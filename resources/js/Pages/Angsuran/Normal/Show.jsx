@@ -26,6 +26,8 @@ const Show = ({ loan, instalment, ...props }) => {
         .filter((item) => item.display == loan.status)
         .reduce((acc, curr) => curr.value, null);
 
+    console.log(statusSekarang);
+
     const statusAngsuran = status_angsuran.filter(
         (item) => item.value >= statusSekarang
     );
@@ -357,7 +359,9 @@ const Show = ({ loan, instalment, ...props }) => {
                                                     id="status"
                                                     type="date"
                                                     name="status"
-                                                    value={data.status}
+                                                    // value={data.status}
+                                                    nullValue={true}
+                                                    required
                                                     options={statusAngsuran}
                                                     className="mt-1 block w-full"
                                                     autoComplete="status"
