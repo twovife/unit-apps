@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         if (auth()->user()->hasPermissionTo('area')) {
-            return redirect()->intended(RouteServiceProvider::MANTRIHOME);
+            return redirect()->route('mantriapps.index');
         }
 
         return redirect()->intended(RouteServiceProvider::HOME);
