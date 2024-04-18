@@ -35,6 +35,7 @@ class LoanController extends Controller
     public function batch_post(Request $request)
     {
 
+        dd($request->all());
         $requestData = $request->all();
         // dd($requestData);
         $newCollection = collect();

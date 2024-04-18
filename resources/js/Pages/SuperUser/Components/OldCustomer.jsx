@@ -252,7 +252,7 @@ const OldCustomer = ({
                         <div className="flex-1">
                             <InputLabel
                                 htmlFor={`status_angsuran_${column.id}`}
-                                value="Tanggal Angsuran"
+                                value="Status"
                             />
                             <div className="flex justify-center items-center gap-2">
                                 <SelectList
