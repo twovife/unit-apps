@@ -44,7 +44,7 @@ class Loan extends Model
     }
     public function angsuran()
     {
-        return $this->hasMany(Instalment::class, 'loan_id', 'id');
+        return $this->hasMany(Instalment::class, 'loan_id', 'id')->orderBy('pembayaran_date');
     }
 
     public function loanrequest()
