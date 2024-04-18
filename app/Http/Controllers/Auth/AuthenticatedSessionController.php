@@ -36,6 +36,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (auth()->user()->hasPermissionTo('area')) {
+            return redirect()->intended(RouteServiceProvider::MANTRIHOME);
+        }
+
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
@@ -50,6 +54,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }

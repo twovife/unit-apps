@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 use Inertia\Middleware;
 use Tightenco\Ziggy\Ziggy;
 
@@ -30,15 +31,22 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user()?->load('employee.branch'),
             ],
             'ziggy' => function () use ($request) {
                 return array_merge((new Ziggy)->toArray(), [
                     'location' => $request->url(),
                 ]);
-            },
+            }, 'flash' => [
+                'message' => fn () => $request->session()->get('message')
+            ],
+            // 'serverStorage' => function () use ($request) {
+            //     $getSessionFilter = Session::get($request);
+            //     return $getSessionFilter;
+            // },
         ]);
     }
 }
