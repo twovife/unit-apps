@@ -549,7 +549,8 @@ class LoanController extends Controller
 
         $dataloan = [
             'id' => $loan->id,
-            'nomor_pinjaman' => $loan->loan_request_id,
+            'nomor_pinjaman' => $loan->id,
+            'nomor_request' => $loan->loan_request_id,
             'nama_customer' => $loan->customer->nama,
             'nik_customer' => $loan->customer->nik,
 
