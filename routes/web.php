@@ -42,7 +42,7 @@ Route::middleware('auth')->group(function () {
                 Route::post('/', 'store_angsuran_normal')->name('store');
                 Route::get('/{loan}', 'show_angsuran_normal')->name('show');
                 Route::post('/{loan}', 'update_angsuran_normal')->name('update');
-                Route::post('/{loan}', 'update_jenis_nasabah')->name('nasabah');
+                Route::post('/{loan}/nasabah', 'update_jenis_nasabah')->name('nasabah');
             });
         });
         Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
