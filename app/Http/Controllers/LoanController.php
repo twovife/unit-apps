@@ -489,7 +489,8 @@ class LoanController extends Controller
             // dd($subEndDate);
             return [
                 'id' => $item->id,
-                'nomor_pinjaman' => $item->loan_request_id,
+                'nomor_pinjaman' => $item->id,
+                'nomor_request' => $item->loan_request_id,
                 'tanggal_drop' => $item->tanggal_drop,
                 'nama_customer' => $item->customer?->nama,
                 'nik_customer' => $item->customer?->nik,
