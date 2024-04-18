@@ -326,7 +326,7 @@ class MantriAppsController extends Controller
         $loanHistory =  $historyLoans->map(function ($item) {
             return
                 [
-                    'id' => $item->loan_request_id,
+                    'id' => $item->id,
                     'tanggal_drop' => $item->tanggal_drop,
                     'hari' => $item->hari,
                     'unit' => $item->branch->unit,

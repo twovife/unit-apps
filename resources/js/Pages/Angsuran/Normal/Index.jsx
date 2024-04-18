@@ -694,6 +694,8 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                     <div className="flex items-start justify-evenly w-[25vw]">
                                                         <div className="flex-1 flex gap-3 justify-evenly items-center py-1 px-4">
                                                             <div>
+                                                                {key + 1}
+                                                                &nbsp;|&nbsp;
                                                                 {
                                                                     item.nomor_pinjaman
                                                                 }
