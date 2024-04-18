@@ -631,8 +631,8 @@ class LoanController extends Controller
             $loan->status = $request->status;
             if ($loan->pinjaman - $totalAngsuran == 0) {
                 $loan->lunas = "lunas";
-                $loan->save();
             }
+            $loan->save();
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
