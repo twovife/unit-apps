@@ -133,6 +133,7 @@ class LoanController extends Controller
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
+            dd($e);
             return redirect()->back()->withErrors('Terjadi Kesalahan, Refresh / Hubungi IT');
         }
 
