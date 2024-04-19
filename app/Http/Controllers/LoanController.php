@@ -149,10 +149,9 @@ class LoanController extends Controller
         ]);
 
         $customer = Customer::with('loan.droper')->where('nik', $request->nik)->first();
-        // dd($customer);
-        // return data loan_request
+
         $data = $customer?->loan->map(function ($item) {
-            $pembayaran_cicilan = $item->cicilan?->sum('jumlah') ?? 0;
+            $pembayaran_cicilan = $item->angsuran?->sum('jumlah') ?? 0;
             $lunas = $item->pinjaman - $pembayaran_cicilan == 0 ? 'Lunas' : "Belum Lunas";
             return [
                 'id' => $item->id,
@@ -167,6 +166,7 @@ class LoanController extends Controller
                 'drop' => $item->drop,
                 'pinjaman' => $item->pinjaman,
                 'cicilan' => $pembayaran_cicilan,
+                // 'cicilan' => $pembayaran_cicilan,
                 'lunas' => $lunas,
                 'status' => AppHelper::status_pinjaman($item->status),
 
