@@ -12,6 +12,15 @@ import React, { useState } from "react";
 import { NumericFormat } from "react-number-format";
 
 const Transaksi = ({ data, branch, server_filters, ...props }) => {
+    const {
+        serverFilters,
+        onServerFilterChange,
+        onServerFilterSubmit,
+        loading,
+        setLoading,
+        mantriMantri,
+        transaction_day,
+    } = useServerFilter(route().current(), server_filters);
     const mantri =
         server_filters.previledge == "mantri"
             ? [
@@ -22,14 +31,6 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
                   },
               ]
             : mantriMantri;
-    const {
-        serverFilters,
-        onServerFilterChange,
-        onServerFilterSubmit,
-        loading,
-        setLoading,
-        mantriMantri,
-    } = useServerFilter(route().current(), server_filters);
 
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -56,7 +57,7 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
         >
             <Head title="Buku Transaksi" />
             <div className="mb-3">
-                <div className="flex justify-between items-center w-full gap-1">
+                <div className="flex justify-between items-center w-full gap-1 flex-wrap">
                     <div className="flex-1">
                         <InputLabel htmlFor="kelompok" value="Kelompok" />
 
@@ -72,13 +73,27 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
                         />
                     </div>
                     <div className="flex-1">
+                        <InputLabel htmlFor="hari" value="Hari" />
+
+                        <SelectList
+                            id="hari"
+                            type="text"
+                            onChange={onServerFilterChange}
+                            name="hari"
+                            value={serverFilters.hari}
+                            options={transaction_day}
+                            className="mt-1 block w-full"
+                            autoComplete="hari"
+                        />
+                    </div>
+                    <div className="flex-1">
                         <InputLabel htmlFor="date" value="Tanggal Transaksi" />
 
                         <div className="flex text-center items-center gap-1">
                             <div className="flex-1">
                                 <TextInput
                                     id="date"
-                                    type="date"
+                                    type="month"
                                     onChange={onServerFilterChange}
                                     value={serverFilters.date}
                                     name="date"
@@ -107,7 +122,7 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
                     />
                 </div>
             </div>
-            <div className="overflow-auto rounded shadow-sm max-h-[50vh] border-b-2">
+            <div className="overflow-auto rounded shadow-sm max-h-[50vh] lg:max-h-[65vh] border-b-2">
                 <table className="text-sm w-full border">
                     <thead className="bg-gray-200">
                         <tr className="text-center">

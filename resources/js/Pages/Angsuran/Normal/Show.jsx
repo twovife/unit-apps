@@ -26,8 +26,6 @@ const Show = ({ loan, instalment, ...props }) => {
         .filter((item) => item.display == loan.status)
         .reduce((acc, curr) => curr.value, null);
 
-    console.log(statusSekarang);
-
     const statusAngsuran = status_angsuran.filter(
         (item) => item.value >= statusSekarang
     );

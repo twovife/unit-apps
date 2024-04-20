@@ -18,7 +18,7 @@ import useServerFilter from "@/Hooks/useServerFilter";
 import useFilterTable from "@/Hooks/useFilterTable";
 import SelectList from "@/Components/SelectList";
 
-const Index = ({ loans, server_filters, ...props }) => {
+const IndexOpen = ({ loans, server_filters, ...props }) => {
     const {
         transaction_date,
         serverFilters,
@@ -26,7 +26,6 @@ const Index = ({ loans, server_filters, ...props }) => {
         onServerFilterSubmit,
         loading,
         setLoading,
-        transaction_day,
         mantriMantri,
     } = useServerFilter(route().current(), server_filters);
 
@@ -435,17 +434,6 @@ const Index = ({ loans, server_filters, ...props }) => {
             <div className="relative">
                 <div className="px-6 py-4 flex justify-end items-center gap-3">
                     <div>
-                        <TextInput
-                            option={transaction_date}
-                            type="month"
-                            className="block text-sm w-full"
-                            id="transaction_date"
-                            name="transaction_date"
-                            value={serverFilters.transaction_date}
-                            onChange={onServerFilterChange}
-                        />
-                    </div>
-                    <div>
                         <SelectList
                             type="date"
                             className="block w-full min-w-16 text-sm"
@@ -456,23 +444,13 @@ const Index = ({ loans, server_filters, ...props }) => {
                             onChange={onServerFilterChange}
                         />
                     </div>
-                    <div>
-                        <SelectList
-                            className="block w-full min-w-16 text-sm"
-                            id="hari"
-                            name="hari"
-                            options={transaction_day}
-                            value={serverFilters.hari}
-                            onChange={onServerFilterChange}
-                        />
-                    </div>
                     <PrimaryButton
                         color="yellow"
                         title="Cari"
                         onClick={onServerFilterSubmit}
                     />
                     <LinkButton
-                        href={route("transaction.index")}
+                        href={route("transaction.index_open")}
                         title="Refresh"
                         onClick={onServerFilterSubmit}
                     />
@@ -600,4 +578,4 @@ const Index = ({ loans, server_filters, ...props }) => {
     );
 };
 
-export default Index;
+export default IndexOpen;

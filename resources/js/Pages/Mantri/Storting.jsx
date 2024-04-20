@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import React, { useState } from "react";
 import { NumericFormat } from "react-number-format";
 
-const Drop = ({ data, branch, server_filters, ...props }) => {
+const Storting = ({ data, server_filters, ...props }) => {
     const {
         serverFilters,
         onServerFilterChange,
@@ -19,6 +19,7 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
         loading,
         setLoading,
         mantriMantri,
+        transaction_day,
     } = useServerFilter(route().current(), server_filters);
 
     const mantri =
@@ -72,17 +73,17 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
                         />
                     </div>
                     <div className="flex-1">
-                        <InputLabel htmlFor="date" value="Tanggal Drop" />
+                        <InputLabel htmlFor="hari" value="Hari" />
 
                         <div className="flex text-center items-center gap-1">
                             <div className="flex-1">
-                                <TextInput
-                                    id="date"
-                                    disabled={true}
-                                    type="date"
+                                <SelectList
+                                    id="hari"
+                                    type="text"
                                     onChange={onServerFilterChange}
-                                    value={serverFilters.date}
-                                    name="date"
+                                    name="hari"
+                                    value={serverFilters.hari}
+                                    options={transaction_day}
                                     className="mt-1 block w-full"
                                 />
                             </div>
@@ -104,19 +105,19 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
                         value={searchTerm}
                         onChange={handleSearchInputChange}
                         className="w-full"
-                        placeHolder="Masukkan NIK / Nama"
+                        placeholder="Masukkan NIK / Nama"
                     />
                 </div>
             </div>
-            <div className="overflow-auto rounded shadow-sm max-h-[50vh] border-b-2">
+            <div className="overflow-auto rounded shadow-lg max-h-[50vh] border-b-2 border-2 border-white/50">
                 <table className="text-sm w-full border">
                     <thead className="bg-gray-200">
                         <tr className="text-center">
                             <td className="p-2">Tgl</td>
                             <td className="p-2">Nasabah</td>
-                            <td className="p-2">Drop</td>
+                            <td className="p-2">Pinjaman</td>
                             <td className="p-2">Status</td>
-                            <td className="p-2">Mantri</td>
+                            <td className="p-2">Kel</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -136,16 +137,9 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
                                             <span className="capitalize">
                                                 {item.hari},
                                             </span>
-                                            {item.transaction_date
-                                                ? dayjs(
-                                                      item.transaction_date
-                                                  ).format("DD-MM-YY")
-                                                : ""}
-                                            /
                                         </div>
                                         <div className="mb-1 italic font-light">
                                             <span className="capitalize">
-                                                Drop :&nbsp;
                                                 {item.tanggal_drop
                                                     ? dayjs(
                                                           item.tanggal_drop
@@ -164,17 +158,38 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
                                         </div>
                                     </td>
                                     <td className="px-2 py-1 text-end">
-                                        <NumericFormat
-                                            value={item.drop}
-                                            displayType={"text"}
-                                            thousandSeparator={","}
-                                        />
+                                        <div className="text-xs">
+                                            <div className="flex justify-between gap-6">
+                                                <div>Pinj</div>
+                                                <NumericFormat
+                                                    value={item.pinjaman}
+                                                    displayType={"text"}
+                                                    thousandSeparator={","}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between mb-1 border-b-black border-b-2">
+                                                <div>Angs</div>
+                                                <NumericFormat
+                                                    value={item.total_angsuran}
+                                                    displayType={"text"}
+                                                    thousandSeparator={","}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <div>Saldo</div>
+                                                <NumericFormat
+                                                    value={item.saldo_ansuran}
+                                                    displayType={"text"}
+                                                    thousandSeparator={","}
+                                                />
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-2 py-1 text-center">
                                         <Link
                                             className="bg-blue-500 px-2 py-1.5 hover:bg-blue-700 text-white hover:cursor-pointer rounded"
                                             href={route(
-                                                "mantriapps.show",
+                                                "mantriapps.bayar",
                                                 item.id
                                             )}
                                         >
@@ -194,4 +209,4 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
     );
 };
 
-export default Drop;
+export default Storting;

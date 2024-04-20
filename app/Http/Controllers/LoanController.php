@@ -183,13 +183,15 @@ class LoanController extends Controller
     {
         $getFilter = new \stdClass;
         $getFilter = (object) request()->all();
-        $getFilter->transaction_date = Carbon::parse(request()->transaction_date ?? Carbon::now())->format('Y-m-d');
+        $getFilter->transaction_date = Carbon::parse(request()->transaction_date ?? Carbon::now())->format('Y-m');
+        $getFilter->hari =  request()->hari ?? AppHelper::dateName(Carbon::now());
+        // $getFilter->transaction_date = Carbon::parse(request()->transaction_date ?? Carbon::now())->format('Y-m-d');
         $getFilter->start_date = Carbon::parse(request()->transaction_date ?? Carbon::now())->startOfMonth()->format('Y-m-d');
         $getFilter->end_date = Carbon::parse(request()->transaction_date ?? Carbon::now())->endOfMonth()->format('Y-m-d');
         $getFilter->branch_id = auth()->user()->hasPermissionTo('unit') ? auth()->user()->employee->branch_id : (request()->branch_id ?? 1);
         $getFilter->mantri = auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->mantri ?? 1);
 
-        $data = LoanRequest::with('customer', 'droper', 'branch', 'approver')->where('transaction_date', $getFilter->transaction_date)->where('kelompok', $getFilter->mantri)->get();
+        $data = LoanRequest::with('customer', 'droper', 'branch', 'approver')->whereBetween('transaction_date', [$getFilter->start_date, $getFilter->end_date])->where('hari', $getFilter->hari)->where('kelompok', $getFilter->mantri)->get();
         $loans = $data->map(function ($item) {
             return [
                 'id' => $item->id,
@@ -215,6 +217,41 @@ class LoanController extends Controller
         Session::put('transaction_index_request', (array)$getFilter);
 
         return Inertia::render('Transaksi/Index', [
+            'loans' => $loans,
+            'server_filters' => $getFilter
+        ]);
+    }
+
+    public function index_transaction_open()
+    {
+        $getFilter = new \stdClass;
+        $getFilter = (object) request()->all();
+        $getFilter->branch_id = auth()->user()->hasPermissionTo('unit') ? auth()->user()->employee->branch_id : (request()->branch_id ?? 1);
+        $getFilter->mantri = auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->mantri ?? 1);
+
+        $data = LoanRequest::with('customer', 'droper', 'branch', 'approver')->where('kelompok', $getFilter->mantri)->where('status', 'open')->get();
+        $loans = $data->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'transaction_date' => $item->transaction_date,
+                'customer_nik' => $item->customer?->nik,
+                'customer_nama' => $item->customer?->nama,
+                'customer_alamat' => $item->customer?->alamat,
+                'droper' => $item->droper?->nama_karyawan,
+                'kelompok' => $item->kelompok,
+                'hari' => $item->hari,
+                'pinjaman' => $item->pinjaman,
+                'pengajuan_ke' => $item->pinjaman_ke,
+                'tanggal_drop' => $item->tanggal_drop,
+                'tanggal_approve' => $item->approved_date,
+                'approver' => $item->approver?->nama_karyawan,
+                'status' => $item->status,
+            ];
+        })->values();
+
+        Session::put('transaction_index_request', (array)$getFilter);
+
+        return Inertia::render('Transaksi/IndexOpen', [
             'loans' => $loans,
             'server_filters' => $getFilter
         ]);
@@ -464,10 +501,6 @@ class LoanController extends Controller
             }
         }
 
-        // dd($dateOfWeek);
-
-        // $data = LoanRequest::with('customer', 'droper', 'branch', 'approver')->where('transaction_date', $getFilter->transaction_date)->where('kelompok', $getFilter->mantri)->get();
-
 
         $data = Loan::with('customer', 'mantri', 'branch', 'angsuran')
             ->where('tanggal_drop', '<=', $getFilter->end_date)
@@ -600,9 +633,9 @@ class LoanController extends Controller
 
     public function update_angsuran_normal(Request $request, Loan $loan)
     {
+        $maksimal_angsuran = $loan->pinjaman - $loan->angsuran->sum('jumlah');
         $request->validate([
-            'danatitipan' => ['required'],
-            'jumlah' => ['required'],
+            'jumlah' => ['required', "max:$maksimal_angsuran", 'min:0'],
             'mantri' => ['required'],
             'status' => ['required'],
             'tanggal_pembayaran' => ['required'],

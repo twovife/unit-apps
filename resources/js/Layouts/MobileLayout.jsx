@@ -20,11 +20,12 @@ const MobileLayout = ({ auth, header, children, loading = false }) => {
                 <SweetAlert type="success" message={flash?.message} />
             )}
             <Loading show={loading} />
-            <img
-                src="/18529.jpg"
-                className="absolute z-0 h-screen max-w-xl top-0 left-1/2 -translate-x-1/2 opacity-70"
-            />
-            <div className=" relative max-w-xl mx-auto h-screen">
+
+            <div className="relative max-w-xl mx-auto h-screen">
+                <img
+                    src="/18529.jpg"
+                    className="absolute z-0 h-screen w-full top-0 left-1/2 -translate-x-1/2 opacity-70"
+                />
                 <div className="sticky top-0 z-10 bg-red-500 text-white">
                     <div className="w-full flex items-center justify-between py-2 px-4">
                         <div className="flex justify-start items-center gap-1">
@@ -36,7 +37,7 @@ const MobileLayout = ({ auth, header, children, loading = false }) => {
                         <div>{auth.user.username}</div>
                     </div>
                 </div>
-                <div className="p-4">{children}</div>
+                <div className="p-4 relative">{children}</div>
             </div>
         </div>
     );
