@@ -306,7 +306,7 @@ class LoanController extends Controller
 
             $mantri = Employee::find($request->mantri);
 
-
+            $dropLangsung = $request->tanggal_drop == $request->transaction_date ? true : false;
 
 
             $loansreq = $customer->loan_request()->create([
@@ -317,16 +317,16 @@ class LoanController extends Controller
                 'hari' => AppHelper::dateName($request->transaction_date),
                 'pinjaman' => $request->pinjaman,
                 'tanggal_drop' => $request->tanggal_drop,
-                'approved_date' => $request->droplangsung ? $request->tanggal_drop : null,
-                'approved_by' => $request->droplangsung ? $request->mantri : null,
-                'status' => $request->droplangsung ? 'acc' : 'open',
+                'approved_date' => $dropLangsung ? $request->tanggal_drop : null,
+                'approved_by' => $dropLangsung ? $request->mantri : null,
+                'status' => $dropLangsung ? 'acc' : 'open',
                 'loan_notes' => null,
 
             ]);
             $loansreq->pinjaman_ke = $customer->load('loan_request')->loan_request->count('id');
             $loansreq->save();
 
-            if ($request->droplangsung) {
+            if ($dropLangsung) {
                 $loans =   $loansreq->loan()->create([
                     'customer_id' => $customer->id,
                     'branch_id' => $loansreq->branch_id,

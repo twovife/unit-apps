@@ -77,7 +77,7 @@ class MantriAppsController extends Controller
 
             $mantri = Employee::find($request->mantri);
 
-            $dropLangsung = $request->tanggal_drop == $request->transaction_date;
+            $dropLangsung = $request->tanggal_drop == $request->transaction_date ? true : false;
 
             $loansreq = $customer->loan_request()->create([
                 'transaction_date' => $request->transaction_date,
