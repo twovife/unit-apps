@@ -21,7 +21,6 @@ const Bayar = ({ loan, ...props }) => {
     const statusAngsuran = status_angsuran.filter(
         (item) => item.value >= loan.status
     );
-    console.log(loan);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         danatitipan: false,

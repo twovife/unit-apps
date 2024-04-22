@@ -198,7 +198,7 @@ class MantriAppsController extends Controller
 
     function mantri_angsur(Request $request)
     {
-        $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->kelompok : (request()->kelompok ?? 1));
+        $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
         $hari = auth()->user()->hasPermissionTo('area') ? AppHelper::dateName(Carbon::now()) : ($request->hari ?? AppHelper::dateName(Carbon::now()));
         $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat");
         $data = Loan::with('customer', 'mantri', 'branch', 'angsuran')
