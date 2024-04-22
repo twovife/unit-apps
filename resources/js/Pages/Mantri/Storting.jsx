@@ -77,7 +77,11 @@ const Storting = ({ data, server_filters, ...props }) => {
 
                         <div className="flex text-center items-center gap-1">
                             <div className="flex-1">
-                                <SelectList
+                                <TextInput
+                                    value={serverFilters.hari}
+                                    disabled
+                                />
+                                {/* <SelectList
                                     id="hari"
                                     type="text"
                                     onChange={onServerFilterChange}
@@ -85,7 +89,7 @@ const Storting = ({ data, server_filters, ...props }) => {
                                     value={serverFilters.hari}
                                     options={transaction_day}
                                     className="mt-1 block w-full"
-                                />
+                                /> */}
                             </div>
                             <PrimaryButton
                                 onClick={onServerFilterSubmit}
