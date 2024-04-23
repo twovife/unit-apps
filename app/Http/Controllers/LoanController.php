@@ -84,14 +84,14 @@ class LoanController extends Controller
 
 
             $loansreq = $customer->loan_request()->create([
-                'transaction_date' => Carbon::parse($request->tanggal_drop)->subWeek(1)->format('Y-m-d'),
+                'transaction_date' => Carbon::parse($request->tanggal_drop)->subRealWeeks(1)->format('Y-m-d'),
                 'branch_id' => $mantri->branch_id,
                 'mantri' => $request->mantri,
                 'kelompok' => $mantri->area,
-                'hari' => AppHelper::dateName($request->transaction_date),
+                'hari' => AppHelper::dateName($request->tanggal_drop),
                 'pinjaman' => $request->pinjaman,
                 'tanggal_drop' => $request->tanggal_drop,
-                'approved_date' => Carbon::parse($request->tanggal_drop)->subWeek(1)->format('Y-m-d'),
+                'approved_date' => Carbon::parse($request->tanggal_drop)->subRealWeeks(1)->format('Y-m-d'),
                 'approved_by' => $request->mantri,
                 'status' => 'acc',
                 'loan_notes' => null,
