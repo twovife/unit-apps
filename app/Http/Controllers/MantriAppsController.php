@@ -194,17 +194,18 @@ class MantriAppsController extends Controller
             'id' => $request->id,
             'server_filters' => ['date' => $date, 'kelompok' => $kelompok, 'branch' => $branch, 'previledge' => $previledge]
         ]);
-        return Inertia::render('Mantri/Drop');
     }
 
     function mantri_angsur(Request $request)
     {
         $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
         $hari =  AppHelper::dateName(Carbon::now());
+        $tanggal_tude =  Carbon::parse(Carbon::now())->format('Y-m-d');
         $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat");
         $data = Loan::with('customer', 'mantri', 'branch', 'angsuran')
             ->where('kelompok', $kelompok)
             ->where('hari', $hari)
+            ->where('tanggal_drop', "<", $tanggal_tude)
             ->where(function ($query) {
                 $query->whereHas('angsuran', function ($subquery) {
                     $subquery->havingRaw('sum(jumlah) < loans.pinjaman');
@@ -213,9 +214,6 @@ class MantriAppsController extends Controller
             ->get();
 
         $loans = $data->map(function ($item) {
-            $datenow = Carbon::parse(Carbon::now());
-            $subStartDate = $datenow->startOfMonth()->subMonthsNoOverflow(1)->format('Y-m-d');
-            $subEndDate = $datenow->endOfMonth()->subMonthsNoOverflow(1)->format('Y-m-d');
 
             return [
                 'id' => $item->id,
@@ -239,9 +237,13 @@ class MantriAppsController extends Controller
 
                 'status' => AppHelper::status_pinjaman($item->status),
                 'loan_notes' => $item->loan_notes,
-                'lunas' => $item->lunas
+                'lunas' => $item->lunas,
+                'is_paid' => Carbon::parse(Carbon::now())->format('Y-m-d') == $item->angsuran->max('pembayaran_date') ? 1 : 0,
+
             ];
-        })->sortBy('nama')->sortBy('bulannumber')->values();
+        })->sortBy('nama')->sortBy('bulannumber')->sortBy('is_paid')->values();
+
+        // dd($loans);
 
         $server_filters = ['hari' => $hari, 'kelompok' => $kelompok,  'previledge' => $previledge];
         Session::put('storting_mantri_apps', $server_filters);
@@ -257,7 +259,7 @@ class MantriAppsController extends Controller
     {
         $batasan = [
             'maxdate' => Carbon::now()->format('Y-m-d'),
-            'mindate' => Carbon::parse($loan->angsuran->max('pembayaran_date'))->addRealWeek()->format('Y-m-d'),
+            'mindate' => Carbon::parse($loan->angsuran->max('pembayaran_date') ?? $loan->tanggal_drop)->addRealWeek()->format('Y-m-d'),
             'max_angsuran' => $loan->pinjaman - $loan->angsuran->sum('jumlah'),
             'previledge' => auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat")
         ];

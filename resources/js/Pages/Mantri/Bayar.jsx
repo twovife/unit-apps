@@ -109,9 +109,7 @@ const Bayar = ({ loan, ...props }) => {
                                 <div>:</div>
                             </div>
                             <div className="flex-[2]">
-                                {dayjs(loan.customer.tanggal_drop).format(
-                                    "DD-MM-YYYY"
-                                )}
+                                {dayjs(loan.tanggal_drop).format("DD-MM-YYYY")}
                             </div>
                         </div>
                         <div className="flex gap-3">

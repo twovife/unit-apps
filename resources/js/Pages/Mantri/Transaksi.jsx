@@ -87,7 +87,7 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
                         />
                     </div>
                     <div className="flex-1">
-                        <InputLabel htmlFor="date" value="Tanggal Transaksi" />
+                        <InputLabel htmlFor="date" value="Tanggal Pengajuan" />
 
                         <div className="flex text-center items-center gap-1">
                             <div className="flex-1">

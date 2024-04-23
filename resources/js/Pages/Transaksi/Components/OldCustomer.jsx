@@ -54,7 +54,7 @@ const OldCustomer = ({
                     <div className="flex-1">
                         <InputLabel
                             htmlFor="transaction_date"
-                            value="Tanggal Pinjam"
+                            value="Tanggal Pengajuan"
                         />
 
                         <TextInput
@@ -145,20 +145,6 @@ const OldCustomer = ({
                     />
                     <InputError message={errors.pinjaman} className="mt-2" />
                 </div>
-                {data.transaction_date == data.tanggal_drop && (
-                    <div className="block mt-4">
-                        <label className="flex items-center">
-                            <Checkbox
-                                name="droplangsung"
-                                value={data.droplangsung}
-                                onChange={handleOnChange}
-                            />
-                            <span className="ml-2 font-semibold text-gray-600">
-                                Drop Langsung?
-                            </span>
-                        </label>
-                    </div>
-                )}
 
                 <div className="block mt-4">
                     <PrimaryButton

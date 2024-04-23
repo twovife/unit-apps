@@ -620,8 +620,10 @@ class LoanController extends Controller
         return Inertia::render('Angsuran/Normal/Show', [
             'loan' => $dataloan,
             'instalment' => $instalment,
-            'min_date' => $loan->angsuran->max('pembayaran_date'),
-            'max_date' => Carbon::now()->format('Y-m-d'),
+            'min_date' =>  "2023-01-01",
+            // 'min_date' =>  $loan->angsuran->max('pembayaran_date'),
+            'max_date' => "2024-12-31",
+            // 'max_date' => Carbon::now()->format('Y-m-d'),
             'back_to_index' => route('transaction.index', Session::get('index_angsuran_normal')),
             'mantri' => $mantri,
         ]);

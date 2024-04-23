@@ -120,17 +120,17 @@ const Storting = ({ data, server_filters, ...props }) => {
                             filterTransactions().map((item, key) => (
                                 <tr
                                     key={key}
-                                    className={`even:bg-gray-100 text-xs ${
-                                        item.id == props.id
-                                            ? "bg-green-100"
-                                            : ""
+                                    className={`text-xs ${
+                                        item.is_paid
+                                            ? "even:bg-green-100 bg-green-100"
+                                            : "even:bg-gray-100"
                                     }`}
                                 >
                                     <td className="px-2 py-1">
                                         <div className="font-semibold text-sm"></div>
                                         <div className="mb-1 italic font-light whitespace-nowrap">
                                             <span className="capitalize">
-                                                {item.hari},
+                                                {item.is_paid},
                                             </span>
                                         </div>
                                         <div className="mb-1 italic font-light">
