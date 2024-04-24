@@ -130,6 +130,7 @@ class LoanController extends Controller
             $loans->angsuran()->createMany($newCollection->toArray());
 
 
+
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
@@ -510,7 +511,7 @@ class LoanController extends Controller
             ->where(function ($query) use ($getFilter) {
                 $query->whereHas('angsuran', function ($subquery) use ($getFilter) {
                     $subquery->where('pembayaran_date', '<=', $getFilter->end_date)
-                        ->havingRaw('sum(jumlah) < loans.pinjaman');
+                        ->havingRaw('sum(jumlah) <= loans.pinjaman');
                 })->orWhereDoesntHave('angsuran', function ($subquery) use ($getFilter) {
                     $subquery->where('pembayaran_date', '<=', $getFilter->end_date);
                 });
