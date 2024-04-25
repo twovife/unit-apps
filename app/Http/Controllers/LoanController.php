@@ -599,7 +599,7 @@ class LoanController extends Controller
             'pinjaman' => $loan->pinjaman,
             'status' =>   AppHelper::status_pinjaman($loan->status),
             'loan_notes' =>   $loan->loan_notes,
-            'lunas' => $item->angsuran->sum('jumlah') - $item->pinjaman == 0 ? "lunas" : ($item->angsuran->sum('jumlah') - $item->pinjaman < 0 ? "belum lunas" : "eror")
+            'lunas' => $loan->angsuran->sum('jumlah') - $loan->pinjaman == 0 ? "lunas" : ($loan->angsuran->sum('jumlah') - $loan->pinjaman < 0 ? "belum lunas" : "eror")
         ];
 
         // dd($dataloan);
