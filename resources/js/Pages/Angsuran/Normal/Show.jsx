@@ -109,6 +109,7 @@ const Show = ({ loan, instalment, ...props }) => {
                                             <th className="px-3 py-2">
                                                 Jenis Nasabah
                                             </th>
+                                            <th className="px-3 py-2">Lunas</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -156,6 +157,9 @@ const Show = ({ loan, instalment, ...props }) => {
                                                 </td>
                                                 <td className="px-3 py-2">
                                                     {loan.loan_notes}
+                                                </td>
+                                                <td className="px-3 py-2">
+                                                    {loan.lunas}
                                                 </td>
                                             </tr>
                                         ) : (

@@ -551,7 +551,7 @@ class LoanController extends Controller
                 })->values(),
                 'status' => AppHelper::status_pinjaman($item->status),
                 'loan_notes' => $item->loan_notes,
-                'lunas' => $item->lunas
+                'lunas' => $item->angsuran->sum('jumlah') - $item->pinjaman == 0 ? "lunas" : ($item->angsuran->sum('jumlah') - $item->pinjaman < 0 ? "belum lunas" : "eror")
             ];
         })->sortBy('nama_customer')->sortBy('bulannumber')->values();
 
@@ -599,6 +599,7 @@ class LoanController extends Controller
             'pinjaman' => $loan->pinjaman,
             'status' =>   AppHelper::status_pinjaman($loan->status),
             'loan_notes' =>   $loan->loan_notes,
+            'lunas' => $item->angsuran->sum('jumlah') - $item->pinjaman == 0 ? "lunas" : ($item->angsuran->sum('jumlah') - $item->pinjaman < 0 ? "belum lunas" : "eror")
         ];
 
         // dd($dataloan);
