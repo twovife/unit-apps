@@ -300,7 +300,7 @@ class MantriAppsController extends Controller
                 "pembayaran_date" => $request->pembayaran_date,
                 "jumlah" => $request->jumlah,
                 "status" => $request->status,
-                "mantri" => $request->mantri,
+                "mantri" => auth()->user()->employee->id,
                 "danatitipan" => $request->danatitipan == 1 ? 'true' : 'false',
             ]);
             $loan->status = $request->status;
