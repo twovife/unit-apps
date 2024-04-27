@@ -663,7 +663,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                         filterModal()}
                                                 </div>
                                             </div>
-                                        </th>{" "}
+                                        </th>
                                         <th className="relative z-30">
                                             <div className="flex items-start justify-evenly">
                                                 <div

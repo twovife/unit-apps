@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ApplicationLogo from "@/Components/ApplicationLogo";
 import Dropdown from "@/Components/Dropdown";
 import NavLink from "@/Components/NavLink";
@@ -24,14 +24,13 @@ export default function Authenticated({
     // const [showingNavigationDropdown, setShowingNavigationDropdown] =
     //     useState(false);
     const { errors, flash } = usePage().props;
+
     return (
         <div className="relative">
             {Object.keys(errors).length > 0 && (
-                <SweetAlert type="error" message={errors[0]} />
+                <SweetAlert type="error" flash={errors} />
             )}
-            {flash?.message && (
-                <SweetAlert type="success" message={flash?.message} />
-            )}
+            {flash?.message && <SweetAlert type="success" flash={flash} />}
             <Loading show={loading} />
             <Navbar
                 isOpen={isSidebarOpen}

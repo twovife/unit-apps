@@ -13,6 +13,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -607,6 +608,7 @@ class LoanController extends Controller
         $instalment = $loan->angsuran->map(function ($item) use (&$saldos) {
             $saldos = $saldos - $item->jumlah;
             return [
+                'id' => $item->id,
                 'tanggal_pembayaran' => $item->pembayaran_date,
                 'jumlah' => $item->jumlah,
                 'saldo' => $saldos,
@@ -619,7 +621,7 @@ class LoanController extends Controller
         $branch = auth()->user()->hasPermissionTo('unit') ? auth()->user()->employee->branch_id : (request()->branch_id ?? 1);
         $mantri = Employee::where('jabatan', 'mantri')->where('branch_id', $branch)->orderBy('area')->get();
         //         dd($instalment);
-        return Inertia::render('Angsuran/Normal/Show', [
+        return Inertia::render('Angsuran/Normal/Newshow', [
             'loan' => $dataloan,
             'instalment' => $instalment,
             'min_date' =>  "2023-01-01",
@@ -697,5 +699,24 @@ class LoanController extends Controller
         }
 
         return redirect()->route('pinjaman.normal.show', $loan->id)->with('message', 'Angsuran Berhasil Ditambahkan');
+    }
+
+    public function deleteAngsuran(Instalment $instalment)
+    {
+        // dd($instalment);
+        try {
+            DB::beginTransaction();
+            $instalment->delete();
+            $loan = Loan::find($instalment->loan_id);
+            $loan->status = $loan->angsuran->max('status') ?? 1;
+            $loan->save();
+            DB::commit();
+        } catch (Exception $e) {
+            return to_route('pinjaman.normal.show', $instalment->loan_id)->withErrors('Gagal Menyimpan Angsuran, Refresh / Hub IT');
+        }
+
+
+        $status = AppHelper::status_pinjaman($loan->status);
+        return to_route('pinjaman.normal.show', $instalment->loan_id)->with('message', "Hapus Berhasil, status pinjaman adalah $status");
     }
 }
