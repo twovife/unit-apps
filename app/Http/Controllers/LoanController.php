@@ -126,6 +126,7 @@ class LoanController extends Controller
             if ($loans->pinjaman == $newCollection->sum('jumlah')) {
                 $loans->lunas = 'lunas';
             }
+            $loans->status = $newCollection->max('status');
             $loans->save();
 
             $loans->angsuran()->createMany($newCollection->toArray());
@@ -634,9 +635,6 @@ class LoanController extends Controller
     }
 
 
-
-
-
     public function update_angsuran_normal(Request $request, Loan $loan)
     {
         $maksimal_angsuran = $loan->pinjaman - $loan->angsuran->sum('jumlah');
@@ -671,6 +669,8 @@ class LoanController extends Controller
             $loan->status = $request->status;
             if ($loan->pinjaman - $totalAngsuran == 0) {
                 $loan->lunas = "lunas";
+            } else {
+                $loan->lunas = "belum lunas";
             }
             $loan->save();
             DB::commit();
@@ -709,6 +709,13 @@ class LoanController extends Controller
             $instalment->delete();
             $loan = Loan::find($instalment->loan_id);
             $loan->status = $loan->angsuran->max('status') ?? 1;
+
+            if ($loan->pinjaman - $loan->angsuran->sum('jumlah') == 0) {
+                $loan->lunas = "lunas";
+            } else {
+                $loan->lunas = "belum lunas";
+            }
+
             $loan->save();
             DB::commit();
         } catch (Exception $e) {
