@@ -59,7 +59,7 @@ const Show = ({ requesttoApprove, loanHistory, requestHistory, ...props }) => {
                             <div className="text-lg font-semibold mb-2">
                                 Pengajuan Pinjaman
                             </div>
-                            <div className="overflow-hidden mb-3 rounded border border-black/5 shadow p-4">
+                            <div className="overflow-auto mb-3 rounded border border-black/5 shadow p-4">
                                 <table className="w-full text-sm text-left text-gray-500">
                                     <thead className="text-xs text-gray-900 uppercase bg-gray-200 sticky top-0 whitespace-nowrap">
                                         <tr>
@@ -237,7 +237,7 @@ const Show = ({ requesttoApprove, loanHistory, requestHistory, ...props }) => {
                             <div className="text-lg font-semibold mb-2">
                                 History Pinjaman
                             </div>
-                            <div className="overflow-hidden mb-3 rounded border border-black/5 shadow p-4">
+                            <div className="overflow-auto mb-3 rounded border border-black/5 shadow p-4">
                                 <table className="w-full text-sm text-left text-gray-500">
                                     <thead className="text-xs text-gray-900 uppercase bg-gray-200 sticky top-0 whitespace-nowrap">
                                         <tr>
@@ -383,7 +383,7 @@ const Show = ({ requesttoApprove, loanHistory, requestHistory, ...props }) => {
                             <div className="text-lg font-semibold mb-2">
                                 History Pengajuan Sebelumnya
                             </div>
-                            <div className="overflow-hidden mb-3 rounded border border-black/5 shadow p-4">
+                            <div className="overflow-auto mb-3 rounded border border-black/5 shadow p-4">
                                 <table className="w-full text-sm text-left text-gray-500">
                                     <thead className="text-xs text-gray-900 uppercase bg-gray-200 sticky top-0 whitespace-nowrap">
                                         <tr>
