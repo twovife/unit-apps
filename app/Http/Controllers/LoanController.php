@@ -666,7 +666,7 @@ class LoanController extends Controller
                 "mantri" => $request->mantri,
                 "danatitipan" => $request->danatitipan == 1 ? 'true' : 'false',
             ]);
-            $loan->status = $loan->angsuran->max('status') ?? 1;
+            $loan->status = $loan->angsuran->max('status') && $loan->angsuran->max('status') > $request->status ? $loan->angsuran->max('status') :  $request->status;
             if ($loan->pinjaman - $totalAngsuran == 0) {
                 $loan->lunas = "lunas";
             } else {
