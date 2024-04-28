@@ -56,7 +56,7 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
             loading={loading}
         >
             <div className="mb-3">
-                <div className="flex justify-between items-center w-full gap-1">
+                <div className="flex justify-between items-center w-full gap-1 flex-wrap">
                     <div className="flex-1">
                         <InputLabel htmlFor="kelompok" value="Kelompok" />
 
