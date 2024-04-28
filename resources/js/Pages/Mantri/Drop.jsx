@@ -56,45 +56,39 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
             loading={loading}
         >
             <div className="mb-3">
-                <div className="flex justify-between items-center w-full gap-1 flex-wrap">
-                    <div className="flex-1">
-                        <InputLabel htmlFor="kelompok" value="Kelompok" />
-
-                        <SelectList
-                            id="kelompok"
-                            type="text"
-                            onChange={onServerFilterChange}
-                            name="kelompok"
-                            value={serverFilters.kelompok}
-                            options={mantri}
-                            className="mt-1 block w-full"
-                            autoComplete="kelompok"
-                        />
-                    </div>
-                    <div className="flex-1">
-                        <InputLabel htmlFor="date" value="Tanggal Drop" />
-                        <TextInput
-                            id="date"
-                            disabled={true}
-                            type="date"
-                            onChange={onServerFilterChange}
-                            value={serverFilters.date}
-                            name="date"
-                            className="mt-1 block w-full"
-                        />
-                    </div>
+                <div className="w-full">
+                    <InputLabel htmlFor="kelompok" value="Kelompok" />
+                    <SelectList
+                        id="kelompok"
+                        type="text"
+                        onChange={onServerFilterChange}
+                        name="kelompok"
+                        value={serverFilters.kelompok}
+                        options={mantri}
+                        className="mt-1 block w-full"
+                        autoComplete="kelompok"
+                    />
                 </div>
-                <div className="flex mt-1 gap-1">
-                    <div className="flex-1">
+                <div className="mt-3 w-full">
+                    <InputLabel htmlFor="date" value="Tanggal Drop" />
+
+                    <div className="flex text-center items-center gap-1">
+                        <div className="flex-1">
+                            <TextInput
+                                id="date"
+                                disabled={true}
+                                type="date"
+                                onChange={onServerFilterChange}
+                                value={serverFilters.date}
+                                name="date"
+                                className="mt-1 block w-full"
+                            />
+                        </div>
                         <PrimaryButton
-                            className="block w-full"
                             onClick={onServerFilterSubmit}
                             title={"Cari"}
                         />
-                    </div>
-                    <div className="flex-1">
                         <LinkButton
-                            className="block w-full"
                             color="blue"
                             as="a"
                             href={route("mantriapps.index")}
