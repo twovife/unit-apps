@@ -23,7 +23,7 @@ const MobileLayout = ({ auth, header, children, loading = false }) => {
             <div className="relative max-w-xl mx-auto h-screen">
                 <img
                     src="/18529.jpg"
-                    className="absolute z-0 h-screen w-full top-0 left-1/2 -translate-x-1/2 opacity-70"
+                    className="fixed z-0 h-screen w-full top-0 left-1/2 -translate-x-1/2 opacity-70"
                 />
                 <div className="sticky top-0 z-10 bg-red-500 text-white">
                     <div className="w-full flex items-center justify-between py-2 px-4">
