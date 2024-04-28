@@ -84,15 +84,17 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
                         />
                     </div>
                 </div>
-                <div className="flex">
+                <div className="flex mt-1 gap-1">
                     <div className="flex-1">
                         <PrimaryButton
+                            className="block w-full"
                             onClick={onServerFilterSubmit}
                             title={"Cari"}
                         />
                     </div>
                     <div className="flex-1">
                         <LinkButton
+                            className="block w-full"
                             color="blue"
                             as="a"
                             href={route("mantriapps.index")}
