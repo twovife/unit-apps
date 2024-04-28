@@ -4,7 +4,7 @@ import { usePage, Head, router } from "@inertiajs/react";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { NumericFormat } from "react-number-format";
-import { M as MobileLayout } from "./MobileLayout-6c116800.mjs";
+import { M as MobileLayout } from "./MobileLayout-adc7706e.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
 import "@inertiajs/react/server";

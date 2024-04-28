@@ -5,7 +5,7 @@ import { P as PrimaryButton } from "./PrimaryButton-e2c4c1f4.mjs";
 import { S as SelectList } from "./SelectList-224f2d77.mjs";
 import { T as TextInput } from "./TextInput-11198f62.mjs";
 import { u as useServerFilter } from "./useServerFilter-d19c7d4b.mjs";
-import { M as MobileLayout } from "./MobileLayout-6c116800.mjs";
+import { M as MobileLayout } from "./MobileLayout-adc7706e.mjs";
 import { Link } from "@inertiajs/react";
 import dayjs from "dayjs";
 import { useState } from "react";
@@ -19,15 +19,14 @@ import "sweetalert2-react-content";
 import "react-dom";
 import "@headlessui/react";
 import "react-icons/ai";
-const Storting = ({ data, server_filters, ...props }) => {
+const Drop = ({ data, branch, server_filters, ...props }) => {
   const {
     serverFilters,
     onServerFilterChange,
     onServerFilterSubmit,
     loading,
     setLoading,
-    mantriMantri,
-    transaction_day
+    mantriMantri
   } = useServerFilter(route().current(), server_filters);
   const mantri = server_filters.previledge == "mantri" ? [
     {
@@ -55,7 +54,7 @@ const Storting = ({ data, server_filters, ...props }) => {
       loading,
       children: [
         /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center w-full gap-1 flex-wrap", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center w-full gap-1", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
               /* @__PURE__ */ jsx(InputLabel, { htmlFor: "kelompok", value: "Kelompok" }),
               /* @__PURE__ */ jsx(
@@ -73,13 +72,18 @@ const Storting = ({ data, server_filters, ...props }) => {
               )
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "hari", value: "Hari" }),
+              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "date", value: "Tanggal Drop" }),
               /* @__PURE__ */ jsxs("div", { className: "flex text-center items-center gap-1", children: [
                 /* @__PURE__ */ jsx("div", { className: "flex-1", children: /* @__PURE__ */ jsx(
                   TextInput,
                   {
-                    value: serverFilters.hari,
-                    disabled: true
+                    id: "date",
+                    disabled: true,
+                    type: "date",
+                    onChange: onServerFilterChange,
+                    value: serverFilters.date,
+                    name: "date",
+                    className: "mt-1 block w-full"
                   }
                 ) }),
                 /* @__PURE__ */ jsx(
@@ -107,79 +111,61 @@ const Storting = ({ data, server_filters, ...props }) => {
               value: searchTerm,
               onChange: handleSearchInputChange,
               className: "w-full",
-              placeholder: "Masukkan NIK / Nama"
+              placeHolder: "Masukkan NIK / Nama"
             }
           ) })
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "overflow-auto rounded shadow-lg max-h-[50vh] border-b-2 border-2 border-white/50", children: /* @__PURE__ */ jsxs("table", { className: "text-sm w-full border", children: [
+        /* @__PURE__ */ jsx("div", { className: "overflow-auto rounded shadow-sm max-h-[50vh] border-b-2", children: /* @__PURE__ */ jsxs("table", { className: "text-sm w-full border", children: [
           /* @__PURE__ */ jsx("thead", { className: "bg-gray-200", children: /* @__PURE__ */ jsxs("tr", { className: "text-center", children: [
             /* @__PURE__ */ jsx("td", { className: "p-2", children: "Tgl" }),
             /* @__PURE__ */ jsx("td", { className: "p-2", children: "Nasabah" }),
-            /* @__PURE__ */ jsx("td", { className: "p-2", children: "Pinjaman" }),
+            /* @__PURE__ */ jsx("td", { className: "p-2", children: "Drop" }),
             /* @__PURE__ */ jsx("td", { className: "p-2", children: "Status" }),
-            /* @__PURE__ */ jsx("td", { className: "p-2", children: "Kel" })
+            /* @__PURE__ */ jsx("td", { className: "p-2", children: "Mantri" })
           ] }) }),
           /* @__PURE__ */ jsx("tbody", { children: data && filterTransactions().map((item, key) => /* @__PURE__ */ jsxs(
             "tr",
             {
-              className: `text-xs ${item.is_paid ? "even:bg-green-100 bg-green-100" : "even:bg-gray-100"}`,
+              className: `even:bg-gray-100 text-xs ${item.id == props.id ? "bg-green-100" : ""}`,
               children: [
                 /* @__PURE__ */ jsxs("td", { className: "px-2 py-1", children: [
                   /* @__PURE__ */ jsx("div", { className: "font-semibold text-sm" }),
-                  /* @__PURE__ */ jsx("div", { className: "mb-1 italic font-light whitespace-nowrap", children: /* @__PURE__ */ jsxs("span", { className: "capitalize", children: [
-                    item.is_paid,
-                    ","
-                  ] }) }),
-                  /* @__PURE__ */ jsx("div", { className: "mb-1 italic font-light", children: /* @__PURE__ */ jsx("span", { className: "capitalize", children: item.tanggal_drop ? dayjs(
-                    item.tanggal_drop
-                  ).format("DD-MM-YY") : "" }) })
+                  /* @__PURE__ */ jsxs("div", { className: "mb-1 italic font-light whitespace-nowrap", children: [
+                    /* @__PURE__ */ jsxs("span", { className: "capitalize", children: [
+                      item.hari,
+                      ","
+                    ] }),
+                    item.transaction_date ? dayjs(
+                      item.transaction_date
+                    ).format("DD-MM-YY") : "",
+                    "/"
+                  ] }),
+                  /* @__PURE__ */ jsx("div", { className: "mb-1 italic font-light", children: /* @__PURE__ */ jsxs("span", { className: "capitalize", children: [
+                    "Drop : ",
+                    item.tanggal_drop ? dayjs(
+                      item.tanggal_drop
+                    ).format("DD-MM-YY") : ""
+                  ] }) })
                 ] }),
                 /* @__PURE__ */ jsxs("td", { className: "px-2 py-1", children: [
                   /* @__PURE__ */ jsx("div", { className: "mb-1 font-semibold", children: item.nama }),
                   /* @__PURE__ */ jsx("div", { className: "mb-1", children: item.nik }),
                   /* @__PURE__ */ jsx("div", { className: "mb-1 font-light italic", children: item.alamat })
                 ] }),
-                /* @__PURE__ */ jsx("td", { className: "px-2 py-1 text-end", children: /* @__PURE__ */ jsxs("div", { className: "text-xs", children: [
-                  /* @__PURE__ */ jsxs("div", { className: "flex justify-between gap-6", children: [
-                    /* @__PURE__ */ jsx("div", { children: "Pinj" }),
-                    /* @__PURE__ */ jsx(
-                      NumericFormat,
-                      {
-                        value: item.pinjaman,
-                        displayType: "text",
-                        thousandSeparator: ","
-                      }
-                    )
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "flex justify-between mb-1 border-b-black border-b-2", children: [
-                    /* @__PURE__ */ jsx("div", { children: "Angs" }),
-                    /* @__PURE__ */ jsx(
-                      NumericFormat,
-                      {
-                        value: item.total_angsuran,
-                        displayType: "text",
-                        thousandSeparator: ","
-                      }
-                    )
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
-                    /* @__PURE__ */ jsx("div", { children: "Saldo" }),
-                    /* @__PURE__ */ jsx(
-                      NumericFormat,
-                      {
-                        value: item.saldo_ansuran,
-                        displayType: "text",
-                        thousandSeparator: ","
-                      }
-                    )
-                  ] })
-                ] }) }),
+                /* @__PURE__ */ jsx("td", { className: "px-2 py-1 text-end", children: /* @__PURE__ */ jsx(
+                  NumericFormat,
+                  {
+                    value: item.drop,
+                    displayType: "text",
+                    thousandSeparator: ","
+                  }
+                ) }),
                 /* @__PURE__ */ jsx("td", { className: "px-2 py-1 text-center", children: /* @__PURE__ */ jsx(
                   Link,
                   {
                     className: "bg-blue-500 px-2 py-1.5 hover:bg-blue-700 text-white hover:cursor-pointer rounded",
                     href: route(
-                      "mantriapps.bayar",
+                      "mantriapps.show",
                       item.id
                     ),
                     children: item.status
@@ -199,5 +185,5 @@ const Storting = ({ data, server_filters, ...props }) => {
   );
 };
 export {
-  Storting as default
+  Drop as default
 };

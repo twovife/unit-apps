@@ -5,8 +5,8 @@ import { P as PrimaryButton } from "./PrimaryButton-e2c4c1f4.mjs";
 import { S as SelectList } from "./SelectList-224f2d77.mjs";
 import { T as TextInput } from "./TextInput-11198f62.mjs";
 import { u as useServerFilter } from "./useServerFilter-d19c7d4b.mjs";
-import { M as MobileLayout } from "./MobileLayout-6c116800.mjs";
-import { Link } from "@inertiajs/react";
+import { M as MobileLayout } from "./MobileLayout-adc7706e.mjs";
+import { Head, Link } from "@inertiajs/react";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { NumericFormat } from "react-number-format";
@@ -19,14 +19,15 @@ import "sweetalert2-react-content";
 import "react-dom";
 import "@headlessui/react";
 import "react-icons/ai";
-const Drop = ({ data, branch, server_filters, ...props }) => {
+const Transaksi = ({ data, branch, server_filters, ...props }) => {
   const {
     serverFilters,
     onServerFilterChange,
     onServerFilterSubmit,
     loading,
     setLoading,
-    mantriMantri
+    mantriMantri,
+    transaction_day
   } = useServerFilter(route().current(), server_filters);
   const mantri = server_filters.previledge == "mantri" ? [
     {
@@ -50,11 +51,12 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
     {
       auth: props.auth,
       errors: props.errors,
-      header: "Drop Harians",
+      header: "Buku Transaksi",
       loading,
       children: [
+        /* @__PURE__ */ jsx(Head, { title: "Buku Transaksi" }),
         /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center w-full gap-1", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center w-full gap-1 flex-wrap", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
               /* @__PURE__ */ jsx(InputLabel, { htmlFor: "kelompok", value: "Kelompok" }),
               /* @__PURE__ */ jsx(
@@ -72,14 +74,29 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
               )
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "date", value: "Tanggal Drop" }),
+              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "hari", value: "Hari" }),
+              /* @__PURE__ */ jsx(
+                SelectList,
+                {
+                  id: "hari",
+                  type: "text",
+                  onChange: onServerFilterChange,
+                  name: "hari",
+                  value: serverFilters.hari,
+                  options: transaction_day,
+                  className: "mt-1 block w-full",
+                  autoComplete: "hari"
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
+              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "date", value: "Tanggal Pengajuan" }),
               /* @__PURE__ */ jsxs("div", { className: "flex text-center items-center gap-1", children: [
                 /* @__PURE__ */ jsx("div", { className: "flex-1", children: /* @__PURE__ */ jsx(
                   TextInput,
                   {
                     id: "date",
-                    disabled: true,
-                    type: "date",
+                    type: "month",
                     onChange: onServerFilterChange,
                     value: serverFilters.date,
                     name: "date",
@@ -115,7 +132,7 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
             }
           ) })
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "overflow-auto rounded shadow-sm max-h-[50vh] border-b-2", children: /* @__PURE__ */ jsxs("table", { className: "text-sm w-full border", children: [
+        /* @__PURE__ */ jsx("div", { className: "overflow-auto rounded shadow-sm max-h-[50vh] lg:max-h-[65vh] border-b-2", children: /* @__PURE__ */ jsxs("table", { className: "text-sm w-full border", children: [
           /* @__PURE__ */ jsx("thead", { className: "bg-gray-200", children: /* @__PURE__ */ jsxs("tr", { className: "text-center", children: [
             /* @__PURE__ */ jsx("td", { className: "p-2", children: "Tgl" }),
             /* @__PURE__ */ jsx("td", { className: "p-2", children: "Nasabah" }),
@@ -185,5 +202,5 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
   );
 };
 export {
-  Drop as default
+  Transaksi as default
 };
