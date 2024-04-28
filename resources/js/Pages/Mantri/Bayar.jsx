@@ -109,6 +109,7 @@ const Bayar = ({ loan, ...props }) => {
                                 <div>:</div>
                             </div>
                             <div className="flex-[2]">
+                                {loan.hari} |{" "}
                                 {dayjs(loan.tanggal_drop).format("DD-MM-YYYY")}
                             </div>
                         </div>
@@ -123,8 +124,21 @@ const Bayar = ({ loan, ...props }) => {
                                     displayType={"text"}
                                     thousandSeparator={","}
                                     prefix={"Rp. "}
-                                />
-                                | {loan.status}
+                                />{" "}
+                                |{" "}
+                                {loan.status == 1 ? (
+                                    <span className="text-green-500">
+                                        Normal
+                                    </span>
+                                ) : loan.status == 2 ? (
+                                    <span className="text-amber-500">CM</span>
+                                ) : loan.status == 3 ? (
+                                    <span className="text-red-500">MB</span>
+                                ) : (
+                                    <span className="text-white bg-black p-1">
+                                        ML
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -132,15 +146,14 @@ const Bayar = ({ loan, ...props }) => {
                         <div className="shadow text-xs rounded overflow-auto border max-h-[50vh]">
                             <table className="w-full bg-white">
                                 <thead>
-                                    <tr>
+                                    <tr className="text-center">
                                         <th className="p-2">No</th>
                                         <th className="p-2">Tanggal Angsur</th>
                                         <th className="p-2">Jumlah</th>
                                         <th className="p-2">Saldo</th>
-                                        <th className="p-2">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="text-center">
                                     {loan.angsuran?.map((item, key) => {
                                         pinjaman = pinjaman - item.jumlah;
                                         return (
@@ -161,25 +174,44 @@ const Bayar = ({ loan, ...props }) => {
                                                         value={item.jumlah}
                                                         displayType={"text"}
                                                         thousandSeparator={","}
-                                                        prefix={"Rp. "}
                                                     />
                                                 </td>
                                                 <td className="px-2 py-1">
-                                                    <NumericFormat
-                                                        value={pinjaman}
-                                                        displayType={"text"}
-                                                        thousandSeparator={","}
-                                                        prefix={"Rp. "}
-                                                    />
-                                                </td>
-                                                <td className="px-2 py-1">
-                                                    {item.status == 1
-                                                        ? "Normal"
-                                                        : item.status == 2
-                                                        ? "CM"
-                                                        : item.status == 3
-                                                        ? "MB"
-                                                        : "ML"}
+                                                    <div className="flex justify-center gap-2">
+                                                        <div className="text-end flex-1">
+                                                            <NumericFormat
+                                                                value={pinjaman}
+                                                                displayType={
+                                                                    "text"
+                                                                }
+                                                                thousandSeparator={
+                                                                    ","
+                                                                }
+                                                            />
+                                                        </div>
+                                                        <div className="text-start flex-1">
+                                                            {item.status ==
+                                                            1 ? (
+                                                                <span className="text-green-500">
+                                                                    Normal
+                                                                </span>
+                                                            ) : item.status ==
+                                                              2 ? (
+                                                                <span className="text-amber-500">
+                                                                    CM
+                                                                </span>
+                                                            ) : item.status ==
+                                                              3 ? (
+                                                                <span className="text-red-500">
+                                                                    MB
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-white bg-black p-1">
+                                                                    ML
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

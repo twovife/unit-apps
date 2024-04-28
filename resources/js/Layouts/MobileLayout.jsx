@@ -11,14 +11,13 @@ import { BiExit, BiMoney, BiMoneyWithdraw } from "react-icons/bi";
 
 const MobileLayout = ({ auth, header, children, loading = false }) => {
     const { errors, flash } = usePage().props;
+    console.log(errors);
     return (
         <div className="antialiased relative z-10">
             {Object.keys(errors).length > 0 && (
-                <SweetAlert type="error" message={errors[0]} />
+                <SweetAlert type="error" flash={errors} />
             )}
-            {flash?.message && (
-                <SweetAlert type="success" message={flash?.message} />
-            )}
+            {flash?.message && <SweetAlert type="success" flash={flash} />}
             <Loading show={loading} />
 
             <div className="relative max-w-xl mx-auto h-screen">

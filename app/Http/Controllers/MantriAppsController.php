@@ -291,6 +291,7 @@ class MantriAppsController extends Controller
             return redirect()->back()->withErrors('Hari Pada Tanggal Berbeda');
         }
         if ($loan->pinjaman < $totalAngsuran) {
+
             return redirect()->back()->withErrors('Saldo Tidak Boleh Kurang Dari 0');
         }
 
@@ -311,7 +312,8 @@ class MantriAppsController extends Controller
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors('Gagal Menyimpan Angsuran, Refresh / Hub IT');
+            dd($e);
+            return redirect()->back()->withErrors('Perhatikan Eror Pada Input / Hub IT');
         }
 
         return redirect()->route('mantriapps.bayar', $loan->id)->with('message', 'Angsuran Berhasil Ditambahkan');
