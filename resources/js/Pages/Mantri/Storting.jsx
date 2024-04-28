@@ -112,7 +112,6 @@ const Storting = ({ data, server_filters, ...props }) => {
                             <td className="p-2">Nasabah</td>
                             <td className="p-2">Pinjaman</td>
                             <td className="p-2">Status</td>
-                            <td className="p-2">Kel</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -127,18 +126,12 @@ const Storting = ({ data, server_filters, ...props }) => {
                                     }`}
                                 >
                                     <td className="px-2 py-1">
-                                        <div className="font-semibold text-sm"></div>
-                                        <div className="mb-1 italic font-light whitespace-nowrap">
-                                            <span className="capitalize">
-                                                {item.is_paid},
-                                            </span>
-                                        </div>
                                         <div className="mb-1 italic font-light">
                                             <span className="capitalize">
                                                 {item.tanggal_drop
                                                     ? dayjs(
                                                           item.tanggal_drop
-                                                      ).format("DD-MM-YY")
+                                                      ).format("DD-MM")
                                                     : ""}
                                             </span>
                                         </div>
@@ -190,10 +183,6 @@ const Storting = ({ data, server_filters, ...props }) => {
                                         >
                                             {item.status}
                                         </Link>
-                                    </td>
-                                    <td className="px-2 py-1 text-end">
-                                        <div>{item.mantri}</div>
-                                        <div>{item.kelompok}</div>
                                     </td>
                                 </tr>
                             ))}

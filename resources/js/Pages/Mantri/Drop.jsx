@@ -73,30 +73,31 @@ const Drop = ({ data, branch, server_filters, ...props }) => {
                     </div>
                     <div className="flex-1">
                         <InputLabel htmlFor="date" value="Tanggal Drop" />
-
-                        <div className="flex text-center items-center gap-1">
-                            <div className="flex-1">
-                                <TextInput
-                                    id="date"
-                                    disabled={true}
-                                    type="date"
-                                    onChange={onServerFilterChange}
-                                    value={serverFilters.date}
-                                    name="date"
-                                    className="mt-1 block w-full"
-                                />
-                            </div>
-                            <PrimaryButton
-                                onClick={onServerFilterSubmit}
-                                title={"Cari"}
-                            />
-                            <LinkButton
-                                color="blue"
-                                as="a"
-                                href={route("mantriapps.index")}
-                                title={"Home"}
-                            />
-                        </div>
+                        <TextInput
+                            id="date"
+                            disabled={true}
+                            type="date"
+                            onChange={onServerFilterChange}
+                            value={serverFilters.date}
+                            name="date"
+                            className="mt-1 block w-full"
+                        />
+                    </div>
+                </div>
+                <div className="flex">
+                    <div className="flex-1">
+                        <PrimaryButton
+                            onClick={onServerFilterSubmit}
+                            title={"Cari"}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <LinkButton
+                            color="blue"
+                            as="a"
+                            href={route("mantriapps.index")}
+                            title={"Home"}
+                        />
                     </div>
                 </div>
                 <div className="w-full mt-3">
