@@ -555,7 +555,7 @@ class LoanController extends Controller
                 'loan_notes' => $item->loan_notes,
                 'lunas' => $item->angsuran->sum('jumlah') - $item->pinjaman == 0 ? "lunas" : ($item->angsuran->sum('jumlah') - $item->pinjaman < 0 ? "belum lunas" : "eror")
             ];
-        })->sortBy('nama_customer')->sortBy('bulannumber')->values();
+        })->sortBy('nama_customer')->sortBy('tanggal_drop')->values();
 
         // dd($loans);
 
