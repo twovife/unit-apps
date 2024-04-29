@@ -757,7 +757,11 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                                     }
                                                                 </span>
                                                             ) : (
-                                                                ""
+                                                                <div>
+                                                                    {
+                                                                        item.status
+                                                                    }
+                                                                </div>
                                                             )}
 
                                                             {/* className=
