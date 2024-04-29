@@ -751,7 +751,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                                 </span>
                                                             ) : item.status ==
                                                               "ml" ? (
-                                                                <span className="mr-1 px-2 py-1 text-xs border rounded bg-black-400 text-white">
+                                                                <span className="mr-1 px-2 py-1 text-xs border rounded bg-black text-white">
                                                                     {
                                                                         item.status
                                                                     }
