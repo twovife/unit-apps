@@ -331,7 +331,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                 <thead className="text-gray-900 uppercase sticky top-0 whitespace-nowrap z-50">
                                     <tr className="bg-gray-200">
                                         <th className="sticky left-0 top-0 z-40 bg-gray-200">
-                                            <div className="flex items-start justify-evenly w-[25vw] bg-gray-200">
+                                            <div className="flex items-start justify-evenly  bg-gray-200">
                                                 <div
                                                     data-item="nomor_pinjaman"
                                                     data-format={"text"}
@@ -691,7 +691,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                         displayData.map((item, key) => (
                                             <tr key={key} className="bg-white">
                                                 <td className="sticky left-0 top-0 z-40 bg-inherit">
-                                                    <div className="flex items-start justify-evenly w-[25vw]">
+                                                    <div className="flex items-start justify-evenly ">
                                                         <div className="flex-1 flex gap-3 justify-evenly items-center py-1 px-4">
                                                             <div>
                                                                 {key + 1}
