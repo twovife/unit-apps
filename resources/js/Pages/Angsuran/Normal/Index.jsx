@@ -692,7 +692,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                         displayData.map((item, key) => (
                                             <tr key={key} className="bg-white">
                                                 <td className="lg:sticky left-0 top-0 z-40 bg-inherit">
-                                                    <div className="flex justify-start items-start lg:w-[25vw]">
+                                                    <div className="flex justify-start items-start">
                                                         <div className="flex-1 flex gap-3 justify-evenly items-center py-1 px-4">
                                                             <div>
                                                                 {key + 1}
