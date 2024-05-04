@@ -145,6 +145,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                         <div className="flex-1 flex flex-col-reverse">
                             <input
                                 name="column"
+                                readOnly
                                 value={addFilter.column}
                                 onChange={(e) =>
                                     setAddFilter({
@@ -152,7 +153,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                         column: e.target.value,
                                     })
                                 }
-                                className="border-0 border-b border-b-gray-400 text-black font-light text-sm px-1.5 py-1.5 focus:bg-gray-100 focus:outline-none focus:border-b-2 focus:border-b-blue-500 peer/column"
+                                className="read-only:bg-gray-200 read-only:cursor-not-allowed border-0 border-b border-b-gray-400 text-black font-light text-sm px-1.5 py-1.5 focus:bg-gray-100 focus:outline-none focus:border-b-2 focus:border-b-blue-500 peer/column"
                             />
                             <label className="text-gray-400 text-xs font-semibold peer-focus/column:text-blue-500">
                                 Kolom
