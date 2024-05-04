@@ -137,11 +137,11 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
     const filterModal = () => {
         return (
             <div
-                className="fixed text-white top-1/2 left-1/2 -translate-x-1/2 w-1/3"
+                className="fixed text-white top-1/2 left-1/2 -translate-x-1/2 lg:w-1/3"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="bg-white border border-gray-300 rounded-lg shadow-lg max-w-full w-full">
-                    <div className="flex justify-end items-center text-2xl px-2 py-4">
+                    <div className="flex justify-end items-center text-2xl px-2 py-4 flex-wrap gap-3">
                         <div className="flex-1 flex flex-col-reverse">
                             <input
                                 name="column"
@@ -155,7 +155,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                 className="border-0 border-b border-b-gray-400 text-black font-light text-sm px-1.5 py-1.5 focus:bg-gray-100 focus:outline-none focus:border-b-2 focus:border-b-blue-500 peer/column"
                             />
                             <label className="text-gray-400 text-xs font-semibold peer-focus/column:text-blue-500">
-                                Column
+                                Kolom
                             </label>
                         </div>
                         <div className="flex-1 flex flex-col-reverse">
@@ -194,7 +194,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                 className="border-0 border-b border-b-gray-400 text-black font-light text-sm px-1.5 py-1.5 focus:bg-gray-100 focus:outline-none focus:border-b-2 focus:border-b-blue-500 peer/value"
                             />
                             <label className="text-gray-400 text-xs font-semibold peer-focus/value:text-blue-500">
-                                Value
+                                Kata Kunci
                             </label>
                         </div>
                         <div className="flex-1 flex items-center justify-center">
