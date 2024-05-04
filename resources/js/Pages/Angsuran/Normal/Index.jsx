@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { NumericFormat } from "react-number-format";
 import {
     AiFillCheckCircle,
+    AiFillEdit,
     AiFillFilter,
     AiOutlineClose,
     AiOutlineSortAscending,
@@ -16,6 +17,8 @@ import TextInput from "@/Components/TextInput";
 import SelectList from "@/Components/SelectList";
 import useServerFilter from "@/Hooks/useServerFilter";
 import useFilterTable from "@/Hooks/useFilterTable";
+import LinkButton from "@/Components/LinkButton";
+import { BiEditAlt } from "react-icons/bi";
 
 const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
     const {
@@ -330,9 +333,9 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                         <div className="overflow-auto max-h-[70vh]">
                             <table className="w-full text-xs text-left text-gray-500 relative">
                                 <thead className="text-gray-900 uppercase sticky top-0 whitespace-nowrap z-50">
-                                    <tr className="bg-gray-200">
+                                    <tr className="bg-gray-200 text-center">
                                         <th className="lg:sticky left-0 top-0 z-40 bg-gray-200">
-                                            <div className="flex w-full bg-gray-200 gap-1">
+                                            <div className="flex justify-start items-start gap-1 w-96">
                                                 <div
                                                     data-item="nomor_pinjaman"
                                                     data-format={"text"}
@@ -352,9 +355,9 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                 <div
                                                     data-item="nama_customer"
                                                     data-format={"text"}
-                                                    className="flex-1 hover:bg-sky-300 hover:cursor-pointer px-4 py-3 filter_trigger"
+                                                    className="flex-[2] hover:bg-sky-300 hover:cursor-pointer px-4 py-3 filter_trigger text-center"
                                                 >
-                                                    Nama Customer
+                                                    Nama Nasabah
                                                     {orderData.column ==
                                                         "nama_customer" && (
                                                         <span className="ml-1 text-blue-400 italic">
@@ -365,12 +368,16 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                         "nama_customer" &&
                                                         filterModal()}
                                                 </div>
+                                            </div>
+                                        </th>
+                                        <th className="relative z-30">
+                                            <div className="flex items-start justify-evenly">
                                                 <div
                                                     data-item="nik_customer"
                                                     data-format={"text"}
                                                     className="flex-1 hover:bg-sky-300 hover:cursor-pointer px-4 py-3 filter_trigger"
                                                 >
-                                                    NIK
+                                                    Nik
                                                     {orderData.column ==
                                                         "nik_customer" && (
                                                         <span className="ml-1 text-blue-400 italic">
@@ -690,29 +697,41 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                 <tbody>
                                     {displayData &&
                                         displayData.map((item, key) => (
-                                            <tr key={key} className="bg-white">
+                                            <tr
+                                                key={key}
+                                                className="bg-white even:bg-gray-100"
+                                            >
                                                 <td className="lg:sticky left-0 top-0 z-40 bg-inherit">
-                                                    <div className="flex justify-start items-start">
-                                                        <div className="flex-1 flex gap-3 justify-evenly items-center py-1 px-4">
-                                                            <div>
-                                                                {key + 1}
-                                                                &nbsp;|&nbsp;
-                                                                {
-                                                                    item.nomor_pinjaman
-                                                                }
+                                                    <div className="flex justify-start items-start gap-1">
+                                                        <div className="flex-1 py-1 px-4 flex justify-between items-center w-full">
+                                                            <div className="bg-red-100">
+                                                                <span>
+                                                                    {key + 1}
+                                                                </span>
+                                                                <span> | </span>
+                                                                <span>
+                                                                    {
+                                                                        item.nomor_pinjaman
+                                                                    }
+                                                                </span>
                                                             </div>
                                                             <Link
                                                                 href={route(
                                                                     "pinjaman.normal.show",
                                                                     item.id
                                                                 )}
+                                                                className="bg-blue-400 p-1 text-sm text-white font-semibold rounded"
                                                             >
-                                                                <AiTwotoneEdit />
+                                                                <BiEditAlt />
                                                             </Link>
                                                         </div>
-                                                        <div className="flex-1 py-1 px-4 text-balance">
+                                                        <div className="flex-[2] py-1 px-4 text-start lg:whitespace-nowrap">
                                                             {item.nama_customer}
                                                         </div>
+                                                    </div>
+                                                </td>
+                                                <td className="relative z-30">
+                                                    <div className="flex items-start justify-evenly w-36">
                                                         <div className="flex-1 py-1 px-4">
                                                             {item.nik_customer}
                                                         </div>

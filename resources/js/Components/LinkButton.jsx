@@ -36,7 +36,7 @@ export default function LinkButton({
             as={as}
             type={type}
             className={
-                `inline-flex items-center px-4 ${sizeButton()} py-2 border rounded-md font-semibold text-xs uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150 ${
+                `inline-flex items-center ${sizeButton()} py-2 px-4 border rounded-md font-semibold text-xs uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150 ${
                     disabled && "opacity-25"
                 }` + className
             }
