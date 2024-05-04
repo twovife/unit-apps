@@ -433,7 +433,7 @@ const Index = ({ loans, server_filters, ...props }) => {
             <Head title="Buku Transaksi" />
 
             <div className="relative">
-                <div className="px-6 py-4 flex justify-end items-center gap-3">
+                <div className="px-6 py-4 flex justify-end items-center gap-3 flex-wrap">
                     <div>
                         <TextInput
                             option={transaction_date}

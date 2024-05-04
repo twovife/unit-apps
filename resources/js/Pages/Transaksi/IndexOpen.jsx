@@ -202,7 +202,7 @@ const IndexOpen = ({ loans, server_filters, ...props }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="bg-white border border-gray-300 rounded-lg shadow-lg max-w-full w-full">
-                    <div className="flex justify-end items-center text-2xl px-2 py-4">
+                    <div className="flex justify-end items-center text-2xl px-2 py-4 flex-wrap">
                         <div className="flex-1 flex flex-col-reverse">
                             <input
                                 name="column"
