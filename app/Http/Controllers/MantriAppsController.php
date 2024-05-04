@@ -206,6 +206,7 @@ class MantriAppsController extends Controller
             ->where('kelompok', $kelompok)
             ->where('hari', $hari)
             ->where('tanggal_drop', "<", $tanggal_tude)
+            ->whereNot('status', 4)
             ->where(function ($query) {
                 $query->whereHas('angsuran', function ($subquery) {
                     $subquery->havingRaw('sum(jumlah) < loans.pinjaman');
@@ -255,6 +256,66 @@ class MantriAppsController extends Controller
         ]);
     }
 
+    function mantri_ml(Request $request)
+    {
+        $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
+        $hari =  AppHelper::dateName(Carbon::now());
+        $tanggal_tude =  Carbon::parse(Carbon::now())->format('Y-m-d');
+        $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat");
+        $data = Loan::with('customer', 'mantri', 'branch', 'angsuran')
+            ->where('kelompok', $kelompok)
+            ->where('hari', $hari)
+            ->where('tanggal_drop', "<", $tanggal_tude)
+            ->where('status', 4)
+            ->where(function ($query) {
+                $query->whereHas('angsuran', function ($subquery) {
+                    $subquery->havingRaw('sum(jumlah) < loans.pinjaman');
+                })->orWhereDoesntHave('angsuran');
+            })
+            ->get();
+
+        $loans = $data->map(function ($item) {
+
+            return [
+                'id' => $item->id,
+                'nomor_pinjaman' => $item->id,
+                'nomor_request' => $item->loan_request_id,
+                'tanggal_drop' => $item->tanggal_drop,
+                'nama' => $item->customer?->nama,
+                'nik' => $item->customer?->nik,
+                'alamat' => $item->customer?->alamat,
+
+                'kelompok' => $item->kelompok,
+                'hari' => $item->hari,
+                'bulannumber' => AppHelper::monthNumber($item->tanggal_drop),
+                'bulan' => AppHelper::monthName($item->tanggal_drop),
+
+                'pinjaman_ke' => $item->pinjaman_ke,
+                'jumlah_angsuran' => $item->angsuran->count('id'),
+                'pinjaman' => $item->pinjaman,
+                'total_angsuran' => $item->angsuran->sum('jumlah'),
+                'saldo_ansuran' => $item->pinjaman -  $item->angsuran->sum('jumlah'),
+
+                'status' => AppHelper::status_pinjaman($item->status),
+                'loan_notes' => $item->loan_notes,
+                'lunas' => $item->lunas,
+                'is_paid' => Carbon::parse(Carbon::now())->format('Y-m-d') == $item->angsuran->max('pembayaran_date') ? 1 : 0,
+
+            ];
+        })->sortBy('nama')->sortBy('bulannumber')->sortBy('is_paid')->values();
+
+        // dd($loans);
+
+        $server_filters = ['hari' => $hari, 'kelompok' => $kelompok,  'previledge' => $previledge];
+        Session::put('storting_ml_mantri_apps', $server_filters);
+
+        return Inertia::render('Mantri/StortingML', [
+            'data' => $loans,
+            'id' => $request->id,
+            'server_filters' => Session::get('storting_ml_mantri_apps')
+        ]);
+    }
+
     public function mantri_bayar_angsuran(Loan $loan)
     {
         $batasan = [
@@ -266,6 +327,21 @@ class MantriAppsController extends Controller
         return Inertia::render('Mantri/Bayar', [
             'loan' => $loan->load('angsuran', 'droper', 'branch', 'customer'),
             'back_button' => route('mantriapps.angsur', Session::get('storting_mantri_apps')),
+            'batasan' => $batasan
+        ]);
+    }
+
+    public function mantri_bayar_angsuran_ml(Loan $loan)
+    {
+        $batasan = [
+            'maxdate' => Carbon::now()->format('Y-m-d'),
+            'mindate' => Carbon::parse($loan->angsuran->max('pembayaran_date') ?? $loan->tanggal_drop)->addRealWeek()->format('Y-m-d'),
+            'max_angsuran' => $loan->pinjaman - $loan->angsuran->sum('jumlah'),
+            'previledge' => auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat")
+        ];
+        return Inertia::render('Mantri/Bayar', [
+            'loan' => $loan->load('angsuran', 'droper', 'branch', 'customer'),
+            'back_button' => route('mantriapps.ml', Session::get('storting_ml_mantri_apps')),
             'batasan' => $batasan
         ]);
     }

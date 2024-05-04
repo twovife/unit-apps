@@ -3,7 +3,13 @@ import { Head, Link } from "@inertiajs/react";
 import React, { useState } from "react";
 import { AiFillCustomerService, AiOutlineUser } from "react-icons/ai";
 import { IoPersonAddSharp } from "react-icons/io5";
-import { BiExit, BiLaptop, BiMoney, BiMoneyWithdraw } from "react-icons/bi";
+import {
+    BiBook,
+    BiExit,
+    BiLaptop,
+    BiMoney,
+    BiMoneyWithdraw,
+} from "react-icons/bi";
 import { LuBookPlus } from "react-icons/lu";
 
 const Index = ({ ...props }) => {
@@ -36,7 +42,9 @@ const Index = ({ ...props }) => {
                     className="w-32 h-32 rounded p-3 flex flex-col justify-center items-center shadow hover:shadow-md focus:shadow-lg bg-gray-50/40 backdrop-blur border border-gray-200"
                 >
                     <BiMoneyWithdraw className="text-5xl" />
-                    <p className="text-center leading-tight">Daftar Drop</p>
+                    <p className="text-center leading-tight">
+                        Daftar Drop Mantri
+                    </p>
                 </Link>
                 <Link
                     as="a"
@@ -46,6 +54,22 @@ const Index = ({ ...props }) => {
                     <BiMoney className="text-5xl" />
                     <p className="text-center leading-tight">Daftar Storting</p>
                 </Link>
+                {/* <Link
+                    as="a"
+                    href={route("mantriapps.ml")}
+                    className="w-32 h-32 rounded p-3 flex flex-col justify-center items-center shadow hover:shadow-md focus:shadow-lg bg-gray-50/40 backdrop-blur border border-gray-200"
+                >
+                    <BiMoney className="text-5xl" />
+                    <p className="text-center leading-tight">Buku ML</p>
+                </Link>
+                <Link
+                    as="a"
+                    disabled
+                    className="w-32 h-32 rounded p-3 flex flex-col justify-center items-center shadow hover:shadow-md focus:shadow-lg bg-gray-50/40 backdrop-blur border border-gray-200"
+                >
+                    <BiBook className="text-5xl" />
+                    <p className="text-center leading-tight">Rekap Mantri</p>
+                </Link> */}
                 <Link
                     as="a"
                     href={route("mantriapps.transaksi")}

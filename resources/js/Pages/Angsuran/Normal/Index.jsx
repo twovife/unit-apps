@@ -327,7 +327,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                     </div>
                     <div className="mx-auto mb-6 ring-1 ring-black ring-opacity-5 rounded shadow max-h-screen">
                         <div className="overflow-auto max-h-[70vh]">
-                            <table className="w-full text-xs text-left text-gray-500 relative mr-[30vw]">
+                            <table className="w-full text-xs text-left text-gray-500 relative">
                                 <thead className="text-gray-900 uppercase sticky top-0 whitespace-nowrap z-50">
                                     <tr className="bg-gray-200">
                                         <th className="sticky left-0 top-0 z-40 bg-gray-200">

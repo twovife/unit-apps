@@ -14,6 +14,7 @@ import Checkbox from "@/Components/Checkbox";
 import InputError from "@/Components/InputError";
 
 const Bayar = ({ loan, ...props }) => {
+    console.log(props.back_button);
     const { status_angsuran } = useServerFilter();
     // const { emps } = useServerFilter(null, null, null, props.mantri);
     // console.log(loan);\

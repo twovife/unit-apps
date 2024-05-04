@@ -48,7 +48,7 @@ const Show = ({
                         color="blue"
                         as="a"
                         href={route("mantriapps.index")}
-                        title={"Home"}
+                        title={"Back"}
                     />
                 </div>
 

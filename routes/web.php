@@ -63,7 +63,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/show/{loanRequest}', 'mantri_show')->name('show');
             Route::put('/show/{loanRequest}', 'mantri_update')->name('update');
             Route::get('/angsur', 'mantri_angsur')->name('angsur');
+            Route::get('/ml', 'mantri_ml')->name('ml');
             Route::get('/bayar/{loan}', 'mantri_bayar_angsuran')->name('bayar');
+            Route::get('/bayarml/{loan}', 'mantri_bayar_angsuran_ml')->name('bayar_ml');
             Route::post('/bayar/{loan}', 'mantri_bayar_angsuran_post')->name('bayarpost');
         });
     });
