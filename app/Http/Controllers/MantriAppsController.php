@@ -206,7 +206,6 @@ class MantriAppsController extends Controller
             ->where('kelompok', $kelompok)
             ->where('hari', $hari)
             ->where('tanggal_drop', "<", $tanggal_tude)
-            ->whereNot('status', 4)
             ->where(function ($query) {
                 $query->whereHas('angsuran', function ($subquery) {
                     $subquery->havingRaw('sum(jumlah) < loans.pinjaman');
