@@ -83,9 +83,9 @@ const Newshow = ({ loan, instalment, ...props }) => {
                             <div className="text-lg font-semibold mb-2">
                                 Pengajuan Pinjaman
                             </div>
-                            <div className="overflow-hidden mb-3 rounded border border-black/5 shadow p-4">
+                            <div className="overflow-auto mb-3 rounded border border-black/5 shadow p-4">
                                 <table className="w-full text-sm text-left text-gray-500">
-                                    <thead className="text-xs text-gray-900 uppercase bg-gray-200 sticky top-0 whitespace-nowrap">
+                                    <thead className="text-xs text-gray-900 uppercase bg-gray-200 sticky top-0 whitespace-nowrap text-center">
                                         <tr>
                                             <th className="px-3 py-2">
                                                 Nomor Pinjaman
@@ -117,7 +117,7 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                             <th className="px-3 py-2">Lunas</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="text-center">
                                         {loan ? (
                                             <tr key={loan.nomor_pinjaman}>
                                                 <td className="px-3 py-2">
@@ -150,7 +150,7 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                         value={loan.pinjaman}
                                                         displayType={"text"}
                                                         thousandSeparator={","}
-                                                        prefix={"Rp. "}
+                                                        // prefix={"Rp. "}
                                                     />
                                                 </td>
 
@@ -186,8 +186,11 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                 <div className="overflow-hidden mb-3 rounded border border-black/5 shadow p-4">
                                     <div className="max-h-[50vh] overflow-auto">
                                         <table className="w-full text-sm text-left text-gray-500">
-                                            <thead className="text-xs text-gray-900 uppercase bg-gray-200 sticky top-0 whitespace-nowrap z-20">
+                                            <thead className="text-xs text-gray-900 uppercase bg-gray-200 sticky top-0 whitespace-nowrap z-20 text-center">
                                                 <tr>
+                                                    <th className="px-3 py-2">
+                                                        Action
+                                                    </th>
                                                     <th className="px-3 py-2">
                                                         Tanggal Pembayaran
                                                     </th>
@@ -210,7 +213,7 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                     </th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="relative z-10">
+                                            <tbody className="relative z-10 text-center">
                                                 {instalment ? (
                                                     instalment.map(
                                                         (item, key) => (
@@ -219,6 +222,18 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                                 className="even:bg-gray-50 hover:bg-gray-200"
                                                             >
                                                                 <td className="px-3 py-2">
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            onClickDelete(
+                                                                                item.id
+                                                                            )
+                                                                        }
+                                                                        className="bg-red-400 px-2 py-1 rounded text-white"
+                                                                    >
+                                                                        Hapus
+                                                                    </button>
+                                                                </td>
+                                                                <td className="px-3 py-2">
                                                                     {dayjs(
                                                                         item.tanggal_pembayaran
                                                                     ).format(
@@ -226,7 +241,7 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                                     )}
                                                                 </td>
 
-                                                                <td className="px-3 py-2">
+                                                                <td className="px-3 py-2 text-end">
                                                                     <NumericFormat
                                                                         value={
                                                                             item.jumlah
@@ -237,13 +252,13 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                                         thousandSeparator={
                                                                             ","
                                                                         }
-                                                                        prefix={
-                                                                            "Rp. "
-                                                                        }
+                                                                        // prefix={
+                                                                        //     "Rp. "
+                                                                        // }
                                                                     />
                                                                 </td>
 
-                                                                <td className="px-3 py-2">
+                                                                <td className="px-3 py-2 text-end">
                                                                     <NumericFormat
                                                                         value={
                                                                             item.saldo
@@ -254,9 +269,9 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                                         thousandSeparator={
                                                                             ","
                                                                         }
-                                                                        prefix={
-                                                                            "Rp. "
-                                                                        }
+                                                                        // prefix={
+                                                                        //     "Rp. "
+                                                                        // }
                                                                     />
                                                                 </td>
 
@@ -271,25 +286,9 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                                     }
                                                                 </td>
                                                                 <td className="px-3 py-2">
-                                                                    <div className="flex justify-start items-center gap-4 text-blue-500">
-                                                                        <div>
-                                                                            {
-                                                                                item.status
-                                                                            }
-                                                                        </div>
-                                                                        <div>
-                                                                            <button
-                                                                                onClick={() =>
-                                                                                    onClickDelete(
-                                                                                        item.id
-                                                                                    )
-                                                                                }
-                                                                                className="bg-red-400 px-2 py-1 rounded text-white"
-                                                                            >
-                                                                                Hapus
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
+                                                                    {
+                                                                        item.status
+                                                                    }
                                                                 </td>
                                                             </tr>
                                                         )

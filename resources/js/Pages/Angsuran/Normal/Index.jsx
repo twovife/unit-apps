@@ -243,7 +243,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
             <Head title="Buku Transaksi" />
 
             <div className="relative">
-                <div className="px-6 py-4 flex justify-end items-center gap-3">
+                <div className="px-6 py-4 flex justify-end items-center gap-3 flex-wrap">
                     <div>
                         <TextInput
                             option={transaction_date}
@@ -330,8 +330,8 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                             <table className="w-full text-xs text-left text-gray-500 relative">
                                 <thead className="text-gray-900 uppercase sticky top-0 whitespace-nowrap z-50">
                                     <tr className="bg-gray-200">
-                                        <th className="sticky left-0 top-0 z-40 bg-gray-200">
-                                            <div className="flex items-start justify-evenly  bg-gray-200">
+                                        <th className="lg:sticky left-0 top-0 z-40 bg-gray-200">
+                                            <div className="flex w-full bg-gray-200 gap-1">
                                                 <div
                                                     data-item="nomor_pinjaman"
                                                     data-format={"text"}
@@ -690,8 +690,8 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                     {displayData &&
                                         displayData.map((item, key) => (
                                             <tr key={key} className="bg-white">
-                                                <td className="sticky left-0 top-0 z-40 bg-inherit">
-                                                    <div className="flex items-start justify-evenly ">
+                                                <td className="lg:sticky left-0 top-0 z-40 bg-inherit">
+                                                    <div className="flex justify-start items-start lg:w-[25vw]">
                                                         <div className="flex-1 flex gap-3 justify-evenly items-center py-1 px-4">
                                                             <div>
                                                                 {key + 1}
@@ -709,7 +709,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                                 <AiTwotoneEdit />
                                                             </Link>
                                                         </div>
-                                                        <div className="flex-1 py-1 px-4">
+                                                        <div className="flex-1 py-1 px-4 lg:whitespace-nowrap text-balance">
                                                             {item.nama_customer}
                                                         </div>
                                                         <div className="flex-1 py-1 px-4">

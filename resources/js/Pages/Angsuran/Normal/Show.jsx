@@ -145,7 +145,6 @@ const Show = ({ loan, instalment, ...props }) => {
                                                         value={loan.pinjaman}
                                                         displayType={"text"}
                                                         thousandSeparator={","}
-                                                        prefix={"Rp. "}
                                                     />
                                                 </td>
 
@@ -256,9 +255,9 @@ const Show = ({ loan, instalment, ...props }) => {
                                                                 </td>
 
                                                                 <td className="px-3 py-2">
-                                                                    {
-                                                                        item.danatitipan
-                                                                    }
+                                                                    {item.danatitipan
+                                                                        ? "Ya"
+                                                                        : "-"}
                                                                 </td>
                                                                 <td className="px-3 py-2 whitespace-nowrap">
                                                                     {
