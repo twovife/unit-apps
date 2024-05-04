@@ -629,7 +629,7 @@ class LoanController extends Controller
             // 'min_date' =>  $loan->angsuran->max('pembayaran_date'),
             'max_date' => "2024-12-31",
             // 'max_date' => Carbon::now()->format('Y-m-d'),
-            'back_to_index' => route('transaction.index', Session::get('index_angsuran_normal')),
+            'back_to_index' => route('pinjaman.normal.index', Session::get('index_angsuran_normal')),
             'mantri' => $mantri,
         ]);
     }
