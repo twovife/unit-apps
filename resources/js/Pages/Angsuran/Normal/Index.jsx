@@ -710,7 +710,7 @@ const Index = ({ loans, server_filters, dateOfWeek, ...props }) => {
                                                                 <AiTwotoneEdit />
                                                             </Link>
                                                         </div>
-                                                        <div className="flex-1 py-1 px-4 lg:whitespace-nowrap text-balance">
+                                                        <div className="flex-1 py-1 px-4 text-balance">
                                                             {item.nama_customer}
                                                         </div>
                                                         <div className="flex-1 py-1 px-4">
