@@ -23,14 +23,13 @@ const Newshow = ({ loan, instalment, ...props }) => {
     // console.log(loan);
     const [loading, setLoading] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
-    const [deletId, setDeletId] = useState(null);
+    const [deletUrl, setDeletUrl] = useState(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         tanggal_pembayaran: "",
         jumlah: "",
         mantri: loan.mantri_id,
         danatitipan: false,
-        status: "",
     });
     const handleOnChange = (e) => {
         setData(
@@ -51,12 +50,12 @@ const Newshow = ({ loan, instalment, ...props }) => {
 
     const onClickDelete = (params) => {
         setShowDelete(true);
-        setDeletId(params);
+        setDeletUrl(params);
     };
 
     const onHideDelete = () => {
         setShowDelete(false);
-        setDeletId(null);
+        setDeletUrl(null);
     };
 
     return (
@@ -69,7 +68,17 @@ const Newshow = ({ loan, instalment, ...props }) => {
             <Head title="Buku Transaksi" />
 
             <div className="relative">
-                <div className="px-6 py-4 flex justify-end items-center">
+                <div className="px-6 py-4 flex justify-between items-center">
+                    <button
+                        onClick={() =>
+                            onClickDelete(
+                                route("pinjaman.normal.deleteLoan", loan.id)
+                            )
+                        }
+                        className="border border-red-500 text-red-500 px-2 py-1 text-xs rounded"
+                    >
+                        Hapus Pinjaman
+                    </button>
                     <LinkButton
                         color="outline"
                         as="a"
@@ -225,7 +234,10 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                                     <button
                                                                         onClick={() =>
                                                                             onClickDelete(
-                                                                                item.id
+                                                                                route(
+                                                                                    "pinjaman.normal.deleteAngsuran",
+                                                                                    item.id
+                                                                                )
                                                                             )
                                                                         }
                                                                         className="bg-red-400 px-2 py-1 rounded text-white"
@@ -310,7 +322,7 @@ const Newshow = ({ loan, instalment, ...props }) => {
                             <ModalHapus
                                 show={showDelete}
                                 setShow={onHideDelete}
-                                id={deletId}
+                                url={deletUrl}
                                 loading={loading}
                                 setLoading={setLoading}
                             />
@@ -377,29 +389,6 @@ const Newshow = ({ loan, instalment, ...props }) => {
                                                 />
                                                 <InputError
                                                     message={errors.jumlah}
-                                                    className="mt-2"
-                                                />
-                                            </div>
-                                            <div className="mb-1">
-                                                <InputLabel
-                                                    htmlFor="status"
-                                                    value="Status"
-                                                />
-
-                                                <SelectList
-                                                    id="status"
-                                                    type="date"
-                                                    name="status"
-                                                    value={data.status}
-                                                    nullValue={true}
-                                                    required
-                                                    options={status_angsuran}
-                                                    className="mt-1 block w-full"
-                                                    onChange={handleOnChange}
-                                                />
-
-                                                <InputError
-                                                    message={errors.status}
                                                     className="mt-2"
                                                 />
                                             </div>

@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
                 Route::post('/{loan}', 'update_angsuran_normal')->name('update');
                 Route::post('/{loan}/nasabah', 'update_jenis_nasabah')->name('nasabah');
                 Route::delete('/{instalment}', 'deleteAngsuran')->name('deleteAngsuran');
+                Route::delete('/{loan}/loan', 'deleteLoan')->name('deleteLoan');
             });
         });
         Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
@@ -61,12 +62,16 @@ Route::middleware('auth')->group(function () {
             Route::get('/transaksi', 'mantri_transaksi')->name('transaksi');
             Route::get('/drop', 'mantri_drop')->name('drop');
             Route::get('/show/{loanRequest}', 'mantri_show')->name('show');
+            Route::get('/show_drop/{loanRequest}', 'mantri_show_drop')->name('show_drop');
             Route::put('/show/{loanRequest}', 'mantri_update')->name('update');
             Route::get('/angsur', 'mantri_angsur')->name('angsur');
             Route::get('/ml', 'mantri_ml')->name('ml');
+
             Route::get('/bayar/{loan}', 'mantri_bayar_angsuran')->name('bayar');
-            Route::get('/bayarml/{loan}', 'mantri_bayar_angsuran_ml')->name('bayar_ml');
             Route::post('/bayar/{loan}', 'mantri_bayar_angsuran_post')->name('bayarpost');
+
+            Route::get('/bayarml/{loan}', 'mantri_bayar_angsuran_ml')->name('bayar_ml');
+            Route::post('/bayarml/{loan}', 'mantri_bayar_angsuran_ml_post')->name('bayarmlpost');
         });
     });
 

@@ -17,7 +17,12 @@ import useServerFilter from "@/Hooks/useServerFilter";
 import { NumericFormat } from "react-number-format";
 
 const Create = ({ max_date, min_date, ...props }) => {
-    const { emps } = useServerFilter(null, null, null, props.mantri);
+    const { emps, kolompokMantri } = useServerFilter(
+        null,
+        null,
+        null,
+        props.mantri
+    );
 
     const [loading, setLoading] = useState(false);
     const [erorAxios, setErorAxios] = useState();
@@ -233,7 +238,7 @@ const Create = ({ max_date, min_date, ...props }) => {
                                     setLoading={setLoading}
                                     max_date={max_date}
                                     min_date={min_date}
-                                    emps={emps}
+                                    emps={kolompokMantri}
                                     nik={nik}
                                     customer_id={customerData?.id}
                                 />
@@ -242,7 +247,7 @@ const Create = ({ max_date, min_date, ...props }) => {
                                     setLoading={setLoading}
                                     max_date={max_date}
                                     min_date={min_date}
-                                    emps={emps}
+                                    emps={kolompokMantri}
                                     nik={nik}
                                 />
                             )

@@ -52,15 +52,15 @@ class LoanController extends Controller
             $tanggalAngsuran = $requestData[$key];
             $angsuran = $requestData['angsuran_' . $index];
             $danatitipan = $requestData['danatitipan_' . $index] ?? false;
-            $statusAngsuran = $requestData['status_angsuran_' . $index];
             $angsuran = $requestData['angsuran_' . $index];
+
 
             // Menambahkan data ke dalam koleksi baru
             $newCollection->push([
                 'pembayaran_date' => $tanggalAngsuran,
                 'jumlah' => $angsuran,
                 'danatitipan' => $danatitipan,
-                'status' => $statusAngsuran,
+                'status' => AppHelper::generateStatusAngsuran($request->tanggal_drop, $tanggalAngsuran),
                 'mantri' => $request->mantri
             ]);
         }
@@ -73,15 +73,9 @@ class LoanController extends Controller
                 "nik" => $request->nik,
                 "no_kk" => $request->no_kk,
                 "alamat" => $request->alamat,
-
-                "unit_id" => $request->unit_id,
-                "mantri" => $request->mantri,
-                "area" => $request->area,
             ]);
 
             $mantri = Employee::find($request->mantri);
-
-
 
 
             $loansreq = $customer->loan_request()->create([
@@ -101,6 +95,8 @@ class LoanController extends Controller
             $loansreq->pinjaman_ke = $customer->load('loan_request')->loan_request->count('id');
             $loansreq->save();
 
+
+
             $loans =   $loansreq->loan()->create([
                 'customer_id' => $customer->id,
                 'branch_id' => $loansreq->branch_id,
@@ -118,12 +114,12 @@ class LoanController extends Controller
             $loans->pinjaman_ke = $customer->load('loan')->loan->count('id');
 
 
-            if ($loans->pinjaman < $newCollection->sum('jumlah')) {
+            if ($request->pinjaman < $newCollection->sum('jumlah')) {
                 DB::rollBack();
                 return redirect()->back()->withErrors('Terjadi Kesalahan, Refresh / Hubungi IT');
             }
 
-            if ($loans->pinjaman == $newCollection->sum('jumlah')) {
+            if ($request->pinjaman == $newCollection->sum('jumlah')) {
                 $loans->lunas = 'lunas';
             }
             $loans->status = $newCollection->max('status');
@@ -263,13 +259,19 @@ class LoanController extends Controller
 
     public function create_transaction()
     {
+        $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat");
         $branch = auth()->user()->hasPermissionTo('unit') ? auth()->user()->employee->branch_id : (request()->branch_id ?? 1);
         $mantri = Employee::where('jabatan', 'mantri')->where('branch_id', $branch)->orderBy('area')->get();
+
+        $kelompok = Employee::where('branch_id', $branch)->when($previledge == 'mantri', function ($que) {
+            $que->where('id', auth()->user()->employee_id);
+        })->where('jabatan', 'mantri')->where('area', "!=", 0)->orderBy('area')->pluck('area')->unique()->values();
 
         return Inertia::render('Transaksi/Create', [
             'max_date' => Carbon::now()->format('Y-m-d'),
             'min_date' => Carbon::now()->subRealDays(7)->format('Y-m-d'),
             'mantri' => $mantri,
+            'kelompok' => $kelompok,
             'back_to_index' => route('transaction.index', Session::get('transaction_index_request'))
         ]);
         // dd('create');
@@ -301,27 +303,20 @@ class LoanController extends Controller
                 "nik" => $request->nik,
                 "no_kk" => $request->no_kk,
                 "alamat" => $request->alamat,
-
-                "unit_id" => $request->unit_id,
-                "mantri" => $request->mantri,
-                "area" => $request->area,
             ]);
-
-            $mantri = Employee::find($request->mantri);
 
             $dropLangsung = $request->tanggal_drop == $request->transaction_date ? true : false;
 
-
             $loansreq = $customer->loan_request()->create([
                 'transaction_date' => $request->transaction_date,
-                'branch_id' => $mantri->branch_id,
-                'mantri' => $request->mantri,
-                'kelompok' => $mantri->area,
+                'branch_id' => auth()->user()->employee->branch_id,
+                'mantri' => auth()->user()->employee->id,
+                'kelompok' => $request->mantri,
                 'hari' => AppHelper::dateName($request->transaction_date),
                 'pinjaman' => $request->pinjaman,
                 'tanggal_drop' => $request->tanggal_drop,
                 'approved_date' => $dropLangsung ? $request->tanggal_drop : null,
-                'approved_by' => $dropLangsung ? $request->mantri : null,
+                'approved_by' => $dropLangsung ?  auth()->user()->employee->id : null,
                 'status' => $dropLangsung ? 'acc' : 'open',
                 'loan_notes' => null,
 
@@ -332,9 +327,9 @@ class LoanController extends Controller
             if ($dropLangsung) {
                 $loans =   $loansreq->loan()->create([
                     'customer_id' => $customer->id,
-                    'branch_id' => $loansreq->branch_id,
-                    'mantri' => $loansreq->mantri,
-                    'kelompok' => $loansreq->kelompok,
+                    'branch_id' => auth()->user()->employee->branch_id,
+                    'mantri' => auth()->user()->employee->id,
+                    'kelompok' => $request->mantri,
                     'hari' => $loansreq->hari,
                     'drop' => $loansreq->pinjaman,
                     'pinjaman' =>  $loansreq->pinjaman + ($request->pinjaman * 0.3),
@@ -357,7 +352,7 @@ class LoanController extends Controller
         }
 
         $getSessionFilter = Session::get('transaction_index_request');
-        return redirect()->route('transaction.index', $getSessionFilter)->with('message', 'data berhasil ditambahkan');
+        return redirect()->route('transaction.index', ['branch_id' => auth()->user()->employee->branch_id, 'mantri' => $request->mantri, 'hari' => $loansreq->hari, 'transaction_date' => $request->transaction_date])->with('message', 'data berhasil ditambahkan');
     }
 
 
@@ -641,7 +636,6 @@ class LoanController extends Controller
         $request->validate([
             'jumlah' => ['required', "max:$maksimal_angsuran", 'min:0'],
             'mantri' => ['required'],
-            'status' => ['required'],
             'tanggal_pembayaran' => ['required'],
         ]);
 
@@ -662,7 +656,7 @@ class LoanController extends Controller
             $loan->angsuran()->create([
                 "pembayaran_date" => $request->tanggal_pembayaran,
                 "jumlah" => $request->jumlah,
-                "status" => $request->status,
+                "status" => AppHelper::generateStatusAngsuran($loan->tanggal_drop, $request->tanggal_pembayaran),
                 "mantri" => $request->mantri,
                 "danatitipan" => $request->danatitipan == 1 ? 'true' : 'false',
             ]);
@@ -725,5 +719,22 @@ class LoanController extends Controller
 
         $status = AppHelper::status_pinjaman($loan->status);
         return to_route('pinjaman.normal.show', $instalment->loan_id)->with('message', "Hapus Berhasil, status pinjaman adalah $status");
+    }
+
+    public function deleteLoan(Loan $loan)
+    {
+        // dd($loan);
+        try {
+            DB::beginTransaction();
+            $loanReq = LoanRequest::find($loan->loan_request_id)->delete();
+            $loan->delete();
+            DB::commit();
+        } catch (Exception $e) {
+            return to_route('pinjaman.normal.show', $loan->id)->withErrors('Gagal Menyimpan Angsuran, Refresh / Hub IT');
+        }
+
+
+        $status = AppHelper::status_pinjaman($loan->status);
+        return to_route('pinjaman.normal.index', Session::get('index_angsuran_normal'))->with('message', "Hapus Berhasil, status pinjaman adalah $status");
     }
 }

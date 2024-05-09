@@ -14,7 +14,6 @@ import Checkbox from "@/Components/Checkbox";
 import InputError from "@/Components/InputError";
 
 const Bayar = ({ loan, ...props }) => {
-    console.log(props.back_button);
     const { status_angsuran } = useServerFilter();
     // const { emps } = useServerFilter(null, null, null, props.mantri);
     // console.log(loan);\
@@ -26,7 +25,6 @@ const Bayar = ({ loan, ...props }) => {
     const { data, setData, post, processing, errors, reset } = useForm({
         danatitipan: false,
         jumlah: 0,
-        status: loan.status,
         pembayaran_date: "",
     });
 
@@ -44,7 +42,7 @@ const Bayar = ({ loan, ...props }) => {
 
     const onSubmitCreate = (e) => {
         e.preventDefault();
-        post(route("mantriapps.bayarpost", loan.id), {
+        post(props.post_route, {
             onSuccess: () => reset(),
         });
     };
@@ -54,7 +52,7 @@ const Bayar = ({ loan, ...props }) => {
         <MobileLayout
             auth={props.auth}
             errors={props.errors}
-            header="Buku Transaksi"
+            header="Angsuran Nasabah"
             loading={processing}
         >
             <Head title="Buku Transaksi" />
@@ -72,6 +70,13 @@ const Bayar = ({ loan, ...props }) => {
                 </div>
                 <div className="overflow-auto">
                     <div>
+                        <div className="flex gap-3">
+                            <div className="flex-1 flex justify-between items-center">
+                                <div>Nomor</div>
+                                <div>:</div>
+                            </div>
+                            <div className="flex-[2]">{loan.id}</div>
+                        </div>
                         <div className="flex gap-3">
                             <div className="flex-1 flex justify-between items-center">
                                 <div>Nasabah</div>
@@ -221,67 +226,51 @@ const Bayar = ({ loan, ...props }) => {
                             </table>
                         </div>
                     </div>
-
-                    <form onSubmit={onSubmitCreate} className="mt-3">
-                        <div>Input Data</div>
-                        <div className="flex gap-3 flex-wrap">
-                            <div className="flex-1">
-                                <InputLabel value={"Tanggal"} />
-                                <TextInput
-                                    type="date"
-                                    onChange={handleOnChange}
-                                    max={props.batasan.maxdate}
-                                    min={props.batasan.mindate}
-                                    className="block mt-1 w-full"
-                                    id="pembayaran_date"
-                                    name="pembayaran_date"
-                                    value={data.pembayaran_date}
-                                />
-                                <InputError
-                                    message={errors.pembayaran_date}
-                                    className="mt-2"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <InputLabel value={"Jumlah"} />
-                                <CurrencyInput
-                                    name="jumlah"
-                                    id="jumlah"
-                                    className={`border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200 disabled:bg-black/10 dark:disabled:bg-white/10 block w-full mt-1`}
-                                    allowDecimals={false}
-                                    prefix="Rp. "
-                                    required
-                                    onValueChange={onHandleCurencyChange}
-                                    value={data.jumlah}
-                                    placeholder={
-                                        "Inputkan angka tanpa sparator"
-                                    }
-                                />
-                                <InputError
-                                    message={errors.jumlah}
-                                    className="mt-2"
-                                />
-                            </div>
-                        </div>
-                        <div className="mt-3">
-                            <InputLabel value={"Status"} />
-                            <div className="flex gap-3 items-center">
-                                <div className="flex-[2]">
-                                    <SelectList
+                    {props.batasan.is_paid == 0 ? (
+                        <form onSubmit={onSubmitCreate} className="mt-3">
+                            <div>Input Data</div>
+                            <div className="flex gap-3 flex-wrap">
+                                <div className="flex-1">
+                                    <InputLabel value={"Tanggal"} />
+                                    <TextInput
+                                        type="date"
                                         onChange={handleOnChange}
-                                        options={statusAngsuran}
+                                        max={props.batasan.maxdate}
+                                        min={props.batasan.mindate}
                                         className="block mt-1 w-full"
-                                        id="status"
-                                        name="status"
-                                        value={data.status}
+                                        id="pembayaran_date"
+                                        name="pembayaran_date"
+                                        value={data.pembayaran_date}
                                     />
                                     <InputError
-                                        message={errors.status}
+                                        message={errors.pembayaran_date}
                                         className="mt-2"
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="flex items-center">
+                                    <InputLabel value={"Jumlah"} />
+                                    <CurrencyInput
+                                        name="jumlah"
+                                        id="jumlah"
+                                        className={`border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200 disabled:bg-black/10 dark:disabled:bg-white/10 block w-full mt-1`}
+                                        allowDecimals={false}
+                                        prefix="Rp. "
+                                        required
+                                        onValueChange={onHandleCurencyChange}
+                                        value={data.jumlah}
+                                        placeholder={
+                                            "Inputkan angka tanpa sparator"
+                                        }
+                                    />
+                                    <InputError
+                                        message={errors.jumlah}
+                                        className="mt-2"
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-3 px-2">
+                                <div className="inline-block">
+                                    <label className="flex items-center justify-center font-bold">
                                         <Checkbox
                                             name="danatitipan"
                                             value={data.danatitipan}
@@ -293,11 +282,32 @@ const Bayar = ({ loan, ...props }) => {
                                     </label>
                                 </div>
                             </div>
-                        </div>
+                            <div className="mt-3 flex justify-between items-center">
+                                <PrimaryButton title={"Submit"} type="submit" />
+                                <a
+                                    target="_blank"
+                                    href={`https://api.whatsapp.com/send?phone=628563158592&text=Ralat%20Angsuran%20Nomor%20${loan.id}%20%2C%20(%20ganti%20ketik%20ralatnya%20dimana%20)`}
+                                    className="text-xs py-1 px-2 border border-gray-600 focus:bg-gray-600 focus:text-white rounded flex justify-center items-center"
+                                >
+                                    <span>lapor</span>
+                                </a>
+                            </div>
+                        </form>
+                    ) : (
                         <div className="mt-3">
-                            <PrimaryButton title={"Submit"} type="submit" />
+                            <div>Sudah Ada Pembayaran Untuk Hari Ini</div>
+                            <small>
+                                *Laporkan jika ada yang eror
+                                <a
+                                    target="_blank"
+                                    href={`https://api.whatsapp.com/send?phone=628563158592&text=Ralat%20Angsuran%20Nomor%20${loan.id}%20%2C%20(%20ganti%20ketik%20ralatnya%20dimana%20)`}
+                                    className="text-xs ml-1 text-blue-700 underline"
+                                >
+                                    <span>disini</span>
+                                </a>
+                            </small>
                         </div>
-                    </form>
+                    )}
                 </div>
             </div>
         </MobileLayout>

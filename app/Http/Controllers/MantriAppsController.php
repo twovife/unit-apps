@@ -10,6 +10,7 @@ use App\Models\LoanRequest;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
@@ -27,21 +28,20 @@ class MantriAppsController extends Controller
         $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat");
         $branch = $previledge == "pusat" ? (request()->branch_id ?? 91) : auth()->user()->employee->branch_id;
 
-        $mantri = Employee::where('branch_id', $branch)->when($previledge == 'mantri', function ($que) {
+        $kelompok = Employee::where('branch_id', $branch)->when($previledge == 'mantri', function ($que) {
             $que->where('id', auth()->user()->employee_id);
-        })->get();
+        })->where('jabatan', 'mantri')->where('area', "!=", 0)->orderBy('area')->pluck('area')->unique()->values();
 
 
         return Inertia::render('Mantri/Create', [
             'max_date' => Carbon::now()->format('Y-m-d'),
             'min_date' => Carbon::now()->subRealDays(7)->format('Y-m-d'),
-            'mantri' => $mantri,
+            'kelompok' => $kelompok,
         ]);
     }
 
     public function mantri_store(Request $request)
     {
-        // dd($request->all());
         $validate = $request->validate([
             "transaction_date" => ['required'],
             "tanggal_drop" => ['required'],
@@ -71,19 +71,19 @@ class MantriAppsController extends Controller
                 "alamat" => $request->alamat,
 
                 "unit_id" => $request->unit_id,
-                "mantri" => $request->mantri,
-                "area" => $request->area,
+                "mantri" => auth()->user()->employee->id,
+                "area" => $request->mantri,
             ]);
 
-            $mantri = Employee::find($request->mantri);
+            $mantri = Employee::find(auth()->user()->employee->id);
 
             $dropLangsung = $request->tanggal_drop == $request->transaction_date ? true : false;
 
             $loansreq = $customer->loan_request()->create([
                 'transaction_date' => $request->transaction_date,
                 'branch_id' => $mantri->branch_id,
-                'mantri' => $request->mantri,
-                'kelompok' => $mantri->area,
+                'mantri' => auth()->user()->employee->id,
+                'kelompok' => $request->mantri,
                 'hari' => AppHelper::dateName($request->transaction_date),
                 'pinjaman' => $request->pinjaman,
                 'tanggal_drop' => $request->tanggal_drop,
@@ -114,9 +114,6 @@ class MantriAppsController extends Controller
                 $loans->pinjaman_ke = $customer->load('loan')->loan->count('id');
                 $loans->save();
             };
-
-            // dd($customer);
-
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
@@ -156,11 +153,14 @@ class MantriAppsController extends Controller
             ];
         });
 
+        $server_filters = ['date' => $date->format('Y-m'), 'kelompok' => $kelompok, 'branch' => $branch, 'previledge' => $previledge, 'hari' => $hari];
+        Session::put('mantri_apps_transaksi', $server_filters);
+
         return Inertia::render('Mantri/Transaksi', [
             'data' => $data,
             'branch' => $branch,
             'id' => $request->id,
-            'server_filters' => ['date' => $date->format('Y-m'), 'kelompok' => $kelompok, 'branch' => $branch, 'previledge' => $previledge, 'hari' => $hari]
+            'server_filters' =>  Session::get('mantri_apps_transaksi')
         ]);
     }
 
@@ -188,33 +188,40 @@ class MantriAppsController extends Controller
             ];
         });
 
+        $server_filters = ['date' => $date, 'kelompok' => $kelompok, 'branch' => $branch, 'previledge' => $previledge];
+        Session::put('mantri_apps_drop', $server_filters);
+
         return Inertia::render('Mantri/Drop', [
             'data' => $data,
             'branch' => $branch,
             'id' => $request->id,
-            'server_filters' => ['date' => $date, 'kelompok' => $kelompok, 'branch' => $branch, 'previledge' => $previledge]
+            'server_filters' => Session::get('mantri_apps_drop')
         ]);
     }
 
     function mantri_angsur(Request $request)
     {
-        $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
-        $hari =  AppHelper::dateName(Carbon::now());
-        $tanggal_tude =  Carbon::parse(Carbon::now())->format('Y-m-d');
         $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat");
+        $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
+        $hari =  $previledge == "mantri" ? AppHelper::dateName(Carbon::now()) : ($request->hari ?? AppHelper::dateName(Carbon::now()));
+        $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
         $data = Loan::with('customer', 'mantri', 'branch', 'angsuran')
             ->where('kelompok', $kelompok)
             ->where('hari', $hari)
-            ->where('tanggal_drop', "<", $tanggal_tude)
-            ->where(function ($query) {
+            ->where('tanggal_drop', "<", $tanggalSeleksi)
+            ->where('status', "<", 4)
+            ->where(function ($query) use ($tanggalSeleksi) {
                 $query->whereHas('angsuran', function ($subquery) {
                     $subquery->havingRaw('sum(jumlah) < loans.pinjaman');
-                })->orWhereDoesntHave('angsuran');
+                })
+                    ->orWhereHas('angsuran', function ($subquery) use ($tanggalSeleksi) {
+                        $subquery->where("pembayaran_date", $tanggalSeleksi);
+                    })
+                    ->orWhereDoesntHave('angsuran');
             })
             ->get();
 
-        $loans = $data->map(function ($item) {
-
+        $loans = $data->map(function ($item) use ($hari) {
             return [
                 'id' => $item->id,
                 'nomor_pinjaman' => $item->id,
@@ -238,12 +245,11 @@ class MantriAppsController extends Controller
                 'status' => AppHelper::status_pinjaman($item->status),
                 'loan_notes' => $item->loan_notes,
                 'lunas' => $item->lunas,
-                'is_paid' => Carbon::parse(Carbon::now())->format('Y-m-d') == $item->angsuran->max('pembayaran_date') ? 1 : 0,
+                'is_paid' => AppHelper::getIsPaid($item->angsuran->max('pembayaran_date'), $hari),
 
             ];
         })->sortBy('nama')->sortBy('bulannumber')->sortBy('is_paid')->values();
 
-        // dd($loans);
 
         $server_filters = ['hari' => $hari, 'kelompok' => $kelompok,  'previledge' => $previledge];
         Session::put('storting_mantri_apps', $server_filters);
@@ -257,24 +263,27 @@ class MantriAppsController extends Controller
 
     function mantri_ml(Request $request)
     {
-        $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
-        $hari =  AppHelper::dateName(Carbon::now());
-        $tanggal_tude =  Carbon::parse(Carbon::now())->format('Y-m-d');
         $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat");
+        $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
+        $hari =  $previledge == "mantri" ? AppHelper::dateName(Carbon::now()) : ($request->hari ?? AppHelper::dateName(Carbon::now()));
+        $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
         $data = Loan::with('customer', 'mantri', 'branch', 'angsuran')
             ->where('kelompok', $kelompok)
             ->where('hari', $hari)
-            ->where('tanggal_drop', "<", $tanggal_tude)
+            ->where('tanggal_drop', "<", $tanggalSeleksi)
             ->where('status', 4)
-            ->where(function ($query) {
+            ->where(function ($query) use ($tanggalSeleksi) {
                 $query->whereHas('angsuran', function ($subquery) {
                     $subquery->havingRaw('sum(jumlah) < loans.pinjaman');
-                })->orWhereDoesntHave('angsuran');
+                })
+                    ->orWhereHas('angsuran', function ($subquery) use ($tanggalSeleksi) {
+                        $subquery->where("pembayaran_date", $tanggalSeleksi);
+                    })
+                    ->orWhereDoesntHave('angsuran');
             })
             ->get();
 
-        $loans = $data->map(function ($item) {
-
+        $loans = $data->map(function ($item) use ($hari) {
             return [
                 'id' => $item->id,
                 'nomor_pinjaman' => $item->id,
@@ -298,7 +307,7 @@ class MantriAppsController extends Controller
                 'status' => AppHelper::status_pinjaman($item->status),
                 'loan_notes' => $item->loan_notes,
                 'lunas' => $item->lunas,
-                'is_paid' => Carbon::parse(Carbon::now())->format('Y-m-d') == $item->angsuran->max('pembayaran_date') ? 1 : 0,
+                'is_paid' => AppHelper::getIsPaid($item->angsuran->max('pembayaran_date'), $hari),
 
             ];
         })->sortBy('nama')->sortBy('bulannumber')->sortBy('is_paid')->values();
@@ -308,7 +317,7 @@ class MantriAppsController extends Controller
         $server_filters = ['hari' => $hari, 'kelompok' => $kelompok,  'previledge' => $previledge];
         Session::put('storting_ml_mantri_apps', $server_filters);
 
-        return Inertia::render('Mantri/StortingML', [
+        return Inertia::render('Mantri/StortingMacetLama', [
             'data' => $loans,
             'id' => $request->id,
             'server_filters' => Session::get('storting_ml_mantri_apps')
@@ -321,11 +330,14 @@ class MantriAppsController extends Controller
             'maxdate' => Carbon::now()->format('Y-m-d'),
             'mindate' => Carbon::parse($loan->angsuran->max('pembayaran_date') ?? $loan->tanggal_drop)->addRealWeek()->format('Y-m-d'),
             'max_angsuran' => $loan->pinjaman - $loan->angsuran->sum('jumlah'),
-            'previledge' => auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat")
+            'previledge' => auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat"),
+            'is_paid' => AppHelper::getIsPaid($loan->angsuran->max('pembayaran_date'), $loan->hari)
         ];
         return Inertia::render('Mantri/Bayar', [
             'loan' => $loan->load('angsuran', 'droper', 'branch', 'customer'),
             'back_button' => route('mantriapps.angsur', Session::get('storting_mantri_apps')),
+            'post_route' => route('mantriapps.bayarpost', $loan->id),
+
             'batasan' => $batasan
         ]);
     }
@@ -336,21 +348,26 @@ class MantriAppsController extends Controller
             'maxdate' => Carbon::now()->format('Y-m-d'),
             'mindate' => Carbon::parse($loan->angsuran->max('pembayaran_date') ?? $loan->tanggal_drop)->addRealWeek()->format('Y-m-d'),
             'max_angsuran' => $loan->pinjaman - $loan->angsuran->sum('jumlah'),
-            'previledge' => auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat")
+            'previledge' => auth()->user()->hasPermissionTo('unit') ? 'unit' : (auth()->user()->hasPermissionTo('area') ? 'mantri' : "pusat"),
+            'is_paid' => AppHelper::getIsPaid($loan->angsuran->max('pembayaran_date'), $loan->hari)
         ];
         return Inertia::render('Mantri/Bayar', [
             'loan' => $loan->load('angsuran', 'droper', 'branch', 'customer'),
             'back_button' => route('mantriapps.ml', Session::get('storting_ml_mantri_apps')),
+            'post_route' => route('mantriapps.bayarmlpost', $loan->id),
             'batasan' => $batasan
         ]);
     }
 
+
     public function mantri_bayar_angsuran_post(Loan $loan, Request $request)
     {
+
+
+
         $maksimal_angsuran =  (int)$loan->pinjaman - $loan->angsuran->sum('jumlah');
         $request->validate([
             'jumlah' => ['required', 'numeric', "max:$maksimal_angsuran", 'min:0'],
-            'status' => ['required'],
             'pembayaran_date' => ['required'],
         ], [
             '*.required' => 'wajib diisi',
@@ -370,16 +387,19 @@ class MantriAppsController extends Controller
             return redirect()->back()->withErrors('Saldo Tidak Boleh Kurang Dari 0');
         }
 
+        // dd([$loan->tanggal_drop, $request->pembayaran_date]);
+        $status_angsuran = AppHelper::generateStatusAngsuran($loan->tanggal_drop, $request->pembayaran_date);
         try {
             DB::beginTransaction();
             $loan->angsuran()->create([
                 "pembayaran_date" => $request->pembayaran_date,
                 "jumlah" => $request->jumlah,
-                "status" => $request->status,
+                "status" => $status_angsuran,
                 "mantri" => auth()->user()->employee->id,
                 "danatitipan" => $request->danatitipan == 1 ? 'true' : 'false',
             ]);
-            $loan->status = $request->status;
+
+            $loan->status = $loan->angsuran->max('status') && $loan->angsuran->max('status') > $status_angsuran ? $loan->angsuran->max('status') : $status_angsuran;
             if ($loan->pinjaman - $totalAngsuran == 0) {
                 $loan->lunas = "lunas";
             }
@@ -387,11 +407,61 @@ class MantriAppsController extends Controller
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
-            dd($e);
             return redirect()->back()->withErrors('Perhatikan Eror Pada Input / Hub IT');
         }
 
         return redirect()->route('mantriapps.bayar', $loan->id)->with('message', 'Angsuran Berhasil Ditambahkan');
+    }
+
+    public function mantri_bayar_angsuran_ml_post(Loan $loan, Request $request)
+    {
+
+        $maksimal_angsuran =  (int)$loan->pinjaman - $loan->angsuran->sum('jumlah');
+        $request->validate([
+            'jumlah' => ['required', 'numeric', "max:$maksimal_angsuran", 'min:0'],
+            'pembayaran_date' => ['required'],
+        ], [
+            '*.required' => 'wajib diisi',
+            '*.max' => "Nilai Maksimal Angsuran Adalah $maksimal_angsuran",
+            '*.min' => 'Tidak boleh dibawah 0',
+        ]);
+
+        $totalAngsuranSebelumnya = $loan->angsuran->sum('jumlah') ?? 0;
+        $totalAngsuran = $totalAngsuranSebelumnya + $request->jumlah;
+        $hariPembayaran = AppHelper::dateName($request->pembayaran_date);
+
+        if ($loan->hari !== $hariPembayaran) {
+            return redirect()->back()->withErrors('Hari Pada Tanggal Berbeda');
+        }
+        if ($loan->pinjaman < $totalAngsuran) {
+
+            return redirect()->back()->withErrors('Saldo Tidak Boleh Kurang Dari 0');
+        }
+
+        // dd([$loan->tanggal_drop, $request->pembayaran_date]);
+        $status_angsuran = AppHelper::generateStatusAngsuran($loan->tanggal_drop, $request->pembayaran_date);
+        try {
+            DB::beginTransaction();
+            $loan->angsuran()->create([
+                "pembayaran_date" => $request->pembayaran_date,
+                "jumlah" => $request->jumlah,
+                "status" => $status_angsuran,
+                "mantri" => auth()->user()->employee->id,
+                "danatitipan" => $request->danatitipan == 1 ? 'true' : 'false',
+            ]);
+
+            $loan->status = $loan->angsuran->max('status') <= $status_angsuran ? $status_angsuran : $loan->angsuran->max('status');
+            if ($loan->pinjaman - $totalAngsuran == 0) {
+                $loan->lunas = "lunas";
+            }
+            $loan->save();
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors('Perhatikan Eror Pada Input / Hub IT');
+        }
+
+        return redirect()->route('mantriapps.bayar_ml', $loan->id)->with('message', 'Angsuran Berhasil Ditambahkan');
     }
 
     public function mantri_show(LoanRequest $loanRequest)
@@ -455,13 +525,86 @@ class MantriAppsController extends Controller
                 ];
         });
 
+
         return Inertia::render('Mantri/Show', [
             'requesttoApprove' => $requesttoApprove,
             'requestHistory' => $requestHistory,
             'loanHistory' => $loanHistory,
             'can_edit' => AppHelper::getCheckAuth('unit'),
             'can_reject' => AppHelper::getCheckAuth('unit'),
-            'back_to_index' => route('transaction.index', Session::get('transaction_index_request'))
+            'back_to_index' => route('mantriapps.transaksi', Session::get('mantri_apps_transaksi'))
+        ]);
+    }
+
+    public function mantri_show_drop(LoanRequest $loanRequest)
+    {
+        $customer = $loanRequest->customer;
+        $historyRequestes = LoanRequest::where('customer_id', $customer->id)->get();
+        $historyLoans = Loan::where('customer_id', $customer->id)->get();
+
+
+        $requesttoApprove = [
+            'tanggal_pengajuan' => $loanRequest->transaction_date,
+            'id' => $loanRequest->id,
+            'customer_name' => $loanRequest->customer->nama,
+            'customer_nik' => $loanRequest->customer->nik,
+            'customer_alamat' => $loanRequest->customer->alamat,
+            'unit' => $loanRequest->branch->unit,
+            'kelompok' => $loanRequest->kelompok,
+            'hari' => $loanRequest->hari,
+            'drop' => $loanRequest->pinjaman,
+            'tanggal_drop' => $loanRequest->tanggal_drop,
+
+            'mantri_name' => $loanRequest->droper->nama_karyawan,
+            'pengajuan_ke' => $loanRequest->pinjaman_ke,
+            'status' => $loanRequest->status,
+            'instalment' => $loanRequest->loan?->angsuran?->count('id') ?? 0
+        ];
+
+        // dd($requesttoApprove);
+        $requestHistory =  $historyRequestes->map(function ($item) {
+            return
+                [
+                    'id' => $item->id,
+                    'tanggal_pengajuan' => $item->transaction_date,
+                    'tanggal_drop' => $item->tanggal_drop,
+                    'hari' => $item->hari,
+                    'unit' => $item->branch->unit,
+                    'kelompok' => $item->kelompok,
+                    'mantri_name' => $item->droper->nama_karyawan,
+                    'customer_name' => $item->customer->nama,
+                    'drop' => $item->pinjaman,
+                    'pengajuan_ke' => $item->pinjaman_ke,
+                    'status' => $item->status
+                ];
+        });
+        // dd($requestHistory);
+        $loanHistory =  $historyLoans->map(function ($item) {
+            return
+                [
+                    'id' => $item->id,
+                    'tanggal_drop' => $item->tanggal_drop,
+                    'hari' => $item->hari,
+                    'unit' => $item->branch->unit,
+                    'kelompok' => $item->kelompok,
+                    'mantri_name' => $item->droper->nama_karyawan,
+                    'drop' => $item->drop,
+                    'pinjaman' => $item->pinjaman,
+                    'juml_pembayaran' => $item->angsuran->count('id'),
+                    'saldo' => $item->pinjaman - $item->angsuran->sum('jumlah'),
+                    'pinjaman_ke' => $item->pinjaman_ke,
+                    'status' => AppHelper::status_pinjaman($item->status),
+                ];
+        });
+
+
+        return Inertia::render('Mantri/Show', [
+            'requesttoApprove' => $requesttoApprove,
+            'requestHistory' => $requestHistory,
+            'loanHistory' => $loanHistory,
+            'can_edit' => AppHelper::getCheckAuth('unit'),
+            'can_reject' => AppHelper::getCheckAuth('unit'),
+            'back_to_index' => route('mantriapps.drop', Session::get('mantri_apps_drop'))
         ]);
     }
 
@@ -503,7 +646,6 @@ class MantriAppsController extends Controller
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
-            dd($e);
             return redirect()->back()->withErrors('Terjadi Kesalahan, Refresh / Hubungi IT');
         }
         return redirect()->route('mantriapps.show', $loanRequest->id)->with('message', 'data berhasil ditambahkan');

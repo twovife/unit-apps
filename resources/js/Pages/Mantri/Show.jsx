@@ -47,7 +47,7 @@ const Show = ({
                     <LinkButton
                         color="blue"
                         as="a"
-                        href={route("mantriapps.index")}
+                        href={props.back_to_index}
                         title={"Back"}
                     />
                 </div>

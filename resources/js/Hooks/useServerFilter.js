@@ -1,4 +1,4 @@
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import React, { useState } from "react";
 
 function useServerFilter(
@@ -9,6 +9,7 @@ function useServerFilter(
     batch_datas,
     tabel_type = null
 ) {
+    const { kelompok } = usePage().props;
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState(
         tabel_type ? batch_datas[0]?.[tabel_type] ?? null : null
@@ -60,9 +61,18 @@ function useServerFilter(
         mantriMantri.push({
             id: i,
             value: i,
-            display: i,
+            display: `Mantri ${i}`,
         });
     }
+    const kolompokMantri = kelompok?.map((item) => {
+        return {
+            id: item,
+            value: item,
+            display: `Mantri ${item}`,
+        };
+    });
+
+    // const selectMantri = mantriMantri.filter(item=>item.value)
 
     const branchess = branch?.map((item) => {
         if (tabel_type == "wilayah") {
@@ -132,6 +142,7 @@ function useServerFilter(
         transaction_day,
         emps,
         mantriMantri,
+        kolompokMantri,
         status_angsuran,
     };
 }

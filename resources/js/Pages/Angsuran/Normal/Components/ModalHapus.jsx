@@ -2,9 +2,9 @@ import { router, useForm } from "@inertiajs/react";
 import { replace } from "lodash";
 import React from "react";
 
-const ModalHapus = ({ id, show, setShow, loading, setLoading }) => {
+const ModalHapus = ({ url, show, setShow, loading, setLoading }) => {
     const onSubmitDelete = () => {
-        router.delete(route("pinjaman.normal.deleteAngsuran", id), {
+        router.delete(url, {
             onStart: (visit) => {
                 setLoading(true);
             },

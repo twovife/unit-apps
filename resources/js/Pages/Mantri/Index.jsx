@@ -54,7 +54,7 @@ const Index = ({ ...props }) => {
                     <BiMoney className="text-5xl" />
                     <p className="text-center leading-tight">Daftar Storting</p>
                 </Link>
-                {/* <Link
+                <Link
                     as="a"
                     href={route("mantriapps.ml")}
                     className="w-32 h-32 rounded p-3 flex flex-col justify-center items-center shadow hover:shadow-md focus:shadow-lg bg-gray-50/40 backdrop-blur border border-gray-200"
@@ -62,7 +62,8 @@ const Index = ({ ...props }) => {
                     <BiMoney className="text-5xl" />
                     <p className="text-center leading-tight">Buku ML</p>
                 </Link>
-                <Link
+
+                {/* <Link
                     as="a"
                     disabled
                     className="w-32 h-32 rounded p-3 flex flex-col justify-center items-center shadow hover:shadow-md focus:shadow-lg bg-gray-50/40 backdrop-blur border border-gray-200"
@@ -70,6 +71,7 @@ const Index = ({ ...props }) => {
                     <BiBook className="text-5xl" />
                     <p className="text-center leading-tight">Rekap Mantri</p>
                 </Link> */}
+
                 <Link
                     as="a"
                     href={route("mantriapps.transaksi")}

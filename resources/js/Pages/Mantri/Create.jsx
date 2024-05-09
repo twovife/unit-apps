@@ -13,14 +13,19 @@ import useServerFilter from "@/Hooks/useServerFilter";
 import LinkButton from "@/Components/LinkButton";
 
 const Create = ({ max_date, min_date, ...props }) => {
-    const { emps } = useServerFilter(null, null, null, props.mantri);
+    const { emps, kolompokMantri } = useServerFilter(
+        null,
+        null,
+        null,
+        props.mantri
+    );
 
     const [loading, setLoading] = useState(false);
     const [erorAxios, setErorAxios] = useState();
     const [nikData, setNikData] = useState();
     const [customerData, setCustomerData] = useState();
     const [nik, setNik] = useState();
-    console.log(nikData);
+
     const onSubmitFindNik = (e) => {
         const nik = document.getElementById("nik").value;
         setLoading(true);
@@ -156,7 +161,7 @@ const Create = ({ max_date, min_date, ...props }) => {
                             setLoading={setLoading}
                             max_date={max_date}
                             min_date={min_date}
-                            emps={emps}
+                            emps={kolompokMantri}
                             nik={nik}
                             customer_id={customerData?.id}
                             url={route("mantriapps.store")}
@@ -166,7 +171,7 @@ const Create = ({ max_date, min_date, ...props }) => {
                             setLoading={setLoading}
                             max_date={max_date}
                             min_date={min_date}
-                            emps={emps}
+                            emps={kolompokMantri}
                             nik={nik}
                             url={route("mantriapps.store")}
                         />

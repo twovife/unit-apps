@@ -213,7 +213,7 @@ const OldCustomer = ({
                                 className="mb-1"
                             />
 
-                            <div className="flex gap-1 justify-center">
+                            <div className="flex gap-2 justify-center items-center">
                                 <CurrencyInput
                                     name={`angsuran_${column.id}`}
                                     id={`angsuran_${column.id}`}
@@ -228,7 +228,7 @@ const OldCustomer = ({
                                         "Inputkan angka tanpa sparator"
                                     }
                                 />
-                                <div className="block mt-4">
+                                <div className="block">
                                     <label className="flex items-center">
                                         <Checkbox
                                             name={`danatitipan_${column.id}`}
@@ -242,44 +242,23 @@ const OldCustomer = ({
                                         </span>
                                     </label>
                                 </div>
+                                <div>
+                                    {index >= 0 && (
+                                        <PrimaryButton
+                                            color="red"
+                                            type="button"
+                                            className="block"
+                                            onClick={() =>
+                                                removeInputColumn(column.id)
+                                            }
+                                        >
+                                            X
+                                        </PrimaryButton>
+                                    )}
+                                </div>
                             </div>
                             <InputError
                                 message={errors[`angsuran_${index}`]}
-                                className="mt-2"
-                            />
-                        </div>
-
-                        <div className="flex-1">
-                            <InputLabel
-                                htmlFor={`status_angsuran_${column.id}`}
-                                value="Status"
-                            />
-                            <div className="flex justify-center items-center gap-2">
-                                <SelectList
-                                    id={`status_angsuran_${column.id}`}
-                                    type="date"
-                                    options={status}
-                                    nullValue={true}
-                                    name={`status_angsuran_${column.id}`}
-                                    value={data[`status_angsuran_${column.id}`]}
-                                    className="mt-1 block w-full"
-                                    onChange={handleOnChange}
-                                />
-                                {index >= 0 && (
-                                    <PrimaryButton
-                                        color="red"
-                                        type="button"
-                                        className="block"
-                                        onClick={() =>
-                                            removeInputColumn(column.id)
-                                        }
-                                    >
-                                        X
-                                    </PrimaryButton>
-                                )}
-                            </div>
-                            <InputError
-                                message={errors[`status_angsuran_${column.id}`]}
                                 className="mt-2"
                             />
                         </div>

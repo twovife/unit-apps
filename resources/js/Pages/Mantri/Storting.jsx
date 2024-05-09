@@ -53,11 +53,11 @@ const Storting = ({ data, server_filters, ...props }) => {
         <MobileLayout
             auth={props.auth}
             errors={props.errors}
-            header="Drop Harians"
+            header="Angsuran Berjalan"
             loading={loading}
         >
             <div className="mb-3">
-                <div className="flex justify-between items-center w-full gap-1 flex-wrap">
+                <div className="lg:flex justify-between items-center w-full gap-1 flex-wrap">
                     <div className="flex-1">
                         <InputLabel htmlFor="kelompok" value="Kelompok" />
 
@@ -72,14 +72,19 @@ const Storting = ({ data, server_filters, ...props }) => {
                             autoComplete="kelompok"
                         />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-[2]">
                         <InputLabel htmlFor="hari" value="Hari" />
-
                         <div className="flex text-center items-center gap-1">
                             <div className="flex-1">
-                                <TextInput
+                                <SelectList
+                                    id="hari"
+                                    type="text"
+                                    onChange={onServerFilterChange}
+                                    name="hari"
                                     value={serverFilters.hari}
-                                    disabled
+                                    options={transaction_day}
+                                    className="mt-1 block w-full"
+                                    autoComplete="hari"
                                 />
                             </div>
                             <PrimaryButton
@@ -163,14 +168,25 @@ const Storting = ({ data, server_filters, ...props }) => {
                                                     thousandSeparator={","}
                                                 />
                                             </div>
-                                            <div className="flex justify-between">
-                                                <div>Saldo</div>
-                                                <NumericFormat
-                                                    value={item.saldo_ansuran}
-                                                    displayType={"text"}
-                                                    thousandSeparator={","}
-                                                />
-                                            </div>
+                                            {item.saldo_ansuran == 0 ? (
+                                                <div className="flex justify-between items-center">
+                                                    <div>Sisa</div>
+                                                    <div className="bg-green-500 font-bold px-2 py-1 rounded">
+                                                        LUNAS
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex justify-between">
+                                                    <div>Sisa</div>
+                                                    <NumericFormat
+                                                        value={
+                                                            item.saldo_ansuran
+                                                        }
+                                                        displayType={"text"}
+                                                        thousandSeparator={","}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-2 py-1 text-center">
