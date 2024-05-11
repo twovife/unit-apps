@@ -114,12 +114,12 @@ class LoanController extends Controller
             $loans->pinjaman_ke = $customer->load('loan')->loan->count('id');
 
 
-            if ($request->pinjaman < $newCollection->sum('jumlah')) {
+            if ($loans->pinjaman < $newCollection->sum('jumlah')) {
                 DB::rollBack();
                 return redirect()->back()->withErrors('Terjadi Kesalahan, Refresh / Hubungi IT');
             }
 
-            if ($request->pinjaman == $newCollection->sum('jumlah')) {
+            if ($loans->pinjaman == $newCollection->sum('jumlah')) {
                 $loans->lunas = 'lunas';
             }
             $loans->status = $newCollection->max('status');
