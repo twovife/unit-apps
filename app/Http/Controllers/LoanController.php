@@ -650,6 +650,7 @@ class LoanController extends Controller
         if ($loan->pinjaman < $totalAngsuran) {
             return redirect()->back()->withErrors('Saldo Tidak Boleh Kurang Dari 0');
         }
+        $statt = AppHelper::generateStatusAngsuran($loan->tanggal_drop, $request->tanggal_pembayaran);
 
         try {
             DB::beginTransaction();
@@ -660,7 +661,9 @@ class LoanController extends Controller
                 "mantri" => $request->mantri,
                 "danatitipan" => $request->danatitipan == 1 ? 'true' : 'false',
             ]);
-            $loan->status = $loan->angsuran->max('status') && $loan->angsuran->max('status') > $request->status ? $loan->angsuran->max('status') :  $request->status;
+
+            $loan->status = $loan->angsuran->max('status') && $loan->angsuran->max('status') > $statt ? $loan->angsuran->max('status') :  $statt;
+
             if ($loan->pinjaman - $totalAngsuran == 0) {
                 $loan->lunas = "lunas";
             } else {
