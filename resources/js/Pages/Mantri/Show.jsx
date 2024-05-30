@@ -212,7 +212,7 @@ const Show = ({
                                         <tr>
                                             <th className="px-1 py-1">No</th>
                                             <th className="px-1 py-1">
-                                                Tanggal
+                                                Tanggal Drop
                                             </th>
                                             <th className="px-1 py-1">
                                                 Unit / Mantri
@@ -237,14 +237,6 @@ const Show = ({
                                                     <td className="px-1 py-1 whitespace-nowrap">
                                                         <div className="capitalize mb-1">
                                                             {item.hari},&nbsp;
-                                                            {dayjs(
-                                                                item.tanggal_pengajuan
-                                                            ).format(
-                                                                "DD-MM-YY"
-                                                            )}
-                                                        </div>
-                                                        <div className="capitalize mb-1">
-                                                            Drop :&nbsp;
                                                             {dayjs(
                                                                 item.tanggal_drop
                                                             ).format(

@@ -94,6 +94,7 @@ class AppHelper
     {
         $today = Carbon::today()->dayOfWeek;
         $reqday = self::getNumbDays($req_day);
+        // dd($reqday);
         $prevDay = Carbon::parse(Carbon::today())->previous($reqday)->format('Y-m-d');
         if ($today == $reqday) {
             return Carbon::today()->format('Y-m-d');

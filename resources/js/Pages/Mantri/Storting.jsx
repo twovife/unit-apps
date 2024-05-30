@@ -132,7 +132,7 @@ const Storting = ({ data, server_filters, ...props }) => {
                                 >
                                     <td className="px-2 py-1">
                                         <div className="mb-1 italic font-light">
-                                            <span className="capitalize">
+                                            <span className="capitalize whitespace-nowrap">
                                                 {item.tanggal_drop
                                                     ? dayjs(
                                                           item.tanggal_drop

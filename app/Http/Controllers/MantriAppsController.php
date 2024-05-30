@@ -205,6 +205,7 @@ class MantriAppsController extends Controller
         $kelompok = (auth()->user()->hasPermissionTo('area') ? auth()->user()->employee->area : (request()->kelompok ?? 1));
         $hari =  $previledge == "mantri" ? AppHelper::dateName(Carbon::now()) : ($request->hari ?? AppHelper::dateName(Carbon::now()));
         $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
+        // dd($tanggalSeleksi);s
         $data = Loan::with('customer', 'mantri', 'branch', 'angsuran')
             ->where('kelompok', $kelompok)
             ->where('hari', $hari)
@@ -248,7 +249,7 @@ class MantriAppsController extends Controller
                 'is_paid' => AppHelper::getIsPaid($item->angsuran->max('pembayaran_date'), $hari),
 
             ];
-        })->sortBy('nama')->sortBy('bulannumber')->sortBy('is_paid')->values();
+        })->sortBy('nama')->sortBy('tanggal_drop')->sortBy('is_paid')->values();
 
 
         $server_filters = ['hari' => $hari, 'kelompok' => $kelompok,  'previledge' => $previledge];
@@ -310,7 +311,7 @@ class MantriAppsController extends Controller
                 'is_paid' => AppHelper::getIsPaid($item->angsuran->max('pembayaran_date'), $hari),
 
             ];
-        })->sortBy('nama')->sortBy('bulannumber')->sortBy('is_paid')->values();
+        })->sortBy('nama')->sortBy('tanggal_drop')->sortBy('is_paid')->values();
 
         // dd($loans);
 
