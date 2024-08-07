@@ -71,6 +71,7 @@ class UpdateSeeder extends Seeder
                         if ($transaksi->status == "tolak") {
                             $loan = $manage->loan()->create([
                                 "branch_id" => $transaksi->branch_id,
+                                "old_id" => $transaksi->id,
                                 "request_date" => $transaksi->transaction_date,
                                 "user_mantri" => $transaksi->mantri,
                                 "check_date" => $transaksi->approved_date,
@@ -97,6 +98,7 @@ class UpdateSeeder extends Seeder
                             $status = $transaksi->tanggal_drop > $tanggal ? "success" : "acc";
                             $loan = $manage->loan()->create([
                                 "branch_id" => $transaksi->branch_id,
+                                "old_id" => $transaksi->id,
                                 "request_date" => $transaksi->transaction_date,
                                 "user_mantri" => $transaksi->mantri,
                                 "check_date" => $transaksi->approved_date,
