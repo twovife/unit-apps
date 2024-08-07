@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('transaction_loan_nominals', function (Blueprint $table) {
             $table->id();
-            $table->integer('transaction_loan_id')->nullable();
-            $table->integer('drop_before')->nullable();
-            $table->integer('request_nominal')->nullable();
-            $table->integer('approved_nominal')->nullable();
-            $table->integer('drop')->nullable();
-            $table->integer('pinjaman')->nullable();
+            $table->bigInteger('transaction_loan_id')->nullable();
+            $table->bigInteger('drop_before')->nullable();
+            $table->bigInteger('request_nominal')->nullable();
+            $table->bigInteger('approved_nominal')->nullable();
+            $table->bigInteger('drop')->nullable();
+            $table->bigInteger('pinjaman')->nullable();
             $table->timestamps();
         });
     }
