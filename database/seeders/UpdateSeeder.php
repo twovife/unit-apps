@@ -45,6 +45,7 @@ class UpdateSeeder extends Seeder
                         if ($transaksi->status == "open") {
                             $loan = $manage->loan()->create([
                                 "branch_id" => $transaksi->branch_id,
+                                "old_id" => $transaksi->id,
                                 "request_date" => $transaksi->transaction_date,
                                 "user_mantri" => $transaksi->mantri,
                                 "check_date" => null,
