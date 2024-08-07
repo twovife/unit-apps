@@ -10,7 +10,7 @@ class TransactionLoanInstalment extends Model
     use HasFactory;
 
     protected $fillable = [
-        "transaction_loan_id", "transaction_date", "nominal", "status", "instalment_notes", "user_mantri", "user_input"
+        "transaction_loan_id", "transaction_date", "nominal", "status", "instalment_notes", "danatitipan", "user_mantri", "user_input"
     ];
 
     public function loan()

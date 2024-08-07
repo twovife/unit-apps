@@ -16,11 +16,14 @@ return new class extends Migration
             $table->bigInteger('transaction_manage_customers')->nullable();
             $table->bigInteger('branch_id')->nullable();
             $table->date('request_date')->nullable();
+            $table->bigInteger('user_mantri')->nullable();
             $table->date('check_date')->nullable();
+            $table->bigInteger('user_check')->nullable();
             $table->date('drop_date')->nullable();
+            $table->bigInteger('user_drop')->nullable();
             $table->string('hari', 255)->nullable();
             $table->integer('pinjaman_ke')->nullable();
-            $table->bigInteger('status')->nullable();
+            $table->string('status', 255)->nullable();
             $table->string('notes')->nullable();
             $table->bigInteger('user_input')->nullable();
             $table->timestamps();

@@ -20,6 +20,6 @@ class TransactionManageCustomer extends Model
 
     public function loan()
     {
-        return $this->hasMany(Loan::class, 'transaction_manage_customers', 'id');
+        return $this->hasMany(TransactionLoan::class, 'transaction_manage_customers', 'id');
     }
 }

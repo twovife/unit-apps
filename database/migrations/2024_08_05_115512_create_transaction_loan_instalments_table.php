@@ -16,8 +16,9 @@ return new class extends Migration
             $table->bigInteger('transaction_loan_id')->nullable();
             $table->date('transaction_date')->nullable();
             $table->bigInteger('nominal')->nullable();
-            $table->string('status')->nullable();
+            $table->integer('status')->nullable();
             $table->string('instalment_notes')->nullable();
+            $table->string('danatitipan')->nullable();
             $table->bigInteger('user_input')->nullable();
             $table->bigInteger('user_mantri')->nullable();
             $table->timestamps();
