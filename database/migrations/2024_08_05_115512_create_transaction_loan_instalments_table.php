@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('transaction_loan_instalments', function (Blueprint $table) {
             $table->id();
-            $table->integer('transaction_loan_id')->nullable();
+            $table->bigInteger('transaction_loan_id')->nullable();
             $table->date('transaction_date')->nullable();
-            $table->integer('nominal')->nullable();
+            $table->bigInteger('nominal')->nullable();
             $table->string('status')->nullable();
             $table->string('instalment_notes')->nullable();
+            $table->bigInteger('user_input')->nullable();
+            $table->bigInteger('user_mantri')->nullable();
             $table->timestamps();
         });
     }

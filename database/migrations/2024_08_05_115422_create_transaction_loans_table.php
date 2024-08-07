@@ -13,15 +13,16 @@ return new class extends Migration
     {
         Schema::create('transaction_loans', function (Blueprint $table) {
             $table->id();
-            $table->integer('transaction_manage_customers')->nullable();
-            $table->integer('branch_id')->nullable();
+            $table->bigInteger('transaction_manage_customers')->nullable();
+            $table->bigInteger('branch_id')->nullable();
             $table->date('request_date')->nullable();
             $table->date('check_date')->nullable();
             $table->date('drop_date')->nullable();
             $table->string('hari', 255)->nullable();
             $table->integer('pinjaman_ke')->nullable();
-            $table->integer('status')->nullable();
-            $table->integer('notes')->nullable();
+            $table->bigInteger('status')->nullable();
+            $table->string('notes')->nullable();
+            $table->bigInteger('user_input')->nullable();
             $table->timestamps();
         });
     }
