@@ -21,7 +21,7 @@ class UpdateSeeder extends Seeder
 
         try {
             DB::beginTransaction();
-            $customers = Customer::with("loan_request.loan")->where('id', ">", 50)->get();
+            $customers = Customer::with("loan_request.loan")->get();
 
 
             $customers->map(function ($customer) {
