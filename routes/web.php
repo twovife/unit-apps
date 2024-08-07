@@ -3,6 +3,7 @@
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\ProfileController;
+use App\Models\TransactionLoan;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -72,6 +73,15 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/bayarml/{loan}', 'mantri_bayar_angsuran_ml')->name('bayar_ml');
             Route::post('/bayarml/{loan}', 'mantri_bayar_angsuran_ml_post')->name('bayarmlpost');
+        });
+    });
+
+    Route::prefix('admin-apps')->name('admin.')->group(function () {
+        Route::prefix('transaction')->name('transaction.')->group(function () {
+            Route::controller(TransactionLoan::class)->group(function () {
+                Route::get('/buku-transaksi', "index_buku_transaksi")->name('index_buku_transaksi');
+                Route::post('/buku-transaksi', "store_buku_transaksi")->name('store_buku_transaksi');
+            });
         });
     });
 
