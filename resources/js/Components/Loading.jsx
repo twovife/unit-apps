@@ -1,5 +1,5 @@
 import React from "react";
-import "../../css/loader.css";
+// import "../../css/loader.css";
 import ReactDOM from "react-dom";
 import { Transition } from "@headlessui/react";
 
