@@ -10,7 +10,7 @@ class TransactionLoanController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index_buku_transaksi()
     {
         //
     }

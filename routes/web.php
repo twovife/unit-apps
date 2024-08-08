@@ -3,6 +3,7 @@
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TransactionLoanController;
 use App\Models\TransactionLoan;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -76,12 +77,10 @@ Route::middleware('auth')->group(function () {
         });
     });
 
-    Route::prefix('admin-apps')->name('admin.')->group(function () {
-        Route::prefix('transaction')->name('transaction.')->group(function () {
-            Route::controller(TransactionLoan::class)->group(function () {
-                Route::get('/buku-transaksi', "index_buku_transaksi")->name('index_buku_transaksi');
-                Route::post('/buku-transaksi', "store_buku_transaksi")->name('store_buku_transaksi');
-            });
+    Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
+        Route::controller(TransactionLoanController::class)->group(function () {
+            Route::get('/buku-transaksi', "index_buku_transaksi")->name('index_buku_transaksi');
+            Route::post('/buku-transaksi', "store_buku_transaksi")->name('store_buku_transaksi');
         });
     });
 
