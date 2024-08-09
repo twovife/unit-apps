@@ -10,12 +10,7 @@ import Navbar from "@/Components/Navbar";
 import SweetAlert from "@/Components/SweetAlert";
 import Loading from "@/Components/Loading";
 
-export default function Authenticated({
-    auth,
-    header,
-    children,
-    loading = false,
-}) {
+export default function Authenticated({ header, children, loading = false }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const toggleSidebar = () => {
@@ -23,14 +18,16 @@ export default function Authenticated({
     };
     // const [showingNavigationDropdown, setShowingNavigationDropdown] =
     //     useState(false);
-    const { errors, flash } = usePage().props;
+    const { errors, flash, auth } = usePage().props;
 
     return (
         <div className="relative">
             {Object.keys(errors).length > 0 && (
-                <SweetAlert type="error" flash={errors} />
+                <SweetAlert type="error" message={errors[0]} />
             )}
-            {flash?.message && <SweetAlert type="success" flash={flash} />}
+            {flash.message && (
+                <SweetAlert type="success" message={flash.message} />
+            )}
             <Loading show={loading} />
             <Navbar
                 isOpen={isSidebarOpen}
@@ -40,7 +37,7 @@ export default function Authenticated({
             />
             <Sidebar isOpen={isSidebarOpen} />
             <div
-                className={`px-4 py-6 transition-all ease-in-out bg-slate-50 duration-300 min-h-screen ${
+                className={`px-4 py-6 transition-all ease-in-out bg-white duration-300 min-h-screen ${
                     isSidebarOpen ? "ml-64" : "ml-0"
                 }`}
             >

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TransactionLoan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TransactionLoanController extends Controller
 {
@@ -13,8 +14,9 @@ class TransactionLoanController extends Controller
      */
     public function index_buku_transaksi(Request $request)
     {
+        $getFilter = new \stdClass;
+        $getFilter = (object) request()->all();
 
-        // dd(auth()->user()->employee);
         $branch_id = $request->branch_id ?? auth()->user()->employee->branch_id;
         $kelompok = $request->kelompok ?? (auth()->user()->employee->kelompok ?? 5);
         // dd($kelompok);
@@ -39,7 +41,10 @@ class TransactionLoanController extends Controller
                 'drop' => $rencana_drop->loan_nominal->drop_before,
             ];
         })->values();
-        ddd($pengajuan);
+        // ddd($pengajuan);
+        return Inertia::render('BukuTransaksi/BukuTransaksi', [
+            'server_filter' => $getFilter
+        ]);
     }
 
     /**

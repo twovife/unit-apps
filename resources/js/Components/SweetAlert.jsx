@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
-const SweetAlert = ({ type, flash }) => {
+const SweetAlert = ({ type, message }) => {
     const MySwal = withReactContent(Swal);
 
     useEffect(() => {
@@ -10,7 +10,7 @@ const SweetAlert = ({ type, flash }) => {
             MySwal.fire({
                 position: "top-end",
                 icon: "error",
-                title: flash[0] || "Terjadi Kesalahan Silahkan hub IT.",
+                title: message || "Terjadi Kesalahan Silahkan hub IT.",
                 showConfirmButton: false,
                 timer: 1500,
             });
@@ -18,12 +18,12 @@ const SweetAlert = ({ type, flash }) => {
             MySwal.fire({
                 position: "top-end",
                 icon: "success",
-                title: flash?.message || "Anda Telah Melakukan Perubahan",
+                title: message || "Anda Telah Melakukan Perubahan",
                 showConfirmButton: false,
                 timer: 1500,
             });
         }
-    }, [type, flash]);
+    }, [type, message]);
 
     return null;
 };
