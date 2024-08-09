@@ -79,8 +79,8 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
         Route::controller(TransactionLoanController::class)->group(function () {
-            Route::get('/buku-transaksi', "index_buku_transaksi")->name('index_buku_transaksi');
-            Route::post('/buku-transaksi', "store_buku_transaksi")->name('store_buku_transaksi');
+            Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
+            Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
         });
     });
 

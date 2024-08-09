@@ -1,8 +1,10 @@
 import { Transition } from "@headlessui/react";
 import React from "react";
-import DropdownButton from "./DropDownButton";
+import DropdownButton from "./shadcn/DropDownButton";
 import ButtonMenu from "./ButtonMenu";
 import { usePage } from "@inertiajs/react";
+import { Button } from "@/shadcn/ui/button";
+import MenuButton from "./shadcn/MenuButton";
 
 const Sidebar = ({ isOpen }) => {
     const { auth } = usePage().props;
@@ -17,18 +19,14 @@ const Sidebar = ({ isOpen }) => {
         >
             <div className="py-4 px-4 font-semibold border-b">Apps Menu</div>
             <div className="p-4 space-y-4">
-                <ButtonMenu
-                    url={route("home")}
+                <MenuButton
+                    href={route("home")}
                     title={"Home"}
                     active={route().current("home")}
                 />
                 {unitAkses && (
                     <>
-                        <ButtonMenu
-                            url={route("batchupdate.batch_create")}
-                            title={"Batch_data"}
-                            active={route().current("batchupdate.*")}
-                        />
+                        <MenuButton title="Data Karyawan" />
 
                         <DropdownButton
                             title="Transaksi Drop"
@@ -37,7 +35,7 @@ const Sidebar = ({ isOpen }) => {
                                 {
                                     id: 1,
                                     title: "Buku Transaksi",
-                                    link: route("transaction.index"),
+                                    href: route("transaction.index"),
                                     active:
                                         route().current("transaction.*") &&
                                         !route().current(
@@ -47,7 +45,7 @@ const Sidebar = ({ isOpen }) => {
                                 {
                                     id: 1,
                                     title: "Open Transaksi",
-                                    link: route("transaction.index_open"),
+                                    href: route("transaction.index_open"),
                                     active: route().current(
                                         "transaction.index_open"
                                     ),
@@ -71,7 +69,7 @@ const Sidebar = ({ isOpen }) => {
                     </>
                 )}
 
-                <ButtonMenu
+                <MenuButton
                     url={route("mantriapps.index")}
                     title={"Mantri Apps"}
                     active={route().current("mantriapps.*")}

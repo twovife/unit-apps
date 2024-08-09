@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('transaction_loans', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('transaction_manage_customers')->nullable();
+            $table->bigInteger('transaction_manage_customer_id')->nullable();
             $table->bigInteger('old_id')->nullable();
             $table->bigInteger('branch_id')->nullable();
             $table->date('request_date')->nullable();

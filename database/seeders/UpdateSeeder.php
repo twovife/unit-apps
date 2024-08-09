@@ -38,7 +38,10 @@ class UpdateSeeder extends Seeder
                     $drop_before = 0;
                     $customer->loan_request->map(function ($transaksi) use ($nasabah, &$drop_before) {
                         $drop_before = $transaksi->loan?->drop ?? 0;
-                        $manage =  $nasabah->manage_customer()->create([
+                        $manage =  $nasabah->manage_customer()->firstOrCreate([
+                            "branch_id" => $transaksi->branch_id,
+                            "kelompok" => $transaksi->kelompok,
+                        ], [
                             "branch_id" => $transaksi->branch_id,
                             "kelompok" => $transaksi->kelompok,
                         ]);

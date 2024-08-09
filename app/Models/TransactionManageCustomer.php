@@ -10,7 +10,10 @@ class TransactionManageCustomer extends Model
     use HasFactory;
 
     protected $fillable = [
-        "transaction_customer_id", "branch_id", "kelompok", "created_at",
+        "transaction_customer_id",
+        "branch_id",
+        "kelompok",
+        "created_at",
     ];
 
     public function customers()
@@ -20,6 +23,11 @@ class TransactionManageCustomer extends Model
 
     public function loan()
     {
-        return $this->hasMany(TransactionLoan::class, 'transaction_manage_customers', 'id');
+        return $this->hasMany(TransactionLoan::class, 'transaction_manage_customer_id', 'id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id', 'id');
     }
 }
