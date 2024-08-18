@@ -98,7 +98,7 @@ class UpdateSeeder extends Seeder
                         }
                         if ($transaksi->status == "acc") {
                             $tanggal = Carbon::now()->format('Y-m-d');
-                            $status = $transaksi->tanggal_drop > $tanggal ? "success" : "acc";
+                            $status = $transaksi->tanggal_drop < $tanggal ? "success" : "acc";
                             $loan = $manage->loan()->create([
                                 "branch_id" => $transaksi->branch_id,
                                 "old_id" => $transaksi->id,
