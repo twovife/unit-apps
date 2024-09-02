@@ -24,4 +24,14 @@ class TransactionLoanInstalment extends Model
   {
     return $this->belongsTo(TransactionLoan::class, 'transaction_loan_id', 'id');
   }
+
+  public function usermantri()
+  {
+    return $this->belongsTo(Employee::class, 'user_mantri', 'id');
+  }
+
+  public function userinput()
+  {
+    return $this->belongsTo(Employee::class, 'user_input', 'id');
+  }
 }

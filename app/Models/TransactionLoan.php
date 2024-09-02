@@ -41,4 +41,19 @@ class TransactionLoan extends Model
   {
     return $this->belongsTo(Branch::class, 'branch_id', 'id');
   }
+
+  public function userinput()
+  {
+    return $this->belongsTo(Employee::class, 'user_input', 'id');
+  }
+
+  public function customer()
+  {
+    return $this->hasOneThrough(TransactionCustomer::class, TransactionManageCustomer::class, 'id', 'id', 'transaction_manage_customer_id', 'transaction_customer_id');
+  }
+
+  public function mantri()
+  {
+    return $this->belongsTo(Employee::class, 'user_mantri', 'id');
+  }
 }

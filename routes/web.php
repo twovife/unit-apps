@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
+use App\Http\Controllers\MobileAppsMantriController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionLoanController;
 use App\Models\TransactionLoan;
@@ -22,74 +23,106 @@ use Inertia\Inertia;
 
 
 Route::get('/', function () {
-    return Inertia::render('Dashboard');
+  return Inertia::render('Dashboard');
 })->middleware(['auth'])->name('home');
 
 Route::middleware('auth')->group(function () {
 
-    Route::controller(LoanController::class)->group(function () {
-        Route::prefix('transaction')->name('transaction.')->group(function () {
-            Route::post('/nik', 'getCustomerLoan')->name('getnik');
-            Route::get('/', 'index_transaction')->name('index');
-            Route::get('/open', 'index_transaction_open')->name('index_open');
-            Route::get('/create', 'create_transaction')->name('create');
-            Route::post('/', 'store_transaction')->name('store');
-            Route::get('/{loanRequest}', 'show_transaction')->name('show');
-            Route::put('/{loanRequest}', 'update_transaction')->name('update');
-        })->middleware('permission:unit');
+  Route::controller(LoanController::class)->group(function () {
+    Route::prefix('transaction')->name('transaction.')->group(function () {
+      Route::post('/nik', 'getCustomerLoan')->name('getnik');
+      Route::get('/', 'index_transaction')->name('index');
+      Route::get('/open', 'index_transaction_open')->name('index_open');
+      Route::get('/create', 'create_transaction')->name('create');
+      Route::post('/', 'store_transaction')->name('store');
+      Route::get('/{loanRequest}', 'show_transaction')->name('show');
+      Route::put('/{loanRequest}', 'update_transaction')->name('update');
+    })->middleware('permission:unit');
 
-        Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
-            Route::prefix('normal')->name('normal.')->group(function () {
-                Route::get('/', 'index_angsuran_normal')->name('index');
-                Route::get('/create', 'create_angsuran_normal')->name('create');
-                Route::post('/', 'store_angsuran_normal')->name('store');
-                Route::get('/{loan}', 'show_angsuran_normal')->name('show');
-                Route::post('/{loan}', 'update_angsuran_normal')->name('update');
-                Route::post('/{loan}/nasabah', 'update_jenis_nasabah')->name('nasabah');
-                Route::delete('/{instalment}', 'deleteAngsuran')->name('deleteAngsuran');
-                Route::delete('/{loan}/loan', 'deleteLoan')->name('deleteLoan');
-            });
-        });
-        Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
-            Route::get('/', 'batch_create')->name('batch_create');
-            Route::post('/', 'batch_post')->name('batch_post');
-        })->middleware('permission:unit');
+    Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
+      Route::prefix('normal')->name('normal.')->group(function () {
+        Route::get('/', 'index_angsuran_normal')->name('index');
+        Route::get('/create', 'create_angsuran_normal')->name('create');
+        Route::post('/', 'store_angsuran_normal')->name('store');
+        Route::get('/{loan}', 'show_angsuran_normal')->name('show');
+        Route::post('/{loan}', 'update_angsuran_normal')->name('update');
+        Route::post('/{loan}/nasabah', 'update_jenis_nasabah')->name('nasabah');
+        Route::delete('/{instalment}', 'deleteAngsuran')->name('deleteAngsuran');
+        Route::delete('/{loan}/loan', 'deleteLoan')->name('deleteLoan');
+      });
     });
+    Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
+      Route::get('/', 'batch_create')->name('batch_create');
+      Route::post('/', 'batch_post')->name('batch_post');
+    })->middleware('permission:unit');
+  });
 
-    Route::controller(MantriAppsController::class)->group(function () {
-        Route::prefix('mantri-apps')->name('mantriapps.')->group(function () {
-            Route::get('/', 'mantri_index')->name('index');
-            Route::get('/create', 'mantri_create')->name('create');
-            Route::post('/', 'mantri_store')->name('store');
-            Route::get('/transaksi', 'mantri_transaksi')->name('transaksi');
-            Route::get('/drop', 'mantri_drop')->name('drop');
-            Route::get('/show/{loanRequest}', 'mantri_show')->name('show');
-            Route::get('/show_drop/{loanRequest}', 'mantri_show_drop')->name('show_drop');
-            Route::put('/show/{loanRequest}', 'mantri_update')->name('update');
-            Route::get('/angsur', 'mantri_angsur')->name('angsur');
-            Route::get('/ml', 'mantri_ml')->name('ml');
+  Route::controller(MantriAppsController::class)->group(function () {
+    Route::prefix('mantri-apps')->name('mantriapps.')->group(function () {
+      Route::get('/', 'mantri_index')->name('index');
+      Route::get('/create', 'mantri_create')->name('create');
+      Route::post('/', 'mantri_store')->name('store');
+      Route::get('/transaksi', 'mantri_transaksi')->name('transaksi');
+      Route::get('/drop', 'mantri_drop')->name('drop');
+      Route::get('/show/{loanRequest}', 'mantri_show')->name('show');
+      Route::get('/show_drop/{loanRequest}', 'mantri_show_drop')->name('show_drop');
+      Route::put('/show/{loanRequest}', 'mantri_update')->name('update');
+      Route::get('/angsur', 'mantri_angsur')->name('angsur');
+      Route::get('/ml', 'mantri_ml')->name('ml');
 
-            Route::get('/bayar/{loan}', 'mantri_bayar_angsuran')->name('bayar');
-            Route::post('/bayar/{loan}', 'mantri_bayar_angsuran_post')->name('bayarpost');
+      Route::get('/bayar/{loan}', 'mantri_bayar_angsuran')->name('bayar');
+      Route::post('/bayar/{loan}', 'mantri_bayar_angsuran_post')->name('bayarpost');
 
-            Route::get('/bayarml/{loan}', 'mantri_bayar_angsuran_ml')->name('bayar_ml');
-            Route::post('/bayarml/{loan}', 'mantri_bayar_angsuran_ml_post')->name('bayarmlpost');
-        });
+      Route::get('/bayarml/{loan}', 'mantri_bayar_angsuran_ml')->name('bayar_ml');
+      Route::post('/bayarml/{loan}', 'mantri_bayar_angsuran_ml_post')->name('bayarmlpost');
     });
+  });
 
-    Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
-        Route::controller(TransactionLoanController::class)->group(function () {
-            Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
-            Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
-        });
+  Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
+    Route::controller(TransactionLoanController::class)->group(function () {
+      Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
+      Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
+      Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
+      Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');
     });
+  });
 
-
-    Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
-        Route::patch('/', [ProfileController::class, 'update'])->name('update');
-        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+  Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
+    Route::controller(TransactionLoanController::class)->group(function () {
+      Route::get('/', "index_pinjaman")->name('index_pinjaman');
+      Route::get('/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
+      Route::post('/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
+      Route::delete('/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
     });
+  });
+
+  Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
+    Route::controller(TransactionLoanController::class)->group(function () {
+      Route::get('/', "index_pinjaman")->name('index_pinjaman');
+      Route::get('/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
+      Route::post('/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
+      Route::delete('/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
+    });
+  });
+
+
+  Route::prefix('mobile_apps')->name('mobile_apps.')->group(function () {
+    Route::controller(MobileAppsMantriController::class)->group(function () {
+      Route::get('/', "index")->name('index');
+      Route::prefix('pengajuan')->name('pengajuan.')->group(function () {
+        Route::get('/', "index_pengajuan")->name('index_pengajuan');
+        Route::get('/baru', "create_pengajuan")->name('create_pengajuan');
+        Route::post('/drop', "drop_pengajuan")->name('drop_pengajuan');
+        Route::post('/transaksi', "transaksi_pengajuan")->name('transaksi_pengajuan');
+      });
+    });
+  });
+
+  Route::prefix('profile')->name('profile.')->group(function () {
+    Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+    Route::patch('/', [ProfileController::class, 'update'])->name('update');
+    Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+  });
 });
 
 require __DIR__ . '/auth.php';

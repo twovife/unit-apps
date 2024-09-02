@@ -1,0 +1,243 @@
+import React, { useEffect, useMemo, useState } from 'react';
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shadcn/ui/table';
+
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { Button } from '@/shadcn/ui/button';
+import { Play } from 'lucide-react';
+import DetailRiwayat from './DetailRiwayat';
+import FormatNumbering from '@/Components/shadcn/FormatNumbering';
+import dayjs from 'dayjs';
+import { Badge } from '@/shadcn/ui/badge';
+import Action from './Action';
+
+const BukuTransaksiTable = ({ datas }) => {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    setData(datas);
+  }, [datas]);
+
+  const calculateTotals = (data) => {
+    return data.reduce(
+      (acc, item) => {
+        acc.request += item.request || 0;
+        acc.drop += item.drop || 0;
+        acc.drop_jadi += item.drop_jadi || 0;
+        acc.acc += item.acc || 0;
+
+        return acc;
+      },
+      {
+        request: 0,
+        drop: 0,
+        acc: 0,
+        drop_jadi: 0,
+      }
+    );
+  };
+
+  const totals = calculateTotals(data);
+
+  const columns = useMemo(
+    () => [
+      {
+        header: 'Tgl Pengajuan',
+        accessorKey: 'tanggal_pengajuan',
+        cell: ({ getValue }) => <div>{getValue()}</div>,
+      },
+      {
+        header: 'Status',
+        type: 'show',
+        accessorKey: 'status',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'Nama',
+        accessorKey: 'nama',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'Alamat',
+        accessorKey: 'alamat',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'No Angt',
+        accessorKey: 'nomor_anggota',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'Pinj ke',
+        accessorKey: 'pinjaman_ke',
+        cell: ({ getValue }) => getValue(),
+      },
+
+      {
+        header: 'Tgl Drop',
+        accessorKey: 'tanggal_drop',
+        cell: ({ getValue }) => (
+          <div>{dayjs(getValue()).format('DD-MM-YY')}</div>
+        ),
+      },
+      {
+        header: 'Drop',
+        accessorKey: 'drop',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.drop} />,
+      },
+      {
+        header: 'Pengajuan',
+        accessorKey: 'request',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.request} />,
+      },
+      {
+        header: 'Acc',
+        accessorKey: 'acc',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.acc} />,
+      },
+      {
+        header: 'Drop Jadi',
+        accessorKey: 'drop_jadi',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.drop_jadi} />,
+      },
+    ],
+    [totals]
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    debugTable: true,
+  });
+
+  // Declare a state variable to track the visibility of the "onCreateShow" component
+  const [onCreateShow, setOnCreateShow] = useState(false);
+  const [actionData, setActionData] = useState();
+
+  // Event handler function to set the "onCreateShow" state variable to true
+  const handleOnCreateShowOpen = (e) => {
+    setOnCreateShow(true);
+    setActionData(e);
+  };
+
+  // Event handler function to set the "onCreateShow" state variable to false
+  const handleOnCreateShowClosed = (e) => {
+    setOnCreateShow(false);
+    setActionData();
+  };
+
+  return (
+    <>
+      <Action
+        show={onCreateShow}
+        onClosed={handleOnCreateShowClosed}
+        triggeredData={actionData}
+      />
+
+      <Table className="w-full table-auto">
+        <TableHeader className="sticky top-0 z-10 bg-gray-100">
+          {table.getHeaderGroups().map((headerGroup, key) => (
+            <TableRow key={key}>
+              {headerGroup.headers.map((header, key) => (
+                <TableHead className="text-center" key={key}>
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row, key) => (
+              <React.Fragment key={key}>
+                <TableRow className={`text-center`} key={key}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className={`${cell.column.columnDef.className}`}
+                    >
+                      {cell.column.columnDef.type == 'show' ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            onClick={() =>
+                              handleOnCreateShowOpen(cell.row.original)
+                            }
+                            variant={
+                              row.original.status == 'open'
+                                ? 'green'
+                                : row.original.status == 'acc'
+                                ? 'yellow'
+                                : row.original.status == 'success'
+                                ? 'default'
+                                : 'destructive'
+                            }
+                            size={'xs'}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </Button>
+                        </div>
+                      ) : (
+                        flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </React.Fragment>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan="4">Belum Ada Catatan Pinjaman</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+        <TableFooter>
+          {table.getFooterGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                return (
+                  <TableHead
+                    key={header.id}
+                    className="text-center text-black bg-gray-100"
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext()
+                    )}
+                  </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableFooter>
+      </Table>
+    </>
+  );
+};
+
+export default BukuTransaksiTable;

@@ -16,8 +16,6 @@ import { Button } from "@/shadcn/ui/button";
 import { PersonIcon } from "@radix-ui/react-icons";
 
 const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
-    console.log(auth);
-
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
     return (

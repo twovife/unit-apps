@@ -7,27 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class TransactionManageCustomer extends Model
 {
-    use HasFactory;
+  use HasFactory;
 
-    protected $fillable = [
-        "transaction_customer_id",
-        "branch_id",
-        "kelompok",
-        "created_at",
-    ];
+  protected $fillable = [
+    "transaction_customer_id",
+    "branch_id",
+    "kelompok",
+    "created_at",
+  ];
 
-    public function customers()
-    {
-        return $this->belongsTo(TransactionCustomer::class, 'transaction_customer_id', 'id');
-    }
+  public function customers()
+  {
+    return $this->belongsTo(TransactionCustomer::class, 'transaction_customer_id', 'id');
+  }
 
-    public function loan()
-    {
-        return $this->hasMany(TransactionLoan::class, 'transaction_manage_customer_id', 'id');
-    }
+  public function loan()
+  {
+    return $this->hasMany(TransactionLoan::class, 'transaction_manage_customer_id', 'id');
+  }
 
-    public function branch()
-    {
-        return $this->belongsTo(Branch::class, 'branch_id', 'id');
-    }
+  public function branch()
+  {
+    return $this->belongsTo(Branch::class, 'branch_id', 'id');
+  }
 }
