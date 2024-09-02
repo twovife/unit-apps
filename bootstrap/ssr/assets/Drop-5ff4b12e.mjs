@@ -5,8 +5,8 @@ import { P as PrimaryButton } from "./PrimaryButton-e2c4c1f4.mjs";
 import { S as SelectList } from "./SelectList-8beaa241.mjs";
 import { T as TextInput } from "./TextInput-11198f62.mjs";
 import { u as useServerFilter } from "./useServerFilter-295b27f7.mjs";
-import { M as MobileLayout } from "./MobileLayout-f2211a20.mjs";
-import { Head, Link } from "@inertiajs/react";
+import { M as MobileLayout } from "./MobileLayout-3a3dffff.mjs";
+import { Link } from "@inertiajs/react";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { NumericFormat } from "react-number-format";
@@ -30,22 +30,20 @@ import "class-variance-authority";
 import "./button-9a023ace.mjs";
 import "@radix-ui/react-slot";
 import "lucide-react";
-const Transaksi = ({ data, branch, server_filters, ...props }) => {
+const Drop = ({ data, branch, server_filters, ...props }) => {
   const {
     serverFilters,
     onServerFilterChange,
     onServerFilterSubmit,
     loading,
     setLoading,
-    mantriMantri,
-    transaction_day
+    mantriMantri
   } = useServerFilter(route().current(), server_filters);
-  console.log(server_filters);
   const mantri = server_filters.previledge == "mantri" ? [
     {
       id: 1,
       value: server_filters.kelompok,
-      display: `Mantri ${server_filters.kelompok}`
+      display: server_filters.kelompok
     }
   ] : mantriMantri;
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,75 +61,57 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
     {
       auth: props.auth,
       errors: props.errors,
-      header: "Buku Transaksi",
+      header: "Drop Harians",
       loading,
       children: [
-        /* @__PURE__ */ jsx(Head, { title: "Buku Transaksi" }),
         /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center w-full gap-1 flex-wrap", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "kelompok", value: "Kelompok" }),
-              /* @__PURE__ */ jsx(
-                SelectList,
+          /* @__PURE__ */ jsxs("div", { className: "w-full", children: [
+            /* @__PURE__ */ jsx(InputLabel, { htmlFor: "kelompok", value: "Kelompok" }),
+            /* @__PURE__ */ jsx(
+              SelectList,
+              {
+                id: "kelompok",
+                type: "text",
+                onChange: onServerFilterChange,
+                name: "kelompok",
+                value: serverFilters.kelompok,
+                options: mantri,
+                className: "mt-1 block w-full",
+                autoComplete: "kelompok"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "mt-3 w-full", children: [
+            /* @__PURE__ */ jsx(InputLabel, { htmlFor: "date", value: "Tanggal Drop" }),
+            /* @__PURE__ */ jsxs("div", { className: "flex text-center items-center gap-1", children: [
+              /* @__PURE__ */ jsx("div", { className: "flex-1", children: /* @__PURE__ */ jsx(
+                TextInput,
                 {
-                  id: "kelompok",
-                  type: "text",
+                  id: "date",
+                  disabled: true,
+                  type: "date",
                   onChange: onServerFilterChange,
-                  name: "kelompok",
-                  value: serverFilters.kelompok,
-                  options: mantri,
-                  className: "mt-1 block w-full",
-                  autoComplete: "kelompok"
+                  value: serverFilters.date,
+                  name: "date",
+                  className: "mt-1 block w-full"
+                }
+              ) }),
+              /* @__PURE__ */ jsx(
+                PrimaryButton,
+                {
+                  onClick: onServerFilterSubmit,
+                  title: "Cari"
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                LinkButton,
+                {
+                  color: "blue",
+                  as: "a",
+                  href: route("mantriapps.index"),
+                  title: "Home"
                 }
               )
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "hari", value: "Hari" }),
-              /* @__PURE__ */ jsx(
-                SelectList,
-                {
-                  id: "hari",
-                  type: "text",
-                  onChange: onServerFilterChange,
-                  name: "hari",
-                  value: serverFilters.hari,
-                  options: transaction_day,
-                  className: "mt-1 block w-full",
-                  autoComplete: "hari"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-              /* @__PURE__ */ jsx(InputLabel, { htmlFor: "date", value: "Tanggal Pengajuan" }),
-              /* @__PURE__ */ jsxs("div", { className: "flex text-center items-center gap-1", children: [
-                /* @__PURE__ */ jsx("div", { className: "flex-1", children: /* @__PURE__ */ jsx(
-                  TextInput,
-                  {
-                    id: "date",
-                    type: "month",
-                    onChange: onServerFilterChange,
-                    value: serverFilters.date,
-                    name: "date",
-                    className: "mt-1 block w-full"
-                  }
-                ) }),
-                /* @__PURE__ */ jsx(
-                  PrimaryButton,
-                  {
-                    onClick: onServerFilterSubmit,
-                    title: "Cari"
-                  }
-                ),
-                /* @__PURE__ */ jsx(
-                  LinkButton,
-                  {
-                    color: "blue",
-                    as: "a",
-                    href: route("mantriapps.index"),
-                    title: "Home"
-                  }
-                )
-              ] })
             ] })
           ] }),
           /* @__PURE__ */ jsx("div", { className: "w-full mt-3", children: /* @__PURE__ */ jsx(
@@ -144,7 +124,7 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
             }
           ) })
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "overflow-auto rounded shadow-sm max-h-[50vh] lg:max-h-[65vh] border-b-2", children: /* @__PURE__ */ jsxs("table", { className: "text-sm w-full border", children: [
+        /* @__PURE__ */ jsx("div", { className: "overflow-auto rounded shadow-sm max-h-[50vh] border-b-2", children: /* @__PURE__ */ jsxs("table", { className: "text-sm w-full border", children: [
           /* @__PURE__ */ jsx("thead", { className: "bg-gray-200", children: /* @__PURE__ */ jsxs("tr", { className: "text-center", children: [
             /* @__PURE__ */ jsx("td", { className: "p-2", children: "Tgl" }),
             /* @__PURE__ */ jsx("td", { className: "p-2", children: "Nasabah" }),
@@ -160,7 +140,10 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
                 /* @__PURE__ */ jsxs("td", { className: "px-2 py-1 text-start", children: [
                   /* @__PURE__ */ jsx("div", { className: "font-semibold text-sm" }),
                   /* @__PURE__ */ jsxs("div", { className: "mb-1 italic font-light whitespace-nowrap", children: [
-                    /* @__PURE__ */ jsx("span", { className: "capitalize", children: "Pengajuan : " }),
+                    /* @__PURE__ */ jsxs("span", { className: "capitalize", children: [
+                      item.hari,
+                      ","
+                    ] }),
                     item.transaction_date ? dayjs(
                       item.transaction_date
                     ).format("DD-MM-YY") : "",
@@ -191,7 +174,7 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
                   {
                     className: `${item.status == "acc" ? `bg-green-500` : item.status == "tolak" ? `bg-red-500` : `bg-blue-500`} px-2 py-1.5 hover:bg-blue-700 text-white hover:cursor-pointer rounded`,
                     href: route(
-                      "mantriapps.show",
+                      "mantriapps.show_drop",
                       item.id
                     ),
                     children: item.status
@@ -208,5 +191,5 @@ const Transaksi = ({ data, branch, server_filters, ...props }) => {
   );
 };
 export {
-  Transaksi as default
+  Drop as default
 };

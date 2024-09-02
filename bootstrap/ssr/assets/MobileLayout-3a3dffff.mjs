@@ -135,7 +135,7 @@ const MobileLayout = ({ header, children, loading = false }) => {
     Object.keys(errors).length > 0 && /* @__PURE__ */ jsx(SweetAlert, { type: "error", flash: errors }),
     (flash == null ? void 0 : flash.message) && /* @__PURE__ */ jsx(SweetAlert, { type: "success", flash }),
     /* @__PURE__ */ jsx(Loading, { show: loading }),
-    /* @__PURE__ */ jsxs("div", { className: "relative h-screen max-w-sm mx-auto", children: [
+    /* @__PURE__ */ jsxs("div", { className: "relative h-screen max-w-xl mx-auto", children: [
       /* @__PURE__ */ jsx("div", { className: "sticky top-0 z-50 flex items-center h-16 gap-4 px-3 bg-transparent", children: /* @__PURE__ */ jsxs("nav", { className: "flex flex-row items-center justify-between w-full gap-5 text-sm font-mediumlg:gap-6", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-start", children: [
           /* @__PURE__ */ jsx(

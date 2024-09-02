@@ -5,7 +5,7 @@ import { P as PrimaryButton } from "./PrimaryButton-e2c4c1f4.mjs";
 import { S as SelectList } from "./SelectList-8beaa241.mjs";
 import { T as TextInput } from "./TextInput-11198f62.mjs";
 import { u as useServerFilter } from "./useServerFilter-295b27f7.mjs";
-import { M as MobileLayout } from "./MobileLayout-f2211a20.mjs";
+import { M as MobileLayout } from "./MobileLayout-3a3dffff.mjs";
 import { Link } from "@inertiajs/react";
 import dayjs from "dayjs";
 import { useState } from "react";

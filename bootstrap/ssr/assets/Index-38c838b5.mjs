@@ -1,5 +1,5 @@
 import { j as jsxs, a as jsx } from "../ssr.mjs";
-import { M as MobileLayout } from "./MobileLayout-f2211a20.mjs";
+import { M as MobileLayout } from "./MobileLayout-3a3dffff.mjs";
 import { B as Button } from "./button-9a023ace.mjs";
 import { C as Card, a as CardHeader, b as CardTitle, d as CardContent } from "./card-c2e72800.mjs";
 import { Link } from "@inertiajs/react";

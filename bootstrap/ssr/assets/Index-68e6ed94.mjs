@@ -1,5 +1,5 @@
 import { j as jsxs, a as jsx } from "../ssr.mjs";
-import { M as MobileLayout } from "./MobileLayout-f2211a20.mjs";
+import { M as MobileLayout } from "./MobileLayout-3a3dffff.mjs";
 import { Head, Link } from "@inertiajs/react";
 import { useState } from "react";
 import { IoPersonAddSharp } from "react-icons/io5";
