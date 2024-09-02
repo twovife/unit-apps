@@ -143,13 +143,15 @@ class TransactionLoanController extends Controller
    */
   public function store_buku_transaksi(Request $request)
   {
-    if (!auth()->user()->hasPermissionTo('can update')) {
+    // dd('asd');
+    if (!auth()->user()->hasPermissionTo('can create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
+
     $val = $request->validate([
       'isActiveMember' => ['boolean', 'required'],
       'nik' => ['required', 'digits:16'],
-      'kelompok' => ['required', 'integer'],
+      'kelompok' => ['required'],
       'request_nominal' =>  ["required", 'integer'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],

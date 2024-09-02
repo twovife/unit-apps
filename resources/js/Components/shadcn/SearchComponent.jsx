@@ -7,12 +7,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import Loading from '../Loading';
 import SelectComponent from './SelectComponent';
 import dayjs from 'dayjs';
+import { Label } from '@/shadcn/ui/label';
 
 const SearchComponent = ({
   urlLink = route('home'),
   localState,
   searchDate = false,
+  labelDate = 'Date',
   searchMonth = false,
+  labelMonth = 'Bulan',
   searchPlanText = false,
   planTextName = 'search',
 
@@ -33,10 +36,6 @@ const SearchComponent = ({
     selectedWilayah,
     setSelectedWilayah,
     filteredBranch,
-    selectedBranch_id,
-    selectedMonth,
-    selectedDate,
-    selectedKelompok,
     optKelompok,
     dayOpt,
   } = useOptionGenerator();
@@ -173,11 +172,12 @@ const SearchComponent = ({
     <>
       <Loading show={processing || loading} />
       <form
-        className="items-end justify-center w-full grid-cols-2 gap-3 lg:flex lg:justify-end"
+        className="flex flex-col items-end w-full gap-3 lg:w-auto lg:flex-row"
         onSubmit={onSubmitSearch}
       >
         {searchDate && (
           <div className="w-full">
+            <Label>{labelDate}</Label>
             <Input
               className="w-full"
               type="date"
@@ -190,6 +190,7 @@ const SearchComponent = ({
         )}
         {searchMonth && (
           <div className="w-full">
+            <Label>{labelMonth}</Label>
             <Input
               className="w-full"
               type="month"
@@ -202,6 +203,7 @@ const SearchComponent = ({
         )}
         {searchKelompok && (
           <div className="w-full">
+            <Label>Kelompok</Label>
             <SelectComponent
               className="w-full"
               value={data.kelompok}
@@ -213,6 +215,7 @@ const SearchComponent = ({
         )}
         {searchWilayah && (
           <div className="w-full">
+            <Label>Wilayah</Label>
             <SelectComponent
               className="w-full"
               value={data.wilayah}
@@ -225,6 +228,7 @@ const SearchComponent = ({
 
         {searchHari && (
           <div className="w-full">
+            <Label>Hari</Label>
             <SelectComponent
               className="w-full"
               value={data.hari}

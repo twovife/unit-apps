@@ -114,6 +114,8 @@ const Create = ({ show = false, onClosed }) => {
     setData('request_nominal', value);
   };
 
+  console.log(data);
+
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
       <Loading show={loading || processing} />
@@ -246,6 +248,7 @@ const Create = ({ show = false, onClosed }) => {
                         value={data.kelompok}
                         options={optKelompok}
                         name="kelompok"
+                        nullvalue={true}
                         onChange={onInputChange}
                         required={true}
                       />
