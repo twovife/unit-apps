@@ -37,37 +37,54 @@ const Index = ({ data, select_kelompok, select_branch, ...props }) => {
             <CardHeader>
               <CardTitle>Pengajuan Minggu Lalu</CardTitle>
               <CardDescription>
-                Pengajuan Tanggal : 22-Agustus-2024
+                Pengajuan Tanggal :
+                <span className="font-bold text-red-500"> Senin ,</span>{' '}
+                22-Agustus-2024
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table className="text-xs">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Tgl Drop</TableHead>
-                    <TableHead>Drop</TableHead>
-                    <TableHead>Pengajuan</TableHead>
-                    <TableHead>Acc</TableHead>
-                    <TableHead>Jadi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>AZIZ NUR IHSAN SUKOWATI</TableCell>
-                    <TableCell>1.000</TableCell>
-                    <TableCell>500</TableCell>
-                    <TableCell>500</TableCell>
-                    <TableCell>
-                      <div className="text-center">
-                        <div>500</div>
-                        <Badge variant={'green'}>Acc</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>500</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <div className="overflow-auto scrollbar-thin">
+                <Table className="text-xs">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead className="text-center">Drop</TableHead>
+                      <TableHead className="text-center">Pengajuan</TableHead>
+                      <TableHead className="text-center">Acc</TableHead>
+                      <TableHead className="text-center">Jadi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>AZIZ NUR IHSAN SUKOWATI</TableCell>
+                      <TableCell>
+                        <div className="text-center">
+                          <div>1.000.000</div>
+                          <Badge variant={'green'}>22/3</Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center">
+                          <div>1.000.000</div>
+                          <div className="px-2.5 py-0.5">&nbsp;</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center">
+                          <div>1.000.000</div>
+                          <Badge variant={'green'}>Acc</Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center">
+                          <div>1.000.000</div>
+                          <Badge variant={'green'}>Acc</Badge>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
