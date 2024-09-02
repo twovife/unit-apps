@@ -45,7 +45,7 @@ const MobileLayout = ({ header, children, loading = false }) => {
       {flash?.message && <SweetAlert type="success" flash={flash} />}
       <Loading show={loading} />
 
-      <div className="relative h-screen max-w-xl mx-auto">
+      <div className="relative h-screen px-2 mx-auto lg:px-4">
         <div className="sticky top-0 z-50 flex items-center h-16 gap-4 px-3 bg-transparent">
           <nav className="flex flex-row items-center justify-between w-full gap-5 text-sm font-mediumlg:gap-6">
             <div className="flex items-center justify-start">
