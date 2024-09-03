@@ -138,7 +138,7 @@ const Index = ({ data, select_kelompok, select_branch, ...props }) => {
                           {item.data.map((row) => (
                             <TableRow>
                               <TableCell>
-                                <p>{row.nama} </p>
+                                <p className="whitespace-nowrap">{row.nama} </p>
                                 <p>{row.alamat}</p>
                               </TableCell>
                               <TableCell className="text-center">
