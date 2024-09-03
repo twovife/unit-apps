@@ -22,7 +22,7 @@ class MobileAppsMantriController extends Controller
     $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->employee->branch_id;
     $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
     $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
-    $transaction_date = $request->date ?? Carbon::now();
+    $transaction_date = Carbon::parse($request->date) ?? Carbon::now();
 
     $loan = TransactionLoan::with(['loan_instalment', 'manage_customer' => function ($itm) {
       $itm->with('customers')
@@ -75,7 +75,7 @@ class MobileAppsMantriController extends Controller
     // ddd($loan);
     return Inertia::render('MobileApps/Pengajuan/Index', [
       'data' => $loan,
-      'server_filter' => ['date' => $transaction_date, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $request->branch_id, 'kelompok' => $kelompok],
+      'server_filter' => ['date' => $transaction_date->format('Y-m-d'), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $request->branch_id, 'kelompok' => $kelompok],
       'select_branch' => auth()->user()->can('can show branch'),
       'select_kelompok' => auth()->user()->can('can show kelompok'),
     ]);

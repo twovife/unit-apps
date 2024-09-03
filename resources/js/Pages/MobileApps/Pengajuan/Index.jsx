@@ -1,3 +1,5 @@
+import BargeStatus from '@/Components/shadcn/BargeStatus';
+import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import MobileLayout from '@/Layouts/MobileLayout';
 import {
@@ -15,6 +17,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shadcn/ui/card';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/shadcn/ui/drawer';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Separator } from '@/shadcn/ui/separator';
 import {
   Table,
@@ -27,161 +40,146 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import { Link } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import { CreditCard, Handshake, Notebook } from 'lucide-react';
+import {
+  CreditCard,
+  Filter,
+  FilterIcon,
+  FilterX,
+  Handshake,
+  Notebook,
+} from 'lucide-react';
 import React from 'react';
 
 const Index = ({ data, select_kelompok, select_branch, ...props }) => {
-  console.log(data);
-
-  const dateprev = dayjs().subtract(1, 'week').format('YYYY-MM-DD');
-  console.log(dateprev);
+  const selectedDay = props.server_filter.date;
+  const dateToday = dayjs(selectedDay).format('YYYY-MM-DD');
+  const dateprev = dayjs(selectedDay).subtract(1, 'week').format('YYYY-MM-DD');
 
   return (
     <MobileLayout>
-      <Tabs defaultValue="prev" className="w-full">
-        <div className="flex flex-col-reverse items-end gap-3 lg:flex-row">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="prev">Minggu Lalu</TabsTrigger>
-            <TabsTrigger value="today">Hari Ini</TabsTrigger>
+      <Tabs defaultValue={0} className="w-full">
+        <div className="flex items-end justify-between gap-3">
+          <TabsList className="grid w-auto grid-cols-2">
+            {data.map((header, key) => (
+              <TabsTrigger key={key} value={key}>
+                {dayjs(header.date).format('DD-MM-YYYY')}
+              </TabsTrigger>
+            ))}
           </TabsList>
-          <SearchComponent
-            urlLink={route('mobile_apps.pengajuan.index_pengajuan')}
-            searchDate={true}
-            labelDate={'Pengajuan'}
-            searchGroupingBranch={select_branch}
-            searchKelompok={select_kelompok}
-          />
+          <div className="hidden lg:inline-block">
+            <SearchComponent
+              urlLink={route('mobile_apps.pengajuan.index_pengajuan')}
+              searchDate={true}
+              labelDate={'Pengajuan'}
+              searchGroupingBranch={select_branch}
+              searchKelompok={select_kelompok}
+            />
+          </div>
+          <div className="lg:hidden">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <FilterIcon className="h-4" />
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <SearchComponent
+                  urlLink={route('mobile_apps.pengajuan.index_pengajuan')}
+                  searchDate={true}
+                  labelDate={'Pengajuan'}
+                  searchGroupingBranch={select_branch}
+                  searchKelompok={select_kelompok}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-        <TabsContent value="prev">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pengajuan Minggu Lalu</CardTitle>
-              <CardDescription>
-                Pengajuan Tanggal :
-                <span className="font-bold text-red-500">
-                  {' '}
-                  {dayjs().subtract(1, 'week').format('dddd')} ,
-                </span>{' '}
-                {dayjs().subtract(1, 'week').format('DD MMMM YYYY')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-auto scrollbar-thin">
-                <Table className="text-xs">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama</TableHead>
-                      <TableHead className="text-center">Drop</TableHead>
-                      <TableHead className="text-center">Pengajuan</TableHead>
-                      <TableHead className="text-center">Acc</TableHead>
-                      <TableHead className="text-center">Jadi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data
-                      .filter((item) => item.date == dateprev)
-                      .map((rows) =>
-                        rows.data.map((item) => (
+        {data.length
+          ? data.map((item, key) => (
+              <TabsContent value={key}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      {item.date == selectedDay
+                        ? 'Pengajuan Sekarang'
+                        : 'Pengajuan Sebelumnya'}
+                    </CardTitle>
+                    <CardDescription>
+                      <div>
+                        Pengajuan Tanggal :
+                        <span className="font-bold text-red-500">
+                          {' '}
+                          {dayjs(item.date).format('dddd')} ,
+                        </span>{' '}
+                        {dayjs(item.date).format('DD MMMM YYYY')}
+                      </div>
+                      <div>Kelompok {props.server_filter.kelompok ?? null}</div>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-auto scrollbar-thin">
+                      <Table className="text-xs">
+                        <TableHeader>
                           <TableRow>
-                            <TableCell>
-                              <p>{item.nama} </p>
-                              <p>{item.alamat}</p>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-center">
-                                <div>{item.drop}</div>
-                                <Badge variant={'green'}>22/3</Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-center">
-                                <div>1.000.000</div>
-                                <div className="px-2.5 py-0.5">&nbsp;</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-center">
-                                <div>1.000.000</div>
-                                <Badge variant={'green'}>Acc</Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-center">
-                                <div>1.000.000</div>
-                                <Badge variant={'green'}>Acc</Badge>
-                              </div>
-                            </TableCell>
+                            <TableHead>Nama</TableHead>
+                            <TableHead className="text-center">
+                              Status
+                            </TableHead>
+                            <TableHead className="text-center">Drop</TableHead>
+                            <TableHead className="text-center">
+                              Pengajuan
+                            </TableHead>
+                            <TableHead className="text-center">Acc</TableHead>
+                            <TableHead className="text-center">Jadi</TableHead>
                           </TableRow>
-                        ))
-                      )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="today">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pengajuan Minggu Lalu</CardTitle>
-              <CardDescription>
-                Pengajuan Tanggal :
-                <span className="font-bold text-red-500">
-                  {' '}
-                  {dayjs().format('dddd')} ,
-                </span>{' '}
-                {dayjs().format('DD MMMM YYYY')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-auto scrollbar-thin">
-                <Table className="text-xs">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama</TableHead>
-                      <TableHead className="text-center">Drop</TableHead>
-                      <TableHead className="text-center">Pengajuan</TableHead>
-                      <TableHead className="text-center">Acc</TableHead>
-                      <TableHead className="text-center">Jadi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>
-                        <p>AZIZ NUR IHSAN SUKOWATI </p>
-                        <p>AZIZ NUR IHSAN SUKOWATI</p>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-center">
-                          <div>1.000.000</div>
-                          <Badge variant={'green'}>22/3</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-center">
-                          <div>1.000.000</div>
-                          <div className="px-2.5 py-0.5">&nbsp;</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-center">
-                          <div>1.000.000</div>
-                          <Badge variant={'green'}>Acc</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-center">
-                          <div>1.000.000</div>
-                          <Badge variant={'green'}>Acc</Badge>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                        </TableHeader>
+                        <TableBody>
+                          {item.data.map((row) => (
+                            <TableRow>
+                              <TableCell>
+                                <p>{row.nama} </p>
+                                <p>{row.alamat}</p>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <p>
+                                  <BargeStatus value={row.status} />
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                <FormatNumbering
+                                  className="mb-0.5 text-center"
+                                  value={row.drop}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <FormatNumbering
+                                  className="mb-0.5 text-center"
+                                  value={row.request}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <FormatNumbering
+                                  className="mb-0.5 text-center"
+                                  value={row.acc}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <FormatNumbering
+                                  className="mb-0.5 text-center"
+                                  value={row.drop_jadi}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            ))
+          : 'Tidak Ada data dibulan ini'}
       </Tabs>
     </MobileLayout>
   );
