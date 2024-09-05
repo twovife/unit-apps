@@ -76,7 +76,7 @@ class UpdateSeeder extends Seeder
                 "drop_before" => $drop_before,
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => null,
-                "drop" => null,
+                "nominal_drop" => null,
                 "pinjaman" => null,
               ]);
             }
@@ -84,7 +84,6 @@ class UpdateSeeder extends Seeder
             if ($transaksi->status == "tolak") {
               $loan = $manage->loan()->create([
                 "transaction_loan_officer_grouping_id" => $manage->transaction_loan_officer_grouping_id,
-                "branch_id" => $transaksi->branch_id,
                 "old_id" => $transaksi->id,
                 "request_date" => $transaksi->transaction_date,
                 "user_mantri" => $transaksi->mantri,
@@ -100,7 +99,7 @@ class UpdateSeeder extends Seeder
                 "drop_before" => $drop_before,
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => null,
-                "drop" => null,
+                "nominal_drop" => null,
                 "pinjaman" => null,
               ]);
             }
@@ -110,7 +109,6 @@ class UpdateSeeder extends Seeder
               $status = $transaksi->tanggal_drop < $tanggal ? "success" : "acc";
               $loan = $manage->loan()->create([
                 "transaction_loan_officer_grouping_id" => $manage->transaction_loan_officer_grouping_id,
-                "branch_id" => $transaksi->branch_id,
                 "old_id" => $transaksi->id,
                 "request_date" => $transaksi->transaction_date,
                 "user_mantri" => $transaksi->mantri,
@@ -126,7 +124,7 @@ class UpdateSeeder extends Seeder
                 "drop_before" => $drop_before,
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => $transaksi->loan?->drop,
-                "drop" =>  $status == "success" ?  $transaksi->loan?->drop : null,
+                "nominal_drop" =>  $status == "success" ?  $transaksi->loan?->drop : null,
               ]);
 
               // id, loan_id, pembayaran_date, jumlah, status, mantri, danatitipan, created_at, updated_at
