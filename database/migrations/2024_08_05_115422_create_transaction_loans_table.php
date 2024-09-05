@@ -29,10 +29,11 @@ return new class extends Migration
       $table->date('check_date')->nullable();
       $table->bigInteger('user_check')->nullable();
 
-      $table->bigInteger('drop')->nullable();
+      $table->bigInteger('nominal_drop')->nullable();
       $table->bigInteger('user_drop')->nullable();
 
-      $table->bigInteger('pinjaman')->storedAs('drop * 1.3')->nullable();
+      $table->bigInteger('pinjaman')->storedAs('nominal_drop * 1.3')->nullable();
+
       $table->string('hari', 255)->nullable();
       $table->integer('pinjaman_ke')->nullable();
       $table->string('status', 255)->nullable();
