@@ -11,10 +11,10 @@ return new class extends Migration
    */
   public function up(): void
   {
-    Schema::create('transaction_hashes', function (Blueprint $table) {
+    Schema::create('transaction_loan_officer_groupings', function (Blueprint $table) {
       $table->id();
-      $table->string('previous_block_hash')->nullable();
-      $table->string('merkle_root')->nullable();
+      $table->bigInteger('branch_id')->nullable();
+      $table->integer('kelompok')->nullable();
       $table->timestamps();
     });
   }
@@ -24,6 +24,6 @@ return new class extends Migration
    */
   public function down(): void
   {
-    Schema::dropIfExists('transaction_hashes');
+    Schema::dropIfExists('transaction_loan_officer_groupings');
   }
 };

@@ -14,7 +14,7 @@ return new class extends Migration
     Schema::create('transaction_loan_instalments', function (Blueprint $table) {
       $table->id();
       $table->bigInteger('transaction_loan_id')->nullable();
-      $table->bigInteger('transaction_hash_id')->nullable();
+      $table->bigInteger('transaction_loan_officer_grouping_id')->nullable();
       $table->date('transaction_date')->nullable();
       $table->bigInteger('nominal')->nullable();
       $table->integer('status')->nullable();

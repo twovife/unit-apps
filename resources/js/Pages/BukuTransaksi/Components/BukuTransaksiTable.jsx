@@ -22,6 +22,7 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import { Badge } from '@/shadcn/ui/badge';
 import Action from './Action';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
 
 const BukuTransaksiTable = ({ datas }) => {
   const [data, setData] = useState([]);
@@ -178,26 +179,12 @@ const BukuTransaksiTable = ({ datas }) => {
                     >
                       {cell.column.columnDef.type == 'show' ? (
                         <div className="flex items-center justify-center gap-2">
-                          <Button
+                          <BargeStatus
+                            value={cell.row.original.status}
                             onClick={() =>
                               handleOnCreateShowOpen(cell.row.original)
                             }
-                            variant={
-                              row.original.status == 'open'
-                                ? 'green'
-                                : row.original.status == 'acc'
-                                ? 'yellow'
-                                : row.original.status == 'success'
-                                ? 'default'
-                                : 'destructive'
-                            }
-                            size={'xs'}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </Button>
+                          />
                         </div>
                       ) : (
                         flexRender(

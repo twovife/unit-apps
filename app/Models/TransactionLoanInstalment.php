@@ -11,6 +11,7 @@ class TransactionLoanInstalment extends Model
 
   protected $fillable = [
     "transaction_loan_id",
+    "transaction_loan_officer_grouping_id",
     "transaction_date",
     "nominal",
     "status",

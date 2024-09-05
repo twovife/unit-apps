@@ -33,6 +33,7 @@ import Acc from './Acc';
 import Tolak from './Tolak';
 import DropJadi from './DropJadi';
 import Gagal from './Gagal';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
   console.log(triggeredData);
@@ -81,7 +82,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
   return (
     <>
       <Dialog open={show} onOpenChange={(open) => (open ? '' : onClosed())}>
-        <DialogContent className="w-[90vw] h-[90vh] lg:h-auto overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <DialogContent className="h-[90vh] lg:h-auto overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
           {erorAxios && <div>terjadi kesalahan saat memuat data</div>}
           {loading ? (
             <div>Data Sedang Dimuat</div>
@@ -196,17 +197,13 @@ function detailTable(data) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-center">Tanggal Pengajuan</TableHead>
           <TableHead className="text-center">Nomor Pengajuan</TableHead>
+          <TableHead className="text-center">Tanggal Pengajuan</TableHead>
           <TableHead className="text-center">Status</TableHead>
           <TableHead className="text-center">Nama Nasabah</TableHead>
-          <TableHead className="text-center">NIK</TableHead>
-          <TableHead className="text-center">Alamat</TableHead>
           <TableHead className="text-center">Unit</TableHead>
-          <TableHead className="text-center">Kelompok</TableHead>
           <TableHead className="text-center">Pengajuan</TableHead>
           <TableHead className="text-center">Tgl Drop</TableHead>
-          <TableHead className="text-center">Kelompok</TableHead>
           <TableHead className="text-center">Pinj Ke</TableHead>
           <TableHead className="text-center">Acc</TableHead>
           <TableHead className="text-center">Drop Jadi</TableHead>
@@ -215,35 +212,26 @@ function detailTable(data) {
       {data && (
         <TableBody>
           <TableRow className="text-center">
-            <TableCell className="bg-red-200">
+            <TableCell>{data.nomor_pengajuan}</TableCell>
+            <TableCell className="text-start">
               {data.tanggal_pengajuan}
             </TableCell>
-            <TableCell>{data.nomor_pengajuan}</TableCell>
             <TableCell>
-              <Badge
-                variant={
-                  data.status == 'open'
-                    ? 'green'
-                    : data.status == 'acc'
-                    ? 'yellow'
-                    : data.status == 'success'
-                    ? 'default'
-                    : 'destructive'
-                }
-              >
-                {data.status}
-              </Badge>
+              <BargeStatus value={data.status} />
             </TableCell>
-            <TableCell>{data.nama}</TableCell>
-            <TableCell>{data.nik}</TableCell>
-            <TableCell>{data.alamat}</TableCell>
-            <TableCell>{data.unit}</TableCell>
-            <TableCell>{data.kelompok}</TableCell>
+            <TableCell className="text-start">
+              <div>{data.nama}</div>
+              <div>{data.nik}</div>
+              <div>{data.alamat}</div>
+            </TableCell>
+            <TableCell className="text-start">
+              <div className="whitespace-nowrap">{data.unit}</div>
+              <div>Kel {data.kelompok}</div>
+            </TableCell>
             <TableCell>
               <FormatNumbering value={data.request} />
             </TableCell>
             <TableCell>{dayjs(data.tanggal_drop).format('DD/MM')}</TableCell>
-            <TableCell>{data.kelompok}</TableCell>
             <TableCell>{data.pinjaman_ke}</TableCell>
             <TableCell>{data.acc}</TableCell>
             <TableCell>{data.drop_jadi}</TableCell>

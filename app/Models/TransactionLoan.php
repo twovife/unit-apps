@@ -11,21 +11,26 @@ class TransactionLoan extends Model
 
   protected $fillable = [
     "transaction_manage_customer_id",
-    "branch_id",
-    "request_date",
-    "check_date",
+    "transaction_loan_officer_grouping_id",
+    "old_id",
+    "drop_before",
+    "drop_date_before",
     "drop_date",
+    "request_date",
+    "request_nominal",
+    "user_mantri",
+    "approved_nominal",
+    "check_date",
+    "user_check",
+    "drop",
+    "user_drop",
+    "pinjaman",
     "hari",
     "pinjaman_ke",
     "status",
     "notes",
     "user_input",
-    "old_id",
-    "drop_before",
-    "request_nominal",
-    "approved_nominal",
-    "drop",
-    "pinjaman",
+    "drop_langsung"
   ];
 
   public function loan_instalment()
@@ -39,7 +44,7 @@ class TransactionLoan extends Model
   }
   public function branch()
   {
-    return $this->belongsTo(Branch::class, 'branch_id', 'id');
+    return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class, 'id', 'id', 'transaction_loan_officer_grouping_id', 'branch_id');
   }
 
   public function userinput()

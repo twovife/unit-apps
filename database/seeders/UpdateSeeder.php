@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\TransactionCustomer;
 use App\Models\TransactionLoan;
+use App\Models\TransactionLoanOfficerGrouping;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -21,9 +23,21 @@ class UpdateSeeder extends Seeder
 
     try {
       DB::beginTransaction();
+
+      $branches = Branch::all();
+
+      foreach ($branches as $branch) {
+        // Loop untuk membuat 10 kelompok untuk setiap branch
+        for ($i = 1; $i <= 10; $i++) {
+          // Buat entry untuk setiap kelompok di branch ini
+          TransactionLoanOfficerGrouping::create([
+            'branch_id' => $branch->id,  // ID cabang dari tabel branch
+            'kelompok'  => $i,           // Nomor kelompok, dari 1 sampai 10
+          ]);
+        }
+      }
+
       $customers = Customer::with("loan_request.loan")->get();
-
-
       $customers->map(function ($customer) {
         echo "memproses" . $customer->id . PHP_EOL;
         $nasabah = TransactionCustomer::create([
@@ -33,21 +47,20 @@ class UpdateSeeder extends Seeder
           "alamat" => $customer->alamat,
         ]);
         echo "nasabah baru" . $customer->id . PHP_EOL . "telah dibuat";
-
         if ($customer->loan_request->isNotEmpty()) {
           $drop_before = 0;
           $customer->loan_request->map(function ($transaksi) use ($nasabah, &$drop_before) {
             $drop_before = $transaksi->loan?->drop ?? 0;
+            $loanOfficer = TransactionLoanOfficerGrouping::where("branch_id", $transaksi->branch_id)->where("kelompok", $transaksi->kelompok)->first();
             $manage =  $nasabah->manage_customer()->firstOrCreate([
-              "branch_id" => $transaksi->branch_id,
-              "kelompok" => $transaksi->kelompok,
+              "transaction_loan_officer_grouping_id" => $loanOfficer->id,
             ], [
-              "branch_id" => $transaksi->branch_id,
-              "kelompok" => $transaksi->kelompok,
+              "transaction_loan_officer_grouping_id" => $loanOfficer->id,
             ]);
+
             if ($transaksi->status == "open") {
               $loan = $manage->loan()->create([
-                "branch_id" => $transaksi->branch_id,
+                "transaction_loan_officer_grouping_id" => $manage->transaction_loan_officer_grouping_id,
                 "old_id" => $transaksi->id,
                 "request_date" => $transaksi->transaction_date,
                 "user_mantri" => $transaksi->mantri,
@@ -67,8 +80,10 @@ class UpdateSeeder extends Seeder
                 "pinjaman" => null,
               ]);
             }
+
             if ($transaksi->status == "tolak") {
               $loan = $manage->loan()->create([
+                "transaction_loan_officer_grouping_id" => $manage->transaction_loan_officer_grouping_id,
                 "branch_id" => $transaksi->branch_id,
                 "old_id" => $transaksi->id,
                 "request_date" => $transaksi->transaction_date,
@@ -89,10 +104,12 @@ class UpdateSeeder extends Seeder
                 "pinjaman" => null,
               ]);
             }
+
             if ($transaksi->status == "acc") {
               $tanggal = Carbon::now()->format('Y-m-d');
               $status = $transaksi->tanggal_drop < $tanggal ? "success" : "acc";
               $loan = $manage->loan()->create([
+                "transaction_loan_officer_grouping_id" => $manage->transaction_loan_officer_grouping_id,
                 "branch_id" => $transaksi->branch_id,
                 "old_id" => $transaksi->id,
                 "request_date" => $transaksi->transaction_date,
@@ -110,7 +127,6 @@ class UpdateSeeder extends Seeder
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => $transaksi->loan?->drop,
                 "drop" =>  $status == "success" ?  $transaksi->loan?->drop : null,
-                "pinjaman" =>  $status == "success" ?  $transaksi->loan?->pinjaman : null,
               ]);
 
               // id, loan_id, pembayaran_date, jumlah, status, mantri, danatitipan, created_at, updated_at
@@ -118,6 +134,7 @@ class UpdateSeeder extends Seeder
               if ($transaksi->loan?->angsuran->isNotEmpty()) {
                 $transaksi->loan->angsuran->map(function ($angsuran) use ($loan) {
                   $loan->loan_instalment()->create([
+                    "transaction_loan_officer_grouping_id" => $loan->transaction_loan_officer_grouping_id,
                     "transaction_date" => $angsuran->pembayaran_date,
                     "nominal" => $angsuran->jumlah,
                     "status" => $angsuran->status,

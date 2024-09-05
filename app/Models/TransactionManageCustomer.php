@@ -11,9 +11,7 @@ class TransactionManageCustomer extends Model
 
   protected $fillable = [
     "transaction_customer_id",
-    "branch_id",
-    "kelompok",
-    "created_at",
+    "transaction_loan_officer_grouping_id"
   ];
 
   public function customers()

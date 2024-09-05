@@ -48,6 +48,7 @@ class MobileAppsMantriController extends Controller
           // 'data' => $rencana_drop
           'data' => $rencana_drop->map(function ($item) {
             return [
+              'id' => $item->id,
               'tanggal_pengajuan' => AppHelper::dateName($item->request_date) . " : " . Carbon::parse($item->request_date)->format('d-m-y'),
               'nama' => $item->manage_customer->customers->nama,
               'alamat' => $item->manage_customer->customers->alamat,
@@ -65,6 +66,7 @@ class MobileAppsMantriController extends Controller
               'nomor_pengajuan' => $item->id,
               'nik' => $item->manage_customer->customers->nik,
               'kelompok' => $item->manage_customer->kelompok,
+              'unit' => $item->manage_customer->branch->unit,
               'hari' => $item->hari,
               'status' => $item->status,
             ];

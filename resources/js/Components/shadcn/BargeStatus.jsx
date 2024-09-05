@@ -1,20 +1,22 @@
 import { Badge } from '@/shadcn/ui/badge';
+import { Button } from '@/shadcn/ui/button';
 import React from 'react';
+const variantMap = {
+  open: 'blue',
+  acc: 'green',
+  success: 'green',
+  tolak: 'destructive',
+  gagal: 'destructive',
+};
+const BargeStatus = ({ value, onClick, ...props }) => {
+  console.log(value);
 
-const BargeStatus = ({ value }) => {
-  if (value === 'open') {
-    return <Badge variant="blue">{value}</Badge>;
-  } else if (value === 'acc') {
-    return <Badge variant="green">{value}</Badge>;
-  } else if (value === 'success') {
-    return <Badge variant="green">{value}</Badge>;
-  } else if (value === 'tolak') {
-    return <Badge variant="destructive">{value}</Badge>;
-  } else if (value === 'gagal') {
-    return <Badge variant="destructive">{value}</Badge>;
-  } else {
-    return <Badge variant="default">{value}</Badge>;
-  }
+  const variant = variantMap[value] || 'default';
+  return (
+    <Button {...props} onClick={onClick} size="xs" variant={variant}>
+      {value}
+    </Button>
+  );
 };
 
 export default BargeStatus;

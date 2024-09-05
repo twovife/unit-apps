@@ -2,13 +2,6 @@ import BargeStatus from '@/Components/shadcn/BargeStatus';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import MobileLayout from '@/Layouts/MobileLayout';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/shadcn/ui/accordion';
-import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
 import {
   Card,
@@ -18,17 +11,14 @@ import {
   CardTitle,
 } from '@/shadcn/ui/card';
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/shadcn/ui/drawer';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/shadcn/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Separator } from '@/shadcn/ui/separator';
 import {
   Table,
   TableBody,
@@ -38,22 +28,28 @@ import {
   TableRow,
 } from '@/shadcn/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import { Link } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import {
-  CreditCard,
-  Filter,
-  FilterIcon,
-  FilterX,
-  Handshake,
-  Notebook,
-} from 'lucide-react';
-import React from 'react';
+import { FilterIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import Action from './Components/Action';
 
 const Index = ({ data, select_kelompok, select_branch, ...props }) => {
   const selectedDay = props.server_filter.date;
   const dateToday = dayjs(selectedDay).format('YYYY-MM-DD');
   const dateprev = dayjs(selectedDay).subtract(1, 'week').format('YYYY-MM-DD');
+
+  const [actionPengajuan, setActionPengajuan] = useState(false);
+  const [actionPengajuanTriggeredData, setActionPengajuanTriggeredData] =
+    useState();
+
+  const onOpenActionPengajuan = (id) => {
+    setActionPengajuan(true);
+    setActionPengajuanTriggeredData(id);
+  };
+  const onClosedActionPengajuan = () => {
+    setActionPengajuan(false);
+    setActionPengajuanTriggeredData();
+  };
 
   return (
     <MobileLayout>
@@ -143,7 +139,10 @@ const Index = ({ data, select_kelompok, select_branch, ...props }) => {
                               </TableCell>
                               <TableCell className="text-center">
                                 <p>
-                                  <BargeStatus value={row.status} />
+                                  <BargeStatus
+                                    onClick={() => onOpenActionPengajuan(row)}
+                                    value={row.status}
+                                  />
                                 </p>
                               </TableCell>
                               <TableCell>
@@ -181,6 +180,16 @@ const Index = ({ data, select_kelompok, select_branch, ...props }) => {
             ))
           : 'Tidak Ada data dibulan ini'}
       </Tabs>
+      <Dialog
+        open={actionPengajuan}
+        onOpenChange={(open) => (open ? '' : onClosedActionPengajuan())}
+      >
+        <Action
+          show={actionPengajuan}
+          onClosed={onClosedActionPengajuan}
+          triggeredData={actionPengajuanTriggeredData}
+        />
+      </Dialog>
     </MobileLayout>
   );
 };

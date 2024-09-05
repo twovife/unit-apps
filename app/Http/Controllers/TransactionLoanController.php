@@ -60,6 +60,7 @@ class TransactionLoanController extends Controller
         'nomor_pengajuan' => $rencana_drop->id,
         'nik' => $rencana_drop->manage_customer->customers->nik,
         'kelompok' => $rencana_drop->manage_customer->kelompok,
+        'unit' => $rencana_drop->manage_customer->branch->unit,
         'hari' => $rencana_drop->hari,
         'status' => $rencana_drop->status,
       ];
