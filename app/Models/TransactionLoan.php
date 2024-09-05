@@ -22,7 +22,7 @@ class TransactionLoan extends Model
     "approved_nominal",
     "check_date",
     "user_check",
-    "drop",
+    "nominal_drop",
     "user_drop",
     "pinjaman",
     "hari",
