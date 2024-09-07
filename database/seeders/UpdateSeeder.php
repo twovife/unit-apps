@@ -55,7 +55,7 @@ class UpdateSeeder extends Seeder
             $drop_before = $transaksi->loan()->where('status', 'success')->orderBy('tanggal_drop', 'desc')->first();
 
             $drop_before = $drop_before?->pinjaman ?? 0;
-            $drop_date_before = $drop_before?->drop_date ?? 0;
+            $drop_date_before = $drop_before?->tanggal_drop ?? null;
 
             $loanOfficer = TransactionLoanOfficerGrouping::where("branch_id", $transaksi->branch_id)->where("kelompok", $transaksi->kelompok)->first();
             $manage =  $nasabah->manage_customer()->firstOrCreate([
