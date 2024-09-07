@@ -52,6 +52,7 @@ class UpdateSeeder extends Seeder
         if ($customer->loan_request->isNotEmpty()) {
           $drop_before = 0;
           $customer->loan_request->map(function ($transaksi) use ($nasabah, &$drop_before) {
+            $customer->loan()->where('tanggal_drop', '<', $transaksi->tanggal_drop)->orderBy('tanggal_drop', 'desc')->where('branch_id', $transaksi->branch_id)->where('kelompok', $transaksi->kelompok)->first();
             $drop_before = $transaksi->loan()->where('tanggal_drop', '<', $transaksi->tanggal_drop)->orderBy('tanggal_drop', 'desc')->first();
 
             $drop_before = $drop_before?->pinjaman ?? 0;
