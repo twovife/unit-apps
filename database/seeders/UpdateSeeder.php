@@ -54,8 +54,9 @@ class UpdateSeeder extends Seeder
           $customer->loan_request->map(function ($transaksi) use ($nasabah, &$drop_before) {
             $drop_before = $transaksi->loan()->where('status', 'success')->orderBy('tanggal_drop', 'desc')->first();
 
-            $drop_before = $drop_before?->nominal_drop ?? 0;
+            $drop_before = $drop_before?->pinjaman ?? 0;
             $drop_date_before = $drop_before?->drop_date ?? 0;
+
             $loanOfficer = TransactionLoanOfficerGrouping::where("branch_id", $transaksi->branch_id)->where("kelompok", $transaksi->kelompok)->first();
             $manage =  $nasabah->manage_customer()->firstOrCreate([
               "transaction_loan_officer_grouping_id" => $loanOfficer->id,
@@ -80,6 +81,7 @@ class UpdateSeeder extends Seeder
                 "user_input" => $transaksi->mantri,
                 "drop_before" => $drop_before,
                 "drop_date_before" => $drop_date_before,
+
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => null,
                 "nominal_drop" => null,
@@ -102,6 +104,7 @@ class UpdateSeeder extends Seeder
                 "status" => $transaksi->status,
                 "notes" => $transaksi->notes,
                 "user_input" => $transaksi->mantri,
+
                 "drop_before" => $drop_before,
                 "drop_date_before" => $drop_date_before,
                 "request_nominal" => $transaksi->pinjaman,
