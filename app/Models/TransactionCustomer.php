@@ -7,17 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class TransactionCustomer extends Model
 {
-    use HasFactory;
+  use HasFactory;
 
-    protected $fillable  = [
-        "nama",
-        "nik",
-        "no_kk",
-        "alamat",
-    ];
+  protected $fillable  = [
+    "nama",
+    "nik",
+    "no_kk",
+    "alamat",
+  ];
 
-    public function manage_customer()
-    {
-        return $this->hasMany(TransactionManageCustomer::class, 'transaction_customer_id', 'id');
-    }
+  public function manage_customer()
+  {
+    return $this->hasMany(TransactionManageCustomer::class, 'transaction_customer_id', 'id');
+  }
 }

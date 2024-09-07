@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\TransactionCustomer;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
+use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionManageCustomer;
 use App\Models\User;
 use Carbon\Carbon;
@@ -30,18 +31,17 @@ class TransactionLoanController extends Controller
     $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
     $transaction_date = $request->date ?? Carbon::now()->format('Y-m-d');
 
-
-    $loan = TransactionLoan::with('loan_instalment', 'manage_customer.customers')
+    $loan = TransactionLoan::with('loan_instalment', 'manage_customer.customers', 'branch')
       ->where('request_date', $transaction_date)
-      ->where('branch_id', $branch_id)
-      ->whereHas('manage_customer', function ($item) use ($kelompok) {
-        $item->where('kelompok', $kelompok);
+      ->whereHas('branch', function ($branch) use ($branch_id, $kelompok) {
+        $branch->where('branch_id', $branch_id)
+          ->where('kelompok', $kelompok);
       })
       ->orderByDesc('drop_date')
       ->get();
 
     $pengajuan = $loan->map(function ($rencana_drop) {
-      $countPinjaman = TransactionLoan::where('transaction_manage_customer_id', $rencana_drop->manage_customer->id)->where('id', "<", $rencana_drop->id)->where('status', 'acc')->orderBy('id', 'desc');
+      $countPinjaman = TransactionLoan::where('transaction_manage_customer_id', $rencana_drop->manage_customer->id)->where('id', "<", $rencana_drop->id)->where('status', 'success')->orderBy('id', 'desc');
       return [
         'tanggal_pengajuan' => AppHelper::dateName($rencana_drop->request_date) . " : " . Carbon::parse($rencana_drop->request_date)->format('d-m-y'),
         'nama' => $rencana_drop->manage_customer->customers->nama,
@@ -59,8 +59,8 @@ class TransactionLoanController extends Controller
 
         'nomor_pengajuan' => $rencana_drop->id,
         'nik' => $rencana_drop->manage_customer->customers->nik,
-        'kelompok' => $rencana_drop->manage_customer->kelompok,
-        'unit' => $rencana_drop->manage_customer->branch->unit,
+        'kelompok' => $rencana_drop->kelompok,
+        'unit' => $rencana_drop->branch->unit,
         'hari' => $rencana_drop->hari,
         'status' => $rencana_drop->status,
       ];
@@ -94,12 +94,16 @@ class TransactionLoanController extends Controller
         'manage_customer' => function ($cust) {
           $cust->with([
             'loan' => function ($loan) {
-              $loan->with(['loan_instalment' => function ($inst) {
-                $inst->orderByDesc('transaction_date');
-              }, 'branch'])
+              $loan->with([
+                'loan_instalment' => function ($inst) {
+                  $inst->orderByDesc('transaction_date');
+                },
+                'branch'
+              ])
                 ->orderByDesc('request_date');;
             },
-            'branch'
+            'branch',
+            'loan_officer_grouping'
           ]);
         }
       ]
@@ -113,7 +117,7 @@ class TransactionLoanController extends Controller
         return [
           'id' => $cust->id,
           'unit' => $cust->branch->unit,
-          'kelompok' => $cust->kelompok,
+          'kelompok' => $cust->loan_officer_grouping->kelompok,
           'jumlah_pengajuan' => $cust->loan->count(),
           'jumlah_pinjaman' => $cust->loan->where('status', 'success')->count(),
           'pinjaman' => $cust->loan->map(function ($l) {
@@ -166,18 +170,21 @@ class TransactionLoanController extends Controller
     try {
       DB::beginTransaction();
       $drop_langsung = $request->request_date == $request->tanggal_drop;
+
       $customer = TransactionCustomer::firstorCreate(['nik' => $request->nik], ['nama' => $request->nama, 'alamat' => $request->alamat]);
-      $manage =  $customer->manage_customer()->firstOrCreate(['kelompok' => $request->kelompok, 'branch_id' => $request->branch]);
+      $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', $request->branch)->where('kelompok', $request->kelompok)->first();
+      $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id]);
+
       if ($manage->wasRecentlyCreated) {
         $request['drop_before'] = 0;
       } else {
-        $request['drop_before'] = $manage->loan->where('status', 'success')->latest()->first()->drop;
+        $drop_before = $manage->loan()->where('status', 'success')->orderBy('request_date', 'desc')->first();
+        $request['drop_before'] = $drop_before?->nominal_drop ?? 0;
+        $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
       $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->first();
-
-
       $loan = $manage->loan()->create([
-        'branch_id' => $request->branch,
+        'transaction_loan_officer_grouping_id' => $officerGrouping->id,
         'request_date' => $request->request_date,
         'user_mantri' => $mantri->id,
 
@@ -194,16 +201,16 @@ class TransactionLoanController extends Controller
 
         'drop_before' => $request['drop_before'],
         'request_nominal' => $request->request_nominal,
-        'approved_nominal' => $request->request_date == $request->tanggal_drop ? $request->request_nominal : null,
-        'drop' => $request->request_date == $request->tanggal_drop ? $request->request_nominal : null,
-        'pinjaman' => $request->request_date == $request->tanggal_drop ?  $request->request_nominal * 1.30 : null,
+        'approved_nominal' => $drop_langsung ? $request->request_nominal : null,
+        'nominal_drop' => $drop_langsung ? $request->request_nominal : null,
       ]);
 
 
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      return redirect()->back()->with('error', $exception->getMessage());
+      ddd($exception);
+      return redirect()->back()->withErrors($exception->getMessage());
     }
     return redirect()->back()->with('success', 'Berhasil Menambahkan Pengajuan');
   }

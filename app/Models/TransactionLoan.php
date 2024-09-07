@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Staudenmeir\EloquentHasManyDeep\HasRelationships;
+use Znck\Eloquent\Traits\BelongsToThrough;
 
 class TransactionLoan extends Model
 {
   use HasFactory;
+  use HasRelationships;
+  use BelongsToThrough;
 
   protected $fillable = [
     "transaction_manage_customer_id",
@@ -30,7 +34,7 @@ class TransactionLoan extends Model
     "status",
     "notes",
     "user_input",
-    "drop_langsung"
+    "drop_langsung",
   ];
 
   public function loan_instalment()
@@ -44,7 +48,7 @@ class TransactionLoan extends Model
   }
   public function branch()
   {
-    return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class, 'id', 'id', 'transaction_loan_officer_grouping_id', 'branch_id');
+    return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class);
   }
 
   public function userinput()

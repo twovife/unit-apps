@@ -46,11 +46,16 @@ class UpdateSeeder extends Seeder
           "no_kk" => $customer->no_kk,
           "alamat" => $customer->alamat,
         ]);
+
         echo "nasabah baru" . $customer->id . PHP_EOL . "telah dibuat";
+
         if ($customer->loan_request->isNotEmpty()) {
           $drop_before = 0;
           $customer->loan_request->map(function ($transaksi) use ($nasabah, &$drop_before) {
-            $drop_before = $transaksi->loan?->drop ?? 0;
+            $drop_before = $transaksi->loan()->where('status', 'success')->orderBy('request_date', 'desc')->first();
+
+            $drop_before = $drop_before?->nominal_drop ?? 0;
+            $drop_date_before = $drop_before?->drop_date ?? 0;
             $loanOfficer = TransactionLoanOfficerGrouping::where("branch_id", $transaksi->branch_id)->where("kelompok", $transaksi->kelompok)->first();
             $manage =  $nasabah->manage_customer()->firstOrCreate([
               "transaction_loan_officer_grouping_id" => $loanOfficer->id,
@@ -74,6 +79,7 @@ class UpdateSeeder extends Seeder
                 "notes" => $transaksi->notes,
                 "user_input" => $transaksi->mantri,
                 "drop_before" => $drop_before,
+                "drop_date_before" => $drop_date_before,
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => null,
                 "nominal_drop" => null,
@@ -97,6 +103,7 @@ class UpdateSeeder extends Seeder
                 "notes" => $transaksi->notes,
                 "user_input" => $transaksi->mantri,
                 "drop_before" => $drop_before,
+                "drop_date_before" => $drop_date_before,
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => null,
                 "nominal_drop" => null,
@@ -122,6 +129,7 @@ class UpdateSeeder extends Seeder
                 "notes" => $transaksi->notes,
                 "user_input" => $transaksi->mantri,
                 "drop_before" => $drop_before,
+                "drop_date_before" => $drop_date_before,
                 "request_nominal" => $transaksi->pinjaman,
                 "approved_nominal" => $transaksi->loan?->drop,
                 "nominal_drop" =>  $status == "success" ?  $transaksi->loan?->drop : null,

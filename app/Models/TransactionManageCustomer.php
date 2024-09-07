@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Znck\Eloquent\Traits\BelongsToThrough;
 
 class TransactionManageCustomer extends Model
 {
   use HasFactory;
+  use BelongsToThrough;
 
   protected $fillable = [
     "transaction_customer_id",
@@ -24,8 +26,13 @@ class TransactionManageCustomer extends Model
     return $this->hasMany(TransactionLoan::class, 'transaction_manage_customer_id', 'id');
   }
 
+  public function loan_officer_grouping()
+  {
+    return $this->belongsTo(TransactionLoanOfficerGrouping::class, 'transaction_loan_officer_grouping_id', 'id');
+  }
+
   public function branch()
   {
-    return $this->belongsTo(Branch::class, 'branch_id', 'id');
+    return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class);
   }
 }
