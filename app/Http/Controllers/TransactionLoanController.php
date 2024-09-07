@@ -178,7 +178,7 @@ class TransactionLoanController extends Controller
       if ($manage->wasRecentlyCreated) {
         $request['drop_before'] = 0;
       } else {
-        $drop_before = $manage->loan()->where('status', 'success')->orderBy('request_date', 'desc')->first();
+        $drop_before = $manage->loan()->where('status', 'success')->orderBy('drop_date', 'desc')->first();
         $request['drop_before'] = $drop_before?->nominal_drop ?? 0;
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
