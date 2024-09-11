@@ -25,39 +25,20 @@ import Action from './Action';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
-const BukuTransaksiTable = ({ datas }) => {
+const Rencana = ({ datas }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     setData(datas);
   }, [datas]);
 
-  const calculateTotals = (data) => {
-    return data.reduce(
-      (acc, item) => {
-        acc.request += item.request || 0;
-        acc.drop += item.drop || 0;
-        acc.drop_jadi += item.drop_jadi || 0;
-        acc.acc += item.acc || 0;
-
-        return acc;
-      },
-      {
-        request: 0,
-        drop: 0,
-        acc: 0,
-        drop_jadi: 0,
-      }
-    );
-  };
-
-  const totals = calculateTotals(data);
+  console.log(data);
 
   const columns = useMemo(
     () => [
       {
         header: 'Tgl Drop',
-        accessorKey: 'tanggal_drop',
+        accessorKey: 'tanggal',
         cell: ({ getValue, cell }) => (
           <div className="flex items-center justify-center gap-3">
             <div>{dayjs(getValue()).format('DD-MM-YY')}</div>
@@ -96,28 +77,24 @@ const BukuTransaksiTable = ({ datas }) => {
         header: 'Drop',
         accessorKey: 'drop',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.drop} />,
       },
       {
         header: 'Pengajuan',
         accessorKey: 'request',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.request} />,
       },
       {
         header: 'Acc',
         accessorKey: 'acc',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.acc} />,
       },
       {
         header: 'Drop Jadi',
         accessorKey: 'drop_jadi',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.drop_jadi} />,
       },
     ],
-    [totals]
+    []
   );
 
   const table = useReactTable({
@@ -151,79 +128,56 @@ const BukuTransaksiTable = ({ datas }) => {
         triggeredData={actionData}
       />
 
-      <Table className="w-full mb-3 table-auto">
+      <Table className="w-full table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
-          {table.getHeaderGroups().map((headerGroup, key) => (
-            <TableRow key={key}>
-              {headerGroup.headers.map((header, key) => (
-                <TableHead className="text-center" key={key}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
+          <TableRow>
+            <TableHead className="text-center">Tanggal</TableHead>
+            <TableHead className="text-center">Kasbon</TableHead>
+            <TableHead className="text-center">Target</TableHead>
+            <TableHead className="text-center">Masuk</TableHead>
+            <TableHead className="text-center">Keluar</TableHead>
+            <TableHead className="text-center">Storting</TableHead>
+            <TableHead className="text-center">Drop</TableHead>
+            <TableHead className="text-center">Baru</TableHead>
+            <TableHead className="text-center">Lama</TableHead>
+            <TableHead className="text-center">Rencana</TableHead>
+          </TableRow>
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row, key) => (
-              <React.Fragment key={key}>
-                <TableRow className={`text-center`} key={key}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={`${cell.column.columnDef.className}`}
-                    >
-                      {cell.column.columnDef.type == 'show' ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <BargeStatus
-                            value={cell.row.original.status}
-                            onClick={() =>
-                              handleOnCreateShowOpen(cell.row.original)
-                            }
-                          />
-                        </div>
-                      ) : (
-                        flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </React.Fragment>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan="4">Belum Ada Catatan Pinjaman</TableCell>
-            </TableRow>
-          )}
+          <TableRow className={`text-center`}>
+            <TableCell>{dayjs(data.tanggal).format('DD-MM-YYYY')}</TableCell>
+            <TableCell>
+              <FormatNumbering value={data.kasbon} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.target} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.masuk} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.keluar} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.storting} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.drop} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.baru} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.lama} />
+            </TableCell>
+            <TableCell>
+              <FormatNumbering value={data.rencana} />
+            </TableCell>
+          </TableRow>
         </TableBody>
-        <TableFooter>
-          {table.getFooterGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead
-                    key={header.id}
-                    className="text-center text-black bg-gray-100"
-                  >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableFooter>
       </Table>
     </>
   );
 };
 
-export default BukuTransaksiTable;
+export default Rencana;

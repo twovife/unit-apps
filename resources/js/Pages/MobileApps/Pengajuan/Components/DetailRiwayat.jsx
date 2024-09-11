@@ -14,8 +14,6 @@ import {
 } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
-import { Button } from '@/shadcn/ui/button';
-import { Play } from 'lucide-react';
 
 const DetailRiwayat = ({ detailData }) => {
   console.log(detailData);

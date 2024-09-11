@@ -51,6 +51,10 @@ class TransactionLoan extends Model
     return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class);
   }
 
+  public function loan_officer_grouping()
+  {
+    return $this->belongsTo(TransactionLoanOfficerGrouping::class, 'transaction_loan_officer_grouping_id', 'id');
+  }
   public function userinput()
   {
     return $this->belongsTo(Employee::class, 'user_input', 'id');

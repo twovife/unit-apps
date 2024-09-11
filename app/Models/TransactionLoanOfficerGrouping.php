@@ -16,4 +16,14 @@ class TransactionLoanOfficerGrouping extends Model
   {
     return $this->belongsTo(Branch::class);
   }
+
+  public function transactionDailyRecap()
+  {
+    return $this->hasMany(TransactionDailyRecap::class);
+  }
+
+  public function transactionSirculation()
+  {
+    return $this->hasMany(TransactionSirculation::class);
+  }
 }

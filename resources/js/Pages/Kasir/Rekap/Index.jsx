@@ -1,32 +1,12 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
-import { Head } from '@inertiajs/react';
-import {
-  ArrowBigLeft,
-  ArrowBigRight,
-  FilterIcon,
-  PlusCircle,
-  StepBack,
-} from 'lucide-react';
-import React, { useState } from 'react';
-import Create from './Components/Create';
-import BukuTransaksiTable from './Components/BukuTransaksiTable';
-import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi';
-import Action from './Components/Action';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import Rencana from './Components/Rencana';
-import BukuTransaksiNextTable from './Components/BukuTransaksiNextTable';
+import { Head } from '@inertiajs/react';
+import { FilterIcon, PlusCircle } from 'lucide-react';
+import React, { useState } from 'react';
 
-const BukuTransaksi = ({
-  datas,
-  pengajuan_next,
-  buku_rencana,
-  auth,
-  ...props
-}) => {
-  // Declare a state variable to track the visibility of the "onCreateShow" component
+const Index = ({ datas, auth, ...props }) => {
   const [onCreateShow, setOnCreateShow] = useState(false);
 
   // Event handler function to set the "onCreateShow" state variable to true
@@ -49,15 +29,14 @@ const BukuTransaksi = ({
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">
-            Buku Transaksi
+            Rekap Mantri
           </h1>
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
-            urlLink={route('transaction.index_buku_transaksi')}
-            localState={'transaction_index_buku_transaksi'}
+            urlLink={route('kasir.rekap.rekap_index')}
+            localState={'kasir_rekap_rekap_index'}
             searchDate={true}
-            searchKelompok={auth.permissions.includes('can show kelompok')}
             searchGroupingBranch={auth.permissions.includes('can show branch')}
             nexOrPrevious={nexOrPrevious}
             setNexOrPrevious={setNexOrPrevious}
@@ -102,33 +81,8 @@ const BukuTransaksi = ({
           </Button>
         </div>
       </div>
-      <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} />
-
-      <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-        <Tabs defaultValue="bukutransaksi" className="w-full">
-          <TabsList>
-            <TabsTrigger value="bukutransaksi">Buku Transaksi</TabsTrigger>
-            <TabsTrigger value="dailyTarget">Target Harian</TabsTrigger>
-          </TabsList>
-          <TabsContent value="bukutransaksi">
-            <BukuTransaksiTable datas={datas} />
-            <BukuTransaksiNextTable datas={pengajuan_next} />
-          </TabsContent>
-          <TabsContent value="dailyTarget">
-            <Rencana datas={buku_rencana} />
-          </TabsContent>
-        </Tabs>
-      </div>
-      <div className="flex justify-between w-full mt-3">
-        <Button onClick={() => onNexOrPreviousTogler('previous')} size="icon">
-          <ArrowBigLeft />
-        </Button>
-        <Button onClick={() => onNexOrPreviousTogler('next')} size="icon">
-          <ArrowBigRight />
-        </Button>
-      </div>
     </Authenticated>
   );
 };
 
-export default BukuTransaksi;
+export default Index;

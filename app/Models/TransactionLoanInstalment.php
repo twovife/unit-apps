@@ -35,4 +35,9 @@ class TransactionLoanInstalment extends Model
   {
     return $this->belongsTo(Employee::class, 'user_input', 'id');
   }
+
+  public function loan_officer_grouping()
+  {
+    return $this->belongsTo(TransactionLoanOfficerGrouping::class, 'transaction_loan_officer_grouping_id', 'id');
+  }
 }

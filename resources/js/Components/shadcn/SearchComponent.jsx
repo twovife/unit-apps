@@ -241,30 +241,33 @@ const SearchComponent = ({
         )}
 
         {searchGroupingBranch && (
-          <div className="flex items-center justify-center w-full gap-3">
-            <div className="flex-1">
+          <>
+            <div className="w-full">
+              <Label>Wilayah</Label>
               <SelectComponent
-                valuetype="number"
+                className="w-full"
+                required="true"
                 value={selectedWilayah}
                 options={optWilayah}
                 name="wilayah"
-                required="true"
                 onChange={onWilayahChange}
               />
             </div>
-
             {selectedWilayah !== '' && (
-              <div className="flex-1">
+              <div className="w-full">
+                <Label>Unit</Label>
                 <SelectComponent
+                  required="true"
+                  className="w-full"
                   value={data.branch_id}
                   options={filteredBranch}
                   name="branch_id"
-                  required="true"
+                  nullvalue={true}
                   onChange={onSearchChange}
                 />
               </div>
             )}
-          </div>
+          </>
         )}
 
         <div className="flex items-center justify-end col-span-2 gap-3">

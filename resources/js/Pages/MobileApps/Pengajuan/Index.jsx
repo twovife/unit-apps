@@ -10,14 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shadcn/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/shadcn/ui/dialog';
+import { Dialog } from '@/shadcn/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import {
   Table,

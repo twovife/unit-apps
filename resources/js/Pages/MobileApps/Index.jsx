@@ -1,12 +1,6 @@
 import MobileLayout from '@/Layouts/MobileLayout';
 import { Button } from '@/shadcn/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/shadcn/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 import { Link } from '@inertiajs/react';
 import { Notebook } from 'lucide-react';
 import React from 'react';

@@ -25,7 +25,7 @@ import Action from './Action';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
-const BukuTransaksiTable = ({ datas }) => {
+const BukuTransaksiNextTable = ({ datas }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -226,4 +226,4 @@ const BukuTransaksiTable = ({ datas }) => {
   );
 };
 
-export default BukuTransaksiTable;
+export default BukuTransaksiNextTable;

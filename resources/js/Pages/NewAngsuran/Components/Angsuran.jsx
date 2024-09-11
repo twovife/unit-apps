@@ -14,7 +14,7 @@ import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 
-const AngsuranTable = ({ dateOfWeek, datas }) => {
+const Angsuran = ({ datas }) => {
   const [data, setData] = useState([]);
   useEffect(() => {
     setData(datas);
@@ -66,17 +66,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               Pinjaman
             </TableHead>
             <TableHead className="text-center border-x border-x-black">
-              Saldo Sebelumnya
-            </TableHead>
-            {dateOfWeek.map((day, i) => (
-              <TableHead
-                className="text-center border-x border-x-black"
-                key={i}
-              >
-                {dayjs(day).format('DD-MM-YY')}
-              </TableHead>
-            ))}
-            <TableHead className="text-center border-x border-x-black">
               Angsuran
             </TableHead>
             <TableHead className="text-center border-x border-x-black">
@@ -90,9 +79,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             data.map((row, i) => (
               <React.Fragment key={i}>
                 <TableRow>
-                  <TableCell colSpan={16 + (dateOfWeek.length ?? 0)}>
-                    {row.month}
-                  </TableCell>
+                  <TableCell colSpan={16}>{row.month}</TableCell>
                 </TableRow>
                 {row.data.map((subrow, i) => (
                   <TableRow key={i}>
@@ -159,14 +146,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering value={subrow.pinjaman} />
                     </TableCell>
                     <TableCell className="border-x border-x-black">
-                      <FormatNumbering value={subrow.saldo_sebelumnya} />
-                    </TableCell>
-                    {dateOfWeek.map((day, i) => (
-                      <TableCell className="border-x border-x-black" key={i}>
-                        <FormatNumbering value={subrow.instalment[day]} />
-                      </TableCell>
-                    ))}
-                    <TableCell className="border-x border-x-black">
                       <FormatNumbering value={subrow.angsuran} />
                     </TableCell>
                     <TableCell className="border-x border-x-black">
@@ -177,27 +156,14 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                 ))}
                 <TableRow className="bg-gray-100">
                   <TableCell className="py-3" colSpan={9}>
-                    ini nanti total
+                    <b>Total</b>
                   </TableCell>
                   <TableCell className="border-x border-x-black">
                     <FormatNumbering
                       value={calculateTotals(row.data, 'pinjaman')}
                     />
                   </TableCell>
-                  <TableCell className="border-x border-x-black">
-                    <FormatNumbering
-                      value={calculateTotals(row.data, 'saldo_sebelumnya')}
-                    />
-                  </TableCell>
-                  {dateOfWeek.map((day, i) => (
-                    <TableCell className="border-x border-x-black" key={i}>
-                      {/* {day} */}
-                      {/* {calculateInstalment(row.data, day)} */}
-                      <FormatNumbering
-                        value={calculateInstalment(row.data, day)}
-                      />
-                    </TableCell>
-                  ))}
+
                   <TableCell className="border-x border-x-black">
                     <FormatNumbering
                       value={calculateTotals(row.data, 'angsuran')}
@@ -208,7 +174,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       value={calculateTotals(row.data, 'saldo')}
                     />
                   </TableCell>
-                  <TableCell></TableCell>
                 </TableRow>
               </React.Fragment>
             ))
@@ -229,4 +194,4 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   );
 };
 
-export default AngsuranTable;
+export default Angsuran;

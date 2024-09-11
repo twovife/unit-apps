@@ -114,7 +114,6 @@ const Create = ({ show = false, onClosed }) => {
     setData('request_nominal', value);
   };
 
-  console.log(data);
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>

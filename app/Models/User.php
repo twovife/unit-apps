@@ -10,10 +10,11 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
+use Znck\Eloquent\Traits\BelongsToThrough;
 
 class User extends Authenticatable
 {
-  use HasApiTokens, HasFactory, Notifiable, HasPermissions, HasRoles;
+  use HasApiTokens, HasFactory, Notifiable, HasPermissions, HasRoles, BelongsToThrough;
 
   /**
    * The attributes that are mass assignable.
@@ -48,6 +49,12 @@ class User extends Authenticatable
   public function employee()
   {
     return $this->belongsTo(Employee::class);
+  }
+
+
+  public function branch()
+  {
+    return $this->BelongsToThrough(Branch::class, Employee::class);
   }
 
   public function rolelist()

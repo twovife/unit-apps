@@ -5,7 +5,9 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\MobileAppsMantriController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TransactionDailyRecapController;
 use App\Http\Controllers\TransactionLoanController;
+use App\Models\TransactionDailyRecap;
 use App\Models\TransactionLoan;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -91,18 +93,18 @@ Route::middleware('auth')->group(function () {
   Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_pinjaman")->name('index_pinjaman');
-      Route::get('/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
-      Route::post('/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
-      Route::delete('/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
+      Route::get('/drop_date', "index_pinjaman_search")->name('index_pinjaman_search');
+      Route::get('/actionloan/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
+      Route::post('/actionloan/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
+      Route::delete('/actionloan/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
     });
   });
 
-  Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
-    Route::controller(TransactionLoanController::class)->group(function () {
-      Route::get('/', "index_pinjaman")->name('index_pinjaman');
-      Route::get('/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
-      Route::post('/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
-      Route::delete('/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
+  Route::prefix('kasir')->name('kasir.')->group(function () {
+    Route::controller(TransactionDailyRecapController::class)->group(function () {
+      Route::prefix('rekap')->name('rekap.')->group(function () {
+        Route::get('/', "rekap_index")->name('rekap_index');
+      });
     });
   });
 

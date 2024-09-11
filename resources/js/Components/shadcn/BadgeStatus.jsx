@@ -7,16 +7,16 @@ const variantMap = {
   success: 'green',
   tolak: 'destructive',
   gagal: 'destructive',
-  lama: 'outline',
-  baru: 'yellow',
+  lama: 'old',
+  baru: 'new',
 };
-const BargeStatus = ({ value, onClick, ...props }) => {
+const BadgeStatus = ({ value, onClick, ...props }) => {
   const variant = variantMap[value] || 'default';
   return (
-    <Button {...props} onClick={onClick} size="xs" variant={variant}>
+    <Badge {...props} onClick={onClick} size="xs" variant={variant}>
       {value}
-    </Button>
+    </Badge>
   );
 };
 
-export default BargeStatus;
+export default BadgeStatus;
