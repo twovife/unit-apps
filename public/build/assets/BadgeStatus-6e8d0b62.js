@@ -1,0 +1,1 @@
+import{a as s}from"./app-a0d29dc0.js";import{B as o}from"./badge-581d80cf.js";import"./button-04b96693.js";const n={open:"blue",acc:"green",success:"green",tolak:"destructive",gagal:"destructive",lama:"old",baru:"new"},u=({value:a,onClick:e,...t})=>{const r=n[a]||"default";return s(o,{...t,onClick:e,size:"xs",variant:r,children:a})};export{u as B};
