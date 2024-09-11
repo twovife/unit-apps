@@ -41,14 +41,12 @@ class TransactionDailyRecapController extends Controller
       ->where('date', $tanggal_sirkulasi)
       ->get()->groupBy('transaction_loan_officer_grouping_id');
 
-    // $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal')
-    //   ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
-    //   ->whereBetween('transaction_date', [$dateOfMb->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')])
-    //   ->get()->groupBy('transaction_loan_officer_grouping_id');
+    $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal')
+      ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+      ->whereBetween('transaction_date', [$dateOfMb->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+      ->get()->groupBy('transaction_loan_officer_grouping_id');
 
-    $loan = TransactionLoan::with(['loan_instalment' => function ($instalment) use ($dateOfMb, $transaction_date) {
-      $instalment->whereBetween('transaction_date', [$dateOfMb->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')]);
-    }])->select('transaction_loan_officer_grouping_id', 'drop_date', 'status', 'nominal_drop', 'pinjaman', 'id')
+    $loan = TransactionLoan::select('transaction_loan_officer_grouping_id', 'drop_date', 'status', 'nominal_drop', 'pinjaman', 'id')
       ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
       ->where('status', 'success')
       ->whereBetween('drop_date', [$dateOfMb->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')])
@@ -94,7 +92,7 @@ class TransactionDailyRecapController extends Controller
 
     // ddd($data);
     return Inertia::render('Kasir/Rekap/Index', [
-      'server_filter' => ['date' => $transaction_date->format('Y-m-d'), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
+      'server_filter' => ['date' => $transaction_date->format(), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
     ]);
   }
 
