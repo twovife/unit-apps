@@ -5,6 +5,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Head } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useState } from 'react';
+import TableRekap from './Components/TableRekap';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
+import TableRekapKasir from './Components/TableRekapKasir';
 
 const Index = ({ datas, auth, ...props }) => {
   const [onCreateShow, setOnCreateShow] = useState(false);
@@ -29,7 +32,7 @@ const Index = ({ datas, auth, ...props }) => {
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">
-            Rekap Mantri
+            Rekap Data Harian
           </h1>
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
@@ -80,6 +83,20 @@ const Index = ({ datas, auth, ...props }) => {
             </span>
           </Button>
         </div>
+      </div>
+      <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <Tabs defaultValue="rekappimpinan" className="w-full">
+          <TabsList>
+            <TabsTrigger value="rekappimpinan">Rekap Pinpinan</TabsTrigger>
+            <TabsTrigger value="rekapkasir">Rekap Kasir</TabsTrigger>
+          </TabsList>
+          <TabsContent value="rekappimpinan">
+            <TableRekap datas={datas} />
+          </TabsContent>
+          <TabsContent value="rekapkasir">
+            <TableRekapKasir datas={datas} />
+          </TabsContent>
+        </Tabs>
       </div>
     </Authenticated>
   );

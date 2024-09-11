@@ -9,12 +9,14 @@ const variantMap = {
   gagal: 'destructive',
   lama: 'old',
   baru: 'new',
+  true: 'green',
+  false: 'destructive',
 };
-const BadgeStatus = ({ value, onClick, ...props }) => {
+const BadgeStatus = ({ value, onClick, children, ...props }) => {
   const variant = variantMap[value] || 'default';
   return (
     <Badge {...props} onClick={onClick} size="xs" variant={variant}>
-      {value}
+      {value || children}
     </Badge>
   );
 };

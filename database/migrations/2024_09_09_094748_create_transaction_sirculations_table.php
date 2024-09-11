@@ -15,8 +15,11 @@ return new class extends Migration
       $table->id();
       $table->bigInteger('transaction_loan_officer_grouping_id')->nullable();
       $table->date('date')->nullable();
+      $table->string('day')->nullable();
       $table->bigInteger('amount')->nullable();
+      $table->bigInteger('cm_amount')->nullable();
       $table->bigInteger('mb_amount')->nullable();
+      $table->bigInteger('ml_amount')->nullable();
       $table->timestamps();
     });
   }

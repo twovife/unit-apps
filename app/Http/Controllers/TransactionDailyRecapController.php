@@ -26,10 +26,8 @@ class TransactionDailyRecapController extends Controller
     $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->branch->id;
     $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
     $transaction_date = Carbon::parse($request->date ?? Carbon::now());
-
-    $tanggal_sirkulasi = $transaction_date->copy()->subMonthNoOverflow(1)->endOfMonth()->format('Y-m-d');
-
     $startDateofMonth = $transaction_date->copy()->startOfMonth()->format('Y-m-d');
+
     $dateOfMb = $transaction_date->copy()->subMonth(4);
     $dateOfCm = $transaction_date->copy()->subMonth(3);
     $transactionOffice = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->get();
@@ -38,63 +36,103 @@ class TransactionDailyRecapController extends Controller
       ->where('date', $transaction_date->format('Y-m-d'))->get();
 
     $transactionSirculation = TransactionSirculation::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
-      ->where('date', $tanggal_sirkulasi)
+      ->where('date', $startDateofMonth)
       ->get()->groupBy('transaction_loan_officer_grouping_id');
+
+    // dd($transactionSirculation);
 
     $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal')
       ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
-      ->whereBetween('transaction_date', [$dateOfMb->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+      ->whereBetween('transaction_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
       ->get()->groupBy('transaction_loan_officer_grouping_id');
 
-    $loan = TransactionLoan::select('transaction_loan_officer_grouping_id', 'drop_date', 'status', 'nominal_drop', 'pinjaman', 'id')
+    $loan = TransactionLoan::select('transaction_loan_officer_grouping_id', 'drop_date', 'nominal_drop', 'pinjaman')
       ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
-      ->where('status', 'success')
-      ->whereBetween('drop_date', [$dateOfMb->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+      ->whereBetween('drop_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
       ->get()->groupBy('transaction_loan_officer_grouping_id');
+
 
     // dd($loan);
 
-    // $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb) {
-    //   $transaction_date = $transaction_date->format('Y-m-d');
-    //   $thisLoan = $loan->get($item->id, collect());
-    //   $thisInstalment = $instalment->get($item->id, collect());
-    //   $thisSirculation = $transactionSirculation->get($item->id, collect());
-    //   $thisDailyRecap = $transactionDailyRecap->where('transaction_loan_officer_grouping_id', $item->id)->first();
-    //   $status_kepala = $thisDailyRecap?->daily_kepala_approval ? true : false;
-    //   $status_kasir = $thisDailyRecap?->daily_kasir_approval ? true : false;
+    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb) {
+      $transaction_date = $transaction_date->format('Y-m-d');
+      $thisLoan = $loan->get($item->id, collect());
+      $thisInstalment = $instalment->get($item->id, collect());
+      $thisSirculation = $transactionSirculation->get($item->id, collect());
+      $thisDailyRecap = $transactionDailyRecap->where('transaction_loan_officer_grouping_id', $item->id)->first();
+      $status_kepala = $thisDailyRecap?->daily_kepala_approval ? true : false;
+      $status_kasir = $thisDailyRecap?->daily_kasir_approval ? true : false;
 
-    //   $totalDrop = $thisLoan->whereBetween('drop_date', [$startDateofMonth, $transaction_date])->sum('nominal_drop') ?? 0;
-    //   $totalStorting = $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->sum('nominal') ?? 0;
+      $totalDrop = $thisLoan->whereBetween('drop_date', [$startDateofMonth, $transaction_date])->sum('nominal_drop') ?? 0;
+      $totalStorting = $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->sum('nominal') ?? 0;
 
-    //   $totalStortingCm = $thisLoan->whereBetween('drop_date', [$dateOfCm->startOfMonth()->format('Y-m-d'), $dateOfCm->endOfMonth()->format('Y-m-d')])->sum('pinjaman') ?? 0;
+      $angusuranExistingCm = $thisInstalment->where('transaction_date', $transaction_date)->where('status', 2)->sum('nominal') ?? 0;
+      $totalStortingCm =  $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 2)->sum('nominal') ?? 0;
 
-    //   $sirkulasi = $thisSirculation->sum('amount') ?? 0;
-    //   return [
-    //     'kelompok' => $item->kelompok,
-    //     'rekap_status' => $thisDailyRecap ? true : false,
-    //     'status_approve_kepala' => $status_kepala,
-    //     'status_approve_kasir' => $status_kasir,
-    //     'status_dayly_approval' => $status_kepala && $status_kasir,
-    //     'transaction_date' => $transaction_date,
+      $angusuranExistingMb = $thisInstalment->where('transaction_date', $transaction_date)->where('status', 3)->sum('nominal') ?? 0;
+      $totalStortingMb =  $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 3)->sum('nominal') ?? 0;
 
-    //     'kasbon' => $thisDailyRecap?->kasbon ?? 0,
-    //     'drop' => $thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') ?? 0,
-    //     'total_drop' => $totalDrop,
+      $angusuranExistingMl = $thisInstalment->where('transaction_date', $transaction_date)->where('status', 4)->sum('nominal') ?? 0;
+      $totalStortingMl =  $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 4)->sum('nominal') ?? 0;
 
-    //     'storting' => $thisInstalment->where('transaction_date', $transaction_date)->sum('nominal') ?? 0,
-    //     'total_storting' => $totalStorting,
-    //     'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),
+      $sirkulasi = $thisSirculation->sum('amount') ?? 0;
+      $sirkulasiCm = $thisSirculation->sum('cm_amount') ?? 0;
+      $sirkulasiMb = $thisSirculation->sum('mb_amount') ?? 0;
+      $sirkulasiMl = $thisSirculation->sum('ml_amount') ?? 0;
 
-    //     'angsuran_cm' => $thisInstalment->where('transaction_date', $transaction_date)->where('status', 2)->sum('nominal') ?? 0,
-    //     'saldo_cm' => $totalStortingCm,
-    //   ];
-    // })->values();
+      $storting = $thisInstalment->where('transaction_date', $transaction_date)->sum('nominal') ?? 0;
+      $do11 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.11) ?? 0;
+      $kasbon = $thisDailyRecap?->kasbon ?? 0;
+      $debit = $do11 + $kasbon + $storting;
 
-    // ddd($data);
+      $transport = $thisDailyRecap?->transport ?? 0;
+      $nominaldrop =  $thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') ?? 0;
+      $kredit = $nominaldrop + $transport;
+
+
+      return [
+        'kelompok' => $item->kelompok,
+        'rekap_status' => $thisDailyRecap ? true : false,
+        'status_approve_kepala' => $status_kepala,
+        'status_approve_kasir' => $status_kasir,
+        'status_dayly_approval' => $status_kepala && $status_kasir,
+        'transaction_date' => $transaction_date,
+
+        'kasbon' => $kasbon,
+        'drop' => $nominaldrop,
+        'total_drop' => $totalDrop,
+        'do11' => $do11,
+
+        'debit' => $debit,
+        'transport' => $transport,
+        'kredit' => $kredit,
+        'tunai' => $debit - $kredit,
+        'tunai_ondb' => $thisDailyRecap?->tunai ?? 0,
+
+        'storting' => $storting,
+        'total_storting' => $totalStorting,
+        'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),
+
+        'angsuran_cm' => $angusuranExistingCm,
+        'total_angsuran_cm' => $totalStortingCm,
+        'saldo_cm' => $sirkulasiCm - $angusuranExistingCm,
+
+        'angsuran_mb' => $angusuranExistingMb,
+        'total_angsuran_mb' => $totalStortingMb,
+        'saldo_mb' => $sirkulasiMb - $angusuranExistingMb,
+
+        'angsuran_ml' => $angusuranExistingMl,
+        'total_angsuran_ml' => $totalStortingMl,
+        'saldo_ml' => $sirkulasiMl - $angusuranExistingMl,
+      ];
+    })->values();
+
     return Inertia::render('Kasir/Rekap/Index', [
+      'datas' => $data,
       'server_filter' => ['date' => $transaction_date->format('Y-m-d'), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
     ]);
   }
+
 
   /**
    * Show the form for creating a new resource.

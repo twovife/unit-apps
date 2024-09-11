@@ -14,6 +14,7 @@ class TransactionDailyRecap extends Model
     "transaction_loan_officer_grouping_id",
     "date",
     "kasbon",
+    "transport",
     "target",
     "rencana",
     "tunai",

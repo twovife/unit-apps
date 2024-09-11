@@ -47,7 +47,6 @@ const SearchComponent = ({
   const submitBtnRef = useRef(null);
   const { data, setData, get, processing } = useForm({});
   const [loading, setLoading] = useState(false);
-  console.log(data);
 
   const onSearchChange = (e) => {
     const { name, value } = e.target;

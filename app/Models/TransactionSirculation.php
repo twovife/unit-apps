@@ -9,7 +9,8 @@ class TransactionSirculation extends Model
 {
   use HasFactory;
 
-  protected $fillable = ['transaction_loan_officer_grouping_id', 'date', 'amount', 'mb_amount'];
+  protected $fillable = ["transaction_loan_officer_grouping_id", "date", "day", "amount", "cm_amount", "mb_amount", "ml_amount"];
+
 
   public function transaction_loan_officer_grouping()
   {
