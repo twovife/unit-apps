@@ -52,7 +52,7 @@ class TransactionDailyRecapController extends Controller
       ->whereBetween('drop_date', [$dateOfMb->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')])
       ->get()->groupBy('transaction_loan_officer_grouping_id');
 
-    ddd($loan);
+    // dd($loan);
 
     // $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb) {
     //   $transaction_date = $transaction_date->format('Y-m-d');
@@ -92,7 +92,7 @@ class TransactionDailyRecapController extends Controller
 
     // ddd($data);
     return Inertia::render('Kasir/Rekap/Index', [
-      'server_filter' => ['date' => $transaction_date->format(), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
+      'server_filter' => ['date' => $transaction_date->format('Y-m-d'), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
     ]);
   }
 
