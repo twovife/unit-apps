@@ -19,7 +19,10 @@ return new class extends Migration
 
       $table->bigInteger('kasbon')->nullable();
       $table->bigInteger('target')->nullable();
+      $table->bigInteger('masuk')->nullable();
+      $table->bigInteger('keluar')->nullable();
       $table->bigInteger('rencana')->nullable();
+      $table->bigInteger('transport')->nullable();
       $table->bigInteger('tunai')->nullable();
       $table->bigInteger('kurangan')->nullable();
 

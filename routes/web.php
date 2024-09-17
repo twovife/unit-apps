@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{loan}/loan', 'deleteLoan')->name('deleteLoan');
       });
     });
+
     Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
       Route::get('/', 'batch_create')->name('batch_create');
       Route::post('/', 'batch_post')->name('batch_post');
