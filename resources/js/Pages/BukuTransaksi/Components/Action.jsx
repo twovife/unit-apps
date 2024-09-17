@@ -35,8 +35,6 @@ import DropJadi from './DropJadi';
 import Gagal from './Gagal';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
-  console.log(triggeredData);
-
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
   const [acc, setAcc] = useState();

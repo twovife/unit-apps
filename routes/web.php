@@ -104,6 +104,9 @@ Route::middleware('auth')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {
         Route::get('/', "rekap_index")->name('rekap_index');
+        Route::post('/', "rekap_post")->name('rekap_post');
+        Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
+        Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
       });
     });
   });

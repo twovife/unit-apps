@@ -23,12 +23,18 @@ class RolePermitSeeder extends Seeder
     Permission::create(['name' => 'mantri apps']);
     Permission::create(['name' => 'pusat apps']);
     Permission::create(['name' => 'unit apps']);
+    Permission::create(['name' => 'unit kasir']);
+    Permission::create(['name' => 'unit pimpinan']);
+    Permission::create(['name' => 'unit mantri']);
 
     $mantri = Role::create(['name' => 'mantri']);
-    $mantri->givePermissionTo(['can create', 'mantri apps', 'area']);
+    $mantri->givePermissionTo(['can create', 'mantri apps', 'area', 'unit mantri']);
 
-    $admin = Role::create(['name' => 'admin']);
-    $admin->givePermissionTo(['can create', 'can update', 'mantri apps', 'unit apps', 'unit', 'can show kelompok']);
+    $admin = Role::create(['name' => 'kasir']);
+    $admin->givePermissionTo(['can create', 'can update', 'mantri apps', 'unit apps', 'unit', 'can show kelompok', 'unit kasir']);
+
+    $admin = Role::create(['name' => 'pimpinan']);
+    $admin->givePermissionTo(['can create', 'can update', 'mantri apps', 'unit apps', 'unit', 'can show kelompok', 'unit pimpinan']);
 
     $pusat = Role::create(['name' => 'admin']);
     $pusat->givePermissionTo(['can create pusat', 'can update pusat', 'mantri apps', 'unit apps', 'pusat apps', 'pusat', 'can show kelompok', 'can show branch']);

@@ -58,6 +58,25 @@ const Sidebar = ({ isOpen }) => {
                 },
               ]}
             />
+
+            <DropdownButton
+              title="Rekap Harian"
+              active={route().current('kasir.rekap.*')}
+              items={[
+                {
+                  id: 1,
+                  title: 'Rekap Kasir',
+                  link: route('kasir.rekap.rekap_index'),
+                  active: route().current('kasir.rekap.rekap_index'),
+                },
+                {
+                  id: 2,
+                  title: 'Rekap Mantri',
+                  link: route('kasir.rekap.rekap_permantri'),
+                  active: route().current('kasir.rekap.rekap_permantri'),
+                },
+              ]}
+            />
           </>
         )}
 

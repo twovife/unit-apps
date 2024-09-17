@@ -4,22 +4,26 @@ import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Head } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import TableRekap from './Components/TableRekap';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import TableRekapKasir from './Components/TableRekapKasir';
+import TunaiMantri from './Components/TunaiMantri';
+import Action from './Components/Action';
 
 const Index = ({ datas, auth, ...props }) => {
-  const [onCreateShow, setOnCreateShow] = useState(false);
+  const [onShowModal, setOnShowModal] = useState(false);
+  const [triggeredData, setTriggeredData] = useState();
 
   // Event handler function to set the "onCreateShow" state variable to true
   const handleOnCreateShowOpen = (e) => {
-    setOnCreateShow(true);
+    setOnShowModal(true);
   };
 
   // Event handler function to set the "onCreateShow" state variable to false
   const handleOnCreateShowClosed = (e) => {
-    setOnCreateShow(false);
+    setOnShowModal(false);
+    setTriggeredData();
   };
 
   const [nexOrPrevious, setNexOrPrevious] = useState(null);
@@ -29,6 +33,12 @@ const Index = ({ datas, auth, ...props }) => {
 
   return (
     <Authenticated header={<Head>Buku Transaksi</Head>}>
+      <Action
+        show={onShowModal}
+        onClosed={handleOnCreateShowClosed}
+        triggeredData={triggeredData}
+      />
+
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">
@@ -89,12 +99,28 @@ const Index = ({ datas, auth, ...props }) => {
           <TabsList>
             <TabsTrigger value="rekappimpinan">Rekap Pinpinan</TabsTrigger>
             <TabsTrigger value="rekapkasir">Rekap Kasir</TabsTrigger>
+            <TabsTrigger value="tunaimantri">Tunai Mantri</TabsTrigger>
           </TabsList>
           <TabsContent value="rekappimpinan">
-            <TableRekap datas={datas} />
+            <TableRekap
+              setOnShowModal={setOnShowModal}
+              setTriggeredData={setTriggeredData}
+              datas={datas}
+            />
           </TabsContent>
           <TabsContent value="rekapkasir">
-            <TableRekapKasir datas={datas} />
+            <TableRekapKasir
+              setOnShowModal={setOnShowModal}
+              setTriggeredData={setTriggeredData}
+              datas={datas}
+            />
+          </TabsContent>
+          <TabsContent value="tunaimantri">
+            <TunaiMantri
+              setOnShowModal={setOnShowModal}
+              setTriggeredData={setTriggeredData}
+              datas={datas}
+            />
           </TabsContent>
         </Tabs>
       </div>

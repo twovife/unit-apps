@@ -21,11 +21,8 @@ import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
-const TableRekap = ({ datas }) => {
-  console.log(datas);
-
+const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
   const [data, setData] = useState([]);
-
   useEffect(() => {
     setData(datas);
   }, [datas]);
@@ -41,32 +38,51 @@ const TableRekap = ({ datas }) => {
 
   const totals = calculateTotals(data);
 
+  const getLastValue = (info, accessorKey) => {
+    const rows = info.table.getRowModel().rows;
+    return rows[rows.length - 1]?.getValue(accessorKey);
+  };
+
+  const onClickStatusHandler = (e) => {
+    setOnShowModal(true);
+    setTriggeredData(e);
+  };
+
   const columns = useMemo(
     () => [
       {
-        header: 'Kelompok',
-        // type: 'show',
+        header: '',
         accessorKey: 'kelompok',
         cell: ({ getValue, cell }) => (
           <div className="flex items-center justify-center gap-3">
-            <div>{getValue()}</div>
-            <BadgeStatus value={cell.row.original.status_dayly_approval}>
+            <div>
+              {cell.row.original.type == 'daily'
+                ? getValue()
+                : dayjs(cell.row.original.tanggal).format('DD-MM')}
+            </div>
+            <BargeStatus
+              onClick={() => onClickStatusHandler(cell.row.original)}
+              value={cell.row.original.status_dayly_approval}
+            >
               {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}
-            </BadgeStatus>
+            </BargeStatus>
           </div>
         ),
       },
       {
         header: 'Drop',
-        accessorKey: 'total_drop',
+        accessorKey: 'drop',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.total_drop} />,
+        footer: (info) => <FormatNumbering value={totals.drop} />,
       },
       {
         header: 'Jumlah Drop',
         accessorKey: 'total_drop',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.total_drop} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'total_drop');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Storting',
@@ -78,13 +94,19 @@ const TableRekap = ({ datas }) => {
         header: 'Jumlah Storting',
         accessorKey: 'total_storting',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.total_storting} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'total_storting');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Sirkulasi',
         accessorKey: 'sirkulasi',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.sirkulasi} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'sirkulasi');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Angsuran CM',
@@ -96,13 +118,19 @@ const TableRekap = ({ datas }) => {
         header: 'Jumlah CM',
         accessorKey: 'total_angsuran_cm',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.total_angsuran_cm} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'total_angsuran_cm');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Saldo CM',
         accessorKey: 'saldo_cm',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.saldo_cm} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'saldo_cm');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Angsuran MB',
@@ -114,13 +142,19 @@ const TableRekap = ({ datas }) => {
         header: 'Jumlah MB',
         accessorKey: 'total_angsuran_mb',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.total_angsuran_mb} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'total_angsuran_mb');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Saldo MB',
         accessorKey: 'saldo_mb',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.saldo_mb} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'saldo_mb');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Angsuran ML',
@@ -132,13 +166,19 @@ const TableRekap = ({ datas }) => {
         header: 'Jumlah ML',
         accessorKey: 'total_angsuran_ml',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.total_angsuran_ml} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'total_angsuran_ml');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Saldo ML',
         accessorKey: 'saldo_ml',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.saldo_ml} />,
+        footer: (info) => {
+          const lastValue = getLastValue(info, 'saldo_ml');
+          return <FormatNumbering value={lastValue} />;
+        },
       },
       {
         header: 'Kasir',
@@ -146,7 +186,6 @@ const TableRekap = ({ datas }) => {
         cell: ({ getValue, cell }) => (
           <div className="flex items-center justify-center gap-3">
             <div>{getValue() ? dayjs(getValue()).format('DD-MM-YY') : ''}</div>
-            {/* <BadgeStatus value={cell.row.original.drop_langsung} /> */}
           </div>
         ),
       },
@@ -156,7 +195,6 @@ const TableRekap = ({ datas }) => {
         cell: ({ getValue, cell }) => (
           <div className="flex items-center justify-center gap-3">
             <div>{getValue() ? dayjs(getValue()).format('DD-MM-YY') : ''}</div>
-            {/* <BadgeStatus value={cell.row.original.drop_langsung} /> */}
           </div>
         ),
       },

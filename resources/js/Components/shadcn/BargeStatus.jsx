@@ -9,12 +9,14 @@ const variantMap = {
   gagal: 'destructive',
   lama: 'outline',
   baru: 'yellow',
+  true: 'green',
+  false: 'destructive',
 };
-const BargeStatus = ({ value, onClick, ...props }) => {
+const BargeStatus = ({ value, children, onClick, ...props }) => {
   const variant = variantMap[value] || 'default';
   return (
     <Button {...props} onClick={onClick} size="xs" variant={variant}>
-      {value}
+      {value || children}
     </Button>
   );
 };

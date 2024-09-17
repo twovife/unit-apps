@@ -21,9 +21,7 @@ import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
-const TableRekapKasir = ({ datas }) => {
-  console.log(datas);
-
+const TableRekapKasir = ({ setOnShowModal, setTriggeredData, datas }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -41,18 +39,34 @@ const TableRekapKasir = ({ datas }) => {
 
   const totals = calculateTotals(data);
 
+  const getLastValue = (info, accessorKey) => {
+    const rows = info.table.getRowModel().rows;
+    return rows[rows.length - 1]?.getValue(accessorKey);
+  };
+
+  const onClickStatusHandler = (e) => {
+    setOnShowModal(true);
+    setTriggeredData(e);
+  };
+
   const columns = useMemo(
     () => [
       {
-        header: 'Kelompok',
-        // type: 'show',
+        header: '',
         accessorKey: 'kelompok',
         cell: ({ getValue, cell }) => (
           <div className="flex items-center justify-center gap-3">
-            <div>{getValue()}</div>
-            <BadgeStatus value={cell.row.original.status_dayly_approval}>
+            <div>
+              {cell.row.original.type == 'daily'
+                ? getValue()
+                : dayjs(cell.row.original.tanggal).format('DD-MM')}
+            </div>
+            <BargeStatus
+              onClick={() => onClickStatusHandler(cell.row.original)}
+              value={cell.row.original.status_dayly_approval}
+            >
               {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}
-            </BadgeStatus>
+            </BargeStatus>
           </div>
         ),
       },
