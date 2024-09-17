@@ -74,6 +74,7 @@ class TransactionLoanController extends Controller
       ];
     })->values();
 
+
     $pengajuan_next = $loan->where('request_date', $transaction_date)->where('drop_langsung', 0)->map(function ($rencana_drop) {
       $countPinjaman = TransactionLoan::where('transaction_manage_customer_id', $rencana_drop->manage_customer->id)->where('id', "<", $rencana_drop->id)->where('status', 'success')->orderBy('id', 'desc');
       return [
@@ -115,7 +116,7 @@ class TransactionLoanController extends Controller
       'target' => $daily_recap ? $daily_recap->target : 0,
       'masuk' => (int) round($pengajuan->sum('drop_jadi') * 0.13),
       'keluar' => (int) round($rencana_next * 0.13),
-      'storting' => $daily_recap ? TransactionLoan::where('transaction_loan_officer_grouping_id', $groupingId)->where('transaction_date', $transaction_date)->sum('nominal') : 0,
+      'storting' => $daily_recap ? TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $groupingId)->where('transaction_date', $transaction_date)->sum('nominal') : 0,
       'baru' => $pengajuan->where('drop_langsung', 'baru')->sum('drop_jadi'),
       'lama' => $pengajuan->where('drop_langsung', 'lama')->sum('drop_jadi'),
       'drop' => $pengajuan->sum('drop_jadi'),
