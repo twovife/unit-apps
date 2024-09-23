@@ -16,8 +16,9 @@ import Checkbox from '@/Components/Checkbox';
 import { Button } from '@/shadcn/ui/button';
 import { useForm } from '@inertiajs/react';
 import Loading from '@/Components/Loading';
+import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 
-const BayarAngsuran = ({ triggeredId }) => {
+const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
   // const { kelompok } = useOptionGenerator();
   const { data, setData, post, errors, processing, reset, recentlySuccessful } =
     useForm({
@@ -40,6 +41,11 @@ const BayarAngsuran = ({ triggeredId }) => {
       e.target.name,
       e.target.type === 'checkbox' ? e.target.checked : e.target.value
     );
+  };
+
+  const buttonValueClick = (e) => {
+    const value = e.target.getAttribute('data-value');
+    setData('nominal', value);
   };
 
   const onSubmitForm = (e) => {
@@ -85,6 +91,15 @@ const BayarAngsuran = ({ triggeredId }) => {
               placeholder={'Inputkan angka tanpa sparator'}
             />
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            onClick={buttonValueClick}
+            data-value={triggeredPinjaman / 10 ?? 65000}
+          >
+            {triggeredPinjaman / 10 ?? 65000}
+          </Button>
           <div className="flex items-center justify-between">
             <label className="flex items-center">
               <Checkbox

@@ -15,12 +15,8 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Button } from '@/shadcn/ui/button';
-import { Play } from 'lucide-react';
-import DetailRiwayat from './DetailRiwayat';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
-import { Badge } from '@/shadcn/ui/badge';
 import Action from './Action';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';

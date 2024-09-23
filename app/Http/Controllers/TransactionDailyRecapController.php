@@ -93,7 +93,6 @@ class TransactionDailyRecapController extends Controller
       $nominaldrop =  $thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop');
       $kredit = $nominaldrop + $transport;
 
-
       return [
         'type' => 'daily',
         'kelompok' => $item->kelompok,
@@ -322,6 +321,59 @@ class TransactionDailyRecapController extends Controller
     return redirect()->back()->with('message', 'Data berhasil disimpan.');
   }
 
+  public function ceklist_kepala(Request $request)
+  {
+
+    // dd($request->all());
+    $validate = $request->validate([
+      'id' => ['required'],
+      'date' => ['required'],
+      'kasbon' => ['required'],
+      'transport' => ['required'],
+      'masuk' => ['required'],
+      'keluar' => ['required'],
+      'baru' => ['required'],
+      'lama' => ['required'],
+      'rencana' => ['required'],
+      'tanggal_rencana_minggu_depan' => ['required'],
+      'rencana_minggu_depan' => ['required'],
+      'target_minggu_depan' => ['required'],
+    ]);
+    $date = Carbon::parse($request->date);
+    $tanggal_rencana_minggu_depan = Carbon::parse($request->tanggal_rencana_minggu_depan);
+
+    // id, transaction_loan_officer_grouping_id, date, kasbon, target, masuk, keluar, rencana, transport, tunai, kurangan, daily_kepala_approval, daily_kepala_approval_user, daily_kasir_approval, daily_kasir_approval_user, monthly_kepala_approval, monthly_kepala_approval_user, monthly_kasir_approval, monthly_kasir_approval_user, created_at, updated_at
+
+    try {
+      DB::beginTransaction();
+      $check_thisDay = TransactionDailyRecap::firstOrNew(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->date]);
+      $check_thisDay->kasbon = $request->kasbon;
+      $check_thisDay->transport = $request->transport;
+      $check_thisDay->masuk = $request->masuk;
+      $check_thisDay->keluar = $request->keluar;
+      $check_thisDay->storting = $request->storting;
+      $check_thisDay->drop = $request->drop;
+      $check_thisDay->daily_kepala_approval = Carbon::now();
+      $check_thisDay->daily_kepala_approval_user = auth()->user()->employee->id;
+      $check_thisDay->save();
+
+      $fillTragetMingguDepan = TransactionDailyRecap::firstOrNew(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->tanggal_rencana_minggu_depan]);
+      $fillTragetMingguDepan->target = $request->target_minggu_depan;
+      $fillTragetMingguDepan->save();
+
+      DB::commit();
+    } catch (Exception $e) {
+      DB::rollBack();
+      ddd($e);
+      return redirect()->back()->withError('Data Gagal Diperbarui, Refresh / Hub IT');
+    }
+    return redirect()->back()->with('message', 'Data berhasil disimpan.');
+  }
+
+  public function rencana_drop(Request $request)
+  {
+    //
+  }
   /**
    * Display the specified resource.
    */

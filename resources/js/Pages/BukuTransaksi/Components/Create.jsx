@@ -26,6 +26,7 @@ import CurrencyInput from 'react-currency-input-field';
 import useOptionGenerator from '@/Hooks/useOptionGenerator';
 import SelectComponent from '@/Components/shadcn/SelectComponent';
 import RiwayatPengajuan from './RiwayatPengajuan';
+import dayjs from 'dayjs';
 
 const Create = ({ show = false, onClosed }) => {
   const { optKelompok } = useOptionGenerator();
@@ -45,7 +46,9 @@ const Create = ({ show = false, onClosed }) => {
     setMixDate(data.request_date);
     setData((prevData) => ({
       ...prevData,
-      tanggal_drop: '',
+      tanggal_drop: dayjs(data.request_date)
+        .add(1, 'week')
+        .format('YYYY-MM-DD'),
     }));
   }, [data.request_date]);
 
@@ -113,7 +116,6 @@ const Create = ({ show = false, onClosed }) => {
     const value = e.target.getAttribute('data-value');
     setData('request_nominal', value);
   };
-
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
@@ -188,11 +190,15 @@ const Create = ({ show = false, onClosed }) => {
                       </div>
                     </div>
                     {data.request_date &&
-                      data.request_date == data.tanggal_drop && (
-                        <div className="w-full mb-3 font-semibold text-red-500">
-                          DROP LANGSUNG
-                        </div>
-                      )}
+                    data.request_date == data.tanggal_drop ? (
+                      <div className="w-full mb-3 font-semibold text-red-500">
+                        DROP BARU
+                      </div>
+                    ) : (
+                      <div className="w-full mb-3 font-semibold text-red-500">
+                        PENGAJUAN DROP
+                      </div>
+                    )}
                     <div className="w-full mb-3">
                       <Label optional>NIK</Label>
                       <Input

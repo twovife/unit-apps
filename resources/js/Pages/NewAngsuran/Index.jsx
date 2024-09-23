@@ -4,9 +4,11 @@ import Authenticated from '@/Layouts/AuthenticatedLayout';
 
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import { Head } from '@inertiajs/react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import AngsuranTable from './Components/AngsuranTable';
+import BukuStorting from './Components/BukuStorting';
 
-const Index = ({ datas, dateOfWeek, ...props }) => {
+const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
   return (
     <Authenticated header={<Head>Angsuran Lancar</Head>}>
       <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center">
@@ -28,9 +30,25 @@ const Index = ({ datas, dateOfWeek, ...props }) => {
           ></SearchComponent>
         </div>
       </div>
-      <div className="overflow-auto">
-        <AngsuranTable dateOfWeek={dateOfWeek} datas={datas} />
-      </div>
+      <Tabs defaultValue="bukuangsuran" className="w-full">
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="bukuangsuran">Buku Angsuran</TabsTrigger>
+            <TabsTrigger value="bukustorting">Buku Storting</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="bukuangsuran">
+          <AngsuranTable dateOfWeek={dateOfWeek} datas={datas} />
+        </TabsContent>
+        <TabsContent value="bukustorting">
+          <BukuStorting
+            dateOfWeek={dateOfWeek}
+            datas={datas}
+            sirkulasi={sirkulasi}
+          />
+          {/* <Rencana datas={buku_rencana} /> */}
+        </TabsContent>
+      </Tabs>
     </Authenticated>
   );
 };

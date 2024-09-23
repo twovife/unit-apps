@@ -40,7 +40,12 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
 
   const getLastValue = (info, accessorKey) => {
     const rows = info.table.getRowModel().rows;
-    return rows[rows.length - 1]?.getValue(accessorKey);
+    const type = rows[rows.length - 1]?.original?.type;
+    if (type === 'permantri') {
+      return rows[rows.length - 1]?.getValue(accessorKey);
+    } else {
+      false;
+    }
   };
 
   const onClickStatusHandler = (e) => {
@@ -96,7 +101,8 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'total_storting');
-          return <FormatNumbering value={lastValue} />;
+
+          return <FormatNumbering value={lastValue ?? totals.total_storting} />;
         },
       },
       {
@@ -105,7 +111,7 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'sirkulasi');
-          return <FormatNumbering value={lastValue} />;
+          return <FormatNumbering value={lastValue ?? totals.sirkulasi} />;
         },
       },
       {
@@ -120,7 +126,9 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'total_angsuran_cm');
-          return <FormatNumbering value={lastValue} />;
+          return (
+            <FormatNumbering value={lastValue ?? totals.total_angsuran_cm} />
+          );
         },
       },
       {
@@ -129,7 +137,7 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'saldo_cm');
-          return <FormatNumbering value={lastValue} />;
+          return <FormatNumbering value={lastValue ?? totals.saldo_cm} />;
         },
       },
       {
@@ -144,7 +152,9 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'total_angsuran_mb');
-          return <FormatNumbering value={lastValue} />;
+          return (
+            <FormatNumbering value={lastValue ?? totals.total_angsuran_mb} />
+          );
         },
       },
       {
@@ -153,7 +163,7 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'saldo_mb');
-          return <FormatNumbering value={lastValue} />;
+          return <FormatNumbering value={lastValue ?? totals.saldo_mb} />;
         },
       },
       {
@@ -168,7 +178,9 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'total_angsuran_ml');
-          return <FormatNumbering value={lastValue} />;
+          return (
+            <FormatNumbering value={lastValue ?? totals.total_angsuran_ml} />
+          );
         },
       },
       {
@@ -177,7 +189,7 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'saldo_ml');
-          return <FormatNumbering value={lastValue} />;
+          return <FormatNumbering value={lastValue ?? totals.saldo_ml} />;
         },
       },
       {

@@ -49,7 +49,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   };
 
   return (
-    <div className="relative overflow-auto h-[60vh] lg:h-[85vh]">
+    <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
       <Table className="text-xs rounded-lg">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">

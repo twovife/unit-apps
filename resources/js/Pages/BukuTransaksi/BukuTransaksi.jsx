@@ -7,25 +7,23 @@ import {
   ArrowBigRight,
   FilterIcon,
   PlusCircle,
-  StepBack,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Create from './Components/Create';
 import BukuTransaksiTable from './Components/BukuTransaksiTable';
-import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi';
-import Action from './Components/Action';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import Rencana from './Components/Rencana';
 import BukuTransaksiNextTable from './Components/BukuTransaksiNextTable';
+import Approval from './Components/Approval';
 
-const BukuTransaksi = ({
-  datas,
-  pengajuan_next,
-  buku_rencana,
-  auth,
-  ...props
-}) => {
+const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
+  const [flatData, setFlatData] = useState([]);
+
+  useEffect(() => {
+    setFlatData(datas.flat());
+  }, [datas]);
+
   // Declare a state variable to track the visibility of the "onCreateShow" component
   const [onCreateShow, setOnCreateShow] = useState(false);
 
@@ -38,6 +36,19 @@ const BukuTransaksi = ({
   const handleOnCreateShowClosed = (e) => {
     setOnCreateShow(false);
   };
+  // Declare a state variable to track the visibility of the "onCreateShow" component
+  const [onApprovalShow, setOnApprovalShow] = useState(false);
+  const [triggeredDate, setTriggeredDate] = useState(false);
+
+  // Event handler function to set the "onApprovalShow" state variable to true
+  const handleOnApprovalShowOpen = (e) => {
+    setOnApprovalShow(true);
+  };
+
+  // Event handler function to set the "onApprovalShow" state variable to false
+  const handleOnApprovalShowClosed = (e) => {
+    setOnApprovalShow(false);
+  };
 
   const [nexOrPrevious, setNexOrPrevious] = useState(null);
   const onNexOrPreviousTogler = (params) => {
@@ -46,6 +57,12 @@ const BukuTransaksi = ({
 
   return (
     <Authenticated header={<Head>Buku Transaksi</Head>}>
+      <Approval
+        show={onApprovalShow}
+        onClosed={handleOnApprovalShowClosed}
+        triggeredData={flatData}
+        triggeredDate={triggeredDate}
+      />
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">
@@ -56,7 +73,8 @@ const BukuTransaksi = ({
           <SearchComponent
             urlLink={route('transaction.index_buku_transaksi')}
             localState={'transaction_index_buku_transaksi'}
-            searchDate={true}
+            searchMonth={true}
+            searchHari={true}
             searchKelompok={auth.permissions.includes('can show kelompok')}
             searchGroupingBranch={auth.permissions.includes('can show branch')}
             nexOrPrevious={nexOrPrevious}
@@ -84,7 +102,8 @@ const BukuTransaksi = ({
               <SearchComponent
                 urlLink={route('transaction.index_buku_transaksi')}
                 localState={'transaction_index_buku_transaksi'}
-                searchDate={true}
+                searchMonth={true}
+                searchHari={true}
                 searchKelompok={auth.permissions.includes('can show kelompok')}
                 searchGroupingBranch={auth.permissions.includes(
                   'can show branch'
@@ -106,13 +125,25 @@ const BukuTransaksi = ({
 
       <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         <Tabs defaultValue="bukutransaksi" className="w-full">
-          <TabsList>
-            <TabsTrigger value="bukutransaksi">Buku Transaksi</TabsTrigger>
-            <TabsTrigger value="dailyTarget">Target Harian</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="bukutransaksi">Buku Transaksi</TabsTrigger>
+              <TabsTrigger value="dailyTarget">Rencana Drop</TabsTrigger>
+            </TabsList>
+            <Button
+              onClick={handleOnApprovalShowOpen}
+              size="sm"
+              className="mr-3"
+            >
+              Cek Transaksi
+            </Button>
+          </div>
           <TabsContent value="bukutransaksi">
-            <BukuTransaksiTable datas={datas} />
-            <BukuTransaksiNextTable datas={pengajuan_next} />
+            {datas &&
+              datas.map((item, index) => (
+                <BukuTransaksiTable key={index} datas={item} />
+              ))}
+            {/* <BukuTransaksiNextTable datas={pengajuan_next} /> */}
           </TabsContent>
           <TabsContent value="dailyTarget">
             <Rencana datas={buku_rencana} />

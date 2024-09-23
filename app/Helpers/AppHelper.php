@@ -125,8 +125,29 @@ class AppHelper
     if ($monthDifference > 4) {
       return 4;
     }
-
     return $monthDifference;
+  }
+  public static function generateStatusAngsuranString($tanggal_drop, $request_date): string
+  {
+    $drop = Carbon::createFromFormat('Y-m-d', $tanggal_drop)->startOfMonth();
+    $request = Carbon::createFromFormat('Y-m-d', $request_date)->startOfMonth();
+
+    $monthDifference = $drop->diffInMonths($request, false);
+    // dd($monthDifference);
+
+    if ($monthDifference < 3) {
+      return "normal";
+    }
+    if ($monthDifference == 3) {
+      return "cm";
+    }
+    if ($monthDifference == 4) {
+      return "mb";
+    }
+    if ($monthDifference > 4) {
+      return "ml";
+    }
+    return "normal";
   }
 
   public static function user_permission(): string

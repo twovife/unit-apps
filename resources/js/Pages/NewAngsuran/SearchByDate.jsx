@@ -9,11 +9,11 @@ import Angsuran from './Components/Angsuran';
 
 const SearchByDate = ({ datas, dateOfWeek, ...props }) => {
   return (
-    <Authenticated header={<Head>Angsuran Lancar</Head>}>
+    <Authenticated header={<Head>Cari Angsuran</Head>}>
       <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">
-            Angsuran Lancar
+            Cari Angsuran
           </h1>
         </div>
         <div className="flex items-center justify-end flex-auto w-full">

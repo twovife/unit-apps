@@ -14,9 +14,13 @@ class TransactionDailyRecap extends Model
     "transaction_loan_officer_grouping_id",
     "date",
     "kasbon",
-    "transport",
     "target",
+    "masuk",
+    "keluar",
+    "storting",
+    "drop",
     "rencana",
+    "transport",
     "tunai",
     "kurangan",
     "daily_kepala_approval",
@@ -26,7 +30,8 @@ class TransactionDailyRecap extends Model
     "monthly_kepala_approval",
     "monthly_kepala_approval_user",
     "monthly_kasir_approval",
-    "monthly_kasir_approval_user"
+    "monthly_kasir_approval_user",
+
   ];
 
   public function transaction_loan_officer_grouping()

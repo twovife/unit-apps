@@ -18,13 +18,18 @@ return new class extends Migration
       $table->date('date')->nullable();
 
       $table->bigInteger('kasbon')->nullable();
-      $table->bigInteger('target')->nullable();
-      $table->bigInteger('masuk')->nullable();
-      $table->bigInteger('keluar')->nullable();
-      $table->bigInteger('rencana')->nullable();
       $table->bigInteger('transport')->nullable();
       $table->bigInteger('tunai')->nullable();
+      $table->bigInteger('titipan')->nullable();
+
+      $table->bigInteger('storting')->nullable();
+      $table->bigInteger('drop')->nullable();
+      $table->bigInteger('keluar')->nullable();
+      $table->bigInteger('masuk')->nullable();
+      $table->bigInteger('target')->nullable();
+
       $table->bigInteger('kurangan')->nullable();
+
 
       $table->timestamp('daily_kepala_approval')->nullable();
       $table->bigInteger('daily_kepala_approval_user')->nullable();

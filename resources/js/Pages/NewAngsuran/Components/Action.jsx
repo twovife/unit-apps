@@ -182,7 +182,10 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
             </CardContent>
           </Card>
           <div className="flex-[2]">
-            <BayarAngsuran triggeredId={customerData.id} />
+            <BayarAngsuran
+              triggeredId={customerData.id}
+              triggeredPinjaman={customerData.pinjaman}
+            />
             <JenisNasabah loan={customerData} />
           </div>
         </div>
