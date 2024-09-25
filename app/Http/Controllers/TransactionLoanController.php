@@ -40,16 +40,6 @@ class TransactionLoanController extends Controller
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
-    // $loan = TransactionLoan::with('loan_instalment', 'manage_customer', 'customer', 'branch', 'loan_officer_grouping')
-    //   ->where(function ($data) use ($transaction_date) {
-    //     $data->where('drop_date', $transaction_date)
-    //       ->orWhere('request_date', $transaction_date);
-    //   })
-    //   ->where('transaction_loan_officer_grouping_id', $groupingId->id)
-    //   ->orderByDesc('drop_date')
-    //   ->get();
-
-
     $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer')
       ->where(function ($data) use ($startOfMonth, $endOfMonth) {
         $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
@@ -142,11 +132,7 @@ class TransactionLoanController extends Controller
       ];
     })->sortBy('tanggal')->values();
 
-    // ddd($buku_rencana_drop);
-    // dd('asd');
-    //
 
-    // dd($buku_rencana_drop);
 
 
     return Inertia::render('BukuTransaksi/BukuTransaksi', [
@@ -353,7 +339,10 @@ class TransactionLoanController extends Controller
     // dd($hari);
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
-    $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)->where('day', $hari)->where('date', $transaction_start_date->format('Y-m-d'))->first();
+    $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where('day', $hari)
+      ->whereIn('date', [$transaction_start_date->format('Y-m-d'), $transaction_date->copy()->addDay()->format('Y-m-d')])
+      ->get();
 
     $loan = TransactionLoan::with(
       ['loan_instalment' => function ($item) {

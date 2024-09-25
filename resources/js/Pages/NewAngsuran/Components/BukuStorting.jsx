@@ -16,6 +16,7 @@ import { Badge } from '@/shadcn/ui/badge';
 
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
   const [data, setData] = useState([]);
+  const [saldoSirkulas, setSaldoSirkulas] = useState(0);
 
   useEffect(() => {
     if (datas) {
@@ -23,16 +24,46 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
         const resutl = () => {
           const instalmentsSum = {};
 
+          const getMaxMinDateObjects = (data) => {
+            if (Array.isArray(data)) {
+              if (data.length === 0) {
+                return { max: {}, min: {} };
+              } else if (data.length === 1) {
+                return { max: {}, min: data[0] };
+              } else {
+                return data.reduce(
+                  (result, current) => {
+                    const currentDate = new Date(current.date);
+                    const minDate = new Date(result.min.date);
+                    const maxDate = new Date(result.max.date);
+
+                    if (currentDate < minDate) result.min = current;
+                    if (currentDate > maxDate) result.max = current;
+
+                    return result;
+                  },
+                  { max: data[0], min: data[0] }
+                );
+              }
+            } else {
+              // Jika data bukan array
+              return { max: {}, min: {} };
+            }
+          };
+
+          const getSirkulasi = getMaxMinDateObjects(sirkulasi);
+          setSaldoSirkulas(getSirkulasi.max?.amount ?? 0);
+
           const sirkulasiBefore = (item) => {
             switch (item.type) {
               case 'ml':
-                return sirkulasi.ml_amount;
+                return getSirkulasi.min?.ml_amount ?? 0;
                 break;
               case 'mb':
-                return sirkulasi.mb_amount;
+                return getSirkulasi.min?.mb_amount ?? 0;
                 break;
               case 'cm':
-                return sirkulasi.cm_amount;
+                return getSirkulasi.min?.cm_amount ?? 0;
                 break;
               default:
                 return item.data.reduce(
@@ -42,7 +73,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             }
           };
 
-          const pinjamanSum = sirkulasiBefore(item);
+          const sirkulasiAwalOnDatabase = sirkulasiBefore(item);
 
           dateOfWeek.forEach((date) => {
             instalmentsSum[date] = 0;
@@ -63,9 +94,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           return {
             key: item.month,
             instalment: { ...instalmentsSum },
-            sirkulasi: pinjamanSum,
+            sirkulasi: sirkulasiAwalOnDatabase,
             totalInstalment: totalInstalment,
-            sirkulasiAfter: pinjamanSum - totalInstalment,
+            sirkulasiAfter: sirkulasiAwalOnDatabase - totalInstalment,
           };
         };
         return resutl();
@@ -74,8 +105,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
       setData(mapingStortingData);
     }
   }, [datas]);
-
-  // console.log(data);
 
   const calculateInstalment = (data, keyToSum) => {
     const result = data.reduce(
@@ -152,6 +181,49 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             </TableRow>
           )}
         </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell rowSpan={2} className="text-center">
+              Total
+            </TableCell>
+            <TableCell rowSpan={2} className="text-center">
+              <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
+            </TableCell>
+            {dateOfWeek.map((day, i) => (
+              <TableCell rowSpan={2} className="text-center" key={i}>
+                <FormatNumbering value={calculateInstalment(data, day)} />
+              </TableCell>
+            ))}
+            <TableCell rowSpan={2} className="text-center">
+              <FormatNumbering
+                value={calculateTotals(data, 'totalInstalment')}
+              />
+            </TableCell>
+            {calculateTotals(data, 'sirkulasiAfter') == saldoSirkulas ? (
+              <TableCell rowSpan={2} className="text-center">
+                <FormatNumbering
+                  value={calculateTotals(data, 'sirkulasiAfter')}
+                />
+              </TableCell>
+            ) : (
+              <TableCell className="text-center">
+                <FormatNumbering
+                  value={calculateTotals(data, 'sirkulasiAfter')}
+                />
+              </TableCell>
+            )}
+          </TableRow>
+          <TableRow>
+            {saldoSirkulas &&
+            calculateTotals(data, 'sirkulasiAfter') != saldoSirkulas ? (
+              <TableCell className="text-center bg-red-500">
+                <FormatNumbering value={saldoSirkulas} />
+              </TableCell>
+            ) : (
+              ''
+            )}
+          </TableRow>
+        </TableFooter>
       </Table>
       <Action
         datas={data}

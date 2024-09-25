@@ -372,8 +372,79 @@ class TransactionDailyRecapController extends Controller
 
   public function rencana_drop(Request $request)
   {
-    //
+    $branches = AppHelper::branch_permission();
+    $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->branch->id;
+    $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
+
+    $transaction_date = $request->month ?? Carbon::now()->format('Y-m');
+    $startOfMonth = Carbon::parse($transaction_date)->copy()->startOfMonth();
+    $endOfMonth = Carbon::parse($transaction_date)->copy()->endOfMonth();
+    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->get();
+
+    $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer')
+      ->where(function ($data) use ($startOfMonth, $endOfMonth) {
+        $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+          ->orWhereBetween('request_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')]);
+      })
+      ->whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
+      ->orderBy('drop_date')
+      ->get()
+      ->groupBy('drop_date');
+
+    $datesMatchDay = collect();
+
+    for ($i = $startOfMonth; $i->lte($endOfMonth); $i->addDays()) {
+      if ($i->dayOfWeek !== 0) {
+        $datesMatchDay->push($i->format('Y-m-d'));
+      }
+    }
+
+    $daily_recap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))->whereIn('date', $datesMatchDay)->get()->groupBy('date');
+
+    $instalment = TransactionLoanInstalment::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))->whereIn('transaction_date', $datesMatchDay)->get()->groupBy('transaction_date');
+
+
+    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($loan, $daily_recap, $instalment, $groupingId) {
+      $thisDailyRecap = $daily_recap->get($tanggal, collect()); //stored as database
+      $thisData = $loan->get($tanggal, collect()); //summary of drop
+      $thisInstalment = $instalment->get($tanggal, collect()); //summary of instalment
+
+      return $groupingId->map(function ($groupingId) use ($tanggal, $thisDailyRecap, $thisData, $thisInstalment) {
+        $thisDataPerGrup = $thisData->where('transaction_loan_officer_grouping_id', $groupingId->id);
+        $thisInstalmentPerGrup = $thisInstalment->where('transaction_loan_officer_grouping_id', $groupingId->id)->sum('nominal');
+        $thisDailyRecapPerGrup = $thisDailyRecap->where('transaction_loan_officer_grouping_id', $groupingId->id)->first();
+        return [
+          'grouping_id' => $groupingId->id,
+          'kelompok' => $groupingId->kelompok,
+          'tanggal' => $tanggal,
+          'kasbon' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->kasbon : 0,
+          'transport' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->transport : 0,
+          'masuk' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->masuk : 0,
+          'keluar' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->keluar : 0,
+          'target' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->target : 0,
+
+          'storting' => $thisInstalmentPerGrup,
+          'storting_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->storting : 0,
+          'storting_validate' => $thisInstalmentPerGrup == ($thisDailyRecapPerGrup?->storting ?? 0) ? true : false,
+
+          'baru' => $thisDataPerGrup->where('drop_langsung', true)->sum('drop_jadi'),
+          'lama' => $thisDataPerGrup->where('drop_langsung', false)->sum('drop_jadi'),
+
+          'drop' => $thisDataPerGrup->sum('nominal_drop'),
+          'drop_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->drop : 0,
+          'drop_validate' => $thisDataPerGrup->sum('drop_jadi') == ($thisDailyRecapPerGrup?->drop ?? 0) ? true : false,
+
+          'rencana' => $thisDataPerGrup->sum('nominal_drop'),
+        ];
+      });
+    })->values();
+
+    return Inertia::render('Kasir/RencanaDrop/Index', [
+      'datas' => $buku_rencana_drop,
+      'server_filter' => ['month' => $transaction_date, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
+    ]);
   }
+
   /**
    * Display the specified resource.
    */
