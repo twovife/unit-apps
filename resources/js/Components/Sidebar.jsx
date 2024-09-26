@@ -75,6 +75,12 @@ const Sidebar = ({ isOpen }) => {
                   link: route('kasir.rekap.rekap_permantri'),
                   active: route().current('kasir.rekap.rekap_permantri'),
                 },
+                {
+                  id: 2,
+                  title: 'Rencana Drop',
+                  link: route('kasir.rekap.rencana_drop'),
+                  active: route().current('kasir.rekap.rencana_drop'),
+                },
               ]}
             />
           </>

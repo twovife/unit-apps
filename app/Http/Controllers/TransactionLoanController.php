@@ -65,6 +65,7 @@ class TransactionLoanController extends Controller
         'nomor_anggota' => $drop->manage_customer->id,
         'pinjaman_ke' => $countPinjaman,
         'tanggal_drop' => $drop->drop_date,
+        'request_date' => $drop->request_date,
 
         'drop' => $drop->drop_langsung ? 0 : $drop->drop_before,
         'request' => $drop->drop_langsung ? 0 : $drop->request_nominal,
@@ -86,7 +87,7 @@ class TransactionLoanController extends Controller
 
 
     $numberDays = AppHelper::getNumbDays($hari);
-
+    // dd($numberDays);
     $datesMatchDay = collect();
 
     for ($i = $startOfMonth; $i->lte($endOfMonth); $i->addDays()) {
@@ -94,6 +95,7 @@ class TransactionLoanController extends Controller
         $datesMatchDay->push($i->format('Y-m-d'));
       }
     }
+
     $daily_recap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('date', $datesMatchDay)->get()->groupBy('date');
 
     $instalment = TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('transaction_date', $datesMatchDay)->get()->groupBy('transaction_date');
@@ -106,7 +108,7 @@ class TransactionLoanController extends Controller
 
       // dd($thisData);
       return [
-        'is_generated' => $daily_recap ? true : false,
+        'is_generated' => $thisDailyRecap ? true : false,
         'grouping_id' => $groupingId->id,
         'kelompok' => $groupingId->kelompok,
         'tanggal' => $tanggal,
@@ -129,6 +131,12 @@ class TransactionLoanController extends Controller
         'drop_validate' => $thisData->sum('drop_jadi') == ($thisDailyRecap?->drop ?? 0) ? true : false,
 
         'rencana' => $thisData->where('drop_langsung', 'lama')->sum('acc'),
+
+        'is_approved' => $thisDailyRecap?->daily_kepala_approval ? true : false,
+        'is_kasir' => $thisDailyRecap?->daily_kasir_approval ? true : false,
+        'at_approved' => $thisDailyRecap?->daily_kepala_approval,
+        'at_kasir' => $thisDailyRecap?->daily_kasir_approval,
+        'is_closed' => $thisDailyRecap?->daily_kepala_approval && $thisDailyRecap?->daily_kasir_approval ? true : false,
       ];
     })->sortBy('tanggal')->values();
 
@@ -138,7 +146,7 @@ class TransactionLoanController extends Controller
     return Inertia::render('BukuTransaksi/BukuTransaksi', [
       'datas' => $pengajuan->values(),
       'buku_rencana' => $buku_rencana_drop,
-      'server_filter' => ['month' => $transaction_date, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok]
+      'server_filter' => ['month' => $transaction_date, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'hari' => $hari]
     ]);
   }
 

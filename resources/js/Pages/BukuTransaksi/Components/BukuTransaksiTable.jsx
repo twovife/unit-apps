@@ -55,8 +55,10 @@ const BukuTransaksiTable = ({ datas }) => {
         header: 'Tgl Drop',
         accessorKey: 'tanggal_drop',
         cell: ({ getValue, cell }) => (
-          <div className="flex items-center justify-center gap-3">
-            <div>{dayjs(getValue()).format('DD-MM-YY')}</div>
+          <div className="flex flex-col items-center justify-center gap-1 lg:gap-3 lg:flex-row">
+            <div className="whitespace-nowrap">
+              {dayjs(getValue()).format('DD-MM-YY')}
+            </div>
             <BadgeStatus value={cell.row.original.drop_langsung} />
           </div>
         ),
@@ -147,7 +149,7 @@ const BukuTransaksiTable = ({ datas }) => {
         triggeredData={actionData}
       />
 
-      <Table className="w-full mb-3 table-auto">
+      <Table className="w-full mb-3 text-xs table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           {table.getHeaderGroups().map((headerGroup, key) => (
             <TableRow key={key}>

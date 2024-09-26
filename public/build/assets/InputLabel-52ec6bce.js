@@ -1,1 +1,0 @@
-import{j as n,a as r}from"./app-6f41ea55.js";function o({value:a,className:s="",children:t,optional:e=!1,...l}){return n("label",{...l,className:"block font-medium text-sm text-gray-700  "+s,children:[a||t,e?r("span",{className:"text-gray-400 italic",children:"(optionals)"}):""]})}export{o as I};

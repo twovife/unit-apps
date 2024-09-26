@@ -13,35 +13,45 @@ import dayjs from 'dayjs';
 import Action from './Action';
 import { Button } from '@/shadcn/ui/button';
 import { Link } from '@inertiajs/react';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
+import Approval from './Approval';
 
-const Rencana = ({ datas }) => {
+const Rencana = ({ datas, dataTransaksi }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     setData(datas);
   }, [datas]);
 
-  // Declare a state variable to track the visibility of the "onCreateShow" component
-  const [onCreateShow, setOnCreateShow] = useState(false);
+  // Declare a state variable to track the visibility of the "onApproveShow" component
+  const [onApproveShow, setOnApproveShow] = useState(false);
   const [actionData, setActionData] = useState();
 
-  // Event handler function to set the "onCreateShow" state variable to true
-  const handleOnCreateShowOpen = (e) => {
-    setOnCreateShow(true);
+  // Event handler function to set the "onApproveShow" state variable to true
+  const handleOnApproveShowOpen = (e) => {
+    setOnApproveShow(true);
     setActionData(e);
   };
 
-  // Event handler function to set the "onCreateShow" state variable to false
-  const handleOnCreateShowClosed = (e) => {
-    setOnCreateShow(false);
+  // Event handler function to set the "onApproveShow" state variable to false
+  const handleOnApproveShowClosed = (e) => {
+    setOnApproveShow(false);
     setActionData();
   };
 
   return (
     <>
+      <Approval
+        show={onApproveShow}
+        onClosed={handleOnApproveShowClosed}
+        z
+        staticData={dataTransaksi}
+        triggeredData={actionData}
+      />
       <Table className="w-full table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           <TableRow>
+            <TableHead className="text-center">Action</TableHead>
             <TableHead className="text-center">Tanggal</TableHead>
             <TableHead className="text-center">Kasbon</TableHead>
             <TableHead className="text-center">Target</TableHead>
@@ -57,6 +67,13 @@ const Rencana = ({ datas }) => {
         <TableBody>
           {data.map((item, index) => (
             <TableRow key={index} className={`text-center`}>
+              <TableCell>
+                <BargeStatus
+                  value={item.is_approved ? 'acc' : 'open'}
+                  onClick={() => handleOnApproveShowOpen(item)}
+                  size="xs"
+                />
+              </TableCell>
               <TableCell>{dayjs(item.tanggal).format('DD-MM-YYYY')}</TableCell>
               <TableCell>
                 <FormatNumbering value={item.kasbon} />

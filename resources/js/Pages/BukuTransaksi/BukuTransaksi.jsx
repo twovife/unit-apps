@@ -146,7 +146,7 @@ const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
             {/* <BukuTransaksiNextTable datas={pengajuan_next} /> */}
           </TabsContent>
           <TabsContent value="dailyTarget">
-            <Rencana datas={buku_rencana} />
+            <Rencana datas={buku_rencana} dataTransaksi={datas} />
           </TabsContent>
         </Tabs>
       </div>
