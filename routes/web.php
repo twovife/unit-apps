@@ -32,28 +32,28 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
 
   Route::controller(LoanController::class)->group(function () {
-    Route::prefix('transaction')->name('transaction.')->group(function () {
-      Route::post('/nik', 'getCustomerLoan')->name('getnik');
-      Route::get('/', 'index_transaction')->name('index');
-      Route::get('/open', 'index_transaction_open')->name('index_open');
-      Route::get('/create', 'create_transaction')->name('create');
-      Route::post('/', 'store_transaction')->name('store');
-      Route::get('/{loanRequest}', 'show_transaction')->name('show');
-      Route::put('/{loanRequest}', 'update_transaction')->name('update');
-    })->middleware('permission:unit');
+    // Route::prefix('transaction')->name('transaction.')->group(function () {
+    //   Route::post('/nik', 'getCustomerLoan')->name('getnik');
+    //   Route::get('/', 'index_transaction')->name('index');
+    //   Route::get('/open', 'index_transaction_open')->name('index_open');
+    //   Route::get('/create', 'create_transaction')->name('create');
+    //   Route::post('/', 'store_transaction')->name('store');
+    //   Route::get('/{loanRequest}', 'show_transaction')->name('show');
+    //   Route::put('/{loanRequest}', 'update_transaction')->name('update');
+    // })->middleware('permission:unit');
 
-    Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
-      Route::prefix('normal')->name('normal.')->group(function () {
-        Route::get('/', 'index_angsuran_normal')->name('index');
-        Route::get('/create', 'create_angsuran_normal')->name('create');
-        Route::post('/', 'store_angsuran_normal')->name('store');
-        Route::get('/{loan}', 'show_angsuran_normal')->name('show');
-        Route::post('/{loan}', 'update_angsuran_normal')->name('update');
-        Route::post('/{loan}/nasabah', 'update_jenis_nasabah')->name('nasabah');
-        Route::delete('/{instalment}', 'deleteAngsuran')->name('deleteAngsuran');
-        Route::delete('/{loan}/loan', 'deleteLoan')->name('deleteLoan');
-      });
-    });
+    // Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
+    //   Route::prefix('normal')->name('normal.')->group(function () {
+    //     Route::get('/', 'index_angsuran_normal')->name('index');
+    //     Route::get('/create', 'create_angsuran_normal')->name('create');
+    //     Route::post('/', 'store_angsuran_normal')->name('store');
+    //     Route::get('/{loan}', 'show_angsuran_normal')->name('show');
+    //     Route::post('/{loan}', 'update_angsuran_normal')->name('update');
+    //     Route::post('/{loan}/nasabah', 'update_jenis_nasabah')->name('nasabah');
+    //     Route::delete('/{instalment}', 'deleteAngsuran')->name('deleteAngsuran');
+    //     Route::delete('/{loan}/loan', 'deleteLoan')->name('deleteLoan');
+    //   });
+    // });
 
     Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
       Route::get('/', 'batch_create')->name('batch_create');
@@ -87,6 +87,8 @@ Route::middleware('auth')->group(function () {
       Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
+      Route::get('/fastcreate', "fastcreate")->name('fastcreate');
+      Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');
       Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');
     });
   });
@@ -95,6 +97,7 @@ Route::middleware('auth')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_pinjaman")->name('index_pinjaman');
       Route::get('/drop_date', "index_pinjaman_search")->name('index_pinjaman_search');
+
       Route::get('/actionloan/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
       Route::post('/actionloan/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
       Route::delete('/actionloan/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');

@@ -267,15 +267,6 @@ class TransactionDailyRecapController extends Controller
   }
 
 
-
-
-  /**
-   * Show the form for creating a new resource.
-   */
-
-  /**
-   * Store a newly created resource in storage.
-   */
   public function rekap_post(Request $request)
   {
 
@@ -443,37 +434,5 @@ class TransactionDailyRecapController extends Controller
       'datas' => $buku_rencana_drop,
       'server_filter' => ['month' => $transaction_date, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
     ]);
-  }
-
-  /**
-   * Display the specified resource.
-   */
-  public function show(TransactionDailyRecap $transactionDailyRecap)
-  {
-    //
-  }
-
-  /**
-   * Show the form for editing the specified resource.
-   */
-  public function edit(TransactionDailyRecap $transactionDailyRecap)
-  {
-    //
-  }
-
-  /**
-   * Update the specified resource in storage.
-   */
-  public function update(Request $request, TransactionDailyRecap $transactionDailyRecap)
-  {
-    //
-  }
-
-  /**
-   * Remove the specified resource from storage.
-   */
-  public function destroy(TransactionDailyRecap $transactionDailyRecap)
-  {
-    //
   }
 }

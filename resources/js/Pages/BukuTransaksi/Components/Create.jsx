@@ -83,9 +83,9 @@ const Create = ({ show = false, onClosed }) => {
         setData((prevData) => ({
           ...prevData,
           nik: data.return_nik,
-          isActiveMember: data.falidate_nik,
+          isActiveMember: data.data ? true : false,
         }));
-        if (data.falidate_nik) {
+        if (data.data) {
           setCustomerData(data.data);
         } else {
           setCustomerData([]);

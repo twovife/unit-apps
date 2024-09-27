@@ -37,6 +37,12 @@ const Sidebar = ({ isOpen }) => {
                   link: route('transaction.index_buku_transaksi'),
                   active: route().current('transaction.index_buku_transaksi'),
                 },
+                {
+                  id: 2,
+                  title: 'Fast Create',
+                  link: route('transaction.fastcreate'),
+                  active: route().current('transaction.fastcreate'),
+                },
               ]}
             />
 
