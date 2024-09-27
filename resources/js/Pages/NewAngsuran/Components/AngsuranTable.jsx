@@ -48,11 +48,26 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     setTriggeredId(null);
   };
 
+  const [selectedId, setSelectedId] = useState([]);
+
+  const handleRowClick = (id) => {
+    setSelectedId((prevSelectedRows) => {
+      if (prevSelectedRows.includes(id)) {
+        // Jika ID sudah ada, hapus dari array (toggle)
+        return prevSelectedRows.filter((rowId) => rowId !== id);
+      } else {
+        // Jika ID belum ada, tambahkan ke array
+        return [...prevSelectedRows, id];
+      }
+    });
+  };
+
   return (
     <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
       <Table className="text-xs rounded-lg">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
+            <TableHead className="text-center">No</TableHead>
             <TableHead className="text-center">Tanggal</TableHead>
             <TableHead className="text-center">Nama Nasabah</TableHead>
             <TableHead className="text-center">NIK</TableHead>
@@ -90,12 +105,22 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             data.map((row, i) => (
               <React.Fragment key={i}>
                 <TableRow>
-                  <TableCell colSpan={16 + (dateOfWeek.length ?? 0)}>
+                  <TableCell colSpan={17 + (dateOfWeek.length ?? 0)}>
                     {row.month}
                   </TableCell>
                 </TableRow>
                 {row.data.map((subrow, i) => (
-                  <TableRow key={i}>
+                  <TableRow
+                    className={`${
+                      selectedId.includes(subrow.id)
+                        ? 'bg-green-200 hover:bg-green-50'
+                        : ''
+                    }}`}
+                    key={i}
+                  >
+                    <TableCell onClick={() => handleRowClick(subrow.id)}>
+                      {i + 1}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
                         <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
@@ -176,7 +201,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   </TableRow>
                 ))}
                 <TableRow className="bg-gray-100">
-                  <TableCell className="py-3" colSpan={9}>
+                  <TableCell className="py-3" colSpan={10}>
                     ini nanti total
                   </TableCell>
                   <TableCell className="border-x border-x-black">

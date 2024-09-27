@@ -28,16 +28,16 @@ import "class-variance-authority";
 import "lucide-react";
 import "./DetailRiwayat-378481c6.mjs";
 import "./badge-ad1cae46.mjs";
-import "./Acc-c299779a.mjs";
+import "./Acc-6ac68ef9.mjs";
 import "./Loading-7f1a61e6.mjs";
 import "react-dom";
 import "@headlessui/react";
 import "./label-cecd7064.mjs";
 import "@radix-ui/react-label";
 import "react-currency-input-field";
-import "./Tolak-2aeda9da.mjs";
-import "./DropJadi-1ff3f454.mjs";
-import "./Gagal-76f2be28.mjs";
+import "./Tolak-b0adbc81.mjs";
+import "./DropJadi-cfa4899c.mjs";
+import "./Gagal-5085ad9c.mjs";
 const BukuTransaksiNextTable = ({ datas }) => {
   const [data, setData] = useState([]);
   useEffect(() => {
