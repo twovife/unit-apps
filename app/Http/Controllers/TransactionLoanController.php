@@ -363,14 +363,15 @@ class TransactionLoanController extends Controller
       $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
 
       if (!$angsuran->isEmpty()) {
-        $angsuran->each(function ($item) use ($loan, $officerGrouping) {
+        $angsuran->each(function ($item) use ($loan, $officerGrouping, $mantri) {
           $loan->loan_instalment()->create([
-            'pembayaran_date' => $item['transaction_date'],
+            'transaction_date' => $item['transaction_date'],
             'nominal' => $item['nominal'],
             'danatitipan' =>  isset($item['dana_titipan']) ? ($item['dana_titipan'] ? "true" : "false") : "false",
             'transaction_loan_officer_grouping_id' => $officerGrouping->id,
             'status' => AppHelper::generateStatusAngsuran($loan->drop_date,  $item['transaction_date']),
             'user_input' => auth()->user()->employee->id,
+            'user_mantri' =>  $mantri->id,
           ]);
         });
       }
