@@ -37,6 +37,15 @@ class TransactionLoan extends Model
     "drop_langsung",
   ];
 
+
+  protected static function boot()
+  {
+    parent::boot();
+    static::deleting(function ($transactionLoan) {
+      $transactionLoan->loan_instalment()->delete();
+    });
+  }
+
   public function loan_instalment()
   {
     return $this->hasMany(TransactionLoanInstalment::class, 'transaction_loan_id', 'id');

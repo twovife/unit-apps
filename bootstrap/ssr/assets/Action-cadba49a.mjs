@@ -9,9 +9,9 @@ import { T as Table, a as TableHeader, b as TableRow, c as TableHead, d as Table
 import "./badge-ad1cae46.mjs";
 import dayjs from "dayjs";
 import Acc from "./Acc-c299779a.mjs";
-import Tolak from "./Tolak-2aeda9da.mjs";
+import Tolak from "./Tolak-b0adbc81.mjs";
 import DropJadi from "./DropJadi-1ff3f454.mjs";
-import Gagal from "./Gagal-76f2be28.mjs";
+import Gagal from "./Gagal-5085ad9c.mjs";
 import { B as BargeStatus } from "./BargeStatus-463d8151.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";

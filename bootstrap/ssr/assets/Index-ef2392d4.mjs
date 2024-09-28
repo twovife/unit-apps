@@ -45,9 +45,9 @@ import "@tanstack/react-table";
 import "./DetailRiwayat-642c065e.mjs";
 import "./Acc-c299779a.mjs";
 import "react-currency-input-field";
-import "./Tolak-2aeda9da.mjs";
+import "./Tolak-b0adbc81.mjs";
 import "./DropJadi-1ff3f454.mjs";
-import "./Gagal-76f2be28.mjs";
+import "./Gagal-5085ad9c.mjs";
 const Index = ({ data, select_kelompok, select_branch, ...props }) => {
   const selectedDay = props.server_filter.date;
   dayjs(selectedDay).format("YYYY-MM-DD");

@@ -88,9 +88,10 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
               <DialogTitle>Check Transaksi Mantri</DialogTitle>
               <DialogDescription>
                 <Tabs defaultValue="account" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="account">Action</TabsTrigger>
-                    <TabsTrigger value="password">Riwayat Pinjaman</TabsTrigger>
+                    <TabsTrigger value="history">Riwayat</TabsTrigger>
+                    <TabsTrigger value="detail">Detail Angsuran</TabsTrigger>
                   </TabsList>
                   <TabsContent value="account">
                     <Card>
@@ -106,7 +107,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                     <div className="flex flex-col gap-3 mt-3 lg:flex-row">
                       <Card className="w-full">
                         <CardHeader>
-                          <CardTitle>Acc / Cek Kodham</CardTitle>
+                          <CardTitle>Acc</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
                           <div className="flex items-end justify-center gap-2 mx-auto lg:w-1/2">
@@ -162,7 +163,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                       )}
                     </div>
                   </TabsContent>
-                  <TabsContent value="password">
+                  <TabsContent value="history">
                     <Card>
                       <CardHeader>
                         <CardTitle>Riwayat Pengajuan</CardTitle>
@@ -213,9 +214,7 @@ function detailTable(data) {
       {data && (
         <TableBody>
           <TableRow className="text-center">
-            <TableCell className="bg-red-200">
-              {data.tanggal_pengajuan}
-            </TableCell>
+            <TableCell>{data.tanggal_pengajuan}</TableCell>
             <TableCell>{data.nomor_pengajuan}</TableCell>
             <TableCell>
               <Badge

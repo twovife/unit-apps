@@ -22,6 +22,7 @@ import StatusPinjaman from '@/Components/shadcn/StatusPinjaman';
 import BayarAngsuran from './BayarAngsuran';
 import JenisNasabah from './JenisNasabah';
 import DeleteAngsuran from './DeleteAngsuran';
+import DeleteLoan from './DeleteLoan';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   const [loading, setLoading] = useState(false);
@@ -92,6 +93,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   <TableHead className="text-center">Lunas</TableHead>
                 </TableRow>
               </TableHeader>
+              {/*  */}
               <TableBody>
                 {Object.keys(customerData).length !== 0 ? (
                   <TableRow className="text-center">
@@ -187,6 +189,10 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
               triggeredPinjaman={customerData.pinjaman}
             />
             <JenisNasabah loan={customerData} />
+            <div className="flex items-center justify-end gap-3 p-3">
+              <div className="font-semibold">Hapus Pinjaman</div>
+              <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
+            </div>
           </div>
         </div>
       </DialogContent>

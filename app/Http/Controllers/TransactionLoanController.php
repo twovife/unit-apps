@@ -683,6 +683,7 @@ class TransactionLoanController extends Controller
       'nama' => $loan->customer->nama,
       'alamat' => $loan->customer->alamat,
       'nik' => $loan->customer->nik,
+      // 'tanggal_pengajuan' => $loan->request_date,
       'tanggal_drop' => $loan->drop_date,
       'hari' => $loan->hari,
       'kelompok' => $loan->loan_officer_grouping->kelompok,
@@ -781,8 +782,18 @@ class TransactionLoanController extends Controller
     }
     return redirect()->back()->with('message', 'data berhasil diubah');
   }
-  public function index_pimpinan()
+
+
+  public function destroy_loan(TransactionLoan $transactionLoan)
   {
-    //
+    try {
+      DB::beginTransaction();
+      $transactionLoan->delete();
+      DB::commit();
+    } catch (Exception $e) {
+      DB::rollBack();
+      return redirect()->back()->withErrors('data gagal diubah');
+    }
+    return redirect()->back()->with('message', 'data berhasil dihapus');
   }
 }
