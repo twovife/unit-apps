@@ -91,15 +91,62 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               placeholder={'Inputkan angka tanpa sparator'}
             />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            onClick={buttonValueClick}
-            data-value={triggeredPinjaman / 10 ?? 65000}
-          >
-            {triggeredPinjaman / 10 ?? 65000}
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={triggeredPinjaman / 10 ?? 65000}
+            >
+              {triggeredPinjaman / 10 ?? 65000}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={52000}
+            >
+              52.000
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={100000}
+            >
+              100.000
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={130000}
+            >
+              130.000
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={195000}
+            >
+              195.000
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={260000}
+            >
+              260.000
+            </Button>
+          </div>
           <div className="flex items-center justify-between">
             <label className="flex items-center">
               <Checkbox

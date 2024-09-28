@@ -5,9 +5,9 @@ import { C as Card, a as CardHeader, b as CardTitle, d as CardContent, c as Card
 import { T as Tabs, a as TabsList, b as TabsTrigger, c as TabsContent } from "./tabs-f70be525.mjs";
 import axios from "axios";
 import RiwayatPengajuan from "./RiwayatPengajuan-7a8d0fc1.mjs";
-import Acc from "./Acc-39848926.mjs";
+import Acc from "./Acc-ff1cd03b.mjs";
 import Tolak from "./Tolak-4a7c0e59.mjs";
-import DropJadi from "./DropJadi-62a0cc4b.mjs";
+import DropJadi from "./DropJadi-a79f5698.mjs";
 import Gagal from "./Gagal-434b7d12.mjs";
 import DetailTableOnAction from "./DetailTableOnAction-00a2809e.mjs";
 import RemoveLoan from "./RemoveLoan-622848d6.mjs";
