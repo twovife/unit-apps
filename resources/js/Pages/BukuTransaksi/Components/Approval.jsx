@@ -27,8 +27,6 @@ import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
 const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
-  console.log(triggeredData);
-
   const { data, setData, post, reset, errors, processing } = useForm({
     id: '',
     date: '',

@@ -208,7 +208,7 @@ class TransactionLoanController extends Controller
               'pinjaman' => $pinjaman->pinjaman,
               'total_angsuran' => $pinjaman->loan_instalment->sum('nominal') ?? 0,
               'lunas' => $pinjaman->pinjaman == $pinjaman->loan_instalment->sum('nominal') ? true : false,
-              'status_pinjaman' => AppHelper::status_pinjaman($pinjaman->loan_instalment->first()->status),
+              'status_pinjaman' => AppHelper::status_pinjaman($pinjaman->loan_instalment->first()?->status),
             ];
           })->values()
         ];
@@ -796,5 +796,74 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('data gagal diubah');
     }
     return redirect()->back()->with('message', 'data berhasil dihapus');
+  }
+
+  public function updateEverything(TransactionLoan $transactionLoan, Request $request)
+  {
+    // id, transaction_manage_customer_id, transaction_loan_officer_grouping_id, old_id, drop_before, drop_date_before, drop_date, request_date, request_nominal, user_mantri, approved_nominal, check_date, user_check, nominal_drop, user_drop, pinjaman, hari, pinjaman_ke, status, notes, user_input, drop_langsung, created_at, updated_at
+
+    try {
+      DB::beginTransaction();
+      $transactionLoan->update($request->all());
+      if ($transactionLoan->wasChanged('status')) {
+        $transactionLoan->loan_instalment()->delete();
+        $transactionLoan->approved_nominal = null;
+        $transactionLoan->check_date = null;
+        $transactionLoan->user_check = null;
+        $transactionLoan->nominal_drop = null;
+        $transactionLoan->user_drop = null;
+        $transactionLoan->save();
+      }
+
+      if ($transactionLoan->wasChanged(['drop_date', 'request_date'])) {
+        $wrongLoansInstalment = $transactionLoan->loan_instalment->where('transaction_date', "<", $transactionLoan->drop_date);
+        if ($wrongLoansInstalment->count() > 0) {
+          return redirect()->back()->withErrors('Tanggal Drop Tidak Boleh Melebihi Tanggal Angsuran');
+        }
+
+        if ($transactionLoan->drop_date < $transactionLoan->request_date) {
+          return redirect()->back()->withErrors('Tanggal Drop Lebih Kecil Dari Tanggal Pengajuan');
+        }
+
+        if (AppHelper::dateName($transactionLoan->drop_date) != AppHelper::dateName($transactionLoan->request_date)) {
+          return redirect()->back()->withErrors('Nama Hari Tidak Sama');
+        } else {
+          if (AppHelper::dateName($transactionLoan->drop_date) != $transactionLoan->hari) {
+            return redirect()->back()->withErrors('Nama Hari Tidak Sama');
+          }
+        }
+
+        if ($transactionLoan->drop_date == $transactionLoan->request_date) {
+
+          $transactionLoan->approved_nominal = $request->request_nominal;
+          $transactionLoan->check_date = Carbon::now();
+          $transactionLoan->user_check = auth()->user()->employee->id;
+          $transactionLoan->nominal_drop = $request->request_nominal;
+          $transactionLoan->user_drop = auth()->user()->employee->id;
+          $transactionLoan->status = 'success';
+          $transactionLoan->save();
+        }
+      }
+      DB::commit();
+    } catch (Exception $e) {
+      DB::rollBack();
+      return redirect()->back()->withErrors('data gagal diubah');
+    }
+
+    // if ($transactionLoan->isDirty('status')) {
+    //   dd($transactionLoan->getDirty('status'));
+    //   // if ($transactionLoan->getDirty('status') == 'open') {
+    //   //   $transactionLoan->loan_instalment()->delete();
+    //   //   $transactionLoan->approved_nominal = null;
+    //   //   $transactionLoan->check_date = null;
+    //   //   $transactionLoan->user_check = null;
+    //   //   $transactionLoan->nominal_drop = null;
+    //   //   $transactionLoan->user_drop = null;
+    //   //   $transactionLoan->save();
+    //   // }
+    // }
+
+
+    return redirect()->back()->with('message', 'data berhasil diubah');
   }
 }

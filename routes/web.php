@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
       Route::get('/fastcreate', "fastcreate")->name('fastcreate');
       Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');
       Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');
+      Route::put('/updateEverything/{transactionLoan}', "updateEverything")->name('updateEverything');
     });
   });
 

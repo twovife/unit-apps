@@ -24,10 +24,11 @@ import DropJadi from './DropJadi';
 import Gagal from './Gagal';
 import DetailTableOnAction from './detailTableOnAction';
 import RemoveLoan from './RemoveLoan';
+import ReStatus from './ReStatus';
+import ChangeDetail from './ChangeDetail';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
   const [data, setData] = useState([]);
-  console.log(data);
 
   const [customerData, setCustomerData] = useState([]);
   const [acc, setAcc] = useState();
@@ -153,12 +154,45 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                           </CardContent>
                         </Card>
                       )}
-                      <div>
-                        <RemoveLoan
-                          triggeredId={data?.nomor_pengajuan}
-                          onClosed={onClosed}
-                        />
-                      </div>
+                      <Card className="w-full">
+                        <CardHeader>
+                          <CardTitle>Admin Edit</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div>
+                            <div className="w-full mb-3 text-start">
+                              <p className="font-semibold">Hapus Pengajuan</p>
+                              <p className="mb-1 text-xs italic font-light text-gray-500">
+                                Jika Pengajuan Sudah Memiliki Angsuran maka akan
+                                terhapus semua
+                              </p>
+                              <RemoveLoan
+                                triggeredId={data?.nomor_pengajuan}
+                                onClosed={onClosed}
+                              />
+                            </div>
+                            {data?.drop_langsung == 'lama' && (
+                              <div className="w-full mb-3 text-start">
+                                <p className="font-semibold ">Restatus</p>
+                                <p className="mb-1 text-xs italic font-light text-gray-500">
+                                  Jika Pengajuan Sudah Memiliki Angsuran maka
+                                  akan terhapus semua
+                                </p>
+                                <ReStatus
+                                  triggeredId={data?.nomor_pengajuan}
+                                  onClosed={onClosed}
+                                />
+                              </div>
+                            )}
+                            {data && (
+                              <ChangeDetail
+                                onClosed={onClosed}
+                                triggeredData={triggeredData}
+                              />
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   </TabsContent>
                   <TabsContent value="history">
