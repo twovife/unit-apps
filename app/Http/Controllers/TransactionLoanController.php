@@ -200,6 +200,7 @@ class TransactionLoanController extends Controller
           'pinjaman' => $cust->loan->map(function ($pinjaman) {
             return [
               'loan_id' => $pinjaman->id,
+              'tanggal_pengajuan' => $pinjaman->request_date,
               'drop_date' => $pinjaman->drop_date,
               'hari' => $pinjaman->hari,
               'drop' => $pinjaman->nominal_drop,

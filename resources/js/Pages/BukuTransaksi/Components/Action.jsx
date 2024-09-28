@@ -18,24 +18,17 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import axios from 'axios';
 import RiwayatPengajuan from './RiwayatPengajuan';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/shadcn/ui/table';
-import { Badge } from '@/shadcn/ui/badge';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
-import dayjs from 'dayjs';
 import Acc from './Acc';
 import Tolak from './Tolak';
 import DropJadi from './DropJadi';
 import Gagal from './Gagal';
+import DetailTableOnAction from './detailTableOnAction';
+import RemoveLoan from './RemoveLoan';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
   const [data, setData] = useState([]);
+  console.log(data);
+
   const [customerData, setCustomerData] = useState([]);
   const [acc, setAcc] = useState();
   const [loading, setLoading] = useState(false);
@@ -88,10 +81,9 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
               <DialogTitle>Check Transaksi Mantri</DialogTitle>
               <DialogDescription>
                 <Tabs defaultValue="account" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="account">Action</TabsTrigger>
                     <TabsTrigger value="history">Riwayat</TabsTrigger>
-                    <TabsTrigger value="detail">Detail Angsuran</TabsTrigger>
                   </TabsList>
                   <TabsContent value="account">
                     <Card>
@@ -100,7 +92,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <div className="overflow-auto border rounded-lg scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                          {detailTable(data)}
+                          <DetailTableOnAction datas={data} />
                         </div>
                       </CardContent>
                     </Card>
@@ -161,6 +153,12 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                           </CardContent>
                         </Card>
                       )}
+                      <div>
+                        <RemoveLoan
+                          triggeredId={data?.nomor_pengajuan}
+                          onClosed={onClosed}
+                        />
+                      </div>
                     </div>
                   </TabsContent>
                   <TabsContent value="history">
@@ -190,63 +188,3 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
 };
 
 export default Action;
-function detailTable(data) {
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="text-center">Tanggal Pengajuan</TableHead>
-          <TableHead className="text-center">Nomor Pengajuan</TableHead>
-          <TableHead className="text-center">Status</TableHead>
-          <TableHead className="text-center">Nama Nasabah</TableHead>
-          <TableHead className="text-center">NIK</TableHead>
-          <TableHead className="text-center">Alamat</TableHead>
-          <TableHead className="text-center">Unit</TableHead>
-          <TableHead className="text-center">Kelompok</TableHead>
-          <TableHead className="text-center">Pengajuan</TableHead>
-          <TableHead className="text-center">Tgl Drop</TableHead>
-          <TableHead className="text-center">Kelompok</TableHead>
-          <TableHead className="text-center">Pinj Ke</TableHead>
-          <TableHead className="text-center">Acc</TableHead>
-          <TableHead className="text-center">Drop Jadi</TableHead>
-        </TableRow>
-      </TableHeader>
-      {data && (
-        <TableBody>
-          <TableRow className="text-center">
-            <TableCell>{data.tanggal_pengajuan}</TableCell>
-            <TableCell>{data.nomor_pengajuan}</TableCell>
-            <TableCell>
-              <Badge
-                variant={
-                  data.status == 'open'
-                    ? 'green'
-                    : data.status == 'acc'
-                    ? 'yellow'
-                    : data.status == 'success'
-                    ? 'default'
-                    : 'destructive'
-                }
-              >
-                {data.status}
-              </Badge>
-            </TableCell>
-            <TableCell>{data.nama}</TableCell>
-            <TableCell>{data.nik}</TableCell>
-            <TableCell>{data.alamat}</TableCell>
-            <TableCell>{data.unit}</TableCell>
-            <TableCell>{data.kelompok}</TableCell>
-            <TableCell>
-              <FormatNumbering value={data.request} />
-            </TableCell>
-            <TableCell>{dayjs(data.tanggal_drop).format('DD/MM')}</TableCell>
-            <TableCell>{data.kelompok}</TableCell>
-            <TableCell>{data.pinjaman_ke}</TableCell>
-            <TableCell>{data.acc}</TableCell>
-            <TableCell>{data.drop_jadi}</TableCell>
-          </TableRow>
-        </TableBody>
-      )}
-    </Table>
-  );
-}
