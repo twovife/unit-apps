@@ -736,7 +736,7 @@ class TransactionLoanController extends Controller
     ]);
 
     $transactionLoan->with('loan_instalment', 'loan_officer_grouping');
-    $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('kelompok', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
+    $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('area', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
     try {
       DB::beginTransaction();
       if ($request->type_transaksi == "bayar") {
