@@ -13,17 +13,44 @@ import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
+import ApprovalAkhir from './ApprovalAkhir';
 
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
   const [data, setData] = useState([]);
   const [saldoSirkulas, setSaldoSirkulas] = useState(0);
+  const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
+    ml: {
+      sirkulasi: 0,
+      angsuran: 0,
+      saldo: 0,
+    },
+    mb: {
+      sirkulasi: 0,
+      angsuran: 0,
+      saldo: 0,
+    },
+    ccm: {
+      sirkulasi: 0,
+      angsuran: 0,
+      saldo: 0,
+    },
+    cm: {
+      sirkulasi: 0,
+      angsuran: 0,
+      saldo: 0,
+    },
+    all: {
+      surkulasi: 0,
+      angsuran: 0,
+      saldo: 0,
+    },
+  });
 
   useEffect(() => {
     if (datas) {
       const mapingStortingData = datas.map((item, index) => {
         const resutl = () => {
           const instalmentsSum = {};
-
           const getMaxMinDateObjects = (data) => {
             if (Array.isArray(data)) {
               if (data.length === 0) {
@@ -55,32 +82,28 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           setSaldoSirkulas(getSirkulasi.max?.amount ?? 0);
 
           const sirkulasiBefore = (item) => {
-            // switch (item.type) {
-            //   case 'ml':
-            //     return getSirkulasi.min?.ml_amount ?? 0;
-            //     break;
-            //   case 'mb':
-            //     return item.data.reduce(
-            //       (acc, item) => acc + item.saldo_sebelumnya,
-            //       0
-            //     );
-            //     break;
-            //   case 'cm':
-            //     return item.data.reduce(
-            //       (acc, item) => acc + item.saldo_sebelumnya,
-            //       0
-            //     );
-            //     break;
-            //   default:
-            //     return item.data.reduce(
-            //       (acc, item) => acc + item.saldo_sebelumnya,
-            //       0
-            //     );
-            // }
-            return item.data.reduce(
-              (acc, item) => acc + item.saldo_sebelumnya,
-              0
-            );
+            switch (item.type) {
+              case 'ml':
+                return getSirkulasi.min?.ml_amount ?? 0;
+                break;
+              //   case 'mb':
+              //     return item.data.reduce(
+              //       (acc, item) => acc + item.saldo_sebelumnya,
+              //       0
+              //     );
+              //     break;
+              //   case 'cm':
+              //     return item.data.reduce(
+              //       (acc, item) => acc + item.saldo_sebelumnya,
+              //       0
+              //     );
+              //     break;
+              default:
+                return item.data.reduce(
+                  (acc, item) => acc + item.saldo_sebelumnya,
+                  0
+                );
+            }
           };
 
           const sirkulasiAwalOnDatabase = sirkulasiBefore(item);
@@ -100,6 +123,15 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               }
             });
           });
+
+          setSirkulasiAkhir((prevSirkulasiAkhir) => ({
+            ...prevSirkulasiAkhir,
+            [item.type]: {
+              sirkulasi: sirkulasiAwalOnDatabase,
+              angsuran: totalInstalment,
+              saldo: sirkulasiAwalOnDatabase - totalInstalment,
+            },
+          }));
 
           return {
             key: item.month,
@@ -145,6 +177,14 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
     setTriggeredId(null);
   };
 
+  const [showApproval, setShowApproval] = useState(false);
+  const onShowApproval = (id) => {
+    setShowApproval(true);
+  };
+
+  const onClosedShowApproval = () => {
+    setShowApproval(false);
+  };
   return (
     <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
       <Table className="text-xs rounded-lg">
@@ -235,6 +275,20 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           </TableRow>
         </TableFooter>
       </Table>
+      <div className="flex items-center justify-end gap-3 mt-6">
+        <div>Approval Akhir Bulan</div>
+        <div>
+          <Button onClick={onShowApproval} variant="green" size="sm">
+            Approval
+          </Button>
+        </div>
+      </div>
+
+      <ApprovalAkhir
+        show={showApproval}
+        onClosed={onClosedShowApproval}
+        datas={sirkulasiAkhir}
+      />
       <Action
         datas={data}
         show={show}

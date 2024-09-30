@@ -442,6 +442,8 @@ class TransactionLoanController extends Controller
       ->whereIn('date', [$transaction_start_date->format('Y-m-d'), $transaction_date->copy()->addDay()->format('Y-m-d')])
       ->get();
 
+    // dd($transactionSirkulan);
+
     $loan = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
         $item->orderByDesc('transaction_date');
@@ -521,7 +523,7 @@ class TransactionLoanController extends Controller
     $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date) {
       return [
         'month' => Carbon::parse($key)->format('FY'),
-        'type' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
+        'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
         'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date) {
           return [
@@ -570,7 +572,7 @@ class TransactionLoanController extends Controller
       'sirkulasi' => $transactionSirkulan,
       'select_branch' => auth()->user()->can('can show branch'),
       'select_kelompok' => auth()->user()->can('can show kelompok'),
-      'server_filter' => ['month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok],
+      'server_filter' => ['month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'groupId' => $groupingId->id],
     ]);
   }
   /**

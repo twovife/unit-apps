@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TransactionSirculation;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -73,5 +75,37 @@ class AdminController extends Controller
     }
 
     return redirect()->back()->with('message', 'User Assigned Successfully');
+  }
+
+  public function sirkulasiAwal(Request $request)
+  {
+    // id, , date, day, amount, cm_amount, mb_amount, ml_amount, created_at, updated_at
+    try {
+      DB::beginTransaction();
+      $create = TransactionSirculation::create([
+        'date' => '2024-09-01',
+        'day' => $request->hari,
+        'transaction_loan_officer_grouping_id' => $request->groupId,
+        'amount' => $request->sirkulasi_awal,
+        'cm_amount' => $request->cm_awal,
+        'mb_amount' => $request->mb_awal,
+        'ml_amount' => $request->ml_awal,
+      ]);
+      $create = TransactionSirculation::create([
+        'date' => '2024-10-01',
+        'day' => $request->hari,
+        'transaction_loan_officer_grouping_id' => $request->groupId,
+        'amount' => $request->sirkulasi_akhir,
+        'cm_amount' => $request->ccm_akhir,
+        'mb_amount' => $request->cm_akhir,
+        'ml_amount' => $request->ml_akhir + $request->mb_akhir,
+      ]);
+
+      DB::commit();
+    } catch (Exception $e) {
+      DB::rollBack();
+      return redirect()->back()->withErrors('Sirkulasi Awal Error');
+    }
+    return redirect()->back()->with('message', 'Sirkulasi Awal Successfully');
   }
 }

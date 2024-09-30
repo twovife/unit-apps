@@ -135,6 +135,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/', "post_permission")->name('post_permission');
     Route::post('/role-assign', "role_assign")->name('role_assign');
     Route::post('/user-assign', "user_assign")->name('user_assign');
+    Route::post('/sirkulasiAwal', "sirkulasiAwal")->name('sirkulasiAwal');
   });
 
   Route::prefix('profile')->name('profile.')->group(function () {
