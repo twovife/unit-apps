@@ -47,7 +47,7 @@ import "./Action-15bda871.mjs";
 import "./Acc-39848926.mjs";
 import "./Tolak-03c98234.mjs";
 import "./DropJadi-62a0cc4b.mjs";
-import "./Gagal-434b7d12.mjs";
+import "./Gagal-2810684e.mjs";
 import "./DetailTableOnAction-f4a7e802.mjs";
 import "./RemoveLoan-622848d6.mjs";
 import "./ReStatus-01ffcaad.mjs";

@@ -48,7 +48,7 @@ import "./Acc-ff1cd03b.mjs";
 import "react-currency-input-field";
 import "./Tolak-4a7c0e59.mjs";
 import "./DropJadi-a79f5698.mjs";
-import "./Gagal-2810684e.mjs";
+import "./Gagal-434b7d12.mjs";
 const Index = ({ data, select_kelompok, select_branch, ...props }) => {
   const selectedDay = props.server_filter.date;
   dayjs(selectedDay).format("YYYY-MM-DD");

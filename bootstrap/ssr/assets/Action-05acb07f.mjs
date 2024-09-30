@@ -12,7 +12,7 @@ import dayjs from "dayjs";
 import Acc from "./Acc-ff1cd03b.mjs";
 import Tolak from "./Tolak-4a7c0e59.mjs";
 import DropJadi from "./DropJadi-a79f5698.mjs";
-import Gagal from "./Gagal-2810684e.mjs";
+import Gagal from "./Gagal-434b7d12.mjs";
 import { B as BargeStatus } from "./BargeStatus-66d07388.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";

@@ -8,7 +8,7 @@ import RiwayatPengajuan from "./RiwayatPengajuan-fce34f28.mjs";
 import Acc from "./Acc-39848926.mjs";
 import Tolak from "./Tolak-03c98234.mjs";
 import DropJadi from "./DropJadi-62a0cc4b.mjs";
-import Gagal from "./Gagal-434b7d12.mjs";
+import Gagal from "./Gagal-2810684e.mjs";
 import DetailTableOnAction from "./DetailTableOnAction-f4a7e802.mjs";
 import RemoveLoan from "./RemoveLoan-622848d6.mjs";
 import ReStatus from "./ReStatus-01ffcaad.mjs";

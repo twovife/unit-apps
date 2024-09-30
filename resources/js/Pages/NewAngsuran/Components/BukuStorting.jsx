@@ -270,6 +270,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             <TableCell rowSpan={2} className="text-center">
               <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
             </TableCell>
+            <TableCell rowSpan={2} className="text-center">
+              <FormatNumbering value={calculateTotals(data, 'sirkulasii')} />
+            </TableCell>
             {dateOfWeek.map((day, i) => (
               <TableCell rowSpan={2} className="text-center" key={i}>
                 <FormatNumbering value={calculateInstalment(data, day)} />

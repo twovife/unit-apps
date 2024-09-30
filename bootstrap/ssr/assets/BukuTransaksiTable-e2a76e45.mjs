@@ -37,7 +37,7 @@ import "@radix-ui/react-label";
 import "react-currency-input-field";
 import "./Tolak-03c98234.mjs";
 import "./DropJadi-62a0cc4b.mjs";
-import "./Gagal-434b7d12.mjs";
+import "./Gagal-2810684e.mjs";
 import "./DetailTableOnAction-f4a7e802.mjs";
 import "./badge-3e44e85b.mjs";
 import "./RemoveLoan-622848d6.mjs";
