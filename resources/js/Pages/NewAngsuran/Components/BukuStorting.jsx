@@ -55,28 +55,32 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           setSaldoSirkulas(getSirkulasi.max?.amount ?? 0);
 
           const sirkulasiBefore = (item) => {
-            switch (item.type) {
-              case 'ml':
-                return getSirkulasi.min?.ml_amount ?? 0;
-                break;
-              case 'mb':
-                return item.data.reduce(
-                  (acc, item) => acc + item.saldo_sebelumnya,
-                  0
-                );
-                break;
-              case 'cm':
-                return item.data.reduce(
-                  (acc, item) => acc + item.saldo_sebelumnya,
-                  0
-                );
-                break;
-              default:
-                return item.data.reduce(
-                  (acc, item) => acc + item.saldo_sebelumnya,
-                  0
-                );
-            }
+            // switch (item.type) {
+            //   case 'ml':
+            //     return getSirkulasi.min?.ml_amount ?? 0;
+            //     break;
+            //   case 'mb':
+            //     return item.data.reduce(
+            //       (acc, item) => acc + item.saldo_sebelumnya,
+            //       0
+            //     );
+            //     break;
+            //   case 'cm':
+            //     return item.data.reduce(
+            //       (acc, item) => acc + item.saldo_sebelumnya,
+            //       0
+            //     );
+            //     break;
+            //   default:
+            //     return item.data.reduce(
+            //       (acc, item) => acc + item.saldo_sebelumnya,
+            //       0
+            //     );
+            // }
+            return item.data.reduce(
+              (acc, item) => acc + item.saldo_sebelumnya,
+              0
+            );
           };
 
           const sirkulasiAwalOnDatabase = sirkulasiBefore(item);
