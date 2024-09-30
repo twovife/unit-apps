@@ -337,7 +337,7 @@ class TransactionLoanController extends Controller
         $request['drop_before'] = $drop_before?->nominal_drop ?? 0;
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
-      $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->first();
+      $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->orderBy('id', 'desc')->first();
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
         'request_date' => $request->request_date,
@@ -735,6 +735,8 @@ class TransactionLoanController extends Controller
       'transaction_date' => ['required_if:type_transaksi,bayar', 'date'],
     ]);
 
+    $transactionLoan->with('loan_instalment', 'loan_officer_grouping');
+    $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('kelompok', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
     try {
       DB::beginTransaction();
       if ($request->type_transaksi == "bayar") {
@@ -745,7 +747,7 @@ class TransactionLoanController extends Controller
           'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date, $request->transaction_date),
           'danatitipan' => $request->danatitipan,
           'user_mantri' => auth()->user()->employee->id,
-          'user_input' => auth()->user()->employee->id,
+          'user_input' => $employee->id,
         ]);
       }
 
