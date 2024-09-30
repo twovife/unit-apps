@@ -105,8 +105,33 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                 );
             }
           };
+          const sirkulasiBeforeOnDB = (item) => {
+            switch (item.type) {
+              case 'ml':
+                return getSirkulasi.min?.ml_amount ?? 0;
+                break;
+              case 'mb':
+                return item.data.reduce(
+                  (acc, item) => acc + item.saldo_sebelumnya,
+                  0
+                );
+                break;
+              case 'cm':
+                return item.data.reduce(
+                  (acc, item) => acc + item.saldo_sebelumnya,
+                  0
+                );
+                break;
+              default:
+                return item.data.reduce(
+                  (acc, item) => acc + item.saldo_sebelumnya,
+                  0
+                );
+            }
+          };
 
           const sirkulasiAwalOnDatabase = sirkulasiBefore(item);
+          const sirkulasiAwalOnDatabase2 = sirkulasiBeforeOnDB(item);
 
           dateOfWeek.forEach((date) => {
             instalmentsSum[date] = 0;
@@ -128,6 +153,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             ...prevSirkulasiAkhir,
             [item.type]: {
               sirkulasi: sirkulasiAwalOnDatabase,
+              sirkulasii: sirkulasiAwalOnDatabase2,
               angsuran: totalInstalment,
               saldo: sirkulasiAwalOnDatabase - totalInstalment,
             },
@@ -192,6 +218,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           <TableRow className="bg-gray-200">
             <TableHead className="text-center">Bulan</TableHead>
             <TableHead className="text-center">Sirkulasi</TableHead>
+            <TableHead className="text-center">Sirkulasi2</TableHead>
             {dateOfWeek.map((day, i) => (
               <TableHead className="text-center" key={i}>
                 {dayjs(day).format('DD-MM-YY')}
@@ -209,6 +236,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                   <TableCell>{row.key}</TableCell>
                   <TableCell>
                     <FormatNumbering value={row.sirkulasi} />
+                  </TableCell>
+                  <TableCell>
+                    <FormatNumbering value={row.sirkulasii} />
                   </TableCell>
 
                   {dateOfWeek.map((day, i) => (
