@@ -60,10 +60,16 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                 return getSirkulasi.min?.ml_amount ?? 0;
                 break;
               case 'mb':
-                return getSirkulasi.min?.mb_amount ?? 0;
+                return item.data.reduce(
+                  (acc, item) => acc + item.saldo_sebelumnya,
+                  0
+                );
                 break;
               case 'cm':
-                return getSirkulasi.min?.cm_amount ?? 0;
+                return item.data.reduce(
+                  (acc, item) => acc + item.saldo_sebelumnya,
+                  0
+                );
                 break;
               default:
                 return item.data.reduce(
