@@ -153,7 +153,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             ...prevSirkulasiAkhir,
             [item.type]: {
               sirkulasi: sirkulasiAwalOnDatabase,
-              sirkulasii: sirkulasiAwalOnDatabase2,
+
               angsuran: totalInstalment,
               saldo: sirkulasiAwalOnDatabase - totalInstalment,
             },
@@ -163,6 +163,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             key: item.month,
             instalment: { ...instalmentsSum },
             sirkulasi: sirkulasiAwalOnDatabase,
+            sirkulasii: sirkulasiAwalOnDatabase2,
             totalInstalment: totalInstalment,
             sirkulasiAfter: sirkulasiAwalOnDatabase - totalInstalment,
           };
