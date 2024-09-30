@@ -737,6 +737,7 @@ class TransactionLoanController extends Controller
 
     $transactionLoan->with('loan_instalment', 'loan_officer_grouping');
     $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('area', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
+
     try {
       DB::beginTransaction();
       if ($request->type_transaksi == "bayar") {
@@ -746,8 +747,8 @@ class TransactionLoanController extends Controller
           'transaction_date' => $request->transaction_date,
           'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date, $request->transaction_date),
           'danatitipan' => $request->danatitipan,
-          'user_mantri' => auth()->user()->employee->id,
-          'user_input' => $employee->id,
+          'user_input' => auth()->user()->employee->id,
+          'user_mantri' => $employee->id,
         ]);
       }
 
