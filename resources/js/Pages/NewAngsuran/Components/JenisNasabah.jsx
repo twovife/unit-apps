@@ -11,7 +11,6 @@ const JenisNasabah = ({ loan }) => {
     notes: '',
     type_transaksi: 'notes',
   });
-  console.log(loan.id);
 
   useEffect(() => {
     setData('notes', loan.notes);

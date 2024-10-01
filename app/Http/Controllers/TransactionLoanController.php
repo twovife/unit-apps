@@ -437,6 +437,7 @@ class TransactionLoanController extends Controller
     // dd($hari);
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+
     $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
       ->where('day', $hari)
       ->whereIn('date', [$transaction_start_date->format('Y-m-d'), $transaction_date->copy()->addDay()->format('Y-m-d')])
@@ -462,6 +463,8 @@ class TransactionLoanController extends Controller
       ->groupBy(function ($item) {
         return Carbon::parse($item->drop_date)->format('Y-m');
       });
+
+    $ClosedTransaction = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->max('date');
 
     $loanMl = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
@@ -572,7 +575,7 @@ class TransactionLoanController extends Controller
       'sirkulasi' => $transactionSirkulan,
       'select_branch' => auth()->user()->can('can show branch'),
       'select_kelompok' => auth()->user()->can('can show kelompok'),
-      'server_filter' => ['month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'groupId' => $groupingId->id],
+      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'groupId' => $groupingId->id],
     ]);
   }
   /**

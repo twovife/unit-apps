@@ -26,6 +26,7 @@ import DetailTableOnAction from './detailTableOnAction';
 import RemoveLoan from './RemoveLoan';
 import ReStatus from './ReStatus';
 import ChangeDetail from './ChangeDetail';
+import { Badge } from '@/shadcn/ui/badge';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
   const [data, setData] = useState([]);
@@ -100,10 +101,10 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                     <div className="flex flex-col gap-3 mt-3 lg:flex-row">
                       <Card className="w-full">
                         <CardHeader>
-                          <CardTitle>Acc</CardTitle>
+                          <CardTitle>ACC / DROP</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                          <div className="flex items-end justify-center gap-2 mx-auto lg:w-1/2">
+                          <div className="flex items-end justify-center gap-2 mx-auto mb-3">
                             {data?.status === 'open' ? (
                               <>
                                 <Acc
@@ -117,21 +118,14 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                                 />
                               </>
                             ) : (
-                              <div>
-                                Status Pengajuan = {data?.status}, Tanggal{' '}
+                              <Badge size={'lg'} variant={'green'}>
+                                Status Pengajuan = {data?.status}, Pada Tanggal
                                 {data?.check_date}
-                              </div>
+                              </Badge>
                             )}
                           </div>
-                        </CardContent>
-                      </Card>
-                      {data?.status !== 'open' && (
-                        <Card className="w-full">
-                          <CardHeader>
-                            <CardTitle>Drop Jadi</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-2">
-                            <div className="flex items-end justify-center gap-2 mx-auto lg:w-1/2">
+                          {data?.status !== 'open' && (
+                            <div className="flex items-end justify-center gap-2 mx-auto">
                               {data?.status === 'acc' ? (
                                 <>
                                   <DropJadi
@@ -145,15 +139,16 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                                   />
                                 </>
                               ) : (
-                                <div>
+                                <Badge size={'lg'} variant={'green'}>
                                   Status Pengajuan = {data?.status}, Tanggal{' '}
                                   {data?.check_date}
-                                </div>
+                                </Badge>
                               )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      )}
+                          )}
+                        </CardContent>
+                      </Card>
+
                       <Card className="w-full">
                         <CardHeader>
                           <CardTitle>Admin Edit</CardTitle>

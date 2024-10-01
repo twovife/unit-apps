@@ -23,6 +23,7 @@ import {
 import { useForm } from '@inertiajs/react';
 import { Label } from '@radix-ui/react-label';
 import dayjs from 'dayjs';
+import { parse } from 'postcss';
 import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
@@ -30,8 +31,6 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
   const { data, setData, post, reset, errors, processing } = useForm({
     id: '',
     date: '',
-    kasbon: '',
-    transport: '',
     masuk: '',
     keluar: '',
     target: '',
@@ -44,7 +43,8 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
     rencana_minggu_depan: '',
     target_minggu_depan: '',
   });
-  const [flaatenData, setFlaatenData] = useState([]);
+  const [flaatenData, setFlaatenData] = useState();
+  const [erorRequest, setErorRequest] = useState(false);
 
   useEffect(() => {
     const flaatenData = staticData?.flat(2) ?? [];
@@ -57,6 +57,19 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
         );
       });
 
+      const uniqueDropDates = [
+        ...new Set(filteredData.map((item) => item.tanggal_drop)),
+      ];
+
+      const uniqueDropDatesString =
+        uniqueDropDates.length === 1
+          ? uniqueDropDates[0]
+          : uniqueDropDates.length === 0
+          ? setErorRequest(false)
+          : setErorRequest(true);
+
+      console.log(uniqueDropDatesString);
+
       const rencana = filteredData.reduce((a, item) => {
         return a + item.acc;
       }, 0);
@@ -64,8 +77,6 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
       setData({
         id: triggeredData.grouping_id ?? null,
         date: triggeredData.tanggal,
-        kasbon: triggeredData.kasbon,
-        transport: triggeredData.transport,
         target: triggeredData.target,
         masuk:
           triggeredData.masuk == 0
@@ -80,15 +91,20 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
         storting: triggeredData.storting,
         drop: triggeredData.drop,
         rencana: triggeredData.rencana,
-        tanggal_rencana_minggu_depan: triggeredData?.tanggal ?? '',
+        tanggal_rencana_minggu_depan: uniqueDropDatesString ?? null,
         rencana_minggu_depan: rencana ?? 0,
-        target_minggu_depan:
-          triggeredData.target + triggeredData.masuk - triggeredData.keluar ??
-          0,
+        target_minggu_depan: 0,
       });
-      setFlaatenData(filteredData);
+      setFlaatenData(uniqueDropDatesString ?? null);
     }
   }, [triggeredData, show]);
+
+  useEffect(() => {
+    setData(
+      'target_minggu_depan',
+      parseInt(data.target) + (parseInt(data.masuk) - parseInt(data.keluar))
+    );
+  }, [data.target, data.masuk, data.keluar]);
 
   const [loading, setLoading] = useState(false);
 
@@ -106,16 +122,19 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
   const closedModal = () => {
     onClosed();
     reset();
+    setErorRequest(false);
   };
 
   const onSubmitForm = (e) => {
     e.preventDefault();
-    post(route('kasir.rekap.ceklist_kepala'), {
-      onSuccess: () => {
-        reset();
-        onClosed();
-      },
-    });
+    console.log(data);
+
+    // post(route('kasir.rekap.ceklist_kepala'), {
+    //   onSuccess: () => {
+    //     reset();
+    //     onClosed();
+    //   },
+    // });
   };
   // console.log(data);
 
@@ -264,42 +283,11 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
                     />
                   </div>
                 )}
-                <p className="mb-1 italic font-thin text-gray-500">
-                  di isi jika kasir belum mengisi
-                </p>
-                <div className="mb-3">
-                  <Label htmlFor="kasbon">Kasbon</Label>
-                  <CurrencyInput
-                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    name="kasbon"
-                    readOnly={data.status_dayly_approval}
-                    allowDecimals={false}
-                    prefix="Rp. "
-                    min={1}
-                    required
-                    onValueChange={onHandleCurencyChange}
-                    value={data.kasbon}
-                    placeholder={'Inputkan angka tanpa sparator'}
-                  />
-                </div>
-                <div className="mb-3">
-                  <Label htmlFor="transport">Transport</Label>
-                  <CurrencyInput
-                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    name="transport"
-                    readOnly={data.status_dayly_approval}
-                    allowDecimals={false}
-                    prefix="Rp. "
-                    min={1}
-                    required
-                    onValueChange={onHandleCurencyChange}
-                    value={data.transport}
-                    placeholder={'Inputkan angka tanpa sparator'}
-                  />
-                </div>
                 <br />
                 <p className="mb-1 italic font-thin text-gray-500">
-                  di isi saat Approval / Cek Transaksi Mantri
+                  Sebelum Ceklist, Diharapkan Semua Storting, Rencana, target
+                  dan drop sudah sesuai, tidak diperbolehkan ada transaksi yang
+                  masih Open
                 </p>
                 <div className="mb-3">
                   <Label htmlFor="masuk">Masuk</Label>
@@ -349,7 +337,20 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
                     value={data.tanggal_rencana_minggu_depan}
                     placeholder={'Inputkan angka tanpa sparator'}
                   />
+                  {erorRequest && (
+                    <small className="text-red-500 ">
+                      Periksa Kembali, Pengajuan Memiliki 2 Tanggal Drop Yang
+                      Berbeda
+                    </small>
+                  )}
+                  {data.tanggal_rencana_minggu_depan == null && (
+                    <small className="text-red-500 ">
+                      Tidak Ada Pengajuan Untuk Minggu Depan, Isikan Tanggal
+                      Secara Manual
+                    </small>
+                  )}
                 </div>
+
                 <div className="mb-3">
                   <Label htmlFor="rencana_minggu_depan">
                     Rencana Drop Minggu Depan

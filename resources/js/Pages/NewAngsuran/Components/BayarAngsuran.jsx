@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from '@/shadcn/ui/card';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Label } from '@/shadcn/ui/label';
 import { Input } from '@/shadcn/ui/input';
@@ -18,13 +18,13 @@ import { useForm } from '@inertiajs/react';
 import Loading from '@/Components/Loading';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 
-const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
+const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   // const { kelompok } = useOptionGenerator();
   const { data, setData, post, errors, processing, reset, recentlySuccessful } =
     useForm({
       type_transaksi: 'bayar',
       transaction_date: '',
-      nominal: '',
+      nominal: 0,
       id: '',
     });
 
@@ -47,6 +47,11 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
     const value = e.target.getAttribute('data-value');
     setData('nominal', value);
   };
+  const buttonAddNominal = (e) => {
+    const nominal = parseInt(data.nominal);
+    const value = parseInt(e.target.getAttribute('data-value'));
+    setData('nominal', value + nominal);
+  };
 
   const onSubmitForm = (e) => {
     e.preventDefault();
@@ -57,6 +62,14 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
       },
     });
   };
+
+  const [pelunasan, setPelunasan] = useState(0);
+
+  useEffect(() => {
+    const pelunasan =
+      instalment?.sort((a, b) => a.saldo - b.saldo)[0]?.saldo ?? 0;
+    setPelunasan(pelunasan);
+  }, [instalment]);
 
   return (
     <Card className="relative w-full mb-3">
@@ -84,7 +97,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               name="nominal"
               allowDecimals={false}
               prefix="Rp. "
-              min={1}
+              min={0}
               required
               onValueChange={onHandleCurencyChange}
               value={data.nominal}
@@ -96,11 +109,31 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               type="button"
               variant="outline"
               size="xs"
-              onClick={buttonValueClick}
-              data-value={triggeredPinjaman / 10 ?? 65000}
+              onClick={buttonAddNominal}
+              data-value={5000}
             >
-              {triggeredPinjaman / 10 ?? 65000}
+              +5 Rb
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonAddNominal}
+              data-value={10000}
+            >
+              +10 Rb
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={50000}
+            >
+              50 Rb
+            </Button>
+
             <Button
               type="button"
               variant="outline"
@@ -108,8 +141,27 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               onClick={buttonValueClick}
               data-value={52000}
             >
-              52.000
+              52 Rb
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={60000}
+            >
+              60 Rb
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={65000}
+            >
+              65 Rb
+            </Button>
+
             <Button
               type="button"
               variant="outline"
@@ -117,7 +169,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               onClick={buttonValueClick}
               data-value={100000}
             >
-              100.000
+              100 Rb
             </Button>
             <Button
               type="button"
@@ -126,7 +178,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               onClick={buttonValueClick}
               data-value={130000}
             >
-              130.000
+              130 Rb
             </Button>
             <Button
               type="button"
@@ -135,7 +187,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               onClick={buttonValueClick}
               data-value={195000}
             >
-              195.000
+              195 Rb
             </Button>
             <Button
               type="button"
@@ -144,10 +196,29 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman }) => {
               onClick={buttonValueClick}
               data-value={260000}
             >
-              260.000
+              260 Rb
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={390000}
+            >
+              390 Rb
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonValueClick}
+              data-value={pelunasan}
+            >
+              {pelunasan}
             </Button>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-6">
             <label className="flex items-center">
               <Checkbox
                 name="danatitipan"

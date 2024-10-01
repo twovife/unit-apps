@@ -23,8 +23,12 @@ import BayarAngsuran from './BayarAngsuran';
 import JenisNasabah from './JenisNasabah';
 import DeleteAngsuran from './DeleteAngsuran';
 import DeleteLoan from './DeleteLoan';
+import { usePage } from '@inertiajs/react';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
+  const {
+    server_filter: { closed_transaction },
+  } = usePage().props;
   const [loading, setLoading] = useState(false);
   const [erorAxios, setErorAxios] = useState(false);
 
@@ -155,7 +159,10 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                     instalment.map((item) => (
                       <TableRow className="text-center">
                         <TableCell>
-                          <DeleteAngsuran id={item.id} />
+                          {(!closed_transaction ||
+                            closed_transaction < item.transaction_date) && (
+                            <DeleteAngsuran id={item.id} />
+                          )}
                         </TableCell>
                         <TableCell>
                           {dayjs(item.transaction_date).format('DD-MM-YYYY')}
@@ -187,6 +194,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
             <BayarAngsuran
               triggeredId={customerData.id}
               triggeredPinjaman={customerData.pinjaman}
+              instalment={instalment}
             />
             <JenisNasabah loan={customerData} />
             <div className="flex items-center justify-end gap-3 p-3">

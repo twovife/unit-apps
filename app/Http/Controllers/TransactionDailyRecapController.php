@@ -315,7 +315,7 @@ class TransactionDailyRecapController extends Controller
   public function ceklist_kepala(Request $request)
   {
 
-    // dd($request->all());
+    dd($request->all());
     $validate = $request->validate([
       'id' => ['required'],
       'date' => ['required'],

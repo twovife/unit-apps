@@ -22,7 +22,7 @@ const Gagal = ({ id, onClosed }) => {
     <form onSubmit={tolakPinjaman}>
       <Loading show={processing} />
       <Button onClick={tolakPinjaman} variant="destructive">
-        TOLAK
+        GAGAL
       </Button>
     </form>
   );
