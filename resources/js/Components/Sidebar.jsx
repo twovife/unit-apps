@@ -71,21 +71,23 @@ const Sidebar = ({ isOpen }) => {
               items={[
                 {
                   id: 1,
-                  title: 'Rekap Kasir',
+                  title: auth.permissions.includes('unit apps')
+                    ? 'Rekap Kasir'
+                    : 'Rekap Mantri',
                   link: route('kasir.rekap.rekap_index'),
                   active: route().current('kasir.rekap.rekap_index'),
-                },
-                {
-                  id: 2,
-                  title: 'Rekap Mantri',
-                  link: route('kasir.rekap.rekap_permantri'),
-                  active: route().current('kasir.rekap.rekap_permantri'),
                 },
                 {
                   id: 2,
                   title: 'Rencana Drop',
                   link: route('kasir.rekap.rencana_drop'),
                   active: route().current('kasir.rekap.rencana_drop'),
+                },
+                {
+                  id: 3,
+                  title: 'Rekap Mantri',
+                  link: route('kasir.rekap.rekap_permantri'),
+                  active: route().current('kasir.rekap.rekap_permantri'),
                 },
               ]}
             />

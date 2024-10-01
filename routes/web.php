@@ -121,12 +121,11 @@ Route::middleware('auth')->group(function () {
   Route::prefix('mobile_apps')->name('mobile_apps.')->group(function () {
     Route::controller(MobileAppsMantriController::class)->group(function () {
       Route::get('/', "index")->name('index');
-      Route::prefix('pengajuan')->name('pengajuan.')->group(function () {
-        Route::get('/', "index_pengajuan")->name('index_pengajuan');
-        Route::get('/baru', "create_pengajuan")->name('create_pengajuan');
-        Route::post('/drop', "drop_pengajuan")->name('drop_pengajuan');
-        Route::post('/transaksi', "transaksi_pengajuan")->name('transaksi_pengajuan');
-      });
+      Route::get('/create', "create")->name('create');
+      Route::post('/create', "store")->name('store');
+      Route::get('/transaksi', "transaksi")->name('transaksi');
+      Route::get('/angsuran', "angsuran")->name('angsuran');
+      Route::get('/macet', "macet")->name('macet');
     });
   });
 

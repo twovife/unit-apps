@@ -16,7 +16,7 @@ const BargeStatus = ({ value, children, onClick, ...props }) => {
   const variant = variantMap[value] || 'default';
   return (
     <Button {...props} onClick={onClick} size="xs" variant={variant}>
-      {value || children}
+      {children ?? value}
     </Button>
   );
 };

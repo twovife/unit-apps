@@ -1,83 +1,75 @@
 import MobileLayout from '@/Layouts/MobileLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
-import { Link } from '@inertiajs/react';
-import { Notebook } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { HandCoinsIcon, Layers, Notebook, UserX } from 'lucide-react';
 import React from 'react';
 
 const Index = () => {
+  const { auth } = usePage().props;
   return (
     <MobileLayout>
-      <Card className="mb-3">
-        <CardHeader>
-          <CardTitle>Menu</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center justify-start gap-3 mb-3">
-            <Button asChild size="icon2xl" variant="destructive">
-              <Link className="flex flex-col">
-                <Notebook />
-                <div className="text-xs">Baru</div>
+      <fieldset className="grid gap-6 p-4 border rounded-lg">
+        <legend className="px-1 -ml-1 text-sm font-medium">Mantri</legend>
+        <div className="flex items-center justify-around gap-6">
+          <div className="text-center">
+            <Button size="icon2xl" variant="outline" asChild>
+              <Link href={route('mobile_apps.create')}>
+                <MagnifyingGlassIcon className="h-7 w-7" />
               </Link>
             </Button>
-            <Button
-              asChild
-              size="icon2xl"
-              variant={
-                route().current('mobile_apps.pengajuan.*')
-                  ? 'default'
-                  : 'destructive'
-              }
-            >
-              <Link
-                href={route('mobile_apps.pengajuan.index_pengajuan')}
-                className="flex flex-col"
-              >
-                <Notebook />
-                <div className="text-xs">Transaksi</div>
-              </Link>
-            </Button>
-            <Button asChild size="icon2xl" variant="destructive">
-              <Link className="flex flex-col">
-                <Notebook />
-                <div className="text-xs">Rencana</div>
-              </Link>
-            </Button>
+            <div>Pengajuan</div>
           </div>
-          <div className="flex flex-wrap items-center justify-start gap-3">
-            <Button asChild size="icon2xl" variant="destructive">
-              <Link className="flex flex-col">
-                <Notebook />
-                <div className="text-xs">Angsuran</div>
+          <div className="text-center">
+            <Button size="icon2xl" variant="outline" asChild>
+              <Link href={route('mobile_apps.transaksi')}>
+                <Layers className="h-7 w-7" />
               </Link>
             </Button>
-            <Button asChild size="icon2xl" variant="destructive">
-              <Link className="flex flex-col">
-                <Notebook />
-                <div className="text-xs">Macet</div>
-              </Link>
-            </Button>
-            <Button asChild size="icon2xl" variant="destructive">
-              <Link className="flex flex-col">
-                <Notebook />
-                <div className="text-xs">Storting</div>
-              </Link>
-            </Button>
-            <Button asChild size="icon2xl" variant="destructive">
-              <Link className="flex flex-col">
-                <Notebook />
-                <div className="text-xs">Rekap</div>
-              </Link>
-            </Button>
+            <div>Drop</div>
           </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Detail Mantri</CardTitle>
-        </CardHeader>
-        <CardContent>asd</CardContent>
-      </Card>
+          <div className="text-center">
+            <Button size="icon2xl" variant="outline" asChild>
+              <Link href={route('mobile_apps.angsuran')}>
+                <HandCoinsIcon className="h-7 w-7" />
+              </Link>
+            </Button>
+            <div>Angsuran</div>
+          </div>
+          <div className="text-center">
+            <Button size="icon2xl" variant="outline" asChild>
+              <Link href={route('mobile_apps.macet')}>
+                <UserX className="h-7 w-7" />
+              </Link>
+            </Button>
+            <div>Macet</div>
+          </div>
+        </div>
+      </fieldset>
+      {auth.permissions.includes('can show unit') && (
+        <fieldset className="grid gap-6 p-4 mt-3 border rounded-lg">
+          <legend className="px-1 -ml-1 text-sm font-medium">Laporan</legend>
+          <div className="flex items-center justify-around gap-6">
+            <div className="text-center">
+              <Button size="icon2xl" variant="outline" asChild>
+                <Link href="#">
+                  <MagnifyingGlassIcon className="h-7 w-7" />
+                </Link>
+              </Button>
+              <div>Web Apps</div>
+            </div>
+            <div className="text-center">
+              <Button size="icon2xl" variant="outline" asChild>
+                <Link href="#">
+                  <HandCoinsIcon className="h-7 w-7" />
+                </Link>
+              </Button>
+              <div>Rekap</div>
+            </div>
+          </div>
+        </fieldset>
+      )}
     </MobileLayout>
   );
 };

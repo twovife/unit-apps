@@ -1,11 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/shadcn/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 
 import React, { useEffect, useState } from 'react';
 
@@ -14,12 +7,14 @@ import { Input } from '@/shadcn/ui/input';
 import CurrencyInput from 'react-currency-input-field';
 import Checkbox from '@/Components/Checkbox';
 import { Button } from '@/shadcn/ui/button';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import Loading from '@/Components/Loading';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 
 const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
-  // const { kelompok } = useOptionGenerator();
+  const {
+    server_filter: { closed_transaction },
+  } = usePage().props;
+
   const { data, setData, post, errors, processing, reset, recentlySuccessful } =
     useForm({
       type_transaksi: 'bayar',
@@ -83,6 +78,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             <Label htmlFor="transaction_date">Tanggal Pembayaran</Label>
             <Input
               type="date"
+              min={closed_transaction}
               name="transaction_date"
               id="transaction_date"
               className="w-full"

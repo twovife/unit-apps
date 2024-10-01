@@ -270,35 +270,32 @@ class TransactionDailyRecapController extends Controller
   public function rekap_post(Request $request)
   {
 
+
     try {
       DB::beginTransaction();
       $dailyTransaction = TransactionDailyRecap::firstOrNew(
         ['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->date]
       );
 
-      if (!$dailyTransaction->daily_kepala_approval || $request->daily_kepala_approval) {
-        $dailyTransaction->daily_kepala_approval = $request->daily_kepala_approval ? Carbon::now() : null;
-        $dailyTransaction->daily_kepala_approval_user = $request->daily_kepala_approval ? auth()->user()->employee->id : null;
-      }
+      if ($request->type == 1) {
+        $optionalFields = ['tunai', 'transport', 'kasbon'];
 
-      if (!$dailyTransaction->daily_kasir_approval || $request->daily_kasir_approval) {
-        $dailyTransaction->daily_kasir_approval = $request->daily_kasir_approval ? Carbon::now() : null;
-        $dailyTransaction->daily_kasir_approval_user = $request->daily_kasir_approval ? auth()->user()->employee->id : null;
-      }
-
-      $kasirApproved = $dailyTransaction->daily_kasir_approval && $request->daily_kasir_approval;
-      $kepalaApproved = $dailyTransaction->daily_kepala_approval && $request->daily_kepala_approval;
-
-      if ($kasirApproved && $kepalaApproved) {
-        $dailyTransaction->tunai = $request->tunai;
-      }
-
-      $optionalFields = ['tunai', 'transport', 'kasbon'];
-
-      foreach ($optionalFields as $field) {
-        if ($request->has($field)) {
-          $dailyTransaction->$field = $request->$field;
+        foreach ($optionalFields as $field) {
+          if ($request->has($field)) {
+            $dailyTransaction->$field = $request->$field;
+          }
         }
+      }
+
+      if ($request->type == 2) {
+
+        if (!$dailyTransaction->daily_kepala_approval) {
+          return redirect()->back()->withError('Data belum di approve kepala');
+        }
+
+        $dailyTransaction->daily_kasir_approval = Carbon::now();
+        $dailyTransaction->daily_kasir_approval_user = auth()->user()->employee->id;
+        $dailyTransaction->tunai = $request->tunai;
       }
 
       $dailyTransaction->save();
@@ -315,25 +312,37 @@ class TransactionDailyRecapController extends Controller
   public function ceklist_kepala(Request $request)
   {
 
-    dd($request->all());
+    // "id" => 311
+    // "date" => "2024-09-03"
+    // "target" => "0"
+    // "masuk" => 806000
+    // "keluar" => 221000
+    // "baru" => 4500000
+    // "lama" => 1700000
+    // "rencana" => 1700000
+    // "storting" => 1820000
+    // "drop" => 6200000
+    // "tanggal_rencana_minggu_depan" => "2024-09-10"
+    // "rencana_minggu_depan" => 0
+    // "target_minggu_depan" => 585000
+    // "daily_kepala_approval" => true
+
+    // dd($request->all());
     $validate = $request->validate([
       'id' => ['required'],
       'date' => ['required'],
-      'kasbon' => ['required'],
-      'transport' => ['required'],
       'masuk' => ['required'],
       'keluar' => ['required'],
       'baru' => ['required'],
       'lama' => ['required'],
       'rencana' => ['required'],
+      'storting' => ['required'],
+      'drop' => ['required'],
       'tanggal_rencana_minggu_depan' => ['required'],
       'rencana_minggu_depan' => ['required'],
       'target_minggu_depan' => ['required'],
     ]);
-    $date = Carbon::parse($request->date);
-    $tanggal_rencana_minggu_depan = Carbon::parse($request->tanggal_rencana_minggu_depan);
 
-    // id, transaction_loan_officer_grouping_id, date, kasbon, target, masuk, keluar, rencana, transport, tunai, kurangan, daily_kepala_approval, daily_kepala_approval_user, daily_kasir_approval, daily_kasir_approval_user, monthly_kepala_approval, monthly_kepala_approval_user, monthly_kasir_approval, monthly_kasir_approval_user, created_at, updated_at
 
     try {
       DB::beginTransaction();

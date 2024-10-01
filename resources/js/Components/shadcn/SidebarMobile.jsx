@@ -11,6 +11,7 @@ import { Button } from '@/shadcn/ui/button';
 import {
   HandCoinsIcon,
   Handshake,
+  Home,
   UserRound,
   UserRoundPlus,
   UserRoundPlusIcon,
@@ -36,35 +37,11 @@ const SidebarMobile = ({ isOpen, setIsOpen }) => {
                   size="iconxl"
                   variant="destructive"
                 >
-                  <Link href={route('mobile_apps.pengajuan.index_pengajuan')}>
-                    <UserRoundPlusIcon />
+                  <Link href={route('mobile_apps.index')}>
+                    <Home />
                   </Link>
                 </Button>
-                <div className="text-center">Pengajuan</div>
-              </div>
-              <div className="w-full text-center">
-                <Button asChild size="iconxl" variant="destructive">
-                  <Link>
-                    <Handshake />
-                  </Link>
-                </Button>
-                <div className="text-center">Transaksi</div>
-              </div>
-              <div className="w-full text-center">
-                <Button asChild size="iconxl" variant="destructive">
-                  <Link>
-                    <HandCoinsIcon />
-                  </Link>
-                </Button>
-                <div className="text-center">Angsuran</div>
-              </div>
-              <div className="w-full text-center">
-                <Button asChild size="iconxl" variant="destructive">
-                  <Link>
-                    <Wrench />
-                  </Link>
-                </Button>
-                <div className="text-center">User</div>
+                <div className="text-center">Home</div>
               </div>
             </div>
           </SheetDescription>

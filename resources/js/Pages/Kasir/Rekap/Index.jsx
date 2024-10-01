@@ -14,6 +14,7 @@ import Action from './Components/Action';
 const Index = ({ datas, auth, ...props }) => {
   const [onShowModal, setOnShowModal] = useState(false);
   const [triggeredData, setTriggeredData] = useState();
+  const [triggeredType, setTriggeredType] = useState();
 
   // Event handler function to set the "onCreateShow" state variable to true
   const handleOnCreateShowOpen = (e) => {
@@ -37,6 +38,7 @@ const Index = ({ datas, auth, ...props }) => {
         show={onShowModal}
         onClosed={handleOnCreateShowClosed}
         triggeredData={triggeredData}
+        type={triggeredType}
       />
 
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
@@ -97,8 +99,12 @@ const Index = ({ datas, auth, ...props }) => {
       <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         <Tabs defaultValue="rekappimpinan" className="w-full">
           <TabsList>
-            <TabsTrigger value="rekappimpinan">Rekap Pinpinan</TabsTrigger>
-            <TabsTrigger value="rekapkasir">Rekap Kasir</TabsTrigger>
+            <TabsTrigger value="rekappimpinan">
+              {auth.permissions.includes('unit pimpinan')
+                ? 'Rekap Pimpinan'
+                : 'Rekap 2'}
+            </TabsTrigger>
+            <TabsTrigger value="rekapkasir">Rekap 1</TabsTrigger>
             <TabsTrigger value="tunaimantri">Tunai Mantri</TabsTrigger>
           </TabsList>
           <TabsContent value="rekappimpinan">
@@ -108,10 +114,12 @@ const Index = ({ datas, auth, ...props }) => {
               datas={datas}
             />
           </TabsContent>
+
           <TabsContent value="rekapkasir">
             <TableRekapKasir
               setOnShowModal={setOnShowModal}
               setTriggeredData={setTriggeredData}
+              setTriggeredType={setTriggeredType}
               datas={datas}
             />
           </TabsContent>
@@ -119,6 +127,7 @@ const Index = ({ datas, auth, ...props }) => {
             <TunaiMantri
               setOnShowModal={setOnShowModal}
               setTriggeredData={setTriggeredData}
+              setTriggeredType={setTriggeredType}
               datas={datas}
             />
           </TabsContent>

@@ -16,7 +16,7 @@ const BadgeStatus = ({ value, onClick, children, ...props }) => {
   const variant = variantMap[value] || 'default';
   return (
     <Badge {...props} onClick={onClick} size="xs" variant={variant}>
-      {value || children}
+      {children ?? value}
     </Badge>
   );
 };

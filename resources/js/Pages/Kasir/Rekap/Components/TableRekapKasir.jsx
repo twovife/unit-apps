@@ -21,7 +21,12 @@ import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
-const TableRekapKasir = ({ setOnShowModal, setTriggeredData, datas }) => {
+const TableRekapKasir = ({
+  setOnShowModal,
+  setTriggeredData,
+  setTriggeredType,
+  datas,
+}) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -44,9 +49,10 @@ const TableRekapKasir = ({ setOnShowModal, setTriggeredData, datas }) => {
     return rows[rows.length - 1]?.getValue(accessorKey);
   };
 
-  const onClickStatusHandler = (e) => {
+  const onClickStatusHandler = (triggeredData, type) => {
     setOnShowModal(true);
-    setTriggeredData(e);
+    setTriggeredData(triggeredData);
+    setTriggeredType(type);
   };
 
   const columns = useMemo(
@@ -62,7 +68,7 @@ const TableRekapKasir = ({ setOnShowModal, setTriggeredData, datas }) => {
                 : dayjs(cell.row.original.tanggal).format('DD-MM')}
             </div>
             <BargeStatus
-              onClick={() => onClickStatusHandler(cell.row.original)}
+              onClick={() => onClickStatusHandler(cell.row.original, 1)}
               value={cell.row.original.status_dayly_approval}
             >
               {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}

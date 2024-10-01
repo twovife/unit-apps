@@ -140,6 +140,7 @@ class TransactionLoanController extends Controller
         'at_approved' => $thisDailyRecap?->daily_kepala_approval,
         'at_kasir' => $thisDailyRecap?->daily_kasir_approval,
         'is_closed' => $thisDailyRecap?->daily_kepala_approval && $thisDailyRecap?->daily_kasir_approval ? true : false,
+        'button_color' => $thisDailyRecap?->daily_kepala_approval ? ($thisDailyRecap?->daily_kasir_approval ? 'success' : 'baru') : 'open',
       ];
     })->sortBy('tanggal')->values();
 
@@ -464,7 +465,7 @@ class TransactionLoanController extends Controller
         return Carbon::parse($item->drop_date)->format('Y-m');
       });
 
-    $ClosedTransaction = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->max('date');
+    $ClosedTransaction = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereNotNull('daily_kepala_approval')->whereNotNull('daily_kasir_approval')->max('date');
 
     $loanMl = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
@@ -731,14 +732,22 @@ class TransactionLoanController extends Controller
    */
   public function bayar_pinjaman(Request $request, TransactionLoan $transactionLoan)
   {
-    if (!auth()->user()->hasPermissionTo('can update')) {
+    // dd($request->all());
+    if (!auth()->user()->hasPermissionTo('can create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
+
+    if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->tanggal_drop)) {
+      return redirect()->back()->withErrors('Hari Tidak Sama');
+    }
+
     $val = $request->validate([
       'type_transaksi' => ['required'],
-      'nominal' => ['required_if:type_transaksi,bayar', 'integer'],
+      'nominal' => ['required_if:type_transaksi,bayar'],
       'transaction_date' => ['required_if:type_transaksi,bayar', 'date'],
     ]);
+
+
 
     $transactionLoan->with('loan_instalment', 'loan_officer_grouping');
     $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('area', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
@@ -767,9 +776,9 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
+      dd($e);
       return redirect()->back()->with('error', 'data gagal diubah');
     }
-    $previousUrl = url()->previous();
     return redirect()->back()->with('message', 'data berhasil diubah');
   }
 

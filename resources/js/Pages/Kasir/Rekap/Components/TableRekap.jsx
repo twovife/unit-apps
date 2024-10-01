@@ -56,7 +56,7 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
   const columns = useMemo(
     () => [
       {
-        header: '',
+        header: 'Kelompok',
         accessorKey: 'kelompok',
         cell: ({ getValue, cell }) => (
           <div className="flex items-center justify-center gap-3">
@@ -65,12 +65,6 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
                 ? getValue()
                 : dayjs(cell.row.original.tanggal).format('DD-MM')}
             </div>
-            <BargeStatus
-              onClick={() => onClickStatusHandler(cell.row.original)}
-              value={cell.row.original.status_dayly_approval}
-            >
-              {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}
-            </BargeStatus>
           </div>
         ),
       },

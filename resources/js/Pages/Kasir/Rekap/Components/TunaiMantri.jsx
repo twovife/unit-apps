@@ -21,7 +21,12 @@ import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
-const TunaiMantri = ({ setOnShowModal, setTriggeredData, datas }) => {
+const TunaiMantri = ({
+  setOnShowModal,
+  setTriggeredData,
+  setTriggeredType,
+  datas,
+}) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -38,9 +43,10 @@ const TunaiMantri = ({ setOnShowModal, setTriggeredData, datas }) => {
   };
 
   const totals = calculateTotals(data);
-  const onClickStatusHandler = (e) => {
+  const onClickStatusHandler = (e, type) => {
     setOnShowModal(true);
     setTriggeredData(e);
+    setTriggeredType(type);
   };
 
   const columns = useMemo(
@@ -56,7 +62,7 @@ const TunaiMantri = ({ setOnShowModal, setTriggeredData, datas }) => {
                 : dayjs(cell.row.original.tanggal).format('DD-MM')}
             </div>
             <BargeStatus
-              onClick={() => onClickStatusHandler(cell.row.original)}
+              onClick={() => onClickStatusHandler(cell.row.original, 2)}
               value={cell.row.original.status_dayly_approval}
             >
               {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}

@@ -46,14 +46,14 @@ const MobileLayout = ({ header, children, loading = false }) => {
       <Loading show={loading} />
 
       <div className="relative h-screen px-2 mx-auto lg:px-4">
-        <div className="sticky top-0 z-50 flex items-center h-16 gap-4 px-3 bg-transparent">
+        <div className="sticky top-0 z-50 flex items-center h-12 gap-4 px-3 bg-transparent">
           <nav className="flex flex-row items-center justify-between w-full gap-5 text-sm font-mediumlg:gap-6 backdrop-blur">
             <div className="flex items-center justify-start">
               <Hamburger
                 distance={'md'}
                 toggled={isOpen}
                 toggle={toggleSidebar}
-                size={16}
+                size={10}
                 rounded
                 color="#020617"
               />
@@ -61,7 +61,10 @@ const MobileLayout = ({ header, children, loading = false }) => {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="flex items-center justify-center gap-3 text-sm">
+                <Button
+                  size="sm"
+                  className="flex items-center justify-center gap-3 text-xs"
+                >
                   {auth.user.username}
                   <UserRound className="w-4 h-4 animate-pulse" />
                 </Button>
