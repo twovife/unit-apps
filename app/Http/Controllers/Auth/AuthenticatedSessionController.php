@@ -14,46 +14,46 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(): Response
-    {
-        return Inertia::render('Auth/Login', [
-            'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
-        ]);
+  /**
+   * Display the login view.
+   */
+  public function create(): Response
+  {
+    return Inertia::render('Auth/Login', [
+      'canResetPassword' => Route::has('password.request'),
+      'status' => session('status'),
+    ]);
+  }
+
+  /**
+   * Handle an incoming authentication request.
+   */
+  public function store(LoginRequest $request): RedirectResponse
+  {
+
+    // dd($request->all());
+    $request->authenticate();
+
+    $request->session()->regenerate();
+
+    if (auth()->user()->hasPermissionTo('area')) {
+      return redirect()->route('mobile_apps.index');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(LoginRequest $request): RedirectResponse
-    {
+    return redirect()->intended(RouteServiceProvider::HOME);
+  }
 
-        // dd($request->all());
-        $request->authenticate();
+  /**
+   * Destroy an authenticated session.
+   */
+  public function destroy(Request $request): RedirectResponse
+  {
+    Auth::guard('web')->logout();
 
-        $request->session()->regenerate();
+    $request->session()->invalidate();
 
-        if (auth()->user()->hasPermissionTo('area')) {
-            return redirect()->route('mantriapps.index');
-        }
+    $request->session()->regenerateToken();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
-    }
-
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): RedirectResponse
-    {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
-
-        return redirect('/login');
-    }
+    return redirect('/login');
+  }
 }

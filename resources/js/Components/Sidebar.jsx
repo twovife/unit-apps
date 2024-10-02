@@ -1,84 +1,107 @@
-import { Transition } from "@headlessui/react";
-import React from "react";
-import DropdownButton from "./DropDownButton";
-import ButtonMenu from "./ButtonMenu";
-import { usePage } from "@inertiajs/react";
+import { Transition } from '@headlessui/react';
+import React from 'react';
+import DropdownButton from './shadcn/DropDownButton';
+import ButtonMenu from './ButtonMenu';
+import { usePage } from '@inertiajs/react';
+import { Button } from '@/shadcn/ui/button';
+import MenuButton from './shadcn/MenuButton';
 
 const Sidebar = ({ isOpen }) => {
-    const { auth } = usePage().props;
-    const unitAkses = auth.user.permissions.some(
-        (item) => item.name === "unit"
-    );
-    return (
-        <aside
-            className={`bg-slate-50 text-slate-900 w-64 fixed top-14 left-0 bottom-0 z-40 transition-all ease-in-out duration-300 ${
-                isOpen ? "translate-x-0" : "-translate-x-64"
-            }`}
-        >
-            <div className="py-2 px-4 font-semibold">Apps Menu</div>
-            <div className="p-4 space-y-4">
-                <ButtonMenu
-                    url={route("home")}
-                    title={"Home"}
-                    active={route().current("home")}
-                />
-                {unitAkses && (
-                    <>
-                        <ButtonMenu
-                            url={route("batchupdate.batch_create")}
-                            title={"Batch_data"}
-                            active={route().current("batchupdate.*")}
-                        />
+  const { auth } = usePage().props;
+  const unitAkses = auth.permissions.includes('unit apps');
 
-                        <DropdownButton
-                            title="Transaksi Drop"
-                            active={route().current("transaction.*")}
-                            items={[
-                                {
-                                    id: 1,
-                                    title: "Buku Transaksi",
-                                    link: route("transaction.index"),
-                                    active:
-                                        route().current("transaction.*") &&
-                                        !route().current(
-                                            "transaction.index_open"
-                                        ),
-                                },
-                                {
-                                    id: 1,
-                                    title: "Open Transaksi",
-                                    link: route("transaction.index_open"),
-                                    active: route().current(
-                                        "transaction.index_open"
-                                    ),
-                                },
-                            ]}
-                        />
-                        <DropdownButton
-                            title="Buku Angsuran"
-                            active={route().current("pinjaman.*")}
-                            items={[
-                                {
-                                    id: 1,
-                                    title: "Angsuran Normal",
-                                    link: route("pinjaman.normal.index"),
-                                    active: route().current(
-                                        "pinjaman.normal.*"
-                                    ),
-                                },
-                            ]}
-                        />
-                    </>
-                )}
+  return (
+    <aside
+      className={`bg-white text-slate-900 w-64 fixed top-16 left-0 bottom-0 z-40 transition-all ease-in-out duration-300 border-r shadow ${
+        isOpen ? 'translate-x-0' : '-translate-x-64'
+      }`}
+    >
+      <div className="px-4 py-4 font-semibold border-b">Apps Menu</div>
+      <div className="p-4 space-y-4">
+        <MenuButton
+          href={route('home')}
+          title={'Home'}
+          active={route().current('home')}
+        />
+        {unitAkses && (
+          <>
+            <MenuButton title="Data Karyawan" />
 
-                <ButtonMenu
-                    url={route("mantriapps.index")}
-                    title={"Mantri Apps"}
-                    active={route().current("mantriapps.*")}
-                />
-            </div>
-        </aside>
-    );
+            <DropdownButton
+              title="Buku Transaksi"
+              active={route().current('transaction.*')}
+              items={[
+                {
+                  id: 1,
+                  title: 'Buku Transaksi Mantri',
+                  link: route('transaction.index_buku_transaksi'),
+                  active: route().current('transaction.index_buku_transaksi'),
+                },
+                {
+                  id: 2,
+                  title: 'Fast Create',
+                  link: route('transaction.fastcreate'),
+                  active: route().current('transaction.fastcreate'),
+                },
+              ]}
+            />
+
+            <DropdownButton
+              title="Angsuran"
+              active={route().current('pinjaman.*')}
+              items={[
+                {
+                  id: 1,
+                  title: 'Angsuran Lancar',
+                  link: route('pinjaman.index_pinjaman'),
+                  active: route().current('pinjaman.index_pinjaman'),
+                },
+                {
+                  id: 2,
+                  title: 'Cari Angsuran / Macet',
+                  link: route('pinjaman.index_pinjaman_search'),
+                  active: route().current('pinjaman.index_pinjaman_search'),
+                },
+              ]}
+            />
+
+            <DropdownButton
+              title="Rekap Harian"
+              active={route().current('kasir.rekap.*')}
+              items={[
+                {
+                  id: 1,
+                  title: auth.permissions.includes('unit apps')
+                    ? 'Rekap Kasir'
+                    : 'Rekap Mantri',
+                  link: route('kasir.rekap.rekap_index'),
+                  active: route().current('kasir.rekap.rekap_index'),
+                },
+                {
+                  id: 2,
+                  title: 'Rencana Drop',
+                  link: route('kasir.rekap.rencana_drop'),
+                  active: route().current('kasir.rekap.rencana_drop'),
+                },
+                {
+                  id: 3,
+                  title: 'Rekap Mantri',
+                  link: route('kasir.rekap.rekap_permantri'),
+                  active: route().current('kasir.rekap.rekap_permantri'),
+                },
+              ]}
+            />
+          </>
+        )}
+
+        <MenuButton
+          url={route('mantriapps.index')}
+          title={'Mantri Apps'}
+          active={route().current('mantriapps.*')}
+        />
+      </div>
+    </aside>
+  );
 };
 
 export default Sidebar;

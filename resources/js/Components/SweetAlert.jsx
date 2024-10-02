@@ -1,30 +1,26 @@
-import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
+import { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
-const SweetAlert = ({ type, flash }) => {
-    const MySwal = withReactContent(Swal);
+const SweetAlert = ({ type, message, keys }) => {
+  console.log(keys);
 
-    useEffect(() => {
-        if (type === "error") {
-            MySwal.fire({
-                position: "top-end",
-                icon: "error",
-                title: flash[0] || "Terjadi Kesalahan Silahkan hub IT.",
-                showConfirmButton: false,
-                timer: 1500,
-            });
-        } else if (type === "success") {
-            MySwal.fire({
-                position: "top-end",
-                icon: "success",
-                title: flash?.message || "Anda Telah Melakukan Perubahan",
-                showConfirmButton: false,
-                timer: 1500,
-            });
-        }
-    }, [type, flash]);
+  const MySwal = withReactContent(Swal);
 
-    return null;
+  useEffect(() => {
+    const alertInstance = MySwal.fire({
+      position: 'top-end',
+      icon: type,
+      title:
+        message ||
+        (type === 'error'
+          ? 'Terjadi Kesalahan Silahkan hub IT.'
+          : 'Anda Telah Melakukan Perubahan'),
+      showConfirmButton: false,
+      timer: 1500,
+    });
+  }, [type, message, keys]);
+
+  return null;
 };
 export default SweetAlert;
