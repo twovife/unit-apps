@@ -253,11 +253,9 @@ class MobileAppsMantriController extends Controller
 
   public function angsuran(Request $request)
   {
-    $date = $request->date ?? null;
-    if ($date) {
-      $request->merge(['month' => Carbon::parse($date)->format('Y-m'), 'hari' => AppHelper::dateName($date)]);
-    }
-    $transaction_date = Carbon::parse($request->month)->endOfMonth() ?? Carbon::now()->endOfMonth();
+
+
+    $transaction_date = Carbon::now()->endOfMonth();
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
@@ -267,7 +265,6 @@ class MobileAppsMantriController extends Controller
     $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
-    // dd($hari);
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
@@ -292,6 +289,15 @@ class MobileAppsMantriController extends Controller
       })
       ->where('status', 'success')
       ->orderBy('drop_date')
+      // ->where(function ($query) use ($tanggalSeleksi) {
+      //   $query->whereHas('loan_instalment', function ($subquery) {
+      //     $subquery->havingRaw('sum(nominal) < transaction_loans.nominal_drop');
+      //   })
+      //     ->orWhereHas('loan_instalment', function ($subquery) use ($tanggalSeleksi) {
+      //       $subquery->where("transaction_date", $tanggalSeleksi);
+      //     })
+      //     ->orWhereDoesntHave('loan_instalment');
+      // })
       ->get()
       ->groupBy(function ($item) {
         return Carbon::parse($item->drop_date)->format('Y-m');
@@ -349,6 +355,7 @@ class MobileAppsMantriController extends Controller
           'x_angs' => $item->loan_instalment->count(),
           'saldo_sebelumnya' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
           'angsuran' => $item->loan_instalment->sum('nominal'),
+          'lunas' => $item->pinjaman == $item->loan_instalment->sum('nominal'),
           'is_paid' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty(),
           'saldo' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_date->format('Y-m-d'))->sum('nominal'),
           'notes' => $item->notes
@@ -388,6 +395,7 @@ class MobileAppsMantriController extends Controller
             'x_angs' => $item->loan_instalment->count(),
             'saldo_sebelumnya' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
             'angsuran' => $item->loan_instalment->sum('nominal'),
+            'lunas' => $item->pinjaman == $item->loan_instalment->sum('nominal'),
             'is_paid' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty(),
             'saldo' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_date->format('Y-m-d'))->sum('nominal'),
             'notes' => $item->notes

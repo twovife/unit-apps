@@ -16,8 +16,20 @@ import { Badge } from '@/shadcn/ui/badge';
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
+
   useEffect(() => {
-    setData(datas);
+    if (datas) {
+      const filterData = (data) => {
+        return data.map((monthData) => ({
+          ...monthData,
+          data: monthData.data.filter((item) => !(item.lunas && !item.is_paid)),
+        }));
+      };
+
+      const filteredData = filterData(datas);
+
+      setData(filteredData);
+    }
   }, [datas]);
 
   const calculateInstalment = (data, keyToSum) => {
