@@ -292,15 +292,6 @@ class MobileAppsMantriController extends Controller
       })
       ->where('status', 'success')
       ->orderBy('drop_date')
-      ->where(function ($query) use ($tanggalSeleksi) {
-        $query->whereHas('loan_instalment', function ($subquery) {
-          $subquery->havingRaw('sum(nominal) < transaction_loans.nominal_drop');
-        })
-          ->orWhereHas('loan_instalment', function ($subquery) use ($tanggalSeleksi) {
-            $subquery->where("transaction_date", $tanggalSeleksi);
-          })
-          ->orWhereDoesntHave('loan_instalment');
-      })
       ->get()
       ->groupBy(function ($item) {
         return Carbon::parse($item->drop_date)->format('Y-m');
