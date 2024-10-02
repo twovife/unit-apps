@@ -11,7 +11,6 @@ import {
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
-import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 
 const Angsuran = ({ datas }) => {

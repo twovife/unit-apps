@@ -10,10 +10,6 @@ import {
 } from '@/shadcn/ui/table';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
-import { Button } from '@/shadcn/ui/button';
-import Action from './Action';
-import { Badge } from '@/shadcn/ui/badge';
-import ApprovalAkhir from './ApprovalAkhir';
 
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
   const [data, setData] = useState([]);
@@ -219,7 +215,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           <TableRow className="bg-gray-200">
             <TableHead className="text-center">Bulan</TableHead>
             <TableHead className="text-center">Sirkulasi</TableHead>
-            <TableHead className="text-center">Sirkulasi2</TableHead>
+            {/* <TableHead className="text-center">Sirkulasi2</TableHead> */}
             {dateOfWeek.map((day, i) => (
               <TableHead className="text-center" key={i}>
                 {dayjs(day).format('DD-MM-YY')}
@@ -238,9 +234,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                   <TableCell>
                     <FormatNumbering value={row.sirkulasi} />
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <FormatNumbering value={row.sirkulasii} />
-                  </TableCell>
+                  </TableCell> */}
 
                   {dateOfWeek.map((day, i) => (
                     <TableCell className="text-center" key={i}>
@@ -270,9 +266,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             <TableCell rowSpan={2} className="text-center">
               <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
             </TableCell>
-            <TableCell rowSpan={2} className="text-center">
+            {/* <TableCell rowSpan={2} className="text-center">
               <FormatNumbering value={calculateTotals(data, 'sirkulasii')} />
-            </TableCell>
+            </TableCell> */}
             {dateOfWeek.map((day, i) => (
               <TableCell rowSpan={2} className="text-center" key={i}>
                 <FormatNumbering value={calculateInstalment(data, day)} />
@@ -309,26 +305,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           </TableRow>
         </TableFooter>
       </Table>
-      <div className="flex items-center justify-end gap-3 mt-6">
-        <div>Approval Akhir Bulan</div>
-        <div>
-          <Button onClick={onShowApproval} variant="green" size="sm">
-            Approval
-          </Button>
-        </div>
-      </div>
-
-      <ApprovalAkhir
-        show={showApproval}
-        onClosed={onClosedShowApproval}
-        datas={sirkulasiAkhir}
-      />
-      <Action
-        datas={data}
-        show={show}
-        onClosed={onClosedShowOpen}
-        triggeredId={triggeredId}
-      />
     </div>
   );
 };

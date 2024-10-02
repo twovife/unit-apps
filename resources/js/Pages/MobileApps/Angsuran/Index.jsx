@@ -24,8 +24,8 @@ const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
-            urlLink={route('transaction.index_buku_transaksi')}
-            localState={'transaction_index_buku_transaksi'}
+            urlLink={route('mobile_apps.buku_angsuran')}
+            localState={'mobile_apps_buku_angsuran'}
             searchMonth={true}
             searchHari={true}
             searchKelompok={auth.permissions.includes('can show kelompok')}
@@ -42,8 +42,8 @@ const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
             </PopoverTrigger>
             <PopoverContent>
               <SearchComponent
-                urlLink={route('transaction.index_buku_transaksi')}
-                localState={'transaction_index_buku_transaksi'}
+                urlLink={route('mobile_apps.buku_angsuran')}
+                localState={'mobile_apps_buku_angsuran'}
                 searchMonth={true}
                 searchHari={true}
                 searchKelompok={auth.permissions.includes('can show kelompok')}

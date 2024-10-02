@@ -5,7 +5,7 @@ import { S as SearchComponent } from "./SearchComponent-ed16326c.mjs";
 import { Head } from "@inertiajs/react";
 import { T as Tabs, a as TabsList, b as TabsTrigger, c as TabsContent } from "./tabs-f70be525.mjs";
 import AngsuranTable from "./AngsuranTable-3e914423.mjs";
-import BukuStorting from "./BukuStorting-174ff8d3.mjs";
+import BukuStorting from "./BukuStorting-c551caa2.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
 import "@inertiajs/react/server";
@@ -35,7 +35,7 @@ import "@radix-ui/react-label";
 import "@radix-ui/react-tabs";
 import "./FormatNumbering-02c28a29.mjs";
 import "react-number-format";
-import "./Action-6d067868.mjs";
+import "./Action-22febb2c.mjs";
 import "./dialog-1c7227a2.mjs";
 import "@radix-ui/react-dialog";
 import "./card-1314102b.mjs";
@@ -50,10 +50,10 @@ import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-6ad6e1ba.mjs";
+import "./DeleteAngsuran-81d092c7.mjs";
 import "./TextInput-11198f62.mjs";
 import "./DeleteLoan-3a480ddc.mjs";
-import "./ApprovalAkhir-734b391e.mjs";
+import "./ApprovalAkhir-0ab61e52.mjs";
 const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
   return /* @__PURE__ */ jsxs(Authenticated, { header: /* @__PURE__ */ jsx(Head, { children: "Angsuran Lancar" }), children: [
     /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center", children: [

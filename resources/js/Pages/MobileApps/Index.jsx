@@ -68,7 +68,7 @@ const Index = () => {
           </div>
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href="#">
+              <Link href={route('mobile_apps.buku_storting')}>
                 <BookCheck className="h-7 w-7" />
               </Link>
             </Button>
@@ -76,15 +76,7 @@ const Index = () => {
           </div>
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href="#">
-                <BookMarked className="h-7 w-7" />
-              </Link>
-            </Button>
-            <div>Buku Transaksi</div>
-          </div>
-          <div className="text-center">
-            <Button size="icon2xl" variant="outline" asChild>
-              <Link href="#">
+              <Link href={route('mobile_apps.buku_rekap')}>
                 <HandCoinsIcon className="h-7 w-7" />
               </Link>
             </Button>
@@ -94,7 +86,9 @@ const Index = () => {
       </fieldset>
       {auth.permissions.includes('can update') && (
         <fieldset className="grid gap-6 p-4 mt-3 border rounded-lg">
-          <legend className="px-1 -ml-1 text-sm font-medium">Laporan</legend>
+          <legend className="px-1 -ml-1 text-sm font-medium">
+            Menu Kepala & Pimpinan
+          </legend>
           <div className="flex items-center justify-around gap-6">
             <div className="text-center">
               <Button size="icon2xl" variant="outline" asChild>
@@ -103,6 +97,14 @@ const Index = () => {
                 </Link>
               </Button>
               <div>Web Apps</div>
+            </div>
+            <div className="text-center">
+              <Button size="icon2xl" variant="outline" asChild>
+                <Link href={route('mobile_apps.buku_transaksi_kepala')}>
+                  <BookMarked className="h-7 w-7" />
+                </Link>
+              </Button>
+              <div>Buku Transaksi</div>
             </div>
             <div className="text-center">
               <Button size="icon2xl" variant="outline" asChild>

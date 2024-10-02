@@ -80,8 +80,6 @@ const Index = ({ datas, auth, ...props }) => {
       <div className="max-h-[70vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         {datas &&
           datas.map((item, index) => {
-            console.log(item);
-
             return (
               <div className="mb-3 border rounded-lg">
                 <div className="p-1 px-2 text-sm">
