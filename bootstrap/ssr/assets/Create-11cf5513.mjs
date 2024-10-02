@@ -13,7 +13,7 @@ import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import CurrencyInput from "react-currency-input-field";
 import { u as useOptionGenerator, S as SelectList } from "./SelectComponent-359a9ab7.mjs";
-import RiwayatPengajuan from "./RiwayatPengajuan-7a8d0fc1.mjs";
+import RiwayatPengajuan from "./RiwayatPengajuan-da34a6d3.mjs";
 import dayjs from "dayjs";
 import "react/jsx-runtime";
 import "react-dom/server";
@@ -32,7 +32,7 @@ import "@radix-ui/react-label";
 import "./FormatNumbering-02c28a29.mjs";
 import "react-number-format";
 import "@tanstack/react-table";
-import "./DetailRiwayat-b43ccc9d.mjs";
+import "./DetailRiwayat-dde788e1.mjs";
 const Create = ({ show = false, onClosed }) => {
   const { optKelompok } = useOptionGenerator();
   const { data, setData, post, errors, processing, reset } = useForm({

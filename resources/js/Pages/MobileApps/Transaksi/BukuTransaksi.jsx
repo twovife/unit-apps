@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import Rencana from './Components/Rencana';
 import BukuTransaksiNextTable from './Components/BukuTransaksiNextTable';
 import Approval from './Components/Approval';
+import MobileLayout from '@/Layouts/MobileLayout';
 
 const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
   const [flatData, setFlatData] = useState([]);
@@ -56,7 +57,7 @@ const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
   };
 
   return (
-    <Authenticated header={<Head>Buku Transaksi</Head>}>
+    <MobileLayout header={<Head>Buku Transaksi</Head>}>
       <Approval
         show={onApprovalShow}
         onClosed={handleOnApprovalShowClosed}
@@ -71,24 +72,13 @@ const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
-            urlLink={route('transaction.index_buku_transaksi')}
-            localState={'transaction_index_buku_transaksi'}
+            urlLink={route('mobile_apps.buku_transaksi_kepala')}
+            localState={'mobile_apps_buku_transaksi_kepala'}
             searchMonth={true}
             searchHari={true}
             searchKelompok={auth.permissions.includes('can show kelompok')}
             searchGroupingBranch={auth.permissions.includes('can show branch')}
-            nexOrPrevious={nexOrPrevious}
-            setNexOrPrevious={setNexOrPrevious}
-          >
-            {auth.permissions.includes('can create') && (
-              <Button type="button" onClick={handleOnCreateShowOpen}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Tambah Pengajuan
-                </span>
-              </Button>
-            )}
-          </SearchComponent>
+          ></SearchComponent>
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
           <Popover>
@@ -100,25 +90,17 @@ const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
             </PopoverTrigger>
             <PopoverContent>
               <SearchComponent
-                urlLink={route('transaction.index_buku_transaksi')}
-                localState={'transaction_index_buku_transaksi'}
+                urlLink={route('mobile_apps.buku_transaksi_kepala')}
+                localState={'mobile_apps_buku_transaksi_kepala'}
                 searchMonth={true}
                 searchHari={true}
                 searchKelompok={auth.permissions.includes('can show kelompok')}
                 searchGroupingBranch={auth.permissions.includes(
                   'can show branch'
                 )}
-                nexOrPrevious={nexOrPrevious}
-                setNexOrPrevious={setNexOrPrevious}
               />
             </PopoverContent>
           </Popover>
-          <Button type="button" onClick={handleOnCreateShowOpen}>
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Tambah Pengajuan
-            </span>
-          </Button>
         </div>
       </div>
       <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} />
@@ -150,15 +132,7 @@ const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
           </TabsContent>
         </Tabs>
       </div>
-      <div className="flex justify-between w-full mt-3">
-        <Button onClick={() => onNexOrPreviousTogler('previous')} size="icon">
-          <ArrowBigLeft />
-        </Button>
-        <Button onClick={() => onNexOrPreviousTogler('next')} size="icon">
-          <ArrowBigRight />
-        </Button>
-      </div>
-    </Authenticated>
+    </MobileLayout>
   );
 };
 

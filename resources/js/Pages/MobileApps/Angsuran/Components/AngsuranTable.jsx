@@ -11,7 +11,6 @@ import {
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
-import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
@@ -63,7 +62,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   };
 
   return (
-    <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
+    <div className="relative overflow-auto h-[70vh] lg:h-[85vh] scrollbar-thin">
       <Table className="text-xs rounded-lg">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
@@ -122,17 +121,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       {i + 1}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-between gap-2">
-                        <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
-                        <div>
-                          <Button
-                            size="xs"
-                            onClick={() => onCreateShowOpen(subrow.id)}
-                          >
-                            Pay
-                          </Button>
-                        </div>
-                      </div>
+                      {dayjs(subrow.tanggal_drop).format('DD-MM')}
                     </TableCell>
                     <TableCell>{subrow.nama}</TableCell>
                     <TableCell className="text-center">{subrow.nik}</TableCell>
@@ -244,12 +233,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
           )}
         </TableBody>
       </Table>
-      <Action
-        datas={data}
-        show={show}
-        onClosed={onClosedShowOpen}
-        triggeredId={triggeredId}
-      />
     </div>
   );
 };

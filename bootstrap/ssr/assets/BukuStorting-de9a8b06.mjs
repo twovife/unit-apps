@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import "./button-5b8f0147.mjs";
 import Action from "./Action-9e289b5e.mjs";
 import "./badge-3e44e85b.mjs";
-import ApprovalAkhir from "./ApprovalAkhir-0ab61e52.mjs";
+import ApprovalAkhir from "./ApprovalAkhir-ea30cb98.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
 import "@inertiajs/react";
@@ -36,7 +36,7 @@ import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-81d092c7.mjs";
+import "./DeleteAngsuran-92011ff6.mjs";
 import "./TextInput-11198f62.mjs";
 import "./DeleteLoan-27fe75b1.mjs";
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {

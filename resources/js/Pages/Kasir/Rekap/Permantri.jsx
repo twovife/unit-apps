@@ -75,8 +75,8 @@ const Permantri = ({ datas, auth, ...props }) => {
             </PopoverTrigger>
             <PopoverContent>
               <SearchComponent
-                urlLink={route('transaction.index_buku_transaksi')}
-                localState={'transaction_index_buku_transaksi'}
+                urlLink={route('kasir.rekap.rekap_permantri')}
+                localState={'kasir_rekap_rekap_permantri'}
                 searchDate={true}
                 searchKelompok={auth.permissions.includes('can show kelompok')}
                 searchGroupingBranch={auth.permissions.includes(

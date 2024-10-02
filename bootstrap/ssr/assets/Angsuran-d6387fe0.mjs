@@ -3,7 +3,7 @@ import React__default, { useState, useEffect } from "react";
 import { T as Table, a as TableHeader, b as TableRow, c as TableHead, d as TableBody, e as TableCell, F as FormatNumbering } from "./FormatNumbering-02c28a29.mjs";
 import dayjs from "dayjs";
 import { B as Button } from "./button-5b8f0147.mjs";
-import Action from "./Action-6d067868.mjs";
+import Action from "./Action-22febb2c.mjs";
 import { B as Badge } from "./badge-3e44e85b.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
@@ -35,7 +35,7 @@ import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-6ad6e1ba.mjs";
+import "./DeleteAngsuran-81d092c7.mjs";
 import "./TextInput-11198f62.mjs";
 import "./DeleteLoan-3a480ddc.mjs";
 const Angsuran = ({ datas }) => {

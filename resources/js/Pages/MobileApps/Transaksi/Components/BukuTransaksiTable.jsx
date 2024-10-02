@@ -95,13 +95,27 @@ const BukuTransaksiTable = ({ datas }) => {
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div className="text-lg font-semibold">{item.nama}</div>
+                    <div className="text-base font-semibold">
+                      <span> {item.nama}</span>{' '}
+                      <BadgeStatus value={item.drop_langsung} />
+                    </div>
                     <div>{item.nik}</div>
                     <div>{item.alamat}</div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <FormatNumbering value={item.drop_jadi} />
+                  <div className="flex justify-between gap-6">
+                    <div>Pengajuan</div>
+                    <FormatNumbering value={item.request} />
+                  </div>
+                  <div className="flex justify-between gap-6">
+                    <div>ACC</div>
+                    <FormatNumbering value={item.acc} />
+                  </div>
+                  <div className="flex justify-between gap-6">
+                    <div>Drop Jadi</div>
+                    <FormatNumbering value={item.drop_jadi} />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -109,9 +123,20 @@ const BukuTransaksiTable = ({ datas }) => {
         <TableFooter>
           <TableRow>
             <TableCell></TableCell>
-            <TableCell>Total Drop Jadi</TableCell>
+            <TableCell>Total</TableCell>
             <TableCell>
-              <FormatNumbering value={totals.drop_jadi} />
+              <div className="flex justify-between gap-6">
+                <div>Pengajuan</div>
+                <FormatNumbering value={totals.request} />
+              </div>
+              <div className="flex justify-between gap-6">
+                <div>ACC</div>
+                <FormatNumbering value={totals.acc} />
+              </div>
+              <div className="flex justify-between gap-6">
+                <div>Drop Jadi</div>
+                <FormatNumbering value={totals.drop_jadi} />
+              </div>
             </TableCell>
           </TableRow>
         </TableFooter>
