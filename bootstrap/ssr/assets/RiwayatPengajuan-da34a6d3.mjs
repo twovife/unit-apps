@@ -4,7 +4,7 @@ import { T as Table, a as TableHeader, b as TableRow, c as TableHead, d as Table
 import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import { B as Button } from "./button-5b8f0147.mjs";
 import { Play } from "lucide-react";
-import DetailRiwayat from "./DetailRiwayat-dde788e1.mjs";
+import DetailRiwayat from "./DetailRiwayat-b43ccc9d.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
 import "@inertiajs/react";

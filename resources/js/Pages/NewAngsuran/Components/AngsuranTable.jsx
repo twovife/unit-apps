@@ -180,10 +180,22 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell className="text-center">
                       {subrow.x_angs}
                     </TableCell>
-                    <TableCell className="bg-slate-200 border-x border-x-black">
+                    <TableCell
+                      className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black ${
+                        selectedId.includes(subrow.id)
+                          ? 'bg-green-200 hover:bg-green-50'
+                          : ''
+                      }`}
+                    >
                       <FormatNumbering value={subrow.pinjaman} />
                     </TableCell>
-                    <TableCell className="bg-blue-300 border-x border-x-black">
+                    <TableCell
+                      className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
+                        selectedId.includes(subrow.id)
+                          ? 'bg-green-200 hover:bg-green-50'
+                          : ''
+                      }`}
+                    >
                       <FormatNumbering value={subrow.saldo_sebelumnya} />
                     </TableCell>
                     {dateOfWeek.map((day, i) => (
@@ -191,10 +203,22 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         <FormatNumbering value={subrow.instalment[day]} />
                       </TableCell>
                     ))}
-                    <TableCell className="bg-yellow-200 border-x border-x-black">
+                    <TableCell
+                      className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black ${
+                        selectedId.includes(subrow.id)
+                          ? 'bg-green-200 hover:bg-green-50'
+                          : ''
+                      }`}
+                    >
                       <FormatNumbering value={subrow.angsuran} />
                     </TableCell>
-                    <TableCell className="bg-green-300 border-x border-x-black">
+                    <TableCell
+                      className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
+                        selectedId.includes(subrow.id)
+                          ? 'bg-green-200 hover:bg-green-50'
+                          : ''
+                      }`}
+                    >
                       <FormatNumbering value={subrow.saldo} />
                     </TableCell>
                     <TableCell>{subrow.notes}</TableCell>
@@ -204,12 +228,24 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   <TableCell className="py-3" colSpan={10}>
                     ini nanti total
                   </TableCell>
-                  <TableCell className="bg-slate-200 border-x border-x-black">
+                  <TableCell
+                    className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black ${
+                      selectedId.includes(subrow.id)
+                        ? 'bg-green-200 hover:bg-green-50'
+                        : ''
+                    }`}
+                  >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'pinjaman')}
                     />
                   </TableCell>
-                  <TableCell className="bg-blue-300 border-x border-x-black">
+                  <TableCell
+                    className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
+                      selectedId.includes(subrow.id)
+                        ? 'bg-green-200 hover:bg-green-50'
+                        : ''
+                    }`}
+                  >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'saldo_sebelumnya')}
                     />
@@ -223,12 +259,24 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       />
                     </TableCell>
                   ))}
-                  <TableCell className="bg-yellow-200 border-x border-x-black">
+                  <TableCell
+                    className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black ${
+                      selectedId.includes(subrow.id)
+                        ? 'bg-green-200 hover:bg-green-50'
+                        : ''
+                    }`}
+                  >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'angsuran')}
                     />
                   </TableCell>
-                  <TableCell className="bg-green-300 border-x border-x-black">
+                  <TableCell
+                    className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
+                      selectedId.includes(subrow.id)
+                        ? 'bg-green-200 hover:bg-green-50'
+                        : ''
+                    }`}
+                  >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'saldo')}
                     />
