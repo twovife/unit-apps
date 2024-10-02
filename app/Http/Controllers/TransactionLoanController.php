@@ -737,7 +737,7 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
 
-    if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->tanggal_drop)) {
+    if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
 

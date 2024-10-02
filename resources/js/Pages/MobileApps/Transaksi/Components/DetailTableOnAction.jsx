@@ -71,8 +71,7 @@ const DetailTableOnAction = ({ datas }) => {
                 <FormatNumbering value={data.acc} />
               </TableCell>
               <TableCell>
-                {' '}
-                <FormatNumbering value={data.acc} />
+                <FormatNumbering value={data.drop_jadi} />
               </TableCell>
             </TableRow>
           </TableBody>

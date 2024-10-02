@@ -3,7 +3,7 @@ import React__default, { useState, useEffect } from "react";
 import { T as Table, a as TableHeader, b as TableRow, c as TableHead, d as TableBody, e as TableCell, F as FormatNumbering } from "./FormatNumbering-02c28a29.mjs";
 import dayjs from "dayjs";
 import { B as Button } from "./button-5b8f0147.mjs";
-import Action from "./Action-22febb2c.mjs";
+import Action from "./Action-6d067868.mjs";
 import { B as Badge } from "./badge-3e44e85b.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
@@ -30,14 +30,14 @@ import "./Checkbox-d7000d9c.mjs";
 import "./Loading-306ada45.mjs";
 import "react-dom";
 import "@headlessui/react";
-import "./JenisNasabah-6b84efb3.mjs";
+import "./JenisNasabah-5b778c2b.mjs";
 import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-92011ff6.mjs";
+import "./DeleteAngsuran-6ad6e1ba.mjs";
 import "./TextInput-11198f62.mjs";
-import "./DeleteLoan-27fe75b1.mjs";
+import "./DeleteLoan-3a480ddc.mjs";
 const Angsuran = ({ datas }) => {
   const [data, setData] = useState([]);
   useEffect(() => {

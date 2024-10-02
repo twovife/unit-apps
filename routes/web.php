@@ -126,6 +126,9 @@ Route::middleware('auth')->group(function () {
       Route::get('/transaksi', "transaksi")->name('transaksi');
       Route::get('/angsuran', "angsuran")->name('angsuran');
       Route::get('/macet', "macet")->name('macet');
+      Route::get('/buku-angsuran', "buku_angsuran")->name('buku_angsuran');
+      Route::get('/buku-transaksi', "buku_transaksi")->name('buku_transaksi');
+      Route::get('/buku-rekap', "buku_rekap")->name('buku_rekap');
     });
   });
 
