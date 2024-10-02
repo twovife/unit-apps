@@ -290,7 +290,7 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      ddd($exception);
+      dd($exception);
       return redirect()->back()->withErrors($exception->getMessage());
     }
     return redirect()->back()->with('success', 'Berhasil Menambahkan Pengajuan');
