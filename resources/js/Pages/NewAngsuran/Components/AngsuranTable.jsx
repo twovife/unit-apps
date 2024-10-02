@@ -229,22 +229,14 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     ini nanti total
                   </TableCell>
                   <TableCell
-                    className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black ${
-                      selectedId.includes(subrow.id)
-                        ? 'bg-green-200 hover:bg-green-50'
-                        : ''
-                    }`}
+                    className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black`}
                   >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'pinjaman')}
                     />
                   </TableCell>
                   <TableCell
-                    className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
-                      selectedId.includes(subrow.id)
-                        ? 'bg-green-200 hover:bg-green-50'
-                        : ''
-                    }`}
+                    className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black`}
                   >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'saldo_sebelumnya')}
@@ -260,22 +252,14 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     </TableCell>
                   ))}
                   <TableCell
-                    className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black ${
-                      selectedId.includes(subrow.id)
-                        ? 'bg-green-200 hover:bg-green-50'
-                        : ''
-                    }`}
+                    className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black `}
                   >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'angsuran')}
                     />
                   </TableCell>
                   <TableCell
-                    className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
-                      selectedId.includes(subrow.id)
-                        ? 'bg-green-200 hover:bg-green-50'
-                        : ''
-                    }`}
+                    className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
                   >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'saldo')}
