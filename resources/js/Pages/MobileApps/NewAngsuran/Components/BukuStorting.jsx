@@ -219,7 +219,8 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           <TableRow className="bg-gray-200">
             <TableHead className="text-center">Bulan</TableHead>
             <TableHead className="text-center">Sirkulasi</TableHead>
-            <TableHead className="text-center">Sirkulasi2</TableHead>
+
+            {/* <TableHead className="text-center">Sirkulasi2</TableHead> */}
             {dateOfWeek.map((day, i) => (
               <TableHead className="text-center whitespace-nowrap" key={i}>
                 {dayjs(day).format('DD-MM-YY')}
@@ -238,9 +239,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                   <TableCell>
                     <FormatNumbering value={row.sirkulasi} />
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <FormatNumbering value={row.sirkulasii} />
-                  </TableCell>
+                  </TableCell> */}
 
                   {dateOfWeek.map((day, i) => (
                     <TableCell
@@ -273,9 +274,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             <TableCell rowSpan={2} className="text-center">
               <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
             </TableCell>
-            <TableCell rowSpan={2} className="text-center">
+            {/* <TableCell rowSpan={2} className="text-center">
               <FormatNumbering value={calculateTotals(data, 'sirkulasii')} />
-            </TableCell>
+            </TableCell> */}
             {dateOfWeek.map((day, i) => (
               <TableCell rowSpan={2} className="text-center" key={i}>
                 <FormatNumbering value={calculateInstalment(data, day)} />

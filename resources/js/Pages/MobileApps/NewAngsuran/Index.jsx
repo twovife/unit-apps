@@ -24,7 +24,6 @@ const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
           <SearchComponent
             urlLink={route('mobile_apps.angsuran')}
             localState={'mobile_apps_angsuran'}
-            searchMonth={true}
             searchHari={true}
             searchKelompok={auth.permissions.includes('can show kelompok')}
             searchGroupingBranch={auth.permissions.includes('can show branch')}
