@@ -102,39 +102,49 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                     <CardTitle>ACC / DROP</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div className="flex items-end justify-center gap-2 mx-auto mb-3">
-                      {data?.status !== 'open' && (
+                    {data?.status == 'open' &&
+                      auth.permissions.includes('can update') && (
+                        <div className="flex items-end justify-center gap-2 mx-auto mb-3">
+                          <Acc
+                            id={data?.nomor_pengajuan}
+                            acc={data?.request}
+                            onClosed={onClosed}
+                          />
+                        </div>
+                      )}
+                    {data?.status !== 'open' && (
+                      <>
                         <Badge size={'lg'} variant={'green'}>
                           Status Pengajuan = {data?.status}, Pada Tanggal
                           {data?.check_date}
                         </Badge>
-                      )}
-                    </div>
-                    {data?.status !== 'open' && (
-                      <div className="flex items-end justify-center gap-2 mx-auto">
-                        {data?.status === 'acc' ? (
-                          <>
-                            <DropJadi
-                              id={data?.nomor_pengajuan}
-                              drop_jadi={data?.acc}
-                              onClosed={onClosed}
-                            />
-                            <Gagal
-                              id={data?.nomor_pengajuan}
-                              onClosed={onClosed}
-                            />
-                          </>
-                        ) : (
-                          <Badge size={'lg'} variant={'green'}>
-                            Status Pengajuan = {data?.status}, Tanggal{' '}
-                            {data?.check_date}
-                          </Badge>
-                        )}
-                      </div>
+                        <div className="flex items-end justify-center gap-2 mx-auto">
+                          {data?.status === 'acc' && (
+                            <>
+                              <DropJadi
+                                id={data?.nomor_pengajuan}
+                                drop_jadi={data?.acc}
+                                onClosed={onClosed}
+                              />
+                              <Gagal
+                                id={data?.nomor_pengajuan}
+                                onClosed={onClosed}
+                              />
+                            </>
+                          )}
+                          {data?.status === 'success' ||
+                            (data?.status === 'gagal' && (
+                              <Badge size={'lg'} variant={'green'}>
+                                Status Pengajuan = {data?.status}, Tanggal{' '}
+                                {data?.check_date}
+                              </Badge>
+                            ))}
+                        </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>
-                {auth.permissions.includes('unit pimpinan') && (
+                {auth.permissions.includes('can update') && (
                   <Card className="w-full">
                     <CardHeader>
                       <CardTitle>Admin Edit</CardTitle>

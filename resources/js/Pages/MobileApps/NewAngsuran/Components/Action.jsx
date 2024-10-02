@@ -202,7 +202,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
               triggeredPinjaman={customerData.pinjaman}
               instalment={instalment}
             />
-            {auth.permissions.includes('unit pimpinan') && (
+            {auth.permissions.includes('can update') && (
               <>
                 <JenisNasabah loan={customerData} />
                 <div className="flex items-center justify-end gap-3 p-3">
