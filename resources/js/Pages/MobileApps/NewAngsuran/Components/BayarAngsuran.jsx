@@ -216,21 +216,18 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
               {pelunasan}
             </Button>
           </div>
-          {auth.permissions.includes('can update') && (
-            <div className="flex items-center justify-between mt-6">
-              <label className="flex items-center">
-                <Checkbox
-                  name="danatitipan"
-                  value={data.danatitipan}
-                  onChange={onInputChange}
-                />
-                <span className="ml-2 text-sm text-gray-600">
-                  Dana Titipan?
-                </span>
-              </label>
-              <Button type="submit">Submit</Button>
-            </div>
-          )}
+
+          <div className="flex items-center justify-between mt-6">
+            <label className="flex items-center">
+              <Checkbox
+                name="danatitipan"
+                value={data.danatitipan}
+                onChange={onInputChange}
+              />
+              <span className="ml-2 text-sm text-gray-600">Dana Titipan?</span>
+            </label>
+            <Button type="submit">Submit</Button>
+          </div>
         </form>
       </CardContent>
     </Card>
