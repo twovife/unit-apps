@@ -741,6 +741,7 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
 
+
     $val = $request->validate([
       'type_transaksi' => ['required'],
       'nominal' => ['required_if:type_transaksi,bayar'],
@@ -750,6 +751,30 @@ class TransactionLoanController extends Controller
 
 
     $transactionLoan->with('loan_instalment', 'loan_officer_grouping');
+
+    $isPaidToday = $transactionLoan->loan_instalment->where('transaction_date', $request->transaction_date);
+
+    if (!auth()->user()->hasPermissionTo('area')) {
+      $user_area = auth()->user()->employee->area;
+      if ($transactionLoan->loan_officer_grouping->kelompok == $user_area) {
+        return redirect()->back()->withErrors('Anda Tidak Boleh Mengubah Angsuran Yang Ditandatangani Oleh Karyawan Lain');
+      };
+    }
+
+    if ($isPaidToday->isNotEmpty()) {
+      return redirect()->back()->withErrors('Angsuran Hari Ini Sudah Dibayar');
+    }
+
+
+    $totalAngsuran = $transactionLoan->loan_instalment->sum('nominal');
+    $pinjaman = $transactionLoan->pinjaman;
+    if ($pinjaman == $totalAngsuran || $pinjaman < $totalAngsuran) {
+      return redirect()->back()->withErrors('Pinjaman Sudah Lunas');
+    }
+    if ($transactionLoan->pinjaman < ($totalAngsuran + $request->nominal)) {
+      return redirect()->back()->withErrors('Angsuran Tidak Boleh Minus');
+    }
+
     $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('area', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
 
     try {
