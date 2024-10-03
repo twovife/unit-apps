@@ -813,9 +813,7 @@ class TransactionLoanController extends Controller
   public function destroy_angsuran(TransactionLoanInstalment $transactionLoanInstalment)
   {
 
-    if (!auth()->user()->hasPermissionTo('can update')) {
-      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
-    }
+
     try {
       DB::beginTransaction();
       $transactionLoanInstalment->delete();
