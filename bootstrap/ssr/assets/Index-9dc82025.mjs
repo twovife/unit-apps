@@ -45,15 +45,15 @@ import "./badge-3e44e85b.mjs";
 import "./BayarAngsuran-9a36c21e.mjs";
 import "react-currency-input-field";
 import "./Checkbox-d7000d9c.mjs";
-import "./JenisNasabah-5b778c2b.mjs";
+import "./JenisNasabah-6b84efb3.mjs";
 import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-81d092c7.mjs";
+import "./DeleteAngsuran-92011ff6.mjs";
 import "./TextInput-11198f62.mjs";
 import "./DeleteLoan-3a480ddc.mjs";
-import "./ApprovalAkhir-ea30cb98.mjs";
+import "./ApprovalAkhir-0ab61e52.mjs";
 const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
   return /* @__PURE__ */ jsxs(Authenticated, { header: /* @__PURE__ */ jsx(Head, { children: "Angsuran Lancar" }), children: [
     /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center", children: [
