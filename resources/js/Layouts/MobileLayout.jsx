@@ -74,17 +74,10 @@ const MobileLayout = ({ header, children, loading = false }) => {
                   {auth.user.employee.nama_karyawan}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                {/* <DropdownMenuItem>
                   <Link href={route('profile.edit')}>Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <a
-                    target="_blank"
-                    href="https://www.youtube.com/watch?v=HrHDfHy0lHk"
-                  >
-                    Support
-                  </a>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <Link

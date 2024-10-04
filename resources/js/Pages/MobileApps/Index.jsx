@@ -89,7 +89,7 @@ const Index = () => {
           <legend className="px-1 -ml-1 text-sm font-medium">
             Menu Kepala & Pimpinan
           </legend>
-          <div className="flex items-center justify-around gap-6">
+          <div className="flex flex-wrap items-center justify-around gap-6">
             <div className="text-center">
               <Button size="icon2xl" variant="outline" asChild>
                 <Link href={route('home')}>

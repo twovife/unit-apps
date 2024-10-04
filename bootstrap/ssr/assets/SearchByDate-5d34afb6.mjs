@@ -43,13 +43,13 @@ import "axios";
 import "./StatusPinjaman-fa220d17.mjs";
 import "./BayarAngsuran-9a36c21e.mjs";
 import "./Checkbox-d7000d9c.mjs";
-import "./JenisNasabah-6b84efb3.mjs";
+import "./JenisNasabah-5b778c2b.mjs";
 import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-92011ff6.mjs";
-import "./DeleteLoan-27fe75b1.mjs";
+import "./DeleteAngsuran-81d092c7.mjs";
+import "./DeleteLoan-3a480ddc.mjs";
 const SearchByDate = ({ datas, dateOfWeek, ...props }) => {
   return /* @__PURE__ */ jsxs(Authenticated, { header: /* @__PURE__ */ jsx(Head, { children: "Cari Angsuran" }), children: [
     /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center", children: [
