@@ -44,7 +44,7 @@ import "axios";
 import "./StatusPinjaman-fa220d17.mjs";
 import "./BayarAngsuran-f8f7c907.mjs";
 import "./Checkbox-d7000d9c.mjs";
-import "./JenisNasabah-5b778c2b.mjs";
+import "./JenisNasabah-6b84efb3.mjs";
 import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";

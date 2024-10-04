@@ -14,7 +14,7 @@ import "./badge-3e44e85b.mjs";
 import "clsx";
 import "./input-7eb6bb1b.mjs";
 import { B as BargeStatus } from "./BargeStatus-e891d920.mjs";
-import Approval from "./Approval-f83b3f2f.mjs";
+import Approval from "./Approval-7c6c5669.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
 import "@inertiajs/react/server";
