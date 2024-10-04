@@ -67,10 +67,12 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
     const lastDate =
       instalment?.sort((a, b) => a.transaction_date - b.transaction_date)[0]
         ?.transaction_date ?? null;
-    setData(
-      'transaction_date',
-      lastDate ? dayjs(lastDate).add(1, 'week').format('YYYY-MM-DD') : ''
-    );
+    setData((prev) => ({
+      ...prev,
+      transaction_date: lastDate
+        ? dayjs(lastDate).add(1, 'week').format('YYYY-MM-DD')
+        : '',
+    }));
 
     setPelunasan(pelunasan);
   }, [instalment]);
