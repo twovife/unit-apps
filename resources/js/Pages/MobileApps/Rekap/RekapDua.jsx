@@ -11,7 +11,13 @@ const RekapDua = ({ datas, auth, ...props }) => {
 
   return (
     <MobileLayout header={<Head>{title}</Head>}>
-      <RekapContent rekapData={datas} show="rekap2" title={title} />
+      <RekapContent
+        rekapData={datas}
+        show="rekap2"
+        title={title}
+        urlLink={route('mobile_apps.rekap_dua')}
+        localState={'mobile_apps_rekap_dua'}
+      />
     </MobileLayout>
   );
 };
