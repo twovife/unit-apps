@@ -49,7 +49,7 @@ import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-92011ff6.mjs";
+import "./DeleteAngsuran-81d092c7.mjs";
 import "./DeleteLoan-27fe75b1.mjs";
 import "@radix-ui/react-popover";
 const SearchByDate = ({ datas, dateOfWeek, ...props }) => {
