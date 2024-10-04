@@ -9,7 +9,13 @@ const RekapSatu = ({ datas, auth, ...props }) => {
 
   return (
     <MobileLayout header={<Head>{title}</Head>}>
-      <RekapContent rekapData={datas} show="rekapkasir" title={title} />
+      <RekapContent
+        rekapData={datas}
+        show="rekapkasir"
+        title={title}
+        urlLink={route('mobile_apps.rekap_satu')}
+        localState={'mobile_apps_rekap_satu'}
+      />
     </MobileLayout>
   );
 };
