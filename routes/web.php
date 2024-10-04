@@ -108,11 +108,14 @@ Route::middleware('auth')->group(function () {
   Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {
-        Route::get('/', "rekap_index")->name('rekap_index');
         Route::post('/', "rekap_post")->name('rekap_post');
         Route::post('/ceklist-kepala', "ceklist_kepala")->name('ceklist_kepala');
         Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
         Route::get('/rencana', "rencana_drop")->name('rencana_drop');
+
+
+        Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');
+        Route::get('/rekap-dua', "rekap_dua")->name('rekap_dua');
       });
     });
   });
@@ -129,8 +132,12 @@ Route::middleware('auth')->group(function () {
       Route::get('/buku-angsuran', "buku_angsuran")->name('buku_angsuran');
       Route::get('/buku-storting', "buku_storting")->name('buku_storting');
       Route::get('/buku-transaksi', "buku_transaksi")->name('buku_transaksi');
-      Route::get('/buku-rekap', "buku_rekap")->name('buku_rekap');
+      Route::get('/rencana-drop-kepala', "rencana_drop_kepala")->name('rencana_drop_kepala');
       Route::get('/buku-transaksi-kepala', "buku_transaksi_kepala")->name('buku_transaksi_kepala');
+
+      Route::get('/rekap-permantri', "rekap_permantri")->name('rekap_permantri');
+      Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');
+      Route::get('/rekap-dua', "rekap_dua")->name('rekap_dua');
     });
   });
 

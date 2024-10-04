@@ -11,7 +11,12 @@ import TableRekapKasir from './Components/TableRekapKasir';
 import TunaiMantri from './Components/TunaiMantri';
 import Action from './Components/Action';
 
-const Permantri = ({ datas, auth, ...props }) => {
+const Permantri = ({ rekapData, auth, urlLink, localState, title }) => {
+  const [datas, setDatas] = useState([]);
+  useEffect(() => {
+    setDatas(rekapData);
+  }, [rekapData]);
+
   const [onShowModal, setOnShowModal] = useState(false);
   const [triggeredData, setTriggeredData] = useState();
 
@@ -32,7 +37,7 @@ const Permantri = ({ datas, auth, ...props }) => {
   };
 
   return (
-    <Authenticated header={<Head>Buku Transaksi</Head>}>
+    <>
       <Action
         show={onShowModal}
         onClosed={handleOnCreateShowClosed}
@@ -41,29 +46,16 @@ const Permantri = ({ datas, auth, ...props }) => {
 
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
-          <h1 className="text-xl font-semibold tracking-tight ">
-            Rekap Data Harian
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight ">{title}</h1>
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
-            urlLink={route('kasir.rekap.rekap_permantri')}
-            localState={'kasir_rekap_rekap_permantri'}
+            urlLink={urlLink}
+            localState={localState}
             searchMonth={true}
             searchKelompok={auth.permissions.includes('can show kelompok')}
             searchGroupingBranch={auth.permissions.includes('can show branch')}
-            nexOrPrevious={nexOrPrevious}
-            setNexOrPrevious={setNexOrPrevious}
-          >
-            {auth.permissions.includes('can create') && (
-              <Button type="button" onClick={handleOnCreateShowOpen}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Tambah Pengajuan
-                </span>
-              </Button>
-            )}
-          </SearchComponent>
+          ></SearchComponent>
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
           <Popover>
@@ -75,31 +67,23 @@ const Permantri = ({ datas, auth, ...props }) => {
             </PopoverTrigger>
             <PopoverContent>
               <SearchComponent
-                urlLink={route('kasir.rekap.rekap_permantri')}
-                localState={'kasir_rekap_rekap_permantri'}
-                searchDate={true}
+                urlLink={urlLink}
+                localState={localState}
+                searchMonth={true}
                 searchKelompok={auth.permissions.includes('can show kelompok')}
                 searchGroupingBranch={auth.permissions.includes(
                   'can show branch'
                 )}
-                nexOrPrevious={nexOrPrevious}
-                setNexOrPrevious={setNexOrPrevious}
               />
             </PopoverContent>
           </Popover>
-          <Button type="button" onClick={handleOnCreateShowOpen}>
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Tambah Pengajuan
-            </span>
-          </Button>
         </div>
       </div>
       <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         <Tabs defaultValue="rekappimpinan" className="w-full">
           <TabsList>
-            <TabsTrigger value="rekappimpinan">Rekap Pinpinan</TabsTrigger>
-            <TabsTrigger value="rekapkasir">Rekap Kasir</TabsTrigger>
+            <TabsTrigger value="rekappimpinan">Rekap Mantri</TabsTrigger>
+            <TabsTrigger value="rekapkasir">Rekap Kasir Mantri</TabsTrigger>
             <TabsTrigger value="tunaimantri">Tunai Mantri</TabsTrigger>
           </TabsList>
           <TabsContent value="rekappimpinan">
@@ -117,7 +101,7 @@ const Permantri = ({ datas, auth, ...props }) => {
           </TabsContent>
         </Tabs>
       </div>
-    </Authenticated>
+    </>
   );
 };
 

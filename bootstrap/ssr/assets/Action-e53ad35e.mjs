@@ -9,7 +9,7 @@ import { S as StatusPinjaman } from "./StatusPinjaman-fa220d17.mjs";
 import BayarAngsuran from "./BayarAngsuran-f8f7c907.mjs";
 import JenisNasabah from "./JenisNasabah-5b778c2b.mjs";
 import DeleteAngsuran from "./DeleteAngsuran-81d092c7.mjs";
-import DeleteLoan from "./DeleteLoan-27fe75b1.mjs";
+import DeleteLoan from "./DeleteLoan-3a480ddc.mjs";
 import { usePage } from "@inertiajs/react";
 import "react/jsx-runtime";
 import "react-dom/server";
