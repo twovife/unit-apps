@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import { B as Button } from "./button-5b8f0147.mjs";
 import Action from "./Action-22febb2c.mjs";
 import "./badge-3e44e85b.mjs";
-import ApprovalAkhir from "./ApprovalAkhir-ea30cb98.mjs";
+import ApprovalAkhir from "./ApprovalAkhir-0ab61e52.mjs";
 import "react/jsx-runtime";
 import "react-dom/server";
 import "@inertiajs/react";
@@ -38,7 +38,7 @@ import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
 import "./DeleteAngsuran-92011ff6.mjs";
 import "./TextInput-11198f62.mjs";
-import "./DeleteLoan-3a480ddc.mjs";
+import "./DeleteLoan-27fe75b1.mjs";
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
   const [data, setData] = useState([]);
   const [saldoSirkulas, setSaldoSirkulas] = useState(0);

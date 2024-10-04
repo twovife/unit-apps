@@ -37,7 +37,7 @@ import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
 import "./DeleteAngsuran-81d092c7.mjs";
 import "./TextInput-11198f62.mjs";
-import "./DeleteLoan-27fe75b1.mjs";
+import "./DeleteLoan-3a480ddc.mjs";
 const AngsuranTable = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
   useEffect(() => {

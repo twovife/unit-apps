@@ -20,6 +20,7 @@ import dayjs from 'dayjs';
 import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
+import { usePage } from '@inertiajs/react';
 
 const TableRekapKasir = ({
   setOnShowModal,
@@ -28,6 +29,7 @@ const TableRekapKasir = ({
   datas,
 }) => {
   const [data, setData] = useState([]);
+  const { auth } = usePage().props;
 
   useEffect(() => {
     setData(datas);
@@ -67,12 +69,14 @@ const TableRekapKasir = ({
                 ? getValue()
                 : dayjs(cell.row.original.tanggal).format('DD-MM')}
             </div>
-            <BargeStatus
-              onClick={() => onClickStatusHandler(cell.row.original, 1)}
-              value={cell.row.original.status_dayly_approval}
-            >
-              {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}
-            </BargeStatus>
+            {auth.permissions.includes('can update') && (
+              <BargeStatus
+                onClick={() => onClickStatusHandler(cell.row.original, 1)}
+                value={cell.row.original.status_dayly_approval}
+              >
+                {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}
+              </BargeStatus>
+            )}
           </div>
         ),
       },

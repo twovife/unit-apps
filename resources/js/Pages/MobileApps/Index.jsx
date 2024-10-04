@@ -76,7 +76,7 @@ const Index = () => {
           </div>
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href={route('mobile_apps.buku_rekap')}>
+              <Link href={route('mobile_apps.rekap_permantri')}>
                 <HandCoinsIcon className="h-7 w-7" />
               </Link>
             </Button>
@@ -108,11 +108,27 @@ const Index = () => {
             </div>
             <div className="text-center">
               <Button size="icon2xl" variant="outline" asChild>
-                <Link href="#">
-                  <HandCoinsIcon className="h-7 w-7" />
+                <Link href={route('mobile_apps.rencana_drop_kepala')}>
+                  <BookMarked className="h-7 w-7" />
                 </Link>
               </Button>
-              <div>Rekap</div>
+              <div>Rencana Drop</div>
+            </div>
+            <div className="text-center">
+              <Button size="icon2xl" variant="outline" asChild>
+                <Link href={route('mobile_apps.rekap_dua')}>
+                  <BookMarked className="h-7 w-7" />
+                </Link>
+              </Button>
+              <div>Rekap Pimpinan</div>
+            </div>
+            <div className="text-center">
+              <Button size="icon2xl" variant="outline" asChild>
+                <Link href={route('mobile_apps.rekap_satu')}>
+                  <BookMarked className="h-7 w-7" />
+                </Link>
+              </Button>
+              <div>Rekap Kasir</div>
             </div>
           </div>
         </fieldset>
