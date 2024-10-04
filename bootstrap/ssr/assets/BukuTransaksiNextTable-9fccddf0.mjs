@@ -36,13 +36,13 @@ import "@radix-ui/react-label";
 import "react-currency-input-field";
 import "./Tolak-5bf5a70d.mjs";
 import "./DropJadi-2246244c.mjs";
-import "./Gagal-ff4d95fe.mjs";
+import "./Gagal-9260ef58.mjs";
 import "./DetailTableOnAction-00a2809e.mjs";
 import "./badge-3e44e85b.mjs";
-import "./RemoveLoan-6d4e21d7.mjs";
+import "./RemoveLoan-6e165887.mjs";
 import "./ReStatus-205e02f3.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./ChangeDetail-b4731033.mjs";
+import "./ChangeDetail-a0f52c5f.mjs";
 import "./input-7eb6bb1b.mjs";
 const BukuTransaksiNextTable = ({ datas }) => {
   const [data, setData] = useState([]);

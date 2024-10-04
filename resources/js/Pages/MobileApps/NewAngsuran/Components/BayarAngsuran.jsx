@@ -65,6 +65,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   useEffect(() => {
     const pelunasan =
       instalment?.sort((a, b) => a.saldo - b.saldo)[0]?.saldo ?? 0;
+
     setPelunasan(pelunasan);
   }, [instalment]);
 

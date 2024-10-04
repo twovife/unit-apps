@@ -63,6 +63,10 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   useEffect(() => {
     const pelunasan =
       instalment?.sort((a, b) => a.saldo - b.saldo)[0]?.saldo ?? 0;
+    const lastDate =
+      instalment?.sort((a, b) => a.transaction_date - b.transaction_date)[0]
+        ?.transaction_date ?? null;
+    setData('transaction_date', lastDate);
     setPelunasan(pelunasan);
   }, [instalment]);
 
