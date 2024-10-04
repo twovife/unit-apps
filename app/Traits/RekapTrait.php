@@ -206,7 +206,7 @@ trait RekapTrait
 
     return  [
       'datas' => $data,
-      'server_filter' => ['month' => $transaction_date->format('Y-m'), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
+      'server_filter' => ['date' => $transaction_date->format('Y-m-d'), 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id]
     ];
   }
 
