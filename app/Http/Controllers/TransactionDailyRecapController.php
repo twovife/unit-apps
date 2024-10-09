@@ -65,23 +65,7 @@ class TransactionDailyRecapController extends Controller
 
   public function ceklist_kepala(Request $request)
   {
-
-    // "id" => 311
-    // "date" => "2024-09-03"
-    // "target" => "0"
-    // "masuk" => 806000
-    // "keluar" => 221000
-    // "baru" => 4500000
-    // "lama" => 1700000
-    // "rencana" => 1700000
-    // "storting" => 1820000
-    // "drop" => 6200000
-    // "tanggal_rencana_minggu_depan" => "2024-09-10"
-    // "rencana_minggu_depan" => 0
-    // "target_minggu_depan" => 585000
-    // "daily_kepala_approval" => true
-
-    // dd($request->all());
+    // dd($request->date);
     $validate = $request->validate([
       'id' => ['required'],
       'date' => ['required'],
@@ -101,8 +85,7 @@ class TransactionDailyRecapController extends Controller
     try {
       DB::beginTransaction();
       $check_thisDay = TransactionDailyRecap::firstOrNew(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->date]);
-      $check_thisDay->kasbon = $request->kasbon;
-      $check_thisDay->transport = $request->transport;
+
       $check_thisDay->masuk = $request->masuk;
       $check_thisDay->keluar = $request->keluar;
       $check_thisDay->storting = $request->storting;
