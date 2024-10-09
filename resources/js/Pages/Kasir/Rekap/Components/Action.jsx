@@ -44,7 +44,11 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
         id: triggeredData.id,
         kelompok: triggeredData.kelompok,
         date: triggeredData.tanggal,
-        kasbon: triggeredData.rekap_status ? triggeredData.kasbon : 200000,
+        kasbon: triggeredData.rekap_status
+          ? triggeredData.kasbon > 0
+            ? triggeredData.kasbon
+            : 200000
+          : 200000,
         transport: triggeredData.transport,
         type: type,
         tunai: type == 1 ? 0 : triggeredData.tunai,
