@@ -11,7 +11,7 @@ import Acc from "./Acc-375da62f.mjs";
 import "./Loading-306ada45.mjs";
 import { usePage } from "@inertiajs/react";
 import DropJadi from "./DropJadi-f2602fac.mjs";
-import Gagal from "./Gagal-ff4d95fe.mjs";
+import Gagal from "./Gagal-9260ef58.mjs";
 import DetailTableOnAction from "./DetailTableOnAction-ce80c62c.mjs";
 import RemoveLoan from "./RemoveLoan-6d4e21d7.mjs";
 import ReStatus from "./ReStatus-49da2205.mjs";

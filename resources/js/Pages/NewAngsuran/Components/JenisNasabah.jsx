@@ -1,5 +1,6 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
+import Loading from '@/Components/Loading';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SelectList from '@/Components/SelectList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
@@ -29,6 +30,7 @@ const JenisNasabah = ({ loan }) => {
   };
   return (
     <Card>
+      <Loading show={processing} />
       <CardHeader>
         <CardTitle>Jenis Nasabah</CardTitle>
       </CardHeader>
