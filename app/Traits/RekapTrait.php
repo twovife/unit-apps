@@ -179,7 +179,6 @@ trait RekapTrait
 
         'debit' => $debit,
         'transport' => $transport, //stored db
-        'transport' => $transport, //stored db
         'kredit' => $kredit,
         'tunai' => $debit - $kredit,
         'tunai_ondb' => $thisDailyRecap?->tunai ?? 0, //stored db
