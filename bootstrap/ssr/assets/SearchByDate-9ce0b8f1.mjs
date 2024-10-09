@@ -44,13 +44,13 @@ import "axios";
 import "./StatusPinjaman-fa220d17.mjs";
 import "./BayarAngsuran-f8f7c907.mjs";
 import "./Checkbox-d7000d9c.mjs";
-import "./JenisNasabah-c91b6df3.mjs";
+import "./JenisNasabah-db547033.mjs";
 import "./InputError-3b072368.mjs";
 import "./InputLabel-20ddd95c.mjs";
 import "./PrimaryButton-e2c4c1f4.mjs";
 import "./SelectList-8beaa241.mjs";
-import "./DeleteAngsuran-92011ff6.mjs";
-import "./DeleteLoan-27fe75b1.mjs";
+import "./DeleteAngsuran-81d092c7.mjs";
+import "./DeleteLoan-3a480ddc.mjs";
 import "@radix-ui/react-popover";
 const SearchByDate = ({ datas, dateOfWeek, ...props }) => {
   const { auth } = props;
