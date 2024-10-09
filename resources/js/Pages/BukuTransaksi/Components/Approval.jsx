@@ -256,10 +256,11 @@ const Approval = ({ show = false, onClosed, triggeredData, staticData }) => {
                 </Table>
               </div>
             )}
+
             {!triggeredData?.is_approved && (
               <form onSubmit={onSubmitForm}>
                 <div className="max-h-[60vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                  {!triggeredData?.is_generated && (
+                  {!triggeredData?.target && (
                     <div className="mb-3">
                       <Label htmlFor="target">Target</Label>
 
