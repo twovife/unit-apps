@@ -32,7 +32,7 @@ import "@radix-ui/react-label";
 import "./FormatNumbering-02c28a29.mjs";
 import "react-number-format";
 import "@tanstack/react-table";
-import "./DetailRiwayat-dde788e1.mjs";
+import "./DetailRiwayat-b43ccc9d.mjs";
 const Create = ({ show = false, onClosed }) => {
   const { optKelompok } = useOptionGenerator();
   const { data, setData, post, errors, processing, reset } = useForm({

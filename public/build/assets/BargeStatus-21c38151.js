@@ -1,1 +1,0 @@
-import{a as n}from"./app-49513fe7.js";import{B as o}from"./button-02e9f315.js";const c={open:"blue",acc:"green",success:"green",tolak:"destructive",gagal:"destructive",lama:"outline",baru:"yellow",true:"green",false:"destructive"},l=({value:e,children:t,onClick:a,...r})=>{const s=c[e]||"default";return n(o,{...r,onClick:a,size:"xs",variant:s,children:t??e})};export{l as B};

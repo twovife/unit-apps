@@ -15,7 +15,7 @@ import {
 import { Input } from '@/shadcn/ui/input';
 import { useForm } from '@inertiajs/react';
 import { Label } from '@radix-ui/react-label';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
 const Action = ({ show = false, onClosed, triggeredData, type }) => {
@@ -28,6 +28,15 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
     type: '1',
   });
   const [loading, setLoading] = useState(false);
+  const focusInputAngka = useRef(null);
+
+  useEffect(() => {
+    if (focusInputAngka.current) {
+      console.log('asd');
+
+      focusInputAngka.current.focus();
+    }
+  }, [focusInputAngka.current]);
 
   useEffect(() => {
     if (triggeredData) {
@@ -35,7 +44,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
         id: triggeredData.id,
         kelompok: triggeredData.kelompok,
         date: triggeredData.tanggal,
-        kasbon: triggeredData.kasbon,
+        kasbon: triggeredData.rekap_status ? triggeredData.kasbon : 200000,
         transport: triggeredData.transport,
         type: type,
         tunai: type == 1 ? 0 : triggeredData.tunai,
@@ -122,6 +131,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
                       className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                       name="transport"
                       allowDecimals={false}
+                      ref={focusInputAngka}
                       readOnly={data.status_dayly_approval}
                       prefix="Rp. "
                       min={1}

@@ -734,12 +734,11 @@ class TransactionLoanController extends Controller
   {
     // dd($request->all());
     if (!auth()->user()->hasPermissionTo('can create')) {
-      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Untuk Melakukan ini');
     }
 
-    if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
-      return redirect()->back()->withErrors('Hari Tidak Sama');
-    }
+
+
 
 
     $val = $request->validate([
@@ -761,19 +760,26 @@ class TransactionLoanController extends Controller
       };
     }
 
-    if ($isPaidToday->isNotEmpty()) {
-      return redirect()->back()->withErrors('Angsuran Hari Ini Sudah Dibayar');
+    if ($request->type_transaksi == 'bayar') {
+      if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
+        return redirect()->back()->withErrors('Hari Tidak Sama');
+      }
+
+      if ($isPaidToday->isNotEmpty()) {
+        return redirect()->back()->withErrors('Angsuran Hari Ini Sudah Dibayar');
+      }
+
+      $totalAngsuran = $transactionLoan->loan_instalment->sum('nominal');
+      $pinjaman = $transactionLoan->pinjaman;
+      if ($pinjaman == $totalAngsuran || $pinjaman < $totalAngsuran) {
+        return redirect()->back()->withErrors('Pinjaman Sudah Lunas');
+      }
+      if ($transactionLoan->pinjaman < ($totalAngsuran + $request->nominal)) {
+        return redirect()->back()->withErrors('Angsuran Tidak Boleh Minus');
+      }
     }
 
 
-    $totalAngsuran = $transactionLoan->loan_instalment->sum('nominal');
-    $pinjaman = $transactionLoan->pinjaman;
-    if ($pinjaman == $totalAngsuran || $pinjaman < $totalAngsuran) {
-      return redirect()->back()->withErrors('Pinjaman Sudah Lunas');
-    }
-    if ($transactionLoan->pinjaman < ($totalAngsuran + $request->nominal)) {
-      return redirect()->back()->withErrors('Angsuran Tidak Boleh Minus');
-    }
 
     $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('area', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
 

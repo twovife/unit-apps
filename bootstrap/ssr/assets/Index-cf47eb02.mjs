@@ -45,7 +45,7 @@ import "./Action-228b5ed8.mjs";
 import "axios";
 import "./Acc-375da62f.mjs";
 import "./DropJadi-f2602fac.mjs";
-import "./Gagal-ff4d95fe.mjs";
+import "./Gagal-9260ef58.mjs";
 import "./DetailTableOnAction-ce80c62c.mjs";
 import "./RemoveLoan-6d4e21d7.mjs";
 import "./ReStatus-49da2205.mjs";
