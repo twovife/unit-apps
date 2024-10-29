@@ -3,14 +3,18 @@ import { Button } from '@/shadcn/ui/button';
 import React from 'react';
 const variantMap = {
   open: 'blue',
-  acc: 'green',
+  acc: 'yellow',
   success: 'green',
-  tolak: 'destructive',
+  tolak: 'default',
   gagal: 'destructive',
-  lama: 'old',
-  baru: 'new',
+  lama: 'outline',
+  baru: 'yellow',
   true: 'green',
   false: 'destructive',
+  ml: 'default',
+  mb: 'destructive',
+  cm: 'yellow',
+  normal: 'green',
 };
 const BadgeStatus = ({ value, onClick, children, ...props }) => {
   const variant = variantMap[value] || 'default';
@@ -20,5 +24,4 @@ const BadgeStatus = ({ value, onClick, children, ...props }) => {
     </Badge>
   );
 };
-
 export default BadgeStatus;

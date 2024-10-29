@@ -69,13 +69,10 @@ class TransactionDailyRecapController extends Controller
     $validate = $request->validate([
       'id' => ['required'],
       'date' => ['required'],
-      'masuk' => ['required'],
       'keluar' => ['required'],
       'baru' => ['required'],
       'lama' => ['required'],
       'rencana' => ['required'],
-      'storting' => ['required'],
-      'drop' => ['required'],
       'tanggal_rencana_minggu_depan' => ['required'],
       'rencana_minggu_depan' => ['required'],
       'target_minggu_depan' => ['required'],
@@ -84,19 +81,26 @@ class TransactionDailyRecapController extends Controller
 
     try {
       DB::beginTransaction();
-      $check_thisDay = TransactionDailyRecap::firstOrNew(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->date]);
+      $sumAllDrop = TransactionLoan::where('transaction_loan_officer_grouping_id', $request->id)->where('drop_date', $request->date)->where('status', 'success')->sum('nominal_drop');
+      $sumAllInstalment = TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $request->id)->where('transaction_date', $request->date)->sum('nominal');
 
-      $check_thisDay->masuk = $request->masuk;
-      $check_thisDay->keluar = $request->keluar;
-      $check_thisDay->storting = $request->storting;
-      $check_thisDay->drop = $request->drop;
-      $check_thisDay->daily_kepala_approval = Carbon::now();
-      $check_thisDay->daily_kepala_approval_user = auth()->user()->employee->id;
-      $check_thisDay->save();
+      $check_thisDay = TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->date]);
+      $check_thisDay->update([
+        'drop' => $sumAllDrop,
+        'storting' => $sumAllInstalment,
+        'keluar' => $request->keluar,
+        'daily_kepala_approval' => Carbon::now(),
+        'daily_kepala_approval_user' =>  auth()->user()->employee->id,
+      ]);
 
-      $fillTragetMingguDepan = TransactionDailyRecap::firstOrNew(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->tanggal_rencana_minggu_depan]);
-      $fillTragetMingguDepan->target = $request->target_minggu_depan;
-      $fillTragetMingguDepan->save();
+
+
+      $fillTragetMingguDepan = TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->tanggal_rencana_minggu_depan]);
+      $fillTragetMingguDepan->update([
+        'target' => $request->target_minggu_depan,
+        'target_on' =>  $request->date,
+      ]);
+
 
       DB::commit();
     } catch (Exception $e) {
@@ -104,7 +108,7 @@ class TransactionDailyRecapController extends Controller
       ddd($e);
       return redirect()->back()->withError('Data Gagal Diperbarui, Refresh / Hub IT');
     }
-    return redirect()->back()->with('message', 'Data berhasil disimpan.');
+    return redirect()->back()->with('message', $message ?? 'Data berhasil disimpan.');
   }
 
   public function rekap_permantri(Request $request)

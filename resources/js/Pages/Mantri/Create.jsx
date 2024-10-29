@@ -7,8 +7,6 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import React, { useState } from 'react';
 import { NumericFormat } from 'react-number-format';
-import OldCustomer from '../Transaksi/Components/OldCustomer';
-import NewCustomer from '../Transaksi/Components/NewCustomer';
 import useServerFilter from '@/Hooks/useServerFilter';
 import LinkButton from '@/Components/LinkButton';
 
@@ -138,30 +136,6 @@ const Create = ({ max_date, min_date, ...props }) => {
               </table>
             </div>
           </div>
-        )}
-        {nik ? (
-          customerData ? (
-            <OldCustomer
-              setLoading={setLoading}
-              max_date={max_date}
-              min_date={min_date}
-              emps={kolompokMantri}
-              nik={nik}
-              customer_id={customerData?.id}
-              url={route('mantriapps.store')}
-            />
-          ) : (
-            <NewCustomer
-              setLoading={setLoading}
-              max_date={max_date}
-              min_date={min_date}
-              emps={kolompokMantri}
-              nik={nik}
-              url={route('mantriapps.store')}
-            />
-          )
-        ) : (
-          ''
         )}
       </>
     </MobileLayout>

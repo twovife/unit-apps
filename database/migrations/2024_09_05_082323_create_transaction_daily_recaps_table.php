@@ -14,21 +14,24 @@ return new class extends Migration
     Schema::create('transaction_daily_recaps', function (Blueprint $table) {
       $table->id();
       $table->bigInteger('transaction_loan_officer_grouping_id')->nullable();
-
       $table->date('date')->nullable();
 
-      $table->bigInteger('kasbon')->nullable();
-      $table->bigInteger('transport')->nullable();
-      $table->bigInteger('tunai')->nullable();
-      $table->bigInteger('titipan')->nullable();
 
-      $table->bigInteger('storting')->nullable();
-      $table->bigInteger('drop')->nullable();
-      $table->bigInteger('keluar')->nullable();
-      $table->bigInteger('masuk')->nullable();
-      $table->bigInteger('target')->nullable();
+      $table->bigInteger('kasbon')->default(0);
+      $table->bigInteger('storting')->default(0);
 
-      $table->bigInteger('kurangan')->nullable();
+      $table->bigInteger('sharingdo')->storedAs('drop * 0.11')->default(0); //do 11%
+      $table->bigInteger('titipan')->storedAs('drop * 0.9')->default(0); //do 9%
+      $table->bigInteger('debt')->storedAs('drop * 0.11 + kasbon + storting')->default(0);
+
+      $table->bigInteger('drop')->default(0);
+      $table->bigInteger('transport')->default(0);
+      $table->bigInteger('kred')->storedAs('drop + transport')->default(0);
+      $table->decimal('tunai', 20, 0)->storedAs('debt - kred')->default(0);
+
+      $table->bigInteger('masuk')->storedAs('drop * 0.13')->default(0);
+      $table->bigInteger('keluar')->default(0);
+      $table->bigInteger('target')->default(0);
 
 
       $table->timestamp('daily_kepala_approval')->nullable();

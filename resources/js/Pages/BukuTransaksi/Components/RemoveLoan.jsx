@@ -49,7 +49,11 @@ const RemoveLoan = ({ triggeredId, onClosed }) => {
             ${confirmingUserDeletion ? 'translate-y-full' : 'translate-y-0'}
             `}
           >
-            <Button type="button" onClick={confirmUserDeletion}>
+            <Button
+              variant="destructiveoutline2"
+              type="button"
+              onClick={confirmUserDeletion}
+            >
               Hapus
             </Button>
           </div>
