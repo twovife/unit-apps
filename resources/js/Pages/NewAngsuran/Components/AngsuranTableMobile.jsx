@@ -14,7 +14,7 @@ import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 
-const AngsuranTable = ({ dateOfWeek, datas }) => {
+const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -226,4 +226,4 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   );
 };
 
-export default AngsuranTable;
+export default AngsuranTableMobile;

@@ -1,6 +1,5 @@
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import Permantri from '@/Pages/Kasir/Rekap/Permantri';
-import RekapContent from '@/Pages/Kasir/Rekap/RekapContent';
 import { Head } from '@inertiajs/react';
 import React from 'react';
 

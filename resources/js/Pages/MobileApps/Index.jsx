@@ -20,6 +20,7 @@ const Index = () => {
     <MobileLayout>
       <fieldset className="grid gap-6 p-4 border rounded-lg">
         <legend className="px-1 -ml-1 text-sm font-medium">Mantri</legend>
+
         <div className="flex items-center justify-around gap-6">
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
@@ -27,16 +28,20 @@ const Index = () => {
                 <MagnifyingGlassIcon className="h-7 w-7" />
               </Link>
             </Button>
+            {/* CREATE PAGE */}
             <div>Pengajuan</div>
           </div>
+
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
               <Link href={route('mobile_apps.transaksi')}>
                 <Layers className="h-7 w-7" />
               </Link>
+              {/* MANTRI DROP PAGE */}
             </Button>
             <div>Drop</div>
           </div>
+
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
               <Link href={route('mobile_apps.angsuran')}>
@@ -66,14 +71,7 @@ const Index = () => {
             </Button>
             <div>Buku Angsuran</div>
           </div>
-          <div className="text-center">
-            <Button size="icon2xl" variant="outline" asChild>
-              <Link href={route('mobile_apps.buku_storting')}>
-                <BookCheck className="h-7 w-7" />
-              </Link>
-            </Button>
-            <div>Buku Storting</div>
-          </div>
+
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
               <Link href={route('mobile_apps.rekap_permantri')}>

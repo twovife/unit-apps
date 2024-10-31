@@ -11,9 +11,10 @@ import {
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
+import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 
-const Angsuran = ({ datas }) => {
+const AngsuranByDateTable = ({ datas }) => {
   const [data, setData] = useState([]);
   useEffect(() => {
     setData(datas);
@@ -193,4 +194,4 @@ const Angsuran = ({ datas }) => {
   );
 };
 
-export default Angsuran;
+export default AngsuranByDateTable;

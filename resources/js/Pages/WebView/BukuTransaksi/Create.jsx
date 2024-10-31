@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shadcn/ui/dialog';
-import Loading from '@/Components/Loading';
 import NewNasabah from '@/Pages/NewLoan/NewNasabah';
 
 const Create = ({ show = false, onClosed }) => {

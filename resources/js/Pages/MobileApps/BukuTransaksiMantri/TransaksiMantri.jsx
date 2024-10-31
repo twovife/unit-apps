@@ -1,21 +1,11 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import { Button } from '@/shadcn/ui/button';
 import { Head } from '@inertiajs/react';
-import {
-  ArrowBigLeft,
-  ArrowBigRight,
-  FilterIcon,
-  PlusCircle,
-} from 'lucide-react';
+import { FilterIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import BukuTransaksi from '@/Pages/BukuTransaksi/BukuTransaksi';
-// import Create from './Create';
 import MobileLayout from '@/Layouts/MobileLayout';
 import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
-// import Rencana from './Components/Rencana';
-// import Approval from './Components/Approval';
 
 const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
   const [flatData, setFlatData] = useState([]);
@@ -66,10 +56,6 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
           </Popover>
         </div>
       </div>
-
-      {/* <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} /> */}
-
-      {/* Whoooooa!!! what is this */}
 
       <div className="max-h-[80vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         {datas &&

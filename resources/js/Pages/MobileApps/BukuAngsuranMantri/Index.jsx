@@ -1,10 +1,8 @@
 import React from 'react';
 
-import Authenticated from '@/Layouts/AuthenticatedLayout';
-
 import { Head } from '@inertiajs/react';
-import Angsuran from '@/Pages/NewAngsuran/Angsuran';
 import MobileLayout from '@/Layouts/MobileLayout';
+import Angsuran from '@/Pages/NewAngsuran/Angsuran';
 
 const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
   return (
@@ -13,9 +11,8 @@ const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
         datas={datas}
         dateOfWeek={dateOfWeek}
         sirkulasi={sirkulasi}
-        type={'mobile'}
-        urlLink={route('mobile_apps.angsuran')}
-        localState={'mobile_apps.angsuran'}
+        urlLink={route('mobile_apps.buku_angsuran')}
+        localState={'mobile_apps.buku_angsuran'}
       />
     </MobileLayout>
   );

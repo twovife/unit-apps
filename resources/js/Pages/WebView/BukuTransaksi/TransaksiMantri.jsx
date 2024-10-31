@@ -2,20 +2,13 @@ import SearchComponent from '@/Components/shadcn/SearchComponent';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Head } from '@inertiajs/react';
-import {
-  ArrowBigLeft,
-  ArrowBigRight,
-  FilterIcon,
-  PlusCircle,
-} from 'lucide-react';
+import { FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import BukuTransaksi from '@/Pages/BukuTransaksi/BukuTransaksi';
 import Create from './Create';
 import Rencana from '@/Pages/BukuTransaksi/Rencana';
-// import Rencana from './Components/Rencana';
-// import Approval from './Components/Approval';
 
 const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
   const [flatData, setFlatData] = useState([]);
@@ -37,21 +30,9 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
     setOnCreateShow(false);
   };
   // Declare a state variable to track the visibility of the "onCreateShow" component
-  const [onApprovalShow, setOnApprovalShow] = useState(false);
-
-  // Event handler function to set the "onApprovalShow" state variable to true
-  const handleOnApprovalShowOpen = (e) => {
-    setOnApprovalShow(true);
-  };
 
   return (
     <Authenticated header={<Head>Buku Transaksi</Head>}>
-      {/* <Approval
-        show={onApprovalShow}
-        onClosed={handleOnApprovalShowClosed}
-        triggeredData={flatData}
-      /> */}
-
       {/* this filter section */}
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">

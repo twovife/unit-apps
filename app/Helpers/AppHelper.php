@@ -192,4 +192,21 @@ class AppHelper
       return Branch::where('id', auth()->user()->employee->branch_id)->get();
     }
   }
+
+  public static function get_closed_date($date)
+  {
+
+    if (auth()->user()->hasPermissionTo('pusat apps')) {
+      return null;
+    }
+    if (auth()->user()->hasPermissionTo('unit apps')) {
+      $closedUnitTransaction = Carbon::parse($date)->copy()->subMonth(2)->startOfMonth()->format('Y-m-d');
+      return $closedUnitTransaction;
+    }
+    if (auth()->user()->hasPermissionTo('mantri apps')) {
+      return $date;
+    }
+
+    return $date;
+  }
 }

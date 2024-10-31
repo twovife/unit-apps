@@ -103,6 +103,7 @@ const NewNasabah = ({ onClosed }) => {
       onSuccess: () => {
         modalIsClosed();
       },
+      replace: true,
     });
   };
 

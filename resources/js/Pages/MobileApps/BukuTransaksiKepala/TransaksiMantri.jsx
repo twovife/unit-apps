@@ -1,21 +1,13 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import { Button } from '@/shadcn/ui/button';
 import { Head } from '@inertiajs/react';
-import {
-  ArrowBigLeft,
-  ArrowBigRight,
-  FilterIcon,
-  PlusCircle,
-} from 'lucide-react';
+import { FilterIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import BukuTransaksi from '@/Pages/BukuTransaksi/BukuTransaksi';
-// import Create from './Create';
 import MobileLayout from '@/Layouts/MobileLayout';
 import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
-// import Rencana from './Components/Rencana';
-// import Approval from './Components/Approval';
+import Rencana from '@/Pages/BukuTransaksi/Rencana';
 
 const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
   const [flatData, setFlatData] = useState([]);
@@ -26,13 +18,6 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
 
   return (
     <MobileLayout header={<Head>Buku Transaksi</Head>}>
-      {/* <Approval
-        show={onApprovalShow}
-        onClosed={handleOnApprovalShowClosed}
-        triggeredData={flatData}
-      /> */}
-
-      {/* this filter section */}
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">
@@ -92,7 +77,7 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
               ))}
           </TabsContent>
           <TabsContent value="dailyTarget">
-            {/* <Rencana datas={buku_rencana} dataTransaksi={datas} /> */}
+            <Rencana datas={buku_rencana} dataTransaksi={datas} />
           </TabsContent>
         </Tabs>
       </div>
