@@ -21,6 +21,33 @@ class TransactionLoanInstalment extends Model
     "user_input"
   ];
 
+
+  protected static function boot()
+  {
+    parent::boot();
+
+    static::creating(function ($transactionLoanInstalment) {
+      if ($transactionLoanInstalment->nominal > 0) {
+        $transactionDailyRecap = TransactionDailyRecap::firstOrCreate([
+          "transaction_loan_officer_grouping_id" => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
+          "date" => $transactionLoanInstalment->transaction_date,
+        ]);
+        $transactionDailyRecap->increment('storting', $transactionLoanInstalment->nominal);
+      }
+    });
+
+
+    static::deleting(function ($transactionLoanInstalment) {
+      if ($transactionLoanInstalment->nominal > 0) {
+        $transactionDailyRecap = TransactionDailyRecap::firstOrCreate([
+          "transaction_loan_officer_grouping_id" => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
+          "date" => $transactionLoanInstalment->transaction_date,
+        ]);
+        $transactionDailyRecap->decrement('storting', $transactionLoanInstalment->nominal);
+      }
+    });
+  }
+
   public function loan()
   {
     return $this->belongsTo(TransactionLoan::class, 'transaction_loan_id', 'id');

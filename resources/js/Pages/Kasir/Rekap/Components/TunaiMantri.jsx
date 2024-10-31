@@ -85,7 +85,7 @@ const TunaiMantri = ({
         header: 'Tunai',
         accessorKey: 'tunai',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.storting} />,
+        footer: (info) => <FormatNumbering value={totals.tunai} />,
       },
       {
         header: 'Status',

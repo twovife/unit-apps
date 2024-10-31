@@ -3,14 +3,18 @@ import { Button } from '@/shadcn/ui/button';
 import React from 'react';
 const variantMap = {
   open: 'blue',
-  acc: 'green',
+  acc: 'yellow',
   success: 'green',
-  tolak: 'destructive',
+  tolak: 'default',
   gagal: 'destructive',
   lama: 'outline',
   baru: 'yellow',
   true: 'green',
   false: 'destructive',
+  ml: 'default',
+  mb: 'destructive',
+  cm: 'yellow',
+  normal: 'green',
 };
 const BargeStatus = ({ value, children, onClick, ...props }) => {
   const variant = variantMap[value] || 'default';

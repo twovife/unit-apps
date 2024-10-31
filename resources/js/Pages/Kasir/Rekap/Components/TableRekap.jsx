@@ -80,7 +80,7 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => {
           const lastValue = getLastValue(info, 'total_drop');
-          return <FormatNumbering value={lastValue} />;
+          return <FormatNumbering value={totals.total_drop} />;
         },
       },
       {
@@ -108,6 +108,7 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
           return <FormatNumbering value={lastValue ?? totals.sirkulasi} />;
         },
       },
+
       {
         header: 'Angsuran CM',
         accessorKey: 'angsuran_cm',

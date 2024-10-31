@@ -1,34 +1,91 @@
 import Loading from '@/Components/Loading';
 import SelectList from '@/Components/SelectList';
 import { showNominalByStatus } from '@/lib/utils';
+
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { useForm } from '@inertiajs/react';
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState, useTransition } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
 const ChangeDetail = ({ triggeredData, onClosed }) => {
-  //genereate form for put/patch
-  const { data, setData, put, processing, reset } = useForm({});
+  console.log(triggeredData);
 
+  //genereate form for put/patch
+  const { data, setData, put, processing, reset, transform, errors } = useForm({
+    request_date: '',
+    drop_date: '',
+    request_nominal: '',
+    approved_nominal: '',
+    nominal_drop: '',
+    drop_langsung: '',
+  });
+  const [errorClient, setErrorClient] = useState(null);
   useEffect(() => {
     if (triggeredData) {
-      setData({
+      setData((prevData) => ({
+        ...prevData,
         request_date: triggeredData.request_date,
         drop_date: triggeredData.tanggal_drop,
+        drop_langsung: triggeredData.drop_langsung,
+
         request_nominal:
-          triggeredData.drop_langsung == 'lama'
-            ? triggeredData.request
-            : triggeredData.drop_jadi,
-        approved_nominal:
-          triggeredData.drop_langsung == 'lama'
-            ? triggeredData.acc
-            : triggeredData.drop_jadi,
+          triggeredData.drop_langsung == 'baru'
+            ? triggeredData.drop_jadi
+            : triggeredData.request,
+
+        approved_nominal: triggeredData.acc,
         nominal_drop: triggeredData.drop_jadi,
-      });
+      }));
     }
   }, [triggeredData]);
+
+  const onDateChange = (e) => {
+    setErrorClient(null);
+
+    const { name, value } = e.target;
+    const isRequestDate = name === 'request_date' && data.drop_date === value;
+    const isDropDate = name === 'drop_date' && data.request_date === value;
+
+    const istrue = isRequestDate || isDropDate;
+    const statusBefore =
+      triggeredData?.status == 'gagal' || triggeredData?.status == 'tolak';
+
+    if (istrue && statusBefore) {
+      setErrorClient(
+        'Status GAGAL / TOLAK tidak bisa diubah ke drop Langsung / Pengajuan'
+      );
+      return null;
+    }
+
+    setData((prevData) => ({
+      ...prevData,
+      [name]: value,
+      drop_langsung: istrue ? 'baru' : 'lama',
+
+      request_nominal: istrue
+        ? null
+        : triggeredData.drop_langsung == 'baru'
+        ? triggeredData.drop_jadi
+        : triggeredData.request,
+
+      approved_nominal: istrue
+        ? null
+        : triggeredData.drop_langsung == 'baru'
+        ? triggeredData.drop_jadi
+        : triggeredData.acc,
+
+      nominal_drop: istrue
+        ? triggeredData.drop_langsung == 'baru'
+          ? triggeredData.drop_jadi
+          : triggeredData.request
+        : triggeredData.status == 'success'
+        ? triggeredData.drop_jadi
+        : null,
+    }));
+  };
 
   const onHandleCurencyChange = (value, name) => {
     setData(name, value);
@@ -38,8 +95,12 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
     setData(e.target.name, e.target.value);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (status) => {
+    transform((data) => ({
+      ...data,
+      updateType: status,
+    }));
+
     put(route('transaction.updateEverything', triggeredData?.nomor_pengajuan), {
       preventDefault: true,
       preserveState: true,
@@ -51,45 +112,62 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={(e) => e.preventDefault()}>
       <Loading show={processing} />
+      <div className="mb-1 ">
+        <div className="flex w-full gap-3">
+          <div className="flex-1">
+            <Label htmlFor="request_date">Tanggal Pengajuan</Label>
+            <Input
+              type="date"
+              onChange={onDateChange}
+              value={data.request_date}
+              id={'request_date'}
+              max={data.drop_date}
+              required
+              name={'request_date'}
+            />
+          </div>
 
-      <div className="flex w-full gap-3 mb-3">
-        <div className="flex-1">
-          <Label htmlFor="request_date">Tanggal Pengajuan</Label>
-          <Input
-            type="date"
-            onChange={onChange}
-            value={data.request_date}
-            id={'request_date'}
-            required
-            name={'request_date'}
-          />
+          <div className="flex-1">
+            <Label htmlFor="drop_date">Tanggal Drop</Label>
+            <Input
+              type="date"
+              onChange={onDateChange}
+              value={data.drop_date}
+              id={'drop_date'}
+              min={data.request_date}
+              required
+              name={'drop_date'}
+            />
+          </div>
         </div>
-        <div className="flex-1">
-          <Label htmlFor="drop_date">Tanggal Pengajuan</Label>
-          <Input
-            type="date"
-            onChange={onChange}
-            value={data.drop_date}
-            id={'drop_date'}
-            required
-            name={'drop_date'}
-          />
+        {errorClient ? (
+          <div className="font-semibold text-red-500">{errorClient}</div>
+        ) : data.drop_langsung == 'baru' ? (
+          <div className="text-red-500 w-fullfont-semibold">DROP BARU</div>
+        ) : (
+          <div className="w-full font-semibold text-red-500">
+            PENGAJUAN DROP
+          </div>
+        )}
+      </div>
+
+      <div className="mb-3">
+        <div className="text-xs text-blue-500">
+          Perubahan Tanggal Mempengaruhi Perolehan Drop dan Rencana Drop
+        </div>
+        <div className="text-xs">
+          Jika <span className="font-semibold text-blue-500">Drop Baru</span>{' '}
+          diubah ke{' '}
+          <span className="font-semibold text-blue-500">
+            Drop Lama / Pengajuan
+          </span>
         </div>
       </div>
-      <small>
-        Perubahan Tanggal Mempengaruhi Perolehan Drop dan Rencana Drop
-      </small>
-      {data.request_date == data.drop_date ? (
-        <div className="w-full mb-3 font-semibold text-red-500">DROP BARU</div>
-      ) : (
-        <div className="w-full mb-3 font-semibold text-red-500">
-          PENGAJUAN DROP
-        </div>
-      )}
-      <div className="flex w-full gap-3 mb-3">
-        {triggeredData?.drop_langsung == 'lama' && (
+
+      <div className="flex w-full gap-3 mb-1">
+        {data.drop_langsung == 'lama' && (
           <>
             <div className="flex-1">
               <Label htmlFor="request_nominal">Nominal Pengajuan</Label>
@@ -105,7 +183,8 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
                 placeholder={'Inputkan angka tanpa sparator'}
               />
             </div>
-            {showNominalByStatus('acc', triggeredData?.status) && (
+
+            {data.approved_nominal && (
               <div className="flex-1">
                 <Label htmlFor="approved_nominal">Nominal Acc</Label>
                 <CurrencyInput
@@ -124,7 +203,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
           </>
         )}
 
-        {showNominalByStatus('nominal_drop', triggeredData?.status) && (
+        {data.nominal_drop && (
           <div className="flex-1">
             <Label htmlFor="nominal_drop">Drop Jadi</Label>
             <CurrencyInput
@@ -141,8 +220,28 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
           </div>
         )}
       </div>
-      <div>
-        <Button type="submit">Ubah</Button>
+      <div className="mb-3">
+        <div className="text-xs text-blue-500">
+          Perubahan Nominal Mempengaruhi Perolehan Drop dan Rencana Drop
+        </div>
+        <div className="text-xs text-yellow-500">
+          Reset Pinjaman akan menghilangkan semua data angsuran pada pinjaman
+          ini
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <Button onClick={() => handleSubmit('detailchange')} type="submit">
+          Ubah
+        </Button>
+        {triggeredData?.drop_langsung == 'lama' && (
+          <Button
+            onClick={() => handleSubmit('resetdata')}
+            variant="yellow"
+            type="submit"
+          >
+            Reset Pinjaman
+          </Button>
+        )}
       </div>
     </form>
   );

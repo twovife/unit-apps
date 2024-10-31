@@ -1,26 +1,35 @@
 import Loading from '@/Components/Loading';
+import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
 import { Label } from '@/shadcn/ui/label';
 import { useForm } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
-const Acc = ({ id, acc, onClosed }) => {
-  const { data, setData, put, errors, processing, reset } = useForm({
+const Acc = ({ id, acc, onClosed, triggeredData }) => {
+  const { data, setData, put, errors, processing, reset, transform } = useForm({
     approved_nominal: '',
-    status: 'acc',
+    status: '',
+    drop: '',
   });
 
   useEffect(() => {
-    setData('approved_nominal', acc);
+    setData((prevData) => ({
+      ...prevData,
+      approved_nominal: triggeredData?.acc ?? triggeredData?.request,
+      drop: triggeredData?.acc,
+    }));
   }, [id, acc]);
 
   const onHandleCurencyChange = (value, name) => {
     setData(name, value);
   };
 
-  const accPinjaman = (e) => {
-    e.preventDefault();
+  const accPinjaman = (status) => {
+    transform((data) => ({
+      ...data,
+      status: status,
+    }));
     put(route('transaction.action_buku_transaksi', id), {
       onFinish: () => {
         onClosed();
@@ -29,23 +38,81 @@ const Acc = ({ id, acc, onClosed }) => {
   };
 
   return (
-    <form className="w-full" onSubmit={accPinjaman}>
+    <form className="w-full" onSubmit={(e) => e.preventDefault()}>
       <Loading show={processing} />
-      <Label htmlFor="approved_nominal">Nominal ACC</Label>
-      <div className="flex items-center justify-center gap-3">
-        <CurrencyInput
-          className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          name="approved_nominal"
-          allowDecimals={false}
-          prefix="Rp. "
-          min={1}
-          required
-          onValueChange={onHandleCurencyChange}
-          value={data.approved_nominal}
-          placeholder={'Inputkan angka tanpa sparator'}
-        />
-        <Button onClick={accPinjaman}>ACC</Button>
+      <div className="mb-3">
+        {triggeredData?.status === 'open' ? (
+          <>
+            <Label htmlFor="approved_nominal">Nominal ACC</Label>
+            <div className="flex items-center justify-center gap-3">
+              <CurrencyInput
+                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                name="approved_nominal"
+                allowDecimals={false}
+                prefix="Rp. "
+                min={1}
+                required
+                onValueChange={onHandleCurencyChange}
+                value={data.approved_nominal}
+                placeholder={'Inputkan angka tanpa sparator'}
+              />
+              <Button variant="green" onClick={() => accPinjaman('acc')}>
+                ACC
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => accPinjaman('tolak')}
+              >
+                Tolak
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Badge size={'lg'} variant={'green'}>
+            Status Pengajuan = {triggeredData?.status}, Pada Tanggal
+            {triggeredData?.check_date}
+          </Badge>
+        )}
       </div>
+
+      {triggeredData?.status !== 'open' && (
+        <div className="mb-3">
+          {triggeredData?.status === 'acc' ? (
+            <>
+              <Label htmlFor="drop" className="whitespace-normal">
+                Drop Jadi
+              </Label>
+              <div className="flex items-center justify-center gap-3">
+                <CurrencyInput
+                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  name="drop"
+                  allowDecimals={false}
+                  prefix="Rp. "
+                  min={1}
+                  required
+                  onValueChange={onHandleCurencyChange}
+                  value={data.drop}
+                  placeholder={'Inputkan angka tanpa sparator'}
+                />
+                <Button variant="green" onClick={() => accPinjaman('success')}>
+                  DROP
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => accPinjaman('gagal')}
+                >
+                  GAGAL
+                </Button>
+              </div>
+            </>
+          ) : (
+            <Badge size={'lg'} variant={'green'}>
+              Status Pengajuan = {triggeredData?.status}, Tanggal
+              {triggeredData?.check_date}
+            </Badge>
+          )}
+        </div>
+      )}
     </form>
   );
 };

@@ -1,164 +1,225 @@
-import SearchComponent from '@/Components/shadcn/SearchComponent';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
-import { Button } from '@/shadcn/ui/button';
-import { Head } from '@inertiajs/react';
-import {
-  ArrowBigLeft,
-  ArrowBigRight,
-  FilterIcon,
-  PlusCircle,
-} from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-import Create from './Components/Create';
-import BukuTransaksiTable from './Components/BukuTransaksiTable';
-import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import Rencana from './Components/Rencana';
-import BukuTransaksiNextTable from './Components/BukuTransaksiNextTable';
-import Approval from './Components/Approval';
+import React, { useEffect, useMemo, useState } from 'react';
 
-const BukuTransaksi = ({ datas, buku_rencana, auth, ...props }) => {
-  const [flatData, setFlatData] = useState([]);
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shadcn/ui/table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import FormatNumbering from '@/Components/shadcn/FormatNumbering';
+import dayjs from 'dayjs';
+import Action from './Action';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
+import BadgeStatus from '@/Components/shadcn/BadgeStatus';
+
+const BukuTransaksi = ({ datas }) => {
+  const [data, setData] = useState([]);
 
   useEffect(() => {
-    setFlatData(datas.flat());
+    setData(datas);
   }, [datas]);
+
+  const calculateTotals = (data) => {
+    return data.reduce(
+      (acc, item) => {
+        acc.request += item.request || 0;
+        acc.drop += item.drop || 0;
+        acc.drop_jadi += item.drop_jadi || 0;
+        acc.acc += item.acc || 0;
+
+        return acc;
+      },
+      {
+        request: 0,
+        drop: 0,
+        acc: 0,
+        drop_jadi: 0,
+      }
+    );
+  };
+
+  const totals = calculateTotals(data);
+
+  const columns = useMemo(
+    () => [
+      {
+        header: 'Tgl Drop',
+        accessorKey: 'tanggal_drop',
+        cell: ({ getValue, cell }) => (
+          <div className="flex flex-col items-center justify-center gap-1 lg:gap-3 lg:flex-row">
+            <div className="whitespace-nowrap">
+              {dayjs(getValue()).format('DD-MM-YY')}
+            </div>
+            <BadgeStatus value={cell.row.original.drop_langsung} />
+          </div>
+        ),
+      },
+      {
+        header: 'Status',
+        type: 'show',
+        accessorKey: 'status',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'Nama',
+        accessorKey: 'nama',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'Alamat',
+        accessorKey: 'alamat',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'No Angt',
+        accessorKey: 'nomor_anggota',
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        header: 'Pinj ke',
+        accessorKey: 'pinjaman_ke',
+        cell: ({ getValue }) => getValue(),
+      },
+
+      {
+        header: 'Drop',
+        accessorKey: 'drop',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.drop} />,
+      },
+      {
+        header: 'Pengajuan',
+        accessorKey: 'request',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.request} />,
+      },
+      {
+        header: 'Acc',
+        accessorKey: 'acc',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.acc} />,
+      },
+      {
+        header: 'Drop Jadi',
+        accessorKey: 'drop_jadi',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.drop_jadi} />,
+      },
+    ],
+    [totals]
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    debugTable: true,
+  });
 
   // Declare a state variable to track the visibility of the "onCreateShow" component
   const [onCreateShow, setOnCreateShow] = useState(false);
+  const [actionData, setActionData] = useState();
 
   // Event handler function to set the "onCreateShow" state variable to true
   const handleOnCreateShowOpen = (e) => {
     setOnCreateShow(true);
+    setActionData(e);
   };
 
   // Event handler function to set the "onCreateShow" state variable to false
   const handleOnCreateShowClosed = (e) => {
     setOnCreateShow(false);
-  };
-  // Declare a state variable to track the visibility of the "onCreateShow" component
-  const [onApprovalShow, setOnApprovalShow] = useState(false);
-  const [triggeredDate, setTriggeredDate] = useState(false);
-
-  // Event handler function to set the "onApprovalShow" state variable to true
-  const handleOnApprovalShowOpen = (e) => {
-    setOnApprovalShow(true);
-  };
-
-  // Event handler function to set the "onApprovalShow" state variable to false
-  const handleOnApprovalShowClosed = (e) => {
-    setOnApprovalShow(false);
-  };
-
-  const [nexOrPrevious, setNexOrPrevious] = useState(null);
-  const onNexOrPreviousTogler = (params) => {
-    setNexOrPrevious(params);
+    setActionData();
   };
 
   return (
-    <Authenticated header={<Head>Buku Transaksi</Head>}>
-      <Approval
-        show={onApprovalShow}
-        onClosed={handleOnApprovalShowClosed}
-        triggeredData={flatData}
-        triggeredDate={triggeredDate}
+    <>
+      <Action
+        show={onCreateShow}
+        onClosed={handleOnCreateShowClosed}
+        triggeredData={actionData}
       />
-      <div className="flex flex-row items-center justify-between gap-3 mb-3">
-        <div className="flex-none shrink-0 whitespace-nowrap">
-          <h1 className="text-xl font-semibold tracking-tight ">
-            Buku Transaksi
-          </h1>
-        </div>
-        <div className="items-center justify-end flex-auto hidden w-full lg:flex">
-          <SearchComponent
-            urlLink={route('transaction.index_buku_transaksi')}
-            localState={'transaction_index_buku_transaksi'}
-            searchMonth={true}
-            searchHari={true}
-            searchKelompok={auth.permissions.includes('can show kelompok')}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
-            nexOrPrevious={nexOrPrevious}
-            setNexOrPrevious={setNexOrPrevious}
-          >
-            {auth.permissions.includes('can create') && (
-              <Button type="button" onClick={handleOnCreateShowOpen}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Tambah Pengajuan
-                </span>
-              </Button>
-            )}
-          </SearchComponent>
-        </div>
-        <div className="flex justify-end gap-3 lg:hidden">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <FilterIcon className="h-4" />
-                Filter
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent>
-              <SearchComponent
-                urlLink={route('transaction.index_buku_transaksi')}
-                localState={'transaction_index_buku_transaksi'}
-                searchMonth={true}
-                searchHari={true}
-                searchKelompok={auth.permissions.includes('can show kelompok')}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
-                nexOrPrevious={nexOrPrevious}
-                setNexOrPrevious={setNexOrPrevious}
-              />
-            </PopoverContent>
-          </Popover>
-          <Button type="button" onClick={handleOnCreateShowOpen}>
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Tambah Pengajuan
-            </span>
-          </Button>
-        </div>
-      </div>
-      <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} />
 
-      <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-        <Tabs defaultValue="bukutransaksi" className="w-full">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="bukutransaksi">Buku Transaksi</TabsTrigger>
-              <TabsTrigger value="dailyTarget">Rencana Drop</TabsTrigger>
-            </TabsList>
-            <Button
-              onClick={handleOnApprovalShowOpen}
-              size="sm"
-              className="mr-3"
-            >
-              Cek Transaksi
-            </Button>
-          </div>
-          <TabsContent value="bukutransaksi">
-            {datas &&
-              datas.map((item, index) => (
-                <BukuTransaksiTable key={index} datas={item} />
+      <Table className="w-full mb-3 text-xs table-auto">
+        <TableHeader className="sticky top-0 z-10 bg-gray-100">
+          {table.getHeaderGroups().map((headerGroup, key) => (
+            <TableRow key={key}>
+              {headerGroup.headers.map((header, key) => (
+                <TableHead className="text-center" key={key}>
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </TableHead>
               ))}
-            {/* <BukuTransaksiNextTable datas={pengajuan_next} /> */}
-          </TabsContent>
-          <TabsContent value="dailyTarget">
-            <Rencana datas={buku_rencana} dataTransaksi={datas} />
-          </TabsContent>
-        </Tabs>
-      </div>
-      <div className="flex justify-between w-full mt-3">
-        <Button onClick={() => onNexOrPreviousTogler('previous')} size="icon">
-          <ArrowBigLeft />
-        </Button>
-        <Button onClick={() => onNexOrPreviousTogler('next')} size="icon">
-          <ArrowBigRight />
-        </Button>
-      </div>
-    </Authenticated>
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row, key) => (
+              <React.Fragment key={key}>
+                <TableRow className={`text-center`} key={key}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className={`${cell.column.columnDef.className}`}
+                    >
+                      {cell.column.columnDef.type == 'show' ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <BargeStatus
+                            value={cell.row.original.status}
+                            onClick={() =>
+                              handleOnCreateShowOpen(cell.row.original)
+                            }
+                          />
+                        </div>
+                      ) : (
+                        flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </React.Fragment>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan="4">Belum Ada Catatan Pinjaman</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+        <TableFooter>
+          {table.getFooterGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                return (
+                  <TableHead
+                    key={header.id}
+                    className="text-center text-black bg-gray-100"
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext()
+                    )}
+                  </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableFooter>
+      </Table>
+    </>
   );
 };
 
