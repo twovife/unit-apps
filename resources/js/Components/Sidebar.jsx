@@ -99,12 +99,6 @@ const Sidebar = ({ isOpen }) => {
             />
           </>
         )}
-
-        <MenuButton
-          url={route('mantriapps.index')}
-          title={'Mantri Apps'}
-          active={route().current('mantriapps.*')}
-        />
       </div>
     </aside>
   );
