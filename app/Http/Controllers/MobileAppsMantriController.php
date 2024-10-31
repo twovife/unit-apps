@@ -50,7 +50,7 @@ class MobileAppsMantriController extends Controller
 
   public function angsuran(Request $request)
   {
-    $data = $this->getLoan($request);
+    $data = $this->getLoan($request, true);
     return Inertia::render("MobileApps/Angsuran/Index", $data);
   }
 
