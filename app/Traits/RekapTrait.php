@@ -192,15 +192,15 @@ trait RekapTrait
 
         'angsuran_cm' => $angusuranExistingCm,
         'total_angsuran_cm' => $totalStortingCm,
-        'saldo_cm' => $sirkulasiCm - $angusuranExistingCm,
+        'saldo_cm' => $sirkulasiCm - $totalStortingCm,
 
         'angsuran_mb' => $angusuranExistingMb,
         'total_angsuran_mb' => $totalStortingMb,
-        'saldo_mb' => $sirkulasiMb - $angusuranExistingMb,
+        'saldo_mb' => $sirkulasiMb - $totalStortingMb,
 
         'angsuran_ml' => $angusuranExistingMl,
         'total_angsuran_ml' => $totalStortingMl,
-        'saldo_ml' => $sirkulasiMl - $angusuranExistingMl,
+        'saldo_ml' => $sirkulasiMl - $totalStortingMl,
       ];
     })->values();
 
