@@ -100,9 +100,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                 {row.data.map((subrow, i) => (
                   <TableRow
                     className={`${
-                      selectedId.includes(subrow.id)
-                        ? 'bg-green-200 hover:bg-green-50'
-                        : ''
+                      subrow.is_paid ? 'bg-green-200 hover:bg-green-50' : ''
                     }}`}
                     key={i}
                   >
