@@ -71,8 +71,8 @@ trait RekapTrait
           'storting_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->storting : 0,
           'storting_validate' => $thisInstalmentPerGrup == ($thisDailyRecapPerGrup?->storting ?? 0) ? true : false,
 
-          'baru' => $thisDataPerGrup->where('drop_langsung', true)->sum('drop_jadi'),
-          'lama' => $thisDataPerGrup->where('drop_langsung', false)->sum('drop_jadi'),
+          'baru' => $thisDataPerGrup->where('drop_langsung', 1)->sum('drop_jadi'),
+          'lama' => $thisDataPerGrup->where('drop_langsung', 0)->sum('drop_jadi'),
 
           'drop' => $thisDataPerGrup->sum('nominal_drop'),
           'drop_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->drop : 0,
