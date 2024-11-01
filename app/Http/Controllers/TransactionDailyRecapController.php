@@ -32,7 +32,7 @@ class TransactionDailyRecapController extends Controller
       );
 
       if ($request->type == 1) {
-        $optionalFields = ['tunai', 'transport', 'kasbon'];
+        $optionalFields = ['transport', 'kasbon'];
 
         foreach ($optionalFields as $field) {
           if ($request->has($field)) {
@@ -40,6 +40,7 @@ class TransactionDailyRecapController extends Controller
           }
         }
       }
+
 
       if ($request->type == 2) {
 
@@ -49,7 +50,6 @@ class TransactionDailyRecapController extends Controller
 
         $dailyTransaction->daily_kasir_approval = Carbon::now();
         $dailyTransaction->daily_kasir_approval_user = auth()->user()->employee->id;
-        $dailyTransaction->tunai = $request->tunai;
       }
 
       $dailyTransaction->save();
