@@ -37,7 +37,6 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
     server_filter: { closed_transaction },
     auth,
   } = usePage().props;
-  // console.log(aut);
 
   const [data, setData] = useState([]);
 

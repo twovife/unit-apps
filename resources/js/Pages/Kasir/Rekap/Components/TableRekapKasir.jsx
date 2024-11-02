@@ -72,9 +72,8 @@ const TableRekapKasir = ({
             {auth.permissions.includes('can update') && (
               <BargeStatus
                 onClick={() => onClickStatusHandler(cell.row.original, 1)}
-                value={cell.row.original.status_dayly_approval}
               >
-                {cell.row.original.status_dayly_approval ? 'Approved' : 'Open'}
+                Input
               </BargeStatus>
             )}
           </div>

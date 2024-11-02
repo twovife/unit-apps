@@ -11,8 +11,6 @@ import React, { useEffect, useState, useTransition } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
 const ChangeDetail = ({ triggeredData, onClosed }) => {
-  console.log(triggeredData);
-
   //genereate form for put/patch
   const { data, setData, put, processing, reset, transform, errors } = useForm({
     request_date: '',

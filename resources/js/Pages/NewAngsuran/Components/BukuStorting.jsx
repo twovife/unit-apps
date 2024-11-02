@@ -17,7 +17,6 @@ import ApprovalAkhir from './ApprovalAkhir';
 
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
   const [data, setData] = useState([]);
-  const [saldoSirkulas, setSaldoSirkulas] = useState(0);
   const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
     ml: {
       sirkulasi: 0,
@@ -51,87 +50,28 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
       const mapingStortingData = datas.map((item, index) => {
         const resutl = () => {
           const instalmentsSum = {};
-          const getMaxMinDateObjects = (data) => {
-            if (Array.isArray(data)) {
-              if (data.length === 0) {
-                return { max: {}, min: {} };
-              } else if (data.length === 1) {
-                return { max: {}, min: data[0] };
-              } else {
-                return data.reduce(
-                  (result, current) => {
-                    const currentDate = new Date(current.date);
-                    const minDate = new Date(result.min.date);
-                    const maxDate = new Date(result.max.date);
 
-                    if (currentDate < minDate) result.min = current;
-                    if (currentDate > maxDate) result.max = current;
-
-                    return result;
-                  },
-                  { max: data[0], min: data[0] }
-                );
-              }
-            } else {
-              // Jika data bukan array
-              return { max: {}, min: {} };
-            }
-          };
-
-          const getSirkulasi = getMaxMinDateObjects(sirkulasi);
-          setSaldoSirkulas(getSirkulasi.max?.amount ?? 0);
-
-          const sirkulasiBefore = (item) => {
-            switch (item.type) {
+          const sirkulasiAwalFunction = (params) => {
+            switch (params.type) {
               case 'ml':
-                return getSirkulasi.min?.ml_amount ?? 0;
-                break;
-              //   case 'mb':
-              //     return item.data.reduce(
-              //       (acc, item) => acc + item.saldo_sebelumnya,
-              //       0
-              //     );
-              //     break;
-              //   case 'cm':
-              //     return item.data.reduce(
-              //       (acc, item) => acc + item.saldo_sebelumnya,
-              //       0
-              //     );
-              //     break;
-              default:
-                return item.data.reduce(
-                  (acc, item) => acc + item.saldo_sebelumnya,
-                  0
-                );
-            }
-          };
-          const sirkulasiBeforeOnDB = (item) => {
-            switch (item.type) {
-              case 'ml':
-                return getSirkulasi.min?.ml_amount ?? 0;
+                return sirkulasi?.ml_amount ?? 0;
                 break;
               case 'mb':
-                return item.data.reduce(
-                  (acc, item) => acc + item.saldo_sebelumnya,
-                  0
-                );
+                return sirkulasi?.mb_amount ?? 0;
                 break;
               case 'cm':
-                return item.data.reduce(
-                  (acc, item) => acc + item.saldo_sebelumnya,
-                  0
-                );
+                return sirkulasi?.cm_amount ?? 0;
                 break;
               default:
-                return item.data.reduce(
-                  (acc, item) => acc + item.saldo_sebelumnya,
+                return params.data.reduce(
+                  (acc, itm) => acc + itm.saldo_sebelumnya,
                   0
                 );
             }
           };
 
-          const sirkulasiAwalOnDatabase = sirkulasiBefore(item);
-          const sirkulasiAwalOnDatabase2 = sirkulasiBeforeOnDB(item);
+          const sirkulasiAwal = sirkulasiAwalFunction(item);
+          console.log(sirkulasiAwal);
 
           dateOfWeek.forEach((date) => {
             instalmentsSum[date] = 0;
@@ -143,7 +83,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             dateOfWeek.forEach((date) => {
               if (data.instalment[date] !== undefined) {
                 totalInstalment += data.instalment[date];
-
                 instalmentsSum[date] += data.instalment[date];
               }
             });
@@ -152,25 +91,23 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           setSirkulasiAkhir((prevSirkulasiAkhir) => ({
             ...prevSirkulasiAkhir,
             [item.type]: {
-              sirkulasi: sirkulasiAwalOnDatabase,
-
+              sirkulasi: sirkulasiAwal,
               angsuran: totalInstalment,
-              saldo: sirkulasiAwalOnDatabase - totalInstalment,
+              saldo: sirkulasiAwal - totalInstalment,
             },
           }));
 
           return {
             key: item.month,
             instalment: { ...instalmentsSum },
-            sirkulasi: sirkulasiAwalOnDatabase,
-            sirkulasii: sirkulasiAwalOnDatabase2,
+            sirkulasi: sirkulasiAwal,
             totalInstalment: totalInstalment,
-            sirkulasiAfter: sirkulasiAwalOnDatabase - totalInstalment,
+            sirkulasiAfter: sirkulasiAwal - totalInstalment,
+            type: item.type,
           };
         };
         return resutl();
       });
-
       setData(mapingStortingData);
     }
   }, [datas]);
@@ -184,11 +121,13 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
     return result;
   };
 
-  const calculateTotals = (data, keyToSum) => {
-    const result = data.reduce(
-      (acc, item) => acc + parseInt(item[keyToSum] ?? 0),
-      0
-    );
+  const calculateTotals = (data, keyToSum, sumAll) => {
+    const result = data.reduce((acc, item) => {
+      if (sumAll && item.type === 'normal') {
+        return acc;
+      }
+      return acc + parseInt(item[keyToSum] ?? 0);
+    }, 0);
     return result;
   };
 
@@ -219,7 +158,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           <TableRow className="bg-gray-200">
             <TableHead className="text-center">Bulan</TableHead>
             <TableHead className="text-center">Sirkulasi</TableHead>
-            <TableHead className="text-center">Sirkulasi2</TableHead>
             {dateOfWeek.map((day, i) => (
               <TableHead className="text-center" key={i}>
                 {dayjs(day).format('DD-MM-YY')}
@@ -235,15 +173,14 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               <React.Fragment key={i}>
                 <TableRow>
                   <TableCell>{row.key}</TableCell>
-                  <TableCell>
+                  <TableCell
+                    className={`${row.type == 'normal' ? 'bg-green-200' : ''} `}
+                  >
                     <FormatNumbering value={row.sirkulasi} />
-                  </TableCell>
-                  <TableCell>
-                    <FormatNumbering value={row.sirkulasii} />
                   </TableCell>
 
                   {dateOfWeek.map((day, i) => (
-                    <TableCell className="text-center" key={i}>
+                    <TableCell className={`text-center`} key={i}>
                       <FormatNumbering value={row.instalment[day]} />
                     </TableCell>
                   ))}
@@ -267,45 +204,36 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             <TableCell rowSpan={2} className="text-center">
               Total
             </TableCell>
-            <TableCell rowSpan={2} className="text-center">
+            <TableCell className="text-center">
+              <FormatNumbering
+                value={calculateTotals(data, 'sirkulasi', true)}
+              />
+            </TableCell>
+            <TableCell
+              className="text-center"
+              colspan={dateOfWeek.length + 2}
+            ></TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="text-center">
               <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
             </TableCell>
-            <TableCell rowSpan={2} className="text-center">
-              <FormatNumbering value={calculateTotals(data, 'sirkulasii')} />
-            </TableCell>
             {dateOfWeek.map((day, i) => (
-              <TableCell rowSpan={2} className="text-center" key={i}>
+              <TableCell className="text-center" key={i}>
                 <FormatNumbering value={calculateInstalment(data, day)} />
               </TableCell>
             ))}
-            <TableCell rowSpan={2} className="text-center">
+            <TableCell className="text-center">
               <FormatNumbering
                 value={calculateTotals(data, 'totalInstalment')}
               />
             </TableCell>
-            {calculateTotals(data, 'sirkulasiAfter') == saldoSirkulas ? (
-              <TableCell rowSpan={2} className="text-center">
-                <FormatNumbering
-                  value={calculateTotals(data, 'sirkulasiAfter')}
-                />
-              </TableCell>
-            ) : (
-              <TableCell className="text-center">
-                <FormatNumbering
-                  value={calculateTotals(data, 'sirkulasiAfter')}
-                />
-              </TableCell>
-            )}
-          </TableRow>
-          <TableRow>
-            {saldoSirkulas &&
-            calculateTotals(data, 'sirkulasiAfter') != saldoSirkulas ? (
-              <TableCell className="text-center bg-red-500">
-                <FormatNumbering value={saldoSirkulas} />
-              </TableCell>
-            ) : (
-              ''
-            )}
+
+            <TableCell className="text-center">
+              <FormatNumbering
+                value={calculateTotals(data, 'sirkulasiAfter')}
+              />
+            </TableCell>
           </TableRow>
         </TableFooter>
       </Table>
