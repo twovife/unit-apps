@@ -31,26 +31,18 @@ class TransactionDailyRecapController extends Controller
         ['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->date]
       );
 
-      if ($request->type == 1) {
-        $optionalFields = ['transport', 'kasbon'];
-
-        foreach ($optionalFields as $field) {
-          if ($request->has($field)) {
-            $dailyTransaction->$field = $request->$field;
-          }
-        }
+      if ($request->type == 2 && !$dailyTransaction->daily_kepala_approval) {
+        return redirect()->back()->withError('Data belum di approve kepala');
       }
 
+      $dailyTransaction->update([
+        "kasbon" => $request->kasbon,
+        "transport" => $request->transport,
+        "daily_kasir_approval" => $request->type == 1 ? $dailyTransaction->daily_kasir_approval : Carbon::now(),
+        "daily_kasir_approval_user" => $request->type == 1 ? $dailyTransaction->daily_kasir_approval_user : auth()->user()->employee->id
+      ]);
 
-      if ($request->type == 2) {
 
-        if (!$dailyTransaction->daily_kepala_approval) {
-          return redirect()->back()->withError('Data belum di approve kepala');
-        }
-
-        $dailyTransaction->daily_kasir_approval = Carbon::now();
-        $dailyTransaction->daily_kasir_approval_user = auth()->user()->employee->id;
-      }
 
       $dailyTransaction->save();
       DB::commit();

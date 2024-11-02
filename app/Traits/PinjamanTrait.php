@@ -86,8 +86,8 @@ trait PinjamanTrait
       }
     }
 
-    $ClosedTransaction = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereNotNull('daily_kepala_approval')->whereNotNull('daily_kasir_approval')->max('date');
-
+    $lastTransaction = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereNotNull('daily_kepala_approval')->whereNotNull('daily_kasir_approval')->max('date');
+    $ClosedTransaction = AppHelper::get_closed_date($lastTransaction);
     // jika beserta plan maka ini yang akan dikembalikan
 
     if ($withPlan) {
@@ -127,7 +127,7 @@ trait PinjamanTrait
           'is_kasir' => $thisDailyRecap?->daily_kasir_approval ? true : false,
           'at_approved' => $thisDailyRecap?->daily_kepala_approval,
           'at_kasir' => $thisDailyRecap?->daily_kasir_approval,
-          'is_closed' => $thisDailyRecap?->daily_kepala_approval && $thisDailyRecap?->daily_kasir_approval ? true : false,
+          'is_closed' => $thisDailyRecap?->daily_kepala_approval ? true : false,
           'button_color' => $thisDailyRecap?->daily_kepala_approval ? ($thisDailyRecap?->daily_kasir_approval ? 'success' : 'baru') : 'open',
         ];
       })->sortBy('tanggal')->values();
@@ -171,8 +171,8 @@ trait PinjamanTrait
 
     $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
       ->where('day', $hari)
-      ->whereIn('date', [$transaction_start_date->format('Y-m-d'), $transaction_date->copy()->addDay()->format('Y-m-d')])
-      ->get();
+      ->where('date', $transaction_start_date->format('Y-m-d'))
+      ->first();
 
     $loan = TransactionLoan::with(
       ['loan_instalment' => function ($item) {

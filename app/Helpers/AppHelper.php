@@ -157,8 +157,8 @@ class AppHelper
     $monthDifference = $drop->diffInMonths($request, false);
     // dd($monthDifference);
 
-    if ($monthDifference < 1) {
-      return "normal";
+    if ($monthDifference == 1) {
+      return "n1";
     }
     if ($monthDifference == 2) {
       return "ccm";
