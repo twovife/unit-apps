@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AppHelper;
 use App\Models\TransactionSirculation;
 use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,26 +81,21 @@ class AdminController extends Controller
 
   public function sirkulasiAwal(Request $request)
   {
-    // id, , date, day, amount, cm_amount, mb_amount, ml_amount, created_at, updated_at
+    $tanggal = Carbon::parse($request->month)->startOfMonth()->addMonthNoOverflow(1)->format('Y-m-d');
+
     try {
       DB::beginTransaction();
-      $create = TransactionSirculation::create([
-        'date' => '2024-09-01',
-        'day' => $request->hari,
-        'transaction_loan_officer_grouping_id' => $request->groupId,
-        'amount' => $request->sirkulasi_awal,
-        'cm_amount' => $request->cm_awal,
-        'mb_amount' => $request->mb_awal,
-        'ml_amount' => $request->ml_awal,
+      $sirkulasi = TransactionSirculation::firstorCreate([
+        "transaction_loan_officer_grouping_id" => $request->transaction_loan_officer_grouping_id,
+        "date" => $tanggal,
+        "day" => $request->hari
       ]);
-      $create = TransactionSirculation::create([
-        'date' => '2024-10-01',
-        'day' => $request->hari,
-        'transaction_loan_officer_grouping_id' => $request->groupId,
-        'amount' => $request->sirkulasi_akhir,
-        'cm_amount' => $request->ccm_akhir,
-        'mb_amount' => $request->cm_akhir,
-        'ml_amount' => $request->ml_akhir + $request->mb_akhir,
+
+      $sirkulasi->update([
+        "amount" => $request->amount_next,
+        "cm_amount" => $request->cm_next,
+        "mb_amount" => $request->mb_next,
+        "ml_amount" => $request->ml_next,
       ]);
 
       DB::commit();
