@@ -26,7 +26,8 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 
 const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
   // getLink after generate
-  const { printUrl } = usePage().props;
+  const { printUrl, auth } = usePage().props;
+  const unitAkses = auth.permissions.includes('can create');
   const [newGenerate, setNewGenerate] = useState(null);
   console.log(newGenerate);
 
@@ -234,298 +235,304 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
             </div>
           </form>
         </fieldset>
-        {nik && data.nik == nik && (
-          <fieldset className="w-full p-4 border rounded-lg">
-            <legend className="px-1 -ml-1 text-sm font-medium">
-              Detail Pinjaman
-            </legend>
-            <form className="w-full mb-3" onSubmit={onSubmitCreate}>
-              <div className="flex flex-col lg:flex-row gap-5">
-                <div className="flex-1">
-                  <div className="flex gap-3">
-                    <div className="w-full mb-3">
-                      <Label>Tanggal Pengajuan</Label>
-                      <Input
-                        type="date"
-                        name="request_date"
-                        required={true}
-                        value={data.request_date}
-                        onChange={onInputChange}
-                      />
-                      <InputError message={errors.request_date} />
-                    </div>
-                    <div className="w-full mb-3">
-                      <Label>Tanggal Drop</Label>
-                      <Input
-                        type="date"
-                        name="tanggal_drop"
-                        min={mixDate}
-                        required={true}
-                        value={data.tanggal_drop}
-                        onChange={onInputChange}
-                      />
-                      <InputError message={errors.tanggal_drop} />
-                    </div>
-                  </div>
-                  {data.request_date &&
-                  data.request_date == data.tanggal_drop ? (
-                    <div className="w-full mb-3 font-semibold text-red-500">
-                      DROP BARU
-                    </div>
-                  ) : (
-                    <div className="w-full mb-3 font-semibold text-red-500">
-                      PENGAJUAN DROP
-                    </div>
-                  )}
-                  <div className="w-full mb-3">
-                    <Label optional>NIK</Label>
-                    <Input
-                      type="text"
-                      name="nik"
-                      value={data.nik}
-                      disabled
-                      onChange={onInputChange}
-                    />
-                    <InputError message={errors.nik} />
-                  </div>
-
-                  {!data.isActiveMember ? (
-                    <>
-                      <div className="w-full mb-3">
-                        <Label optional>NO KK</Label>
-                        <Input
-                          type="text"
-                          name="no_kk"
-                          value={data.no_kk}
-                          onChange={onInputChange}
-                        />
-                        <InputError message={errors.no_kk} />
-                      </div>
-                      <div className="w-full mb-3">
-                        <Label>Nama</Label>
-                        <Input
-                          type="text"
-                          name="nama"
-                          value={data.nama}
-                          onChange={onInputChange}
-                          required={true}
-                        />
-                        <InputError message={errors.nama} />
-                      </div>
-                      <div className="w-full mb-3">
-                        <Label>Alamat</Label>
-                        <Input
-                          type="text"
-                          name="alamat"
-                          value={data.alamat}
-                          onChange={onInputChange}
-                          required={true}
-                        />
-                        <InputError message={errors.alamat} />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-full mb-3">
-                        <Label>Nama</Label>
-                        <Input
-                          type="text"
-                          disabled
-                          value={customerData.nama ?? ''}
-                        />
-                      </div>
-                      <div className="w-full mb-3">
-                        <Label>Alamat</Label>
-                        <Input
-                          type="text"
-                          disabled
-                          value={customerData.alamat ?? ''}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  <div className="w-full mb-3">
-                    <Label>Kelompok</Label>
-                    <SelectComponent
-                      value={data.kelompok}
-                      options={optKelompok}
-                      name="kelompok"
-                      nullvalue={true}
-                      onChange={onInputChange}
-                      required={true}
-                    />
-                    <InputError message={errors.kelompok} />
-                  </div>
-
-                  <div className="w-full mb-3">
-                    <Label>Nominal Pinjaman</Label>
-                    <CurrencyInput
-                      className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      name="request_nominal"
-                      defaultValue={0}
-                      allowDecimals={false}
-                      prefix="Rp. "
-                      min={1}
-                      required
-                      onValueChange={onHandleCurencyChange}
-                      value={data.request_nominal}
-                      placeholder={'Inputkan angka tanpa sparator'}
-                    />
-                    <InputError message={errors.request_nominal} />
-                  </div>
-                  <div className="flex flex-wrap w-full gap-2 mb-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={buttonValueClick}
-                      data-value="500000"
-                    >
-                      500.000
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={buttonValueClick}
-                      data-value="700000"
-                    >
-                      700.000
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={buttonValueClick}
-                      data-value="1000000"
-                    >
-                      1.000.000
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="xs"
-                      onClick={buttonValueClick}
-                      data-value="0"
-                    >
-                      reset
-                    </Button>
-                  </div>
-                </div>
-                {elements.length > 0 && (
-                  <div className="flex-1">
-                    {elements.map((element, key) => (
-                      <div
-                        key={element.id}
-                        className="flex flex-col lg:flex-row gap-3 mb-3"
-                      >
-                        <div className="w-full">
-                          <Label>Tanggal Storting</Label>
+        {unitAkses && (
+          <>
+            {nik && data.nik == nik && (
+              <fieldset className="w-full p-4 border rounded-lg">
+                <legend className="px-1 -ml-1 text-sm font-medium">
+                  Detail Pinjaman
+                </legend>
+                <form className="w-full mb-3" onSubmit={onSubmitCreate}>
+                  <div className="flex flex-col gap-5 lg:flex-row">
+                    <div className="flex-1">
+                      <div className="flex gap-3">
+                        <div className="w-full mb-3">
+                          <Label>Tanggal Pengajuan</Label>
                           <Input
                             type="date"
-                            name="transaction_date"
-                            min={dayjs(data.tanggal_drop)
-                              .add(1, 'week')
-                              .format('YYYY-MM-DD')}
+                            name="request_date"
                             required={true}
-                            value={element.transaction_date}
-                            onChange={(e) =>
-                              onInputElementChange(
-                                element.id,
-                                e.target.name,
-                                e.target.value
-                              )
-                            }
+                            value={data.request_date}
+                            onChange={onInputChange}
                           />
+                          <InputError message={errors.request_date} />
                         </div>
-                        <div className="w-full">
-                          <Label>Nominal</Label>
-                          <div className="flex items-center justify-start gap-3">
-                            <div className="min-w-32 flex-1">
-                              <CurrencyInput
-                                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                name="nominal"
-                                defaultValue={0}
-                                allowDecimals={false}
-                                prefix="Rp. "
-                                min={1}
-                                required
-                                onValueChange={(value, name) =>
-                                  onHandleElementCurencyChange(
-                                    parseInt(value),
-                                    name,
-                                    element.id
-                                  )
-                                }
-                                value={element.nominal}
-                                placeholder={'Inputkan angka tanpa sparator'}
-                              />
-                            </div>
+                        <div className="w-full mb-3">
+                          <Label>Tanggal Drop</Label>
+                          <Input
+                            type="date"
+                            name="tanggal_drop"
+                            min={mixDate}
+                            required={true}
+                            value={data.tanggal_drop}
+                            onChange={onInputChange}
+                          />
+                          <InputError message={errors.tanggal_drop} />
+                        </div>
+                      </div>
+                      {data.request_date &&
+                      data.request_date == data.tanggal_drop ? (
+                        <div className="w-full mb-3 font-semibold text-red-500">
+                          DROP BARU
+                        </div>
+                      ) : (
+                        <div className="w-full mb-3 font-semibold text-red-500">
+                          PENGAJUAN DROP
+                        </div>
+                      )}
+                      <div className="w-full mb-3">
+                        <Label optional>NIK</Label>
+                        <Input
+                          type="text"
+                          name="nik"
+                          value={data.nik}
+                          disabled
+                          onChange={onInputChange}
+                        />
+                        <InputError message={errors.nik} />
+                      </div>
 
-                            <div className="flex items-center justify-start gap-1">
-                              <Checkbox
-                                name="dana_titipan"
-                                id={`dana_titipan_${element.id}`}
-                                checked={element.isActiveMember}
+                      {!data.isActiveMember ? (
+                        <>
+                          <div className="w-full mb-3">
+                            <Label optional>NO KK</Label>
+                            <Input
+                              type="text"
+                              name="no_kk"
+                              value={data.no_kk}
+                              onChange={onInputChange}
+                            />
+                            <InputError message={errors.no_kk} />
+                          </div>
+                          <div className="w-full mb-3">
+                            <Label>Nama</Label>
+                            <Input
+                              type="text"
+                              name="nama"
+                              value={data.nama}
+                              onChange={onInputChange}
+                              required={true}
+                            />
+                            <InputError message={errors.nama} />
+                          </div>
+                          <div className="w-full mb-3">
+                            <Label>Alamat</Label>
+                            <Input
+                              type="text"
+                              name="alamat"
+                              value={data.alamat}
+                              onChange={onInputChange}
+                              required={true}
+                            />
+                            <InputError message={errors.alamat} />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-full mb-3">
+                            <Label>Nama</Label>
+                            <Input
+                              type="text"
+                              disabled
+                              value={customerData.nama ?? ''}
+                            />
+                          </div>
+                          <div className="w-full mb-3">
+                            <Label>Alamat</Label>
+                            <Input
+                              type="text"
+                              disabled
+                              value={customerData.alamat ?? ''}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div className="w-full mb-3">
+                        <Label>Kelompok</Label>
+                        <SelectComponent
+                          value={data.kelompok}
+                          options={optKelompok}
+                          name="kelompok"
+                          nullvalue={true}
+                          onChange={onInputChange}
+                          required={true}
+                        />
+                        <InputError message={errors.kelompok} />
+                      </div>
+
+                      <div className="w-full mb-3">
+                        <Label>Nominal Pinjaman</Label>
+                        <CurrencyInput
+                          className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          name="request_nominal"
+                          defaultValue={0}
+                          allowDecimals={false}
+                          prefix="Rp. "
+                          min={1}
+                          required
+                          onValueChange={onHandleCurencyChange}
+                          value={data.request_nominal}
+                          placeholder={'Inputkan angka tanpa sparator'}
+                        />
+                        <InputError message={errors.request_nominal} />
+                      </div>
+                      <div className="flex flex-wrap w-full gap-2 mb-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          onClick={buttonValueClick}
+                          data-value="500000"
+                        >
+                          500.000
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          onClick={buttonValueClick}
+                          data-value="700000"
+                        >
+                          700.000
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          onClick={buttonValueClick}
+                          data-value="1000000"
+                        >
+                          1.000.000
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="xs"
+                          onClick={buttonValueClick}
+                          data-value="0"
+                        >
+                          reset
+                        </Button>
+                      </div>
+                    </div>
+                    {elements.length > 0 && (
+                      <div className="flex-1">
+                        {elements.map((element, key) => (
+                          <div
+                            key={element.id}
+                            className="flex flex-col gap-3 mb-3 lg:flex-row"
+                          >
+                            <div className="w-full">
+                              <Label>Tanggal Storting</Label>
+                              <Input
+                                type="date"
+                                name="transaction_date"
+                                min={dayjs(data.tanggal_drop)
+                                  .add(1, 'week')
+                                  .format('YYYY-MM-DD')}
+                                required={true}
+                                value={element.transaction_date}
                                 onChange={(e) =>
                                   onInputElementChange(
                                     element.id,
                                     e.target.name,
-                                    e.target.checked
+                                    e.target.value
                                   )
                                 }
                               />
-                              <Label
-                                htmlFor={`dana_titipan_${element.id}`}
-                                className="whitespace-nowrap"
-                                nomb={true}
-                              >
-                                Dana Titipan
-                              </Label>
                             </div>
-                            <Button
-                              onClick={() => removeElement(element.id)}
-                              type="button"
-                              size="iconsm"
-                              variant="outline"
-                            >
-                              <X className="w-auto h-3" />
-                            </Button>
+                            <div className="w-full">
+                              <Label>Nominal</Label>
+                              <div className="flex items-center justify-start gap-3">
+                                <div className="flex-1 min-w-32">
+                                  <CurrencyInput
+                                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    name="nominal"
+                                    defaultValue={0}
+                                    allowDecimals={false}
+                                    prefix="Rp. "
+                                    min={1}
+                                    required
+                                    onValueChange={(value, name) =>
+                                      onHandleElementCurencyChange(
+                                        parseInt(value),
+                                        name,
+                                        element.id
+                                      )
+                                    }
+                                    value={element.nominal}
+                                    placeholder={
+                                      'Inputkan angka tanpa sparator'
+                                    }
+                                  />
+                                </div>
+
+                                <div className="flex items-center justify-start gap-1">
+                                  <Checkbox
+                                    name="dana_titipan"
+                                    id={`dana_titipan_${element.id}`}
+                                    checked={element.isActiveMember}
+                                    onChange={(e) =>
+                                      onInputElementChange(
+                                        element.id,
+                                        e.target.name,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <Label
+                                    htmlFor={`dana_titipan_${element.id}`}
+                                    className="whitespace-nowrap"
+                                    nomb={true}
+                                  >
+                                    Dana Titipan
+                                  </Label>
+                                </div>
+                                <Button
+                                  onClick={() => removeElement(element.id)}
+                                  type="button"
+                                  size="iconsm"
+                                  variant="outline"
+                                >
+                                  <X className="w-auto h-3" />
+                                </Button>
+                              </div>
+                            </div>
                           </div>
+                        ))}
+                        <div className="flex justify-end gap-3 font-semibold text-red-500">
+                          <div>Saldo Tersisa</div>
+                          <FormatNumbering value={calculatePinjaman} />
                         </div>
                       </div>
-                    ))}
-                    <div className="text-red-500 flex gap-3 font-semibold justify-end">
-                      <div>Saldo Tersisa</div>
-                      <FormatNumbering value={calculatePinjaman} />
-                    </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="text-end">
-                {generateAngsuran && data.tanggal_drop && (
-                  <Button
-                    type="button"
-                    onClick={addElement}
-                    className="mr-3"
-                    variant="outline"
-                  >
-                    Add Angsuran
-                  </Button>
-                )}
+                  <div className="text-end">
+                    {generateAngsuran && data.tanggal_drop && (
+                      <Button
+                        type="button"
+                        onClick={addElement}
+                        className="mr-3"
+                        variant="outline"
+                      >
+                        Add Angsuran
+                      </Button>
+                    )}
 
-                <Button>Submit</Button>
-              </div>
-            </form>
-          </fieldset>
+                    <Button>Submit</Button>
+                  </div>
+                </form>
+              </fieldset>
+            )}
+          </>
         )}
       </div>
       <div className="w-auto lg:w-full">
         <Tabs defaultValue="pengajuan" className="w-auto">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="pengajuan">Riwayat Pinjaman</TabsTrigger>
-            <TabsTrigger value="pinjaman">Ringkasan Pinjaman</TabsTrigger>
+            <TabsTrigger value="pinjaman">Riwayat Lain</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">
             <Card>

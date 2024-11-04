@@ -38,7 +38,11 @@ const RiwayatPengajuan = ({ data }) => {
       {
         accessorKey: 'kelompok',
         header: 'Kelompok',
-        cell: ({ row, getValue }) => getValue(),
+        cell: ({ row, getValue }) => (
+          <div>
+            {row.original.unit} - Kel {getValue()}
+          </div>
+        ),
       },
       {
         accessorKey: 'drop_date',
