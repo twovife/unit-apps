@@ -28,8 +28,8 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
   // getLink after generate
   const { printUrl, auth } = usePage().props;
   const unitAkses = auth.permissions.includes('can create');
+  const canshowkelompok = auth.permissions.includes('can show kelompok');
   const [newGenerate, setNewGenerate] = useState(null);
-  console.log(newGenerate);
 
   useEffect(() => {
     setNewGenerate(printUrl.url);
@@ -57,7 +57,6 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     console.log(data.request_nominal);
 
     const totalPinjaman = parseInt(data.request_nominal ?? 0) * 1.3;
-    console.log(totalPinjaman);
 
     const totalAngsuran = data.angsuran.reduce((acc, curr) => {
       const nominal = parseInt(curr.nominal, 10);
@@ -129,7 +128,7 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     }));
   }, [data.request_date]);
 
-  const onHandleCurencyChange = (value, name) => {
+  const onHandleCurencyChange = (value, name, float) => {
     setData(name, value);
   };
 
@@ -348,18 +347,19 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                         </>
                       )}
 
-                      <div className="w-full mb-3">
-                        <Label>Kelompok</Label>
-                        <SelectComponent
-                          value={data.kelompok}
-                          options={optKelompok}
-                          name="kelompok"
-                          nullvalue={true}
-                          onChange={onInputChange}
-                          required={true}
-                        />
-                        <InputError message={errors.kelompok} />
-                      </div>
+                      {canshowkelompok && (
+                        <div className="w-full mb-3">
+                          <Label>Kelompok</Label>
+                          <SelectComponent
+                            value={data.kelompok}
+                            options={optKelompok}
+                            name="kelompok"
+                            nullvalue={true}
+                            onChange={onInputChange}
+                          />
+                          <InputError message={errors.kelompok} />
+                        </div>
+                      )}
 
                       <div className="w-full mb-3">
                         <Label>Nominal Pinjaman</Label>
