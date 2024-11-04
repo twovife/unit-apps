@@ -5,7 +5,7 @@ import InputLabel from '@/Components/InputLabel';
 import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
 import { Dialog } from '@headlessui/react';
 import Loading from '@/Components/Loading';
@@ -13,6 +13,10 @@ import Loading from '@/Components/Loading';
 export default function DeleteAngsuran({ id }) {
   const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
   const passwordInput = useRef();
+  const { auth } = usePage().props;
+
+  const unitAkses = auth.permissions.includes('can create');
+  console.log(unitAkses);
 
   const {
     data,
@@ -53,7 +57,12 @@ export default function DeleteAngsuran({ id }) {
               ${confirmingUserDeletion ? 'translate-y-full' : 'translate-y-0'}
               `}
           >
-            <Button type="button" size="xs" onClick={confirmUserDeletion}>
+            <Button
+              disabled={!unitAkses}
+              type="button"
+              size="xs"
+              onClick={confirmUserDeletion}
+            >
               Hapus
             </Button>
           </div>

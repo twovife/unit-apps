@@ -18,6 +18,8 @@ import Checkbox from '@/Components/Checkbox';
 import InputLabel from '@/Components/InputLabel';
 import { useForm } from '@inertiajs/react';
 import AssignRoles from './Components/AssignRoles';
+import { BarcodeIcon } from 'lucide-react';
+import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
 const Index = ({ role, permission, user, ...props }) => {
   const { data, setData, post, processing, errors, reset } = useForm({
@@ -50,7 +52,7 @@ const Index = ({ role, permission, user, ...props }) => {
       id: role.id,
     };
   });
-  console.log(roleOptions);
+  console.log(role);
 
   const userOptions = user.map((emp) => {
     return {
@@ -122,6 +124,53 @@ const Index = ({ role, permission, user, ...props }) => {
       </div>
       <div className="flex w-full gap-3">
         <AssignRoles userOptions={userOptions} roleOptions={roleOptions} />
+        <Card>
+          <CardHeader>
+            <CardTitle>User Role</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {permission &&
+                permission.map((pemit, key) => (
+                  <BadgeStatus value={pemit.name} key={key} />
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="mt-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Role</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[50vh] overflow-auto space-y-3">
+              {role &&
+                role.map((roole) => {
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>
+                          <BadgeStatus value={'normal'}>
+                            {roole.name}
+                          </BadgeStatus>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex gap-1">
+                        {roole.permissions.map((permit) => {
+                          return (
+                            <BadgeStatus value={permit.name}>
+                              {permit.name}
+                            </BadgeStatus>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Authenticated>
   );

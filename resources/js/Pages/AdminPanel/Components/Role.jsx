@@ -24,7 +24,7 @@ const Role = () => {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    post(route('adminpanel.c'), {
+    post(route('adminpanel.post_permission'), {
       onSuccess: () => {
         reset('name');
       },

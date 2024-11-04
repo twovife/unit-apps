@@ -20,6 +20,8 @@ class AdminController extends Controller
   {
     $role = Role::with('permissions', 'users')->get();
     $user = User::with('rolelist')->get();
+
+
     $permission = Permission::all();
     return Inertia::render('AdminPanel/Index', [
       'role' => $role,
