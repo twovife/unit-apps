@@ -3,8 +3,6 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
 const SweetAlert = ({ type, message, keys }) => {
-  console.log(keys);
-
   const MySwal = withReactContent(Swal);
 
   useEffect(() => {
@@ -24,3 +22,5 @@ const SweetAlert = ({ type, message, keys }) => {
   return null;
 };
 export default SweetAlert;
+
+

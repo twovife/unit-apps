@@ -16,7 +16,10 @@ const Create = ({ show = false, onClosed }) => {
           <DialogTitle>Pengajuan Pinjaman Baru</DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          <NewNasabah onClosed={onClosed} />
+          <NewNasabah
+            onClosed={onClosed}
+            submitUrl={route('transaction.store_buku_transaksi')}
+          />
         </DialogDescription>
       </DialogContent>
     </Dialog>

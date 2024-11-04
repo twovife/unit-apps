@@ -25,7 +25,7 @@ const RiwayatPengajuan = ({ data }) => {
   const [customerData, setCustomerData] = useState([]);
 
   useEffect(() => {
-    setCustomerData(data);
+    setCustomerData(data ?? []);
   }, [data]);
 
   const [expanded, setExpanded] = useState();

@@ -27,7 +27,7 @@ class TransactionLoanController extends Controller
 
   public function fastcreate(Request $request)
   {
-    return Inertia::render('BukuTransaksi/BatchUpload');
+    return Inertia::render('WebView/BukuTransaksi/BatchUpload');
   }
   public function index_buku_transaksi(Request $request)
   {
@@ -209,7 +209,6 @@ class TransactionLoanController extends Controller
   // store for batch Transksi
   public function store_buku_transaksi_batch(Request $request)
   {
-
     if (!auth()->user()->hasPermissionTo('can create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
@@ -218,22 +217,53 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
 
+    $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
+
+    if (!$angsuran->isEmpty()) {
+      $dateToocheck = AppHelper::dateName($request->tanggal_drop);
+
+      $filtered = $angsuran->filter(function ($item) use ($dateToocheck) {
+        return AppHelper::dateName($item['transaction_date']) !== $dateToocheck;
+      }); // mencari apakah hari sama dengan tanggal drop
+
+      $groupedByDate = $angsuran->groupBy('transaction_date');
+      $duplicates = $groupedByDate->filter(function ($group) {
+        return $group->count() > 1; // Mencari grup dengan lebih dari satu item
+      });
+
+
+      if ($filtered->isNotEmpty()) {
+        return redirect()->back()->withErrors('Hari Angsuran Tidak Sama');
+      }
+
+      if ($duplicates->isNotEmpty()) {
+        return redirect()->back()->withErrors('Ada angsuran yang duplikat pada tanggal yang sama.');
+      }
+    }
+
+
 
     $val = $request->validate([
       'isActiveMember' => ['boolean', 'required'],
       'nik' => ['required', 'digits:16'],
       'kelompok' => ['required'],
       'request_nominal' =>  ["required", 'integer'],
+
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
+
       'request_date' => ['required', 'date'],
       'tanggal_drop' =>  ['required', 'date'],
+    ], [
+      '*.required' => "Wajib Diisi"
     ]);
 
     $request['kelompok'] = auth()->user()->can('can show kelompok') ? $request->kelompok : auth()->user()->employee->area;
     $request['branch'] = auth()->user()->can('can show branch') ? $request->branch_id : auth()->user()->employee->branch_id;
 
     try {
+
+
       DB::beginTransaction();
       $drop_langsung = $request->request_date == $request->tanggal_drop;
 
@@ -250,30 +280,41 @@ class TransactionLoanController extends Controller
         $request['drop_before'] = $drop_before?->nominal_drop ?? 0;
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
-      $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->orderBy('id', 'desc')->first();
+
+      $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->whereNull('date_resign')->orderBy('id', 'desc')->first();
+
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
         'request_date' => $request->request_date,
         'user_mantri' => $mantri->id,
-
-        'check_date' =>  $request->request_date,
-        'user_check' =>  $mantri->id,
-
         'drop_date' => $request->tanggal_drop,
-        'user_drop' =>  $mantri->id,
-
-
         'hari' => AppHelper::dateName($request->tanggal_drop),
-        'status' => "success",
+        'status' => "open",
         'user_input' => auth()->user()->employee->id,
 
         'drop_before' => $request['drop_before'],
         'request_nominal' => $request->request_nominal,
-        'approved_nominal' => $request->request_nominal,
-        'nominal_drop' => $request->request_nominal,
       ]);
 
-      $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
+
+      if ($drop_langsung) {
+        $loan->update([
+          'user_drop' => $mantri->id,
+          'status' => "success",
+          'nominal_drop' => $request->request_nominal,
+          'request_nominal' => null,
+        ]);
+      } else {
+        $loan->update([
+          'status' =>  "success",
+          'user_check' => auth()->user()->employee->id,
+          'check_date' => Carbon::now()->format('Y-m-d'),
+          'approved_nominal' => $request->request_nominal,
+
+          'nominal_drop' => $request->request_nominal,
+          'user_drop' => $mantri->id,
+        ]);
+      }
 
       if (!$angsuran->isEmpty()) {
         $angsuran->each(function ($item) use ($loan, $officerGrouping, $mantri) {
@@ -289,12 +330,14 @@ class TransactionLoanController extends Controller
         });
       }
 
+
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
+      ddd($exception);
       return redirect()->back()->withErrors($exception->getMessage());
     }
-    return redirect()->back()->with('success', 'Berhasil Menambahkan Pengajuan');
+    return redirect()->back()->with('message', 'www.google.com')->with('printUrl', route('pinjaman.index_pinjaman_search', ['kelompok' => $officerGrouping->kelompok, 'month' => Carbon::parse($request->tanggal_drop)->format('Y-m'), 'branch_id' =>  $request['branch'], 'hari' => AppHelper::dateName($request->tanggal_drop)]));
   }
 
 

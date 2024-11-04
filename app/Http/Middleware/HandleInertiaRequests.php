@@ -47,6 +47,10 @@ class HandleInertiaRequests extends Middleware
         'message' => fn() => $request->session()->get('message'),
         'timestamp' => fn() => Carbon::now(),
       ],
+      'printUrl' => [
+        'url' => $request->session()->get('printUrl'),
+        'timestamp' => fn() => Carbon::now(),
+      ]
       // 'serverStorage' => function () use ($request) {
       //     $getSessionFilter = Session::get($request);
       //     return $getSessionFilter;
