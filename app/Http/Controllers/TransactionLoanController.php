@@ -141,15 +141,16 @@ class TransactionLoanController extends Controller
     $val = $request->validate([
       'isActiveMember' => ['boolean', 'required'],
       'nik' => ['required', 'digits:16'],
-      'kelompok' => ['required'],
-      'request_nominal' =>  ["required", 'integer'],
+      'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
       'request_date' => ['required', 'date'],
       'tanggal_drop' =>  ['required', 'date'],
+    ], [
+      '*.min' => 'minimal diisi 100rb'
     ]);
 
-    $request['kelompok'] = auth()->user()->can('can show kelompok') ? $request->kelompok : auth()->user()->employee->area;
+    $request['kelompok'] = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
     $request['branch'] = auth()->user()->can('can show branch') ? $request->branch_id : auth()->user()->employee->branch_id;
 
     try {
