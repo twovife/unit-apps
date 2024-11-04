@@ -19,7 +19,6 @@ const MobileLayout = ({ header, children, loading = false }) => {
   const { errors, flash } = usePage().props;
   const [isOpen, setIsOpen] = useState(false);
   const toggleSidebar = () => setIsOpen(!isOpen);
-  console.log(flash);
   return (
     <div className="relative z-10 antialiased">
       {Object.keys(errors).length > 0 && (
