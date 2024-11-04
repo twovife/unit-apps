@@ -39,11 +39,15 @@ class TransactionLoanInstalment extends Model
 
     static::deleting(function ($transactionLoanInstalment) {
       if ($transactionLoanInstalment->nominal > 0) {
-        $transactionDailyRecap = TransactionDailyRecap::firstOrCreate([
-          "transaction_loan_officer_grouping_id" => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-          "date" => $transactionLoanInstalment->transaction_date,
-        ]);
-        $transactionDailyRecap->decrement('storting', $transactionLoanInstalment->nominal);
+        $transactionDailyRecap = TransactionDailyRecap::where(
+          "transaction_loan_officer_grouping_id",
+          $transactionLoanInstalment->transaction_loan_officer_grouping_id,
+
+        )->where("date", $transactionLoanInstalment->transaction_date)->first();
+
+        if ($transactionDailyRecap) {
+          $transactionDailyRecap->decrement('storting', $transactionLoanInstalment->nominal);
+        }
       }
     });
   }

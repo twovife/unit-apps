@@ -77,7 +77,25 @@ class TransactionDailyRecap extends Model
           $transactionAfter->increment('target', $rangeTarget);
         }
       }
+
+      if ($transactionDailyRecap->isDirty('storting') || $transactionDailyRecap->isDirty('drop')) {
+        if ($transactionDailyRecap->target_on == null && $transactionDailyRecap->storting == 0 && $transactionDailyRecap->drop == 0) {
+          $transactionDailyRecap->delete();
+        }
+      }
     });
+
+
+
+    // static::deleting(function ($transactionDailyRecap) {
+    //   $transactionBefore = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
+    //     ->where('target_on', "<", $transactionDailyRecap->target_on)
+    //     ->get();
+
+    //   $transactionAfter = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
+    //     ->where('target_on', ">", $transactionDailyRecap->date)
+    //     ->get();
+    // });
   }
 
   public function transaction_loan_officer_grouping()

@@ -141,15 +141,18 @@ class TransactionLoan extends Model
         $sumDropLoanDay = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
           ->where('drop_date', $transactionLoan->drop_date)->where('status', 'success')->where('id', '!=', $transactionLoan->id)->sum('nominal_drop');
 
-        $dailyRekap = TransactionDailyRecap::firstOrCreate([
-          "transaction_loan_officer_grouping_id" => $transactionLoan->transaction_loan_officer_grouping_id,
-          "date" => $transactionLoan->drop_date,
-        ]);
+        $dailyRekap = TransactionDailyRecap::where(
+          "transaction_loan_officer_grouping_id",
+          $transactionLoan->transaction_loan_officer_grouping_id,
 
-        if ($dailyRekap->drop != $sumDropLoanDay) {
-          $dailyRekap->update([
-            "drop" => $sumDropLoanDay,
-          ]);
+        )->where("date", $transactionLoan->drop_date)->first();
+
+        if ($dailyRekap) {
+          if ($dailyRekap->drop != $sumDropLoanDay) {
+            $dailyRekap->update([
+              "drop" => $sumDropLoanDay,
+            ]);
+          }
         }
       }
     });

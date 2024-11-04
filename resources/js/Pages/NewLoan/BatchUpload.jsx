@@ -3,7 +3,7 @@ import Loading from '@/Components/Loading';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Search, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -13,8 +13,25 @@ import SelectComponent from '@/Components/shadcn/SelectComponent';
 import dayjs from 'dayjs';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import Checkbox from '@/Components/Checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shadcn/ui/card';
+import RiwayatPengajuan from './Components/RiwayatPengajuan';
 
 const BatchUpload = () => {
+  const { printUrl } = usePage().props;
+
+  useEffect(() => {
+    if (printUrl.url) {
+      window.open(printUrl.url, '_blank');
+    }
+  }, [printUrl.timestamp]);
+
   const { optKelompok } = useOptionGenerator();
   const { data, setData, post, errors, processing, reset } = useForm({
     isActiveMember: false,
@@ -104,6 +121,7 @@ const BatchUpload = () => {
   const onNikChange = (e) => {
     const { name, value } = e.target;
     setNik(value);
+    setCustomerData([]);
   };
 
   const onNikSubmit = async (e) => {
@@ -460,7 +478,45 @@ const BatchUpload = () => {
             </fieldset>
           )}
         </div>
-        <div className="w-auto"></div>
+        <div className="w-auto lg:w-3/4">
+          <Tabs defaultValue="pengajuan" className="w-auto">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="pengajuan">Riwayat Pinjaman</TabsTrigger>
+              <TabsTrigger value="pinjaman">Ringkasan Pinjaman</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pengajuan">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Riwayat Unit</CardTitle>
+                  <CardDescription>
+                    Riwayat Pengajuan Nasabah sesuai dengan nik di satu unit
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+                    <RiwayatPengajuan data={customerData?.history_branch} />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="pinjaman">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Riwayat Lain</CardTitle>
+                  <CardDescription>
+                    Riwayat Pengajuan Nasabah sesuai dengan nik di unit selain
+                    unit ini
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+                    <RiwayatPengajuan data={customerData?.history_lain} />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </Authenticated>
   );

@@ -125,4 +125,17 @@ class TransactionDailyRecapController extends Controller
     $data = $this->getRekapDuaData($request);
     return Inertia::render('WebView/Rekap/RekapSatu', $data);
   }
+
+  public function deleteRekap(TransactionDailyRecap $transactionDailyRecap, Request $request)
+  {
+    try {
+      DB::beginTransaction();
+      $transactionDailyRecap->delete();
+      DB::commit();
+    } catch (Exception $e) {
+      DB::rollBack();
+      return redirect()->back()->withError('Data Gagal Diperbarui, Refresh / Hub IT');
+    }
+    return redirect()->back()->with('message', 'Data berhasil dihapus.');
+  }
 }
