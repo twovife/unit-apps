@@ -20,6 +20,7 @@ class NasabahGrs3Seeder extends Seeder
       DB::beginTransaction();
       $nasabah = collect(json_decode(file_get_contents(storage_path('nasabahgrs3.json')), true));
 
+
       $nasabah->each(function ($item) {
         $transaksi = TransactionCustomer::firstOrCreate([
           'nik' => $item['NIK']
@@ -36,6 +37,8 @@ class NasabahGrs3Seeder extends Seeder
           echo   $item['NIK'] . "Instance Sudah ada." . PHP_EOL;
         }
       });
+
+      echo $nasabah->count() . " Data Nasabah GRS 3" . PHP_EOL;
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
