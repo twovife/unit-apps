@@ -321,7 +321,7 @@ class TransactionLoanController extends Controller
         $angsuran->each(function ($item) use ($loan, $officerGrouping, $mantri) {
           $loan->loan_instalment()->create([
             'transaction_date' => $item['transaction_date'],
-            'nominal' => $item['nominal'],
+            'nominal' => $item['nominal'] ?? 0,
             'danatitipan' =>  isset($item['dana_titipan']) ? ($item['dana_titipan'] ? "true" : "false") : "false",
             'transaction_loan_officer_grouping_id' => $officerGrouping->id,
             'status' => AppHelper::generateStatusAngsuran($loan->drop_date,  $item['transaction_date']),
