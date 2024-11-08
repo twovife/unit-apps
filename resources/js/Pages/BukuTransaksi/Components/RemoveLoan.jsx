@@ -1,6 +1,6 @@
 import Loading from '@/Components/Loading';
 import { Button } from '@/shadcn/ui/button';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import React, { useRef, useState } from 'react';
 
 const RemoveLoan = ({ triggeredId, onClosed }) => {
