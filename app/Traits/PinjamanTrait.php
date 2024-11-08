@@ -370,35 +370,46 @@ trait PinjamanTrait
         'month' => Carbon::parse($key)->format('FY'),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
         'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date) {
+
           return [
             'tanggal_drop' => $item->drop_date,
             'nama' => $item->customer->nama,
+
             'alamat' => $item->customer->alamat,
             'nomor_anggota' => $item->manage_customer->id,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
             'lunas' => $item->loan_instalment->sum('nominal') == $item->pinjaman,
+
             'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
             'drop' => $item->nominal_drop,
+
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
+
             'note' => $item->note,
             'nik' => $item->customer->nik,
+
             'kelompok' => $item->loan_officer_grouping->kelompok,
             'jumlah_angsuran' => $item->loan_instalment->count(),
+
             'id' => $item->id,
             'instalment' => $item->loan_instalment->reduce(function ($carry, $instalment) {
               $key = Carbon::parse($instalment->transaction_date)->format('Y-m-d');
               $carry[$key] = $instalment->nominal;
               return $carry;
             }, []),
+
             'x_angs' => $item->loan_instalment->count(),
             'angsuran' => $item->loan_instalment->sum('nominal'),
+
             'saldo' => $item->pinjaman - $item->loan_instalment->sum('nominal'),
             'notes' => $item->notes
+
           ];
         })->sortBy('nama')->sortBy('tanggal_drop')->values(),
       ];
+      
     })->values();
 
     return  [

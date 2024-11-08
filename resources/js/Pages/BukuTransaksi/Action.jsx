@@ -31,14 +31,12 @@ import RemoveLoan from './Components/RemoveLoan';
 import ReStatus from './Components/ReStatus';
 import ChangeDetail from './Components/ChangeDetail';
 import { usePage } from '@inertiajs/react';
+import NoEditOverlay from '@/Components/NoEditOverlay';
+import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
-  const {
-    server_filter: { closed_transaction },
-    auth,
-  } = usePage().props;
-
   const [data, setData] = useState([]);
+  const { isUnit, isMantri, isPusat, isCreator } = useFrontEndPermission();
 
   const [customerData, setCustomerData] = useState([]);
   const [acc, setAcc] = useState();
@@ -109,7 +107,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                     </Card>
                     <div className="flex flex-col gap-3 mt-3 lg:flex-row">
                       <div className="w-full">
-                        <Card className="mb-3">
+                        <Card className="mb-3 relative">
                           <CardHeader>
                             <CardTitle>ACC / DROP</CardTitle>
                           </CardHeader>
@@ -123,33 +121,30 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                             </div>
                           </CardContent>
                         </Card>
-                        {auth.permissions.includes('can update') && (
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Admin Edit</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                              {triggeredData?.tanggal_drop <=
-                              closed_transaction ? (
-                                <div>
-                                  Data Sudah Di Approve Oleh Pimpinan, Tidak
-                                  Bisa Diubah, Hubungi IT untuk mengubah
-                                </div>
-                              ) : (
-                                <div>
-                                  {data && (
-                                    <ChangeDetail
-                                      onClosed={onClosed}
-                                      triggeredData={triggeredData}
-                                    />
-                                  )}
-                                </div>
+
+                        <Card className="relative">
+                          {!isCreator && (
+                            <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
+                          )}
+                          <CardHeader>
+                            <CardTitle>Admin Edit</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            <div>
+                              {data && (
+                                <ChangeDetail
+                                  onClosed={onClosed}
+                                  triggeredData={triggeredData}
+                                />
                               )}
-                            </CardContent>
-                          </Card>
-                        )}
+                            </div>
+                          </CardContent>
+                        </Card>
                       </div>
-                      <Card className="w-full">
+                      <Card className="w-full relative">
+                        {!isCreator && (
+                          <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
+                        )}
                         <CardHeader>
                           <CardTitle>Remove Loan</CardTitle>
                         </CardHeader>
@@ -171,45 +166,38 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                               />
                             </div>
                           </div>
-                          {auth.permissions.includes('can update') && (
-                            <Accordion
-                              className="mb-3"
-                              type="single"
-                              collapsible
-                            >
-                              <AccordionItem value="item-1">
-                                <AccordionTrigger>Tambahan</AccordionTrigger>
-                                <AccordionContent>
-                                  <div className="text-sm">
-                                    <ul className="list-disc list-outside">
-                                      <li>
-                                        1. Jika ada kesalahan pada angsuran baru
-                                        ( angsuran hari ini ) utamakan
-                                        menghapus, dan buat angsuran lagi.
-                                      </li>
-                                      <li>
-                                        2. Jika terjadi kesalahan Status *
-                                        Tanggal, usahakan untuk ganti tanggal (
-                                        tanggal drop / tanggal request ) dan dan
-                                        reset status setelah itu
-                                      </li>
-                                      <li>
-                                        3. Setelah mengganti Detail pada
-                                        angsuran, dimohon untuk cek ulang,
-                                        storting & dan transaksi lagi,
-                                        dikarenakan perubahan pada detail, akan
-                                        mempengaruhi laporan lainnya
-                                      </li>
-                                      <li className="text-red-500">
-                                        4. Reset Status Hanya Tersedia jika
-                                        pinjaman adalah drop lama / pengajuan
-                                      </li>
-                                    </ul>
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          )}
+                          <Accordion className="mb-3" type="single" collapsible>
+                            <AccordionItem value="item-1">
+                              <AccordionTrigger>Tambahan</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="text-sm">
+                                  <ul className="list-disc list-outside">
+                                    <li>
+                                      1. Jika ada kesalahan pada angsuran baru (
+                                      angsuran hari ini ) utamakan menghapus,
+                                      dan buat angsuran lagi.
+                                    </li>
+                                    <li>
+                                      2. Jika terjadi kesalahan Status *
+                                      Tanggal, usahakan untuk ganti tanggal (
+                                      tanggal drop / tanggal request ) dan dan
+                                      reset status setelah itu
+                                    </li>
+                                    <li>
+                                      3. Setelah mengganti Detail pada angsuran,
+                                      dimohon untuk cek ulang, storting & dan
+                                      transaksi lagi, dikarenakan perubahan pada
+                                      detail, akan mempengaruhi laporan lainnya
+                                    </li>
+                                    <li className="text-red-500">
+                                      4. Reset Status Hanya Tersedia jika
+                                      pinjaman adalah drop lama / pengajuan
+                                    </li>
+                                  </ul>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
                         </CardContent>
                       </Card>
                     </div>

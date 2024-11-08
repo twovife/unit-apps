@@ -1,4 +1,6 @@
 import Loading from '@/Components/Loading';
+import NoEditOverlay from '@/Components/NoEditOverlay';
+import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
 import { Label } from '@/shadcn/ui/label';
@@ -12,6 +14,8 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
     status: '',
     drop: '',
   });
+
+  const { isUnit, isMantri, isPusat, isCreator } = useFrontEndPermission();
 
   useEffect(() => {
     setData((prevData) => ({
@@ -39,10 +43,17 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
 
   return (
     <form className="w-full" onSubmit={(e) => e.preventDefault()}>
+      {!isCreator && (
+        <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
+      )}
       <Loading show={processing} />
+
       <div className="mb-3">
         {triggeredData?.status === 'open' ? (
           <>
+            {isMantri && (
+              <NoEditOverlay value="Tunggu Pimpinan Acc Terlebih Dahulu" />
+            )}
             <Label htmlFor="approved_nominal">Nominal ACC</Label>
             <div className="flex items-center justify-center gap-3">
               <CurrencyInput

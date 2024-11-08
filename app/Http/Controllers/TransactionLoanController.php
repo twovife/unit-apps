@@ -3,15 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AppHelper;
-use App\Models\Branch;
 use App\Models\Employee;
 use App\Models\TransactionCustomer;
-use App\Models\TransactionDailyRecap;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
 use App\Models\TransactionLoanOfficerGrouping;
-use App\Models\TransactionManageCustomer;
-use App\Models\TransactionSirculation;
 use App\Traits\PinjamanTrait;
 use Carbon\Carbon;
 use Exception;
@@ -346,7 +342,22 @@ class TransactionLoanController extends Controller
   // UBAH STATUS PINJAMAN
   public function action_buku_transaksi(TransactionLoan $transactionLoan, Request $request)
   {
-    // dd($request->all());
+
+    $checkPermission = AppHelper::havePermissionByPermission('can create');
+
+    $checkPermissionMantri = AppHelper::havePermissionByPermission('unit mantri');
+
+    if (!$checkPermission) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Action');
+    }
+
+    if ($checkPermissionMantri) {
+      if ($request->status == 'acc' || $request->status == 'tolak') {
+        return redirect()->back()->withErrors('ACC / Tolak Tidak Bisa Dilakukan Oleh Mantri');
+      }
+    }
+
+
     $val = $request->validate([
       'status' => ['required'],
       'approved_nominal' => ['required_if:status,acc'],
@@ -365,6 +376,14 @@ class TransactionLoanController extends Controller
         ]);
       }
 
+      if ($request->status == 'tolak') {
+        $transactionLoan->update([
+          'status' =>  $request->status,
+          'user_check' => auth()->user()->employee->id,
+          'check_date' => Carbon::now()->format('Y-m-d'),
+        ]);
+      }
+
       if ($request->status == 'success') {
         $transactionLoan->update([
           'status' =>  $request->status,
@@ -372,6 +391,7 @@ class TransactionLoanController extends Controller
           'user_drop' => $transactionLoan->user_mantri,
         ]);
       }
+
 
       if ($request->status == 'gagal') {
         $transactionLoan->update([
@@ -381,13 +401,7 @@ class TransactionLoanController extends Controller
         ]);
       }
 
-      if ($request->status == 'tolak') {
-        $transactionLoan->update([
-          'status' =>  $request->status,
-          'user_check' => auth()->user()->employee->id,
-          'check_date' => Carbon::now()->format('Y-m-d'),
-        ]);
-      }
+
 
       DB::commit();
     } catch (Exception $exception) {
@@ -570,6 +584,11 @@ class TransactionLoanController extends Controller
   {
 
 
+    $permission =  AppHelper::havePermissionByDate($transactionLoanInstalment->drop_date);
+    if (!$permission['status']) {
+      return redirect()->back()->withErrors($permission['message']);
+    }
+
     try {
       DB::beginTransaction();
       $transactionLoanInstalment->delete();
@@ -584,6 +603,13 @@ class TransactionLoanController extends Controller
 
   public function destroy_loan(TransactionLoan $transactionLoan)
   {
+
+    // check permission
+    $permission =  AppHelper::havePermissionByDate($transactionLoan->drop_date);
+    if (!$permission['status']) {
+      return redirect()->back()->withErrors($permission['message']);
+    }
+
     try {
       DB::beginTransaction();
       $transactionLoan->delete();

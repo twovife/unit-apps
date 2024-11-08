@@ -19,8 +19,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
 const Action = ({ show = false, onClosed, triggeredData, type }) => {
-  console.log(triggeredData);
-
   const { data, setData, post, reset, errors, processing } = useForm({
     id: '',
     kelompok: '',
@@ -28,6 +26,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
     kasbon: '',
     transport: '',
     type: '1',
+    tunai: '',
   });
   const [loading, setLoading] = useState(false);
   const focusInputAngka = useRef(null);
@@ -44,11 +43,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
         id: triggeredData.id,
         kelompok: triggeredData.kelompok,
         date: triggeredData.tanggal,
-        kasbon: triggeredData.rekap_status
-          ? triggeredData.kasbon > 0
-            ? triggeredData.kasbon
-            : 200000
-          : 200000,
+        kasbon: triggeredData.kasbon,
         transport: triggeredData.transport,
         type: type,
         tunai: triggeredData.tunai,
@@ -64,21 +59,38 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
     }));
   };
 
-  const onHandleCurencyChange = (value, name) => {
-    let tunai = triggeredData.tunai;
-    let transport = triggeredData.transport;
-    let kasbon = triggeredData.kasbon;
-    if (name === 'kasbon') {
-      tunai = tunai - kasbon + parseInt(value);
-    } else if (name === 'transport') {
-      tunai = tunai + transport - parseInt(value);
-    }
-
+  const onHandleKasbonChange = (value) => {
+    const newKasbon = value;
     setData((prevData) => ({
       ...prevData,
-      [name]: value,
-      tunai: tunai,
+      kasbon: newKasbon,
+      tunai: calculateTunai(newKasbon, prevData.transport),
     }));
+  };
+
+  const onHandleTransportChange = (value) => {
+    const newTransport = value;
+    setData((prevData) => ({
+      ...prevData,
+      transport: newTransport,
+      tunai: calculateTunai(prevData.kasbon, newTransport),
+    }));
+  };
+
+  const calculateTunai = (kasbon, transport) => {
+    // Nilai tunai = triggeredData.tunai - kasbon - transport
+    const x =
+      triggeredData.tunai - triggeredData.kasbon + triggeredData.transport;
+
+    console.log(x);
+
+    console.log(
+      triggeredData.tunai,
+      triggeredData.kasbon,
+      triggeredData.transport
+    );
+
+    return parseFloat(x) + parseFloat(kasbon) - parseFloat(transport);
   };
 
   const closedModal = () => {
@@ -128,12 +140,12 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
                   <CurrencyInput
                     className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     name="kasbon"
-                    readOnly={data.status_dayly_approval}
                     allowDecimals={false}
+                    ref={focusInputAngka}
                     prefix="Rp. "
                     min={1}
                     required
-                    onValueChange={onHandleCurencyChange}
+                    onValueChange={onHandleKasbonChange}
                     value={data.kasbon}
                     placeholder={'Inputkan angka tanpa sparator'}
                   />
@@ -144,11 +156,10 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
                     className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     name="transport"
                     allowDecimals={false}
-                    ref={focusInputAngka}
                     prefix="Rp. "
                     min={1}
                     required
-                    onValueChange={onHandleCurencyChange}
+                    onValueChange={onHandleTransportChange}
                     value={data.transport}
                     placeholder={'Inputkan angka tanpa sparator'}
                   />
@@ -162,8 +173,6 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
                     readOnly
                     prefix="Rp. "
                     min={1}
-                    required
-                    onValueChange={onHandleCurencyChange}
                     value={data.tunai}
                     placeholder={'Inputkan angka tanpa sparator'}
                   />

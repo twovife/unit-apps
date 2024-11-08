@@ -22,10 +22,12 @@ const MobileLayout = ({ header, children, loading = false }) => {
   return (
     <div className="relative z-10 antialiased">
       {Object.keys(errors).length > 0 && (
-        <SweetAlert type="error" flash={errors} />
+        <SweetAlert type="error" message={errors[0]} keys={flash} />
+      )}
+      {flash.message && (
+        <SweetAlert type="success" message={flash.message} keys={flash} />
       )}
 
-      {flash?.message && <SweetAlert type="success" flash={flash} />}
       <Loading show={loading} />
       <div className="relative mx-auto">
         <div className="sticky top-0 z-50 flex items-center h-10 gap-4 bg-transparent">
