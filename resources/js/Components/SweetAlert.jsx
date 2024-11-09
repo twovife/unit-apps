@@ -15,12 +15,10 @@ const SweetAlert = ({ type, message, keys }) => {
           ? 'Terjadi Kesalahan Silahkan hub IT.'
           : 'Anda Telah Melakukan Perubahan'),
       showConfirmButton: false,
-      timer: 1500,
+      timer: 2000,
     });
   }, [type, message, keys]);
 
   return null;
 };
 export default SweetAlert;
-
-

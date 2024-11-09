@@ -24,18 +24,17 @@ import JenisNasabah from './JenisNasabah';
 import DeleteAngsuran from './DeleteAngsuran';
 import DeleteLoan from './DeleteLoan';
 import { usePage } from '@inertiajs/react';
+import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
+import NoEditOverlay from '@/Components/NoEditOverlay';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   const {
     server_filter: { closed_transaction },
-    auth,
   } = usePage().props;
-
-  const unitAkses = auth.permissions.includes('can create');
 
   const [loading, setLoading] = useState(false);
   const [erorAxios, setErorAxios] = useState(false);
-
+  const { isCreator } = useFrontEndPermission();
   const [customerData, setCustomerData] = useState({});
 
   const [instalment, setInstalment] = useState([]);
@@ -169,7 +168,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                         <TableRow className="text-center">
                           <TableCell>
                             {(!closed_transaction ||
-                              closed_transaction < item.transaction_date) && (
+                              closed_transaction <= item.transaction_date) && (
                               <DeleteAngsuran id={item.id} />
                             )}
                           </TableCell>
@@ -202,20 +201,25 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
               </div>
             </CardContent>
           </Card>
-          {unitAkses && (
-            <div className="flex-[2]">
-              <BayarAngsuran
-                triggeredId={customerData.id}
-                triggeredPinjaman={customerData.pinjaman}
-                instalment={instalment}
-              />
-              <JenisNasabah loan={customerData} />
-              <div className="flex items-center justify-end gap-3 p-3">
-                <div className="font-semibold">Hapus Pinjaman</div>
-                <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
-              </div>
+          <div className="flex-[2] relative">
+            {customerData.lunas == true ? (
+              <NoEditOverlay value="Pinjaman Sudah Lunas" />
+            ) : (
+              !isCreator && (
+                <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
+              )
+            )}
+            <BayarAngsuran
+              triggeredId={customerData.id}
+              triggeredPinjaman={customerData}
+              instalment={instalment}
+            />
+            <JenisNasabah loan={customerData} />
+            <div className="flex items-center justify-end gap-3 p-3">
+              <div className="font-semibold">Hapus Pinjaman</div>
+              <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
             </div>
-          )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

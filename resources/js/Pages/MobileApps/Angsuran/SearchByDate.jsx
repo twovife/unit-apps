@@ -10,8 +10,8 @@ const SearchByDate = ({ datas, dateOfWeek, ...props }) => {
       <AngsuranByDate
         datas={datas}
         dateOfWeek={dateOfWeek}
-        urlLink={route('pinjaman.index_pinjaman_search')}
-        localState={'pinjaman_index_pinjaman_search'}
+        urlLink={route('mobile_apps.macet')}
+        localState={'mobile_apps_macet'}
         searchMonth={true}
         searchHari={true}
       />

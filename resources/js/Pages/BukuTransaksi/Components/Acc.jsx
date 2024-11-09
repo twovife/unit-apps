@@ -15,7 +15,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
     drop: '',
   });
 
-  const { isUnit, isMantri, isPusat, isCreator } = useFrontEndPermission();
+  const { isMantri, isCreator } = useFrontEndPermission();
 
   useEffect(() => {
     setData((prevData) => ({
@@ -35,7 +35,8 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
       status: status,
     }));
     put(route('transaction.action_buku_transaksi', id), {
-      onFinish: () => {
+      onSuccess: () => {
+        reset();
         onClosed();
       },
     });

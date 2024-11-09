@@ -1,5 +1,7 @@
 import Loading from '@/Components/Loading';
+import NoEditOverlay from '@/Components/NoEditOverlay';
 import SelectList from '@/Components/SelectList';
+import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import { showNominalByStatus } from '@/lib/utils';
 
 import { Button } from '@/shadcn/ui/button';
@@ -12,6 +14,9 @@ import CurrencyInput from 'react-currency-input-field';
 
 const ChangeDetail = ({ triggeredData, onClosed }) => {
   //genereate form for put/patch
+
+  const { isUnit, isMantri, isPusat, isCreator } = useFrontEndPermission();
+
   const { data, setData, put, processing, reset, transform, errors } = useForm({
     request_date: '',
     drop_date: '',
@@ -111,6 +116,9 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
 
   return (
     <form onSubmit={(e) => e.preventDefault()}>
+      {isMantri && (
+        <NoEditOverlay value="Hanya bisa dilakukan oleh Pimpinan / Staff" />
+      )}
       <Loading show={processing} />
       <div className="mb-1 ">
         <div className="flex w-full gap-3">

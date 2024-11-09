@@ -216,7 +216,7 @@ class AppHelper
 
     if (auth()->user()->hasPermissionTo('area')) {
       if ($date->lt($now->subDays(2))) {
-        return ["status" => false, 'message' => 'Tanggal Ini Tidak Bisa Dirubah Oleh Mantri']; // Tanggal lebih dari 2 hari yang lalu
+        return ["status" => false, 'message' => 'Tanggal Sudah Lewat 2 Hari, Hubungi Pimpinan Untuk Merubah']; // Tanggal lebih dari 2 hari yang lalu
       }
       return ["status" => true];
     }

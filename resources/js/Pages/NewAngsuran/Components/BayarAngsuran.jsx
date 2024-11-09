@@ -10,10 +10,17 @@ import { Button } from '@/shadcn/ui/button';
 import { useForm, usePage } from '@inertiajs/react';
 import Loading from '@/Components/Loading';
 import dayjs from 'dayjs';
+import NoEditOverlay from '@/Components/NoEditOverlay';
+import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 
 const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
+  const [triggeredData, setTriggeredData] = useState({});
+  useEffect(() => {
+    setTriggeredData(triggeredPinjaman);
+  }, [triggeredPinjaman]);
+
   const {
-    server_filter: { closed_transaction },
+    server_filter: { closed_transaction, today },
   } = usePage().props;
 
   const { data, setData, post, errors, processing, reset, recentlySuccessful } =
@@ -64,14 +71,9 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   useEffect(() => {
     const pelunasan =
       instalment?.sort((a, b) => a.saldo - b.saldo)[0]?.saldo ?? 0;
-    const lastDate =
-      instalment?.sort((a, b) => a.transaction_date - b.transaction_date)[0]
-        ?.transaction_date ?? null;
     setData((prev) => ({
       ...prev,
-      transaction_date: lastDate
-        ? dayjs(lastDate).add(1, 'week').format('YYYY-MM-DD')
-        : '',
+      transaction_date: today,
     }));
 
     setPelunasan(pelunasan);
@@ -83,7 +85,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
       <CardHeader>
         <CardTitle>Isi Angsuran</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative">
         <form onSubmit={onSubmitForm}>
           <div className="mb-3">
             <Label htmlFor="transaction_date">Tanggal Pembayaran</Label>
@@ -226,14 +228,20 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             </Button>
           </div>
           <div className="flex items-center justify-between mt-6">
-            <label className="flex items-center">
-              <Checkbox
-                name="danatitipan"
-                value={data.danatitipan}
-                onChange={onInputChange}
-              />
-              <span className="ml-2 text-sm text-gray-600">Dana Titipan?</span>
-            </label>
+            <div>
+              {triggeredData.status_pinjaman !== 'normal' && (
+                <label className="flex items-center">
+                  <Checkbox
+                    name="danatitipan"
+                    value={data.danatitipan}
+                    onChange={onInputChange}
+                  />
+                  <span className="ml-2 text-sm text-gray-600">
+                    Dana Titipan?
+                  </span>
+                </label>
+              )}
+            </div>
             <Button type="submit">Submit</Button>
           </div>
         </form>
