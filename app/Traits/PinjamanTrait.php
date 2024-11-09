@@ -165,6 +165,7 @@ trait PinjamanTrait
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
 
 
+
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
@@ -195,9 +196,11 @@ trait PinjamanTrait
 
 
 
-    $lastTransaction = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereNotNull('daily_kepala_approval')->whereNotNull('daily_kasir_approval')->max('date');
+    $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
+    $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
+    $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
+    $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
 
-    $ClosedTransaction = AppHelper::get_closed_date($lastTransaction);
 
     $loanMl = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
@@ -327,7 +330,7 @@ trait PinjamanTrait
       'datas' => $mergedData,
       'dateOfWeek' => $dateOfWeek,
       'sirkulasi' => $transactionSirkulan,
-      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'groupId' => $groupingId->id],
+      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'groupId' => $groupingId->id, 'today' => $dayClosedParams],
     ];
   }
 
@@ -343,6 +346,12 @@ trait PinjamanTrait
     $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
     // dd($hari);
+
+
+    $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
+    $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
+    $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
+    $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
 
     $loan = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
@@ -409,14 +418,13 @@ trait PinjamanTrait
           ];
         })->sortBy('nama')->sortBy('tanggal_drop')->values(),
       ];
-      
     })->values();
 
     return  [
       'datas' => $groupByMonth,
       'select_branch' => auth()->user()->can('can show branch'),
       'select_kelompok' => auth()->user()->can('can show kelompok'),
-      'server_filter' => ['month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok],
+      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'today' => $dayClosedParams, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok],
     ];
   }
 }

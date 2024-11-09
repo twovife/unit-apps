@@ -12,10 +12,12 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
+import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 
 const Rencana = ({ datas, dataTransaksi }) => {
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
+  const { isUnit } = useFrontEndPermission();
 
   useEffect(() => {
     setData(datas);
@@ -50,7 +52,7 @@ const Rencana = ({ datas, dataTransaksi }) => {
       <Table className="w-full table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           <TableRow>
-            <TableHead className="text-center">Action</TableHead>
+            {isUnit && <TableHead className="text-center">Action</TableHead>}
             <TableHead className="text-center">Tanggal</TableHead>
             <TableHead className="text-center">Kasbon</TableHead>
             <TableHead className="text-center">Target</TableHead>
@@ -66,17 +68,19 @@ const Rencana = ({ datas, dataTransaksi }) => {
         <TableBody>
           {data.map((item, index) => (
             <TableRow key={index} className={`text-center`}>
-              <TableCell>
-                {item.is_generated && (
-                  <BargeStatus
-                    value={item.is_closed}
-                    onClick={() => handleOnApproveShowOpen(item.tanggal)}
-                    size="xs"
-                  >
-                    Action
-                  </BargeStatus>
-                )}
-              </TableCell>
+              {isUnit && (
+                <TableCell>
+                  {item.is_generated && (
+                    <BargeStatus
+                      value={item.is_closed}
+                      onClick={() => handleOnApproveShowOpen(item.tanggal)}
+                      size="xs"
+                    >
+                      Action
+                    </BargeStatus>
+                  )}
+                </TableCell>
+              )}
               <TableCell>{dayjs(item.tanggal).format('DD-MM-YYYY')}</TableCell>
               <TableCell>
                 <FormatNumbering value={item.kasbon} />

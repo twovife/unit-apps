@@ -43,6 +43,7 @@ const SidebarMobile = ({ isOpen, setIsOpen }) => {
                   </Button>
                   <div>Home</div>
                 </div>
+
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
                     <Link href={route('mobile_apps.create')}>
@@ -51,14 +52,17 @@ const SidebarMobile = ({ isOpen, setIsOpen }) => {
                   </Button>
                   <div>Pengajuan</div>
                 </div>
+
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
                     <Link href={route('mobile_apps.transaksi')}>
                       <Layers className="h-7 w-7" />
                     </Link>
+                    {/* MANTRI DROP PAGE */}
                   </Button>
                   <div>Drop</div>
                 </div>
+
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
                     <Link href={route('mobile_apps.angsuran')}>

@@ -23,6 +23,7 @@ class TransactionLoanController extends Controller
 
   public function fastcreate(Request $request)
   {
+
     return Inertia::render('WebView/BukuTransaksi/BatchUpload');
   }
   public function index_buku_transaksi(Request $request)
@@ -123,6 +124,11 @@ class TransactionLoanController extends Controller
    */
   public function store_buku_transaksi(Request $request)
   {
+
+    if (!auth()->user()->hasPermissionTo('can create')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
+    }
+
     $previousUrl = url()->previous();
 
     $previousRouteName = app('router')->getRoutes()->match(app('request')->create($previousUrl))->getName();
@@ -207,7 +213,7 @@ class TransactionLoanController extends Controller
   public function store_buku_transaksi_batch(Request $request)
   {
     if (!auth()->user()->hasPermissionTo('can create')) {
-      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
     }
 
     if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
@@ -343,6 +349,11 @@ class TransactionLoanController extends Controller
   public function action_buku_transaksi(TransactionLoan $transactionLoan, Request $request)
   {
 
+    if (!auth()->user()->hasPermissionTo('unit')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
+    }
+
+
     $checkPermission = AppHelper::havePermissionByPermission('can create');
 
     $checkPermissionMantri = AppHelper::havePermissionByPermission('unit mantri');
@@ -406,7 +417,6 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      ddd($exception);
       return redirect()->back()->with('error', 'Terjadi Kesalahan Mohon Ulangi Lagi');
     }
     return redirect()->back()->with('message', 'Berhasil Menyimpan');
@@ -530,7 +540,9 @@ class TransactionLoanController extends Controller
       }
 
       if ($isPaidToday->isNotEmpty()) {
-        return redirect()->back()->withErrors('Angsuran Hari Ini Sudah Dibayar');
+        if (!$request->danatitipan) {
+          return redirect()->back()->withErrors('Angsuran Hari Ini Sudah Dibayar');
+        }
       }
 
       $totalAngsuran = $transactionLoan->loan_instalment->sum('nominal');
@@ -582,7 +594,6 @@ class TransactionLoanController extends Controller
    */
   public function destroy_angsuran(TransactionLoanInstalment $transactionLoanInstalment)
   {
-
 
     $permission =  AppHelper::havePermissionByDate($transactionLoanInstalment->drop_date);
     if (!$permission['status']) {
@@ -639,6 +650,12 @@ class TransactionLoanController extends Controller
 
   public function updateEverything(TransactionLoan $transactionLoan, Request $request)
   {
+
+    $permission =  AppHelper::havePermissionByDate($transactionLoan->drop_date);
+    if (!$permission['status']) {
+      return redirect()->back()->withErrors($permission['message']);
+    }
+
 
 
     $validate = $request->validate([

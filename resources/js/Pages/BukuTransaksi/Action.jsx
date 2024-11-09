@@ -36,7 +36,7 @@ import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
   const [data, setData] = useState([]);
-  const { isUnit, isMantri, isPusat, isCreator } = useFrontEndPermission();
+  const { isCreator } = useFrontEndPermission();
 
   const [customerData, setCustomerData] = useState([]);
   const [acc, setAcc] = useState();
@@ -107,7 +107,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                     </Card>
                     <div className="flex flex-col gap-3 mt-3 lg:flex-row">
                       <div className="w-full">
-                        <Card className="mb-3 relative">
+                        <Card className="relative mb-3">
                           <CardHeader>
                             <CardTitle>ACC / DROP</CardTitle>
                           </CardHeader>
@@ -141,7 +141,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                           </CardContent>
                         </Card>
                       </div>
-                      <Card className="w-full relative">
+                      <Card className="relative w-full">
                         {!isCreator && (
                           <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
                         )}
@@ -157,7 +157,10 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                               Perhatian !!!, Jika pengajuan berstatus sukses,
                               maka pengajuan sudah masuk dalam daftar angsuran,
                               jika tetap dihapus akan mempengaruhi data pada
-                              angsuran, dan angsuran akan ikut terhapus
+                              angsuran, dan angsuran akan ikut terhapus.
+                              <br /> ( Penghapusan hanya bisa dilakukan 2hari
+                              dari tanggal drop (Mantri) dan 2bulan (Admin &
+                              Kepala))
                             </p>
                             <div className="text-right">
                               <RemoveLoan
