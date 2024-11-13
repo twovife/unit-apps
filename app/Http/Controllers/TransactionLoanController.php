@@ -324,7 +324,7 @@ class TransactionLoanController extends Controller
           $loan->loan_instalment()->create([
             'transaction_date' => $item['transaction_date'],
             'nominal' => $item['nominal'] ?? 0,
-            'danatitipan' =>  isset($item['dana_titipan']) ? ($item['dana_titipan'] ? "true" : "false") : "false",
+            'danatitipan' =>  isset($item['dana_titipan']) ? ($item['dana_titipan'] ? 1 : 0) : 0,
             'transaction_loan_officer_grouping_id' => $officerGrouping->id,
             'status' => AppHelper::generateStatusAngsuran($loan->drop_date,  $item['transaction_date']),
             'user_input' => auth()->user()->employee->id,
@@ -567,7 +567,7 @@ class TransactionLoanController extends Controller
           'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
           'transaction_date' => $request->transaction_date,
           'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date, $request->transaction_date),
-          'danatitipan' => $request->danatitipan ? true : false,
+          'danatitipan' => $request->danatitipan ? 1 : 0,
           'user_input' => auth()->user()->employee->id,
           'user_mantri' => $employee->id,
         ]);
