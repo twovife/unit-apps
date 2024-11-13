@@ -227,6 +227,7 @@ trait PinjamanTrait
     $dataMlGenerate = [
       'month' => "ML",
       'type' => "ml",
+      'type2' => "ML",
       'date' => Carbon::parse($begin_transaction)->subMonthNoOverflow(1)->format('Y-m-d'),
       'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
         $data = [
@@ -246,11 +247,16 @@ trait PinjamanTrait
           'kelompok' => $item->loan_officer_grouping->kelompok,
           'jumlah_angsuran' => $item->loan_instalment->count(),
           'id' => $item->id,
-          'instalment' => $item->loan_instalment->reduce(function ($carry, $instalment) {
-            $key = Carbon::parse($instalment->transaction_date)->format('Y-m-d');
-            $carry[$key] = $instalment->nominal;
-            return $carry;
-          }, []),
+          'instalment' => $item->loan_instalment->groupBy(function ($instalment) {
+            return Carbon::parse($instalment->transaction_date)->format('Y-m-d');
+          })->map(function ($instalments) {
+            return [
+              'total_nominal' => $instalments->sum('nominal'),
+              'is_active' => $instalments->contains(function ($instalment) {
+                return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
+              })
+            ];
+          }),
           'x_angs' => $item->loan_instalment->count(),
           'saldo_sebelumnya' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
 
@@ -269,12 +275,13 @@ trait PinjamanTrait
         return $data;
       })->sortBy('nama')->sortBy('tanggal_drop')->values(),
     ];
-
+    // dd($dataMlGenerate);
 
     $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView) {
       return [
         'month' => Carbon::parse($key)->format('FY'),
         'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
+        'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
         'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
           $data = [
@@ -294,11 +301,17 @@ trait PinjamanTrait
             'kelompok' => $item->loan_officer_grouping->kelompok,
             'jumlah_angsuran' => $item->loan_instalment->count(),
             'id' => $item->id,
-            'instalment' => $item->loan_instalment->reduce(function ($carry, $instalment) {
-              $key = Carbon::parse($instalment->transaction_date)->format('Y-m-d');
-              $carry[$key] = $instalment->nominal;
-              return $carry;
-            }, []),
+            'instalment' => $item->loan_instalment->groupBy(function ($instalment) {
+              return Carbon::parse($instalment->transaction_date)->format('Y-m-d');
+            })->map(function ($instalments) {
+              return [
+                'total_nominal' => $instalments->sum('nominal'),
+                'is_active' => $instalments->contains(function ($instalment) {
+                  return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
+                })
+              ];
+            }),
+            'angs_today' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)?->sum('nominal') ?? 0,
             'x_angs' => $item->loan_instalment->count(),
             'saldo_sebelumnya' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
             'saldo' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<=', $transaction_date->format('Y-m-d'))->sum('nominal'),
@@ -403,12 +416,11 @@ trait PinjamanTrait
             'jumlah_angsuran' => $item->loan_instalment->count(),
 
             'id' => $item->id,
-            'instalment' => $item->loan_instalment->reduce(function ($carry, $instalment) {
-              $key = Carbon::parse($instalment->transaction_date)->format('Y-m-d');
-              $carry[$key] = $instalment->nominal;
-              return $carry;
-            }, []),
-
+            'instalment' => $item->loan_instalment->groupBy(function ($instalment) {
+              return Carbon::parse($instalment->transaction_date)->format('Y-m-d');
+            })->map(function ($instalments) {
+              return $instalments->sum('nominal');
+            }),
             'x_angs' => $item->loan_instalment->count(),
             'angsuran' => $item->loan_instalment->sum('nominal'),
 

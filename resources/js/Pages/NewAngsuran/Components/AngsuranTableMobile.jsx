@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
 
 const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
@@ -82,7 +83,6 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
             <TableHead className="text-center">No</TableHead>
             <TableHead className="text-center">Tanggal</TableHead>
             <TableHead className="text-center">Nasabah</TableHead>
-            <TableHead className="text-center">Note</TableHead>
             <TableHead className="text-center border-x border-x-black">
               Nominal
             </TableHead>
@@ -94,7 +94,9 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
               <React.Fragment key={i}>
                 <TableRow>
                   <TableCell colSpan={17 + (dateOfWeek.length ?? 0)}>
-                    {row.month}
+                    <div className="flex items-center gap-3">
+                      <BargeStatus value={row.type2} /> <div>{row.month}</div>
+                    </div>
                   </TableCell>
                 </TableRow>
                 {row.data.map((subrow, i) => (
@@ -136,32 +138,6 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                       <div>{subrow.nik}</div>
                       <div>{subrow.alamat}</div>
                     </TableCell>
-                    <TableCell className="text-center">
-                      {subrow.status_pinjaman == 'normal' ? (
-                        <span className="px-2 py-1 mr-1 text-xs border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : subrow.status_pinjaman == 'cm' ? (
-                        <span className="px-2 py-1 mr-1 text-xs text-white bg-yellow-400 border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : subrow.status_pinjaman == 'mb' ? (
-                        <span className="px-2 py-1 mr-1 text-xs text-white bg-red-400 border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : subrow.status_pinjaman == 'ml' ? (
-                        <span className="px-2 py-1 mr-1 text-xs text-white bg-black border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : (
-                        <div>{subrow.status_pinjaman}</div>
-                      )}
-                      {subrow.notes !== null ? (
-                        <Badge>{subrow.notes}</Badge>
-                      ) : (
-                        ''
-                      )}
-                    </TableCell>
                     <TableCell className="border-x border-x-black">
                       <div className="flex justify-between gap-6">
                         <div>P</div>
@@ -169,7 +145,16 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                       </div>
                       <div className="flex justify-between gap-6 border-b-2 border-b-black ">
                         <div>A</div>
-                        <FormatNumbering value={subrow.angsuran} />
+                        <div className="flex gap-3">
+                          <div className="italic whitespace-nowrap">
+                            <FormatNumbering
+                              value={subrow.angs_today}
+                              prefix={'('}
+                              suffix={')'}
+                            />
+                          </div>
+                          <FormatNumbering value={subrow.angsuran} />
+                        </div>
                       </div>
 
                       <div className="flex justify-between gap-6">
@@ -180,7 +165,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                   </TableRow>
                 ))}
                 <TableRow className="bg-gray-100">
-                  <TableCell className="py-3" colSpan={4}>
+                  <TableCell className="py-3" colSpan={3}>
                     TOTAL
                   </TableCell>
                   <TableCell className="border-x border-x-black">
@@ -192,9 +177,18 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                     </div>
                     <div className="flex justify-between gap-6 border-b-2 border-b-black ">
                       <div>A</div>
-                      <FormatNumbering
-                        value={calculateTotals(row.data, 'angsuran')}
-                      />
+                      <div className="flex gap-3">
+                        <div className="italic whitespace-nowrap">
+                          <FormatNumbering
+                            value={calculateTotals(row.data, 'angs_today')}
+                            prefix={'('}
+                            suffix={')'}
+                          />
+                        </div>
+                        <FormatNumbering
+                          value={calculateTotals(row.data, 'angsuran')}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex justify-between gap-6">

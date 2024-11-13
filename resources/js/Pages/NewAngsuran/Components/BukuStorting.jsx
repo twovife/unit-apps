@@ -82,8 +82,8 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           item.data.forEach((data) => {
             dateOfWeek.forEach((date) => {
               if (data.instalment[date] !== undefined) {
-                totalInstalment += data.instalment[date];
-                instalmentsSum[date] += data.instalment[date];
+                totalInstalment += data.instalment[date].total_nominal;
+                instalmentsSum[date] += data.instalment[date].total_nominal;
               }
             });
           });
