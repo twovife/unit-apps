@@ -221,12 +221,12 @@ class AppHelper
       return ["status" => true];
     }
 
-    // if (auth()->user()->hasPermissionTo('unit')) {
-    //   if ($date->lt($now->subMonthsNoOverflow(2))) {
-    //     return ["status" => false, 'message' => 'Konfirmasi Kepada Staff IT Untuk Mengubah Data']; // Tanggal lebih dari 2 hari yang lalu
-    //   }
-    //   return ["status" => true];
-    // }
+    if (auth()->user()->hasPermissionTo('unit')) {
+      if ($date->lt($now->subMonthsNoOverflow(2))) {
+        return ["status" => true]; // Tanggal lebih dari 2 hari yang lalu
+      }
+      return ["status" => true];
+    }
 
     return ["status" => false, 'message' => 'User Tidak Punya Akses Merubah Data']; // Tanggal lebih dari 2 hari yang lalu
   }
