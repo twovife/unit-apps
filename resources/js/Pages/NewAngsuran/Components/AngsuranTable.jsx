@@ -199,8 +199,17 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering value={subrow.saldo_sebelumnya} />
                     </TableCell>
                     {dateOfWeek.map((day, i) => (
-                      <TableCell className="border-x border-x-black" key={i}>
-                        <FormatNumbering value={subrow.instalment[day]} />
+                      <TableCell
+                        className={`border-x border-x-black ${
+                          subrow.instalment[day]?.is_active
+                            ? 'text-red-500 font-semibold'
+                            : ''
+                        }`}
+                        key={i}
+                      >
+                        <FormatNumbering
+                          value={subrow.instalment[day]?.total_nominal}
+                        />
                       </TableCell>
                     ))}
                     <TableCell
