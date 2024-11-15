@@ -135,7 +135,11 @@ class TransactionLoan extends Model
 
 
     static::deleting(function ($transactionLoan) {
-      $transactionLoan->loan_instalment()->delete();
+
+
+      foreach ($transactionLoan->loan_instalment as $loanInstalment) {
+        $loanInstalment->delete(); // Ini akan memicu event deleting dan deleted pada LoanInstalment
+      }
 
       if ($transactionLoan->status == "success") {
         $sumDropLoanDay = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)

@@ -33,6 +33,7 @@ class TransactionLoanInstalment extends Model
           "date" => $transactionLoanInstalment->transaction_date,
         ]);
         $transactionDailyRecap->increment('storting', $transactionLoanInstalment->nominal);
+        $transactionDailyRecap->save();
       }
     });
 
@@ -42,11 +43,11 @@ class TransactionLoanInstalment extends Model
         $transactionDailyRecap = TransactionDailyRecap::where(
           "transaction_loan_officer_grouping_id",
           $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-
         )->where("date", $transactionLoanInstalment->transaction_date)->first();
 
         if ($transactionDailyRecap) {
           $transactionDailyRecap->decrement('storting', $transactionLoanInstalment->nominal);
+          $transactionDailyRecap->save();
         }
       }
     });
