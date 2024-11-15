@@ -52,13 +52,13 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     angsuran: [],
   });
 
+  console.log(data);
+
   // handlingForAngsuranBatchProssess
   const [elements, setElements] = useState([]);
   const [calculatePinjaman, setCalculatePinjaman] = useState(0);
 
   useEffect(() => {
-    console.log(data.request_nominal);
-
     const totalPinjaman = parseInt(data.request_nominal ?? 0) * 1.3;
 
     const totalAngsuran = data.angsuran.reduce((acc, curr) => {

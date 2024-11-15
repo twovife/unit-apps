@@ -38,6 +38,13 @@ class TransactionLoanController extends Controller
   //  GET NIK FOR AXIOS
   public function nasabah_buku_transaksi(Request $request)
   {
+    $prefix = strtoupper(substr($request->nik, 0, 2));
+
+    if ($prefix == "UB" || $prefix == "ML") {
+      return response()->json(['data' =>  null, 'return_nik' => $request->nik]);
+    }
+
+
     $validate = $request->validate([
       'nik' => ['required', 'digits:16']
     ], [
@@ -67,54 +74,55 @@ class TransactionLoanController extends Controller
       ]
     )->where('nik', $request->nik)->first();
 
-    $data = $nasabah ? [
-      'nik' => $nasabah->nik,
-      'nama' => $nasabah->nama,
-      'alamat' => $nasabah->alamat,
-      'history_branch' => $nasabah->manage_customer->filter(function ($customer) {
-        return $customer->branch && $customer->branch->id === auth()->user()->employee->branch_id;
-      })->flatMap(function ($filtered_data) {
-        // Memproses loan yang berstatus 'success'
-        return $filtered_data->loan->where('status', 'success')->map(function ($item) use ($filtered_data) {
-          // Mengecek apakah pinjaman sudah lunas
-          $isLunas = $item->loan_instalment->sum('nominal') >= $item->pinjaman;
-          // Mendapatkan tanggal transaksi terakhir
-          $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
+    $data = $nasabah ?
+      [
+        'nik' => $nasabah->nik,
+        'nama' => $nasabah->nama,
+        'alamat' => $nasabah->alamat,
+        'history_branch' => $nasabah->manage_customer->filter(function ($customer) {
+          return $customer->branch && $customer->branch->id === auth()->user()->employee->branch_id;
+        })->flatMap(function ($filtered_data) {
+          // Memproses loan yang berstatus 'success'
+          return $filtered_data->loan->where('status', 'success')->map(function ($item) use ($filtered_data) {
+            // Mengecek apakah pinjaman sudah lunas
+            $isLunas = $item->loan_instalment->sum('nominal') >= $item->pinjaman;
+            // Mendapatkan tanggal transaksi terakhir
+            $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
 
-          return [
-            'drop_date' => $item->drop_date,
-            'pinjaman' => $item->pinjaman,
-            'unit' => $item->branch->unit,
-            'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
-            'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
-            'lunas' => $isLunas,
-            'status' => AppHelper::generateStatusAngsuranString($item->drop_date, $maxTransactionDate),
-          ];
-        });
-      })->sortBy('kelompok')->sortBy('drop_date')->values(),
-      'history_lain' => $nasabah->manage_customer->filter(function ($customer) {
-        return $customer->branch && $customer->branch->id != auth()->user()->employee->branch_id;
-      })->flatMap(function ($filtered_data) {
-        // Memproses loan yang berstatus 'success'
-        return $filtered_data->loan->where('status', 'success')->map(function ($item) use ($filtered_data) {
-          // Mengecek apakah pinjaman sudah lunas
-          $isLunas = $item->loan_instalment->sum('nominal') >= $item->pinjaman;
-          // Mendapatkan tanggal transaksi terakhir
-          $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
+            return [
+              'drop_date' => $item->drop_date,
+              'pinjaman' => $item->pinjaman,
+              'unit' => $item->branch->unit,
+              'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
+              'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
+              'lunas' => $isLunas,
+              'status' => AppHelper::generateStatusAngsuranString($item->drop_date, $maxTransactionDate),
+            ];
+          });
+        })->sortBy('kelompok')->sortBy('drop_date')->values(),
+        'history_lain' => $nasabah->manage_customer->filter(function ($customer) {
+          return $customer->branch && $customer->branch->id != auth()->user()->employee->branch_id;
+        })->flatMap(function ($filtered_data) {
+          // Memproses loan yang berstatus 'success'
+          return $filtered_data->loan->where('status', 'success')->map(function ($item) use ($filtered_data) {
+            // Mengecek apakah pinjaman sudah lunas
+            $isLunas = $item->loan_instalment->sum('nominal') >= $item->pinjaman;
+            // Mendapatkan tanggal transaksi terakhir
+            $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
 
-          return [
-            'drop_date' => $item->drop_date,
-            'pinjaman' => $item->pinjaman,
-            'unit' => $item->branch->unit, // Menggunakan optional() langsung
-            'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
-            'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
-            'lunas' => $isLunas,
-            'status' => AppHelper::generateStatusAngsuranString($item->drop_date, $maxTransactionDate),
-          ];
-        });
-      })->sortBy('kelompok')->sortBy('unit')->sortBy('drop_date')->values(),
-      // Reset indeks setelah proses pemetaan
-    ] : null;
+            return [
+              'drop_date' => $item->drop_date,
+              'pinjaman' => $item->pinjaman,
+              'unit' => $item->branch->unit, // Menggunakan optional() langsung
+              'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
+              'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
+              'lunas' => $isLunas,
+              'status' => AppHelper::generateStatusAngsuranString($item->drop_date, $maxTransactionDate),
+            ];
+          });
+        })->sortBy('kelompok')->sortBy('unit')->sortBy('drop_date')->values(),
+        // Reset indeks setelah proses pemetaan
+      ] : null;
 
     return response()->json(['data' => $data ?? null, 'return_nik' => $request->nik]);
   }
@@ -140,10 +148,15 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
 
+    $newNik = AppHelper::callUnknownNik($request);
+    $request->merge(['nik' => $newNik]);
+
+    dd($request->all());
+
     $val = $request->validate([
       'isActiveMember' => ['boolean', 'required'],
-      'nik' => ['required', 'digits:16'],
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
+      'nik' => ['required', 'digits:16'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
       'request_date' => ['required', 'date'],
@@ -170,6 +183,7 @@ class TransactionLoanController extends Controller
         $request['drop_before'] = $drop_before?->nominal_drop ?? 0;
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
+
       $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->first();
 
       $loan = $manage->loan()->create([
@@ -244,6 +258,8 @@ class TransactionLoanController extends Controller
       }
     }
 
+    $newNik = AppHelper::callUnknownNik($request);
+    $request->merge(['nik' => $newNik]);
 
 
     $val = $request->validate([
@@ -340,7 +356,7 @@ class TransactionLoanController extends Controller
       ddd($exception);
       return redirect()->back()->withErrors($exception->getMessage());
     }
-    return redirect()->back()->with('message', 'www.google.com')->with('printUrl', route('pinjaman.index_pinjaman_search', ['kelompok' => $officerGrouping->kelompok, 'month' => Carbon::parse($request->tanggal_drop)->format('Y-m'), 'branch_id' =>  $request['branch'], 'hari' => AppHelper::dateName($request->tanggal_drop)]));
+    return redirect()->back()->with('message', 'BERHASIL DITAMBAHKAN')->with('printUrl', route('pinjaman.index_pinjaman_search', ['kelompok' => $officerGrouping->kelompok, 'month' => Carbon::parse($request->tanggal_drop)->format('Y-m'), 'branch_id' =>  $request['branch'], 'hari' => AppHelper::dateName($request->tanggal_drop)]));
   }
 
 

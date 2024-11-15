@@ -44,6 +44,13 @@ class TransactionDailyRecap extends Model
   {
     parent::boot();
 
+    // static::saving(function ($transactionDailyRecap) {
+    //   if ($transactionDailyRecap->wasChanged('storting') || $transactionDailyRecap->wasChanged('drop')) {
+    //     $day = AppHelper::dateName($transactionDailyRecap->date);
+    //     dd($day);
+    //   }
+    // });
+
     static::updating(function ($transactionDailyRecap) {
 
       if ($transactionDailyRecap->isDirty('keluar') || $transactionDailyRecap->isDirty('drop')) {
@@ -85,6 +92,7 @@ class TransactionDailyRecap extends Model
       }
     });
   }
+
   // static::deleting(function ($transactionDailyRecap) {
   //   $transactionBefore = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
   //     ->where('target_on', "<", $transactionDailyRecap->target_on)

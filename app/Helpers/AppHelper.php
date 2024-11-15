@@ -3,16 +3,50 @@
 namespace App\Helpers;
 
 use App\Models\Branch;
+use App\Models\TransactionCustomer;
 use Carbon\Carbon;
 use Faker\Core\Number;
 use Illuminate\Support\Facades\Auth;
 
 class AppHelper
 {
+
+  private static function generateUnknownNik($request)
+  {
+    $drop_date = Carbon::parse($request->drop_date)->format('ym');
+    $branch_id = sprintf("%04d",  auth()->user()->employee->branch_id);
+    $kelompok_id = sprintf("%02d",  auth()->user()->employee->area);
+    $randomNumber = random_int(1, 999999);
+    $formattedNumber = sprintf("%06d", $randomNumber);
+    return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
+  }
   public static function dateName($date)
   {
     return strtolower(Carbon::parse($date)->locale('id')->dayName);
   }
+
+  public static function callUnknownNik($request)
+  {
+    $prefix = strtoupper(substr($request->nik, 0, 2));
+    // Inisialisasi variabel untuk menyimpan newNik
+    $newNik = null;
+
+    // Cek jika prefix adalah "UB" atau "ML"
+    if ($prefix == "UB" || $prefix == "ML") {
+
+      // Lakukan looping sampai menemukan newNik yang unik
+      do {
+        // Generate newNik
+        $newNik = self::generateUnknownNik($request);
+        // Cari nasabah dengan newNik di database
+        $nasabah = TransactionCustomer::where('nik', $newNik)->first();
+      } while ($nasabah); // Ulangi jika nasabah ditemukan
+      return $newNik;
+    }
+
+    return $request->nik;
+  }
+
 
   public static function monthNumber($date)
   {

@@ -9,6 +9,7 @@ use App\Http\Controllers\TransactionDailyRecapController;
 use App\Http\Controllers\TransactionLoanController;
 use App\Models\TransactionDailyRecap;
 use App\Models\TransactionLoan;
+use App\Models\VIsBalanceLoanWithDailyreport;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -38,6 +39,11 @@ Route::middleware('auth')->group(function () {
       Route::get('/', 'batch_create')->name('batch_create');
       Route::post('/', 'batch_post')->name('batch_post');
     })->middleware('permission:unit');
+  });
+
+  Route::get('/getviewasd', function () {
+    $data = VIsBalanceLoanWithDailyReport::all();
+    dd($data);
   });
 
 

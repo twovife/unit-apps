@@ -154,9 +154,6 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                       <TableHead className="text-center">Jumlah</TableHead>
                       <TableHead className="text-center">Saldo</TableHead>
                       <TableHead className="hidden text-center lg:table-cell">
-                        Dana Titipan
-                      </TableHead>
-                      <TableHead className="hidden text-center lg:table-cell">
                         Mantri
                       </TableHead>
                       <TableHead className="text-center">Status</TableHead>
@@ -175,13 +172,16 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                           <TableCell className="whitespace-nowrap">
                             {dayjs(item.transaction_date).format('DD-MM-YY')}
                           </TableCell>
-                          <TableCell>
+                          <TableCell
+                            className={`${
+                              item.danatitipan == 1
+                                ? 'text-red-500 font-semibold'
+                                : ''
+                            }`}
+                          >
                             <FormatNumbering value={item.nominal} />
                           </TableCell>
                           <TableCell>{item.saldo}</TableCell>
-                          <TableCell className="hidden lg:block">
-                            {item.danatitipan == 'true' ? 'Yes' : ''}
-                          </TableCell>
                           <TableCell className="hidden lg:block">
                             {item.mantri}
                           </TableCell>
