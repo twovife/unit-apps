@@ -25,25 +25,17 @@ class MobileAppsMantriController extends Controller
   use PinjamanTrait;
   public function index()
   {
-
     return Inertia::render('MobileApps/Index');
   }
-
-
 
   public function create()
   {
     return Inertia::render('MobileApps/Create/Index');
   }
 
-
-
   public function transaksi(Request $request)
   {
-
-
     $data = $this->getTransactionLoan($request, true, true);
-
     return Inertia::render('MobileApps/BukuTransaksiMantri/TransaksiMantri', $data);
   }
 
@@ -61,8 +53,6 @@ class MobileAppsMantriController extends Controller
 
   public function macet(Request $request)
   {
-
-
     $data = $this->getLoanByDate($request);
     return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
   }
@@ -70,7 +60,6 @@ class MobileAppsMantriController extends Controller
 
   public function buku_transaksi_kepala(Request $request)
   {
-
     $data = $this->getTransactionLoan($request, true);
     return Inertia::render('MobileApps/BukuTransaksiKepala/TransaksiMantri', $data);
   }
