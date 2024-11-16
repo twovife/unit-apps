@@ -151,7 +151,6 @@ class TransactionLoanController extends Controller
     $newNik = AppHelper::callUnknownNik($request);
     $request->merge(['nik' => $newNik]);
 
-    dd($request->all());
 
     $val = $request->validate([
       'isActiveMember' => ['boolean', 'required'],
@@ -212,7 +211,6 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      dd($exception);
       return redirect()->back()->withErrors($exception->getMessage());
     }
 
@@ -353,7 +351,6 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      ddd($exception);
       return redirect()->back()->withErrors($exception->getMessage());
     }
     return redirect()->back()->with('message', 'BERHASIL DITAMBAHKAN')->with('printUrl', route('pinjaman.index_pinjaman_search', ['kelompok' => $officerGrouping->kelompok, 'month' => Carbon::parse($request->tanggal_drop)->format('Y-m'), 'branch_id' =>  $request['branch'], 'hari' => AppHelper::dateName($request->tanggal_drop)]));
@@ -451,9 +448,6 @@ class TransactionLoanController extends Controller
   public function index_pinjaman_search(Request $request)
   {
 
-
-    // ddd($groupByMonth);
-
     $data = $this->getLoanByDate($request);
     return Inertia::render("WebView/Angsuran/SearchByDate", $data);
   }
@@ -514,10 +508,6 @@ class TransactionLoanController extends Controller
       ];
     });
 
-
-    // ddd([$pinjaman, $instalment]);
-
-
     $loan = $transactionLoan->load('loan_instalment');
     return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment]);
   }
@@ -527,7 +517,6 @@ class TransactionLoanController extends Controller
   //  NAH INI POST UNTUK BAYAR ASUNYA
   public function bayar_pinjaman(Request $request, TransactionLoan $transactionLoan)
   {
-    // dd($request->all());
     if (!auth()->user()->hasPermissionTo('can create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Untuk Melakukan ini');
     }
@@ -590,7 +579,6 @@ class TransactionLoanController extends Controller
       }
 
       if ($request->type_transaksi == "notes") {
-        // dd($request->all());
         $transactionLoan->notes = $request->notes;
         $transactionLoan->save();
       }
@@ -599,7 +587,6 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      dd($e);
       return redirect()->back()->with('error', 'data gagal diubah');
     }
     return redirect()->back()->with('message', 'data berhasil diubah');

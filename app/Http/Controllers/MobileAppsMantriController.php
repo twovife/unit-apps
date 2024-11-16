@@ -44,7 +44,6 @@ class MobileAppsMantriController extends Controller
 
     $data = $this->getTransactionLoan($request, true, true);
 
-    // dd($data);
     return Inertia::render('MobileApps/BukuTransaksiMantri/TransaksiMantri', $data);
   }
 
@@ -63,9 +62,6 @@ class MobileAppsMantriController extends Controller
   public function macet(Request $request)
   {
 
-    // ddd($groupByMonth)
-
-    // ddd($groupByMonth);
 
     $data = $this->getLoanByDate($request);
     return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
@@ -76,7 +72,6 @@ class MobileAppsMantriController extends Controller
   {
 
     $data = $this->getTransactionLoan($request, true);
-    // dd($data);
     return Inertia::render('MobileApps/BukuTransaksiKepala/TransaksiMantri', $data);
   }
 

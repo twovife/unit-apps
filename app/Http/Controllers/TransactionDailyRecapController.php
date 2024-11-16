@@ -48,7 +48,6 @@ class TransactionDailyRecapController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      dd($e);
       return redirect()->back()->withError('Data Gagal Diperbarui, Refresh / Hub IT');
     }
 
@@ -57,7 +56,6 @@ class TransactionDailyRecapController extends Controller
 
   public function ceklist_kepala(Request $request)
   {
-    // dd($request->date);
     $validate = $request->validate([
       'id' => ['required'],
       'date' => ['required'],
@@ -97,7 +95,6 @@ class TransactionDailyRecapController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      ddd($e);
       return redirect()->back()->withError('Data Gagal Diperbarui, Refresh / Hub IT');
     }
     return redirect()->back()->with('message', $message ?? 'Data berhasil disimpan.');
