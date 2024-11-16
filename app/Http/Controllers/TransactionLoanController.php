@@ -598,16 +598,16 @@ class TransactionLoanController extends Controller
   public function destroy_angsuran(TransactionLoanInstalment $transactionLoanInstalment)
   {
 
-    $permission =  AppHelper::havePermissionByDate($transactionLoanInstalment->drop_date);
+    $permission =  AppHelper::havePermissionByDate($transactionLoanInstalment->transaction_date);
     if (!$permission['status']) {
       return redirect()->back()->withErrors($permission['message']);
     }
-
     try {
       DB::beginTransaction();
       $transactionLoanInstalment->delete();
       DB::commit();
     } catch (Exception $e) {
+      ddd($e);
       DB::rollBack();
       return redirect()->back()->withErrors('data gagal diubah');
     }

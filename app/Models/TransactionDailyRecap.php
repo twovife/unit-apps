@@ -52,12 +52,8 @@ class TransactionDailyRecap extends Model
     // });
 
     static::updating(function ($transactionDailyRecap) {
-
       if ($transactionDailyRecap->isDirty('keluar') || $transactionDailyRecap->isDirty('drop')) {
-        //get transaction with same day name
 
-        // dd('im berubah');
-        // dd($transactionDailyRecap);
         $transactionAfter = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
           ->where('target_on', $transactionDailyRecap->date)
           ->first();
@@ -84,14 +80,19 @@ class TransactionDailyRecap extends Model
           $transactionAfter->increment('target', $rangeTarget);
         }
       }
+    });
 
-      if ($transactionDailyRecap->isDirty('storting') || $transactionDailyRecap->isDirty('drop')) {
-        if ($transactionDailyRecap->target_on == null && $transactionDailyRecap->storting == 0 && $transactionDailyRecap->drop == 0) {
-          $transactionDailyRecap->delete();
-        }
+    static::saved(function ($transactionDailyRecap) {
+      if ($transactionDailyRecap->target_on == null && $transactionDailyRecap->storting == 0 && $transactionDailyRecap->drop == 0) {
+        $transactionDailyRecap->delete();
       }
     });
+
+    static::deleting(function ($transactionDailyRecap) {
+      // dd($transactionDailyRecap, 'trigger delete');
+    });
   }
+
 
   // static::deleting(function ($transactionDailyRecap) {
   //   $transactionBefore = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
