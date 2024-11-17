@@ -58,17 +58,11 @@ const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
               {auth.user.employee.nama_karyawan}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+
             <DropdownMenuItem>
               <Link href={route('profile.edit')}>Profile</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <a
-                target="_blank"
-                href="https://www.youtube.com/watch?v=HrHDfHy0lHk"
-              >
-                Support
-              </a>
-            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <Link
