@@ -35,7 +35,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
 
   const calculateInstalment = (data, keyToSum) => {
     const result = data.reduce(
-      (acc, item) => acc + parseInt(item.instalment[keyToSum] ?? 0),
+      acc + parseInt(item.instalment[keyToSum]?.total_nominal ?? 0),
       0
     );
     return result;

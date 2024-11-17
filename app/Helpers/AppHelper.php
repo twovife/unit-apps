@@ -109,7 +109,7 @@ class AppHelper
     if ($req == "sabtu") {
       return 6;
     }
-    return 7;
+    return 0;
   }
 
   public static function getIsPaid($max_date, $req_day)

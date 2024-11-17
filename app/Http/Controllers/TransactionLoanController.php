@@ -440,6 +440,7 @@ class TransactionLoanController extends Controller
   // INI ADALAH PINJAMAN YA
   public function index_pinjaman(Request $request)
   {
+    // dd('asd');
     $data = $this->getLoan($request);
     return Inertia::render("WebView/Angsuran/Index", $data);
   }

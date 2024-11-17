@@ -254,8 +254,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   </TableCell>
                   {dateOfWeek.map((day, i) => (
                     <TableCell className="border-x border-x-black" key={i}>
-                      {/* {day} */}
-                      {/* {calculateInstalment(row.data, day)} */}
                       <FormatNumbering
                         value={calculateInstalment(row.data, day)}
                       />
