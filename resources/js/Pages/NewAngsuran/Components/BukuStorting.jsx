@@ -56,12 +56,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               case 'ml':
                 return sirkulasi?.ml_amount ?? 0;
                 break;
-              case 'mb':
-                return sirkulasi?.mb_amount ?? 0;
-                break;
-              case 'cm':
-                return sirkulasi?.cm_amount ?? 0;
-                break;
               default:
                 return params.data.reduce(
                   (acc, itm) => acc + itm.saldo_sebelumnya,
@@ -71,7 +65,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           };
 
           const sirkulasiAwal = sirkulasiAwalFunction(item);
-          console.log(sirkulasiAwal);
 
           dateOfWeek.forEach((date) => {
             instalmentsSum[date] = 0;

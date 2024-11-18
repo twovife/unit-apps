@@ -29,6 +29,11 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
       mb_amount: '',
       cm_amount: '',
       amount: '',
+
+      amount_next: '',
+      cm_next: '',
+      mb_next: '',
+      ml_next: '',
     }
   );
 
