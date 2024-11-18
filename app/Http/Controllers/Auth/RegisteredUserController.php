@@ -24,7 +24,7 @@ class RegisteredUserController extends Controller
    */
   public function create(): Response
   {
-    $employees = Employee::where('branch_id', 3)->whereNull('date_resign')->get();
+    $employees = Employee::where('branch_id', 2)->whereNull('date_resign')->get();
     return Inertia::render('Auth/Register', [
       'employees' => $employees,
     ]);

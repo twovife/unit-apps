@@ -83,11 +83,13 @@ class AdminController extends Controller
 
   public function sirkulasiAwal(Request $request)
   {
+    // dd($request->all());
     $tanggal = Carbon::parse($request->month)->startOfMonth()->addMonthNoOverflow(1)->format('Y-m-d');
 
     try {
       DB::beginTransaction();
-      $sirkulasi = TransactionSirculation::firstorCreate([
+      // ddd($request->all());
+      $sirkulasi = TransactionSirculation::firstOrCreate([
         "transaction_loan_officer_grouping_id" => $request->transaction_loan_officer_grouping_id,
         "date" => $tanggal,
         "day" => $request->hari
@@ -103,6 +105,7 @@ class AdminController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
+      ddd($e);
       return redirect()->back()->withErrors('Sirkulasi Awal Error');
     }
     return redirect()->back()->with('message', 'Sirkulasi Awal Successfully');
