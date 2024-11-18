@@ -362,10 +362,6 @@ class TransactionLoanController extends Controller
   public function action_buku_transaksi(TransactionLoan $transactionLoan, Request $request)
   {
 
-    if (!auth()->user()->hasPermissionTo('unit') || !auth()->user()->hasPermissionTo('unit')) {
-      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
-    }
-
 
     $checkPermission = AppHelper::havePermissionByPermission('can create');
 
