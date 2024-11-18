@@ -57,7 +57,6 @@ class TransactionDailyRecap extends Model
         $transactionAfter = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
           ->where('target_on', $transactionDailyRecap->date)
           ->first();
-        // dd($transactionDailyRecap->target + $transactionDailyRecap->masuk - $transactionDailyRecap->keluar);
         if ($transactionAfter) {
           $transactionAfter->update([
             'target' => $transactionDailyRecap->target + ($transactionDailyRecap->drop * 0.13) - $transactionDailyRecap->keluar,
@@ -82,11 +81,12 @@ class TransactionDailyRecap extends Model
       }
     });
 
-    static::saved(function ($transactionDailyRecap) {
-      if ($transactionDailyRecap->target_on == null && $transactionDailyRecap->storting == 0 && $transactionDailyRecap->drop == 0) {
-        $transactionDailyRecap->delete();
-      }
-    });
+
+    // static::saved(function ($transactionDailyRecap) {
+    //   if ($transactionDailyRecap->target_on == null && $transactionDailyRecap->storting == 0 && $transactionDailyRecap->drop == 0) {
+    //     $transactionDailyRecap->delete();
+    //   }
+    // });
 
     static::deleting(function ($transactionDailyRecap) {
       // dd($transactionDailyRecap, 'trigger delete');

@@ -84,12 +84,14 @@ class TransactionDailyRecapController extends Controller
       ]);
 
 
-
       $fillTragetMingguDepan = TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->tanggal_rencana_minggu_depan]);
       $fillTragetMingguDepan->update([
         'target' => $request->target_minggu_depan,
         'target_on' =>  $request->date,
       ]);
+
+
+
 
 
       DB::commit();
