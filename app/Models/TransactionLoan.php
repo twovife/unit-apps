@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\AppHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Staudenmeir\EloquentHasManyDeep\HasRelationships;
@@ -47,7 +48,9 @@ class TransactionLoan extends Model
       $origilanDate = $transactionLoan->getOriginal('drop_date');
       $newDate = $transactionLoan->drop_date;
 
-
+      if (AppHelper::dateName($origilanDate) !== AppHelper::dateName($newDate)) {
+        return redirect()->back()->withErrors('Hari Pada Tanggal Yang Diubah Harus Sama');
+      }
 
       if ($transactionLoan->isDirty('status')) {
         $originalStatus = $transactionLoan->getOriginal('status');
@@ -162,6 +165,7 @@ class TransactionLoan extends Model
       }
     });
   }
+
 
 
   public function loan_instalment()
