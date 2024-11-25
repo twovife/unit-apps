@@ -183,7 +183,7 @@ class TransactionLoanController extends Controller
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
 
-      $mantri = AppHelper::getMantri($request);
+      $mantri = AppHelper::getMantri($officerGrouping);
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
@@ -301,7 +301,7 @@ class TransactionLoanController extends Controller
       }
 
 
-      $mantri = AppHelper::getMantri($request);
+      $mantri = AppHelper::getMantri($officerGrouping);
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
@@ -518,6 +518,7 @@ class TransactionLoanController extends Controller
   //  NAH INI POST UNTUK BAYAR ASUNYA
   public function bayar_pinjaman(Request $request, TransactionLoan $transactionLoan)
   {
+
     if (!auth()->user()->hasPermissionTo('can create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Untuk Melakukan ini');
     }
@@ -563,7 +564,8 @@ class TransactionLoanController extends Controller
 
 
 
-    $employee = Employee::where('branch_id', $transactionLoan->loan_officer_grouping->branch_id)->where('area', $transactionLoan->loan_officer_grouping->kelompok)->orderBy('id', 'desc')->first();
+    $employee = AppHelper::getMantri($transactionLoan->loan_officer_grouping);
+
 
     try {
       DB::beginTransaction();
@@ -575,7 +577,7 @@ class TransactionLoanController extends Controller
           'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date, $request->transaction_date),
           'danatitipan' => $request->danatitipan ? 1 : 0,
           'user_input' => auth()->user()->employee->id,
-          'user_mantri' => $employee->id,
+          'user_mantri' => $employee,
         ]);
       }
 
