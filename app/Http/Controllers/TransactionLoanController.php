@@ -183,12 +183,12 @@ class TransactionLoanController extends Controller
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
 
-      $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->first();
+      $mantri = AppHelper::getMantri($request);
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
         'request_date' => $request->request_date,
-        'user_mantri' => $mantri->id,
+        'user_mantri' => $mantri,
         'drop_date' => $request->tanggal_drop,
         'hari' => AppHelper::dateName($request->tanggal_drop),
         'status' => "open",
@@ -201,7 +201,7 @@ class TransactionLoanController extends Controller
 
       if ($drop_langsung) {
         $loan->update([
-          'user_drop' => $mantri->id,
+          'user_drop' => $mantri,
           'status' => "success",
           'nominal_drop' => $request->request_nominal,
           'request_nominal' => null,
@@ -300,12 +300,13 @@ class TransactionLoanController extends Controller
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
 
-      $mantri = Employee::where('branch_id', $request->branch)->where('area', $request->kelompok)->whereNull('date_resign')->orderBy('id', 'desc')->first();
+
+      $mantri = AppHelper::getMantri($request);
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
         'request_date' => $request->request_date,
-        'user_mantri' => $mantri->id,
+        'user_mantri' => $mantri,
         'drop_date' => $request->tanggal_drop,
         'hari' => AppHelper::dateName($request->tanggal_drop),
         'status' => "open",
@@ -318,7 +319,7 @@ class TransactionLoanController extends Controller
 
       if ($drop_langsung) {
         $loan->update([
-          'user_drop' => $mantri->id,
+          'user_drop' => $mantri,
           'status' => "success",
           'nominal_drop' => $request->request_nominal,
           'request_nominal' => null,
@@ -331,7 +332,7 @@ class TransactionLoanController extends Controller
           'approved_nominal' => $request->request_nominal,
 
           'nominal_drop' => $request->request_nominal,
-          'user_drop' => $mantri->id,
+          'user_drop' => $mantri,
         ]);
       }
 
@@ -353,6 +354,7 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
+      dd($exception);
       return redirect()->back()->withErrors($exception->getMessage());
     }
     return redirect()->back()->with('message', 'BERHASIL DITAMBAHKAN')->with('printUrl', route('pinjaman.index_pinjaman_search', ['kelompok' => $officerGrouping->kelompok, 'month' => Carbon::parse($request->tanggal_drop)->format('Y-m'), 'branch_id' =>  $request['branch'], 'hari' => AppHelper::dateName($request->tanggal_drop)]));
