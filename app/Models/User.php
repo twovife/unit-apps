@@ -21,6 +21,15 @@ class User extends Authenticatable
    *
    * @var array<int, string>
    */
+
+  /**
+   * @property-read \Illuminate\Database\Eloquent\Collection|\Spatie\Permission\Models\Role[] $roles
+   * @property-read \Illuminate\Database\Eloquent\Collection|\Spatie\Permission\Models\Permission[] $permissions
+   * @method bool hasPermissionTo($permission)
+   * @method bool hasAnyPermission(...$permissions)
+   */
+
+
   protected $fillable = [
     'employee_id',
     'username',

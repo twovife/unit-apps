@@ -3,13 +3,17 @@
 namespace App\Helpers;
 
 use App\Models\Branch;
+use App\Models\Employee;
 use App\Models\TransactionCustomer;
 use Carbon\Carbon;
 use Faker\Core\Number;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AppHelper
 {
+
+
 
   private static function generateUnknownNik($request)
   {
@@ -20,6 +24,39 @@ class AppHelper
     $formattedNumber = sprintf("%06d", $randomNumber);
     return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
   }
+
+  public static function getMantri(Request $request)
+  {
+    // Periksa jika user memiliki izin tertentu
+    if (auth()->user()->hasAnyPermission(['unit pimpinan', 'unit mantri', 'unit km'])) {
+      return auth()->user()->employee->id;
+    }
+
+    // Dapatkan daftar mantri berdasarkan branch_id dan area dari request
+    $get_mantri = Employee::where('branch_id', $request->branch)
+      ->where('area', $request->kelompok)
+      ->orderBy('id', 'desc')
+      ->get();
+
+    // Coba temukan mantri yang aktif (tidak resign)
+    $mantri = $get_mantri->whereNull('date_resign')->first()?->id;
+
+    // Jika tidak ada mantri aktif yang ditemukan, ambil mantri pertama dari daftar
+    if (!$mantri) {
+      $mantri = $get_mantri->first()?->id;
+    }
+
+    // Jika daftar mantri kosong, gunakan ID employee dari user yang sedang login
+    if (!$mantri) {
+      $mantri = auth()->user()->employee->id;
+    }
+
+    return $mantri;
+  }
+
+
+
+
   public static function dateName($date)
   {
     return strtolower(Carbon::parse($date)->locale('id')->dayName);
