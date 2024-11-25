@@ -345,7 +345,7 @@ class TransactionLoanController extends Controller
             'transaction_loan_officer_grouping_id' => $officerGrouping->id,
             'status' => AppHelper::generateStatusAngsuran($loan->drop_date,  $item['transaction_date']),
             'user_input' => auth()->user()->employee->id,
-            'user_mantri' =>  $mantri->id,
+            'user_mantri' =>  $mantri,
           ]);
         });
       }
