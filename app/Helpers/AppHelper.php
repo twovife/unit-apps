@@ -25,7 +25,7 @@ class AppHelper
     return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
   }
 
-  public static function getMantri(Request $request)
+  public static function getMantri($officerGrouping)
   {
     // Periksa jika user memiliki izin tertentu
     if (auth()->user()->hasAnyPermission(['unit pimpinan', 'unit mantri', 'unit km'])) {
@@ -33,8 +33,8 @@ class AppHelper
     }
 
     // Dapatkan daftar mantri berdasarkan branch_id dan area dari request
-    $get_mantri = Employee::where('branch_id', $request->branch)
-      ->where('area', $request->kelompok)
+    $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
+      ->where('area', $officerGrouping->kelompok)
       ->orderBy('id', 'desc')
       ->get();
 
