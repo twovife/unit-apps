@@ -38,15 +38,14 @@ class TransactionLoanInstalment extends Model
 
       $sumNominal = TransactionLoanInstalment::where('transaction_loan_id', $transactionLoanInstalment->transaction_loan_id)->where('id', "!=", $transactionLoanInstalment->id)->sum('nominal') + $transactionLoanInstalment->nominal;
 
-      if ($transactionDailyRecap->loan()->pinjaman == $sumNominal) {
-        $transactionDailyRecap->loan()->update([
+      if ($transactionLoanInstalment->loan->pinjaman == $sumNominal) {
+        $transactionLoanInstalment->loan()->update([
           'out_date' => $transactionLoanInstalment->transaction_date,
           'out_status' => 'LUNAS',
         ]);
       }
-
-      if ($transactionDailyRecap->loan()->pinjaman < $sumNominal) {
-        $transactionDailyRecap->loan()->update([
+      if ($transactionLoanInstalment->loan->pinjaman < $sumNominal) {
+        $transactionLoanInstalment->loan()->update([
           'out_date' => $transactionLoanInstalment->transaction_date,
           'out_status' => 'LUNAS Xs',
         ]);
@@ -66,6 +65,29 @@ class TransactionLoanInstalment extends Model
         if ($transactionDailyRecap) {
           $transactionDailyRecap->decrement('storting', $transactionLoanInstalment->nominal);
           $transactionDailyRecap->save();
+        }
+
+        $sumNominal = TransactionLoanInstalment::where('transaction_loan_id', $transactionLoanInstalment->transaction_loan_id)->where('id', "!=", $transactionLoanInstalment->id)->sum('nominal');
+
+        if ($transactionLoanInstalment->loan->pinjaman == $sumNominal) {
+          $transactionLoanInstalment->loan()->update([
+            'out_date' => $transactionLoanInstalment->transaction_date,
+            'out_status' => 'LUNAS',
+          ]);
+        }
+
+        if ($transactionLoanInstalment->loan->pinjaman < $sumNominal) {
+          $transactionLoanInstalment->loan()->update([
+            'out_date' => $transactionLoanInstalment->transaction_date,
+            'out_status' => 'LUNAS Xs',
+          ]);
+        }
+
+        if ($transactionLoanInstalment->loan->pinjaman > $sumNominal) {
+          $transactionLoanInstalment->loan()->update([
+            'out_date' => null,
+            'out_status' => null,
+          ]);
         }
       }
     });

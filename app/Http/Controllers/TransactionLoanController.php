@@ -597,6 +597,7 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
+      dd($e);
       return redirect()->back()->with('error', 'data gagal diubah');
     }
     return redirect()->back()->with('message', 'data berhasil diubah');
