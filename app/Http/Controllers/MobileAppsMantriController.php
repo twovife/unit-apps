@@ -57,6 +57,12 @@ class MobileAppsMantriController extends Controller
     return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
   }
 
+  public function byDates(Request $request)
+  {
+    $data = $this->getLoanMacet($request);
+    return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
+  }
+
 
   public function buku_transaksi_kepala(Request $request)
   {

@@ -52,7 +52,7 @@ const Index = () => {
           </div>
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href={route('mobile_apps.macet')}>
+              <Link href={route('mobile_apps.byDates')}>
                 <UserX className="h-7 w-7" />
               </Link>
             </Button>
@@ -71,7 +71,14 @@ const Index = () => {
             </Button>
             <div>Buku Angsuran</div>
           </div>
-
+          <div className="text-center">
+            <Button size="icon2xl" variant="outline" asChild>
+              <Link href={route('mobile_apps.macet')}>
+                <UserX className="h-7 w-7" />
+              </Link>
+            </Button>
+            <div>Cari Per Bulan</div>
+          </div>
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
               <Link href={route('mobile_apps.rekap_permantri')}>

@@ -93,6 +93,7 @@ Route::middleware('auth')->group(function () {
       Route::get('/transaksi', "transaksi")->name('transaksi');
       Route::get('/angsuran', "angsuran")->name('angsuran');
       Route::get('/macet', "macet")->name('macet');
+      Route::get('/byDates', "byDates")->name('byDates');
       Route::get('/buku-angsuran', "buku_angsuran")->name('buku_angsuran');
 
       Route::get('/rencana-drop-kepala', "rencana_drop_kepala")->name('rencana_drop_kepala');
