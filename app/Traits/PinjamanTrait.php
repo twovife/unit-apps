@@ -437,7 +437,7 @@ trait PinjamanTrait
       'datas' => $groupByMonth,
       'select_branch' => auth()->user()->can('can show branch'),
       'select_kelompok' => auth()->user()->can('can show kelompok'),
-      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'today' => $dayClosedParams, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok],
+      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'today' => $dayClosedParams, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'searchMonth' => true],
     ];
   }
 
