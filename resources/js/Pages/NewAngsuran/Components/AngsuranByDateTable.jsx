@@ -48,6 +48,20 @@ const AngsuranByDateTable = ({ datas }) => {
     setTriggeredId(null);
   };
 
+  const [selectedId, setSelectedId] = useState([]);
+
+  const handleRowClick = (id) => {
+    setSelectedId((prevSelectedRows) => {
+      if (prevSelectedRows.includes(id)) {
+        // Jika ID sudah ada, hapus dari array (toggle)
+        return prevSelectedRows.filter((rowId) => rowId !== id);
+      } else {
+        // Jika ID belum ada, tambahkan ke array
+        return [...prevSelectedRows, id];
+      }
+    });
+  };
+
   return (
     <div className="relative overflow-auto h-[60vh] lg:h-[85vh]">
       <Table className="text-xs rounded-lg">
@@ -82,7 +96,14 @@ const AngsuranByDateTable = ({ datas }) => {
                   <TableCell colSpan={16}>{row.month}</TableCell>
                 </TableRow>
                 {row.data.map((subrow, i) => (
-                  <TableRow key={i}>
+                  <TableRow
+                    className={`${
+                      selectedId.includes(subrow.id)
+                        ? 'bg-green-200 hover:bg-green-50'
+                        : ''
+                    }}`}
+                    key={i}
+                  >
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
                         <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
@@ -96,7 +117,9 @@ const AngsuranByDateTable = ({ datas }) => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{subrow.nama}</TableCell>
+                    <TableCell onClick={() => handleRowClick(subrow.id)}>
+                      {subrow.nama}
+                    </TableCell>
                     <TableCell className="text-center">{subrow.nik}</TableCell>
                     <TableCell className="text-center">
                       {subrow.lunas ? (
