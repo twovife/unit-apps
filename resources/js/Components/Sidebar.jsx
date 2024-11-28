@@ -57,8 +57,14 @@ const Sidebar = ({ isOpen }) => {
                   active: route().current('pinjaman.index_pinjaman'),
                 },
                 {
+                  id: 3,
+                  title: 'Macet',
+                  link: route('pinjaman.index_pinjaman_macet'),
+                  active: route().current('pinjaman.index_pinjaman_macet'),
+                },
+                {
                   id: 2,
-                  title: 'Cari Angsuran / Macet',
+                  title: 'Cari Angsuran',
                   link: route('pinjaman.index_pinjaman_search'),
                   active: route().current('pinjaman.index_pinjaman_search'),
                 },
