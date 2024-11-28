@@ -270,6 +270,11 @@ class AppHelper
     if (auth()->user()->hasPermissionTo('pusat apps')) {
       return null;
     }
+
+    if (auth()->user()->hasPermissionTo('maintenance worker')) {
+      return null;
+    }
+
     if (auth()->user()->hasPermissionTo('unit apps')) {
       $closedUnitTransaction = Carbon::parse($date)->copy()->subMonth(1)->startOfMonth()->format('Y-m-d');
       return $closedUnitTransaction;
