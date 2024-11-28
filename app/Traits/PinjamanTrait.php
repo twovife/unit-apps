@@ -11,6 +11,7 @@ use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionSirculation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 trait PinjamanTrait
 {
@@ -431,6 +432,86 @@ trait PinjamanTrait
         })->sortBy('nama')->sortBy('tanggal_drop')->values(),
       ];
     })->values();
+
+    return  [
+      'datas' => $groupByMonth,
+      'select_branch' => auth()->user()->can('can show branch'),
+      'select_kelompok' => auth()->user()->can('can show kelompok'),
+      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'today' => $dayClosedParams, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok],
+    ];
+  }
+
+  public static function getLoanMacet(Request $request)
+  {
+    $transaction_date = Carbon::now()->subMonthsNoOverflow(5)->startOfMonth()->format('Y-m-d');
+
+    $branches = AppHelper::branch_permission();
+    $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->employee->branch_id;
+    $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
+    $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
+    $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
+    // dd($hari);
+
+
+    $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
+    $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
+    $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
+    $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
+    $userGrouping = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+
+    $loans = TransactionLoan::withSum('loan_instalment as total_nominal', 'nominal')
+      ->where('status', 'success')
+      ->having('pinjaman', '=', DB::raw('total_nominal'))
+      ->get();
+
+    dd($loans);
+
+    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date) {
+      return [
+        'month' => Carbon::parse($key)->format('FY'),
+        'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
+        'data' => $item->map(function ($item) use ($transaction_date) {
+
+          return [
+            'tanggal_drop' => $item->drop_date,
+            'nama' => $item->customer->nama,
+
+            'alamat' => $item->customer->alamat,
+            'nomor_anggota' => $item->manage_customer->id,
+
+            'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
+            'lunas' => $item->loan_instalment->sum('nominal') == $item->pinjaman,
+
+            'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
+            'drop' => $item->nominal_drop,
+
+            'pinjaman' => $item->pinjaman,
+            'hari' => $item->hari,
+
+            'note' => $item->note,
+            'nik' => $item->customer->nik,
+
+            'kelompok' => $item->loan_officer_grouping->kelompok,
+            'jumlah_angsuran' => $item->loan_instalment->count(),
+
+            'id' => $item->id,
+            'instalment' => $item->loan_instalment->groupBy(function ($instalment) {
+              return Carbon::parse($instalment->transaction_date)->format('Y-m-d');
+            })->map(function ($instalments) {
+              return $instalments->sum('nominal');
+            }),
+            'x_angs' => $item->loan_instalment->count(),
+            'angsuran' => $item->loan_instalment->sum('nominal'),
+
+            'saldo' => $item->pinjaman - $item->loan_instalment->sum('nominal'),
+            'notes' => $item->notes
+
+          ];
+        })->sortBy('nama')->sortBy('tanggal_drop')->values(),
+      ];
+    })->values();
+
+    dd($groupByMonth);
 
     return  [
       'datas' => $groupByMonth,
