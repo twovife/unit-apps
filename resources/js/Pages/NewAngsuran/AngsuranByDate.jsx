@@ -7,14 +7,21 @@ import AngsuranByDateTable from './Components/AngsuranByDateTable';
 import { Button } from '@/shadcn/ui/button';
 import { FilterIcon } from 'lucide-react';
 
-const AngsuranByDate = ({ datas, urlLink, localState }) => {
+const AngsuranByDate = ({
+  headerName,
+  datas,
+  urlLink,
+  localState,
+  searchMonth,
+  searchHari,
+}) => {
   const { auth } = usePage().props;
   return (
     <>
       <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center">
         <div className="flex justify-between flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">
-            Cari Angsuran
+            {headerName}
           </h1>
           <div className="flex justify-end gap-3 lg:hidden">
             <Popover>
@@ -28,8 +35,8 @@ const AngsuranByDate = ({ datas, urlLink, localState }) => {
                 <SearchComponent
                   urlLink={urlLink}
                   localState={localState}
-                  searchMonth={true}
-                  searchHari={true}
+                  searchMonth={searchMonth}
+                  searchHari={searchHari}
                   searchKelompok={auth.permissions.includes(
                     'can show kelompok'
                   )}
@@ -45,8 +52,8 @@ const AngsuranByDate = ({ datas, urlLink, localState }) => {
           <SearchComponent
             urlLink={urlLink}
             localState={localState}
-            searchMonth={true}
-            searchHari={true}
+            searchMonth={searchMonth}
+            searchHari={searchHari}
             searchKelompok={auth.permissions.includes('can show kelompok')}
             searchGroupingBranch={auth.permissions.includes('can show branch')}
           ></SearchComponent>

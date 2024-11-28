@@ -20,13 +20,15 @@ class AdminController extends Controller
   {
     $role = Role::with('permissions', 'users')->get();
     $user = User::with('rolelist')->get();
-
+    $maintenen_workers = User::permission('maintenance worker')->with('branch', 'employee')->get();
+    // dd($maintenen_workers);
 
     $permission = Permission::all();
     return Inertia::render('AdminPanel/Index', [
       'role' => $role,
       'permission' => $permission,
       'user' => $user,
+      'maintenen_workers' => $maintenen_workers
     ]);
   }
 
@@ -109,5 +111,26 @@ class AdminController extends Controller
       return redirect()->back()->withErrors('Sirkulasi Awal Error');
     }
     return redirect()->back()->with('message', 'Sirkulasi Awal Successfully');
+  }
+
+  public function giveMaintenerWorker(Request $request)
+  {
+    $userid = (int) $request->username;
+    if ($request->type == 1) {
+      try {
+        $user = User::find($userid);
+        $user->givePermissionTo('maintenance worker');
+      } catch (Exception $e) {
+        return redirect()->back()->withErrors('User Assigned Error');
+      }
+    } else {
+      try {
+        $user = User::find($userid);
+        $user->revokePermissionTo('maintenance worker');
+      } catch (Exception $e) {
+        return redirect()->back()->withErrors('User Assigned Error');
+      }
+    }
+    return redirect()->back()->with('message', 'User Assigned Successfully');
   }
 }

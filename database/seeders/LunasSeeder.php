@@ -6,6 +6,7 @@ use App\Models\TransactionLoan;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
 
 class LunasSeeder extends Seeder
 {
@@ -38,6 +39,8 @@ class LunasSeeder extends Seeder
         }
         echo $item->id . " Success" . PHP_EOL;
       });
+
+      Permission::create(['name' => 'maintenance worker']);
       DB::commit();
     } catch (\Throwable $th) {
       DB::rollBack();

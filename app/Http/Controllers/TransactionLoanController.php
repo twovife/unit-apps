@@ -455,13 +455,8 @@ class TransactionLoanController extends Controller
 
   public function index_pinjaman_macet(Request $request)
   {
-    // $data = $this->getLoanMacet($request);
+    $data = $this->getLoanMacet($request, true);
     // dd($data);
-    $loan = TransactionLoan::where('status', 'success')->get();
-
-    $loan->each(function ($item) {
-      dd($item->loan_instalment()->max('transaction_date'));
-    });
     return Inertia::render("WebView/Angsuran/SearchByDate", $data);
   }
 

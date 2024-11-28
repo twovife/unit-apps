@@ -174,6 +174,7 @@ const AngsuranByDateTable = ({ datas }) => {
                       value={calculateTotals(row.data, 'saldo')}
                     />
                   </TableCell>
+                  <TableCell className="py-3"></TableCell>
                 </TableRow>
               </React.Fragment>
             ))

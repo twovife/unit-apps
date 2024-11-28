@@ -36,6 +36,8 @@ class TransactionLoan extends Model
     "notes",
     "user_input",
     "drop_langsung",
+    "out_date",
+    "out_status"
   ];
 
 

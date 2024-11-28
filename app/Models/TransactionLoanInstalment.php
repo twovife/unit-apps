@@ -35,6 +35,22 @@ class TransactionLoanInstalment extends Model
         $transactionDailyRecap->increment('storting', $transactionLoanInstalment->nominal);
         $transactionDailyRecap->save();
       }
+
+      $sumNominal = TransactionLoanInstalment::where('transaction_loan_id', $transactionLoanInstalment->transaction_loan_id)->where('id', "!=", $transactionLoanInstalment->id)->sum('nominal') + $transactionLoanInstalment->nominal;
+
+      if ($transactionDailyRecap->loan()->pinjaman == $sumNominal) {
+        $transactionDailyRecap->loan()->update([
+          'out_date' => $transactionLoanInstalment->transaction_date,
+          'out_status' => 'LUNAS',
+        ]);
+      }
+
+      if ($transactionDailyRecap->loan()->pinjaman < $sumNominal) {
+        $transactionDailyRecap->loan()->update([
+          'out_date' => $transactionLoanInstalment->transaction_date,
+          'out_status' => 'LUNAS Xs',
+        ]);
+      }
     });
 
 
