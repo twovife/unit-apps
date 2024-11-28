@@ -20,8 +20,17 @@ import { useForm } from '@inertiajs/react';
 import AssignRoles from './Components/AssignRoles';
 import { BarcodeIcon } from 'lucide-react';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
+import MaintenerWorker from './Components/MaintenerWorker';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shadcn/ui/table';
 
-const Index = ({ role, permission, user, ...props }) => {
+const Index = ({ role, permission, user, maintenen_workers, ...props }) => {
   const { data, setData, post, processing, errors, reset } = useForm({
     role: '',
     permission: [],
@@ -171,6 +180,44 @@ const Index = ({ role, permission, user, ...props }) => {
             </div>
           </CardContent>
         </Card>
+      </div>
+      <div className="flex w-full gap-3 mt-3">
+        <div className="flex-1">
+          <MaintenerWorker
+            userOptions={userOptions}
+            roleOptions={roleOptions}
+          />
+        </div>
+        <div className="flex-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Role</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>Unit</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {maintenen_workers &&
+                    maintenen_workers.map((worker, key) => (
+                      <TableRow key={key}>
+                        <TableCell>{key + 1}</TableCell>
+                        <TableCell>{worker.username}</TableCell>
+                        <TableCell>{worker.employee.nama_karyawan}</TableCell>
+                        <TableCell>{worker.branch.unit}</TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Authenticated>
   );
