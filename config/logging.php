@@ -64,28 +64,28 @@ return [
     ],
 
 
-    // 'scheduler_reports' => [
-    //   'driver' => 'daily',
-    //   'path' => storage_path('logs/scheduler_reports.log'),
-    //   'level' => env('LOG_LEVEL', 'info'),
-    //   'days' => 7,
-    //   'tap' => [function ($logger) {
-    //     foreach ($logger->getHandlers() as $handler) {
-    //       $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
-    //     }
-    //   }],
-    // ],
+    'scheduler_reports' => [
+      'driver' => 'daily',
+      'path' => storage_path('logs/scheduler_reports.log'),
+      'level' => env('LOG_LEVEL', 'info'),
+      'days' => 7,
+      'tap' => [function ($logger) {
+        foreach ($logger->getHandlers() as $handler) {
+          $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
+        }
+      }],
+    ],
 
-    // 'job_reports' => [
-    //   'driver' => 'single',
-    //   'path' => storage_path('logs/job_reports.log'),
-    //   'level' => env('LOG_LEVEL', 'info'),
-    //   'tap' => [function ($logger) {
-    //     foreach ($logger->getHandlers() as $handler) {
-    //       $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
-    //     }
-    //   }],
-    // ],
+    'job_reports' => [
+      'driver' => 'single',
+      'path' => storage_path('logs/job_reports.log'),
+      'level' => env('LOG_LEVEL', 'info'),
+      'tap' => [function ($logger) {
+        foreach ($logger->getHandlers() as $handler) {
+          $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
+        }
+      }],
+    ],
 
     'daily' => [
       'driver' => 'daily',
