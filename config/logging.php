@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -69,22 +70,14 @@ return [
       'path' => storage_path('logs/scheduler_reports.log'),
       'level' => env('LOG_LEVEL', 'info'),
       'days' => 7,
-      'tap' => [function ($logger) {
-        foreach ($logger->getHandlers() as $handler) {
-          $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
-        }
-      }],
+      'formatter' => JsonFormatter::class,
     ],
 
     'job_reports' => [
       'driver' => 'single',
       'path' => storage_path('logs/job_reports.log'),
       'level' => env('LOG_LEVEL', 'info'),
-      'tap' => [function ($logger) {
-        foreach ($logger->getHandlers() as $handler) {
-          $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
-        }
-      }],
+      'formatter' => JsonFormatter::class,
     ],
 
     'daily' => [
