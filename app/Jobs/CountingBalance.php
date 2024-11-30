@@ -61,6 +61,12 @@ class CountingBalance implements ShouldQueue
           ]);
         }
       }
+
+      Log::channel('job_reports')->info('Job CountingBalance', [
+        'report_id' => $this->report->id,
+        'batch_type' => $this->report instanceof VIsBalanceLoanWithDailyReport ? 'loan' : 'drop',  // Misalnya Anda ingin menambahkan tipe batch
+        'timestamp' => now()->toDateTimeString(),
+      ]);
     } catch (Exception $e) {
       Log::error("Error updating daily recap: " . $e->getMessage());
       // Bisa juga melakukan retry atau melanjutkan eksekusi

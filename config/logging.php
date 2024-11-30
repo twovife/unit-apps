@@ -63,12 +63,37 @@ return [
       'level' => env('LOG_LEVEL', 'debug'),
     ],
 
+
+    'scheduler_reports' => [
+      'driver' => 'daily',
+      'path' => storage_path('logs/scheduler_reports.log'),
+      'level' => env('LOG_LEVEL', 'info'),
+      'days' => 7,
+      'tap' => [function ($logger) {
+        foreach ($logger->getHandlers() as $handler) {
+          $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
+        }
+      }],
+    ],
+
+    'job_reports' => [
+      'driver' => 'single',
+      'path' => storage_path('logs/job_reports.log'),
+      'level' => env('LOG_LEVEL', 'info'),
+      'tap' => [function ($logger) {
+        foreach ($logger->getHandlers() as $handler) {
+          $handler->setFormatter(new \Monolog\Formatter\JsonFormatter());
+        }
+      }],
+    ],
+
     'daily' => [
       'driver' => 'daily',
       'path' => storage_path('logs/laravel.log'),
       'level' => env('LOG_LEVEL', 'debug'),
       'days' => 14,
     ],
+
 
     'slack' => [
       'driver' => 'slack',
