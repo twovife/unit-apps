@@ -31,7 +31,12 @@ class CountingDailyBalance extends Command
   {
 
     $dropReports = VIsBalanceDropWithDailyReport::chunk(100, function ($reports) {
-      Log::channel('scheduler_reports')->log('Job Is Active');
+      Log::channel('scheduler_reports')->info('Job Is Active', [
+        'batch_type' => 'drop',  // Misalnya Anda ingin menambahkan tipe batch
+        'countJob' => $reports->count(),
+        'timestamp' => now()->toDateTimeString(),
+      ]);
+
       foreach ($reports as $report) {
         // Dispatch job untuk batch ini
         CountingBalance::dispatch($report);
@@ -44,6 +49,7 @@ class CountingDailyBalance extends Command
         'countJob' => $reports->count(),
         'timestamp' => now()->toDateTimeString(),
       ]);
+
       foreach ($reports as $report) {
         // Dispatch job untuk batch ini
         CountingBalance::dispatch($report);
