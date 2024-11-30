@@ -3,11 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Jobs\CountingBalance;
-use App\Jobs\CountingDrop;
-use App\Jobs\CountingLoan;
 use App\Models\VIsBalanceDropWithDailyReport;
 use App\Models\VIsBalanceLoanWithDailyReport;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class CountingDailyBalance extends Command
 {
@@ -31,8 +30,8 @@ class CountingDailyBalance extends Command
   public function handle()
   {
 
-
     $dropReports = VIsBalanceDropWithDailyReport::chunk(100, function ($reports) {
+      Log::channel('scheduler_reports')->log('Job Is Active');
       foreach ($reports as $report) {
         // Dispatch job untuk batch ini
         CountingBalance::dispatch($report);
@@ -40,6 +39,11 @@ class CountingDailyBalance extends Command
     });
 
     $loanReports = VIsBalanceLoanWithDailyReport::chunk(100, function ($reports) {
+      Log::channel('scheduler_reports')->info('Job Is Active', [
+        'batch_type' => 'loan',  // Misalnya Anda ingin menambahkan tipe batch
+        'countJob' => $reports->count(),
+        'timestamp' => now()->toDateTimeString(),
+      ]);
       foreach ($reports as $report) {
         // Dispatch job untuk batch ini
         CountingBalance::dispatch($report);
