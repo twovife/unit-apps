@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AppHelper;
 use App\Models\TransactionSirculation;
 use App\Models\User;
+use App\Models\VIsBalanceLoanWithDailyReport;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -132,5 +133,11 @@ class AdminController extends Controller
       }
     }
     return redirect()->back()->with('message', 'User Assigned Successfully');
+  }
+
+  public function loan_balancing(Request $request)
+  {
+    $loanBalance = VIsBalanceLoanWithDailyReport::all();
+    dd($loanBalance);
   }
 }
