@@ -25,7 +25,11 @@ const Sidebar = ({ isOpen }) => {
         />
         {unitAkses && (
           <>
-            <MenuButton title="Data Karyawan" />
+            <MenuButton
+              active={route().current('administrasi.manpower.index')}
+              href={route('administrasi.manpower.index')}
+              title="Data Karyawan"
+            />
 
             <DropdownButton
               title="Buku Transaksi"
