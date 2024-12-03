@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\MobileAppsMantriController;
@@ -71,6 +72,11 @@ Route::middleware('auth')->group(function () {
     });
   });
 
+  Route::prefix('administrasi')->name('administrasi.')->group(function () {
+    Route::controller(EmployeeController::class)->prefix('manpower')->name('manpower.')->group(function () {
+      Route::get('/', "index")->name('index');
+    });
+  });
   Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {
