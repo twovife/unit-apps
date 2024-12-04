@@ -41,7 +41,7 @@ const AssignRoles = ({ userOptions, roleOptions }) => {
       <CardContent>
         <form onSubmit={submitForm}>
           <div className="flex flex-col space-y-1.5 mb-3">
-            <Label htmlFor="username">Role Name</Label>
+            <Label htmlFor="username">User Name</Label>
             <SelectList
               options={userOptions}
               required

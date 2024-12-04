@@ -75,6 +75,7 @@ Route::middleware('auth')->group(function () {
   Route::prefix('administrasi')->name('administrasi.')->group(function () {
     Route::controller(EmployeeController::class)->prefix('manpower')->name('manpower.')->group(function () {
       Route::get('/', "index")->name('index');
+      Route::post('/', "store")->name('store');
     });
   });
   Route::prefix('kasir')->name('kasir.')->group(function () {
