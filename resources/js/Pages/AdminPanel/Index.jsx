@@ -61,7 +61,6 @@ const Index = ({ role, permission, user, maintenen_workers, ...props }) => {
       id: role.id,
     };
   });
-  console.log(role);
 
   const userOptions = user.map((emp) => {
     return {

@@ -19,9 +19,7 @@ trait PinjamanTrait
   {
     $branches = AppHelper::branch_permission();
     $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->branch->id;
-
     $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
-
     $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
 
     $transaction_date = $request->month ?? Carbon::now()->format('Y-m');
