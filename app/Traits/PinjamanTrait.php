@@ -142,32 +142,45 @@ trait PinjamanTrait
 
   public function getLoan(Request $request, $dailyView = false)
   {
+
     $date = $request->date ?? null;
     if ($date) {
-      $request->merge(['month' => Carbon::parse($date)->format('Y-m'), 'hari' => AppHelper::dateName($date)]);
+      $request->merge([
+        'month' => Carbon::parse($date)->format('Y-m'),
+        'hari' => AppHelper::dateName($date)
+      ]);
     }
 
-    if ($dailyView) {
-      $transaction_date = Carbon::now()->endOfMonth();
-    } else {
-      $transaction_date = Carbon::parse($request->month)->endOfMonth() ?? Carbon::now()->endOfMonth();
-    }
+
+
+    $now = Carbon::now();
+    $transaction_date = $dailyView
+      ? $now->copy()->endOfMonth()
+      : Carbon::parse($request->month ?? $now)->endOfMonth();
 
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
+
+    $hari = $request->hari ?? AppHelper::dateName($now->format('Y-m-d'));
+
+    $tanggalSeleksi  = AppHelper::getStortingShowDate($hari);
+
 
 
     $branches = AppHelper::branch_permission();
     $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->employee->branch_id;
     $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
     $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
-    $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
 
 
-
-    $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+
+
+    $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
+    $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
+    $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
+    $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
 
     $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
       ->where('day', $hari)
@@ -183,9 +196,7 @@ trait PinjamanTrait
     )
       ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
       ->where('hari', $hari)
-      ->whereHas('loan_officer_grouping', function ($branch) use ($branch_id, $kelompok) {
-        $branch->where('branch_id', $branch_id)->where('kelompok', $kelompok);
-      })
+      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
       ->where('status', 'success')
       ->orderBy('drop_date')
       ->get()
@@ -194,11 +205,6 @@ trait PinjamanTrait
       });
 
 
-
-    $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
-    $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
-    $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
-    $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
 
 
     $loanMl = TransactionLoan::with(
@@ -210,9 +216,7 @@ trait PinjamanTrait
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
       ->where('hari', $hari)
-      ->whereHas('branch', function ($branch) use ($branch_id, $kelompok) {
-        $branch->where('branch_id', $branch_id)->where('kelompok', $kelompok);
-      })
+      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
       ->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
         $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
           ->where('nominal', '>', 0);
