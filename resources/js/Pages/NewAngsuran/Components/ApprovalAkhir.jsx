@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shadcn/ui/dialog';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 import { useForm, usePage } from '@inertiajs/react';
@@ -12,7 +12,6 @@ import { Label } from '@/shadcn/ui/label';
 import CurrencyInput from 'react-currency-input-field';
 import { Button } from '@/shadcn/ui/button';
 import Loading from '@/Components/Loading';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import Checkbox from '@/Components/Checkbox';
 import InputLabel from '@/Components/InputLabel';
 
@@ -22,7 +21,6 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
     server_filter: { month, hari, groupId },
   } = usePage().props;
 
-  const [loading, setLoading] = useState(false);
   const { data, setData, post, reset, processing, errors, transform } = useForm(
     {
       ml_amount: '',
@@ -111,7 +109,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
-      <Loading show={loading || processing} />
+      <Loading show={processing} />
       <DialogContent
         className={`w-[90vw] h-[90vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin`}
       >

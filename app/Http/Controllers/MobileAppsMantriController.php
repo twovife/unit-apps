@@ -2,21 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\AppHelper;
-use App\Models\Branch;
-use App\Models\Employee;
-use App\Models\TransactionCustomer;
-use App\Models\TransactionDailyRecap;
-use App\Models\TransactionLoan;
-use App\Models\TransactionLoanInstalment;
-use App\Models\TransactionLoanOfficerGrouping;
-use App\Models\TransactionSirculation;
+
 use App\Traits\PinjamanTrait;
 use App\Traits\RekapTrait;
-use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class MobileAppsMantriController extends Controller
@@ -42,6 +31,7 @@ class MobileAppsMantriController extends Controller
   public function angsuran(Request $request)
   {
     $data = $this->getLoan($request, true);
+
     return Inertia::render("MobileApps/Angsuran/Index", $data);
   }
 
