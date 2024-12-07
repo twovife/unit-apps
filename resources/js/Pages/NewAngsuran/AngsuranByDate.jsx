@@ -15,7 +15,7 @@ const AngsuranByDate = ({
   searchMonth,
   searchHari,
 }) => {
-  const { auth } = usePage().props;
+  const { auth, server_filter } = usePage().props;
   return (
     <>
       <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center">
@@ -37,12 +37,11 @@ const AngsuranByDate = ({
                   localState={localState}
                   searchMonth={searchMonth}
                   searchHari={searchHari}
-                  searchKelompok={auth.permissions.includes(
-                    'can show kelompok'
-                  )}
-                  searchGroupingBranch={auth.permissions.includes(
-                    'can show branch'
-                  )}
+                  searchKelompok={server_filter.userAuthorized.canShowKelompok}
+                  searchBranch={server_filter.userAuthorized.canShowBranch}
+                  searchGroupingBranch={
+                    server_filter.userAuthorized.canShowGroupingBranch
+                  }
                 />
               </PopoverContent>
             </Popover>
@@ -54,8 +53,11 @@ const AngsuranByDate = ({
             localState={localState}
             searchMonth={searchMonth}
             searchHari={searchHari}
-            searchKelompok={auth.permissions.includes('can show kelompok')}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
+            searchKelompok={server_filter.userAuthorized.canShowKelompok}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           ></SearchComponent>
         </div>
       </div>

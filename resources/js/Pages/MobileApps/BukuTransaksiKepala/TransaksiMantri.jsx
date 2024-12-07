@@ -1,6 +1,6 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import { Button } from '@/shadcn/ui/button';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { FilterIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
@@ -11,6 +11,7 @@ import Rencana from '@/Pages/BukuTransaksi/Rencana';
 
 const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
   const [flatData, setFlatData] = useState([]);
+  const { server_filter } = usePage().props;
 
   useEffect(() => {
     setFlatData(datas.flat());
@@ -30,8 +31,11 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
             localState={'mobile_apps.buku_transaksi_kepala'}
             searchMonth={true}
             searchHari={true}
-            searchKelompok={auth.permissions.includes('can show kelompok')}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
+            searchKelompok={server_filter.userAuthorized.canShowKelompok}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           />
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
@@ -48,10 +52,11 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
                 localState={'mobile_apps.buku_transaksi_kepala'}
                 searchMonth={true}
                 searchHari={true}
-                searchKelompok={auth.permissions.includes('can show kelompok')}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
+                searchKelompok={server_filter.userAuthorized.canShowKelompok}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={
+                  server_filter.userAuthorized.canShowGroupingBranch
+                }
               />
             </PopoverContent>
           </Popover>

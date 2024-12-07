@@ -20,9 +20,13 @@ class EmployeeController extends Controller
   public function index(Request $request)
   {
 
-    $branches = AppHelper::branch_permission();
-    $branch_id = auth()->user()->can('superuser') ? ($request->branch_id ?? 1) : auth()->user()->branch->id;
-    $wilayah =  auth()->user()->can('superuser') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
+    $authorized = auth()->user();
+    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
+    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
+    // dd($userAuthorized);
+
 
     $roles = Role::with('permissions', 'users')->get();
     $employee = Employee::with('username.rolelist', 'employment')->where('branch_id', $branch_id)
@@ -60,7 +64,12 @@ class EmployeeController extends Controller
     return Inertia::render('WebView/ManPower/Index', [
       'datas' => $data,
       'roles' => $roles,
-      'server_filter' => ['wilayah' => $wilayah, 'branch' => $branches,  'branch_id' => $branch_id]
+      'server_filter' => [
+        'wilayah' => $wilayah,
+        'branch' => $userAuthorized['branches'],
+        'userAuthorized' => $userAuthorized,
+        'branch_id' => $branch_id
+      ]
     ]);
   }
 

@@ -2,7 +2,7 @@ import SearchComponent from '@/Components/shadcn/SearchComponent';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import TableRekap from './Components/TableRekap';
@@ -13,6 +13,7 @@ import Action from './Components/Action';
 
 const Permantri = ({ rekapData, auth, urlLink, localState, title }) => {
   const [datas, setDatas] = useState([]);
+  const { server_filter } = usePage().props;
   useEffect(() => {
     setDatas(rekapData);
   }, [rekapData]);
@@ -53,8 +54,11 @@ const Permantri = ({ rekapData, auth, urlLink, localState, title }) => {
             urlLink={urlLink}
             localState={localState}
             searchMonth={true}
-            searchKelompok={auth.permissions.includes('can show kelompok')}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
+            searchKelompok={server_filter.userAuthorized.canShowKelompok}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           ></SearchComponent>
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
@@ -70,10 +74,11 @@ const Permantri = ({ rekapData, auth, urlLink, localState, title }) => {
                 urlLink={urlLink}
                 localState={localState}
                 searchMonth={true}
-                searchKelompok={auth.permissions.includes('can show kelompok')}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
+                searchKelompok={server_filter.userAuthorized.canShowKelompok}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={
+                  server_filter.userAuthorized.canShowGroupingBranch
+                }
               />
             </PopoverContent>
           </Popover>
