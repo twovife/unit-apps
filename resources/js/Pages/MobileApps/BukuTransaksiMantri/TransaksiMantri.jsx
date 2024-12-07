@@ -1,6 +1,6 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import { Button } from '@/shadcn/ui/button';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { FilterIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
