@@ -9,7 +9,7 @@ import { FilterIcon, PlusCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 
 const Content = ({ urlLink, localState, triggeredData }) => {
-  const { auth } = usePage().props;
+  const { auth, server_filter } = usePage().props;
   const [datas, setDatas] = useState([]);
 
   useEffect(() => {
@@ -29,7 +29,10 @@ const Content = ({ urlLink, localState, triggeredData }) => {
             urlLink={urlLink}
             localState={localState}
             searchMonth={true}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           ></SearchComponent>
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
@@ -45,9 +48,10 @@ const Content = ({ urlLink, localState, triggeredData }) => {
                 urlLink={urlLink}
                 localState={localState}
                 searchMonth={true}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={
+                  server_filter.userAuthorized.canShowGroupingBranch
+                }
               />
             </PopoverContent>
           </Popover>

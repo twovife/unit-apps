@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\Branch;
 use App\Models\Employee;
+use App\Models\EmploymentPermission;
 use App\Models\TransactionCustomer;
 use Carbon\Carbon;
 use Faker\Core\Number;
@@ -255,15 +256,56 @@ class AppHelper
     return $previledge;
   }
 
-  public static function branch_permission()
+  public static function branch_permission($authorized, $branch_id)
   {
-    if (auth()->user()->hasPermissionTo('can show branch')) {
-      return Branch::all();
+    $result = collect([
+      'canShowGroupingBranch' => false,
+      'canShowBranch' => false,
+      'canShowKelompok' => false,
+      'canCreate' => false,
+      'branches' => collect()
+    ]);
+
+    if ($authorized->hasPermissionTo('unit_pengawas')) {
+      $result['canShowGroupingBranch'] = false;
+      $result['canShowBranch'] = true;
+      $result['canShowKelompok'] = true;
+      $result['canCreate'] = auth()->user()->branch->id == $branch_id ? true : false;
+
+      $employmentPermission = EmploymentPermission::where('employee_id', $authorized->employee->id)->pluck('branch_id');
+      $result['branches'] = Branch::whereIn('id', $employmentPermission)->get();
+      return $result;
+    }
+
+    if ($authorized->hasPermissionTo('can show branch')) {
+      $result['canShowGroupingBranch'] = true;
+      $result['canShowBranch'] = false;
+      $result['canShowKelompok'] = true;
+      $result['canCreate'] = false;
+      $result['branches'] = Branch::all();
+      return $result;
     } else {
-      return Branch::where('id', auth()->user()->employee->branch_id)->get();
+      $result['canShowGroupingBranch'] = false;
+      $result['canShowBranch'] = false;
+      $result['canShowKelompok'] = $authorized->can('can show kelompok') ?? false;
+      $result['canCreate'] = true;
+      $result['branches'] = Branch::where('id', $authorized->employee->branch_id)->get();
+      return $result;
     }
   }
 
+  public static function user_authorized($authorized)
+  {
+    if ($authorized->hasPermissionTo('unit_pengawas')) {
+      $employmentPermission = EmploymentPermission::where('employee_id', $authorized->employee->id)->pluck('id');
+      return Branch::whereIn('id', $employmentPermission)->get();
+    }
+    if ($authorized->hasPermissionTo('can show branch')) {
+      return Branch::all();
+    } else {
+      return Branch::where('id', $authorized->employee->branch_id)->get();
+    }
+  }
   public static function get_closed_date($date)
   {
 

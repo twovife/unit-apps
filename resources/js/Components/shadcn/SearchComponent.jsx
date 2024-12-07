@@ -23,6 +23,7 @@ const SearchComponent = ({
 
   searchWilayah = false,
   searchGroupingBranch = false,
+  searchBranch = false,
   searchKelompok = false,
 
   children,
@@ -33,6 +34,7 @@ const SearchComponent = ({
   const {
     selectedSearchParam,
     optWilayah,
+    optBranch,
     selectedWilayah,
     setSelectedWilayah,
     filteredBranch,
@@ -220,6 +222,19 @@ const SearchComponent = ({
               value={data.wilayah}
               options={optWilayah}
               name="wilayah"
+              onChange={onSearchChange}
+            />
+          </div>
+        )}
+
+        {searchBranch && (
+          <div className="w-full">
+            <Label>Unit</Label>
+            <SelectComponent
+              className="w-full"
+              value={data.branch_id}
+              options={optBranch}
+              name="branch_id"
               onChange={onSearchChange}
             />
           </div>

@@ -9,6 +9,7 @@ import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
 
 const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
   const [flatData, setFlatData] = useState([]);
+  const { server_filter } = usePage().props;
 
   useEffect(() => {
     setFlatData(datas.flat());
@@ -29,8 +30,11 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
             localState={'mobile_apps.buku_transaksi_kepala'}
             searchMonth={true}
             searchHari={true}
-            searchKelompok={auth.permissions.includes('can show kelompok')}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
+            searchKelompok={server_filter.userAuthorized.canShowKelompok}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           />
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
@@ -47,10 +51,11 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
                 localState={'mobile_apps.buku_transaksi_kepala'}
                 searchMonth={true}
                 searchHari={true}
-                searchKelompok={auth.permissions.includes('can show kelompok')}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
+                searchKelompok={server_filter.userAuthorized.canShowKelompok}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={
+                  server_filter.userAuthorized.canShowGroupingBranch
+                }
               />
             </PopoverContent>
           </Popover>

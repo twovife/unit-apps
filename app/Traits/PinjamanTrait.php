@@ -17,10 +17,13 @@ trait PinjamanTrait
 {
   public function getTransactionLoan(Request $request, bool $withPlan = false, bool $sortDesc = false)
   {
-    $branches = AppHelper::branch_permission();
-    $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->branch->id;
-    $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
-    $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
+
+    $authorized = auth()->user();
+    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
+    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
+
 
     $transaction_date = $request->month ?? Carbon::now()->format('Y-m');
     $startOfMonth = Carbon::parse($transaction_date)->copy()->startOfMonth();
@@ -136,7 +139,16 @@ trait PinjamanTrait
     return [
       'datas' => $sortDesc ? $pengajuan->sortKeysDesc()->values() : $pengajuan->values(),
       'buku_rencana' => $buku_rencana_drop,
-      'server_filter' => ['month' => $transaction_date, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'hari' => $hari, 'closed_transaction' => $ClosedTransaction,]
+      'server_filter' => [
+        'month' => $transaction_date,
+        'wilayah' => $wilayah,
+        'branch' => $userAuthorized['branches'],
+        'userAuthorized' => $userAuthorized,
+        'branch_id' => $branch_id,
+        'kelompok' => $kelompok,
+        'hari' => $hari,
+        'closed_transaction' => $ClosedTransaction
+      ]
     ];
   }
 
@@ -165,12 +177,11 @@ trait PinjamanTrait
 
     $tanggalSeleksi  = AppHelper::getStortingShowDate($hari);
 
-
-
-    $branches = AppHelper::branch_permission();
-    $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->employee->branch_id;
-    $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
-    $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
+    $authorized = auth()->user();
+    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
+    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
 
 
@@ -346,7 +357,18 @@ trait PinjamanTrait
       'datas' => $mergedData,
       'dateOfWeek' => $dateOfWeek,
       'sirkulasi' => $transactionSirkulan,
-      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'groupId' => $groupingId->id, 'today' => $dayClosedParams],
+      'server_filter' => [
+        'closed_transaction' => $ClosedTransaction,
+        'month' => $transaction_date->format('Y-m'),
+        'hari' => $hari,
+        'wilayah' => $wilayah,
+        'branch' => $userAuthorized['branches'],
+        'userAuthorized' => $userAuthorized,
+        'branch_id' => $branch_id,
+        'kelompok' => $kelompok,
+        'groupId' => $groupingId->id,
+        'today' => $dayClosedParams
+      ],
     ];
   }
 
@@ -356,10 +378,13 @@ trait PinjamanTrait
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth();
 
-    $branches = AppHelper::branch_permission();
-    $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->employee->branch_id;
-    $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
-    $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
+    $authorized = auth()->user();
+    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
+    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
+
+
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
     // dd($hari);
 
@@ -439,7 +464,18 @@ trait PinjamanTrait
       'datas' => $groupByMonth,
       'select_branch' => auth()->user()->can('can show branch'),
       'select_kelompok' => auth()->user()->can('can show kelompok'),
-      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'today' => $dayClosedParams, 'month' => $transaction_date->format('Y-m'), 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'searchMonth' => true],
+      'server_filter' => [
+        'closed_transaction' => $ClosedTransaction,
+        'today' => $dayClosedParams,
+        'month' => $transaction_date->format('Y-m'),
+        'hari' => $hari,
+        'wilayah' => $wilayah,
+        'branch' => $userAuthorized['branches'],
+        'userAuthorized' => $userAuthorized,
+        'branch_id' => $branch_id,
+        'kelompok' => $kelompok,
+        'searchMonth' => true
+      ],
     ];
   }
 
@@ -455,10 +491,13 @@ trait PinjamanTrait
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
 
-    $branches = AppHelper::branch_permission();
-    $branch_id = auth()->user()->can('can show branch') ? ($request->branch_id ?? 1) : auth()->user()->employee->branch_id;
-    $wilayah =  auth()->user()->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : auth()->user()->employee->branch->wilayah;
-    $kelompok = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
+    $authorized = auth()->user();
+    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
+    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
+
+
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
@@ -557,7 +596,18 @@ trait PinjamanTrait
       'datas' => $groupByMonth,
       'select_branch' => auth()->user()->can('can show branch'),
       'select_kelompok' => auth()->user()->can('can show kelompok'),
-      'server_filter' => ['closed_transaction' => $ClosedTransaction, 'today' => $dayClosedParams, 'hari' => $hari, 'wilayah' => $wilayah, 'branch' => $branches, 'branch_id' => $branch_id, 'kelompok' => $kelompok, 'type_show' => 'macet', 'searchMonth' => false],
+      'server_filter' => [
+        'closed_transaction' => $ClosedTransaction,
+        'today' => $dayClosedParams,
+        'hari' => $hari,
+        'wilayah' => $wilayah,
+        'branch' => $userAuthorized['branches'],
+        'userAuthorized' => $userAuthorized,
+        'branch_id' => $branch_id,
+        'kelompok' => $kelompok,
+        'type_show' => 'macet',
+        'searchMonth' => false
+      ],
     ];
   }
 }

@@ -18,7 +18,7 @@ import { Button } from '@/shadcn/ui/button';
 import { FilterIcon } from 'lucide-react';
 
 const ManPower = ({ datas, title }) => {
-  const { auth } = usePage().props;
+  const { auth, server_filter } = usePage().props;
 
   const [onShowCreateUser, setOnShowCreateUser] = useState(false);
   const [paramsData, setParamsData] = useState(null);
@@ -45,7 +45,10 @@ const ManPower = ({ datas, title }) => {
           <SearchComponent
             urlLink={route('administrasi.manpower.index')}
             localState={'administrasi_manpower_store'}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           ></SearchComponent>
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
@@ -60,9 +63,10 @@ const ManPower = ({ datas, title }) => {
               <SearchComponent
                 urlLink={route('administrasi.manpower.index')}
                 localState={'administrasi_manpower_store'}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={
+                  server_filter.userAuthorized.canShowGroupingBranch
+                }
               />
             </PopoverContent>
           </Popover>

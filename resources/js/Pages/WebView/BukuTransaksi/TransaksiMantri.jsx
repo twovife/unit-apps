@@ -1,7 +1,7 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
@@ -11,8 +11,9 @@ import Create from './Create';
 import Rencana from '@/Pages/BukuTransaksi/Rencana';
 
 const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
-  const [flatData, setFlatData] = useState([]);
+  const { server_filter } = usePage().props;
 
+  const [flatData, setFlatData] = useState([]);
   useEffect(() => {
     setFlatData(datas.flat());
   }, [datas]);
@@ -46,10 +47,13 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
             localState={'transaction_index_buku_transaksi'}
             searchMonth={true}
             searchHari={true}
-            searchKelompok={auth.permissions.includes('can show kelompok')}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
+            searchKelompok={server_filter.userAuthorized.canShowKelompok}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           >
-            {auth.permissions.includes('can create') && (
+            {server_filter.userAuthorized.canCreate && (
               <Button type="button" onClick={handleOnCreateShowOpen}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -73,10 +77,11 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
                 localState={'transaction_index_buku_transaksi'}
                 searchMonth={true}
                 searchHari={true}
-                searchKelompok={auth.permissions.includes('can show kelompok')}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
+                searchKelompok={server_filter.userAuthorized.canShowKelompok}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={
+                  server_filter.userAuthorized.canShowGroupingBranch
+                }
               />
             </PopoverContent>
           </Popover>

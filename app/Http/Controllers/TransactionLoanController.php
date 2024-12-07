@@ -139,6 +139,7 @@ class TransactionLoanController extends Controller
 
     $previousUrl = url()->previous();
 
+
     $previousRouteName = app('router')->getRoutes()->match(app('request')->create($previousUrl))->getName();
     if (!auth()->user()->hasPermissionTo('can create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');

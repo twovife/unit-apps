@@ -11,7 +11,7 @@ import TunaiMantri from './Components/TunaiMantri';
 import Action from './Components/Action';
 
 const RekapContent = ({ rekapData, show, title, urlLink, localState }) => {
-  const { auth } = usePage().props;
+  const { auth, server_filter } = usePage().props;
   const [datas, setDatas] = useState([]);
 
   useEffect(() => {
@@ -56,9 +56,11 @@ const RekapContent = ({ rekapData, show, title, urlLink, localState }) => {
             urlLink={urlLink}
             localState={localState}
             searchDate={true}
-            searchGroupingBranch={auth.permissions.includes('can show branch')}
-            nexOrPrevious={nexOrPrevious}
-            setNexOrPrevious={setNexOrPrevious}
+            // searchKelompok={server_filter.userAuthorized.canShowKelompok}
+            searchBranch={server_filter.userAuthorized.canShowBranch}
+            searchGroupingBranch={
+              server_filter.userAuthorized.canShowGroupingBranch
+            }
           ></SearchComponent>
         </div>
         <div className="flex justify-end gap-3 lg:hidden">
@@ -74,12 +76,11 @@ const RekapContent = ({ rekapData, show, title, urlLink, localState }) => {
                 urlLink={urlLink}
                 localState={localState}
                 searchDate={true}
-                searchKelompok={auth.permissions.includes('can show kelompok')}
-                searchGroupingBranch={auth.permissions.includes(
-                  'can show branch'
-                )}
-                nexOrPrevious={nexOrPrevious}
-                setNexOrPrevious={setNexOrPrevious}
+                // searchKelompok={server_filter.userAuthorized.canShowKelompok}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={
+                  server_filter.userAuthorized.canShowGroupingBranch
+                }
               />
             </PopoverContent>
           </Popover>

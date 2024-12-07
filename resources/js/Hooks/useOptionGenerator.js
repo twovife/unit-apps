@@ -70,6 +70,13 @@ function useOptionGenerator({ propsWilayah = '', ...props } = {}) {
     { id: 10, display: 10, value: 10 },
   ];
 
+  const optBranch = server_filter?.branch?.map((item) => {
+    return {
+      id: item.id,
+      display: item.unit,
+      value: item.id,
+    };
+  });
   const [filteredBranch, setFilteredBranch] = useState();
 
   const [filteredEmps, setFilteredEmps] = useState();
@@ -145,7 +152,7 @@ function useOptionGenerator({ propsWilayah = '', ...props } = {}) {
     setSelectedMonth,
     selectedDate,
     setSelectedDate,
-
+    optBranch,
     optWilayah,
     filteredBranch,
     filteredEmps,
