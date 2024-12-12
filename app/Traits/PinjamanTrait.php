@@ -271,10 +271,9 @@ trait PinjamanTrait
               })
             ];
           }),
+          'angs_today' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)?->sum('nominal') ?? 0,
           'x_angs' => $item->loan_instalment->count(),
           'saldo_sebelumnya' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
-
-
           'saldo' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<=', $transaction_date->format('Y-m-d'))->sum('nominal'),
           'notes' => $item->notes
         ];
