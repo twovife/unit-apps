@@ -115,6 +115,7 @@ Route::middleware('auth')->group(function () {
 
   Route::controller(AdminController::class)->prefix('admin-panel')->name('adminpanel.')->group(function () {
     Route::get('/', "index")->name('index');
+
     Route::get('/monitoring-staff', "monitoring_staff")->name('monitoring_staff');
     Route::get('/loan-balancing', "loan_balancing")->name('loan_balancing');
     Route::post('/', "post_permission")->name('post_permission');
