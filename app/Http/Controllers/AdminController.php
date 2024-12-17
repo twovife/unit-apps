@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AppHelper;
+use App\Models\TransactionLoan;
+use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionSirculation;
 use App\Models\User;
 use App\Models\VIsBalanceLoanWithDailyReport;
@@ -30,6 +32,45 @@ class AdminController extends Controller
       'permission' => $permission,
       'user' => $user,
       'maintenen_workers' => $maintenen_workers
+    ]);
+  }
+  public function monitoring_staff()
+  {
+    $transaction_loan_officer_grouping_id = TransactionLoanOfficerGrouping::whereHas('branch', function ($item) {
+      $item->where('wilayah', 1);
+    })->pluck('id');
+    $angsuran = TransactionLoan::with('branch', 'loan_officer_grouping')->whereIn('transaction_loan_officer_grouping_id', $transaction_loan_officer_grouping_id)
+      ->select('id', 'transaction_loan_officer_grouping_id', 'drop_date', 'hari')
+      ->get();
+
+    $mapingAngsuran = $angsuran->groupBy('branch.id')->map(function ($items) {
+      return [
+        'branch' => $items->first()->branch->unit,
+        'days' => $items->groupBy('hari')->map(function ($dailyItems) {
+          return [
+            'hari' => AppHelper::getNumbDays($dailyItems->first()->hari),
+            'day' => $dailyItems->first()->hari,
+            'data' =>   $dailyItems->groupBy('transaction_loan_officer_grouping_id')->map(function ($kelompokItems) {
+              return [
+                'kelompok' => $kelompokItems->first()->loan_officer_grouping->kelompok,
+                'data' => $kelompokItems->groupBy(function ($item) {
+                  return Carbon::parse($item->drop_date)->format('Y-m');
+                })->map(function ($monthlyItems) {
+                  return [
+                    'month' => Carbon::parse($monthlyItems->first()->drop_date)->format('Y-m'),
+                    'count' => $monthlyItems->count('id')
+                  ];
+                })->values()
+              ];
+            })->values()
+          ];
+        })->values()->sortBy('hari')->values()
+      ];
+    })->sortBy('branch')->values();
+    // dd($mapingAngsuran->first());
+    return Inertia::render('AdminPanel/MonitoringStaff', [
+      'datas' => $mapingAngsuran,
+
     ]);
   }
 
