@@ -1,1 +1,0 @@
-import{a as r}from"./app-35d31ed9.js";import{N as s}from"./react-number-format.es-d26c8058.js";const p=({value:t=0,prefix:a,suffix:e,className:o="text-end"})=>r("div",{className:`${o}`,children:r(s,{value:t,displayType:"text",thousandSeparator:",",prefix:a??"",suffix:e??""})});export{p as F};
