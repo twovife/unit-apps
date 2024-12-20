@@ -554,6 +554,14 @@ class TransactionLoanController extends Controller
         return redirect()->back()->withErrors('Hari Tidak Sama');
       }
 
+      if ($request->transaction_date == $transactionLoan->drop_date) {
+        return redirect()->back()->withErrors('Yang ini baru didrop pak, isi yang bulan sebelumnya (pelunasan)');
+      }
+
+      if ($request->transaction_date < $transactionLoan->drop_date) {
+        return redirect()->back()->withErrors('tanggal bayar tidak boleh kurang dari tanggal drop');
+      }
+
       if ($isPaidToday->isNotEmpty()) {
         if (!$request->danatitipan) {
           return redirect()->back()->withErrors('Angsuran Hari Ini Sudah Dibayar');
