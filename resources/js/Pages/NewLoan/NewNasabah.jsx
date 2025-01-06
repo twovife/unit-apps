@@ -201,33 +201,42 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     <div className="flex flex-col w-full gap-3 lg:flex-row">
       <Loading show={loading || processing} />
       <div className="w-auto">
-        <fieldset className="min-w-[20vw] p-4 mb-3 border rounded-lg">
+        <fieldset className="min-w-[20vw] p-3 mb-3 border rounded-lg">
           <legend className="px-1 -ml-1 text-sm font-medium">
-            Cari Nasabah
+            CEK NIK NASABAH
           </legend>
-          <form className="w-full mb-3" onSubmit={onNikSubmit}>
-            <Label optional>NIK</Label>
-            <div className="flex items-center gap-3">
-              <Input
-                type="text"
-                name="nik"
-                value={nik}
-                onChange={onNikChange}
-                placeholder="Cek NIK"
-              />
-              <Button className="text-xs" size="sm">
-                <Search className="w-auto h-4 mr-1" />
-                Cari
-              </Button>
+          <form className="w-full" onSubmit={onNikSubmit}>
+            <Label>NIK</Label>
+            <div className="grid grid-cols-3 grid-rows-2 gap-2">
+              <div className="col-span-3">
+                <Input
+                  type="text"
+                  name="nik"
+                  value={nik}
+                  onChange={onNikChange}
+                  placeholder="Cek NIK"
+                />
+                {erorAxios && (
+                  <div>
+                    <InputError message={erorAxios} className="mt-1" />
+                  </div>
+                )}
+              </div>
+              <div
+                className={`font-semibold mt-1 col-span-2 ${
+                  nik.length == 16 ? 'text-green-500' : 'text-red-500'
+                }`}
+              >
+                {nik.length} Digit
+              </div>
+              <div className="col-span-1 text-end">
+                <Button className="text-xs" size="sm">
+                  <Search className="w-auto h-4 mr-1" />
+                  Cari
+                </Button>
+              </div>
             </div>
-            {erorAxios && <InputError message={erorAxios} className="mt-1" />}
-            <div
-              className={`font-semibold mt-1 ${
-                nik.length == 16 ? 'text-green-500' : 'text-red-500'
-              }`}
-            >
-              {nik.length} Digit
-            </div>
+
             <div>
               {newGenerate && (
                 <a href={newGenerate ?? '#'} target="_blank">
@@ -244,12 +253,12 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                 <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Menambah Pinjaman" />
               )}
               <legend className="px-1 -ml-1 text-sm font-medium">
-                Detail Pinjaman
+                Detail Pengajuan
               </legend>
               <form className="w-full mb-3" onSubmit={onSubmitCreate}>
                 <div className="flex flex-col gap-5 lg:flex-row">
                   <div className="flex-1">
-                    <div className="flex gap-3">
+                    <div className="gap-3 lg:flex">
                       <div className="w-full mb-3">
                         <Label>Tanggal Pengajuan</Label>
                         <Input
@@ -387,9 +396,18 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                         variant="outline"
                         size="xs"
                         onClick={buttonValueClick}
+                        data-value="400000"
+                      >
+                        400rb
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={buttonValueClick}
                         data-value="500000"
                       >
-                        500.000
+                        500rb
                       </Button>
                       <Button
                         type="button"
@@ -398,7 +416,16 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                         onClick={buttonValueClick}
                         data-value="700000"
                       >
-                        700.000
+                        700rb
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={buttonValueClick}
+                        data-value="800000"
+                      >
+                        800rb
                       </Button>
                       <Button
                         type="button"
@@ -407,7 +434,16 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                         onClick={buttonValueClick}
                         data-value="1000000"
                       >
-                        1.000.000
+                        1 Jt
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={buttonValueClick}
+                        data-value="1500000"
+                      >
+                        1,5 Jt
                       </Button>
                       <Button
                         type="button"
@@ -529,42 +565,22 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
           )}
         </div>
       </div>
+
       <div className="w-auto lg:w-full">
         <Tabs defaultValue="pengajuan" className="w-auto">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pengajuan">Riwayat Pinjaman</TabsTrigger>
-            <TabsTrigger value="pinjaman">Riwayat Lain</TabsTrigger>
+            <TabsTrigger value="pengajuan">Crash Kantor</TabsTrigger>
+            <TabsTrigger value="pinjaman">Crash UBM</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">
-            <Card>
-              <CardHeader>
-                <CardTitle>Riwayat Unit</CardTitle>
-                <CardDescription>
-                  Riwayat Pengajuan Nasabah sesuai dengan nik di satu unit
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                  <RiwayatPengajuan data={customerData?.history_branch} />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="max-h-[70vh] h-min overflow-auto scrollbar-thin rounded">
+              <RiwayatPengajuan data={customerData?.history_branch} />
+            </div>
           </TabsContent>
           <TabsContent value="pinjaman">
-            <Card>
-              <CardHeader>
-                <CardTitle>Riwayat Lain</CardTitle>
-                <CardDescription>
-                  Riwayat Pengajuan Nasabah sesuai dengan nik di unit selain
-                  unit ini
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                  <RiwayatPengajuan data={customerData?.history_lain} />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="max-h-[70vh] h-min overflow-auto scrollbar-thin rounded">
+              <RiwayatPengajuan data={customerData?.history_lain} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

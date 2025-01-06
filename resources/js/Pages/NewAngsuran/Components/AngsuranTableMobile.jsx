@@ -14,16 +14,24 @@ import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
+import TextInput from '@/Components/TextInput';
+import { Check, X } from 'lucide-react';
 
 const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
+  const [filterName, setFilterName] = useState('');
 
   useEffect(() => {
     if (datas) {
       const filterData = (data) => {
         return data.map((monthData) => ({
           ...monthData,
-          data: monthData.data.filter((item) => !(item.lunas && !item.is_paid)),
+          data: monthData.data.filter(
+            (item) =>
+              !(item.lunas && !item.is_paid) &&
+              (!filterName ||
+                item.nama.toLowerCase().includes(filterName.toLowerCase()))
+          ),
         }));
       };
 
@@ -31,7 +39,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
 
       setData(filteredData);
     }
-  }, [datas]);
+  }, [datas, filterName]);
 
   const calculateInstalment = (data, keyToSum) => {
     const result = data.reduce(
@@ -76,11 +84,24 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   };
 
   return (
-    <div className="relative overflow-auto h-[70vh] lg:h-[85vh] scrollbar-thin">
-      <Table className="text-xs rounded-lg">
+    <div className="relative overflow-scroll h-[70vh] lg:h-[85vh] ">
+      <div className="relative w-full mb-2 lg:w-auto lg:max-w-60">
+        <TextInput
+          type="text"
+          placeholder="Cari Nama"
+          value={filterName}
+          onChange={(e) => setFilterName(e.target.value)}
+          className="w-full text-xs"
+        />
+        <X
+          className="absolute right-0 w-auto h-5 text-gray-400 -translate-x-1/2 -translate-y-1/2 top-1/2"
+          onClick={(e) => setFilterName('')}
+        />
+      </div>
+      <Table className="text-[0.6rem]/tight sm:text-xs/tight">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
-            <TableHead className="text-center">No</TableHead>
+            {/* <TableHead className="text-center">No</TableHead> */}
             <TableHead className="text-center">Tanggal</TableHead>
             <TableHead className="text-center">Nasabah</TableHead>
             <TableHead className="text-center border-x border-x-black">
@@ -106,10 +127,10 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                     }}`}
                     key={i}
                   >
-                    <TableCell onClick={() => handleRowClick(subrow.id)}>
+                    {/* <TableCell onClick={() => handleRowClick(subrow.id)}>
                       {i + 1}
-                    </TableCell>
-                    <TableCell>
+                    </TableCell> */}
+                    <TableCell className="p-1">
                       <div className="space-y-2 text-center">
                         <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
                         <div>
@@ -124,21 +145,25 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                             }
                             onClick={() => onCreateShowOpen(subrow.id)}
                           >
-                            {subrow.lunas
-                              ? 'Lunas'
-                              : subrow.is_paid
-                              ? 'Dibayar'
-                              : 'Bayar'}
+                            {subrow.lunas ? (
+                              <Check className="text-xs" />
+                            ) : subrow.is_paid ? (
+                              'Paid'
+                            ) : (
+                              'Pay'
+                            )}
                           </Button>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="p-1">
                       <div className="font-semibold">{subrow.nama}</div>
                       <div>{subrow.nik}</div>
-                      <div>{subrow.alamat}</div>
+                      <div className="text-ellipsis overflow-hidden ...">
+                        {subrow.alamat}
+                      </div>
                     </TableCell>
-                    <TableCell className="border-x border-x-black">
+                    <TableCell className="p-1 border-x border-x-black">
                       <div className="flex justify-between gap-6">
                         <div>P</div>
                         <FormatNumbering value={subrow.pinjaman} />
@@ -165,7 +190,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                   </TableRow>
                 ))}
                 <TableRow className="bg-gray-100">
-                  <TableCell className="py-3" colSpan={3}>
+                  <TableCell className="py-3" colSpan={2}>
                     TOTAL
                   </TableCell>
                   <TableCell className="border-x border-x-black">

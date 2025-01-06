@@ -35,11 +35,6 @@ class AuthenticatedSessionController extends Controller
     $request->authenticate();
 
     $request->session()->regenerate();
-
-    if (auth()->user()->hasPermissionTo('area')) {
-      return redirect()->route('mobile_apps.index');
-    }
-
     return redirect()->intended(RouteServiceProvider::HOME);
   }
 

@@ -33,6 +33,7 @@ import ChangeDetail from './Components/ChangeDetail';
 import { usePage } from '@inertiajs/react';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
   const [data, setData] = useState([]);
@@ -81,7 +82,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
   return (
     <>
       <Dialog open={show} onOpenChange={(open) => (open ? '' : onClosed())}>
-        <DialogContent className="w-[90vw] h-[90vh] lg:h-auto overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <DialogContent className="w-[95vw] h-auto px-1 overflow-hidden">
           {erorAxios && <div>terjadi kesalahan saat memuat data</div>}
           {loading ? (
             <div>Data Sedang Dimuat</div>
@@ -89,17 +90,21 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
             <DialogHeader>
               <DialogTitle>Check Transaksi Mantri</DialogTitle>
               <DialogDescription>
-                <Tabs defaultValue="account" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                <Tabs defaultValue="account" className="w-full h-max">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="account">Action</TabsTrigger>
-                    <TabsTrigger value="history">Riwayat</TabsTrigger>
+                    <TabsTrigger value="history">Crash Kantor</TabsTrigger>
+                    <TabsTrigger value="historylain">Crash UBM</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="account">
+                  <TabsContent
+                    value="account"
+                    className="overflow-scroll h-[70vh]"
+                  >
                     <Card>
                       <CardHeader>
                         <CardTitle>Detail Pengajuan</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-2">
+                      <CardContent className="p-1 space-y-2">
                         <div className="overflow-auto border rounded-lg scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
                           <DetailTableOnAction datas={data} />
                         </div>
@@ -214,11 +219,27 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                           tertera dari semua cabang
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-2">
+                      <CardContent className="p-1 space-y-2">
                         <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
                           <RiwayatPengajuan
-                            data={customerData.history_branch}
+                            data={customerData?.history_branch}
                           />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  <TabsContent value="historylain">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Riwayat Pengajuan</CardTitle>
+                        <CardDescription>
+                          Riwayat Pengajuan Nasabah dilihat berdasarkan NIK yang
+                          tertera dari semua cabang
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-1 space-y-2">
+                        <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+                          <RiwayatPengajuan data={customerData?.history_lain} />
                         </div>
                       </CardContent>
                     </Card>
