@@ -39,7 +39,6 @@ class TransactionLoanController extends Controller
   public function nasabah_buku_transaksi(Request $request)
   {
     $prefix = strtoupper(substr($request->nik, 0, 2));
-
     if ($prefix == "UB" || $prefix == "ML") {
       return response()->json(['data' =>  null, 'return_nik' => $request->nik]);
     }
@@ -74,6 +73,7 @@ class TransactionLoanController extends Controller
       ]
     )->where('nik', $request->nik)->first();
 
+
     $data = $nasabah ?
       [
         'nik' => $nasabah->nik,
@@ -90,7 +90,9 @@ class TransactionLoanController extends Controller
             $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
 
             return [
+              'id' => $item->id,
               'drop_date' => $item->drop_date,
+              'hari' => strtoupper($item->hari),
               'pinjaman' => $item->pinjaman,
               'unit' => $item->branch->unit,
               'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
@@ -111,7 +113,9 @@ class TransactionLoanController extends Controller
             $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
 
             return [
+              'id' => $item->id,
               'drop_date' => $item->drop_date,
+              'hari' => strtoupper($item->hari),
               'pinjaman' => $item->pinjaman,
               'unit' => $item->branch->unit, // Menggunakan optional() langsung
               'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
@@ -124,7 +128,33 @@ class TransactionLoanController extends Controller
         // Reset indeks setelah proses pemetaan
       ] : null;
 
-    return response()->json(['data' => $data ?? null, 'return_nik' => $request->nik]);
+    return response()->json(['data' => $data ?? null, 'return_nik' => $request->nik], 200);
+  }
+
+  public function get_instalment_nasabah(TransactionLoan $transactionLoan, Request $request)
+  {
+
+    $pinjaman = 0;
+    $transactionLoan->load(['loan_instalment' => function ($query) {
+      $query->orderBy('transaction_date', 'desc');
+    }]);
+
+    $instalments = $transactionLoan->loan_instalment;
+    $saldo = $pinjaman;
+
+    $sortedInstalments = [];
+
+    foreach ($instalments as $instalment) {
+      $sortedInstalments[] = [
+        'transaction_date' => $instalment->transaction_date,
+        'nominal' => $instalment->nominal,
+        'saldo' => $saldo,
+        'dana_titipan' => $instalment->danatitipan ? true : false,
+        'status' => AppHelper::generateStatusAngsuranString($transactionLoan->drop_date,  $instalment['transaction_date']),
+      ];
+      $saldo += $instalment->nominal;
+    }
+    return response()->json(['data' => $sortedInstalments ?? null], 200);
   }
 
   /**

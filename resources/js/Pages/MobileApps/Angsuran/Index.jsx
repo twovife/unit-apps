@@ -7,6 +7,8 @@ import Angsuran from '@/Pages/NewAngsuran/Angsuran';
 import MobileLayout from '@/Layouts/MobileLayout';
 
 const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
+  console.log(datas);
+
   return (
     <MobileLayout header={<Head>Angsuran Lancar</Head>}>
       <Angsuran

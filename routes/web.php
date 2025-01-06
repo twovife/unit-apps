@@ -34,8 +34,6 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
 
   Route::controller(LoanController::class)->group(function () {
-
-
     Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
       Route::get('/', 'batch_create')->name('batch_create');
       Route::post('/', 'batch_post')->name('batch_post');
@@ -48,10 +46,12 @@ Route::middleware('auth')->group(function () {
   });
 
 
+
   Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
+      Route::post('/{transactionLoan}', "get_instalment_nasabah")->name('get_instalment_nasabah');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreate")->name('fastcreate');
       Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');

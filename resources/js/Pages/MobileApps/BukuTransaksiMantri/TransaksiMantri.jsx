@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import MobileLayout from '@/Layouts/MobileLayout';
 import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
+import Authenticated from '@/Layouts/AuthenticatedLayout';
 
 const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
   const [flatData, setFlatData] = useState([]);
@@ -16,13 +17,11 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
   }, [datas]);
 
   return (
-    <MobileLayout header={<Head>Buku Transaksi</Head>}>
+    <Authenticated title={'Daftar Drop'}>
       {/* this filter section */}
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
-          <h1 className="text-xl font-semibold tracking-tight ">
-            Buku Transaksi
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight ">DROP</h1>
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
@@ -62,13 +61,13 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
         </div>
       </div>
 
-      <div className="max-h-[80vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+      <div className="overflow-auto rounded-lg max-h-svh lg:scrollbar-thin">
         {datas &&
           datas.map((item, index) => (
             <BukuTransaksiKepala key={index} datas={item} />
           ))}
       </div>
-    </MobileLayout>
+    </Authenticated>
   );
 };
 

@@ -1,27 +1,27 @@
-import { useEffect, useState } from 'react';
-import ApplicationLogo from '@/Components/ApplicationLogo';
-import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import { Link, usePage } from '@inertiajs/react';
-import { Transition } from '@headlessui/react';
-import Sidebar from '@/Components/Sidebar';
-import Navbar from '@/Components/Navbar';
 import SweetAlert from '@/Components/SweetAlert';
 import Loading from '@/Components/Loading';
 
-export default function Authenticated({ header, children, loading = false }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+import React, { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
+import { AppSidebar } from '@/Components/shadcn/AppSidebar';
+import { Separator } from '@/shadcn/ui/separator';
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/shadcn/ui/sidebar';
+import DropdownProfile from '@/Components/shadcn/DropdownProfile';
+import { WebSidebar } from '@/Components/shadcn/WebSidebar';
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-  // const [showingNavigationDropdown, setShowingNavigationDropdown] =
-  //     useState(false);
+export default function Authenticated({ title, children, loading = false }) {
   const { errors, flash, auth } = usePage().props;
+  const requiredPermission = ['unit staff', 'unit kasir'];
+  const showSideBar = requiredPermission.some((permission) =>
+    auth.permissions.includes(permission)
+  );
 
   return (
-    <div className="relative">
+    <SidebarProvider>
       {Object.keys(errors).length > 0 && (
         <SweetAlert type="error" message={errors[0]} keys={flash} />
       )}
@@ -29,20 +29,20 @@ export default function Authenticated({ header, children, loading = false }) {
         <SweetAlert type="success" message={flash.message} keys={flash} />
       )}
       <Loading show={loading} />
-      <Navbar
-        isOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-        auth={auth}
-        header={header}
-      />
-      <Sidebar isOpen={isSidebarOpen} />
-      <div
-        className={`px-4 py-6 transition-all ease-in-out  duration-300 h-auto bg-white min-h-[calc(100vh-4rem)]  ${
-          isSidebarOpen ? 'ml-64' : 'ml-0'
-        }`}
-      >
-        <main>{children}</main>
-      </div>
-    </div>
+      {showSideBar ? <WebSidebar /> : <AppSidebar />}
+      <SidebarInset>
+        <header className="flex items-center h-10 gap-2 border-b lg:h-16 shrink-0">
+          <div className="flex items-center justify-between w-full px-3">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="h-4 mr-2" />
+            </div>
+            <DropdownProfile />
+          </div>
+        </header>
+        <Head title={title} />
+        <div className="relative p-4 antialiased max-w-screen">{children}</div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

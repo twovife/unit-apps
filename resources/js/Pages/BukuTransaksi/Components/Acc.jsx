@@ -56,18 +56,18 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
               <NoEditOverlay value="Tunggu Pimpinan Acc Terlebih Dahulu" />
             )}
             <Label htmlFor="approved_nominal">Nominal ACC</Label>
-            <div className="flex items-center justify-center gap-3">
-              <CurrencyInput
-                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                name="approved_nominal"
-                allowDecimals={false}
-                prefix="Rp. "
-                min={1}
-                required
-                onValueChange={onHandleCurencyChange}
-                value={data.approved_nominal}
-                placeholder={'Inputkan angka tanpa sparator'}
-              />
+            <CurrencyInput
+              className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              name="approved_nominal"
+              allowDecimals={false}
+              prefix="Rp. "
+              min={1}
+              required
+              onValueChange={onHandleCurencyChange}
+              value={data.approved_nominal}
+              placeholder={'Inputkan angka tanpa sparator'}
+            />
+            <div className="flex items-center justify-end gap-3 mt-3">
               <Button variant="green" onClick={() => accPinjaman('acc')}>
                 ACC
               </Button>
@@ -94,18 +94,18 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
               <Label htmlFor="drop" className="whitespace-normal">
                 Drop Jadi
               </Label>
-              <div className="flex items-center justify-center gap-3">
-                <CurrencyInput
-                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  name="drop"
-                  allowDecimals={false}
-                  prefix="Rp. "
-                  min={1}
-                  required
-                  onValueChange={onHandleCurencyChange}
-                  value={data.drop}
-                  placeholder={'Inputkan angka tanpa sparator'}
-                />
+              <CurrencyInput
+                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                name="drop"
+                allowDecimals={false}
+                prefix="Rp. "
+                min={1}
+                required
+                onValueChange={onHandleCurencyChange}
+                value={data.drop}
+                placeholder={'Inputkan angka tanpa sparator'}
+              />
+              <div className="flex items-center justify-end gap-3 mt-3">
                 <Button variant="green" onClick={() => accPinjaman('success')}>
                   DROP
                 </Button>

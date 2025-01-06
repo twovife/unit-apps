@@ -1,0 +1,82 @@
+import { a as jsx } from "../ssr.mjs";
+import "react";
+import "./SweetAlert-565cd2f8.mjs";
+import "./Loading-95bc2f77.mjs";
+import { Head } from "@inertiajs/react";
+import "./DropdownProfile-f572cff8.mjs";
+import "./button-e7ccf50f.mjs";
+import "./separator-6fdc070c.mjs";
+import Angsuran from "./Angsuran-3662ede9.mjs";
+import { M as MobileLayout } from "./MobileLayout-a011c42b.mjs";
+import "react/jsx-runtime";
+import "react-dom/server";
+import "@inertiajs/react/server";
+import "sweetalert2";
+import "sweetalert2-react-content";
+import "react-dom";
+import "@headlessui/react";
+import "@radix-ui/react-slot";
+import "class-variance-authority";
+import "./use-mobile-f8f7682a.mjs";
+import "./utils-efa289ef.mjs";
+import "clsx";
+import "tailwind-merge";
+import "./input-22e7db4a.mjs";
+import "@radix-ui/react-dialog";
+import "@radix-ui/react-icons";
+import "@radix-ui/react-tooltip";
+import "@radix-ui/react-dropdown-menu";
+import "lucide-react";
+import "@radix-ui/react-separator";
+import "./popover-590ea694.mjs";
+import "./SelectComponent-dc7360ed.mjs";
+import "dayjs";
+import "./label-7289427a.mjs";
+import "@radix-ui/react-label";
+import "@radix-ui/react-popover";
+import "./tabs-c148af71.mjs";
+import "@radix-ui/react-tabs";
+import "./AngsuranTable-30253b7c.mjs";
+import "./table-8d30c177.mjs";
+import "./FormatNumbering-47cfa339.mjs";
+import "react-number-format";
+import "./Action-dd15eaa0.mjs";
+import "./dialog-97d8ecd0.mjs";
+import "./card-f356ad44.mjs";
+import "axios";
+import "./badge-ad1cae46.mjs";
+import "./BayarAngsuran-7f0bb562.mjs";
+import "react-currency-input-field";
+import "./Checkbox-d7000d9c.mjs";
+import "./JenisNasabah-255e5d7a.mjs";
+import "./InputError-3b072368.mjs";
+import "./InputLabel-20ddd95c.mjs";
+import "./PrimaryButton-e2c4c1f4.mjs";
+import "./SelectList-8beaa241.mjs";
+import "./DeleteAngsuran-aac95183.mjs";
+import "./TextInput-11198f62.mjs";
+import "./DeleteLoan-53e22530.mjs";
+import "./useFrontEndPermission-59a7cda0.mjs";
+import "./NoEditOverlay-fb1d5d5c.mjs";
+import "./BukuStorting-4b9522f5.mjs";
+import "./ApprovalAkhir-2f48a27e.mjs";
+import "./AngsuranTableMobile-6b43b092.mjs";
+import "./BargeStatus-070c40e0.mjs";
+import "./AppSidebar-66e8729f.mjs";
+const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
+  console.log(datas);
+  return /* @__PURE__ */ jsx(MobileLayout, { header: /* @__PURE__ */ jsx(Head, { children: "Angsuran Lancar" }), children: /* @__PURE__ */ jsx(
+    Angsuran,
+    {
+      datas,
+      dateOfWeek,
+      sirkulasi,
+      type: "mobile",
+      urlLink: route("mobile_apps.angsuran"),
+      localState: "mobile_apps.angsuran"
+    }
+  ) });
+};
+export {
+  Index as default
+};

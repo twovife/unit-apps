@@ -8,7 +8,7 @@ const variantMap = {
   tolak: 'default',
   gagal: 'destructive',
   lama: 'outline',
-  baru: 'yellow',
+  baru: 'green',
   true: 'green',
   false: 'destructive',
   ml: 'default',

@@ -10,14 +10,9 @@ import {
 import { Button } from '@/shadcn/ui/button';
 import {
   HandCoinsIcon,
-  Handshake,
   Home,
   Layers,
-  UserRound,
-  UserRoundPlus,
-  UserRoundPlusIcon,
   UserX,
-  Wrench,
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';

@@ -20,6 +20,10 @@ import DetailRiwayat from '../../BukuTransaksi/Components/DetailRiwayat';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
+import axios from 'axios';
+import Loading from '@/Components/Loading';
+import ModalShowAngsuran from './ModalShowAngsuran';
 
 const RiwayatPengajuan = ({ data }) => {
   const [customerData, setCustomerData] = useState([]);
@@ -28,9 +32,30 @@ const RiwayatPengajuan = ({ data }) => {
     setCustomerData(data ?? []);
   }, [data]);
 
-  const [expanded, setExpanded] = useState();
-  const handleExpandedTogled = (value) => {
-    setExpanded((prevId) => (prevId === value ? null : value));
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [triggeredData, setTriggeredData] = useState(null);
+
+  const handleExpandedTogled = async (id) => {
+    setLoading(true);
+    setShowModal(false);
+
+    try {
+      const response = await axios.post(
+        route('transaction.get_instalment_nasabah', id)
+      );
+      setTriggeredData(response.data.data);
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onClosedModal = () => {
+    setShowModal(false);
+    setTriggeredData(null);
   };
 
   const columns = useMemo(
@@ -39,16 +64,20 @@ const RiwayatPengajuan = ({ data }) => {
         accessorKey: 'kelompok',
         header: 'Kelompok',
         cell: ({ row, getValue }) => (
-          <div>
-            {row.original.unit} - Kel {getValue()}
+          <div className="text-start">
+            <div>{row.original.unit}</div>
+            <div>Kel {getValue()}</div>
           </div>
         ),
       },
       {
         accessorKey: 'drop_date',
-        header: 'Tanggal Drop',
+        header: 'Tgl Drop',
         cell: ({ row, getValue }) => (
-          <div>{dayjs(getValue()).format('DD-MM-YYYY')}</div>
+          <div className="text-start">
+            <div>{row.original.hari}</div>
+            <div>{dayjs(getValue()).format('DD-MM-YY')}</div>
+          </div>
         ),
       },
       {
@@ -66,7 +95,12 @@ const RiwayatPengajuan = ({ data }) => {
       {
         accessorKey: 'status',
         header: 'status',
-        cell: ({ row, getValue }) => <BadgeStatus value={getValue()} />,
+        cell: ({ row, getValue }) => (
+          <BargeStatus
+            onClick={(e) => handleExpandedTogled(row.original.id)}
+            value={getValue()}
+          />
+        ),
       },
     ],
     []
@@ -81,6 +115,12 @@ const RiwayatPengajuan = ({ data }) => {
 
   return (
     <Table className="w-full table-auto">
+      <Loading show={loading} />
+      <ModalShowAngsuran
+        show={showModal}
+        triggeredData={triggeredData}
+        onClosed={onClosedModal}
+      />
       <TableHeader className="sticky top-0 z-10 bg-gray-100">
         {table.getHeaderGroups().map((headerGroup, key) => (
           <TableRow key={key}>
@@ -100,7 +140,12 @@ const RiwayatPengajuan = ({ data }) => {
           table.getRowModel().rows.map((row, key) => (
             <React.Fragment key={key}>
               <>
-                <TableRow className={`text-center`} key={key}>
+                <TableRow
+                  className={`text-center ${
+                    row.original.lunas ? 'bg-green-100 hover:bg-green-50' : ''
+                  }`}
+                  key={key}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
@@ -118,7 +163,7 @@ const RiwayatPengajuan = ({ data }) => {
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan="4">Belum Ada Catatan Pinjaman</TableCell>
+            <TableCell colSpan="5">Belum Ada Catatan Pinjaman</TableCell>
           </TableRow>
         )}
       </TableBody>
