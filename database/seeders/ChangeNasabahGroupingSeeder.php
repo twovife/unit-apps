@@ -20,45 +20,45 @@ class ChangeNasabahGroupingSeeder extends Seeder
   {
     try {
       DB::beginTransaction();
-      // TransactionLoan::whereIn(
-      //   'transaction_manage_customer_id',
-      //   function ($query) {
-      //     $query->select('transaction_manage_customer_id')
-      //       ->from('transaction_loans')
-      //       ->groupBy('transaction_manage_customer_id')
-      //       ->havingRaw('COUNT(DISTINCT hari) = 1');
-      //   }
-      // )->select('transaction_manage_customer_id', 'hari', 'transaction_loan_officer_grouping_id')
-      //   ->lazy()
-      //   ->each(function ($transaction) {
-      //     $customerId = $transaction->transaction_manage_customer_id;
-      //     $day = AppHelper::getNumbDays($transaction->hari);
+      TransactionLoan::whereIn(
+        'transaction_manage_customer_id',
+        function ($query) {
+          $query->select('transaction_manage_customer_id')
+            ->from('transaction_loans')
+            ->groupBy('transaction_manage_customer_id')
+            ->havingRaw('COUNT(DISTINCT hari) = 1');
+        }
+      )->select('transaction_manage_customer_id', 'hari', 'transaction_loan_officer_grouping_id')
+        ->lazy()
+        ->each(function ($transaction) {
+          $customerId = $transaction->transaction_manage_customer_id;
+          $day = AppHelper::getNumbDays($transaction->hari);
 
-      //     $transactionManage = TransactionManageCustomer::find($customerId);
-      //     $transactionCustomer = TransactionCustomer::find($transactionManage->transaction_customer_id);
+          $transactionManage = TransactionManageCustomer::find($customerId);
+          $transactionCustomer = TransactionCustomer::find($transactionManage->transaction_customer_id);
 
-      //     TransactionManageCustomer::where('id', $customerId)
-      //       ->update(['day' => $day], ['residential_address' => $transactionCustomer->alamat]);
-      //     echo $customerId . PHP_EOL;
-      //   });
+          TransactionManageCustomer::where('id', $customerId)
+            ->update(['day' => $day], ['residential_address' => $transactionCustomer->alamat]);
+          echo $customerId . PHP_EOL;
+        });
 
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
-      // echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
 
       TransactionLoan::whereIn(
         'transaction_manage_customer_id',
@@ -116,7 +116,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
           echo "membuat manage baru = " . $newTransactionManage->id . " " . "managet terbaru = " . $transaction->transaction_manage_customer_id . " " .  PHP_EOL;
           echo "____________pindah halaman___________" . PHP_EOL;
         });
-      DB::rollBack();
+      DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
       echo $e;
