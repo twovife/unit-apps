@@ -112,7 +112,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
               'transaction_manage_customer_id' => $newTransactionManage->id,
             ]);
           }
-          echo $transactionCustomer->nik . " " . $transaction->id . " " .  PHP_EOL;
+          echo $transactionCustomer->id . " " . $transaction->id . " " .  PHP_EOL;
         });
       DB::commit();
     } catch (Exception $e) {
