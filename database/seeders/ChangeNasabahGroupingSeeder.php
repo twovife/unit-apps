@@ -18,45 +18,45 @@ class ChangeNasabahGroupingSeeder extends Seeder
   public function run(): void
   {
     try {
-      TransactionLoan::whereIn(
-        'transaction_manage_customer_id',
-        function ($query) {
-          $query->select('transaction_manage_customer_id')
-            ->from('transaction_loans')
-            ->groupBy('transaction_manage_customer_id')
-            ->havingRaw('COUNT(DISTINCT hari) = 1');
-        }
-      )->select('transaction_manage_customer_id', 'hari', 'transaction_loan_officer_grouping_id')
-        ->lazy()
-        ->each(function ($transaction) {
-          $customerId = $transaction->transaction_manage_customer_id;
-          $day = AppHelper::getNumbDays($transaction->hari);
+      //   TransactionLoan::whereIn(
+      //     'transaction_manage_customer_id',
+      //     function ($query) {
+      //       $query->select('transaction_manage_customer_id')
+      //         ->from('transaction_loans')
+      //         ->groupBy('transaction_manage_customer_id')
+      //         ->havingRaw('COUNT(DISTINCT hari) = 1');
+      //     }
+      //   )->select('transaction_manage_customer_id', 'hari', 'transaction_loan_officer_grouping_id')
+      //     ->lazy()
+      //     ->each(function ($transaction) {
+      //       $customerId = $transaction->transaction_manage_customer_id;
+      //       $day = AppHelper::getNumbDays($transaction->hari);
 
-          $transactionManage = TransactionManageCustomer::find($customerId);
-          $transactionCustomer = TransactionCustomer::find($transactionManage->transaction_customer_id);
+      //       $transactionManage = TransactionManageCustomer::find($customerId);
+      //       $transactionCustomer = TransactionCustomer::find($transactionManage->transaction_customer_id);
 
-          TransactionManageCustomer::where('id', $customerId)
-            ->update(['day' => $day], ['residential_address' => $transactionCustomer->alamat]);
-          echo $customerId . PHP_EOL;
-        });
+      //       TransactionManageCustomer::where('id', $customerId)
+      //         ->update(['day' => $day], ['residential_address' => $transactionCustomer->alamat]);
+      //       echo $customerId . PHP_EOL;
+      //     });
 
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
+      //   echo "update hari tunggal selesai";
 
       TransactionLoan::whereIn(
         'transaction_manage_customer_id',
@@ -70,6 +70,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
         ->lazy()
         ->groupBy('transaction_manage_customer_id') // Kelompokkan transaksi berdasarkan `transaction_manage_customer_id`
         ->each(function ($transactions) {
+          echo "start";
           // Ambil semua hari yang terkait dengan `transaction_manage_customer_id`
           $days = $transactions->sortBy('hari');
 
