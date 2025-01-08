@@ -91,7 +91,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
               ['residential_address' => $transactionCustomer->alamat]
             );
 
-          echo   "manage asli" . $firstCustomerManageId . PHP_EOL;
+          echo   "manage asli = " . $firstCustomerManageId . PHP_EOL;
           // diatas update hari pertama yang ditemukan
 
 
@@ -99,7 +99,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
           $remainingDays = $days->slice(1); // Ambil hari kedua dan seterusnya
 
           foreach ($remainingDays as $transaction) {
-            echo "managa awal" .  $transaction->transaction_manage_customer_id . PHP_EOL;
+            echo "managa awal = " .  $transaction->transaction_manage_customer_id . PHP_EOL;
             $newTransactionManage = TransactionManageCustomer::firstOrCreate([
               'transaction_customer_id' => $transactionCustomer->id,
               'transaction_loan_officer_grouping_id' => $transaction->transaction_loan_officer_grouping_id,
