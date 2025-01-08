@@ -194,10 +194,12 @@ class AdminController extends Controller
         $query->select('transaction_manage_customer_id')
           ->from('transaction_loans')
           ->groupBy('transaction_manage_customer_id')
-          ->havingRaw('COUNT(DISTINCT hari) > 2');
+          ->havingRaw('COUNT(DISTINCT hari) > 1');
       }
     )->select('transaction_manage_customer_id', 'hari')
-      ->get();
+      ->get()
+      ->groupBy('transaction_manage_customer_id')
+      ->count();
     dd($data);
   }
 }
