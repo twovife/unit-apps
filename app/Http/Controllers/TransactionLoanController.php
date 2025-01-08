@@ -157,6 +157,19 @@ class TransactionLoanController extends Controller
     return response()->json(['data' => $sortedInstalments ?? null], 200);
   }
 
+  public function checkpengajuan(TransactionLoan $transactionLoan, Request $request)
+  {
+    // get nasabah id
+    $id_transaksi = $transactionLoan->transaction_manage_customer_id;
+    $transaction_list_by_manage_customer = TransactionLoan::where('transaction_manage_customer_id', $id_transaksi)
+      ->where('drop_date', '>', $transactionLoan->drop_date)
+      ->whereIn('status', ['open', 'acc'])
+      ->get();
+
+
+    return response()->json(['data' => $transaction_list_by_manage_customer ?? null], 200);
+  }
+
   /**
    * Store a newly created resource in storage.
    */

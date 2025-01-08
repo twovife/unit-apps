@@ -210,7 +210,7 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
             <div className="grid grid-cols-3 grid-rows-2 gap-2">
               <div className="col-span-3">
                 <Input
-                  type="text"
+                  type="number"
                   name="nik"
                   value={nik}
                   onChange={onNikChange}

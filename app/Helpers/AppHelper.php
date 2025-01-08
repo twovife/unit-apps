@@ -57,12 +57,6 @@ class AppHelper
 
 
 
-
-  public static function dateName($date)
-  {
-    return strtolower(Carbon::parse($date)->locale('id')->dayName);
-  }
-
   public static function callUnknownNik($request)
   {
     $prefix = strtoupper(substr($request->nik, 0, 2));
@@ -85,14 +79,39 @@ class AppHelper
     return $request->nik;
   }
 
+  // mengubah tanggal menjadi nama hari
+  public static function dateName($date)
+  {
+    return strtolower(Carbon::parse($date)->locale('id')->dayName);
+  }
 
+  // mengubah dari tanggal menjadi format Y-m
   public static function monthNumber($date)
   {
     return strtolower(Carbon::parse($date)->format('Y-m'));
   }
+
+  // mengubah tanggal menjadi nama bulan dalam indonesia
   public static function monthName($date)
   {
     return strtolower(Carbon::parse($date)->locale('id')->monthName);
+  }
+
+  // mengubah hari menjadi angka
+  public static function getNumbDays($request)
+  {
+    $mapping = [
+      'senin' => 1,
+      'selasa' => 2,
+      'rabu' => 3,
+      'kamis' => 4,
+      'jumat' => 5,
+      'sabtu' => 6,
+      'minggu' => 0,
+    ];
+    $hariLower = strtolower($request); // Normalisasi ke huruf kecil
+    return $mapping[$hariLower] ?? null; // Kembalikan angka, atau null jika tidak ditemukan
+
   }
 
   public static function status_pinjaman($parameter)
@@ -125,30 +144,7 @@ class AppHelper
       return false;
     }
   }
-  public static function getNumbDays($request)
-  {
-    $req = strtolower($request);
 
-    if ($req == "senin") {
-      return 1;
-    }
-    if ($req == "selasa") {
-      return 2;
-    }
-    if ($req == "rabu") {
-      return 3;
-    }
-    if ($req == "kamis") {
-      return 4;
-    }
-    if ($req == "jumat") {
-      return 5;
-    }
-    if ($req == "sabtu") {
-      return 6;
-    }
-    return 0;
-  }
 
   public static function getIsPaid($max_date, $req_day)
   {
