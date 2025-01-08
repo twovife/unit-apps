@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:public/build/assets/NoEditOverlay-92680984.js
-import{a as e}from"./app-1513e6ad.js";const a=({value:t="User Tidak Bisa Melakukan Edit"})=>e("div",{className:"absolute top-0 left-0 z-50 w-full h-full transition-all duration-200 ease-in opacity-0 bg-white/0 hover:bg-white/30 hover:opacity-100 hover:cursor-not-allowed",children:e("div",{className:"flex items-center justify-center w-full h-full",children:e("div",{className:"text-3xl font-black text-center text-red-500",children:t})})});export{a as N};
-========
-import{a as e}from"./app-35d31ed9.js";const a=({value:t="User Tidak Bisa Melakukan Edit"})=>e("div",{className:"absolute top-0 left-0 z-50 w-full h-full transition-all duration-200 ease-in opacity-0 bg-white/0 hover:bg-white/30 hover:opacity-100 hover:cursor-not-allowed",children:e("div",{className:"flex items-center justify-center w-full h-full",children:e("div",{className:"text-3xl font-black text-center text-red-500",children:t})})});export{a as N};
->>>>>>>> parent of 1b5b8c4 (build):public/build/assets/NoEditOverlay-19559f6f.js

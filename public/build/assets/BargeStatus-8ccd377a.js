@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:public/build/assets/BargeStatus-c0c91ea9.js
-import{a as s}from"./app-1513e6ad.js";import{B as o}from"./button-fa3185df.js";const n={open:"blue",acc:"yellow",success:"green",tolak:"default",gagal:"destructive",lama:"outline",baru:"yellow",true:"green",false:"destructive",ml:"default",mb:"destructive",cm:"yellow",normal:"green"},i=({value:e,children:t,onClick:a,...r})=>{const l=n[e]||"default";return s(o,{...r,onClick:a,size:"xs",variant:l,children:t??e})};export{i as B};
-========
-import{a as s}from"./app-35d31ed9.js";import{B as o}from"./button-1aa3a58c.js";const n={open:"blue",acc:"yellow",success:"green",tolak:"default",gagal:"destructive",lama:"outline",baru:"yellow",true:"green",false:"destructive",ml:"default",mb:"destructive",cm:"yellow",normal:"green"},i=({value:e,children:t,onClick:a,...r})=>{const l=n[e]||"default";return s(o,{...r,onClick:a,size:"xs",variant:l,children:t??e})};export{i as B};
->>>>>>>> parent of 1b5b8c4 (build):public/build/assets/BargeStatus-8ccd377a.js
