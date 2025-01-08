@@ -91,7 +91,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
               ['residential_address' => $transactionCustomer->alamat]
             );
 
-          echo $firstCustomerManageId . PHP_EOL . "manage asli";
+          echo   "manage asli" . $firstCustomerManageId . PHP_EOL;
           // diatas update hari pertama yang ditemukan
 
 
@@ -99,7 +99,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
           $remainingDays = $days->slice(1); // Ambil hari kedua dan seterusnya
 
           foreach ($remainingDays as $transaction) {
-            echo  $transaction->transaction_manage_customer_id . PHP_EOL . "managa awal";
+            echo "managa awal" .  $transaction->transaction_manage_customer_id . PHP_EOL;
             $newTransactionManage = TransactionManageCustomer::firstOrCreate([
               'transaction_customer_id' => $transactionCustomer->id,
               'transaction_loan_officer_grouping_id' => $transaction->transaction_loan_officer_grouping_id,
@@ -113,7 +113,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
               'transaction_manage_customer_id' => $newTransactionManage->id,
             ]);
           }
-          echo "membuat manage baru" . $newTransactionManage->id . " " . "managet terbaru" . $transaction->transaction_manage_customer_id . " " .  PHP_EOL;
+          echo "membuat manage baru = " . $newTransactionManage->id . " " . "managet terbaru = " . $transaction->transaction_manage_customer_id . " " .  PHP_EOL;
           echo "____________pindah halaman___________" . PHP_EOL;
         });
       DB::rollBack();
