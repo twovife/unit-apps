@@ -9,6 +9,7 @@ use App\Models\TransactionManageCustomer;
 use Exception;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class ChangeNasabahGroupingSeeder extends Seeder
 {
@@ -18,6 +19,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
   public function run(): void
   {
     try {
+      DB::beginTransaction();
       TransactionLoan::whereIn(
         'transaction_manage_customer_id',
         function ($query) {
@@ -40,23 +42,23 @@ class ChangeNasabahGroupingSeeder extends Seeder
           echo $customerId . PHP_EOL;
         });
 
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
-      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
+      echo "update hari tunggal selesai" . PHP_EOL;
 
       TransactionLoan::whereIn(
         'transaction_manage_customer_id',
@@ -97,7 +99,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
           $remainingDays = $days->slice(1); // Ambil hari kedua dan seterusnya
 
           foreach ($remainingDays as $transaction) {
-            $newTransactionManage = TransactionManageCustomer::createOrCreate([
+            $newTransactionManage = TransactionManageCustomer::firstOrCreate([
               'transaction_customer_id' => $transactionCustomer->id,
               'transaction_loan_officer_grouping_id' => $transaction->transaction_loan_officer_grouping_id,
               'day' => AppHelper::getNumbDays($transaction->hari),
@@ -112,7 +114,9 @@ class ChangeNasabahGroupingSeeder extends Seeder
           }
           echo $transactionCustomer . " " . $transaction->id . " " .  PHP_EOL;
         });
+      DB::commit();
     } catch (Exception $e) {
+      DB::rollBack();
       echo $e;
     }
   }
