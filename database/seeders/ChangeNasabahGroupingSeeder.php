@@ -96,10 +96,11 @@ class ChangeNasabahGroupingSeeder extends Seeder
           $remainingDays = $days->slice(1); // Ambil hari kedua dan seterusnya
 
           foreach ($remainingDays as $transaction) {
-            $newTransactionManage = TransactionManageCustomer::create([
+            $newTransactionManage = TransactionManageCustomer::createOrCreate([
               'transaction_customer_id' => $transactionCustomer->id,
               'transaction_loan_officer_grouping_id' => $transaction->transaction_loan_officer_grouping_id,
               'day' => AppHelper::getNumbDays($transaction->hari),
+            ], [
               'residential_address' => $transactionCustomer->alamat,
             ]);
 
