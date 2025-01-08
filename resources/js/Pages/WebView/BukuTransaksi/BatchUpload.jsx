@@ -8,6 +8,7 @@ const BatchUpload = () => {
       <NewNasabah
         onClosed={() => void 0}
         generateAngsuran={true}
+        typeInput={'text'}
         submitUrl={route('transaction.store_buku_transaksi_batch')}
       />
     </Authenticated>

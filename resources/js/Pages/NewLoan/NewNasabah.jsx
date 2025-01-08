@@ -26,7 +26,12 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 
-const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
+const NewNasabah = ({
+  onClosed,
+  generateAngsuran = false,
+  submitUrl,
+  typeInput = 'number',
+}) => {
   // getLink after generate
   const { printUrl } = usePage().props;
   const { isUnit, isMantri, isCanShowKelompok, isCreator } =
@@ -203,13 +208,13 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
       <div className="w-auto">
         <fieldset className="min-w-[20vw] p-4 mb-3 border rounded-lg">
           <legend className="px-1 -ml-1 text-sm font-medium">
-            Cari Nasabah
+            CEK NIK NASABAH
           </legend>
           <form className="w-full mb-3" onSubmit={onNikSubmit}>
             <Label optional>NIK</Label>
             <div className="flex items-center gap-3">
               <Input
-                type="text"
+                type={typeInput}
                 name="nik"
                 value={nik}
                 onChange={onNikChange}
