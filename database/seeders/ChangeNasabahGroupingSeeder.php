@@ -67,7 +67,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
             ->havingRaw('COUNT(DISTINCT hari) > 2');
         }
       )->select('transaction_manage_customer_id', 'hari', 'transaction_loan_officer_grouping_id')
-        ->lazy()
+        ->get()
         ->groupBy('transaction_manage_customer_id') // Kelompokkan transaksi berdasarkan `transaction_manage_customer_id`
         ->each(function ($transactions) {
           echo "start";
