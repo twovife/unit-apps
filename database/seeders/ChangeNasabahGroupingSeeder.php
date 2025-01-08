@@ -105,13 +105,13 @@ class ChangeNasabahGroupingSeeder extends Seeder
             ], [
               'residential_address' => $transactionCustomer->alamat,
             ]);
-
+            echo  $transaction->transaction_manage_customer_id . PHP_EOL;
             // Update `transaction_manage_customer_id` di transaksi
             $transaction->update([
               'transaction_manage_customer_id' => $newTransactionManage->id,
             ]);
           }
-          echo $transactionCustomer->id . " " . $transaction . " " .  PHP_EOL;
+          echo $newTransactionManage->id . " " . $transaction->transaction_manage_customer_id . " " .  PHP_EOL;
         });
       DB::commit();
     } catch (Exception $e) {
