@@ -17,6 +17,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
    */
   public function run(): void
   {
+    echo "running";
     try {
       //   TransactionLoan::whereIn(
       //     'transaction_manage_customer_id',
