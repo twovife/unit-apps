@@ -188,6 +188,16 @@ class AdminController extends Controller
   public function routetest()
   {
     // dd('asd');
-
+    $data = TransactionLoan::whereIn(
+      'transaction_manage_customer_id',
+      function ($query) {
+        $query->select('transaction_manage_customer_id')
+          ->from('transaction_loans')
+          ->groupBy('transaction_manage_customer_id')
+          ->havingRaw('COUNT(DISTINCT hari) > 2');
+      }
+    )->select('transaction_manage_customer_id', 'hari')
+      ->get();
+    dd($data);
   }
 }
