@@ -67,10 +67,11 @@ class ChangeNasabahGroupingSeeder extends Seeder
             ->havingRaw('COUNT(DISTINCT hari) > 2');
         }
       )->select('transaction_manage_customer_id', 'hari', 'transaction_loan_officer_grouping_id')
-        ->get();
-      echo "oke done get" . PHP_EOL;
-      // ->groupBy('transaction_manage_customer_id') // Kelompokkan transaksi berdasarkan `transaction_manage_customer_id`
-      // ->each(function ($transactions) {
+        ->get()
+        ->groupBy('transaction_manage_customer_id') // Kelompokkan transaksi berdasarkan `transaction_manage_customer_id`
+        ->each(function ($transactions) {
+          echo "oke done get" . PHP_EOL;
+        });
       //   echo "start";
       //   // Ambil semua hari yang terkait dengan `transaction_manage_customer_id`
       //   $days = $transactions->sortBy('hari');
@@ -113,6 +114,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
       //   }
       //   echo $transactionCustomer . " " . $transaction->id . " " .  PHP_EOL;
       // });
+
     } catch (Exception $e) {
       echo $e;
     }
