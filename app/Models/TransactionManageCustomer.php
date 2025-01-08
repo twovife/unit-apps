@@ -14,6 +14,10 @@ class TransactionManageCustomer extends Model
   protected $fillable = [
     "transaction_customer_id",
     "transaction_loan_officer_grouping_id",
+    "day",
+    "residential_address",
+    "alternative_name",
+    "status",
     'notes'
   ];
 
