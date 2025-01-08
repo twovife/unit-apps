@@ -740,3 +740,5 @@ class TransactionLoanController extends Controller
     return redirect()->back()->with('message', 'data berhasil diubah');
   }
 }
+
+
