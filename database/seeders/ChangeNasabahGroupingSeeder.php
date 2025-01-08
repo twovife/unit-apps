@@ -39,16 +39,25 @@ class ChangeNasabahGroupingSeeder extends Seeder
             ->update(['day' => $day], ['residential_address' => $transactionCustomer->alamat]);
           echo $customerId . PHP_EOL;
         });
-    } catch (Exception $e) {
-      echo $e;
-    }
 
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
+      echo "update hari tunggal selesai";
 
-    echo "update hari tunggal selesai";
-    sleep(5);
-
-
-    try {
       TransactionLoan::whereIn(
         'transaction_manage_customer_id',
         function ($query) {
