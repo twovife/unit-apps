@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AppHelper;
+use App\Models\TransactionCustomer;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanOfficerGrouping;
+use App\Models\TransactionManageCustomer;
 use App\Models\TransactionSirculation;
 use App\Models\User;
 use App\Models\VIsBalanceLoanWithDailyReport;
@@ -180,5 +182,12 @@ class AdminController extends Controller
   {
     $loanBalance = VIsBalanceLoanWithDailyReport::all();
     dd($loanBalance);
+  }
+
+
+  public function routetest()
+  {
+    // dd('asd');
+
   }
 }

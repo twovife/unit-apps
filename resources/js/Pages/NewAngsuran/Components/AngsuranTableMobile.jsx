@@ -157,7 +157,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                       </div>
                     </TableCell>
                     <TableCell className="p-1">
-                      <div className="font-semibold">{subrow.nama}</div>
+                      <div className="text-xs font-semibold">{subrow.nama}</div>
                       <div>{subrow.nik}</div>
                       <div className="text-ellipsis overflow-hidden ...">
                         {subrow.alamat}
