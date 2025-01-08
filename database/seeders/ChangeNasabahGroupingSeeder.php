@@ -57,7 +57,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
       //   echo "update hari tunggal selesai";
       //   echo "update hari tunggal selesai";
       //   echo "update hari tunggal selesai";
-
+      echo "gas";
       TransactionLoan::whereIn(
         'transaction_manage_customer_id',
         function ($query) {
@@ -112,6 +112,7 @@ class ChangeNasabahGroupingSeeder extends Seeder
           }
           echo $transactionCustomer . " " . $transaction->id . " " .  PHP_EOL;
         });
+      echo "gol";
     } catch (Exception $e) {
       echo $e;
     }
