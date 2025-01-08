@@ -3,6 +3,7 @@
     "file": "assets/Loading-80f63e10.css",
     "src": "Loading.css"
   },
+<<<<<<< HEAD
   "_AppSidebar-f5076252.js": {
     "file": "assets/AppSidebar-f5076252.js",
     "imports": [
@@ -43,10 +44,39 @@
   },
   "_Checkbox-da7e107c.js": {
     "file": "assets/Checkbox-da7e107c.js",
+=======
+  "_AuthenticatedLayout-0bdafcbe.js": {
+    "file": "assets/AuthenticatedLayout-0bdafcbe.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_Loading-4c55c56e.js"
+    ]
+  },
+  "_BadgeStatus-dd3c5d72.js": {
+    "file": "assets/BadgeStatus-dd3c5d72.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_badge-a296b71f.js",
+      "_button-1aa3a58c.js"
+    ]
+  },
+  "_BargeStatus-8ccd377a.js": {
+    "file": "assets/BargeStatus-8ccd377a.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_button-1aa3a58c.js"
+    ]
+  },
+  "_Checkbox-c284e770.js": {
+    "file": "assets/Checkbox-c284e770.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_Combination-6c46d091.js": {
     "file": "assets/Combination-6c46d091.js",
     "imports": [
@@ -83,22 +113,44 @@
   },
   "_GuestLayout-ba747592.js": {
     "file": "assets/GuestLayout-ba747592.js",
+=======
+  "_FormatNumbering-7d539e15.js": {
+    "file": "assets/FormatNumbering-7d539e15.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_react-number-format.es-d26c8058.js"
+    ]
+  },
+  "_GuestLayout-18f1753b.js": {
+    "file": "assets/GuestLayout-18f1753b.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_InputError-ff1ce2b5.js": {
     "file": "assets/InputError-ff1ce2b5.js",
+=======
+  "_InputError-43992ab8.js": {
+    "file": "assets/InputError-43992ab8.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_InputLabel-7e6bf775.js": {
     "file": "assets/InputLabel-7e6bf775.js",
+=======
+  "_InputLabel-c3c1a497.js": {
+    "file": "assets/InputLabel-c3c1a497.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_Loading-dd9671cb.js": {
     "css": [
       "assets/Loading-80f63e10.css"
@@ -121,40 +173,137 @@
   },
   "_NoEditOverlay-92680984.js": {
     "file": "assets/NoEditOverlay-92680984.js",
+=======
+  "_Loading-4c55c56e.js": {
+    "css": [
+      "assets/Loading-80f63e10.css"
+    ],
+    "file": "assets/Loading-4c55c56e.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_transition-e7b86cd0.js"
+    ]
+  },
+  "_MobileLayout-5acfae98.js": {
+    "file": "assets/MobileLayout-5acfae98.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Loading-4c55c56e.js",
+      "_SweetAlert-77e0aa69.js",
+      "_button-1aa3a58c.js",
+      "_index-d3423716.js",
+      "_react-icons.esm-2b559b63.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js"
+    ]
+  },
+  "_Navbar-910a8e5d.js": {
+    "file": "assets/Navbar-910a8e5d.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_button-1aa3a58c.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js"
+    ]
+  },
+  "_NoEditOverlay-19559f6f.js": {
+    "file": "assets/NoEditOverlay-19559f6f.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_PrimaryButton-24a1d2b3.js": {
     "file": "assets/PrimaryButton-24a1d2b3.js",
+=======
+  "_PrimaryButton-43022f34.js": {
+    "file": "assets/PrimaryButton-43022f34.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_SelectComponent-5b175194.js": {
     "file": "assets/SelectComponent-5b175194.js",
+=======
+  "_SelectComponent-97521685.js": {
+    "file": "assets/SelectComponent-97521685.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_SelectList-5a93a8d5.js": {
     "file": "assets/SelectList-5a93a8d5.js",
+=======
+  "_SelectList-57492041.js": {
+    "file": "assets/SelectList-57492041.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_SweetAlert-09647bae.js": {
     "file": "assets/SweetAlert-09647bae.js",
+=======
+  "_SweetAlert-77e0aa69.js": {
+    "file": "assets/SweetAlert-77e0aa69.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_TextInput-1dda684e.js": {
+    "file": "assets/TextInput-1dda684e.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_TextInput-a52a2d1e.js": {
     "file": "assets/TextInput-a52a2d1e.js",
+=======
+  "_badge-a296b71f.js": {
+    "file": "assets/badge-a296b71f.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_button-1aa3a58c.js": {
+    "file": "assets/button-1aa3a58c.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_card-201f9aba.js": {
+    "file": "assets/card-201f9aba.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_createLucideIcon-e2a25d74.js": {
+    "file": "assets/createLucideIcon-e2a25d74.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_accordion-1ef771f4.js": {
     "file": "assets/accordion-1ef771f4.js",
     "imports": [
@@ -191,10 +340,24 @@
   },
   "_createLucideIcon-0dc67ecd.js": {
     "file": "assets/createLucideIcon-0dc67ecd.js",
+=======
+  "_dialog-5923ce6e.js": {
+    "file": "assets/dialog-5923ce6e.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-d3423716.js",
+      "_react-icons.esm-2b559b63.js",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_index-1469b9f7.js": {
+    "file": "assets/index-1469b9f7.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_dialog-c0b29a8d.js": {
     "file": "assets/dialog-c0b29a8d.js",
     "imports": [
@@ -214,10 +377,64 @@
   },
   "_index-2e4ba388.js": {
     "file": "assets/index-2e4ba388.js",
+=======
+  "_index-2b75c312.js": {
+    "file": "assets/index-2b75c312.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_index-4dbb77c9.js"
+    ]
+  },
+  "_index-30fd9ee9.js": {
+    "file": "assets/index-30fd9ee9.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_button-1aa3a58c.js"
+    ]
+  },
+  "_index-4dbb77c9.js": {
+    "file": "assets/index-4dbb77c9.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_button-1aa3a58c.js"
+    ]
+  },
+  "_index-c504300c.js": {
+    "file": "assets/index-c504300c.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-4dbb77c9.js"
+    ]
+  },
+  "_index-d3423716.js": {
+    "file": "assets/index-d3423716.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js"
+    ]
+  },
+  "_index-fd31a729.js": {
+    "file": "assets/index-fd31a729.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-4dbb77c9.js",
+      "_button-1aa3a58c.js",
+      "_index-30fd9ee9.js"
+    ]
+  },
+  "_index.esm-afbbfe1e.js": {
+    "file": "assets/index.esm-afbbfe1e.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_index-3fba9fed.js": {
     "file": "assets/index-3fba9fed.js",
     "imports": [
@@ -243,16 +460,85 @@
   },
   "_index-fbaf698f.js": {
     "file": "assets/index-fbaf698f.js",
+=======
+  "_input-68668017.js": {
+    "file": "assets/input-68668017.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_label-abe714e5.js": {
+    "file": "assets/label-abe714e5.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-c504300c.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_popover-c111436e.js": {
+    "file": "assets/popover-c111436e.js",
+    "imports": [
+      "_createLucideIcon-e2a25d74.js",
+      "resources/js/app.jsx",
+      "_SelectComponent-97521685.js",
+      "_button-1aa3a58c.js",
+      "_input-68668017.js",
+      "_react-icons.esm-2b559b63.js",
+      "_Loading-4c55c56e.js",
+      "_label-abe714e5.js",
+      "_index-30fd9ee9.js",
+      "_index-fd31a729.js",
+      "_index-4dbb77c9.js",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_react-icons.esm-2b559b63.js": {
+    "file": "assets/react-icons.esm-2b559b63.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_button-1aa3a58c.js"
+    ]
+  },
+  "_react-number-format.es-d26c8058.js": {
+    "file": "assets/react-number-format.es-d26c8058.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_index.esm-a025e82b.js": {
     "file": "assets/index.esm-a025e82b.js",
+=======
+  "_table-06e53020.js": {
+    "file": "assets/table-06e53020.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_tabs-d27c9ef9.js": {
+    "file": "assets/tabs-d27c9ef9.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_index-30fd9ee9.js",
+      "_index-2b75c312.js",
+      "_index-4dbb77c9.js",
+      "_utils-36e2ef84.js"
+    ]
+  },
+  "_transition-e7b86cd0.js": {
+    "file": "assets/transition-e7b86cd0.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_input-79bff17c.js": {
     "file": "assets/input-79bff17c.js",
     "imports": [
@@ -289,10 +575,15 @@
   },
   "_react-icons.esm-5687bae1.js": {
     "file": "assets/react-icons.esm-5687bae1.js",
+=======
+  "_useFrontEndPermission-35e96759.js": {
+    "file": "assets/useFrontEndPermission-35e96759.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ]
   },
+<<<<<<< HEAD
   "_react-number-format.es-55b240a9.js": {
     "file": "assets/react-number-format.es-55b240a9.js",
     "imports": [
@@ -376,11 +667,35 @@
       "_utils-aa679991.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+  "_utils-36e2ef84.js": {
+    "file": "assets/utils-36e2ef84.js"
+  },
+  "_x-f2f95b68.js": {
+    "file": "assets/x-f2f95b68.js",
+    "imports": [
+      "_createLucideIcon-e2a25d74.js"
+    ]
+  },
+  "resources/js/Pages/AdminPanel/Components/AssignRoles.jsx": {
+    "file": "assets/AssignRoles-b66372dc.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_card-201f9aba.js",
+      "_label-abe714e5.js",
+      "_input-68668017.js",
+      "_button-1aa3a58c.js",
+      "_SelectList-57492041.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/AdminPanel/Components/AssignRoles.jsx"
   },
   "resources/js/Pages/AdminPanel/Components/MaintenerWorker.jsx": {
+<<<<<<< HEAD
     "file": "assets/MaintenerWorker-18d40976.js",
     "imports": [
       "resources/js/app.jsx",
@@ -392,11 +707,25 @@
       "_utils-aa679991.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+    "file": "assets/MaintenerWorker-484d2c4a.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_card-201f9aba.js",
+      "_label-abe714e5.js",
+      "_input-68668017.js",
+      "_button-1aa3a58c.js",
+      "_SelectList-57492041.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/AdminPanel/Components/MaintenerWorker.jsx"
   },
   "resources/js/Pages/AdminPanel/Components/Permission.jsx": {
+<<<<<<< HEAD
     "file": "assets/Permission-73d92c6d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -407,11 +736,24 @@
       "_utils-aa679991.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+    "file": "assets/Permission-117a9067.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_card-201f9aba.js",
+      "_label-abe714e5.js",
+      "_input-68668017.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/AdminPanel/Components/Permission.jsx"
   },
   "resources/js/Pages/AdminPanel/Components/Role.jsx": {
+<<<<<<< HEAD
     "file": "assets/Role-2de342cb.js",
     "imports": [
       "resources/js/app.jsx",
@@ -422,11 +764,24 @@
       "_utils-aa679991.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+    "file": "assets/Role-51251973.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_card-201f9aba.js",
+      "_label-abe714e5.js",
+      "_input-68668017.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/AdminPanel/Components/Role.jsx"
   },
   "resources/js/Pages/AdminPanel/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-8975f7be.js",
     "imports": [
       "resources/js/app.jsx",
@@ -462,10 +817,43 @@
       "_user-x-d8428dea.js",
       "_index-f6c8e49c.js",
       "_badge-2f261dfb.js"
+=======
+    "file": "assets/Index-24703249.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_card-201f9aba.js",
+      "resources/js/Pages/AdminPanel/Components/Permission.jsx",
+      "resources/js/Pages/AdminPanel/Components/Role.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_label-abe714e5.js",
+      "_input-68668017.js",
+      "_button-1aa3a58c.js",
+      "_SelectList-57492041.js",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "resources/js/Pages/AdminPanel/Components/AssignRoles.jsx",
+      "_BadgeStatus-dd3c5d72.js",
+      "resources/js/Pages/AdminPanel/Components/MaintenerWorker.jsx",
+      "_table-06e53020.js",
+      "_utils-36e2ef84.js",
+      "_Navbar-910a8e5d.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_index-c504300c.js",
+      "_badge-a296b71f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/AdminPanel/Index.jsx"
   },
+<<<<<<< HEAD
   "resources/js/Pages/AdminPanel/MonitoringStaff.jsx": {
     "file": "assets/MonitoringStaff-b9a1b53e.js",
     "imports": [
@@ -511,11 +899,31 @@
       "_react-icons.esm-5687bae1.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+  "resources/js/Pages/Administrasi/ManPower/GenerateUser.jsx": {
+    "file": "assets/GenerateUser-ed4918e5.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Loading-4c55c56e.js",
+      "_SelectList-57492041.js",
+      "_button-1aa3a58c.js",
+      "_dialog-5923ce6e.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_index-c504300c.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Administrasi/ManPower/GenerateUser.jsx"
   },
   "resources/js/Pages/Administrasi/ManPower/ManPower.jsx": {
+<<<<<<< HEAD
     "file": "assets/ManPower-08c5ab7f.js",
     "imports": [
       "resources/js/app.jsx",
@@ -541,11 +949,39 @@
       "_SelectComponent-5b175194.js",
       "_index-1c376abe.js",
       "_Combination-6c46d091.js"
+=======
+    "file": "assets/ManPower-bdebc95b.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_BadgeStatus-dd3c5d72.js",
+      "_table-06e53020.js",
+      "resources/js/Pages/Administrasi/ManPower/GenerateUser.jsx",
+      "_BargeStatus-8ccd377a.js",
+      "_popover-c111436e.js",
+      "_button-1aa3a58c.js",
+      "_badge-a296b71f.js",
+      "_utils-36e2ef84.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_SelectList-57492041.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_index-fd31a729.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Administrasi/ManPower/ManPower.jsx"
   },
   "resources/js/Pages/Auth/ConfirmPassword.jsx": {
+<<<<<<< HEAD
     "file": "assets/ConfirmPassword-a0d658aa.js",
     "imports": [
       "resources/js/app.jsx",
@@ -554,11 +990,22 @@
       "_InputLabel-7e6bf775.js",
       "_PrimaryButton-24a1d2b3.js",
       "_TextInput-a52a2d1e.js"
+=======
+    "file": "assets/ConfirmPassword-ed66a6db.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_GuestLayout-18f1753b.js",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_TextInput-1dda684e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Auth/ConfirmPassword.jsx"
   },
   "resources/js/Pages/Auth/ForgotPassword.jsx": {
+<<<<<<< HEAD
     "file": "assets/ForgotPassword-b49ea9d0.js",
     "imports": [
       "resources/js/app.jsx",
@@ -566,11 +1013,21 @@
       "_InputError-ff1ce2b5.js",
       "_PrimaryButton-24a1d2b3.js",
       "_TextInput-a52a2d1e.js"
+=======
+    "file": "assets/ForgotPassword-e46a43c8.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_GuestLayout-18f1753b.js",
+      "_InputError-43992ab8.js",
+      "_PrimaryButton-43022f34.js",
+      "_TextInput-1dda684e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Auth/ForgotPassword.jsx"
   },
   "resources/js/Pages/Auth/Login.jsx": {
+<<<<<<< HEAD
     "file": "assets/Login-baa8d099.js",
     "imports": [
       "resources/js/app.jsx",
@@ -585,11 +1042,28 @@
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js",
       "_transition-d80bb77d.js"
+=======
+    "file": "assets/Login-1ba6b583.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_GuestLayout-18f1753b.js",
+      "_InputError-43992ab8.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_card-201f9aba.js",
+      "_button-1aa3a58c.js",
+      "_Loading-4c55c56e.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Auth/Login.jsx"
   },
   "resources/js/Pages/Auth/Register.jsx": {
+<<<<<<< HEAD
     "file": "assets/Register-b59d2e71.js",
     "imports": [
       "resources/js/app.jsx",
@@ -616,11 +1090,34 @@
       "_createLucideIcon-0dc67ecd.js",
       "_user-x-d8428dea.js",
       "_transition-d80bb77d.js"
+=======
+    "file": "assets/Register-aa7c8c12.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_TextInput-1dda684e.js",
+      "_SelectList-57492041.js",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_Loading-4c55c56e.js",
+      "_button-1aa3a58c.js",
+      "_Navbar-910a8e5d.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_utils-36e2ef84.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Auth/Register.jsx"
   },
   "resources/js/Pages/Auth/ResetPassword.jsx": {
+<<<<<<< HEAD
     "file": "assets/ResetPassword-83ee245d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -629,21 +1126,40 @@
       "_InputLabel-7e6bf775.js",
       "_PrimaryButton-24a1d2b3.js",
       "_TextInput-a52a2d1e.js"
+=======
+    "file": "assets/ResetPassword-4819aafd.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_GuestLayout-18f1753b.js",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_TextInput-1dda684e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Auth/ResetPassword.jsx"
   },
   "resources/js/Pages/Auth/VerifyEmail.jsx": {
+<<<<<<< HEAD
     "file": "assets/VerifyEmail-0d5a0866.js",
     "imports": [
       "resources/js/app.jsx",
       "_GuestLayout-ba747592.js",
       "_PrimaryButton-24a1d2b3.js"
+=======
+    "file": "assets/VerifyEmail-22586a00.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_GuestLayout-18f1753b.js",
+      "_PrimaryButton-43022f34.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Auth/VerifyEmail.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Action.jsx": {
+<<<<<<< HEAD
     "file": "assets/Action-ac444987.js",
     "imports": [
       "resources/js/app.jsx",
@@ -651,10 +1167,25 @@
       "_accordion-1ef771f4.js",
       "_card-496f5bec.js",
       "_tabs-952dd9b9.js",
+=======
+    "file": "assets/Action-efc7307d.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_dialog-5923ce6e.js",
+      "_index-30fd9ee9.js",
+      "_index-2b75c312.js",
+      "_button-1aa3a58c.js",
+      "_index-4dbb77c9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_utils-36e2ef84.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+>>>>>>> parent of 1b5b8c4 (build)
       "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
       "resources/js/Pages/BukuTransaksi/Components/Acc.jsx",
       "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx",
       "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx",
+<<<<<<< HEAD
       "_Loading-dd9671cb.js",
       "_button-fa3185df.js",
       "_label-fcb642ac.js",
@@ -681,11 +1212,30 @@
       "_transition-d80bb77d.js",
       "_index-f6c8e49c.js",
       "_input-79bff17c.js"
+=======
+      "_Loading-4c55c56e.js",
+      "_label-abe714e5.js",
+      "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_index-d3423716.js",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_index.esm-afbbfe1e.js",
+      "_transition-e7b86cd0.js",
+      "_index-c504300c.js",
+      "_input-68668017.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Action.jsx"
   },
   "resources/js/Pages/BukuTransaksi/BukuTransaksi.jsx": {
+<<<<<<< HEAD
     "file": "assets/BukuTransaksi-ff49e410.js",
     "imports": [
       "resources/js/app.jsx",
@@ -718,17 +1268,54 @@
       "_label-fcb642ac.js",
       "_index-f6c8e49c.js",
       "_index.esm-a025e82b.js",
+=======
+    "file": "assets/BukuTransaksi-b777b5ff.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "resources/js/Pages/BukuTransaksi/Action.jsx",
+      "_BargeStatus-8ccd377a.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/BukuTransaksi/Components/Acc.jsx",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js",
+>>>>>>> parent of 1b5b8c4 (build)
       "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx",
       "_use-mobile-fce16445.js",
       "_createLucideIcon-0dc67ecd.js",
       "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx",
       "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx",
+<<<<<<< HEAD
       "_input-79bff17c.js"
+=======
+      "_input-68668017.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/BukuTransaksi.jsx"
   },
   "resources/js/Pages/BukuTransaksi/BukuTransaksiKepala.jsx": {
+<<<<<<< HEAD
     "file": "assets/BukuTransaksiKepala-b0e5cb60.js",
     "imports": [
       "resources/js/app.jsx",
@@ -762,17 +1349,54 @@
       "_label-fcb642ac.js",
       "_index-f6c8e49c.js",
       "_index.esm-a025e82b.js",
+=======
+    "file": "assets/BukuTransaksiKepala-0adb5f74.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_BargeStatus-8ccd377a.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "resources/js/Pages/BukuTransaksi/Action.jsx",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_button-1aa3a58c.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_index-1469b9f7.js",
+      "resources/js/Pages/BukuTransaksi/Components/Acc.jsx",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js",
+>>>>>>> parent of 1b5b8c4 (build)
       "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx",
       "_use-mobile-fce16445.js",
       "_createLucideIcon-0dc67ecd.js",
       "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx",
       "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx",
+<<<<<<< HEAD
       "_input-79bff17c.js"
+=======
+      "_input-68668017.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/BukuTransaksiKepala.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Components/Acc.jsx": {
+<<<<<<< HEAD
     "file": "assets/Acc-60fedd6d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -787,11 +1411,28 @@
       "_utils-aa679991.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+    "file": "assets/Acc-64600fbe.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Loading-4c55c56e.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_badge-a296b71f.js",
+      "_button-1aa3a58c.js",
+      "_label-abe714e5.js",
+      "_index.esm-afbbfe1e.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Components/Acc.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx": {
+<<<<<<< HEAD
     "file": "assets/ActionTable-83dd5c0d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -804,11 +1445,24 @@
       "_utils-aa679991.js",
       "_react-number-format.es-55b240a9.js",
       "_badge-2f261dfb.js"
+=======
+    "file": "assets/ActionTable-7f494273.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_button-1aa3a58c.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_badge-a296b71f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Components/Approval.jsx": {
+<<<<<<< HEAD
     "file": "assets/Approval-3eee9caf.js",
     "imports": [
       "resources/js/app.jsx",
@@ -828,11 +1482,34 @@
       "_index-40c8da9e.js",
       "_react-icons.esm-5687bae1.js",
       "_index-fbaf698f.js"
+=======
+    "file": "assets/Approval-885bce9d.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_Loading-4c55c56e.js",
+      "_FormatNumbering-7d539e15.js",
+      "_button-1aa3a58c.js",
+      "_dialog-5923ce6e.js",
+      "_input-68668017.js",
+      "_table-06e53020.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js",
+      "_transition-e7b86cd0.js",
+      "_react-number-format.es-d26c8058.js",
+      "_utils-36e2ef84.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Components/Approval.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx": {
+<<<<<<< HEAD
     "file": "assets/ChangeDetail-8af4cc63.js",
     "imports": [
       "resources/js/app.jsx",
@@ -847,11 +1524,28 @@
       "_utils-aa679991.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+    "file": "assets/ChangeDetail-1ccbc071.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Loading-4c55c56e.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_button-1aa3a58c.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index.esm-afbbfe1e.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Components/DetailRiwayat.jsx": {
+<<<<<<< HEAD
     "file": "assets/DetailRiwayat-95d1b609.js",
     "imports": [
       "resources/js/app.jsx",
@@ -861,11 +1555,23 @@
       "_button-fa3185df.js",
       "_utils-aa679991.js",
       "_react-number-format.es-55b240a9.js"
+=======
+    "file": "assets/DetailRiwayat-5b292bda.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Components/DetailRiwayat.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Components/ReStatus.jsx": {
+<<<<<<< HEAD
     "file": "assets/ReStatus-64e2d081.js",
     "imports": [
       "resources/js/app.jsx",
@@ -877,11 +1583,25 @@
       "_utils-aa679991.js",
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js"
+=======
+    "file": "assets/ReStatus-211ba8d0.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Loading-4c55c56e.js",
+      "_SelectList-57492041.js",
+      "_button-1aa3a58c.js",
+      "_label-abe714e5.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Components/ReStatus.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx": {
+<<<<<<< HEAD
     "file": "assets/RemoveLoan-a1dda1f9.js",
     "imports": [
       "resources/js/app.jsx",
@@ -889,11 +1609,21 @@
       "_button-fa3185df.js",
       "_transition-d80bb77d.js",
       "_utils-aa679991.js"
+=======
+    "file": "assets/RemoveLoan-9f8962d4.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Loading-4c55c56e.js",
+      "_button-1aa3a58c.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx"
   },
   "resources/js/Pages/BukuTransaksi/Rencana.jsx": {
+<<<<<<< HEAD
     "file": "assets/Rencana-25a30c65.js",
     "imports": [
       "resources/js/app.jsx",
@@ -916,11 +1646,37 @@
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/Rencana-4f3ca93b.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_BargeStatus-8ccd377a.js",
+      "resources/js/Pages/BukuTransaksi/Components/Approval.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_button-1aa3a58c.js",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_input-68668017.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/BukuTransaksi/Rencana.jsx"
   },
   "resources/js/Pages/Dashboard.jsx": {
+<<<<<<< HEAD
     "file": "assets/Dashboard-98c48a81.js",
     "imports": [
       "resources/js/app.jsx",
@@ -944,10 +1700,29 @@
       "_index-3fba9fed.js",
       "_createLucideIcon-0dc67ecd.js",
       "_user-x-d8428dea.js"
+=======
+    "file": "assets/Dashboard-a85b3b54.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Dashboard.jsx"
   },
+<<<<<<< HEAD
   "resources/js/Pages/Dashboard/MantriDashboard.jsx": {
     "file": "assets/MantriDashboard-317e6d06.js",
     "imports": [
@@ -980,11 +1755,34 @@
       "_index-40c8da9e.js",
       "_react-icons.esm-5687bae1.js",
       "_index-fbaf698f.js"
+=======
+  "resources/js/Pages/Kasir/Rekap/Components/Action.jsx": {
+    "file": "assets/Action-ea70d168.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_Loading-4c55c56e.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_button-1aa3a58c.js",
+      "_dialog-5923ce6e.js",
+      "_input-68668017.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js",
+      "_transition-e7b86cd0.js",
+      "_badge-a296b71f.js",
+      "_utils-36e2ef84.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/Rekap/Components/Action.jsx"
   },
   "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx": {
+<<<<<<< HEAD
     "file": "assets/TableRekap-9a08b1a2.js",
     "imports": [
       "resources/js/app.jsx",
@@ -995,11 +1793,24 @@
       "_button-fa3185df.js",
       "_utils-aa679991.js",
       "_react-number-format.es-55b240a9.js"
+=======
+    "file": "assets/TableRekap-7242b93f.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_BargeStatus-8ccd377a.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx"
   },
   "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx": {
+<<<<<<< HEAD
     "file": "assets/TableRekapKasir-f0cff12d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1010,11 +1821,24 @@
       "_button-fa3185df.js",
       "_utils-aa679991.js",
       "_react-number-format.es-55b240a9.js"
+=======
+    "file": "assets/TableRekapKasir-e26e7df9.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_BargeStatus-8ccd377a.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx"
   },
   "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx": {
+<<<<<<< HEAD
     "file": "assets/TunaiMantri-7c5e4f16.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1025,11 +1849,24 @@
       "_button-fa3185df.js",
       "_utils-aa679991.js",
       "_react-number-format.es-55b240a9.js"
+=======
+    "file": "assets/TunaiMantri-faa6f760.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_BargeStatus-8ccd377a.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx"
   },
   "resources/js/Pages/Kasir/Rekap/Permantri.jsx": {
+<<<<<<< HEAD
     "file": "assets/Permantri-283c8bc8.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1069,11 +1906,51 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/Permantri-032958c3.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_popover-c111436e.js",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_Loading-4c55c56e.js",
+      "_button-1aa3a58c.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_index-2b75c312.js",
+      "_transition-e7b86cd0.js",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/Rekap/Permantri.jsx"
   },
   "resources/js/Pages/Kasir/Rekap/RekapContent.jsx": {
+<<<<<<< HEAD
     "file": "assets/RekapContent-0b589871.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1109,11 +1986,49 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/RekapContent-0a7a13ff.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_popover-c111436e.js",
+      "_button-1aa3a58c.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_index-2b75c312.js",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/Rekap/RekapContent.jsx"
   },
   "resources/js/Pages/Kasir/RencanaDrop/Content.jsx": {
+<<<<<<< HEAD
     "file": "assets/Content-8cebad43.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1144,11 +2059,41 @@
       "_transition-d80bb77d.js",
       "_use-mobile-fce16445.js",
       "_index-3fba9fed.js"
+=======
+    "file": "assets/Content-4650adc3.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "resources/js/Pages/Kasir/RencanaDrop/TableRekap.jsx",
+      "_popover-c111436e.js",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_Loading-4c55c56e.js",
+      "_button-1aa3a58c.js",
+      "_tabs-d27c9ef9.js",
+      "_table-06e53020.js",
+      "_utils-36e2ef84.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_index-2b75c312.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/RencanaDrop/Content.jsx"
   },
   "resources/js/Pages/Kasir/RencanaDrop/TableRekap.jsx": {
+<<<<<<< HEAD
     "file": "assets/TableRekap-725e2e6f.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1159,11 +2104,24 @@
       "_button-fa3185df.js",
       "_utils-aa679991.js",
       "_react-number-format.es-55b240a9.js"
+=======
+    "file": "assets/TableRekap-5bc2bdba.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_BargeStatus-8ccd377a.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Kasir/RencanaDrop/TableRekap.jsx"
   },
   "resources/js/Pages/MobileApps/Angsuran/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-cc8e8209.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1218,11 +2176,63 @@
       "_x-9cf345df.js",
       "_AppSidebar-f5076252.js",
       "_user-x-d8428dea.js"
+=======
+    "file": "assets/Index-a1a599e6.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_Loading-4c55c56e.js",
+      "resources/js/Pages/NewAngsuran/Angsuran.jsx",
+      "_MobileLayout-5acfae98.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_transition-e7b86cd0.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "resources/js/Pages/NewAngsuran/Components/BukuStorting.jsx",
+      "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx",
+      "_BargeStatus-8ccd377a.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/Angsuran/Index.jsx"
   },
   "resources/js/Pages/MobileApps/Angsuran/SearchByDate.jsx": {
+<<<<<<< HEAD
     "file": "assets/SearchByDate-6c15e12d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1270,11 +2280,57 @@
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js"
+=======
+    "file": "assets/SearchByDate-2e773ade.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/NewAngsuran/AngsuranByDate.jsx",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_index-d3423716.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranByDateTable.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/Angsuran/SearchByDate.jsx"
   },
   "resources/js/Pages/MobileApps/BukuAngsuranMantri/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-a3ec0422.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1328,11 +2384,62 @@
       "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx",
       "_BargeStatus-c0c91ea9.js",
       "_x-9cf345df.js"
+=======
+    "file": "assets/Index-7ad75ceb.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/NewAngsuran/Angsuran.jsx",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_index-d3423716.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "resources/js/Pages/NewAngsuran/Components/BukuStorting.jsx",
+      "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx",
+      "_BargeStatus-8ccd377a.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/BukuAngsuranMantri/Index.jsx"
   },
   "resources/js/Pages/MobileApps/BukuTransaksiKepala/TransaksiMantri.jsx": {
+<<<<<<< HEAD
     "file": "assets/TransaksiMantri-a35dcb45.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1378,17 +2485,64 @@
       "_NoEditOverlay-92680984.js",
       "_useFrontEndPermission-e97f7be2.js",
       "_index.esm-a025e82b.js",
+=======
+    "file": "assets/TransaksiMantri-136f5edc.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_popover-c111436e.js",
+      "_button-1aa3a58c.js",
+      "_tabs-d27c9ef9.js",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/BukuTransaksi/BukuTransaksiKepala.jsx",
+      "resources/js/Pages/BukuTransaksi/Rencana.jsx",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_index-2b75c312.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-d3423716.js",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/BukuTransaksi/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_card-201f9aba.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_index-1469b9f7.js",
+      "resources/js/Pages/BukuTransaksi/Components/Acc.jsx",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_index.esm-afbbfe1e.js",
+>>>>>>> parent of 1b5b8c4 (build)
       "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx",
       "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx",
       "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx",
       "resources/js/Pages/BukuTransaksi/Components/Approval.jsx",
+<<<<<<< HEAD
       "_Checkbox-da7e107c.js",
       "_InputLabel-7e6bf775.js"
+=======
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/BukuTransaksiKepala/TransaksiMantri.jsx"
   },
   "resources/js/Pages/MobileApps/BukuTransaksiMantri/TransaksiMantri.jsx": {
+<<<<<<< HEAD
     "file": "assets/TransaksiMantri-87037daf.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1431,6 +2585,46 @@
       "_NoEditOverlay-92680984.js",
       "_useFrontEndPermission-e97f7be2.js",
       "_index.esm-a025e82b.js",
+=======
+    "file": "assets/TransaksiMantri-788cc7f7.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_popover-c111436e.js",
+      "_button-1aa3a58c.js",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/BukuTransaksi/BukuTransaksiKepala.jsx",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-2b75c312.js",
+      "_index-d3423716.js",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/BukuTransaksi/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_index-1469b9f7.js",
+      "resources/js/Pages/BukuTransaksi/Components/Acc.jsx",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_index.esm-afbbfe1e.js",
+>>>>>>> parent of 1b5b8c4 (build)
       "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx",
       "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx",
       "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx",
@@ -1442,6 +2636,7 @@
     "src": "resources/js/Pages/MobileApps/BukuTransaksiMantri/TransaksiMantri.jsx"
   },
   "resources/js/Pages/MobileApps/Create/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-3c3f3944.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1485,11 +2680,50 @@
       "_SweetAlert-09647bae.js",
       "_AppSidebar-f5076252.js",
       "_user-x-d8428dea.js"
+=======
+    "file": "assets/Index-9cf5e2bc.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/NewLoan/NewNasabah.jsx",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_index-d3423716.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_InputError-43992ab8.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js",
+      "_SelectComponent-97521685.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_Checkbox-c284e770.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_x-f2f95b68.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/Create/Index.jsx"
   },
   "resources/js/Pages/MobileApps/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-1e877366.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1512,11 +2746,31 @@
       "_index-1c376abe.js",
       "_index-fbaf698f.js",
       "_index-3fba9fed.js"
+=======
+    "file": "assets/Index-e0286623.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_MobileLayout-5acfae98.js",
+      "_button-1aa3a58c.js",
+      "_card-201f9aba.js",
+      "_react-icons.esm-2b559b63.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_index-fd31a729.js",
+      "_utils-36e2ef84.js",
+      "_index-d3423716.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/Index.jsx"
   },
   "resources/js/Pages/MobileApps/Rekap/RekapDua.jsx": {
+<<<<<<< HEAD
     "file": "assets/RekapDua-1e1bbe15.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1560,11 +2814,53 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/RekapDua-dc5ef541.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_Loading-4c55c56e.js",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/Kasir/Rekap/RekapContent.jsx",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_transition-e7b86cd0.js",
+      "_index-d3423716.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/Rekap/RekapDua.jsx"
   },
   "resources/js/Pages/MobileApps/Rekap/RekapPerMantri.jsx": {
+<<<<<<< HEAD
     "file": "assets/RekapPerMantri-2e0db2c9.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1608,11 +2904,53 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/RekapPerMantri-894a7b78.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/Kasir/Rekap/Permantri.jsx",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_index-d3423716.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_Navbar-910a8e5d.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/Rekap/RekapPerMantri.jsx"
   },
   "resources/js/Pages/MobileApps/Rekap/RekapSatu.jsx": {
+<<<<<<< HEAD
     "file": "assets/RekapSatu-290cb434.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1656,11 +2994,53 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/RekapSatu-335b985f.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_Loading-4c55c56e.js",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/Kasir/Rekap/RekapContent.jsx",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_transition-e7b86cd0.js",
+      "_index-d3423716.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/Rekap/RekapSatu.jsx"
   },
   "resources/js/Pages/MobileApps/RencanaDropKepala/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-bbc40879.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1695,10 +3075,43 @@
       "_label-fcb642ac.js",
       "_index-f6c8e49c.js",
       "_tabs-952dd9b9.js"
+=======
+    "file": "assets/Index-c9342a88.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_Loading-4c55c56e.js",
+      "_MobileLayout-5acfae98.js",
+      "resources/js/Pages/Kasir/RencanaDrop/Content.jsx",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_transition-e7b86cd0.js",
+      "_index-d3423716.js",
+      "resources/js/Pages/Kasir/RencanaDrop/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_tabs-d27c9ef9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/MobileApps/RencanaDropKepala/Index.jsx"
   },
+<<<<<<< HEAD
   "resources/js/Pages/MobileApps/_Index.jsx": {
     "file": "assets/_Index-6ef51388.js",
     "imports": [
@@ -1771,11 +3184,60 @@
       "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx",
       "_BargeStatus-c0c91ea9.js",
       "_x-9cf345df.js"
+=======
+  "resources/js/Pages/NewAngsuran/Angsuran.jsx": {
+    "file": "assets/Angsuran-1411c5c5.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_popover-c111436e.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx",
+      "resources/js/Pages/NewAngsuran/Components/BukuStorting.jsx",
+      "_button-1aa3a58c.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_index-2b75c312.js",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx",
+      "_BargeStatus-8ccd377a.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Angsuran.jsx"
   },
   "resources/js/Pages/NewAngsuran/AngsuranByDate.jsx": {
+<<<<<<< HEAD
     "file": "assets/AngsuranByDate-55a5cd9c.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1815,11 +3277,53 @@
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js"
+=======
+    "file": "assets/AngsuranByDate-e8ee12bb.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_popover-c111436e.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranByDateTable.jsx",
+      "_button-1aa3a58c.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/AngsuranByDate.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/Action.jsx": {
+<<<<<<< HEAD
     "file": "assets/Action-23b60756.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1828,10 +3332,21 @@
       "_table-7e5d8dfc.js",
       "_FormatNumbering-8f8bff39.js",
       "_badge-2f261dfb.js",
+=======
+    "file": "assets/Action-ee59f0ba.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_dialog-5923ce6e.js",
+      "_card-201f9aba.js",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_badge-a296b71f.js",
+>>>>>>> parent of 1b5b8c4 (build)
       "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
       "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
       "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+<<<<<<< HEAD
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js",
       "_index-40c8da9e.js",
@@ -1852,11 +3367,35 @@
       "_PrimaryButton-24a1d2b3.js",
       "_SelectList-5a93a8d5.js",
       "_TextInput-a52a2d1e.js"
+=======
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_react-number-format.es-d26c8058.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_input-68668017.js",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "_TextInput-1dda684e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/Action.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/AngsuranByDateTable.jsx": {
+<<<<<<< HEAD
     "file": "assets/AngsuranByDateTable-4a0aa171.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1890,11 +3429,48 @@
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js"
+=======
+    "file": "assets/AngsuranByDateTable-714f1ae6.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_button-1aa3a58c.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_badge-a296b71f.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_card-201f9aba.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_input-68668017.js",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/AngsuranByDateTable.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx": {
+<<<<<<< HEAD
     "file": "assets/AngsuranTable-6d6526b8.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1928,11 +3504,48 @@
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js"
+=======
+    "file": "assets/AngsuranTable-83995d28.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_button-1aa3a58c.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_badge-a296b71f.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_card-201f9aba.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_input-68668017.js",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx": {
+<<<<<<< HEAD
     "file": "assets/AngsuranTableMobile-d98509b5.js",
     "imports": [
       "resources/js/app.jsx",
@@ -1969,10 +3582,48 @@
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js"
+=======
+    "file": "assets/AngsuranTableMobile-11d7cd64.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_button-1aa3a58c.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_BargeStatus-8ccd377a.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_input-68668017.js",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx"
   },
+<<<<<<< HEAD
   "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobilexxx.jsx": {
     "file": "assets/AngsuranTableMobilexxx-811f709b.js",
     "imports": [
@@ -2032,11 +3683,33 @@
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js",
       "_transition-d80bb77d.js"
+=======
+  "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx": {
+    "file": "assets/ApprovalAkhir-77d66f9a.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_dialog-5923ce6e.js",
+      "_card-201f9aba.js",
+      "_label-abe714e5.js",
+      "_index.esm-afbbfe1e.js",
+      "_button-1aa3a58c.js",
+      "_Loading-4c55c56e.js",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx": {
+<<<<<<< HEAD
     "file": "assets/BayarAngsuran-43e34fac.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2051,11 +3724,28 @@
       "_index-f6c8e49c.js",
       "_index-fbaf698f.js",
       "_transition-d80bb77d.js"
+=======
+    "file": "assets/BayarAngsuran-a74bbd9d.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_card-201f9aba.js",
+      "_label-abe714e5.js",
+      "_input-68668017.js",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "_button-1aa3a58c.js",
+      "_Loading-4c55c56e.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/BukuStorting.jsx": {
+<<<<<<< HEAD
     "file": "assets/BukuStorting-e34e2445.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2090,11 +3780,49 @@
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js"
+=======
+    "file": "assets/BukuStorting-b0bdf99e.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_button-1aa3a58c.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_input-68668017.js",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/BukuStorting.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx": {
+<<<<<<< HEAD
     "file": "assets/DeleteAngsuran-27b6ef83.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2103,11 +3831,22 @@
       "_Loading-dd9671cb.js",
       "_utils-aa679991.js",
       "_transition-d80bb77d.js"
+=======
+    "file": "assets/DeleteAngsuran-51fad7c2.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_TextInput-1dda684e.js",
+      "_button-1aa3a58c.js",
+      "_Loading-4c55c56e.js",
+      "_utils-36e2ef84.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx": {
+<<<<<<< HEAD
     "file": "assets/DeleteLoan-be1b2074.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2116,11 +3855,22 @@
       "_Loading-dd9671cb.js",
       "_utils-aa679991.js",
       "_transition-d80bb77d.js"
+=======
+    "file": "assets/DeleteLoan-5a3159c8.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_TextInput-1dda684e.js",
+      "_button-1aa3a58c.js",
+      "_Loading-4c55c56e.js",
+      "_utils-36e2ef84.js",
+      "_transition-e7b86cd0.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx"
   },
   "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx": {
+<<<<<<< HEAD
     "file": "assets/JenisNasabah-eb71e6a9.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2132,11 +3882,25 @@
       "_card-496f5bec.js",
       "_transition-d80bb77d.js",
       "_utils-aa679991.js"
+=======
+    "file": "assets/JenisNasabah-29121434.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_Loading-4c55c56e.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "_card-201f9aba.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx"
   },
   "resources/js/Pages/NewLoan/BatchUpload.jsx": {
+<<<<<<< HEAD
     "file": "assets/BatchUpload-4e72c1bc.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2177,11 +3941,47 @@
       "_BargeStatus-c0c91ea9.js",
       "resources/js/Pages/NewLoan/Components/ModalShowAngsuran.jsx",
       "_dialog-c0b29a8d.js"
+=======
+    "file": "assets/BatchUpload-f4df1230.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_Loading-4c55c56e.js",
+      "_button-1aa3a58c.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index.esm-afbbfe1e.js",
+      "_SelectComponent-97521685.js",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_Checkbox-c284e770.js",
+      "_tabs-d27c9ef9.js",
+      "_card-201f9aba.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_x-f2f95b68.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js",
+      "_Navbar-910a8e5d.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewLoan/BatchUpload.jsx"
   },
   "resources/js/Pages/NewLoan/BatchUploadx.jsx": {
+<<<<<<< HEAD
     "file": "assets/BatchUploadx-93f72d81.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2222,10 +4022,46 @@
       "_BargeStatus-c0c91ea9.js",
       "resources/js/Pages/NewLoan/Components/ModalShowAngsuran.jsx",
       "_dialog-c0b29a8d.js"
+=======
+    "file": "assets/BatchUploadx-cc9c1f7c.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_Loading-4c55c56e.js",
+      "_button-1aa3a58c.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index.esm-afbbfe1e.js",
+      "_SelectComponent-97521685.js",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_Checkbox-c284e770.js",
+      "_tabs-d27c9ef9.js",
+      "_card-201f9aba.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_x-f2f95b68.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js",
+      "_index-c504300c.js",
+      "_index-4dbb77c9.js",
+      "_Navbar-910a8e5d.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewLoan/BatchUploadx.jsx"
   },
+<<<<<<< HEAD
   "resources/js/Pages/NewLoan/Components/ModalShowAngsuran.jsx": {
     "file": "assets/ModalShowAngsuran-2efd8777.js",
     "imports": [
@@ -2260,11 +4096,26 @@
       "_dialog-c0b29a8d.js",
       "_index-40c8da9e.js",
       "_react-icons.esm-5687bae1.js"
+=======
+  "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx": {
+    "file": "assets/RiwayatPengajuan-e98b5a16.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_button-1aa3a58c.js",
+      "_FormatNumbering-7d539e15.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_utils-36e2ef84.js",
+      "_react-number-format.es-d26c8058.js",
+      "_badge-a296b71f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx"
   },
   "resources/js/Pages/NewLoan/NewNasabah.jsx": {
+<<<<<<< HEAD
     "file": "assets/NewNasabah-2799da33.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2299,11 +4150,44 @@
       "_react-icons.esm-5687bae1.js",
       "_react-number-format.es-55b240a9.js",
       "_createLucideIcon-0dc67ecd.js"
+=======
+    "file": "assets/NewNasabah-da12611b.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_Loading-4c55c56e.js",
+      "_button-1aa3a58c.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index.esm-afbbfe1e.js",
+      "_SelectComponent-97521685.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_Checkbox-c284e770.js",
+      "_FormatNumbering-7d539e15.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_x-f2f95b68.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js",
+      "_index-30fd9ee9.js",
+      "_index-2b75c312.js",
+      "_index-4dbb77c9.js",
+      "_index-c504300c.js",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_react-number-format.es-d26c8058.js",
+      "_createLucideIcon-e2a25d74.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/NewLoan/NewNasabah.jsx"
   },
   "resources/js/Pages/Profile/Edit.jsx": {
+<<<<<<< HEAD
     "file": "assets/Edit-22efecf4.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2332,11 +4216,37 @@
       "_user-x-d8428dea.js",
       "_InputError-ff1ce2b5.js",
       "_InputLabel-7e6bf775.js"
+=======
+    "file": "assets/Edit-20149e1a.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/Profile/Partials/UpdatePasswordForm.jsx",
+      "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.jsx",
+      "_MobileLayout-5acfae98.js",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_index-d3423716.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Profile/Edit.jsx"
   },
   "resources/js/Pages/Profile/Partials/DeleteUserForm.jsx": {
+<<<<<<< HEAD
     "file": "assets/DeleteUserForm-ea6d1ae4.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2344,11 +4254,21 @@
       "_InputLabel-7e6bf775.js",
       "_transition-d80bb77d.js",
       "_TextInput-a52a2d1e.js"
+=======
+    "file": "assets/DeleteUserForm-c944c99c.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_transition-e7b86cd0.js",
+      "_TextInput-1dda684e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Profile/Partials/DeleteUserForm.jsx"
   },
   "resources/js/Pages/Profile/Partials/UpdatePasswordForm.jsx": {
+<<<<<<< HEAD
     "file": "assets/UpdatePasswordForm-00f985cb.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2358,22 +4278,43 @@
       "_button-fa3185df.js",
       "_transition-d80bb77d.js",
       "_utils-aa679991.js"
+=======
+    "file": "assets/UpdatePasswordForm-d3db393a.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_TextInput-1dda684e.js",
+      "_button-1aa3a58c.js",
+      "_transition-e7b86cd0.js",
+      "_utils-36e2ef84.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Profile/Partials/UpdatePasswordForm.jsx"
   },
   "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.jsx": {
+<<<<<<< HEAD
     "file": "assets/UpdateProfileInformationForm-0a291410.js",
     "imports": [
       "resources/js/app.jsx",
       "_InputError-ff1ce2b5.js",
       "_InputLabel-7e6bf775.js",
       "_TextInput-a52a2d1e.js"
+=======
+    "file": "assets/UpdateProfileInformationForm-4944bd8d.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_TextInput-1dda684e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.jsx"
   },
   "resources/js/Pages/SuperUser/BatchUpdate.jsx": {
+<<<<<<< HEAD
     "file": "assets/BatchUpdate-f1da5bf0.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2406,11 +4347,40 @@
       "_Checkbox-da7e107c.js",
       "_SelectList-5a93a8d5.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/BatchUpdate-fdb41ef8.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_TextInput-1dda684e.js",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/SuperUser/Components/OldCustomer.jsx",
+      "resources/js/Pages/SuperUser/Components/NewCustomer.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_Checkbox-c284e770.js",
+      "_SelectList-57492041.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/SuperUser/BatchUpdate.jsx"
   },
   "resources/js/Pages/SuperUser/Components/NewCustomer.jsx": {
+<<<<<<< HEAD
     "file": "assets/NewCustomer-8fe50273.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2421,11 +4391,24 @@
       "_SelectList-5a93a8d5.js",
       "_TextInput-a52a2d1e.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/NewCustomer-a77b94c7.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "_TextInput-1dda684e.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/SuperUser/Components/NewCustomer.jsx"
   },
   "resources/js/Pages/SuperUser/Components/OldCustomer.jsx": {
+<<<<<<< HEAD
     "file": "assets/OldCustomer-de157f1e.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2436,11 +4419,24 @@
       "_SelectList-5a93a8d5.js",
       "_TextInput-a52a2d1e.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/OldCustomer-66c5e88f.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "_TextInput-1dda684e.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/SuperUser/Components/OldCustomer.jsx"
   },
   "resources/js/Pages/WebView/Angsuran/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-6b754495.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2495,11 +4491,63 @@
       "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx",
       "_BargeStatus-c0c91ea9.js",
       "_x-9cf345df.js"
+=======
+    "file": "assets/Index-3d83abe0.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "resources/js/Pages/NewAngsuran/Angsuran.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "resources/js/Pages/NewAngsuran/Components/BukuStorting.jsx",
+      "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx",
+      "_BargeStatus-8ccd377a.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/Angsuran/Index.jsx"
   },
   "resources/js/Pages/WebView/Angsuran/SearchByDate.jsx": {
+<<<<<<< HEAD
     "file": "assets/SearchByDate-71fa1803.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2548,11 +4596,58 @@
       "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
       "_useFrontEndPermission-e97f7be2.js",
       "_NoEditOverlay-92680984.js"
+=======
+    "file": "assets/SearchByDate-4ef5d1da.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "resources/js/Pages/NewAngsuran/AngsuranByDate.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "resources/js/Pages/NewAngsuran/Components/AngsuranByDateTable.jsx",
+      "_table-06e53020.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/NewAngsuran/Components/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_card-201f9aba.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx",
+      "_index.esm-afbbfe1e.js",
+      "_Checkbox-c284e770.js",
+      "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_InputLabel-c3c1a497.js",
+      "_PrimaryButton-43022f34.js",
+      "_SelectList-57492041.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx",
+      "_TextInput-1dda684e.js",
+      "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/Angsuran/SearchByDate.jsx"
   },
   "resources/js/Pages/WebView/BukuTransaksi/BatchUpload.jsx": {
+<<<<<<< HEAD
     "file": "assets/BatchUpload-d8cf141c.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2596,11 +4691,50 @@
       "_separator-e6bdf748.js",
       "_Combination-6c46d091.js",
       "_user-x-d8428dea.js"
+=======
+    "file": "assets/BatchUpload-768aac72.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "resources/js/Pages/NewLoan/NewNasabah.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_InputError-43992ab8.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+      "_index-30fd9ee9.js",
+      "_index-2b75c312.js",
+      "_index-4dbb77c9.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js",
+      "_SelectComponent-97521685.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_Checkbox-c284e770.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_x-f2f95b68.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/BukuTransaksi/BatchUpload.jsx"
   },
   "resources/js/Pages/WebView/BukuTransaksi/Create.jsx": {
+<<<<<<< HEAD
     "file": "assets/Create-988202b9.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2636,11 +4770,48 @@
       "_search-cd240278.js",
       "_createLucideIcon-0dc67ecd.js",
       "_x-9cf345df.js"
+=======
+    "file": "assets/Create-ebd6d083.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_dialog-5923ce6e.js",
+      "resources/js/Pages/NewLoan/NewNasabah.jsx",
+      "_index-d3423716.js",
+      "_index-30fd9ee9.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-4dbb77c9.js",
+      "_InputError-43992ab8.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_card-201f9aba.js",
+      "_tabs-d27c9ef9.js",
+      "_index-2b75c312.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index.esm-afbbfe1e.js",
+      "_SelectComponent-97521685.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_Checkbox-c284e770.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_NoEditOverlay-19559f6f.js",
+      "_x-f2f95b68.js",
+      "_createLucideIcon-e2a25d74.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/BukuTransaksi/Create.jsx"
   },
   "resources/js/Pages/WebView/BukuTransaksi/TransaksiMantri.jsx": {
+<<<<<<< HEAD
     "file": "assets/TransaksiMantri-1a1d6442.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2687,10 +4858,53 @@
       "_useFrontEndPermission-e97f7be2.js",
       "_badge-2f261dfb.js",
       "_index.esm-a025e82b.js",
+=======
+    "file": "assets/TransaksiMantri-454fbc60.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_popover-c111436e.js",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "_button-1aa3a58c.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/BukuTransaksi/BukuTransaksi.jsx",
+      "resources/js/Pages/WebView/BukuTransaksi/Create.jsx",
+      "resources/js/Pages/BukuTransaksi/Rencana.jsx",
+      "_createLucideIcon-e2a25d74.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_utils-36e2ef84.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_index-fd31a729.js",
+      "_Navbar-910a8e5d.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-2b75c312.js",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "resources/js/Pages/BukuTransaksi/Action.jsx",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_card-201f9aba.js",
+      "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "resources/js/Pages/BukuTransaksi/Components/Acc.jsx",
+      "_NoEditOverlay-19559f6f.js",
+      "_useFrontEndPermission-35e96759.js",
+      "_index.esm-afbbfe1e.js",
+>>>>>>> parent of 1b5b8c4 (build)
       "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx",
       "_BadgeStatus-6e08e193.js",
       "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx",
       "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx",
+<<<<<<< HEAD
       "resources/js/Pages/NewLoan/NewNasabah.jsx",
       "_InputError-ff1ce2b5.js",
       "_Checkbox-da7e107c.js",
@@ -2698,11 +4912,21 @@
       "_x-9cf345df.js",
       "resources/js/Pages/BukuTransaksi/Components/Approval.jsx",
       "_InputLabel-7e6bf775.js"
+=======
+      "_BargeStatus-8ccd377a.js",
+      "resources/js/Pages/NewLoan/NewNasabah.jsx",
+      "_InputError-43992ab8.js",
+      "_Checkbox-c284e770.js",
+      "_x-f2f95b68.js",
+      "resources/js/Pages/BukuTransaksi/Components/Approval.jsx",
+      "_InputLabel-c3c1a497.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/BukuTransaksi/TransaksiMantri.jsx"
   },
   "resources/js/Pages/WebView/ManPower/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-7e0b560d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2737,11 +4961,44 @@
       "_BargeStatus-c0c91ea9.js",
       "_popover-a9c7bb5d.js",
       "_SelectComponent-5b175194.js"
+=======
+    "file": "assets/Index-c2a4e32f.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "resources/js/Pages/Administrasi/ManPower/ManPower.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_table-06e53020.js",
+      "resources/js/Pages/Administrasi/ManPower/GenerateUser.jsx",
+      "_SelectList-57492041.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_BargeStatus-8ccd377a.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/ManPower/Index.jsx"
   },
   "resources/js/Pages/WebView/Rekap/RekapDua.jsx": {
+<<<<<<< HEAD
     "file": "assets/RekapDua-3d7c3948.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2785,11 +5042,53 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/RekapDua-34da41a1.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "resources/js/Pages/Kasir/Rekap/RekapContent.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/Rekap/RekapDua.jsx"
   },
   "resources/js/Pages/WebView/Rekap/RekapPerMantri.jsx": {
+<<<<<<< HEAD
     "file": "assets/RekapPerMantri-b33f795d.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2833,11 +5132,53 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/RekapPerMantri-774e3e8b.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "resources/js/Pages/Kasir/Rekap/Permantri.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/Rekap/RekapPerMantri.jsx"
   },
   "resources/js/Pages/WebView/Rekap/RekapSatu.jsx": {
+<<<<<<< HEAD
     "file": "assets/RekapSatu-2d2623f9.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2881,11 +5222,53 @@
       "_badge-2f261dfb.js",
       "_dialog-c0b29a8d.js",
       "_index.esm-a025e82b.js"
+=======
+    "file": "assets/RekapSatu-79f4caaa.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "resources/js/Pages/Kasir/Rekap/RekapContent.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_tabs-d27c9ef9.js",
+      "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx",
+      "resources/js/Pages/Kasir/Rekap/Components/Action.jsx",
+      "_Checkbox-c284e770.js",
+      "_InputLabel-c3c1a497.js",
+      "_BadgeStatus-dd3c5d72.js",
+      "_badge-a296b71f.js",
+      "_dialog-5923ce6e.js",
+      "_index-d3423716.js",
+      "_index.esm-afbbfe1e.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/Rekap/RekapSatu.jsx"
   },
   "resources/js/Pages/WebView/RencanaDropKepala/Index.jsx": {
+<<<<<<< HEAD
     "file": "assets/Index-b8131d73.js",
     "imports": [
       "resources/js/app.jsx",
@@ -2920,12 +5303,47 @@
       "_label-fcb642ac.js",
       "_index-f6c8e49c.js",
       "_tabs-952dd9b9.js"
+=======
+    "file": "assets/Index-b76b2a4e.js",
+    "imports": [
+      "resources/js/app.jsx",
+      "_AuthenticatedLayout-0bdafcbe.js",
+      "resources/js/Pages/Kasir/RencanaDrop/Content.jsx",
+      "_Navbar-910a8e5d.js",
+      "_button-1aa3a58c.js",
+      "_utils-36e2ef84.js",
+      "_createLucideIcon-e2a25d74.js",
+      "_SweetAlert-77e0aa69.js",
+      "_index-30fd9ee9.js",
+      "_index-4dbb77c9.js",
+      "_index-2b75c312.js",
+      "_react-icons.esm-2b559b63.js",
+      "_index-fd31a729.js",
+      "_Loading-4c55c56e.js",
+      "_transition-e7b86cd0.js",
+      "resources/js/Pages/Kasir/RencanaDrop/TableRekap.jsx",
+      "_table-06e53020.js",
+      "_index-1469b9f7.js",
+      "_FormatNumbering-7d539e15.js",
+      "_react-number-format.es-d26c8058.js",
+      "_BargeStatus-8ccd377a.js",
+      "_popover-c111436e.js",
+      "_SelectComponent-97521685.js",
+      "_input-68668017.js",
+      "_label-abe714e5.js",
+      "_index-c504300c.js",
+      "_tabs-d27c9ef9.js"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "isDynamicEntry": true,
     "src": "resources/js/Pages/WebView/RencanaDropKepala/Index.jsx"
   },
   "resources/js/Pages/Welcome.jsx": {
+<<<<<<< HEAD
     "file": "assets/Welcome-a8997c59.js",
+=======
+    "file": "assets/Welcome-a2391148.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "imports": [
       "resources/js/app.jsx"
     ],
@@ -2933,12 +5351,20 @@
     "src": "resources/js/Pages/Welcome.jsx"
   },
   "resources/js/app.css": {
+<<<<<<< HEAD
     "file": "assets/app-c7ddee2b.css",
+=======
+    "file": "assets/app-d36e9686.css",
+>>>>>>> parent of 1b5b8c4 (build)
     "src": "resources/js/app.css"
   },
   "resources/js/app.jsx": {
     "css": [
+<<<<<<< HEAD
       "assets/app-c7ddee2b.css"
+=======
+      "assets/app-d36e9686.css"
+>>>>>>> parent of 1b5b8c4 (build)
     ],
     "dynamicImports": [
       "resources/js/Pages/AdminPanel/Components/AssignRoles.jsx",
@@ -2946,7 +5372,6 @@
       "resources/js/Pages/AdminPanel/Components/Permission.jsx",
       "resources/js/Pages/AdminPanel/Components/Role.jsx",
       "resources/js/Pages/AdminPanel/Index.jsx",
-      "resources/js/Pages/AdminPanel/MonitoringStaff.jsx",
       "resources/js/Pages/Administrasi/ManPower/GenerateUser.jsx",
       "resources/js/Pages/Administrasi/ManPower/ManPower.jsx",
       "resources/js/Pages/Auth/ConfirmPassword.jsx",
@@ -3025,7 +5450,11 @@
       "resources/js/Pages/WebView/RencanaDropKepala/Index.jsx",
       "resources/js/Pages/Welcome.jsx"
     ],
+<<<<<<< HEAD
     "file": "assets/app-1513e6ad.js",
+=======
+    "file": "assets/app-35d31ed9.js",
+>>>>>>> parent of 1b5b8c4 (build)
     "isEntry": true,
     "src": "resources/js/app.jsx"
   }
