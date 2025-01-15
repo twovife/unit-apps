@@ -32,7 +32,7 @@ class EmploymentSeeder extends Seeder
     echo 'emplyment_generated' . PHP_EOL;
     $employmentData = Employment::all();
     echo 'employment called' . PHP_EOL;
-    $employees = Employee::all();
+    $employees = Employee::whereNull('employment_id')->get();
     echo 'employee called' . PHP_EOL;
 
     try {
