@@ -66,7 +66,10 @@ Route::middleware('auth')->group(function () {
       Route::get('/drop_date', "index_pinjaman_search")->name('index_pinjaman_search');
       Route::get('/pinjaman-macet', "index_pinjaman_macet")->name('index_pinjaman_macet');
       Route::get('/actionloan/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
+      Route::get('/checkpengajuan/{transactionLoan}', "checkpengajuan")->name('checkpengajuan');
       Route::post('/actionloan/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
+      Route::post('/store-pengajuan-lama/{transactionLoan}', "store_pengajuan_lama")->name('store_pengajuan_lama');
+      Route::post('/white-off-loan/{transactionLoan}', "white_off_loan")->name('white_off_loan'); //router pemutihan
       Route::delete('/actionloan/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
       Route::delete('/deleteloan/{transactionLoan}', "destroy_loan")->name('destroy_loan');
     });

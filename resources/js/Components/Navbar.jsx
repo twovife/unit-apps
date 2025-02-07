@@ -34,12 +34,6 @@ const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
         </div>
         <div className="flex flex-1 w-full gap-6 underline">
           <Link
-            href="#"
-            className="transition-colors text-muted-foreground hover:text-foreground"
-          >
-            Home
-          </Link>
-          <Link
             href={route('mobile_apps.index')}
             className="transition-colors text-muted-foreground hover:text-foreground"
           >

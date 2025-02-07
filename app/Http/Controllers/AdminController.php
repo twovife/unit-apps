@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AppHelper;
+use App\Models\Loan;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionSirculation;
@@ -178,7 +179,11 @@ class AdminController extends Controller
 
   public function loan_balancing(Request $request)
   {
-    $loanBalance = VIsBalanceLoanWithDailyReport::all();
-    dd($loanBalance);
+    $transactions = TransactionLoan::select('id', 'drop_date', 'hari')->get();
+
+    $inBalanceDay = $transactions->filter(function ($transaction) {
+      return AppHelper::dateName($transaction->drop_date) !== $transaction->hari;
+    })->count();
+    dd($inBalanceDay);
   }
 }

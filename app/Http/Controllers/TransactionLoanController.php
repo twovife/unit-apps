@@ -93,6 +93,7 @@ class TransactionLoanController extends Controller
               'drop_date' => $item->drop_date,
               'pinjaman' => $item->pinjaman,
               'unit' => $item->branch->unit,
+              'hari' => $item->hari,
               'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
               'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
               'lunas' => $isLunas,
@@ -100,6 +101,7 @@ class TransactionLoanController extends Controller
             ];
           });
         })->sortBy('kelompok')->sortBy('drop_date')->values(),
+
         'history_lain' => $nasabah->manage_customer->filter(function ($customer) {
           return $customer->branch && $customer->branch->id != auth()->user()->employee->branch_id;
         })->flatMap(function ($filtered_data) {
@@ -113,6 +115,7 @@ class TransactionLoanController extends Controller
             return [
               'drop_date' => $item->drop_date,
               'pinjaman' => $item->pinjaman,
+              'hari' => $item->hari,
               'unit' => $item->branch->unit, // Menggunakan optional() langsung
               'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
               'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
@@ -127,9 +130,33 @@ class TransactionLoanController extends Controller
     return response()->json(['data' => $data ?? null, 'return_nik' => $request->nik]);
   }
 
-  /**
-   * Store a newly created resource in storage.
-   */
+  public function get_instalment_nasabah(TransactionLoan $transactionLoan, Request $request)
+  {
+
+    $pinjaman = 0;
+    $transactionLoan->load(['loan_instalment' => function ($query) {
+      $query->orderBy('transaction_date', 'desc');
+    }]);
+
+    $instalments = $transactionLoan->loan_instalment;
+    $saldo = $pinjaman;
+
+    $sortedInstalments = [];
+
+    foreach ($instalments as $instalment) {
+      $sortedInstalments[] = [
+        'transaction_date' => $instalment->transaction_date,
+        'nominal' => $instalment->nominal,
+        'saldo' => $saldo,
+        'dana_titipan' => $instalment->danatitipan ? true : false,
+        'status' => AppHelper::generateStatusAngsuranString($transactionLoan->drop_date,  $instalment['transaction_date']),
+      ];
+      $saldo += $instalment->nominal;
+    }
+    return response()->json(['data' => $sortedInstalments ?? null], 200);
+  }
+
+
   public function store_buku_transaksi(Request $request)
   {
 
@@ -363,6 +390,83 @@ class TransactionLoanController extends Controller
   }
 
 
+  public function store_pengajuan_lama(TransactionLoan $transactionLoan, Request $request)
+  {
+
+    if (!auth()->user()->hasPermissionTo('can create')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
+    }
+
+    $previousUrl = url()->previous();
+
+    $previousRouteName = app('router')->getRoutes()->match(app('request')->create($previousUrl))->getName();
+    if (!auth()->user()->hasPermissionTo('can create')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
+    }
+
+    if (AppHelper::dateName($transactionLoan->drop_date) !== AppHelper::dateName($request->request_date)) {
+      return redirect()->back()->withErrors('Hari Tidak Sama');
+    }
+    if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
+      return redirect()->back()->withErrors('Hari Tidak Sama');
+    }
+
+    $val = $request->validate([
+      'request_nominal' =>  ["required", 'integer', 'min:100000'],
+      'request_date' => ['required', 'date'],
+      'tanggal_drop' =>  ['required', 'date'],
+      'type' =>  ['required'],
+    ], [
+      '*.min' => 'minimal diisi 100rb'
+    ]);
+
+    try {
+      DB::beginTransaction();
+      $drop_langsung = $request->request_date == $request->tanggal_drop;
+
+      $officerGrouping = TransactionLoanOfficerGrouping::find($transactionLoan->transaction_loan_officer_grouping_id);
+      $mantri = AppHelper::getMantri($officerGrouping);
+
+
+
+      $loan = TransactionLoan::create([
+        'transaction_manage_customer_id' => $transactionLoan->transaction_manage_customer_id,
+        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+        'request_date' => $request->request_date,
+        'user_mantri' => $mantri,
+        'drop_date' => $request->tanggal_drop,
+        'hari' => AppHelper::dateName($request->tanggal_drop),
+        'status' => "open",
+        'user_input' => auth()->user()->employee->id,
+        'drop_before' => $transactionLoan->nominal_drop,
+        'request_nominal' => $request->request_nominal,
+      ]);
+      // dd($loan);
+
+      if ($drop_langsung) {
+        $loan->update([
+          'user_drop' => $mantri,
+          'status' => "success",
+          'nominal_drop' => $request->request_nominal,
+          'request_nominal' => null,
+        ]);
+      }
+
+      $transactionLoan->out_date = $request->tanggal_drop;
+      $transactionLoan->transaction_out_reasons_id = 1;
+      $transactionLoan->save();
+
+
+      DB::commit();
+    } catch (Exception $exception) {
+      DB::rollBack();
+      return redirect()->back()->withErrors($exception->getMessage());
+    }
+
+
+    return redirect()->back()->with('message', 'Berhasil Menambahkan Pengajuan');
+  }
+
 
   // UBAH STATUS PINJAMAN
   public function action_buku_transaksi(TransactionLoan $transactionLoan, Request $request)
@@ -479,11 +583,13 @@ class TransactionLoanController extends Controller
         'branch',
         'customer',
         'mantri',
+        'white_off',
         'loan_officer_grouping'
       ]
     );
 
-
+    $pemutihan = $loan->white_off?->nominal ?? 0;
+    $saldo = ($loan->pinjaman - $pemutihan) - $loan->loan_instalment->sum('nominal');
     $pinjaman = [
       'nomor_anggota' => $loan->manage_customer->id,
       'id' => $loan->id,
@@ -498,7 +604,7 @@ class TransactionLoanController extends Controller
       'pinjaman' => $loan->pinjaman,
       'status_pinjaman' => AppHelper::status_pinjaman($loan->loan_instalment->first()?->status),
       'notes' => $loan->notes ?? null,
-      'lunas' => $loan->loan_instalment->sum('nominal') == $loan->pinjaman,
+      'lunas' => $saldo <= 0,
       'mantri' => $loan->mantri->nama_karyawan,
     ];
 
@@ -506,7 +612,6 @@ class TransactionLoanController extends Controller
     $instalment = $loan->loan_instalment->map(function ($instalment) use (&$saldo) {
       $saldoBefore = $saldo;
       $saldo += $instalment->nominal;
-
       return [
         'id' => $instalment->id,
         'nominal' => $instalment->nominal,
@@ -518,11 +623,28 @@ class TransactionLoanController extends Controller
       ];
     });
 
+
+
     $loan = $transactionLoan->load('loan_instalment');
-    return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment]);
+    return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment, 'pemutihan' => $loan->white_off ?? null], 200);
   }
 
+  public function checkpengajuan(TransactionLoan $transactionLoan, Request $request)
+  {
+    // get nasabah id
+    $id_transaksi = $transactionLoan->transaction_manage_customer_id;
+    $transaction_list_by_manage_customer = TransactionLoan::where('transaction_manage_customer_id', $id_transaksi)
+      ->where('drop_date', '>', $transactionLoan->drop_date)
+      ->whereIn('status', ['open', 'acc', 'tolak', 'gagal'])
+      ->get();
 
+    $data = [
+      'loan_out_status' => $transactionLoan->transaction_out_reasons_id,
+      'cek_pengajuan' => $transaction_list_by_manage_customer
+    ];
+
+    return response()->json(['data' => $data ?? null], 200);
+  }
 
   //  NAH INI POST UNTUK BAYAR ASUNYA
   public function bayar_pinjaman(Request $request, TransactionLoan $transactionLoan)
@@ -611,6 +733,40 @@ class TransactionLoanController extends Controller
       return redirect()->back()->with('error', 'data gagal diubah');
     }
     return redirect()->back()->with('message', 'data berhasil diubah');
+  }
+
+
+  public function  white_off_loan(TransactionLoan $transactionLoan, Request $request)
+  {
+    $val = $request->validate([
+      'nominal' => ['required', 'integer', 'min:1'],
+      'transaction_date' => ['required', 'date'],
+    ]);
+
+    try {
+      DB::beginTransaction();
+
+      $outDate = $transactionLoan->out_date;
+      $reason = $transactionLoan->transaction_out_reasons_id;
+
+      $transactionLoan->out_date = $outDate ? $outDate : $request->transaction_date;
+      $transactionLoan->transaction_out_reasons_id = $reason ? $reason : 4;
+
+
+      $transactionLoan->white_off()->create([
+        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+        'transaction_date' => $request->transaction_date,
+        'nominal' => $request->nominal,
+      ]);
+
+      $transactionLoan->save();
+      DB::commit();
+    } catch (Exception $e) {
+      DB::rollBack();
+      return redirect()->back()->withErrors('Data gagal diubah');
+    }
+
+    return redirect()->back()->with('message', 'Data berhasil diubah');
   }
 
   /**

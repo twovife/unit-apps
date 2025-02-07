@@ -57,8 +57,6 @@ const NewNasabah = ({
     angsuran: [],
   });
 
-  console.log(data);
-
   // handlingForAngsuranBatchProssess
   const [elements, setElements] = useState([]);
   const [calculatePinjaman, setCalculatePinjaman] = useState(0);
@@ -196,6 +194,17 @@ const NewNasabah = ({
       replace: true,
     });
   };
+
+  const buttonValue = [
+    { value: 400000, label: '400rb' },
+    { value: 500000, label: '500rb' },
+    { value: 700000, label: '700rb' },
+    { value: 800000, label: '800rb' },
+    { value: 1000000, label: '1 jt' },
+    { value: 1300000, label: '1,3 jt' },
+    { value: 1500000, label: '1,5 jt' },
+    { value: 2000000, label: '2 jt' },
+  ];
 
   const buttonValueClick = (e) => {
     const value = e.target.getAttribute('data-value');
@@ -386,43 +395,18 @@ const NewNasabah = ({
                       />
                       <InputError message={errors.request_nominal} />
                     </div>
-                    <div className="flex flex-wrap w-full gap-2 mb-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="500000"
-                      >
-                        500.000
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="700000"
-                      >
-                        700.000
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="1000000"
-                      >
-                        1.000.000
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="0"
-                      >
-                        reset
-                      </Button>
+                    <div className="grid grid-cols-4 mb-3 gap-x-2 gap-y-1">
+                      {buttonValue.map((button, key) => (
+                        <Button
+                          type="button"
+                          size="xs"
+                          key={key}
+                          data-value={button.value}
+                          onClick={buttonValueClick}
+                        >
+                          {button.label}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                   {elements.length > 0 && (
@@ -537,39 +521,18 @@ const NewNasabah = ({
       <div className="w-auto lg:w-full">
         <Tabs defaultValue="pengajuan" className="w-auto">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pengajuan">Riwayat Pinjaman</TabsTrigger>
-            <TabsTrigger value="pinjaman">Riwayat Lain</TabsTrigger>
+            <TabsTrigger value="pengajuan">Crash Kantor</TabsTrigger>
+            <TabsTrigger value="pinjaman">Crash UBM</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">
-            <Card>
-              <CardHeader>
-                <CardTitle>Riwayat Unit</CardTitle>
-                <CardDescription>
-                  Riwayat Pengajuan Nasabah sesuai dengan nik di satu unit
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                  <RiwayatPengajuan data={customerData?.history_branch} />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="overflow-auto shadow scrollbar-thin h-max">
+              <RiwayatPengajuan data={customerData?.history_branch} />
+            </div>
           </TabsContent>
           <TabsContent value="pinjaman">
-            <Card>
-              <CardHeader>
-                <CardTitle>Riwayat Lain</CardTitle>
-                <CardDescription>
-                  Riwayat Pengajuan Nasabah sesuai dengan nik di unit selain
-                  unit ini
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                  <RiwayatPengajuan data={customerData?.history_lain} />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="overflow-auto shadow scrollbar-thin h-max">
+              <RiwayatPengajuan data={customerData?.history_lain} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

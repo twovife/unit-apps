@@ -14,16 +14,25 @@ import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
+import { Input } from '@/shadcn/ui/input';
+import TextInput from '@/Components/TextInput';
+import { X } from 'lucide-react';
 
 const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
+  const [filterName, setFilterName] = useState('');
 
   useEffect(() => {
     if (datas) {
       const filterData = (data) => {
         return data.map((monthData) => ({
           ...monthData,
-          data: monthData.data.filter((item) => !(item.lunas && !item.is_paid)),
+          data: monthData.data.filter(
+            (item) =>
+              !(item.lunas && !item.is_paid) &&
+              (!filterName ||
+                item.nama.toLowerCase().includes(filterName.toLowerCase()))
+          ),
         }));
       };
 
@@ -31,7 +40,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
 
       setData(filteredData);
     }
-  }, [datas]);
+  }, [datas, filterName]);
 
   const calculateInstalment = (data, keyToSum) => {
     const result = data.reduce(
@@ -76,9 +85,26 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   };
 
   return (
-    <div className="relative overflow-auto h-[70vh] lg:h-[85vh] scrollbar-thin">
+    <div className="relative overflow-auto h-[70vh] lg:h-[85vh] scrollbar-none">
       <Table className="text-xs rounded-lg">
         <TableHeader className="sticky top-0 left-0 z-10">
+          <TableRow>
+            <TableHead colSpan="4" className="bg-white">
+              <div className="relative w-full mb-2 lg:w-auto lg:max-w-60">
+                <TextInput
+                  type="text"
+                  placeholder="Cari Nama"
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  className="w-full text-xs"
+                />
+                <X
+                  className="absolute right-0 w-auto h-5 text-gray-400 -translate-x-1/2 -translate-y-1/2 top-1/2"
+                  onClick={(e) => setFilterName('')}
+                />
+              </div>
+            </TableHead>
+          </TableRow>
           <TableRow className="bg-gray-200">
             <TableHead className="text-center">No</TableHead>
             <TableHead className="text-center">Tanggal</TableHead>
@@ -88,7 +114,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
             </TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="text-tinny">
           {data ? (
             data.map((row, i) => (
               <React.Fragment key={i}>
@@ -102,7 +128,11 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                 {row.data.map((subrow, i) => (
                   <TableRow
                     className={`${
-                      subrow.is_paid ? 'bg-green-200 hover:bg-green-50' : ''
+                      subrow.is_paid
+                        ? subrow.angs_today == 0
+                          ? 'bg-red-300 hover:bg-red-400'
+                          : 'bg-green-200 hover:bg-green-50'
+                        : ''
                     }}`}
                     key={i}
                   >
@@ -134,15 +164,16 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-semibold">{subrow.nama}</div>
+                      <div className="text-xs font-semibold">{subrow.nama}</div>
                       <div>{subrow.nik}</div>
                       <div>{subrow.alamat}</div>
                     </TableCell>
                     <TableCell className="border-x border-x-black">
-                      <div className="flex justify-between gap-6">
+                      <div className="flex justify-between gap-6 ">
                         <div>P</div>
                         <FormatNumbering value={subrow.pinjaman} />
                       </div>
+
                       <div className="flex justify-between gap-6 border-b-2 border-b-black ">
                         <div>A</div>
                         <div className="flex gap-3">
@@ -159,7 +190,18 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
 
                       <div className="flex justify-between gap-6">
                         <div>S</div>
-                        <FormatNumbering value={subrow.saldo} />
+                        <div className="flex gap-3">
+                          {subrow.pemutihan_today !== 0 && (
+                            <div className="italic whitespace-nowrap">
+                              <FormatNumbering
+                                value={subrow.pemutihan_today}
+                                prefix={'('}
+                                suffix={')'}
+                              />
+                            </div>
+                          )}
+                          <FormatNumbering value={subrow.saldo} />
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>

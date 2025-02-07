@@ -14,9 +14,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Button } from '@/shadcn/ui/button';
-import { Play } from 'lucide-react';
-import DetailRiwayat from '../../BukuTransaksi/Components/DetailRiwayat';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
@@ -28,11 +25,6 @@ const RiwayatPengajuan = ({ data }) => {
     setCustomerData(data ?? []);
   }, [data]);
 
-  const [expanded, setExpanded] = useState();
-  const handleExpandedTogled = (value) => {
-    setExpanded((prevId) => (prevId === value ? null : value));
-  };
-
   const columns = useMemo(
     () => [
       {
@@ -40,7 +32,7 @@ const RiwayatPengajuan = ({ data }) => {
         header: 'Kelompok',
         cell: ({ row, getValue }) => (
           <div>
-            {row.original.unit} - Kel {getValue()}
+            <div>{row.original.unit}</div> Kel {getValue()}
           </div>
         ),
       },
@@ -48,7 +40,10 @@ const RiwayatPengajuan = ({ data }) => {
         accessorKey: 'drop_date',
         header: 'Tanggal Drop',
         cell: ({ row, getValue }) => (
-          <div>{dayjs(getValue()).format('DD-MM-YYYY')}</div>
+          <div>
+            <div>{row.original.hari}</div>
+            <div>{dayjs(getValue()).format('DD-MM-YYYY')}</div>
+          </div>
         ),
       },
       {

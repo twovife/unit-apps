@@ -10,7 +10,14 @@ import TableRekapKasir from './Components/TableRekapKasir';
 import TunaiMantri from './Components/TunaiMantri';
 import Action from './Components/Action';
 
-const RekapContent = ({ rekapData, show, title, urlLink, localState }) => {
+const RekapContent = ({
+  rekapData,
+  saldoAwalBulan,
+  show,
+  title,
+  urlLink,
+  localState,
+}) => {
   const { auth, server_filter } = usePage().props;
   const [datas, setDatas] = useState([]);
 
@@ -86,12 +93,14 @@ const RekapContent = ({ rekapData, show, title, urlLink, localState }) => {
           </Popover>
         </div>
       </div>
-      <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+      <div>
         {show == 'rekap2' && (
+          // <div>rekap 2 show</div>
           <TableRekap
             setOnShowModal={setOnShowModal}
             setTriggeredData={setTriggeredData}
             datas={datas}
+            saldoAwalBulan={saldoAwalBulan}
           />
         )}
         {show == 'rekapkasir' && (

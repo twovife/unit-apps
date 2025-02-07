@@ -11,7 +11,7 @@ import {
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
-import Action from './Action';
+import Action from './Action22';
 import { Badge } from '@/shadcn/ui/badge';
 import ApprovalAkhir from './ApprovalAkhir';
 
@@ -72,6 +72,13 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
 
           let totalInstalment = 0;
 
+          const totalPemutihan = item.data.reduce(
+            (total, item) => total + item.pemutihanThisMonth,
+            0
+          );
+
+          // console.log(totalPemutihan);
+
           item.data.forEach((data) => {
             dateOfWeek.forEach((date) => {
               if (data.instalment[date] !== undefined) {
@@ -86,7 +93,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             [item.type]: {
               sirkulasi: sirkulasiAwal,
               angsuran: totalInstalment,
-              saldo: sirkulasiAwal - totalInstalment,
+              saldo: sirkulasiAwal - (totalInstalment + totalPemutihan),
             },
           }));
 
@@ -95,7 +102,8 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             instalment: { ...instalmentsSum },
             sirkulasi: sirkulasiAwal,
             totalInstalment: totalInstalment,
-            sirkulasiAfter: sirkulasiAwal - totalInstalment,
+            totalPemutihan: totalPemutihan,
+            sirkulasiAfter: sirkulasiAwal - (totalInstalment + totalPemutihan),
             type: item.type,
           };
         };
@@ -157,6 +165,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               </TableHead>
             ))}
             <TableHead className="text-center">Angsuran</TableHead>
+            <TableHead className="text-center">MD</TableHead>
             <TableHead className="text-center">Saldo</TableHead>
           </TableRow>
         </TableHeader>
@@ -179,6 +188,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                   ))}
                   <TableCell>
                     <FormatNumbering value={row.totalInstalment} />
+                  </TableCell>
+                  <TableCell>
+                    <FormatNumbering value={row.totalPemutihan} />
                   </TableCell>
                   <TableCell>
                     <FormatNumbering value={row.sirkulasiAfter} />
@@ -204,7 +216,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             </TableCell>
             <TableCell
               className="text-center"
-              colspan={dateOfWeek.length + 2}
+              colspan={dateOfWeek.length + 3}
             ></TableCell>
           </TableRow>
           <TableRow>
@@ -219,6 +231,11 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             <TableCell className="text-center">
               <FormatNumbering
                 value={calculateTotals(data, 'totalInstalment')}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <FormatNumbering
+                value={calculateTotals(data, 'totalPemutihan')}
               />
             </TableCell>
 

@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-
 import {
   Table,
   TableBody,
@@ -9,34 +8,36 @@ import {
   TableHeader,
   TableRow,
 } from '@/shadcn/ui/table';
-
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
-import { Badge } from '@/shadcn/ui/badge';
-import BargeStatus from '@/Components/shadcn/BargeStatus';
-import BadgeStatus from '@/Components/shadcn/BadgeStatus';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/shadcn/ui/accordion';
+import { CheckCircle, XCircle } from 'lucide-react';
 
-const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
+const TableRekap = ({
+  setOnShowModal,
+  saldoAwalBulan,
+  setTriggeredData,
+  datas,
+}) => {
   const [data, setData] = useState([]);
+  const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
   useEffect(() => {
     setData(datas);
-  }, [datas]);
+    setSirkulasiAwal(saldoAwalBulan);
+  }, [datas, saldoAwalBulan]);
 
-  const calculateTotals = (data) => {
-    return data.reduce((acc, item) => {
-      Object.keys(item).forEach((key) => {
-        acc[key] = (acc[key] || 0) + (item[key] || 0);
-      });
-      return acc;
-    }, {});
+  const calculateTotals = (data, keyToSum) => {
+    const result = data.reduce(
+      (acc, item) => acc + parseInt(item[keyToSum] ?? 0),
+      0
+    );
+    return result;
   };
-
-  const totals = calculateTotals(data);
 
   const getLastValue = (info, accessorKey) => {
     const rows = info.table.getRowModel().rows;
@@ -53,265 +54,244 @@ const TableRekap = ({ setOnShowModal, setTriggeredData, datas }) => {
     setTriggeredData(e);
   };
 
-  const columns = useMemo(
-    () => [
-      {
-        header: 'Kelompok',
-        accessorKey: 'kelompok',
-        cell: ({ getValue, cell }) => (
-          <div className="flex items-center justify-center gap-3">
-            <div>
-              {cell.row.original.type == 'daily'
-                ? getValue()
-                : dayjs(cell.row.original.tanggal).format('DD-MM')}
-            </div>
-          </div>
-        ),
-      },
-      {
-        header: 'Drop',
-        accessorKey: 'drop',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.drop} />,
-      },
-      {
-        header: 'Jumlah Drop',
-        accessorKey: 'total_drop',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'total_drop');
-          return <FormatNumbering value={totals.total_drop} />;
-        },
-      },
-      {
-        header: 'Storting',
-        accessorKey: 'storting',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.storting} />,
-      },
-      {
-        header: 'Jumlah Storting',
-        accessorKey: 'total_storting',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'total_storting');
-
-          return <FormatNumbering value={lastValue ?? totals.total_storting} />;
-        },
-      },
-      {
-        header: 'Sirkulasi',
-        accessorKey: 'sirkulasi',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'sirkulasi');
-          return <FormatNumbering value={lastValue ?? totals.sirkulasi} />;
-        },
-      },
-
-      {
-        header: 'Angsuran CM',
-        accessorKey: 'angsuran_cm',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.angsuran_cm} />,
-      },
-      {
-        header: 'Jumlah CM',
-        accessorKey: 'total_angsuran_cm',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'total_angsuran_cm');
-          return (
-            <FormatNumbering value={lastValue ?? totals.total_angsuran_cm} />
-          );
-        },
-      },
-      {
-        header: 'Saldo CM',
-        accessorKey: 'saldo_cm',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'saldo_cm');
-          return <FormatNumbering value={lastValue ?? totals.saldo_cm} />;
-        },
-      },
-      {
-        header: 'Angsuran MB',
-        accessorKey: 'angsuran_mb',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.angsuran_mb} />,
-      },
-      {
-        header: 'Jumlah MB',
-        accessorKey: 'total_angsuran_mb',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'total_angsuran_mb');
-          return (
-            <FormatNumbering value={lastValue ?? totals.total_angsuran_mb} />
-          );
-        },
-      },
-      {
-        header: 'Saldo MB',
-        accessorKey: 'saldo_mb',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'saldo_mb');
-          return <FormatNumbering value={lastValue ?? totals.saldo_mb} />;
-        },
-      },
-      {
-        header: 'Angsuran ML',
-        accessorKey: 'angsuran_ml',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => <FormatNumbering value={totals.angsuran_ml} />,
-      },
-      {
-        header: 'Jumlah ML',
-        accessorKey: 'total_angsuran_ml',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'total_angsuran_ml');
-          return (
-            <FormatNumbering value={lastValue ?? totals.total_angsuran_ml} />
-          );
-        },
-      },
-      {
-        header: 'Saldo ML',
-        accessorKey: 'saldo_ml',
-        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
-        footer: (info) => {
-          const lastValue = getLastValue(info, 'saldo_ml');
-          return <FormatNumbering value={lastValue ?? totals.saldo_ml} />;
-        },
-      },
-      {
-        header: 'Kasir',
-        accessorKey: 'status_approve_kasir',
-        cell: ({ getValue, cell }) => (
-          <div className="flex items-center justify-center gap-3">
-            <div>{getValue() ? dayjs(getValue()).format('DD-MM-YY') : ''}</div>
-          </div>
-        ),
-      },
-      {
-        header: 'Pimp',
-        accessorKey: 'status_approve_kepala',
-        cell: ({ getValue, cell }) => (
-          <div className="flex items-center justify-center gap-3">
-            <div>{getValue() ? dayjs(getValue()).format('DD-MM-YY') : ''}</div>
-          </div>
-        ),
-      },
-    ],
-    [totals]
-  );
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    debugTable: true,
-  });
-
-  // Declare a state variable to track the visibility of the "onCreateShow" component
-  const [onCreateShow, setOnCreateShow] = useState(false);
-  const [actionData, setActionData] = useState();
-
-  // Event handler function to set the "onCreateShow" state variable to true
-  const handleOnCreateShowOpen = (e) => {
-    setOnCreateShow(true);
-    setActionData(e);
-  };
-
-  // Event handler function to set the "onCreateShow" state variable to false
-  const handleOnCreateShowClosed = (e) => {
-    setOnCreateShow(false);
-    setActionData();
-  };
-
   return (
-    <>
-      {/* <Action
-        show={onCreateShow}
-        onClosed={handleOnCreateShowClosed}
-        triggeredData={actionData}
-      /> */}
-
-      <Table className="w-full mb-3 table-auto">
-        <TableHeader className="sticky top-0 z-10 bg-gray-100">
-          {table.getHeaderGroups().map((headerGroup, key) => (
-            <TableRow key={key}>
-              {headerGroup.headers.map((header, key) => (
-                <TableHead className="text-center" key={key}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row, key) => (
-              <React.Fragment key={key}>
-                <TableRow className={`text-center`} key={key}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={`${cell.column.columnDef.className}`}
-                    >
-                      {cell.column.columnDef.type == 'show' ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <BargeStatus
-                            value={cell.row.original.status}
-                            onClick={() =>
-                              handleOnCreateShowOpen(cell.row.original)
-                            }
-                          />
-                        </div>
-                      ) : (
-                        flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )
-                      )}
-                    </TableCell>
-                  ))}
+    <div>
+      <Accordion type="single" collapsible className="mb-3">
+        <AccordionItem value="item-1">
+          <AccordionTrigger className="px-3">Saldo Awal Bulan</AccordionTrigger>
+          <AccordionContent>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-200">
+                  <TableHead className="text-center">Kelompok</TableHead>
+                  <TableHead className="text-center">Surkulasi</TableHead>
+                  <TableHead className="text-center">Saldo CM</TableHead>
+                  <TableHead className="text-center">Saldo MB</TableHead>
+                  <TableHead className="text-center">Saldo ML</TableHead>
                 </TableRow>
-              </React.Fragment>
-            ))
-          ) : (
+              </TableHeader>
+              <TableBody className="text-tinny">
+                {sirkulasiAwal.map((item, key) => (
+                  <TableRow key={key}>
+                    <TableCell>{item.kelompok}</TableCell>
+                    <TableCell>
+                      <FormatNumbering value={item.sirkulasi} />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering value={item.sirkulasiCm} />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering value={item.sirkulasiMb} />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering value={item.sirkulasiMl} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      <div className="max-h-[65vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <Table className="w-full mb-3 table-auto">
+          <TableHeader className="sticky top-0 z-10 bg-gray-100">
             <TableRow>
-              <TableCell colSpan="4">Belum Ada Catatan Pinjaman</TableCell>
+              <TableHead className="text-center">Tanggal</TableHead>
+              <TableHead className="text-center">Kelompok</TableHead>
+              <TableHead className="text-center">Drop</TableHead>
+              <TableHead className="text-center">Jumlah Drop</TableHead>
+              <TableHead className="text-center">Storting</TableHead>
+              <TableHead className="text-center">Jumlah Storting</TableHead>
+              <TableHead className="text-center">Sirkulasi</TableHead>
+              <TableHead className="text-center">Angsuran CM</TableHead>
+              <TableHead className="text-center">Jumlah CM</TableHead>
+              <TableHead className="text-center">Saldo CM</TableHead>
+              <TableHead className="text-center">Angsuran MB</TableHead>
+              <TableHead className="text-center">Jumlah MB</TableHead>
+              <TableHead className="text-center">Saldo MB</TableHead>
+              <TableHead className="text-center">Angsuran ML</TableHead>
+              <TableHead className="text-center">Jumlah ML</TableHead>
+              <TableHead className="text-center">Saldo ML</TableHead>
+              <TableHead className="text-center">Cek Staff</TableHead>
+              <TableHead className="text-center">Cek Target</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-        <TableFooter>
-          {table.getFooterGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead
-                    key={header.id}
-                    className="text-center text-black bg-gray-100"
+          </TableHeader>
+          <TableBody>
+            {data &&
+              data.map((item, key) => (
+                <>
+                  <TableRow
+                    key={key}
+                    className={`${
+                      dayjs(item.tanggal).format('dddd') == 'Senin'
+                        ? 'bg-red-300 hover:bg-red-400'
+                        : ''
+                    }`}
                   >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableFooter>
-      </Table>
-    </>
+                    <TableCell className="whitespace-nowrap" colSpan="18">
+                      {dayjs(item.tanggal).format('dddd')},
+                      {dayjs(item.tanggal).format('DD-MM-YYYY')}
+                    </TableCell>
+                  </TableRow>
+
+                  {item.data.map((subitem, subkey) => (
+                    <TableRow key={subkey}>
+                      <TableCell></TableCell>
+                      <TableCell>{subitem.kelompok}</TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.drop} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.total_drop} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.storting} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.total_storting} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.sirkulasi} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.angsuran_cm} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.total_angsuran_cm} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.saldo_cm} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.angsuran_mb} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.total_angsuran_mb} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.saldo_mb} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.angsuran_ml} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.total_angsuran_ml} />
+                      </TableCell>
+                      <TableCell>
+                        <FormatNumbering value={subitem.saldo_ml} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-center">
+                          {subitem.status_approve_kasir ? (
+                            <CheckCircle className="text-green-500" />
+                          ) : (
+                            <XCircle className="text-red-500" />
+                          )}
+                        </div>
+                        {/* {subitem.status_approve_kasir
+                          ? dayjs(subitem.status_approve_kasir).format('DD-MM')
+                          : ''} */}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-center ">
+                          {subitem.status_approve_kepala ? (
+                            <CheckCircle className="text-green-500" />
+                          ) : (
+                            <XCircle className="text-red-500" />
+                          )}
+                        </div>
+                        {/* {subitem.status_approve_kepala
+                          ? dayjs(subitem.status_approve_kepala).format('DD-MM')
+                          : ''} */}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  <TableRow className="bg-gray-100">
+                    <TableCell></TableCell>
+                    <TableCell className="font-semibold">TOTAL</TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'drop')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'total_drop')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'storting')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'total_storting')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'sirkulasi')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'angsuran_cm')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'total_angsuran_cm')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'saldo_cm')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'angsuran_mb')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'total_angsuran_mb')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'saldo_mb')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'angsuran_ml')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'total_angsuran_ml')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormatNumbering
+                        value={calculateTotals(item.data, 'saldo_ml')}
+                      />
+                    </TableCell>
+                    <TableCell></TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </>
+              ))}
+          </TableBody>
+          <TableFooter></TableFooter>
+        </Table>
+      </div>
+    </div>
   );
 };
 

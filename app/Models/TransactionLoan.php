@@ -37,7 +37,8 @@ class TransactionLoan extends Model
     "user_input",
     "drop_langsung",
     "out_date",
-    "out_status"
+    "out_status",
+    "transaction_out_reasons_id"
   ];
 
 
@@ -216,5 +217,10 @@ class TransactionLoan extends Model
   public function mantri()
   {
     return $this->belongsTo(Employee::class, 'user_mantri', 'id');
+  }
+
+  public function white_off()
+  {
+    return $this->hasOne(TransactionWhiteOff::class, 'transaction_loan_id', 'id');
   }
 }

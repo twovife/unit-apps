@@ -81,20 +81,24 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
   return (
     <>
       <Dialog open={show} onOpenChange={(open) => (open ? '' : onClosed())}>
-        <DialogContent className="w-[90vw] h-[90vh] lg:h-auto overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <DialogContent className="w-[98vw] p-2">
           {erorAxios && <div>terjadi kesalahan saat memuat data</div>}
           {loading ? (
             <div>Data Sedang Dimuat</div>
           ) : (
             <DialogHeader>
-              <DialogTitle>Check Transaksi Mantri</DialogTitle>
+              <DialogTitle className="p-2">Check Transaksi Mantri</DialogTitle>
               <DialogDescription>
                 <Tabs defaultValue="account" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="account">Action</TabsTrigger>
-                    <TabsTrigger value="history">Riwayat</TabsTrigger>
+                    <TabsTrigger value="history">Crash Kantor</TabsTrigger>
+                    <TabsTrigger value="crashubm">Crash UBM</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="account">
+                  <TabsContent
+                    value="account"
+                    className="h-[80vh] overflow-auto scrollbar-thin"
+                  >
                     <Card>
                       <CardHeader>
                         <CardTitle>Detail Pengajuan</CardTitle>
@@ -205,23 +209,21 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                       </Card>
                     </div>
                   </TabsContent>
-                  <TabsContent value="history">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Riwayat Pengajuan</CardTitle>
-                        <CardDescription>
-                          Riwayat Pengajuan Nasabah dilihat berdasarkan NIK yang
-                          tertera dari semua cabang
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                          <RiwayatPengajuan
-                            data={customerData.history_branch}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <TabsContent
+                    value="history"
+                    className="h-[80vh] overflow-auto scrollbar-thin"
+                  >
+                    <div className="overflow-auto scrollbar-thin h-max">
+                      <RiwayatPengajuan data={customerData.history_branch} />
+                    </div>
+                  </TabsContent>
+                  <TabsContent
+                    value="crashubm"
+                    className="h-[80vh] overflow-auto scrollbar-thin"
+                  >
+                    <div className="overflow-auto scrollbar-thin h-max">
+                      <RiwayatPengajuan data={customerData.history_lain} />
+                    </div>
                   </TabsContent>
                 </Tabs>
               </DialogDescription>

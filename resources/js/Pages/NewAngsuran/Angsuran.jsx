@@ -9,6 +9,7 @@ import BukuStorting from './Components/BukuStorting';
 import { Button } from '@/shadcn/ui/button';
 import { FilterIcon } from 'lucide-react';
 import AngsuranTableMobile from './Components/AngsuranTableMobile';
+import { Input } from '@/shadcn/ui/input';
 
 const Angsuran = ({
   datas,

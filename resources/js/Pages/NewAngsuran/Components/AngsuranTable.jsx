@@ -96,9 +96,11 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               Angsuran
             </TableHead>
             <TableHead className="text-center border-x border-x-black">
+              (MD)
+            </TableHead>
+            <TableHead className="text-center border-x border-x-black">
               Saldo
             </TableHead>
-            <TableHead className="text-center">Note</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -145,7 +147,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       ) : (
                         ''
                       )}
-                      {subrow.status_pinjaman == 'normal' ? (
+                      {/* {subrow.status_pinjaman == 'normal' ? (
                         <span className="px-2 py-1 mr-1 text-xs border rounded">
                           {subrow.status_pinjaman}
                         </span>
@@ -163,7 +165,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         </span>
                       ) : (
                         <div>{subrow.status_pinjaman}</div>
-                      )}
+                      )} */}
                       {subrow.notes !== null ? (
                         <Badge>{subrow.notes}</Badge>
                       ) : (
@@ -223,6 +225,15 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering value={subrow.angsuran} />
                     </TableCell>
                     <TableCell
+                      className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black ${
+                        selectedId.includes(subrow.id)
+                          ? 'bg-green-200 hover:bg-green-50'
+                          : ''
+                      }`}
+                    >
+                      <FormatNumbering value={subrow.pemutihanThisMonth} />
+                    </TableCell>
+                    <TableCell
                       className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? 'bg-green-200 hover:bg-green-50'
@@ -231,7 +242,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     >
                       <FormatNumbering value={subrow.saldo} />
                     </TableCell>
-                    <TableCell>{subrow.notes}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-gray-100">
@@ -267,13 +277,19 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     />
                   </TableCell>
                   <TableCell
+                    className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black `}
+                  >
+                    <FormatNumbering
+                      value={calculateTotals(row.data, 'pemutihanThisMonth')}
+                    />
+                  </TableCell>
+                  <TableCell
                     className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
                   >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'saldo')}
                     />
                   </TableCell>
-                  <TableCell></TableCell>
                 </TableRow>
               </React.Fragment>
             ))
