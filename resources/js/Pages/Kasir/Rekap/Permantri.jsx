@@ -10,8 +10,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import TableRekapKasir from './Components/TableRekapKasir';
 import TunaiMantri from './Components/TunaiMantri';
 import Action from './Components/Action';
+import TableRekapPerMantri from './Components/TableRekapPerMantri';
 
-const Permantri = ({ rekapData, auth, urlLink, localState, title }) => {
+const Permantri = ({
+  rekapData,
+  saldoAwalBulan,
+  auth,
+  urlLink,
+  localState,
+  title,
+}) => {
+  // console.log(saldoAwalBulan);
+
   const [datas, setDatas] = useState([]);
   const { server_filter } = usePage().props;
   useEffect(() => {
@@ -84,23 +94,27 @@ const Permantri = ({ rekapData, auth, urlLink, localState, title }) => {
           </Popover>
         </div>
       </div>
-      <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+      <div className="border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         <Tabs defaultValue="rekappimpinan" className="w-full">
           <TabsList>
             <TabsTrigger value="rekappimpinan">Rekap Mantri</TabsTrigger>
             <TabsTrigger value="rekapkasir">Rekap Kasir Mantri</TabsTrigger>
             <TabsTrigger value="tunaimantri">Tunai Mantri</TabsTrigger>
           </TabsList>
+
           <TabsContent value="rekappimpinan">
-            <TableRekap
+            <TableRekapPerMantri
               setOnShowModal={setOnShowModal}
               setTriggeredData={setTriggeredData}
+              saldoAwalBulan={saldoAwalBulan}
               datas={datas}
             />
           </TabsContent>
+
           <TabsContent value="rekapkasir">
             <TableRekapKasir datas={datas} />
           </TabsContent>
+
           <TabsContent value="tunaimantri">
             <TunaiMantri datas={datas} />
           </TabsContent>

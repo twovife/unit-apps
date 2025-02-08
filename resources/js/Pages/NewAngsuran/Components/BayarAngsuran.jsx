@@ -66,17 +66,54 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
     });
   };
 
-  const [pelunasan, setPelunasan] = useState(0);
+  const [nominalPembayaran, setNominalPembayaran] = useState([
+    50000, 52000, 60000, 65000, 100000, 130000, 195000, 260000, 390000,
+  ]);
 
   useEffect(() => {
-    const pelunasan =
-      instalment?.sort((a, b) => a.saldo - b.saldo)[0]?.saldo ?? 0;
     setData((prev) => ({
       ...prev,
       transaction_date: today,
     }));
 
-    setPelunasan(pelunasan);
+    if (instalment.length > 0) {
+      const getMostFrequentNumber = (data) => {
+        const frequency = data.reduce((acc, { nomor }) => {
+          acc[nomor] = (acc[nomor] || 0) + 1;
+          return acc;
+        }, {});
+
+        return Object.keys(frequency).reduce((a, b) =>
+          frequency[a] > frequency[b] ? a : b
+        );
+      };
+
+      const result = Number(getMostFrequentNumber(instalment));
+      const pelunasan =
+        instalment.sort((a, b) => a.saldo - b.saldo)[0]?.saldo ?? 0;
+
+      setNominalPembayaran((prev) => {
+        // Filter hanya angka yang valid
+        const validResult = !isNaN(result) && result > 0 ? result : null;
+        const validPelunasan =
+          !isNaN(pelunasan) && pelunasan > 0 ? pelunasan : null;
+
+        // Gabungkan array baru tanpa duplikasi, dengan filter validasi
+        const updated = [
+          ...new Set(
+            [
+              ...prev.filter(
+                (value) => value !== validResult && value !== validPelunasan
+              ),
+              validResult,
+              validPelunasan,
+            ].filter((value) => value !== null)
+          ), // Hapus null dari array
+        ];
+
+        return updated.sort((a, b) => a - b); // Urutkan dari kecil ke besar
+      });
+    }
   }, [instalment]);
 
   return (
@@ -113,7 +150,17 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
               placeholder={'Inputkan angka tanpa sparator'}
             />
           </div>
+
           <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={buttonAddNominal}
+              data-value={1000}
+            >
+              +1 Rb
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -132,101 +179,20 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             >
               +10 Rb
             </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={50000}
-            >
-              50 Rb
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={52000}
-            >
-              52 Rb
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={60000}
-            >
-              60 Rb
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={65000}
-            >
-              65 Rb
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={100000}
-            >
-              100 Rb
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={130000}
-            >
-              130 Rb
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={195000}
-            >
-              195 Rb
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={260000}
-            >
-              260 Rb
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={390000}
-            >
-              390 Rb
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={buttonValueClick}
-              data-value={pelunasan}
-            >
-              {pelunasan}
-            </Button>
+            {nominalPembayaran &&
+              nominalPembayaran.map((item) => (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  onClick={buttonValueClick}
+                  data-value={item}
+                >
+                  {(item / 1000).toLocaleString('id-ID')} Rb
+                </Button>
+              ))}
           </div>
+
           <div className="flex items-center justify-between mt-6">
             <div>
               {triggeredData.status_pinjaman !== 'normal' && (

@@ -291,9 +291,7 @@ trait RekapTrait
       return [
         'tanggal' => $date,
         'data' =>  $transactionOffice->map(function ($item) use ($date, $loan, $instalment, $transactionSirculation, $transactionDailyRecap, $startDateofMonth, $dateOfCm, $dateOfMb) {
-
           $transaction_date = $date;
-
           // dd($transaction_date);
           $thisLoan = $loan->get($item->id, collect());
           $thisInstalment = $instalment->get($item->id, collect());
@@ -400,7 +398,6 @@ trait RekapTrait
     $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
-    // dd($kelompok);
     $transaction_date = Carbon::parse($request->month ?? Carbon::now());
 
     $startDateofMonth = $transaction_date->copy()->startOfMonth()->format('Y-m-d');
@@ -418,8 +415,6 @@ trait RekapTrait
       ->where('date', $startDateofMonth)
       ->get();
 
-    // dd($transactionSirculation);
-
     $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal')
       ->where('transaction_loan_officer_grouping_id', $transactionOffice->id)
       ->whereBetween('transaction_date', [$startDateofMonth, $endDateofMonth])
@@ -431,7 +426,23 @@ trait RekapTrait
       ->get();
 
     $dates = $loan->pluck('drop_date')->merge($instalment->pluck('transaction_date'))->unique()->sort()->values();
+
+    $saldoAwalBulan = $transactionSirculation->map(function ($item) {
+      return [
+        'kelompok' => $item->transaction_loan_officer_grouping->kelompok,
+        'hari' => $item->day,
+        'day' => AppHelper::getNumbDays($item->day),
+        'sirkulasi' => $item->amount ?? 0,
+        'sirkulasiCm' =>  $item->cm_amount ?? 0,
+        'sirkulasiMb' =>  $item->mb_amount ?? 0,
+        'sirkulasiMl' =>  $item->ml_amount ?? 0,
+      ];
+    })->sortBy('day')->values();
+
+    // dd($saldoAwalBulan);
     $data = $dates->map(function ($date) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transactionOffice, $startDateofMonth, $kelompok) {
+      // 'tanggal' => $date,
+
       $transaction_date = Carbon::parse($date)->format('Y-m-d');
 
       $thisLoan = $loan->where('drop_date', $transaction_date);
@@ -511,6 +522,7 @@ trait RekapTrait
 
     return [
       'datas' => $data,
+      'saldoAwalBulan' => $saldoAwalBulan,
       'server_filter' => [
         'month' => $transaction_date->format('Y-m'),
         'wilayah' => $wilayah,

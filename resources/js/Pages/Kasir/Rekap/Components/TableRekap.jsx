@@ -39,21 +39,6 @@ const TableRekap = ({
     return result;
   };
 
-  const getLastValue = (info, accessorKey) => {
-    const rows = info.table.getRowModel().rows;
-    const type = rows[rows.length - 1]?.original?.type;
-    if (type === 'permantri') {
-      return rows[rows.length - 1]?.getValue(accessorKey);
-    } else {
-      false;
-    }
-  };
-
-  const onClickStatusHandler = (e) => {
-    setOnShowModal(true);
-    setTriggeredData(e);
-  };
-
   return (
     <div>
       <Accordion type="single" collapsible className="mb-3">
