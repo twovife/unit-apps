@@ -73,7 +73,7 @@ class MobileAppsMantriController extends Controller
 
   public function rekap_dua(Request $request)
   {
-    $data = $this->getRekapDuaData($request);
+    $data = $this->getDataRekapDua($request);
     return Inertia::render('MobileApps/Rekap/RekapDua', $data);
   }
   public function rekap_satu(Request $request)
