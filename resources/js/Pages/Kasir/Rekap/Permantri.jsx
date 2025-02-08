@@ -94,7 +94,7 @@ const Permantri = ({
           </Popover>
         </div>
       </div>
-      <div className="border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+      <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-none">
         <Tabs defaultValue="rekappimpinan" className="w-full">
           <TabsList>
             <TabsTrigger value="rekappimpinan">Rekap Mantri</TabsTrigger>
