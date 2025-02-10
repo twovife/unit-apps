@@ -29,10 +29,11 @@ class EmploymentSeeder extends Seeder
     $employment->each(function ($item, $key) {
       Employment::firstOrCreate($item);
     });
+
     echo 'emplyment_generated' . PHP_EOL;
     $employmentData = Employment::all();
     echo 'employment called' . PHP_EOL;
-    $employees = Employee::whereNull('employment_id')->get();
+    $employees = Employee::get();
     echo 'employee called' . PHP_EOL;
 
     try {
