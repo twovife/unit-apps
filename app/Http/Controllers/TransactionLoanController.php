@@ -270,28 +270,6 @@ class TransactionLoanController extends Controller
     // }
 
     $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
-    // dd($angsuran);
-    if (!$angsuran->isEmpty()) {
-      $dateToocheck = AppHelper::dateName($request->tanggal_drop);
-
-      $filtered = $angsuran->filter(function ($item) use ($dateToocheck) {
-        return AppHelper::dateName($item['transaction_date']) !== $dateToocheck;
-      }); // mencari apakah hari sama dengan tanggal drop
-
-      $groupedByDate = $angsuran->groupBy('transaction_date');
-      $duplicates = $groupedByDate->filter(function ($group) {
-        return $group->count() > 1; // Mencari grup dengan lebih dari satu item
-      });
-
-
-      if ($filtered->isNotEmpty()) {
-        return redirect()->back()->withErrors('Hari Angsuran Tidak Sama');
-      }
-
-      if ($duplicates->isNotEmpty()) {
-        return redirect()->back()->withErrors('Ada angsuran yang duplikat pada tanggal yang sama.');
-      }
-    }
 
     $newNik = AppHelper::callUnknownNik($request);
     $request->merge(['nik' => $newNik]);
@@ -313,6 +291,34 @@ class TransactionLoanController extends Controller
       '*.min' => 'minimal diisi 100rb'
 
     ]);
+
+
+    // validasi tambahan jika angsuran ada
+    if (!$angsuran->isEmpty()) {
+      $dateToocheck = AppHelper::dateName($request->tanggal_drop);
+
+      $filtered = $angsuran->filter(function ($item) use ($dateToocheck) {
+        return AppHelper::dateName($item['transaction_date']) !== $dateToocheck;
+      }); // mencari apakah hari sama dengan tanggal drop
+
+      $groupedByDate = $angsuran->groupBy('transaction_date');
+      $duplicates = $groupedByDate->filter(function ($group) {
+        return $group->count() > 1; // Mencari grup dengan lebih dari satu item
+      });
+
+
+      if ($filtered->isNotEmpty()) {
+        return redirect()->back()->withErrors('Hari Angsuran Tidak Sama');
+      }
+
+      if ($duplicates->isNotEmpty()) {
+        return redirect()->back()->withErrors('Ada angsuran yang duplikat pada tanggal yang sama.');
+      }
+
+      if ($angsuran->sum('nominal') > ($request->request_nominal * 1.3)) {
+        return redirect()->back()->withErrors('Tidak Boleh Minus');
+      }
+    }
 
 
     $request['kelompok'] = auth()->user()->can('can show kelompok') ? $request->kelompok : auth()->user()->employee->area;
