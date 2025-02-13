@@ -270,7 +270,7 @@ class TransactionLoanController extends Controller
     // }
 
     $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
-    dd($angsuran);
+    // dd($angsuran);
     if (!$angsuran->isEmpty()) {
       $dateToocheck = AppHelper::dateName($request->tanggal_drop);
 
