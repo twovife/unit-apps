@@ -270,7 +270,7 @@ class TransactionLoanController extends Controller
     // }
 
     $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
-
+    dd($angsuran);
     if (!$angsuran->isEmpty()) {
       $dateToocheck = AppHelper::dateName($request->tanggal_drop);
 
@@ -383,7 +383,7 @@ class TransactionLoanController extends Controller
 
           $loan->loan_instalment()->create([
             'transaction_date' => $item['transaction_date'],
-            'nominal' => (int) $item['nominal'] ?? 0,
+            'nominal' => $item['nominal'] ?? 0,
             'danatitipan' =>  isset($item['dana_titipan']) ? ($item['dana_titipan'] ? 1 : 0) : 0,
             'transaction_loan_officer_grouping_id' => $officerGrouping->id,
             'status' => AppHelper::generateStatusAngsuran($loan->drop_date,  $item['transaction_date']),
@@ -391,7 +391,7 @@ class TransactionLoanController extends Controller
             'user_mantri' =>  $mantri,
           ]);
 
-          $hutang -= (int) $item['nominal'] ?? 0;
+          $hutang -=  $item['nominal'] ?? 0;
         });
       }
 

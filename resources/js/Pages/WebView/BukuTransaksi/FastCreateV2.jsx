@@ -57,8 +57,6 @@ const FastCreateV2 = () => {
     angsuran: [],
   });
 
-  console.log(data);
-
   const [calculatePinjaman, setCalculatePinjaman] = useState(0);
 
   useEffect(() => {
@@ -140,10 +138,8 @@ const FastCreateV2 = () => {
   const onNikChange = (e) => {
     const { name, value } = e.target;
     setCustomerData([]);
-    reset({
-      ...data,
-      kelompok: currentKelompok,
-    });
+    reset();
+    setData('kelompok', currentKelompok);
 
     setAngsuran([]);
     setIsSaldoAkhir(false);
@@ -168,10 +164,8 @@ const FastCreateV2 = () => {
 
   const onNikSubmit = async (e) => {
     e.preventDefault();
-    reset({
-      ...data,
-      kelompok: currentKelompok,
-    });
+    reset();
+    setData('kelompok', currentKelompok);
 
     setAngsuran([]);
     setIsSaldoAkhir(false);
@@ -241,10 +235,8 @@ const FastCreateV2 = () => {
   };
 
   const modalIsClosed = (e) => {
-    reset({
-      ...data,
-      kelompok: currentKelompok,
-    });
+    reset();
+    setData('kelompok', currentKelompok);
   };
 
   const onSubmitCreate = (e) => {
