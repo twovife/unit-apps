@@ -26,6 +26,14 @@ class TransactionLoanController extends Controller
 
     return Inertia::render('WebView/BukuTransaksi/BatchUpload');
   }
+
+
+  public function fastcreatev2(Request $request)
+  {
+
+
+    return Inertia::render('WebView/BukuTransaksi/FastCreateV2');
+  }
   public function index_buku_transaksi(Request $request)
   {
 
@@ -252,13 +260,14 @@ class TransactionLoanController extends Controller
   // store for batch Transksi
   public function store_buku_transaksi_batch(Request $request)
   {
+    // dd($request->all());
     if (!auth()->user()->hasPermissionTo('can create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
     }
 
-    if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
-      return redirect()->back()->withErrors('Hari Tidak Sama');
-    }
+    // if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
+    //   return redirect()->back()->withErrors('Hari Tidak Sama');
+    // }
 
     $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
 
@@ -290,20 +299,21 @@ class TransactionLoanController extends Controller
 
     $val = $request->validate([
       'isActiveMember' => ['boolean', 'required'],
-      'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'nik' => ['required', 'digits:16'],
+
+      'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'kelompok' => ['required'],
 
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
 
-      'request_date' => ['required', 'date'],
       'tanggal_drop' =>  ['required', 'date'],
     ], [
       '*.required' => "Wajib Diisi",
       '*.min' => 'minimal diisi 100rb'
 
     ]);
+
 
     $request['kelompok'] = auth()->user()->can('can show kelompok') ? $request->kelompok : auth()->user()->employee->area;
     $request['branch'] = auth()->user()->can('can show branch') ? $request->branch_id : auth()->user()->employee->branch_id;
@@ -360,22 +370,28 @@ class TransactionLoanController extends Controller
           'check_date' => Carbon::now()->format('Y-m-d'),
           'approved_nominal' => $request->request_nominal,
 
-          'nominal_drop' => $request->request_nominal,
+          'nominal_drop' => (int) $request->request_nominal,
           'user_drop' => $mantri,
         ]);
       }
 
       if (!$angsuran->isEmpty()) {
-        $angsuran->each(function ($item) use ($loan, $officerGrouping, $mantri) {
+        $hutang = $request->request_nominal * 1.3;
+
+        $angsuran->each(function ($item) use ($loan, $officerGrouping, $mantri, &$hutang) {
+          if ($hutang <= 0) return false; // Hentikan loop jika hutang sudah lunas
+
           $loan->loan_instalment()->create([
             'transaction_date' => $item['transaction_date'],
-            'nominal' => $item['nominal'] ?? 0,
+            'nominal' => (int) $item['nominal'] ?? 0,
             'danatitipan' =>  isset($item['dana_titipan']) ? ($item['dana_titipan'] ? 1 : 0) : 0,
             'transaction_loan_officer_grouping_id' => $officerGrouping->id,
             'status' => AppHelper::generateStatusAngsuran($loan->drop_date,  $item['transaction_date']),
             'user_input' => auth()->user()->employee->id,
             'user_mantri' =>  $mantri,
           ]);
+
+          $hutang -= (int) $item['nominal'] ?? 0;
         });
       }
 
