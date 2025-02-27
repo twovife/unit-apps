@@ -328,7 +328,7 @@ class TransactionLoanController extends Controller
 
 
       DB::beginTransaction();
-      $drop_langsung = $request->request_date == $request->tanggal_drop;
+      $drop_langsung = !$request->request_date ? true : $request->request_date == $request->tanggal_drop;
 
       $customer = TransactionCustomer::firstorCreate(['nik' => $request->nik], ['nama' => $request->nama, 'alamat' => $request->alamat]);
       $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', $request->branch)->where('kelompok', $request->kelompok)->first();
@@ -350,7 +350,7 @@ class TransactionLoanController extends Controller
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
-        'request_date' => $request->request_date,
+        'request_date' => $request->request_date ?? $request->tanggal_drop,
         'user_mantri' => $mantri,
         'drop_date' => $request->tanggal_drop,
         'hari' => AppHelper::dateName($request->tanggal_drop),
