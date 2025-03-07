@@ -117,6 +117,7 @@ class TransactionDailyRecapController extends Controller
   public function rekap_dua(Request $request)
   {
     $data = $this->getDataRekapDua($request);
+    // ddd($data);
     return Inertia::render('WebView/Rekap/RekapDua', $data);
   }
   public function rekap_satu(Request $request)

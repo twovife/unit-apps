@@ -573,6 +573,8 @@ class TransactionLoanController extends Controller
     return Inertia::render("WebView/Angsuran/Index", $data);
   }
 
+
+
   // INI INDEX PINJAMAN PERBULAN ( UNTUK CARI ML / PENGGANTI MENU MACET )
   public function index_pinjaman_search(Request $request)
   {
@@ -589,7 +591,27 @@ class TransactionLoanController extends Controller
   }
 
 
+  public function get_synch_angsuran(TransactionLoan $transactionLoan)
+  {
 
+    $loan = $transactionLoan->load(
+      [
+        'loan_instalment' => function ($item) {
+          $item->with('usermantri', 'userinput')
+            ->orderByDesc('transaction_date');
+        },
+        'branch',
+        'customer',
+        'mantri',
+        'white_off',
+        'loan_officer_grouping'
+      ]
+    );
+
+
+    // $dataset
+    return response()->json(['loan' => $loan], 200);
+  }
 
   // INI CONTROLLER API AXIOS ( UNTUK MENCARI KEBENARAH YANG HAKIKI , EH SALAH UNTUK MEMUNCULKAN DATA ANGSURAN )
 
