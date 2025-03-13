@@ -713,13 +713,12 @@ class TransactionLoanController extends Controller
     $pinjaman = (int)$request->saldobefore;
 
     $instalments->each(function ($item) use ($transactionLoan, &$pinjaman) {
-      if ($pinjaman <= 0) return false;
-
       if ($item['id']) {
         TransactionLoanInstalment::find($item['id'])->update([
           'nominal' => $item['nominal'],
         ]);
       } else {
+        if ($pinjaman <= 0) return false;
         $transactionLoan->loan_instalment()->create([
           'transaction_date' => $item['transaction_date'],
           'nominal' => $item['nominal'],
