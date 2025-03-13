@@ -618,7 +618,11 @@ class TransactionLoanController extends Controller
     })->sortBy('transaction_date')->values();
 
     $dateOfWeeks = collect($request->dateofweek)
-      ->filter(fn($item) => Carbon::parse($item)->isBefore(Carbon::today()))
+      ->filter(
+        fn($item) =>
+        Carbon::parse($item)->isBefore(Carbon::today()) &&
+          Carbon::parse($item)->isAfter(Carbon::parse($loan->drop_date))
+      )
       ->mapWithKeys(function ($item, $index) {
         return [$index => ['date' => Carbon::parse($item)->format('Y-m-d')]];
       });
