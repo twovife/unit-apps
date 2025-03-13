@@ -720,7 +720,6 @@ class TransactionLoanController extends Controller
           ]);
         } else {
           TransactionLoanInstalment::find($item['id'])->delete();
-          return false;
         }
       } else {
         if ($pinjaman <= 0) return false;
