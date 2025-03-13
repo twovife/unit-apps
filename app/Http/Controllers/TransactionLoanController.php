@@ -702,6 +702,7 @@ class TransactionLoanController extends Controller
       ]);
     }
 
+
     $instalments = collect($request->instalment)->map(function ($item) {
       return [
         'id' => $item['id'] ?? null,
@@ -713,14 +714,16 @@ class TransactionLoanController extends Controller
     $pinjaman = (int)$request->saldobefore;
 
     $instalments->each(function ($item) use ($transactionLoan, &$pinjaman) {
+
+
       if ($item['id']) {
         if ($pinjaman <= 0) {
           TransactionLoanInstalment::find($item['id'])->delete();
-        } else {
-          TransactionLoanInstalment::find($item['id'])->update([
-            'nominal' => $item['nominal'],
-          ]);
+          return false;
         }
+        TransactionLoanInstalment::find($item['id'])->update([
+          'nominal' => $item['nominal'],
+        ]);
       } else {
         if ($pinjaman <= 0) return false;
         $transactionLoan->loan_instalment()->create([
@@ -733,6 +736,7 @@ class TransactionLoanController extends Controller
           'user_mantri' => $transactionLoan->user_mantri,
         ]);
       }
+
       $pinjaman -=   $item['nominal'];
     });
 
