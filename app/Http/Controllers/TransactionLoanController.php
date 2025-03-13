@@ -710,7 +710,7 @@ class TransactionLoanController extends Controller
       ];
     })->values();
 
-    $pinjaman = $transactionLoan->pinjaman;
+    $pinjaman = (int)$request->saldobefore;
 
     $instalments->each(function ($item) use ($transactionLoan, &$pinjaman) {
       if ($pinjaman <= 0) return false;
