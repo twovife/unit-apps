@@ -356,4 +356,25 @@ class AppHelper
     }
     return false;
   }
+
+  public static function getFirstDayOfMonthID($dayNameID, $month)
+  {
+    $dayMap = [
+      'minggu' => 'Sunday',
+      'senin' => 'Monday',
+      'selasa' => 'Tuesday',
+      'rabu' => 'Wednesday',
+      'kamis' => 'Thursday',
+      'jumat' => 'Friday',
+      'sabtu' => 'Saturday'
+    ];
+
+    $dayName = $dayMap[strtolower($dayNameID)] ?? null;
+
+    if (!$dayName) {
+      return 'Nama hari tidak valid!';
+    }
+
+    return Carbon::parse($month)->startOfMonth()->next($dayName);
+  }
 }

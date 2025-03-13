@@ -196,6 +196,7 @@ const NewNasabah = ({
   };
 
   const buttonValue = [
+    { value: 300000, label: '300rb' },
     { value: 400000, label: '400rb' },
     { value: 500000, label: '500rb' },
     { value: 700000, label: '700rb' },

@@ -27,7 +27,9 @@ import ButtonAngsuran from './ButtonAngsuran';
 const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
   const [syncData, setSyncData] = useState(null);
 
-  const [saldoBefore, setSaldoBefore] = useState(0);
+  // console.log(syncData);
+
+  const [saldoBefores, setSaldoBefores] = useState(0);
   const { data, setData, post, processing, errors, reset } = useForm({
     saldobefore: 0,
     month: '',
@@ -39,17 +41,18 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
     onClosed();
     reset();
     setSyncData(null);
+    setIndexButton(null);
   };
   const month = usePage().props.server_filter?.month;
 
-  const dateofweek = usePage().props.dateOfWeek;
+  const day = usePage().props.server_filter.hari;
 
   useEffect(() => {
     if (show && triggeredId) {
       axios
         .post(route('pinjaman.get_synch_angsuran', triggeredId), {
           month,
-          dateofweek,
+          day,
         })
         .then((res) => {
           setSyncData(res.data?.data);
@@ -79,13 +82,15 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
   };
 
   useEffect(() => {
-    if (syncData) {
+    if (syncData?.instalments) {
       const saldo = data?.saldobefore;
+
       const sumInstalment = data?.instalment?.reduce(
         (acc, item) => acc + (parseFloat(item.nominal) || 0),
         0
       );
-      setSaldoBefore(saldo - sumInstalment);
+
+      setSaldoBefores(saldo - sumInstalment);
     }
   }, [syncData, data]);
 
@@ -115,6 +120,24 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
     };
     setData('instalment', updatedInstalments);
   };
+
+  const handleButtonAngsuranOnScroll = (e, index) => {
+    console.log(e.deltaY);
+
+    const value = data.instalment[index]?.nominal ?? 0;
+    const updatedInstalments = [...data.instalment];
+    updatedInstalments[index] = {
+      ...updatedInstalments[index],
+      nominal: parseFloat(value) + e.deltaY * 10,
+    };
+    setData('instalment', updatedInstalments);
+  };
+
+  const scrollthis = (e) => {
+    const saldb = parseFloat(data.saldobefore) ?? 0;
+    setData('saldobefore', saldb + e.deltaY * 10);
+  };
+
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
       <Loading show={processing} />
@@ -147,6 +170,7 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
                     prefix="Rp. "
                     min={1}
                     required
+                    onWheel={scrollthis}
                     onValueChange={(value, name) =>
                       handleInputChange(value, name)
                     }
@@ -156,7 +180,11 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
                 </div>
                 {data?.instalment &&
                   data?.instalment.map((item, index) => (
-                    <div className="mb-1 relative">
+                    <div
+                      className={`mb-1 relative ${
+                        indexButton == index && 'bg-green-50'
+                      }`}
+                    >
                       <InputLabel
                         value={`Angsuran ${dayjs(item?.transaction_date).format(
                           'DD-MM-YYYY'
@@ -170,6 +198,7 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
                         prefix="Rp. "
                         min={1}
                         required
+                        onWheel={(e) => handleButtonAngsuranOnScroll(e, index)}
                         onFocus={(e) => setIndexButton(index)}
                         onValueChange={(value, name) =>
                           handleInputChange(value, name, index)
@@ -180,7 +209,7 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
                       {indexButton == index && (
                         <ButtonAngsuran
                           nominalPembayaran={nominalPembayaran}
-                          pelunasan={saldoBefore}
+                          pelunasan={saldoBefores}
                           onClickButton={handleButtonAngsuran}
                           index={index}
                         />
@@ -193,7 +222,7 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
                   </Button>
                 </div>
                 <div className="text-green-500 font-semibold text-lg">
-                  {saldoBefore.toLocaleString()}
+                  {saldoBefores.toLocaleString()}
                 </div>
               </form>
               <div>

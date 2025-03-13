@@ -594,7 +594,6 @@ class TransactionLoanController extends Controller
   public function get_synch_angsuran(TransactionLoan $transactionLoan, Request $request)
   {
 
-
     $loan = $transactionLoan->load(
       [
         'loan_instalment' => function ($item) {
@@ -617,19 +616,23 @@ class TransactionLoanController extends Controller
       ];
     })->sortBy('transaction_date')->values();
 
-    $dateOfWeeks = collect($request->dateofweek)
-      ->filter(fn($item) => Carbon::parse($item)->isBefore(Carbon::today()))
-      ->mapWithKeys(function ($item, $index) {
-        return [$index => ['date' => Carbon::parse($item)->format('Y-m-d')]];
-      });
+    $startDay = AppHelper::getFirstDayOfMonthID($request->day, $request->month);
+    $dateOfWeeks = [];
+    for ($date = $startDay; $date->lte(Carbon::now()); $date->addDay()) {
+      if (AppHelper::dateName($date) === $request->day) {
+        $dateOfWeeks[] = $date->copy()->format('Y-m-d');
+      }
+    }
+
+    $dateOfWeeks = collect($dateOfWeeks)
+      ->filter(fn($item) => Carbon::parse($item)->isBefore(Carbon::today()) && Carbon::parse($item)->isAfter(Carbon::parse($loan->drop_date)))
+      ->mapWithKeys(fn($item, $index) => [$index => ['date' => Carbon::parse($item)->format('Y-m-d')]]);
 
 
-    $result = $dateOfWeeks->map(function ($week) use ($instalment) {
+    $result = $dateOfWeeks->map(function ($week) use ($transactionLoan, $instalment) {
       $transactionDate = $week['date'];
-
       $matchedInstalment = $instalment->firstWhere('transaction_date', $transactionDate);
       if ($matchedInstalment) {
-        // Jika ditemukan, kembalikan data instalment yang sesuai
         return [
           'id' => $matchedInstalment['id'],
           'nominal' => $matchedInstalment['nominal'],
@@ -642,7 +645,8 @@ class TransactionLoanController extends Controller
           'transaction_date' => $transactionDate,
         ];
       }
-    });
+    })->values();
+
 
     $angsuranBefore = $instalment->where('transaction_date', '<', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d'))->sum('nominal');
     $saldoSebelumnya = $loan->pinjaman - $angsuranBefore;
@@ -679,7 +683,9 @@ class TransactionLoanController extends Controller
       ];
     });
 
-
+    if ($request->saldobefore - collect($request->instalment)->sum('nominal') < 0) {
+      return redirect()->back()->withErrors('Tidak Boleh Minus');
+    }
     // ambil angsuran terakhir yang didatabase
     $angsuranBefore = $Loaninstalment->where('transaction_date', '<', $startOfMonth)->sum('nominal');
     $saldoSebelumnya = $loan->pinjaman - $angsuranBefore;

@@ -47,11 +47,6 @@ const RiwayatPengajuan = ({ data }) => {
         ),
       },
       {
-        accessorKey: 'pinjaman',
-        header: 'Pinjaman',
-        cell: ({ row, getValue }) => <FormatNumbering value={getValue()} />,
-      },
-      {
         accessorKey: 'lunas',
         header: 'Lunas',
         cell: ({ row, getValue }) => (
