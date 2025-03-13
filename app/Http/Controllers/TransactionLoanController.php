@@ -686,21 +686,19 @@ class TransactionLoanController extends Controller
 
     $saldoBefore = $saldoSebelumnya - (int)$request->saldobefore;
 
+    $loan->loan_instalment()->delete();
 
-    if ($saldoBefore !== 0) {
-      $loan->loan_instalment()->where('transaction_date', '<', $startOfMonth)->delete();
+    $tanggalAngsuranPertama = Carbon::parse($transactionLoan->drop_date)->addWeek()->format('Y-m-d');
+    $transactionLoan->loan_instalment()->create([
+      'transaction_date' => $tanggalAngsuranPertama,
+      'nominal' => $transactionLoan->pinjaman - (int)$request->saldobefore,
+      'danatitipan' => 0,
+      'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+      'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $tanggalAngsuranPertama),
+      'user_input' => auth()->user()->employee->id,
+      'user_mantri' => $transactionLoan->user_mantri,
+    ]);
 
-      $tanggalAngsuranPertama = Carbon::parse($transactionLoan->drop_date)->addWeek()->format('Y-m-d');
-      $transactionLoan->loan_instalment()->create([
-        'transaction_date' => $tanggalAngsuranPertama,
-        'nominal' => $transactionLoan->pinjaman - (int)$request->saldobefore,
-        'danatitipan' => 0,
-        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
-        'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $tanggalAngsuranPertama),
-        'user_input' => auth()->user()->employee->id,
-        'user_mantri' => $transactionLoan->user_mantri,
-      ]);
-    }
 
 
     $instalments = collect($request->instalment)->map(function ($item) {
@@ -714,28 +712,17 @@ class TransactionLoanController extends Controller
     $pinjaman = (int)$request->saldobefore;
 
     $instalments->each(function ($item) use ($transactionLoan, &$pinjaman) {
+      if ($pinjaman <= 0) return false;
 
-
-      if ($item['id']) {
-        if ($pinjaman <= 0) {
-          TransactionLoanInstalment::find($item['id'])->delete();
-          return false;
-        }
-        TransactionLoanInstalment::find($item['id'])->update([
-          'nominal' => $item['nominal'],
-        ]);
-      } else {
-        if ($pinjaman <= 0) return false;
-        $transactionLoan->loan_instalment()->create([
-          'transaction_date' => $item['transaction_date'],
-          'nominal' => $item['nominal'],
-          'danatitipan' => 0,
-          'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
-          'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $item['transaction_date']),
-          'user_input' => auth()->user()->employee->id,
-          'user_mantri' => $transactionLoan->user_mantri,
-        ]);
-      }
+      $transactionLoan->loan_instalment()->create([
+        'transaction_date' => $item['transaction_date'],
+        'nominal' => $item['nominal'],
+        'danatitipan' => 0,
+        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+        'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $item['transaction_date']),
+        'user_input' => auth()->user()->employee->id,
+        'user_mantri' => $transactionLoan->user_mantri,
+      ]);
 
       $pinjaman -=   $item['nominal'];
     });
