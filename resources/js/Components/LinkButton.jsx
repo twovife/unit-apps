@@ -15,7 +15,7 @@ export default function LinkButton({
             return "text-white bg-gray-800 border-transparent hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:ring-gray-500 focus:ring-opacity-50";
         }
         if (color == "outline") {
-            return "text-gray-800 bg-white border-gray-800/50 border-1 hover:bg-gray-700 hover:text-white focus:bg-gray-700 active:bg-gray-900 focus:ring-gray-500 focus:ring-opacity-50 shadow";
+            return "text-gray-800 bg-white border-gray-800/50 border-1 hover:bg-gray-700 hover:text-white focus:bg-gray-700 active:bg-gray-900 focus:ring-gray-500 focus:ring-opacity-50 shadow-sm";
         }
         if (color == "red") {
             return "text-white bg-red-800 border-transparent hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:ring-red-500 focus:ring-opacity-50";
@@ -36,7 +36,7 @@ export default function LinkButton({
             as={as}
             type={type}
             className={
-                `inline-flex items-center ${sizeButton()} py-2 px-4 border rounded-md font-semibold text-xs uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150 ${
+                `inline-flex items-center ${sizeButton()} py-2 px-4 border rounded-md font-semibold text-xs uppercase tracking-widest focus:outline-hidden focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150 ${
                     disabled && "opacity-25"
                 }` + className
             }

@@ -11,7 +11,7 @@ export default function Dashboard(props) {
             <Head title="Home" />
 
             <div className="relative">
-                <div className="px-6 py-4 bg-white rounded-md shadow text-slate-700 ring-1 ring-slate-700 ring-opacity-5">
+                <div className="px-6 py-4 bg-white rounded-md shadow-sm text-slate-700 ring-1 ring-slate-700 ring-opacity-5">
                     You're logged in!
                 </div>
             </div>

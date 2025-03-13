@@ -23,7 +23,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
 
       <div className="py-12">
         <div className="mx-auto space-y-6 max-w-7xl sm:px-6 lg:px-8">
-          <div className="p-4 bg-white shadow sm:p-8 sm:rounded-lg">
+          <div className="p-4 bg-white shadow-sm sm:p-8 sm:rounded-lg">
             <UpdateProfileInformationForm
               mustVerifyEmail={mustVerifyEmail}
               status={status}
@@ -31,7 +31,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
             />
           </div>
 
-          <div className="p-4 bg-white shadow sm:p-8 sm:rounded-lg">
+          <div className="p-4 bg-white shadow-sm sm:p-8 sm:rounded-lg">
             <UpdatePasswordForm className="max-w-xl" />
           </div>
         </div>

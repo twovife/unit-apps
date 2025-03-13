@@ -382,7 +382,7 @@ const NewNasabah = ({
                     <div className="w-full mb-3">
                       <Label>Nominal Pinjaman</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="request_nominal"
                         defaultValue={0}
                         allowDecimals={false}
@@ -440,7 +440,7 @@ const NewNasabah = ({
                             <div className="flex items-center justify-start gap-3">
                               <div className="flex-1 min-w-32">
                                 <CurrencyInput
-                                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                   name="nominal"
                                   defaultValue={0}
                                   allowDecimals={false}
@@ -525,12 +525,12 @@ const NewNasabah = ({
             <TabsTrigger value="pinjaman">Crash UBM</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">
-            <div className="overflow-auto shadow scrollbar-thin h-max">
+            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
               <RiwayatPengajuan data={customerData?.history_branch} />
             </div>
           </TabsContent>
           <TabsContent value="pinjaman">
-            <div className="overflow-auto shadow scrollbar-thin h-max">
+            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
               <RiwayatPengajuan data={customerData?.history_lain} />
             </div>
           </TabsContent>

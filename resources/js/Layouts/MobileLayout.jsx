@@ -31,7 +31,7 @@ const MobileLayout = ({ header, children, loading = false }) => {
       <Loading show={loading} />
       <div className="relative mx-auto">
         <div className="sticky top-0 z-50 flex items-center h-10 gap-4 bg-transparent">
-          <nav className="flex flex-row items-center justify-between w-full h-full gap-5 px-2 text-sm lg:px-4 font-mediumlg:gap-6 backdrop-blur">
+          <nav className="flex flex-row items-center justify-between w-full h-full gap-5 px-2 text-sm lg:px-4 font-mediumlg:gap-6 backdrop-blur-sm">
             <div className="flex items-center justify-start">
               <Button variant="icon" onClick={toggleSidebar}>
                 <Menu className="w-4 h-4" />

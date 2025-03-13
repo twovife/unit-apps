@@ -94,7 +94,7 @@ const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
                                     <span className="inline-flex rounded-md">
                                         <button
                                             type="button"
-                                            className="inline-flex items-center text-sm font-medium leading-4 text-white transition duration-150 ease-in-out bg-red-700 border border-transparent rounded-md hover:text-gray-50 focus:outline-none"
+                                            className="inline-flex items-center text-sm font-medium leading-4 text-white transition duration-150 ease-in-out bg-red-700 border border-transparent rounded-md hover:text-gray-50 focus:outline-hidden"
                                         >
                                             {auth.user.username}
 

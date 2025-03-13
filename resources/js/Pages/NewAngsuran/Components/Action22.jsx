@@ -149,7 +149,7 @@ const xAction = ({ datas, show = false, onClosed, triggeredId }) => {
             </CardContent>
           </Card>
           <div className="flex flex-col w-full gap-3 mt-3 lg:flex-row">
-            <Card className="flex-[5]">
+            <Card className="flex-5">
               <CardHeader>
                 <CardTitle>Rincian Angsuran</CardTitle>
               </CardHeader>
@@ -211,7 +211,7 @@ const xAction = ({ datas, show = false, onClosed, triggeredId }) => {
                 </div>
               </CardContent>
             </Card>
-            <div className="flex-[2] relative">
+            <div className="flex-2 relative">
               {customerData.lunas == true ? (
                 <NoEditOverlay value="Pinjaman Sudah Lunas" />
               ) : (

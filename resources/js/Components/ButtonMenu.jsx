@@ -8,7 +8,7 @@ const ButtonMenu = ({ title, active, url }) => {
             <Link
                 as="a"
                 href={url}
-                className={`flex items-center justify-between w-full px-4 py-2 text-left text-sm font-medium transition duration-300 ease-in-out border border-transparent rounded-md focus:outline-none ${
+                className={`flex items-center justify-between w-full px-4 py-2 text-left text-sm font-medium transition duration-300 ease-in-out border border-transparent rounded-md focus:outline-hidden ${
                     active
                         ? // ? `bg-gray-100 text-gray-900  hover:text-gray-900 hover:bg-gray-100`
                           // : `text-gray-600 bg-white  hover:text-gray-900 hover:bg-gray-100`

@@ -591,8 +591,9 @@ class TransactionLoanController extends Controller
   }
 
 
-  public function get_synch_angsuran(TransactionLoan $transactionLoan)
+  public function get_synch_angsuran(TransactionLoan $transactionLoan, Request $request)
   {
+
 
     $loan = $transactionLoan->load(
       [
@@ -608,11 +609,134 @@ class TransactionLoanController extends Controller
       ]
     );
 
+    $instalment = $loan->loan_instalment->map(function ($instalment) {
+      return [
+        'id' => $instalment->id,
+        'nominal' => $instalment->nominal,
+        'transaction_date' => $instalment->transaction_date,
+      ];
+    })->sortBy('transaction_date')->values();
 
+    $dateOfWeeks = collect($request->dateofweek)
+      ->filter(fn($item) => Carbon::parse($item)->isBefore(Carbon::today()))
+      ->mapWithKeys(function ($item, $index) {
+        return [$index => ['date' => Carbon::parse($item)->format('Y-m-d')]];
+      });
+
+
+    $result = $dateOfWeeks->map(function ($week) use ($instalment) {
+      $transactionDate = $week['date'];
+
+      $matchedInstalment = $instalment->firstWhere('transaction_date', $transactionDate);
+      if ($matchedInstalment) {
+        // Jika ditemukan, kembalikan data instalment yang sesuai
+        return [
+          'id' => $matchedInstalment['id'],
+          'nominal' => $matchedInstalment['nominal'],
+          'transaction_date' => $matchedInstalment['transaction_date'],
+        ];
+      } else {
+        return [
+          'id' => null,
+          'nominal' => null,
+          'transaction_date' => $transactionDate,
+        ];
+      }
+    });
+
+    $angsuranBefore = $instalment->where('transaction_date', '<', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d'))->sum('nominal');
+    $saldoSebelumnya = $loan->pinjaman - $angsuranBefore;
+    $data = [
+      'loan' => ['id' => $loan->id, 'pinjaman' => $loan->pinjaman],
+      'instalments' => $instalment,
+      'angsuran' => $result,
+      'saldoSebelumnya' => $saldoSebelumnya,
+      'month' => $request->month,
+    ];
+
+    return response()->json(['data' => $data], 200);
     // $dataset
-    return response()->json(['loan' => $loan], 200);
   }
 
+  public function synch_angsuran(TransactionLoan $transactionLoan, Request $request)
+  {
+
+    $startOfMonth = Carbon::parse($request->month)->startOfMonth()->format('Y-m-d');
+    $loan = $transactionLoan->load(
+      [
+        'loan_instalment' => function ($item) {
+          $item->with('usermantri', 'userinput')
+            ->orderByDesc('transaction_date');
+        },
+      ]
+    );
+
+    $Loaninstalment = $loan->loan_instalment->map(function ($instalment) {
+      return [
+        'id' => $instalment->id,
+        'nominal' => $instalment->nominal,
+        'transaction_date' => $instalment->transaction_date,
+      ];
+    });
+
+
+    // ambil angsuran terakhir yang didatabase
+    $angsuranBefore = $Loaninstalment->where('transaction_date', '<', $startOfMonth)->sum('nominal');
+    $saldoSebelumnya = $loan->pinjaman - $angsuranBefore;
+
+    $saldoBefore = $saldoSebelumnya - (int)$request->saldobefore;
+
+
+    if ($saldoBefore !== 0) {
+      $loan->loan_instalment()->where('transaction_date', '<', $startOfMonth)->delete();
+
+      $tanggalAngsuranPertama = Carbon::parse($transactionLoan->drop_date)->addWeek()->format('Y-m-d');
+      $transactionLoan->loan_instalment()->create([
+        'transaction_date' => $tanggalAngsuranPertama,
+        'nominal' => $transactionLoan->pinjaman - (int)$request->saldobefore,
+        'danatitipan' => 0,
+        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+        'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $tanggalAngsuranPertama),
+        'user_input' => auth()->user()->employee->id,
+        'user_mantri' => $transactionLoan->user_mantri,
+      ]);
+    }
+
+    $instalments = collect($request->instalment)->map(function ($item) {
+      return [
+        'id' => $item['id'] ?? null,
+        'transaction_date' => $item['transaction_date'],
+        'nominal' => $item['nominal'],
+      ];
+    })->values();
+
+    $pinjaman = $transactionLoan->pinjaman;
+
+    $instalments->each(function ($item) use ($transactionLoan, &$pinjaman) {
+      if ($pinjaman <= 0) return false;
+
+      if ($item['id']) {
+        TransactionLoanInstalment::find($item['id'])->update([
+          'nominal' => $item['nominal'],
+        ]);
+      } else {
+        $transactionLoan->loan_instalment()->create([
+          'transaction_date' => $item['transaction_date'],
+          'nominal' => $item['nominal'],
+          'danatitipan' => 0,
+          'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+          'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $item['transaction_date']),
+          'user_input' => auth()->user()->employee->id,
+          'user_mantri' => $transactionLoan->user_mantri,
+        ]);
+      }
+
+      $pinjaman -=   $item['nominal'];
+    });
+
+
+    return redirect()->back()->with('message', 'berhasil di sinkronkan');
+  }
   // INI CONTROLLER API AXIOS ( UNTUK MENCARI KEBENARAH YANG HAKIKI , EH SALAH UNTUK MEMUNCULKAN DATA ANGSURAN )
 
   public function get_loan_pinjaman(TransactionLoan $transactionLoan)

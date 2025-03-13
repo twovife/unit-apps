@@ -67,7 +67,8 @@ Route::middleware('auth')->group(function () {
       Route::get('/drop_date', "index_pinjaman_search")->name('index_pinjaman_search');
       Route::get('/pinjaman-macet', "index_pinjaman_macet")->name('index_pinjaman_macet');
       Route::get('/actionloan/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
-      Route::get('/get-synch-angsuran/{transactionLoan}', "get_synch_angsuran")->name('get_synch_angsuran');
+      Route::post('/get-synch-angsuran/{transactionLoan}', "get_synch_angsuran")->name('get_synch_angsuran');
+      Route::post('/synch-angsuran/{transactionLoan}', "synch_angsuran")->name('synch_angsuran');
       Route::get('/checkpengajuan/{transactionLoan}', "checkpengajuan")->name('checkpengajuan');
       Route::post('/actionloan/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
       Route::post('/store-pengajuan-lama/{transactionLoan}', "store_pengajuan_lama")->name('store_pengajuan_lama');

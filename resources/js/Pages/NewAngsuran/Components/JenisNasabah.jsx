@@ -38,7 +38,7 @@ const JenisNasabah = ({ loan }) => {
         <form onSubmit={onSubmitCreate}>
           <InputLabel htmlFor="status" value="Status" />
           <div className="flex items-center justify-between w-full gap-3">
-            <div className="flex-[3]">
+            <div className="flex-3">
               <SelectList
                 id="notes"
                 type="date"
@@ -66,7 +66,7 @@ const JenisNasabah = ({ loan }) => {
                 onChange={handleOnChange}
               />
             </div>
-            <div className="flex-[1]">
+            <div className="flex-1">
               <PrimaryButton title={'Submit'} type="submit" />
             </div>
           </div>
