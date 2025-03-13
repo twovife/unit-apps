@@ -714,13 +714,12 @@ class TransactionLoanController extends Controller
 
     $instalments->each(function ($item) use ($transactionLoan, &$pinjaman) {
       if ($item['id']) {
-        if ($pinjaman < 0) {
-          TransactionLoanInstalment::find($item['id'])->update([
-            'nominal' => $item['nominal'],
-          ]);
-        } else {
+        if ($pinjaman <= 0) {
           TransactionLoanInstalment::find($item['id'])->delete();
         }
+        TransactionLoanInstalment::find($item['id'])->update([
+          'nominal' => $item['nominal'],
+        ]);
       } else {
         if ($pinjaman <= 0) return false;
         $transactionLoan->loan_instalment()->create([
