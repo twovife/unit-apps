@@ -128,14 +128,15 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
     const updatedInstalments = [...data.instalment];
     updatedInstalments[index] = {
       ...updatedInstalments[index],
-      nominal: parseFloat(value) + e.deltaY * 10,
+      nominal: parseFloat(value) + (e.deltaY < 0 ? -1000 : 1000),
     };
     setData('instalment', updatedInstalments);
   };
 
   const scrollthis = (e) => {
     const saldb = parseFloat(data.saldobefore) ?? 0;
-    setData('saldobefore', saldb + e.deltaY * 10);
+
+    setData('saldobefore', saldb + (e.deltaY < 0 ? -1000 : 1000));
   };
 
   return (
