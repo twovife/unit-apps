@@ -118,6 +118,7 @@ const InputMacet = ({ show, onClosed }) => {
 
     setData({
       ...data,
+      [name]: value,
       angsuran: [
         {
           ...data.angsuran[0],
