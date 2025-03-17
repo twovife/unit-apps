@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreate")->name('fastcreate');
       Route::get('/fastcreatev2', "fastcreatev2")->name('fastcreatev2');
+      Route::get('/inputmacet', "inputmacet")->name('inputmacet');
       Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');
       Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');
       Route::put('/updateEverything/{transactionLoan}', "updateEverything")->name('updateEverything');

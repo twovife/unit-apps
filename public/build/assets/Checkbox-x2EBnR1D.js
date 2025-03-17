@@ -1,0 +1,1 @@
+import{j as e}from"./app-CrLrPaf_.js";function t({className:o="",...r}){return e.jsx("input",{...r,type:"checkbox",className:"rounded border-gray-300 text-indigo-600 shadow-xs focus:ring-indigo-500 "+o})}export{t as C};

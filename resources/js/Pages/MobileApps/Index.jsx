@@ -52,7 +52,7 @@ const Index = () => {
           </div>
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href={route('mobile_apps.byDates')}>
+              <Link href={route('mobile_apps.macet')}>
                 <UserX className="h-7 w-7" />
               </Link>
             </Button>
@@ -73,7 +73,7 @@ const Index = () => {
           </div>
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href={route('mobile_apps.macet')}>
+              <Link href={route('mobile_apps.byDates')}>
                 <UserX className="h-7 w-7" />
               </Link>
             </Button>

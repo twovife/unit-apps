@@ -34,6 +34,14 @@ class TransactionLoanController extends Controller
 
     return Inertia::render('WebView/BukuTransaksi/FastCreateV2');
   }
+
+
+  public function inputmacet(Request $request)
+  {
+
+
+    return Inertia::render('WebView/BukuTransaksi/InputMacet');
+  }
   public function index_buku_transaksi(Request $request)
   {
 
@@ -408,6 +416,9 @@ class TransactionLoanController extends Controller
       dd($exception);
       return redirect()->back()->withErrors($exception->getMessage());
     }
+
+
+
     return redirect()->back()->with('message', 'BERHASIL DITAMBAHKAN')->with('printUrl', route('pinjaman.index_pinjaman_search', ['kelompok' => $officerGrouping->kelompok, 'month' => Carbon::parse($request->tanggal_drop)->format('Y-m'), 'branch_id' =>  $request['branch'], 'hari' => AppHelper::dateName($request->tanggal_drop)]));
   }
 

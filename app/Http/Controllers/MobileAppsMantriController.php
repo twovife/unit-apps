@@ -42,13 +42,14 @@ class MobileAppsMantriController extends Controller
 
   public function macet(Request $request)
   {
-    $data = $this->getLoanByDate($request);
+    $data = $this->getLoanMacet($request);
+
     return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
   }
 
   public function byDates(Request $request)
   {
-    $data = $this->getLoanMacet($request);
+    $data = $this->getLoanByDate($request);
     return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
   }
 
