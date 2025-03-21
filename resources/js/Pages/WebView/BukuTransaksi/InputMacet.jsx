@@ -88,15 +88,47 @@ const InputMacet = ({ show, onClosed }) => {
     if (name == 'kelompok') {
       setCurrentKelompok(value);
     }
+    if (name == 'tanggal_drop') {
+      const nominal = dayjs(value).add(1, 'week').format('YYYY-MM-DD');
+      console.log(nominal);
+
+      setData((prevData) => ({
+        ...prevData,
+        angsuran: prevData.angsuran.map((item, index) =>
+          index === 0 ? { ...item, transaction_date: nominal } : item
+        ),
+      }));
+    }
   };
+
+  useEffect(() => {
+    const nominal = dayjs(data.transaction_date)
+      .add(1, 'week')
+      .format('YYYY-MM-DD');
+
+    setData((prevData) => ({
+      ...prevData,
+      angsuran: prevData.angsuran.map((item, index) =>
+        index === 0 ? { ...item, transaction_date: nominal } : item
+      ),
+    }));
+    console.log(nominal);
+  }, [data.tanggal_drop]);
+
+  console.log(data);
 
   const onHandlePinjaman = (value) => {
     const nominal = parseInt(value) || 0;
-    setData({
-      ...data,
+    const valueint = parseInt(value) * 1.3 - parseInt(data.saldo_before) || 0;
+
+    setData((prevData) => ({
+      ...prevData,
       request_nominal: value,
       saldo_before: (nominal * 1.3).toString(),
-    });
+      angsuran: prevData.angsuran.map((item, index) =>
+        index === 0 ? { ...item, nominal: valueint } : 0
+      ),
+    }));
   };
 
   const handleAngsuranNominalChange = (value) => {
@@ -112,20 +144,15 @@ const InputMacet = ({ show, onClosed }) => {
   };
 
   const onHandleCurencyChange = (value, name, prams) => {
-    if (value > data.request_nominal * 1.3) {
-      return false;
-    }
-
-    setData({
-      ...data,
+    const valueint =
+      parseInt(data?.request_nominal) * 1.3 - parseInt(value) || 0;
+    setData((prevData) => ({
+      ...prevData,
       [name]: value,
-      angsuran: [
-        {
-          ...data.angsuran[0],
-          nominal: parseInt(value) || 0,
-        },
-      ],
-    });
+      angsuran: prevData.angsuran.map((item, index) =>
+        index === 0 ? { ...item, nominal: valueint } : 0
+      ),
+    }));
   };
 
   const onNikChange = (e) => {
