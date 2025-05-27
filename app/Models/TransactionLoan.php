@@ -186,8 +186,6 @@ class TransactionLoan extends Model
     });
   }
 
-
-
   public function loan_instalment()
   {
     return $this->hasMany(TransactionLoanInstalment::class, 'transaction_loan_id', 'id');

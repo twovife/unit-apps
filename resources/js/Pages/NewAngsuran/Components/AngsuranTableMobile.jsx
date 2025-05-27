@@ -17,6 +17,7 @@ import BargeStatus from '@/Components/shadcn/BargeStatus';
 import { Input } from '@/shadcn/ui/input';
 import TextInput from '@/Components/TextInput';
 import { X } from 'lucide-react';
+import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
 const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
@@ -83,7 +84,6 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
       }
     });
   };
-
   return (
     <div className="relative overflow-auto h-[70vh] lg:h-[85vh] scrollbar-none">
       <Table className="text-xs rounded-lg">
@@ -164,7 +164,14 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-xs font-semibold">{subrow.nama}</div>
+                      <div className="text-xs font-semibold">
+                        {subrow.nama}
+                        {subrow.notes && (
+                          <BadgeStatus className="ml-2">
+                            {subrow.notes}
+                          </BadgeStatus>
+                        )}
+                      </div>
                       <div>{subrow.nik}</div>
                       <div>{subrow.alamat}</div>
                     </TableCell>

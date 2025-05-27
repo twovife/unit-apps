@@ -23,6 +23,7 @@ import useOptionGenerator from '@/Hooks/useOptionGenerator';
 import RiwayatPengajuan from '@/Pages/NewLoan/Components/RiwayatPengajuan';
 import LinkButton from '@/Components/LinkButton';
 import DatePicker from '@/Components/shadcn/DatePicker';
+import { format } from 'date-fns';
 
 const InputMacet = ({ show, onClosed }) => {
   const { isUnit, isMantri, isCanShowKelompok, isCreator } =
@@ -42,17 +43,14 @@ const InputMacet = ({ show, onClosed }) => {
 
   const { optKelompok } = useOptionGenerator();
 
-  const firstDate = new Date();
-  const fiveMonthsAgo = new Date(
-    firstDate.getFullYear(),
-    firstDate.getMonth() - 5,
-    0
-  );
+  const fiveMonthsAgo = dayjs(
+    usePage().props.server_filter?.onlineDate ?? new Date()
+  ).format('YYYY-MM-DD');
 
   const { data, setData, post, errors, processing, reset } = useForm({
     isActiveMember: false,
     nik: '',
-    tanggal_drop: dayjs(fiveMonthsAgo).format('YYYY-MM-DD'),
+    tanggal_drop: '',
     no_kk: '',
     nama: '',
     alamat: '',
@@ -61,7 +59,7 @@ const InputMacet = ({ show, onClosed }) => {
     saldo_before: 0,
     angsuran: [
       {
-        transaction_date: dayjs(fiveMonthsAgo).format('YYYY-MM-DD'),
+        transaction_date: '',
         nominal: 0,
       },
       { transaction_date: dayjs().format('YYYY-MM-DD'), nominal: 0 },
@@ -76,10 +74,10 @@ const InputMacet = ({ show, onClosed }) => {
 
   useEffect(() => {
     const pinjaman = parseInt(data.request_nominal) * 1.3 || 0;
-    const sisalSaldos = parseInt(data.saldo_before);
-    const angsuranAwal = pinjaman - sisalSaldos;
+    const angsuran1 = parseInt(data.angsuran[0].nominal) || 0;
+    const angsuran2 = parseInt(data.angsuran[1].nominal) || 0;
 
-    setSisaSaldo(pinjaman - angsuranAwal - data.angsuran[0].nominal);
+    setSisaSaldo(pinjaman - angsuran1 - angsuran2);
   }, [data]);
 
   const onInputChange = (e) => {
@@ -90,7 +88,6 @@ const InputMacet = ({ show, onClosed }) => {
     }
     if (name == 'tanggal_drop') {
       const nominal = dayjs(value).add(1, 'week').format('YYYY-MM-DD');
-      console.log(nominal);
 
       setData((prevData) => ({
         ...prevData,
@@ -102,20 +99,19 @@ const InputMacet = ({ show, onClosed }) => {
   };
 
   useEffect(() => {
-    const nominal = dayjs(data.transaction_date)
-      .add(1, 'week')
-      .format('YYYY-MM-DD');
+    if (data.tanggal_drop) {
+      const nominal = dayjs(data.tanggal_drop)
+        .add(1, 'week')
+        .format('YYYY-MM-DD');
 
-    setData((prevData) => ({
-      ...prevData,
-      angsuran: prevData.angsuran.map((item, index) =>
-        index === 0 ? { ...item, transaction_date: nominal } : item
-      ),
-    }));
-    console.log(nominal);
+      setData((prevData) => ({
+        ...prevData,
+        angsuran: prevData.angsuran.map((item, index) =>
+          index === 0 ? { ...item, transaction_date: nominal } : item
+        ),
+      }));
+    }
   }, [data.tanggal_drop]);
-
-  console.log(data);
 
   const onHandlePinjaman = (value) => {
     const nominal = parseInt(value) || 0;
@@ -126,21 +122,46 @@ const InputMacet = ({ show, onClosed }) => {
       request_nominal: value,
       saldo_before: (nominal * 1.3).toString(),
       angsuran: prevData.angsuran.map((item, index) =>
-        index === 0 ? { ...item, nominal: valueint } : 0
+        index === 0 ? { ...item, nominal: 0 } : item
+      ),
+    }));
+  };
+
+  const buttonValue = [
+    { value: 400000, label: '400rb' },
+    { value: 500000, label: '500rb' },
+    { value: 700000, label: '700rb' },
+    { value: 800000, label: '800rb' },
+    { value: 1000000, label: '1 jt' },
+    { value: 1300000, label: '1,3 jt' },
+    { value: 1500000, label: '1,5 jt' },
+    { value: 2000000, label: '2 jt' },
+  ];
+
+  const buttonValueClick = (e) => {
+    const value = e.target.getAttribute('data-value');
+
+    const nominal = parseInt(value) || 0;
+    const valueint = parseInt(value) * 1.3 - parseInt(data.saldo_before) || 0;
+
+    setData((prevData) => ({
+      ...prevData,
+      request_nominal: value,
+      saldo_before: (nominal * 1.3).toString(),
+      angsuran: prevData.angsuran.map((item, index) =>
+        index === 0 ? { ...item, nominal: 0 } : item
       ),
     }));
   };
 
   const handleAngsuranNominalChange = (value) => {
-    setData({
-      ...data,
-      angsuran: [
-        {
-          ...data.angsuran[1],
-          nominal: parseInt(value) || 0,
-        },
-      ],
-    });
+    // Convert the value to an integer, defaulting to 0 if it's not a valid number
+    setData((prev) => ({
+      ...prev,
+      angsuran: prev.angsuran.map((item, index) =>
+        index === 1 ? { ...item, nominal: value } : item
+      ),
+    }));
   };
 
   const onHandleCurencyChange = (value, name, prams) => {
@@ -149,9 +170,9 @@ const InputMacet = ({ show, onClosed }) => {
     setData((prevData) => ({
       ...prevData,
       [name]: value,
-      angsuran: prevData.angsuran.map((item, index) =>
-        index === 0 ? { ...item, nominal: valueint } : 0
-      ),
+      angsuran: prevData.angsuran.map((item, index) => {
+        return index === 0 ? { ...item, nominal: valueint } : item;
+      }),
     }));
   };
 
@@ -198,27 +219,6 @@ const InputMacet = ({ show, onClosed }) => {
       });
   };
 
-  const buttonValue = [
-    { value: 400000, label: '400rb' },
-    { value: 500000, label: '500rb' },
-    { value: 700000, label: '700rb' },
-    { value: 800000, label: '800rb' },
-    { value: 1000000, label: '1 jt' },
-    { value: 1300000, label: '1,3 jt' },
-    { value: 1500000, label: '1,5 jt' },
-    { value: 2000000, label: '2 jt' },
-  ];
-
-  const buttonValueClick = (e) => {
-    const value = e.target.getAttribute('data-value');
-
-    setData({
-      ...data,
-      request_nominal: value,
-      saldo_before: (value * 1.3).toString(),
-    });
-  };
-
   const modalIsClosed = (e) => {
     reset();
     onClosed();
@@ -240,10 +240,10 @@ const InputMacet = ({ show, onClosed }) => {
     <Dialog open={show} onOpenChange={modalIsClosed}>
       <DialogContent className={`w-[95vw] p-2 lg:p-6`}>
         <DialogHeader className={'max-h-10'}>
-          <DialogTitle className="p-2">Isi Angsurans</DialogTitle>
+          <DialogTitle className="p-2">INPUT MACET</DialogTitle>
           {/* <Button type="button" /> */}
         </DialogHeader>
-        <Loading show={loading} />
+        <Loading show={loading || processing} />
         <div className="h-[80vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin flex flex-col lg:flex-row gap-2">
           <div className={`w-auto min-w-[20vw] lg:w-auto`}>
             <form className="mb-1" onSubmit={onNikSubmit}>
@@ -262,6 +262,14 @@ const InputMacet = ({ show, onClosed }) => {
               }`}
             >
               {nik.length} Digit
+              <div className="text-black">
+                (KETIKKAN <span className="bold text-red-500">UB</span> Jika NIK
+                Sudah Tidak Ada)
+              </div>
+              <div className="text-black">
+                (Hanya Untuk Macet {dayjs(fiveMonthsAgo).format('MMMM YYYY')}{' '}
+                dan Sebelumnya, Serta Macet Yang Belum di Input Saja)
+              </div>
             </div>
 
             <form className="relative" onSubmit={onSubmitCreate}>
@@ -411,7 +419,7 @@ const InputMacet = ({ show, onClosed }) => {
 
                           <div className="w-full mb-3">
                             <Label>
-                              Angsuran {dayjs().format('DD-MM-YYYY')}
+                              Angsuran Hari Ini / {dayjs().format('DD-MM-YYYY')}
                             </Label>
                             <CurrencyInput
                               className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -446,25 +454,6 @@ const InputMacet = ({ show, onClosed }) => {
                 </div>
               </div>
             </form>
-          </div>
-          <div className={`w-auto lg:w-full`}>
-            <div>History</div>
-            <Tabs defaultValue="pengajuan" className="w-auto">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="pengajuan">Crash Kantor</TabsTrigger>
-                <TabsTrigger value="pinjaman">Crash UBM</TabsTrigger>
-              </TabsList>
-              <TabsContent value="pengajuan">
-                <div className="overflow-auto shadow-sm scrollbar-thin h-max">
-                  <RiwayatPengajuan data={customerData?.history_branch} />
-                </div>
-              </TabsContent>
-              <TabsContent value="pinjaman">
-                <div className="overflow-auto shadow-sm scrollbar-thin h-max">
-                  <RiwayatPengajuan data={customerData?.history_lain} />
-                </div>
-              </TabsContent>
-            </Tabs>
           </div>
         </div>
       </DialogContent>

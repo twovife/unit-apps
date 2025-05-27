@@ -82,13 +82,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
     const x =
       triggeredData.tunai - triggeredData.kasbon + triggeredData.transport;
 
-    console.log(x);
 
-    console.log(
-      triggeredData.tunai,
-      triggeredData.kasbon,
-      triggeredData.transport
-    );
 
     return parseFloat(x) + parseFloat(kasbon) - parseFloat(transport);
   };

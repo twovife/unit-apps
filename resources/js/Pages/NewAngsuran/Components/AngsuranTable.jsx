@@ -142,7 +142,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
                         <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
-                        {/* {is_maintenaner && (
+                        {is_maintenaner && (
                           <div>
                             <Button
                               variant="blue"
@@ -152,7 +152,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                               Sync
                             </Button>
                           </div>
-                        )} */}
+                        )}
 
                         <div>
                           <Button

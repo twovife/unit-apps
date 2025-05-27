@@ -50,15 +50,12 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
     const value = e.target.getAttribute('data-value');
     setData('request_nominal', value);
   };
-  // console.log(data);
-  // console.log(isActive);
 
   const getDataAxios = async () => {
     try {
       const response = await axios.get(
         route('pinjaman.checkpengajuan', triggeredId)
       );
-      console.log({ response: response.data.data });
 
       isTargetActive(response.data.data.loan_out_status);
     } catch (error) {

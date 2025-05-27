@@ -1,1 +1,0 @@
-import{j as s}from"./app-Bhivlch7.js";function i({value:t,className:a="",children:e,optional:l=!1,...n}){return s.jsxs("label",{...n,className:"block font-medium text-sm text-gray-700  "+a,children:[t||e,l?s.jsx("span",{className:"text-gray-400 italic",children:"(optionals)"}):""]})}export{i as I};

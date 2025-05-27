@@ -54,12 +54,15 @@ const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
             <DropdownMenuSeparator />
 
             <DropdownMenuItem>
-              <Link href={route('profile.edit')}>Profile</Link>
+              <Link className="w-full" href={route('profile.edit')}>
+                Profile
+              </Link>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <Link
+                className="w-full text-left"
                 href={route('logout')}
                 method="post"
                 as="button"

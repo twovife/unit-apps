@@ -31,7 +31,7 @@ const OldCustomer = ({
         status_angsuran_: "",
     });
     const [inputColumns, setInputColumns] = useState([{ id: 1 }]);
-    console.log();
+
 
     const addInputColumn = () => {
         const newId = inputColumns[inputColumns.length - 1].id + 1;
@@ -93,7 +93,6 @@ const OldCustomer = ({
     const onHandleCurencyChange = (value, name) => {
         setData(name, value);
     };
-    console.log(data);
     const onSubmitCreate = (e) => {
         e.preventDefault();
         post(url);

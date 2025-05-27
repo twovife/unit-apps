@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Helpers\AppHelper;
 use App\Models\Branch;
+use App\Models\OnlineBranch;
 use App\Models\TransactionDailyRecap;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
@@ -261,7 +262,6 @@ trait PinjamanTrait
           'drop' => $item->nominal_drop,
           'pinjaman' => $item->pinjaman,
           'hari' => $item->hari,
-          'note' => $item->note,
           'nik' => $item->customer->nik,
           'kelompok' => $item->loan_officer_grouping->kelompok,
           'jumlah_angsuran' => $item->loan_instalment->count(),
@@ -323,7 +323,6 @@ trait PinjamanTrait
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
-            'note' => $item->note,
             'nik' => $item->customer->nik,
             'kelompok' => $item->loan_officer_grouping->kelompok,
             'jumlah_angsuran' => $item->loan_instalment->count(),
@@ -454,7 +453,6 @@ trait PinjamanTrait
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
 
-            'note' => $item->note,
             'nik' => $item->customer->nik,
 
             'kelompok' => $item->loan_officer_grouping->kelompok,
@@ -504,12 +502,14 @@ trait PinjamanTrait
       $transaction_date = Carbon::now()->endOfMonth();
     }
 
+
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
 
     $authorized = auth()->user();
     $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    // dd($branch_id);
     $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
     $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
@@ -518,6 +518,8 @@ trait PinjamanTrait
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+    $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
+
 
 
     $loan = TransactionLoan::with(
@@ -537,6 +539,8 @@ trait PinjamanTrait
       ->groupBy(function ($item) {
         return Carbon::parse($item->drop_date)->format('Y-m');
       });
+
+
 
 
 
@@ -567,7 +571,6 @@ trait PinjamanTrait
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
-            'note' => $item->note,
             'nik' => $item->customer->nik,
             'kelompok' => $item->loan_officer_grouping->kelompok,
             'jumlah_angsuran' => $item->loan_instalment->count(),
@@ -623,7 +626,8 @@ trait PinjamanTrait
         'branch_id' => $branch_id,
         'kelompok' => $kelompok,
         'type_show' => 'macet',
-        'searchMonth' => false
+        'searchMonth' => false,
+        'onlineDate' => $onlineDate,
       ],
     ];
   }

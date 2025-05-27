@@ -78,7 +78,6 @@ const Approval = ({
     const getIsGenerateRencanaDropMingguDepan = datas?.filter(
       (item) => item.tanggal > triggeredDate && item.is_generated === true
     )[0];
-    // console.log(getIsGenerateRencanaDropMingguDepan);
 
     const triggeredData = Object.assign({}, getSelecterDateRencanaDropData[0]);
     setTriggeredData(triggeredData);
@@ -184,7 +183,6 @@ const Approval = ({
 
         // Ambil elemen pertama dari nilai unik tanggal_drop
         uniqueDropDatesString = uniqueDropDates[0];
-        console.log(uniqueDropDatesString);
 
         // Filter data berdasarkan tanggal_drop yang sama dengan elemen pertama dari nilai unik
         const filteredData2 = filteredData.filter((item) => {
@@ -255,7 +253,6 @@ const Approval = ({
 
   const onSubmitForm = (e) => {
     e.preventDefault();
-    // console.log(data);
 
     post(route('kasir.rekap.ceklist_kepala'), {
       onSuccess: () => {
@@ -264,7 +261,6 @@ const Approval = ({
       },
     });
   };
-  // console.log(data);
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : closedModal())}>

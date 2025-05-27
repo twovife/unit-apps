@@ -27,7 +27,7 @@ import ButtonAngsuran from './ButtonAngsuran';
 const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
   const [syncData, setSyncData] = useState(null);
 
-  // console.log(syncData);
+
 
   const [saldoBefores, setSaldoBefores] = useState(0);
   const { data, setData, post, processing, errors, reset } = useForm({
@@ -122,7 +122,6 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
   };
 
   const handleButtonAngsuranOnScroll = (e, index) => {
-    console.log(e.deltaY);
 
     const value = data.instalment[index]?.nominal ?? 0;
     const updatedInstalments = [...data.instalment];

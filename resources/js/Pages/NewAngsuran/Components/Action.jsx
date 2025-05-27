@@ -34,7 +34,6 @@ import { Button } from '@/shadcn/ui/button';
 import Pengajuan from './Pengajuan';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
-  // console.log(datas);
 
   const isMobile = useIsMobile();
   const {

@@ -10,7 +10,7 @@ const variantMap = {
   lama: 'outline',
   baru: 'yellow',
   true: 'green',
-  false: 'destructive',
+false: 'destructive',
   ml: 'default',
   mb: 'destructive',
   cm: 'yellow',

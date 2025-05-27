@@ -20,7 +20,6 @@ const Permantri = ({
   localState,
   title,
 }) => {
-  // console.log(saldoAwalBulan);
 
   const [datas, setDatas] = useState([]);
   const { server_filter } = usePage().props;

@@ -77,7 +77,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             0
           );
 
-          // console.log(totalPemutihan);
 
           item.data.forEach((data) => {
             dateOfWeek.forEach((date) => {

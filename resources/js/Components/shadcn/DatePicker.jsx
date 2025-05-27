@@ -10,27 +10,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shadcn/ui/select';
-import { format, getMonth, getYear, setMonth, setYear } from 'date-fns';
+import { format, getMonth, getYear, min, setMonth, setYear } from 'date-fns';
 import dayjs from 'dayjs';
 import { CalendarIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const DatePicker = ({
-  startYear = getYear(new Date()) - 100,
+  startYear = 2015,
   endYear = getYear(new Date()),
   values,
   onChange,
   name = 'date',
+  minDate,
 }) => {
-  const firstDate = new Date();
-  const fiveMonthsAgo = new Date(
-    firstDate.getFullYear(),
-    firstDate.getMonth() - 5,
-    0
-  );
-  const [date, setDate] = useState();
+  const [date, setDate] = useState(null);
   const [open, setOpen] = useState(false);
-  const [displayDate, setDisplayDate] = useState(values || fiveMonthsAgo);
+  const [displayDate, setDisplayDate] = useState(values || minDate);
   const months = [
     'Januari',
     'Februari',
@@ -52,18 +47,22 @@ const DatePicker = ({
   );
 
   const handleChangeMonth = (month) => {
-    const newDate = setMonth(date, months.indexOf(month));
+    const newDate = setMonth(displayDate, months.indexOf(month));
     setDisplayDate(newDate);
   };
   const handleChangeYear = (year) => {
-    const newDate = setYear(date, parseInt(year));
+    const newDate = setYear(displayDate, parseInt(year));
+
     setDisplayDate(newDate);
   };
 
   const handleSelect = (date) => {
-    if (date > fiveMonthsAgo) {
+    const minimalDate = new Date(minDate);
+
+    if (date > minimalDate) {
       return false;
     }
+
     if (date) {
       setDate(date);
       onChange(name, dayjs(date).format('YYYY-MM-DD'));
@@ -72,10 +71,12 @@ const DatePicker = ({
   };
 
   const isDisabled = (date) => {
+    const minimalDate = new Date(minDate);
+
     const today = dayjs().toDate();
     const todayDay = today.getDay();
     // Disable kalau lebih dari 5 bulan lalu atau masuk ke hari Sabtu/Minggu
-    return date > fiveMonthsAgo || date.getDay() !== todayDay;
+    return date > minimalDate || date.getDay() !== todayDay;
   };
 
   useEffect(() => {
@@ -101,7 +102,7 @@ const DatePicker = ({
         <div className="flex justify-between gap-3">
           <Select
             onValueChange={handleChangeMonth}
-            value={months[getMonth(date)]}
+            value={months[getMonth(displayDate ?? minDate)]}
           >
             <SelectTrigger>
               <SelectValue placeholder="Month" />
@@ -118,7 +119,7 @@ const DatePicker = ({
           </Select>
           <Select
             onValueChange={handleChangeYear}
-            value={getYear(date).toString()}
+            value={getYear(displayDate || minDate).toString()}
           >
             <SelectTrigger>
               <SelectValue placeholder="Year" />

@@ -16,7 +16,6 @@ export default function DeleteAngsuran({ id }) {
   const { auth } = usePage().props;
 
   const unitAkses = auth.permissions.includes('can create');
-  console.log(unitAkses);
 
   const {
     data,
