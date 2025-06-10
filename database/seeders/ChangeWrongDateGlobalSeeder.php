@@ -22,51 +22,51 @@ class ChangeWrongDateGlobalSeeder extends Seeder
     $getOnlineBranch = OnlineBranch::pluck('branch_id');
     $groupingId = TransactionLoanOfficerGrouping::whereIn('branch_id', $getOnlineBranch)->pluck('id');
 
-    try {
-      $getWrongDate = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId)->where('drop_date', "2025-05-26")->get();
-      $getWrongDate->groupBy('transaction_loan_officer_grouping_id')->map(function ($item, $man_id) {
-        $item->groupBy('drop_date')->map(function ($item, $date) use ($man_id) {
+    $wrongDate = "2025-06-06";
+    $trueDate = "2025-06-13";
+    $beforeDate = "2025-05-30";
 
-          $item->map(function ($item) {
+    try {
+      $getWrongDate = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId)->where('drop_date', $wrongDate)->get();
+      $getWrongDate->groupBy('transaction_loan_officer_grouping_id')->map(function ($item, $man_id) use ($wrongDate, $trueDate, $beforeDate) {
+        $item->groupBy('drop_date')->map(function ($item, $date) use ($man_id, $wrongDate, $trueDate, $beforeDate) {
+
+          $dailyRecap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $man_id)
+            ->where('date', $wrongDate)
+            ->first();
+
+          $dailyRecapRevisi = TransactionDailyRecap::updateOrCreate(
+            [
+              'transaction_loan_officer_grouping_id' => $man_id,
+              'date' => $trueDate,
+            ],
+            [
+              'target_on' => $beforeDate,
+              'target' => $dailyRecap?->target ?? 0,
+            ]
+          );
+
+          if ($dailyRecapRevisi->wasRecentlyCreated) {
+            echo "Berhasil membuat rekap harian {$dailyRecapRevisi->date} untuk {$man_id}" . PHP_EOL;
+          } else {
+            echo "Berhasil mengupdate rekap harian {$dailyRecapRevisi->date} untuk {$man_id}" . PHP_EOL;
+          }
+
+
+          $item->map(function ($item) use ($trueDate, $wrongDate) {
             $item->update([
-              'drop_date' => Carbon::parse($item->drop_date)->addWeeks(2)->format('Y-m-d'),
+              'drop_date' => $trueDate,
             ]);
+            echo "Berhasil mengubah tanggal {$item->drop_date} menjadi {$wrongDate} untuk {$item->transaction_loan_officer_grouping_id}" . PHP_EOL;
           });
 
-          $dailyRecap = TransactionDailyRecap::updateOrCreate([
-            'transaction_loan_officer_grouping_id' => $man_id,
-            'date' => "2025-05-19",
-          ], [
-            'target_on' =>  "2025-05-05",
-          ]);
+          $dailyRecap?->delete();
 
-
-          $unit = TransactionLoanOfficerGrouping::with('branch')->find($man_id);
-          if ($dailyRecap->wasRecentlyCreated) {
-            // Data baru berhasil dibuat
-            echo "Data baru dibuat!" . PHP_EOL;
-            Log::info('Daily recap updated', [
-              'unit' =>  $unit->branch->unit,
-              'kelompok' =>  $unit->kelompok,
-              'tanggal_pengajuan_lama' => null,
-              'tanggal_pengajuan_baru' => Carbon::parse($date)->addWeeks(2)->format('Y-m-d'),
-              'status' => 'new',
-            ]);
-          } else {
-            // Data lama di-update
-            echo "Data berhasil di-update!" . PHP_EOL;
-            Log::info('Daily recap updated', [
-              'unit' =>  $unit->branch->unit,
-              'kelompok' =>  $unit->kelompok,
-              'tanggal_pengajuan_lama' => $date,
-              'tanggal_pengajuan_baru' => Carbon::parse($date)->addWeeks(2)->format('Y-m-d'),
-              'status' => 'new',
-            ]);
-          }
+          // echo "Berhasil mengubah tanggal {$wrongDate} menjadi {$trueDate} untuk {$man_id} pada tanggal {$date}" . PHP_EOL;
         });
       });
     } catch (Exception $e) {
-      echo $e->getMessage();
+      echo "eror {$e->getMessage()}";
     }
   }
 }

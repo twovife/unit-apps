@@ -103,7 +103,8 @@ class TransactionLoan extends Model
           $transactionLoan->transaction_loan_officer_grouping_id
         )->where("date", $origilanDate)->first();
 
-        $dailyRekapOriginalDay->update([
+
+        $dailyRekapOriginalDay?->update([
           "drop" => $sumOriginalDate,
         ]);
 

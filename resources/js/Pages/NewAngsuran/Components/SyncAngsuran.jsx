@@ -27,8 +27,6 @@ import ButtonAngsuran from './ButtonAngsuran';
 const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
   const [syncData, setSyncData] = useState(null);
 
-
-
   const [saldoBefores, setSaldoBefores] = useState(0);
   const { data, setData, post, processing, errors, reset } = useForm({
     saldobefore: 0,
@@ -122,7 +120,6 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
   };
 
   const handleButtonAngsuranOnScroll = (e, index) => {
-
     const value = data.instalment[index]?.nominal ?? 0;
     const updatedInstalments = [...data.instalment];
     updatedInstalments[index] = {
@@ -141,11 +138,13 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
       <Loading show={processing} />
-      <DialogContent className={`p-1 lg:p-6 min-w-[50vw] max-w-[90vw] w-auto`}>
+      <DialogContent
+        className={`p-1 lg:p-6 lg:min-w-[50vw] min-w-[80vw] max-w-[90vw] w-auto`}
+      >
         <DialogHeader>
           <DialogTitle>Angsuran</DialogTitle>
         </DialogHeader>
-        <div className="h-[80vh]">
+        <div className="h-[80vh] overflow-auto">
           {syncData ? (
             <div className="lg:grid-cols-2 grid w-full gap-3">
               <form onSubmit={submitForm}>
