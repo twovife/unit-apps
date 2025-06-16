@@ -208,7 +208,9 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
                 </label>
               )}
             </div>
-            <Button type="submit">Submit</Button>
+            <Button disabled={processing} type="submit">
+              Submit
+            </Button>
           </div>
         </form>
       </CardContent>

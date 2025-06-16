@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class TransactionLoanInstalment extends Model
 {
@@ -26,70 +27,99 @@ class TransactionLoanInstalment extends Model
   {
     parent::boot();
 
-    static::creating(function ($transactionLoanInstalment) {
-      if ($transactionLoanInstalment->nominal > 0) {
-        $transactionDailyRecap = TransactionDailyRecap::firstOrCreate([
-          "transaction_loan_officer_grouping_id" => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-          "date" => $transactionLoanInstalment->transaction_date,
-        ]);
-        $transactionDailyRecap->increment('storting', $transactionLoanInstalment->nominal);
-        $transactionDailyRecap->save();
+    static::creating(function (self $transactionLoanInstalment) {
+      if ($transactionLoanInstalment->nominal <= 0) {
+        return;
       }
 
-      $sumNominal = TransactionLoanInstalment::where('transaction_loan_id', $transactionLoanInstalment->transaction_loan_id)->where('id', "!=", $transactionLoanInstalment->id)->sum('nominal') + $transactionLoanInstalment->nominal;
+      DB::transaction(function () use ($transactionLoanInstalment) {
+        $recap = TransactionDailyRecap::query()
+          ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
+          ->where('date', $transactionLoanInstalment->transaction_date)
+          ->lockForUpdate()
+          ->firstOrCreate([
+            'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
+            'date'                                 => $transactionLoanInstalment->transaction_date,
+          ]);
 
-      if ($transactionLoanInstalment->loan->pinjaman == $sumNominal) {
-        $transactionLoanInstalment->loan()->update([
-          'out_date' => $transactionLoanInstalment->transaction_date,
-          'out_status' => 'LUNAS',
-        ]);
-      }
-      if ($transactionLoanInstalment->loan->pinjaman < $sumNominal) {
-        $transactionLoanInstalment->loan()->update([
-          'out_date' => $transactionLoanInstalment->transaction_date,
-          'out_status' => 'LUNAS Xs',
-        ]);
-      }
+        $recap->increment('storting', $transactionLoanInstalment->nominal);
+        $loan = $transactionLoanInstalment->loan()->lockForUpdate()->first();
+        if ($loan) {
+          $newTotal = $loan->total_angsuran + $transactionLoanInstalment->nominal;
+          // dd($newTotal);
+
+          $attrs = ['total_angsuran' => $newTotal];
+
+          // Lunas bila total angsuran ≥ pinjaman (kolom 'pinjaman' atau 'nominal_drop')
+          if ($newTotal >= $loan->pinjaman /* atau $loan->nominal_drop */) {
+            $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
+            $attrs['out_status'] = 'LUNAS';
+          }
+
+          $loan->update($attrs);
+        }
+      });
     });
 
 
-    static::deleting(function ($transactionLoanInstalment) {
+    static::deleting(function (self $transactionLoanInstalment): void {
 
-      if ($transactionLoanInstalment->nominal > 0) {
-        $transactionDailyRecap = TransactionDailyRecap::where(
-          "transaction_loan_officer_grouping_id",
-          $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-        )->where("date", $transactionLoanInstalment->transaction_date)->first();
-
-        // dd($transactionDailyRecap);
-        if ($transactionDailyRecap) {
-          $transactionDailyRecap->decrement('storting', $transactionLoanInstalment->nominal);
-          $transactionDailyRecap->save();
-        }
-
-        $sumNominal = TransactionLoanInstalment::where('transaction_loan_id', $transactionLoanInstalment->transaction_loan_id)->where('id', "!=", $transactionLoanInstalment->id)->sum('nominal');
-
-        if ($transactionLoanInstalment->loan->pinjaman == $sumNominal) {
-          $transactionLoanInstalment->loan()->update([
-            'out_date' => $transactionLoanInstalment->transaction_date,
-            'out_status' => 'LUNAS',
-          ]);
-        }
-
-        if ($transactionLoanInstalment->loan->pinjaman < $sumNominal) {
-          $transactionLoanInstalment->loan()->update([
-            'out_date' => $transactionLoanInstalment->transaction_date,
-            'out_status' => 'LUNAS Xs',
-          ]);
-        }
-
-        if ($transactionLoanInstalment->loan->pinjaman > $sumNominal) {
-          $transactionLoanInstalment->loan()->update([
-            'out_date' => null,
-            'out_status' => null,
-          ]);
-        }
+      // Abaikan angsuran bernominal 0 / negatif
+      if ($transactionLoanInstalment->nominal <= 0) {
+        return;
       }
+
+      /**
+       * 1) Jalankan dalam transaksi + retry   (Laravel 10+ bisa pakai attempts=3)
+       * 2) Lock parent‑loan dulu, baru lock recap — konsisten agar anti‑deadlock
+       */
+      DB::connection()->transaction(function () use ($transactionLoanInstalment) {
+
+        /*────────── 1. LOCK & UPDATE PARENT LOAN ──────────*/
+        $loan = $transactionLoanInstalment->loan()          // relasi belongsTo
+          ->lockForUpdate()                // kunci baris loan
+          ->first();
+
+        // Jika parent loan sudah hilang (soft‑deleted / race), keluar
+        if (! $loan) {
+          return;
+        }
+
+        // Hitung total angsuran setelah baris ini dihapus
+        $newTotal = $loan->total_angsuran - $transactionLoanInstalment->nominal;
+        if ($newTotal < 0) {                 // tidak boleh negatif
+          $newTotal = 0;
+        }
+
+        // Siapkan kolom yang akan diperbarui
+        $attrs = ['total_angsuran' => $newTotal];
+
+        // Tentukan status lunas / belum lunas
+        $plafond = $loan->pinjaman;          // atau $loan->nominal_drop
+        if ($newTotal >= $plafond) {
+          $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
+          $attrs['out_status'] = 'LUNAS';
+        } else {
+          $attrs['out_date']   = null;
+          $attrs['out_status'] = null;
+        }
+
+        // UPDATE parent loan (1 query)
+        $loan->update($attrs);
+
+        /*────────── 2. LOCK & UPDATE REKAP HARIAN ──────────*/
+        $recap = TransactionDailyRecap::query()
+          ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
+          ->where('date', $transactionLoanInstalment->transaction_date)
+          ->lockForUpdate()                // row‑level lock
+          ->firstOrCreate([
+            'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
+            'date'                                 => $transactionLoanInstalment->transaction_date,
+          ]);
+
+        // Kurangi storting secara atomik
+        $recap->decrement('storting', $transactionLoanInstalment->nominal);
+      }, attempts: 3); // retry otomatis bila deadlock
     });
   }
 

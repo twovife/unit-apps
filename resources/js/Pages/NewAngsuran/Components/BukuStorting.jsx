@@ -77,7 +77,6 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             0
           );
 
-
           item.data.forEach((data) => {
             dateOfWeek.forEach((date) => {
               if (data.instalment[date] !== undefined) {

@@ -172,7 +172,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
         </div>
       </div> */}
 
-      <div className="flex w-full gap-3 mb-1">
+      {/* <div className="flex w-full gap-3 mb-1">
         {data.drop_langsung == 'lama' && (
           <>
             <div className="flex-1">
@@ -225,7 +225,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
             />
           </div>
         )}
-      </div>
+      </div> */}
       <div className="mb-3">
         <div className="text-xs text-blue-500">
           Perubahan Nominal Mempengaruhi Perolehan Drop dan Rencana Drop
@@ -236,9 +236,9 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <Button onClick={() => handleSubmit('detailchange')} type="submit">
+        {/* <Button onClick={() => handleSubmit('detailchange')} type="submit">
           Ubah
-        </Button>
+        </Button> */}
         {triggeredData?.drop_langsung == 'lama' && (
           <Button
             onClick={() => handleSubmit('resetdata')}
