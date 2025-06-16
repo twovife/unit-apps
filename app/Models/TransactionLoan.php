@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Helpers\AppHelper;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Staudenmeir\EloquentHasManyDeep\HasRelationships;
 use Znck\Eloquent\Traits\BelongsToThrough;
 
@@ -38,6 +40,7 @@ class TransactionLoan extends Model
     "drop_langsung",
     "out_date",
     "out_status",
+    "total_angsuran",
     "transaction_out_reasons_id"
   ];
 
@@ -46,150 +49,94 @@ class TransactionLoan extends Model
   {
     parent::boot();
 
-    static::updating(function ($transactionLoan) {
-
-      $origilanDate = $transactionLoan->getOriginal('drop_date');
-      $newDate = $transactionLoan->drop_date;
-
-      if (AppHelper::dateName($origilanDate) !== AppHelper::dateName($newDate)) {
-        return redirect()->back()->withErrors('Hari Pada Tanggal Yang Diubah Harus Sama');
-      }
-
-      if ($transactionLoan->isDirty('status')) {
-        $originalStatus = $transactionLoan->getOriginal('status');
-        $newStatus = $transactionLoan->status;
-
-        if (($originalStatus === 'success') !== ($newStatus === 'success')) {
-
-          $sumDropLoanDay = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
-            ->where('drop_date', $transactionLoan->drop_date)->where('status', 'success')->where('id', '!=', $transactionLoan->id)->sum('nominal_drop') ?? 0;
-
-          if ($newStatus == 'success') {
-            $sumDropLoanDay += $transactionLoan->nominal_drop;
-          }
-
-          $dailyRekap = TransactionDailyRecap::firstOrCreate([
-            "transaction_loan_officer_grouping_id" => $transactionLoan->transaction_loan_officer_grouping_id,
-            "date" => $transactionLoan->drop_date,
-          ]);
-
-          if ($dailyRekap->drop != $sumDropLoanDay) {
-            $dailyRekap->update([
-              "drop" => $sumDropLoanDay,
-            ]);
-          }
-        }
+    static::updating(function (self $transactionLoan) {
+      if (! $transactionLoan->isDirty('status')) {
+        return;
       }
 
 
+      $old = $transactionLoan->getOriginal('status');
+      $new = $transactionLoan->status;
 
-      if ($transactionLoan->isDirty('drop_date')) {
-        $sumLoan = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
-          ->whereIn('drop_date', [$origilanDate, $newDate])->where('status', 'success')->where('id', '!=', $transactionLoan->id)->get()->groupBy('drop_date')->map(function ($item, $key) {
-            return $item->sum('nominal_drop');
-          });
+      if (($old === 'success') === ($new === 'success')) {
+        return;
+      }
 
-        $sumOriginalDate = $sumLoan[$origilanDate] ?? 0;
-        $sumDestinationDate = $sumLoan[$newDate] ?? 0;
+      DB::transaction(function () use ($transactionLoan, $new) {
 
-        if ($transactionLoan->getOriginal('status') == 'success') {
-          $sumDestinationDate += $transactionLoan->nominal_drop;
+        $freshLoan = self::whereKey($transactionLoan->id)
+          ->lockForUpdate()
+          ->first();
+
+        // Kalau ternyata status di DB sudah sama dgn yg mau disimpan,
+        // artinya request lain sudah sempat memproses –> keluar saja.
+        if ($freshLoan->status === $transactionLoan->status) {
+          return;
         }
 
-
-        // remove total drop on original Day
-        $dailyRekapOriginalDay = TransactionDailyRecap::where(
-          "transaction_loan_officer_grouping_id",
-          $transactionLoan->transaction_loan_officer_grouping_id
-        )->where("date", $origilanDate)->first();
-
-
-        $dailyRekapOriginalDay?->update([
-          "drop" => $sumOriginalDate,
-        ]);
-
-
-        // add total drop on new Day
-
-        $dailyRekapNewDay = TransactionDailyRecap::firstOrCreate([
-          "transaction_loan_officer_grouping_id" => $transactionLoan->transaction_loan_officer_grouping_id,
-          "date" => $newDate,
-        ]);
-
-        if ($dailyRekapNewDay->wasRecentlyCreated) {
-          $sumAllInstalment = TransactionLoanInstalment::where(
-            "transaction_loan_officer_grouping_id",
-            $transactionLoan->transaction_loan_officer_grouping_id
-          )->where("transaction_date", $newDate)->sum('nominal');
-          $dailyRekapNewDay->update([
-            "storting" => $sumAllInstalment,
-            "drop" => $sumDestinationDate,
+        // Kunci baris recap yang bersangkutan
+        $dailyRekap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
+          ->where('date', $transactionLoan->drop_date)
+          ->lockForUpdate()
+          ->firstOrCreate([
+            'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+            'date'   => $transactionLoan->drop_date,
           ]);
+
+        if ($new === 'success') {
+          // status baru jadi sukses → tambah nominal‑nya
+          $dailyRekap->increment('drop', $transactionLoan->nominal_drop);
         } else {
-          $dailyRekapNewDay->update([
-            "drop" => $sumDestinationDate,
-          ]);
+          // status dicabut dari sukses → kurangi nominal lama
+          $dailyRekap->decrement('drop', $transactionLoan->getOriginal('nominal_drop'));
         }
-      }
-
-
-
-
-
-      if ($transactionLoan->isDirty('nominal_drop')) {
-
-        if ($transactionLoan->getOriginal('status') == $transactionLoan->status) {
-          $sumDropLoanDay = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
-            ->where('drop_date', $transactionLoan->drop_date)->where('status', 'success')->where('id', '!=', $transactionLoan->id)->sum('nominal_drop');
-
-          $sumDropLoanDay += $transactionLoan->nominal_drop;
-
-          $dailyRekap = TransactionDailyRecap::where(
-            "transaction_loan_officer_grouping_id",
-            $transactionLoan->transaction_loan_officer_grouping_id,
-          )->where("date", $transactionLoan->drop_date)->first();
-
-          if ($dailyRekap->drop != $sumDropLoanDay) {
-            $dailyRekap->update([
-              "drop" => $sumDropLoanDay,
-            ]);
-          }
-        }
-      }
+      });
     });
 
 
-    static::deleting(function ($transactionLoan) {
+    static::deleting(function (self $transactionLoan) {
 
+      DB::transaction(function () use ($transactionLoan) {
 
-      foreach ($transactionLoan->loan_instalment as $loanInstalment) {
-        $loanInstalment->delete();
-        // Ini akan memicu event deleting dan deleted pada LoanInstalment
-      }
+        $freshLoan = self::whereKey($transactionLoan->id)
+          ->lockForUpdate()
+          ->first();
 
-      if ($transactionLoan->status == "success") {
-        $sumDropLoanDay = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
-          ->where('drop_date', $transactionLoan->drop_date)->where('status', 'success')->where('id', '!=', $transactionLoan->id)->sum('nominal_drop');
+        if (! $freshLoan) {
+          return; // sudah dihapus oleh proses lain
+        }
 
-        $dailyRekap = TransactionDailyRecap::where(
-          "transaction_loan_officer_grouping_id",
-          $transactionLoan->transaction_loan_officer_grouping_id,
-        )->where("date", $transactionLoan->drop_date)->first();
+        // 2. Hapus semua cicilan terkait
+        foreach ($freshLoan->loan_instalment as $instalment) {
+          $instalment->delete();
+        }
 
-        if ($dailyRekap) {
-          if ($dailyRekap->drop != $sumDropLoanDay) {
-            $dailyRekap->update([
-              "drop" => $sumDropLoanDay,
-            ]);
+        // 3. Koreksi recap hanya jika status = success
+        if ($freshLoan->status === 'success') {
+
+          $dailyRekap = TransactionDailyRecap::query()
+            ->where('transaction_loan_officer_grouping_id', $freshLoan->transaction_loan_officer_grouping_id)
+            ->where('date', $freshLoan->drop_date)
+            ->lockForUpdate() // kunci baris recap
+            ->first();
+
+          if ($dailyRekap) {
+            $dailyRekap->decrement('drop', $freshLoan->nominal_drop);
           }
         }
-      }
+      });
     });
   }
 
   public function loan_instalment()
   {
     return $this->hasMany(TransactionLoanInstalment::class, 'transaction_loan_id', 'id');
+  }
+
+  public function loanInstalmentOn(string|\DateTimeInterface $date)
+  {
+    return $this->hasMany(TransactionLoanInstalment::class, 'transaction_loan_id')
+      ->whereDate('transaction_date', $date);
   }
 
   public function manage_customer()

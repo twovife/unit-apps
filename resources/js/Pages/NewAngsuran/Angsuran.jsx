@@ -10,6 +10,7 @@ import { Button } from '@/shadcn/ui/button';
 import { FilterIcon } from 'lucide-react';
 import AngsuranTableMobile from './Components/AngsuranTableMobile';
 import { Input } from '@/shadcn/ui/input';
+import BukuStortingMobile from './Components/BukuStortingMobile';
 
 const Angsuran = ({
   datas,
@@ -81,11 +82,20 @@ const Angsuran = ({
           )}
         </TabsContent>
         <TabsContent value="bukustorting">
-          <BukuStorting
-            dateOfWeek={dateOfWeek}
-            datas={datas}
-            sirkulasi={sirkulasi}
-          />
+          {type === 'mobile' && (
+            <BukuStortingMobile
+              dateOfWeek={dateOfWeek}
+              datas={datas}
+              sirkulasi={sirkulasi}
+            />
+          )}
+          {type === 'desktop' && (
+            <BukuStorting
+              dateOfWeek={dateOfWeek}
+              datas={datas}
+              sirkulasi={sirkulasi}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </>

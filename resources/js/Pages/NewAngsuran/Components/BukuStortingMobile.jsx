@@ -15,7 +15,7 @@ import Action from './Action22';
 import { Badge } from '@/shadcn/ui/badge';
 import ApprovalAkhir from './ApprovalAkhir';
 
-const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
+const BukuStortingMobile = ({ dateOfWeek, datas, sirkulasi }) => {
   const [data, setData] = useState([]);
   const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
     ml: {
@@ -51,20 +51,20 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
         const resutl = () => {
           const instalmentsSum = {};
 
-          const sirkulasiAwalFunction = (params) => {
-            switch (params.type) {
-              case 'ml':
-                return sirkulasi?.ml_amount ?? 0;
-                break;
-              default:
-                return params.data.reduce(
-                  (acc, itm) => acc + itm.saldo_sebelumnya,
-                  0
-                );
-            }
-          };
+          // const sirkulasiAwalFunction = (params) => {
+          //   switch (params.type) {
+          //     case 'ml':
+          //       return sirkulasi?.ml_amount ?? 0;
+          //       break;
+          //     default:
+          //       return params.data.reduce(
+          //         (acc, itm) => acc + itm.saldo_sebelumnya,
+          //         0
+          //       );
+          //   }
+          // };
 
-          const sirkulasiAwal = sirkulasiAwalFunction(item);
+          // const sirkulasiAwal = sirkulasiAwalFunction(item);
 
           dateOfWeek.forEach((date) => {
             instalmentsSum[date] = 0;
@@ -89,19 +89,19 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           setSirkulasiAkhir((prevSirkulasiAkhir) => ({
             ...prevSirkulasiAkhir,
             [item.type]: {
-              sirkulasi: sirkulasiAwal,
+              // sirkulasi: sirkulasiAwal,
               angsuran: totalInstalment,
-              saldo: sirkulasiAwal - (totalInstalment + totalPemutihan),
+              // saldo: sirkulasiAwal - (totalInstalment + totalPemutihan),
             },
           }));
 
           return {
             key: item.month,
             instalment: { ...instalmentsSum },
-            sirkulasi: sirkulasiAwal,
+            // sirkulasi: sirkulasiAwal,
             totalInstalment: totalInstalment,
             totalPemutihan: totalPemutihan,
-            sirkulasiAfter: sirkulasiAwal - (totalInstalment + totalPemutihan),
+            // sirkulasiAfter: sirkulasiAwal - (totalInstalment + totalPemutihan),
             type: item.type,
           };
         };
@@ -156,7 +156,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
             <TableHead className="text-center">Bulan</TableHead>
-            <TableHead className="text-center">Sirkulasi</TableHead>
+            {/* <TableHead className="text-center">Sirkulasi</TableHead> */}
             {dateOfWeek.map((day, i) => (
               <TableHead className="text-center" key={i}>
                 {dayjs(day).format('DD-MM-YY')}
@@ -164,7 +164,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             ))}
             <TableHead className="text-center">Angsuran</TableHead>
             <TableHead className="text-center">MD</TableHead>
-            <TableHead className="text-center">Saldo</TableHead>
+            {/* <TableHead className="text-center">Saldo</TableHead> */}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -173,11 +173,11 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               <React.Fragment key={i}>
                 <TableRow>
                   <TableCell>{row.key}</TableCell>
-                  <TableCell
+                  {/* <TableCell
                     className={`${row.type == 'normal' ? 'bg-green-200' : ''} `}
                   >
                     <FormatNumbering value={row.sirkulasi} />
-                  </TableCell>
+                  </TableCell> */}
 
                   {dateOfWeek.map((day, i) => (
                     <TableCell className={`text-center`} key={i}>
@@ -190,9 +190,9 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                   <TableCell>
                     <FormatNumbering value={row.totalPemutihan} />
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <FormatNumbering value={row.sirkulasiAfter} />
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               </React.Fragment>
             ))
@@ -203,7 +203,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           )}
         </TableBody>
         <TableFooter>
-          <TableRow>
+          {/* <TableRow>
             <TableCell rowSpan={2} className="text-center">
               Total
             </TableCell>
@@ -216,11 +216,12 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               className="text-center"
               colspan={dateOfWeek.length + 3}
             ></TableCell>
-          </TableRow>
+          </TableRow> */}
           <TableRow>
-            <TableCell className="text-center">
+            <TableCell className="text-center">Total</TableCell>
+            {/* <TableCell className="text-center">
               <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
-            </TableCell>
+            </TableCell> */}
             {dateOfWeek.map((day, i) => (
               <TableCell className="text-center" key={i}>
                 <FormatNumbering value={calculateInstalment(data, day)} />
@@ -237,11 +238,11 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               />
             </TableCell>
 
-            <TableCell className="text-center">
+            {/* <TableCell className="text-center">
               <FormatNumbering
                 value={calculateTotals(data, 'sirkulasiAfter')}
               />
-            </TableCell>
+            </TableCell> */}
           </TableRow>
         </TableFooter>
       </Table>
@@ -265,8 +266,11 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
         onClosed={onClosedShowOpen}
         triggeredId={triggeredId}
       />
+      <div>
+        MENU DALAM PROSES PERBAIKAN, STORTING HANYA DAPAT DILIHAT PER HARI INI
+      </div>
     </div>
   );
 };
 
-export default BukuStorting;
+export default BukuStortingMobile;

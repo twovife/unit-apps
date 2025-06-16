@@ -11,6 +11,10 @@ return new class extends Migration
    */
   public function up(): void
   {
+    // jika sudah ada table online_branches, maka skip migrasi ini
+    if (Schema::hasTable('online_branches')) {
+      return;
+    }
     Schema::create('online_branches', function (Blueprint $table) {
       $table->id();
       $table->bigInteger('branch_id')->nullable();
