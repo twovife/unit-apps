@@ -436,9 +436,7 @@ trait PinjamanTrait
       ->first();
     // dd($transaction_date);
     $loan = TransactionLoan::with(
-      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer' => function ($item) {
-        $item->with('loan');
-      }, 'branch', 'customer', 'white_off', 'loan_officer_grouping']
+      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer', 'white_off']
     )
       ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
       ->where('hari', $hari)
@@ -452,9 +450,7 @@ trait PinjamanTrait
     // dd($loan);
 
     $loanMl = TransactionLoan::with(
-      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer' => function ($item) {
-        $item->with('loan');
-      }, 'branch', 'customer', 'loan_officer_grouping']
+      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer']
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
       ->where('hari', $hari)
@@ -489,7 +485,6 @@ trait PinjamanTrait
 
           // ini status lunas
           'lunas' => $saldo <= 0,
-          'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
           'drop' => $item->nominal_drop,
           'pinjaman' => $item->pinjaman,
           'hari' => $item->hari,
@@ -545,7 +540,6 @@ trait PinjamanTrait
 
             // ini status lunas
             'lunas' => $saldo <= 0,
-            'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
