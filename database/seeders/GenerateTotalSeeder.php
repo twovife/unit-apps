@@ -31,10 +31,16 @@ class GenerateTotalSeeder extends Seeder
           ->groupBy('transaction_loan_id')
           ->pluck('total', 'transaction_loan_id');   // [id => total]
 
+        $totals = TransactionLoan::withSum('loan_instalment', 'nominal')
+          ->whereIn('id', $loanIds)
+          ->get()
+          ->pluck('loan_instalment_sum_nominal', 'id');
+
+
         foreach ($loans as $loan) {
           $total = $totals[$loan->id] ?? 0;
 
-          if ($total !== $loan->total_angsuran) {
+          if ($total !== $loan->loan_instalment_sum_nominal) {
             $loan->update(['total_angsuran' => $total]);
           }
           echo "Updated loan ID {$loan->id} with total_angsuran: {$total}" . PHP_EOL;
