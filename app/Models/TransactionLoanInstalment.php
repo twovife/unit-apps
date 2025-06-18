@@ -44,14 +44,18 @@ class TransactionLoanInstalment extends Model
 
         $recap->increment('storting', $transactionLoanInstalment->nominal);
         $loan = $transactionLoanInstalment->loan()->lockForUpdate()->first();
+        $sumInstalment = TransactionLoan::withSum('loan_instalment', 'nominal')
+          ->where('id', $transactionLoanInstalment->transaction_loan_id)
+          ->first();
+
         if ($loan) {
-          $newTotal = $loan->total_angsuran + $transactionLoanInstalment->nominal;
+          $newTotal = $sumInstalment->loan_instalment_sum_nominal + $transactionLoanInstalment->nominal;
           // dd($newTotal);
 
           $attrs = ['total_angsuran' => $newTotal];
 
           // Lunas bila total angsuran ≥ pinjaman (kolom 'pinjaman' atau 'nominal_drop')
-          if ($newTotal >= $loan->pinjaman /* atau $loan->nominal_drop */) {
+          if ($newTotal >= $sumInstalment->pinjaman /* atau $loan->nominal_drop */) {
             $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
             $attrs['out_status'] = 'LUNAS';
           }
@@ -76,9 +80,11 @@ class TransactionLoanInstalment extends Model
       DB::connection()->transaction(function () use ($transactionLoanInstalment) {
 
         /*────────── 1. LOCK & UPDATE PARENT LOAN ──────────*/
-        $loan = $transactionLoanInstalment->loan()          // relasi belongsTo
-          ->lockForUpdate()                // kunci baris loan
+        $loan = $transactionLoanInstalment->loan()->lockForUpdate()->first();
+        $sumInstalment = TransactionLoan::withSum('loan_instalment', 'nominal')
+          ->where('id', $transactionLoanInstalment->transaction_loan_id)
           ->first();
+
 
         // Jika parent loan sudah hilang (soft‑deleted / race), keluar
         if (! $loan) {
@@ -86,7 +92,7 @@ class TransactionLoanInstalment extends Model
         }
 
         // Hitung total angsuran setelah baris ini dihapus
-        $newTotal = $loan->total_angsuran - $transactionLoanInstalment->nominal;
+        $newTotal = $sumInstalment->loan_instalment_sum_nominal - $transactionLoanInstalment->nominal;
         if ($newTotal < 0) {                 // tidak boleh negatif
           $newTotal = 0;
         }
