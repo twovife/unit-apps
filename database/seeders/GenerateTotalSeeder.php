@@ -19,7 +19,6 @@ class GenerateTotalSeeder extends Seeder
     // 1 000 loan per iterasi — ubah sesuai kapasitas server
     TransactionLoan::where('status', 'success')
       // ->where('total_angsuran', 0) // Pastikan ID lebih besar dari 0
-      ->where('id', 246440)
       ->chunkById(5000, function ($loans) {
 
         // Ambil daftar ID loan dlm chunk ini
@@ -28,15 +27,14 @@ class GenerateTotalSeeder extends Seeder
         // ----- 1 query GROUP BY utk subset ini -----
 
         $totals = TransactionLoan::withSum('loan_instalment', 'nominal')
-          ->where('id', $loanIds)
+          ->whereIn('id', $loanIds)
           ->get()
           ->pluck('loan_instalment_sum_nominal', 'id');
 
 
         foreach ($loans as $loan) {
           $total = $totals[$loan->id] ?? 0;
-
-
+          $loan->update(['total_angsuran' => $total]);
           echo "Updated loan ID {$loan->id} with total_angsuran: {$total}" . PHP_EOL;
         }
       });
