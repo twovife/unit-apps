@@ -58,6 +58,9 @@ class TransactionLoanInstalment extends Model
           if ($newTotal >= $sumInstalment->pinjaman /* atau $loan->nominal_drop */) {
             $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
             $attrs['out_status'] = 'LUNAS';
+          } else {
+            $attrs['out_date']   = null;
+            $attrs['out_status'] = null;
           }
 
           $loan->update($attrs);
