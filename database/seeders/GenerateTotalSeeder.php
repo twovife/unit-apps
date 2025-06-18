@@ -25,11 +25,6 @@ class GenerateTotalSeeder extends Seeder
         $loanIds = $loans->pluck('id');
 
         // ----- 1 query GROUP BY utk subset ini -----
-        $totals = DB::table('transaction_loan_instalments')
-          ->select('transaction_loan_id', DB::raw('SUM(nominal) AS total'))
-          ->whereIn('transaction_loan_id', $loanIds)
-          ->groupBy('transaction_loan_id')
-          ->pluck('total', 'transaction_loan_id');   // [id => total]
 
         $totals = TransactionLoan::withSum('loan_instalment', 'nominal')
           ->whereIn('id', $loanIds)
@@ -40,9 +35,7 @@ class GenerateTotalSeeder extends Seeder
         foreach ($loans as $loan) {
           $total = $totals[$loan->id] ?? 0;
 
-          if ($total !== $loan->loan_instalment_sum_nominal) {
-            $loan->update(['total_angsuran' => $total]);
-          }
+
           echo "Updated loan ID {$loan->id} with total_angsuran: {$total}" . PHP_EOL;
         }
       });
