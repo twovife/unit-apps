@@ -36,19 +36,19 @@ class TransactionLoanInstalment extends Model
         $recap = TransactionDailyRecap::query()
           ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
           ->where('date', $transactionLoanInstalment->transaction_date)
-          ->lockForUpdate()
           ->firstOrCreate([
             'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
             'date'                                 => $transactionLoanInstalment->transaction_date,
           ]);
 
         $recap->increment('storting', $transactionLoanInstalment->nominal);
-        $loan = $transactionLoanInstalment->loan()->lockForUpdate()->first();
+
         $sumInstalment = TransactionLoan::withSum('loan_instalment', 'nominal')
           ->where('id', $transactionLoanInstalment->transaction_loan_id)
           ->first();
 
-        if ($loan) {
+        // dd($sumInstalment);
+        if ($sumInstalment) {
           $newTotal = $sumInstalment->loan_instalment_sum_nominal + $transactionLoanInstalment->nominal;
           // dd($newTotal);
 
@@ -63,7 +63,7 @@ class TransactionLoanInstalment extends Model
             $attrs['out_status'] = null;
           }
 
-          $loan->update($attrs);
+          $sumInstalment->update($attrs);
         }
       });
     });
@@ -83,14 +83,20 @@ class TransactionLoanInstalment extends Model
       DB::connection()->transaction(function () use ($transactionLoanInstalment) {
 
         /*────────── 1. LOCK & UPDATE PARENT LOAN ──────────*/
-        $loan = $transactionLoanInstalment->loan()->lockForUpdate()->first();
         $sumInstalment = TransactionLoan::withSum('loan_instalment', 'nominal')
           ->where('id', $transactionLoanInstalment->transaction_loan_id)
           ->first();
 
 
+        $freshLoan = self::whereKey($transactionLoanInstalment->id)
+          ->first();
+
+        // dd($sumInstalment);
         // Jika parent loan sudah hilang (soft‑deleted / race), keluar
-        if (! $loan) {
+        if (!$freshLoan) {
+          return; //
+        }
+        if (!$sumInstalment) {
           return;
         }
 
@@ -104,7 +110,7 @@ class TransactionLoanInstalment extends Model
         $attrs = ['total_angsuran' => $newTotal];
 
         // Tentukan status lunas / belum lunas
-        $plafond = $loan->pinjaman;          // atau $loan->nominal_drop
+        $plafond = $sumInstalment->pinjaman;          // atau $loan->nominal_drop
         if ($newTotal >= $plafond) {
           $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
           $attrs['out_status'] = 'LUNAS';
@@ -114,13 +120,12 @@ class TransactionLoanInstalment extends Model
         }
 
         // UPDATE parent loan (1 query)
-        $loan->update($attrs);
+        $sumInstalment->update($attrs);
 
         /*────────── 2. LOCK & UPDATE REKAP HARIAN ──────────*/
         $recap = TransactionDailyRecap::query()
           ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
-          ->where('date', $transactionLoanInstalment->transaction_date)
-          ->lockForUpdate()                // row‑level lock
+          ->where('date', $transactionLoanInstalment->transaction_date)              // row‑level lock
           ->firstOrCreate([
             'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
             'date'                                 => $transactionLoanInstalment->transaction_date,
