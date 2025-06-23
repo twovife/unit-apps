@@ -40,7 +40,6 @@ class LunasSeeder extends Seeder
         echo $item->id . " Success" . PHP_EOL;
       });
 
-      Permission::create(['name' => 'maintenance worker']);
       DB::commit();
     } catch (\Throwable $th) {
       DB::rollBack();
