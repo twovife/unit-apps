@@ -20,8 +20,8 @@ class LunasinSeeder extends Seeder
 
     try {
       DB::beginTransaction();
-      $grouping = TransactionLoanOfficerGrouping::where('branch_id', 42)->pluck('id');
-      $loan = TransactionLoan::where('status', 'success')->whereIn('transaction_loan_officer_grouping_id', $grouping)->where('drop_date', "<=", "2025-02-01")->whereNot('hari', 'selasa')->get();
+      $grouping = TransactionLoanOfficerGrouping::where('branch_id', 100)->pluck('id');
+      $loan = TransactionLoan::where('status', 'success')->whereIn('transaction_loan_officer_grouping_id', $grouping)->where('drop_date', "<", "2025-03-01")->get();
 
       $loan->each(function ($item) {
         $delete_angsuran = $item->loan_instalment()->delete();
