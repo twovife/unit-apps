@@ -41,7 +41,7 @@ class KeubahSeeder extends Seeder
     // $json = json_encode($result, JSON_PRETTY_PRINT);
     // file_put_contents(storage_path('app/hasil_export2.json'), $json);
 
-    $data = collect(json_decode(file_get_contents(storage_path('app/hasil_export2.json')), true));
+    $data = collect(json_decode(file_get_contents(storage_path('hasil_export2.json')), true));
 
     $loans = collect($data['loans']);
     $loans->each(
@@ -66,6 +66,7 @@ class KeubahSeeder extends Seeder
             );
           }
         );
+        echo $loan['id'] . ' - ' . $transactionLoan->pinjaman . ' - ' . $transactionLoan->loan_instalment->count() . PHP_EOL;
       }
     );
   }
