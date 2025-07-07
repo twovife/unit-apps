@@ -375,6 +375,7 @@ class AppHelper
       return 'Nama hari tidak valid!';
     }
 
-    return Carbon::parse($month)->startOfMonth()->next($dayName);
+    $date = Carbon::parse($month)->startOfMonth();
+    return $date->copy()->isSameDay($date->copy()->next($dayName)->subWeek()) ? $date : $date->next($dayName);
   }
 }
