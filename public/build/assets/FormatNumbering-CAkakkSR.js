@@ -1,0 +1,1 @@
+import{j as r}from"./app-VW9K5PiD.js";import{N as o}from"./react-number-format.es-Mv8QENyp.js";const x=({value:t=0,prefix:e,suffix:s,className:a="text-end"})=>r.jsx("div",{className:`${a}`,children:r.jsx(o,{value:t,displayType:"text",thousandSeparator:",",prefix:e??"",suffix:s??""})});export{x as F};

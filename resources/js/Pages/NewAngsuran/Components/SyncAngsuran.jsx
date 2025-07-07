@@ -180,6 +180,7 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
                 {data?.instalment &&
                   data?.instalment.map((item, index) => (
                     <div
+                      key={index}
                       className={`mb-1 relative ${
                         indexButton == index && 'bg-green-50'
                       }`}
@@ -237,8 +238,8 @@ const SyncAngsuran = ({ show = show, onClosed, triggeredId }) => {
                       </TableHeader>
                       <TableBody>
                         {syncData &&
-                          syncData?.instalments.map((item) => (
-                            <TableRow>
+                          syncData?.instalments.map((item, key) => (
+                            <TableRow key={key}>
                               <TableCell>
                                 {dayjs(item?.transaction_date).format(
                                   'DD/MM/YYYY'
