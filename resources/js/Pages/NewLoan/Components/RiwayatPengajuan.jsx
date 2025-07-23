@@ -32,31 +32,21 @@ const RiwayatPengajuan = ({ data }) => {
         header: 'Kelompok',
         cell: ({ row, getValue }) => (
           <div>
-            <div>{row.original.unit}</div> Kel {getValue()}
+            <div>{row.original.unit}</div> Kelompok {getValue()}
           </div>
         ),
       },
       {
-        accessorKey: 'drop_date',
-        header: 'Tanggal Drop',
-        cell: ({ row, getValue }) => (
-          <div>
-            <div>{row.original.hari}</div>
-            <div>{dayjs(getValue()).format('DD-MM-YYYY')}</div>
-          </div>
-        ),
+        accessorKey: 'day',
+        header: 'Hari',
+        cell: ({ row, getValue }) => <div>{getValue()}</div>,
       },
       {
-        accessorKey: 'lunas',
-        header: 'Lunas',
+        accessorKey: 'pinjaman',
+        header: 'Tgl Pinjaman',
         cell: ({ row, getValue }) => (
-          <div>{getValue() ? 'Lunas' : 'Belum'}</div>
+          <div>{dayjs(getValue()).format('DD-MM-YYYY')}</div>
         ),
-      },
-      {
-        accessorKey: 'status',
-        header: 'status',
-        cell: ({ row, getValue }) => <BadgeStatus value={getValue()} />,
       },
     ],
     []

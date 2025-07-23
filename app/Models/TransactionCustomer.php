@@ -23,7 +23,7 @@ class TransactionCustomer extends Model
 
   public function transaction_loans()
   {
-    return $this->hasManyThrough(
+    return $this->hasOneThrough(
       TransactionLoan::class, // Model tujuan (Loan)
       TransactionManageCustomer::class, // Model perantara (ManageCustomer)
       'transaction_customer_id', // Foreign key di tabel manage_customer

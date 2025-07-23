@@ -31,6 +31,9 @@ class TransactionManageCustomer extends Model
     return $this->hasMany(TransactionLoan::class, 'transaction_manage_customer_id', 'id');
   }
 
+  // Di model ManageCustomer.php
+
+
   public function loan_officer_grouping()
   {
     return $this->belongsTo(TransactionLoanOfficerGrouping::class, 'transaction_loan_officer_grouping_id', 'id');

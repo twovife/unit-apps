@@ -72,19 +72,12 @@ class TransactionLoanController extends Controller
       [
         'manage_customer' => function ($cust) {
           $cust->with([
-            'loan' => function ($loan) {
-              $loan->with([
-                'loan_instalment' => function ($inst) {
-                  $inst->orderByDesc('transaction_date');
-                },
-                'branch'
-              ])
-                ->orderByDesc('request_date');
-            },
-            'branch',
-            'loan_officer_grouping'
+            'loan',
+            'loan_officer_grouping',
+            'branch'
           ])->whereHas('loan', function ($item) {
-            $item->where('status', 'success');
+            $item->where('status', 'success')
+              ->whereNull('out_date');
           });
         }
       ]
@@ -95,52 +88,40 @@ class TransactionLoanController extends Controller
         'nik' => $nasabah->nik,
         'nama' => $nasabah->nama,
         'alamat' => $nasabah->alamat,
-        'history_branch' => $nasabah->manage_customer->filter(function ($customer) {
-          return $customer->branch && $customer->branch->id === auth()->user()->employee->branch_id;
-        })->flatMap(function ($filtered_data) {
-          // Memproses loan yang berstatus 'success'
-          return $filtered_data->loan->where('status', 'success')->map(function ($item) use ($filtered_data) {
-            // Mengecek apakah pinjaman sudah lunas
-            $isLunas = $item->loan_instalment->sum('nominal') >= $item->pinjaman;
-            // Mendapatkan tanggal transaksi terakhir
-            $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
-
+        'history_branch' => $nasabah->manage_customer
+          ->filter(function ($customer) {
+            return $customer->branch && $customer->branch->id === auth()->user()->employee->branch_id;
+          })
+          ->groupBy(
+            function ($customer) {
+              return $customer->loan_officer_grouping->id; // Group by branch ID
+            }
+          )->map(function ($group) {
             return [
-              'drop_date' => $item->drop_date,
-              'pinjaman' => $item->pinjaman,
-              'unit' => $item->branch->unit,
-              'hari' => $item->hari,
-              'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
-              'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
-              'lunas' => $isLunas,
-              'status' => AppHelper::generateStatusAngsuranString($item->drop_date, $maxTransactionDate),
+              'kelompok' => $group->first()->loan_officer_grouping->kelompok,
+              'day' => AppHelper::getNumberToNameDays($group->first()->day),
+              'pinjaman' => $group->first()->loan?->sortBy('drop_date')->first()->drop_date,
+              // 'tanggal_pinjaman' => $group->loan->latest('drop_date')->drop_date->format('Y-m-d'),
             ];
-          });
-        })->sortBy('kelompok')->sortBy('drop_date')->values(),
+          })->sortBy('kelompok')->values(),
+        // maping group disini dengan return (transaction_manage_customers.transaction_loan_officer_grouping_id, transaction_manage_customers.day)
 
-        'history_lain' => $nasabah->manage_customer->filter(function ($customer) {
-          return $customer->branch && $customer->branch->id != auth()->user()->employee->branch_id;
-        })->flatMap(function ($filtered_data) {
-          // Memproses loan yang berstatus 'success'
-          return $filtered_data->loan->where('status', 'success')->map(function ($item) use ($filtered_data) {
-            // Mengecek apakah pinjaman sudah lunas
-            $isLunas = $item->loan_instalment->sum('nominal') >= $item->pinjaman;
-            // Mendapatkan tanggal transaksi terakhir
-            $maxTransactionDate = $isLunas ? $item->loan_instalment->max('transaction_date') : Carbon::now()->format('Y-m-d');
-
+        'history_lain' => $nasabah->manage_customer
+          ->filter(function ($customer) {
+            return $customer->branch && $customer->branch->id != auth()->user()->employee->branch_id;
+          })
+          ->groupBy(
+            function ($customer) {
+              return $customer->day; // Group by branch ID
+            }
+          )->map(function ($group, $key) {
             return [
-              'drop_date' => $item->drop_date,
-              'pinjaman' => $item->pinjaman,
-              'hari' => $item->hari,
-              'unit' => $item->branch->unit, // Menggunakan optional() langsung
-              'kelompok' => optional($filtered_data->loan_officer_grouping)->kelompok, // Menggunakan optional() langsung
-              'saldo' => $item->pinjaman - ($item->loan_instalment->sum('nominal') ?? 0),
-              'lunas' => $isLunas,
-              'status' => AppHelper::generateStatusAngsuranString($item->drop_date, $maxTransactionDate),
+              'day' =>  AppHelper::getNumberToNameDays($key),
+              'count' => $group->count($group),
             ];
-          });
-        })->sortBy('kelompok')->sortBy('unit')->sortBy('drop_date')->values(),
-        // Reset indeks setelah proses pemetaan
+          })->values(),
+        // maping group disini dengan return group per transaction_manage_customers.day total manage_customer
+
       ] : null;
 
     return response()->json(['data' => $data ?? null, 'return_nik' => $request->nik]);

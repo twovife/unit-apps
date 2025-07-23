@@ -25,6 +25,7 @@ import Checkbox from '@/Components/Checkbox';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import NoEditOverlay from '@/Components/NoEditOverlay';
+import RiwayatPengajuanLain from './Components/RiwayatPengajuanLain';
 
 const NewNasabah = ({
   onClosed,
@@ -169,6 +170,7 @@ const NewNasabah = ({
           isActiveMember: data.data ? true : false,
         }));
         if (data.data) {
+          console.log(data.data);
           setCustomerData(data.data);
         } else {
           setCustomerData([]);
@@ -532,7 +534,7 @@ const NewNasabah = ({
           </TabsContent>
           <TabsContent value="pinjaman">
             <div className="overflow-auto shadow-sm scrollbar-thin h-max">
-              <RiwayatPengajuan data={customerData?.history_lain} />
+              <RiwayatPengajuanLain data={customerData?.history_lain} />
             </div>
           </TabsContent>
         </Tabs>
