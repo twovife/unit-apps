@@ -102,6 +102,10 @@ const RiwayatPengajuan = ({ data }) => {
           </TableRow>
         )}
       </TableBody>
+      <caption className="text-center text-xs text-red-500 mt-3">
+        Perubahan Sementara, Hasil Dari Rapim 03-JULI-2025, Selanjutnya akan
+        dibahas lebih detail
+      </caption>
     </Table>
   );
 };

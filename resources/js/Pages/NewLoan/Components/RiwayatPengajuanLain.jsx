@@ -34,8 +34,8 @@ const RiwayatPengajuanLain = ({ data }) => {
       },
       {
         accessorKey: 'count',
-        header: 'Total Crash',
-        cell: ({ row, getValue }) => <div>{getValue()}</div>,
+        header: 'Total Crash (Seluruh UBM)',
+        cell: ({ row, getValue }) => <div>{`${getValue()} Kelompok`}</div>,
       },
     ],
     []
@@ -91,6 +91,10 @@ const RiwayatPengajuanLain = ({ data }) => {
           </TableRow>
         )}
       </TableBody>
+      <caption className="text-center text-xs text-red-500 mt-3">
+        Perubahan Sementara, Hasil Rapim TGL 03-JULI-2025, Selanjutnya akan
+        dibahas lebih detail
+      </caption>
     </Table>
   );
 };
