@@ -150,6 +150,31 @@ class AppHelper
     return 0;
   }
 
+  public static function getNumberToNameDays($request)
+  {
+    $req = strtolower($request);
+
+    if ($req == 1) {
+      return "senin";
+    }
+    if ($req == 2) {
+      return "selasa";
+    }
+    if ($req == 3) {
+      return "rabu";
+    }
+    if ($req == 4) {
+      return "kamis";
+    }
+    if ($req == 5) {
+      return "jumat";
+    }
+    if ($req == 6) {
+      return "sabtu";
+    }
+    return "minggu";
+  }
+
   public static function getIsPaid($max_date, $req_day)
   {
     // dd([$max_date, Carbon::parse(Carbon::now())->format('Y-m-d')]);
