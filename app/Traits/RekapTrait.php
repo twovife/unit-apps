@@ -164,7 +164,7 @@ trait RekapTrait
 
       $storting = $thisInstalment->where('transaction_date', $transaction_date)->sum('nominal') ?? 0;
       $do11 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.11) ?? 0;
-      $titipan9 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.9) ?? 0;
+      $titipan9 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.09) ?? 0;
       $kasbon = $thisDailyRecap?->kasbon ?? 0;
       $debit = $do11 + $kasbon + $storting;
 
@@ -321,7 +321,7 @@ trait RekapTrait
 
           $storting = $thisInstalment->where('transaction_date', $transaction_date)->sum('nominal') ?? 0;
           $do11 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.11) ?? 0;
-          $titipan9 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.9) ?? 0;
+          $titipan9 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.09) ?? 0;
           $kasbon = $thisDailyRecap?->kasbon ?? 0;
           $debit = $do11 + $kasbon + $storting;
 
@@ -471,7 +471,7 @@ trait RekapTrait
 
       $storting = $thisInstalment->sum('nominal') ?? 0;
       $do11 = (int) round($thisLoan->sum('nominal_drop') * 0.11) ?? 0;
-      $titipan9 = (int) round($thisLoan->sum('nominal_drop') * 0.9) ?? 0;
+      $titipan9 = (int) round($thisLoan->sum('nominal_drop') * 0.09) ?? 0;
       $kasbon = $thisDailyRecap?->kasbon ?? 0;
       $debit = $do11 + $kasbon + $storting;
 
