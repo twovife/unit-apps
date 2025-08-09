@@ -307,7 +307,11 @@ class AppHelper
       $result['canShowBranch'] = false;
       $result['canShowKelompok'] = true;
       $result['canCreate'] = false;
-      $result['branches'] = Branch::all();
+      if ($authorized->hasPermissionTo('staffkontrol4')) {
+        $result['branches'] = Branch::where('wilayah', 4)->get();
+      } else {
+        $result['branches'] = Branch::all();
+      }
       return $result;
     } else {
       $result['canShowGroupingBranch'] = false;
@@ -326,7 +330,11 @@ class AppHelper
       return Branch::whereIn('id', $employmentPermission)->get();
     }
     if ($authorized->hasPermissionTo('can show branch')) {
-      return Branch::all();
+      if ($authorized->hasPermissionTo('staffkontrol4')) {
+        $result['branches'] = Branch::where('wilayah', 4)->get();
+      } else {
+        $result['branches'] = Branch::all();
+      }
     } else {
       return Branch::where('id', $authorized->employee->branch_id)->get();
     }
