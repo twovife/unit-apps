@@ -22,9 +22,9 @@ class ChangeWrongDateGlobalSeeder extends Seeder
     $getOnlineBranch = OnlineBranch::pluck('branch_id');
     $groupingId = TransactionLoanOfficerGrouping::whereIn('branch_id', $getOnlineBranch)->pluck('id');
 
-    $wrongDate = "2025-06-06";
-    $trueDate = "2025-06-13";
-    $beforeDate = "2025-05-30";
+    $wrongDate = "2025-09-05";
+    $trueDate = "2025-09-12";
+    $beforeDate = "2025-08-29";
 
     try {
       $getWrongDate = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId)->where('drop_date', $wrongDate)->get();

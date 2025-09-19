@@ -8,6 +8,7 @@ use App\Models\EmploymentPermission;
 use App\Models\TransactionCustomer;
 use Carbon\Carbon;
 use Faker\Core\Number;
+use Illuminate\Bus\Batch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,14 +27,47 @@ class AppHelper
     return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
   }
 
+  private static function generateUnknownNik2($request)
+  {
+    $drop_date = Carbon::parse($request->drop_date)->format('ym');
+    $branch_id = sprintf("%04d",  $request->branch_id);
+    $kelompok_id = sprintf("%02d",  $request->kelompok);
+    $randomNumber = random_int(1, 999999);
+    $formattedNumber = sprintf("%06d", $randomNumber);
+    // dd([$branch_id, $kelompok_id, $drop_date, $formattedNumber]);
+    return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
+  }
+
   public static function getMantri($officerGrouping)
   {
-    // Periksa jika user memiliki izin tertentu
+
     if (auth()->user()->hasAnyPermission(['unit pimpinan', 'unit mantri', 'unit km'])) {
       return auth()->user()->employee->id;
     }
+    $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
+      ->where('area', $officerGrouping->kelompok)
+      ->orderBy('id', 'desc')
+      ->get();
 
-    // Dapatkan daftar mantri berdasarkan branch_id dan area dari request
+    // Coba temukan mantri yang aktif (tidak resign)
+    $mantri = $get_mantri->whereNull('date_resign')->first()?->id;
+
+    // Jika tidak ada mantri aktif yang ditemukan, ambil mantri pertama dari daftar
+    if (!$mantri) {
+      $mantri = $get_mantri->first()?->id;
+    }
+
+    // Jika daftar mantri kosong, gunakan ID employee dari user yang sedang login
+    if (!$mantri) {
+      $mantri = auth()->user()->employee->id;
+    }
+
+    return $mantri;
+  }
+
+  public static function getMantriNoauth($officerGrouping)
+  {
+
     $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
       ->where('area', $officerGrouping->kelompok)
       ->orderBy('id', 'desc')
@@ -63,8 +97,9 @@ class AppHelper
     return strtolower(Carbon::parse($date)->locale('id')->dayName);
   }
 
-  public static function callUnknownNik($request)
+  public static function callUnknownNik($request, $batch = false)
   {
+
     $prefix = strtoupper(substr($request->nik, 0, 2));
     // Inisialisasi variabel untuk menyimpan newNik
     $newNik = null;
@@ -75,10 +110,11 @@ class AppHelper
       // Lakukan looping sampai menemukan newNik yang unik
       do {
         // Generate newNik
-        $newNik = self::generateUnknownNik($request);
+        $newNik = $batch ? self::generateUnknownNik2($request) : self::generateUnknownNik($request);
         // Cari nasabah dengan newNik di database
         $nasabah = TransactionCustomer::where('nik', $newNik)->first();
       } while ($nasabah); // Ulangi jika nasabah ditemukan
+
       return $newNik;
     }
 
