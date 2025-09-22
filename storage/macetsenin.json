@@ -1,0 +1,6352 @@
+[
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-06-01",
+    "nama": "NOVITA",
+    "nik": "ub",
+    "saldo": 1640000,
+    "alamat": "Nomor Anggota 65",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-06-01",
+    "nama": "SELLY",
+    "nik": "ub",
+    "saldo": 1410000,
+    "alamat": "Nomor Anggota 55",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-06-01",
+    "nama": "ARUM",
+    "nik": "ub",
+    "saldo": 1440000,
+    "alamat": "Nomor Anggota 56",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-04-01",
+    "nama": "SAROPA",
+    "nik": "ub",
+    "saldo": 1950000,
+    "alamat": "Nomor Anggota 59",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-07-01",
+    "nama": "JEMIN",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 74",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-07-01",
+    "nama": "WIWIK",
+    "nik": "ub",
+    "saldo": 920000,
+    "alamat": "Nomor Anggota 75",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-07-01",
+    "nama": "RETNO",
+    "nik": "ub",
+    "saldo": 1680000,
+    "alamat": "Nomor Anggota 77",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-11-01",
+    "nama": "IDA",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 84",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-12-01",
+    "nama": "ARISKA",
+    "nik": "ub",
+    "saldo": 425000,
+    "alamat": "Nomor Anggota 83",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-12-01",
+    "nama": "INDRIYANI",
+    "nik": "ub",
+    "saldo": 730000,
+    "alamat": "Nomor Anggota 90",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2021-12-01",
+    "nama": "RETNO",
+    "nik": "ub",
+    "saldo": 549000,
+    "alamat": "Nomor Anggota 91",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-07-01",
+    "nama": "TIKA",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 102",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-06-01",
+    "nama": "ITA",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 112",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-06-01",
+    "nama": "KASITUTI",
+    "nik": "ub",
+    "saldo": 355000,
+    "alamat": "Nomor Anggota 78",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-07-01",
+    "nama": "DINI",
+    "nik": "ub",
+    "saldo": 570000,
+    "alamat": "Nomor Anggota 110",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-07-01",
+    "nama": "SUDARTIK",
+    "nik": "ub",
+    "saldo": 1300000,
+    "alamat": "Nomor Anggota 116",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-06-01",
+    "nama": "SUPRIYATI",
+    "nik": "ub",
+    "saldo": 425000,
+    "alamat": "Nomor Anggota 123",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-10-01",
+    "nama": "MAKIS",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 120",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-10-01",
+    "nama": "FARIDATUN",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 129",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-10-01",
+    "nama": "ERNAWATI",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 130",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-07-01",
+    "nama": "ASRI ATIN",
+    "nik": "ub",
+    "saldo": 385000,
+    "alamat": "Nomor Anggota 113",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-11-01",
+    "nama": "LINA",
+    "nik": "ub",
+    "saldo": 330000,
+    "alamat": "Nomor Anggota 134",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-11-01",
+    "nama": "SUSI",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 135",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-11-01",
+    "nama": "SITI ROHANI",
+    "nik": "ub",
+    "saldo": 340000,
+    "alamat": "Nomor Anggota 137",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2022-12-01",
+    "nama": "YUYUN S",
+    "nik": "ub",
+    "saldo": 880000,
+    "alamat": "Nomor Anggota 139",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-11-01",
+    "nama": "IDA PURWATI",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 132",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-07-01",
+    "nama": "SULASTRI",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 142",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-01-01",
+    "nama": "SUCI",
+    "nik": "ub",
+    "saldo": 560000,
+    "alamat": "Nomor Anggota 143",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-01-01",
+    "nama": "BARROTUL",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 144",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-12-01",
+    "nama": "SUNIK",
+    "nik": "ub",
+    "saldo": 610000,
+    "alamat": "Nomor Anggota 26",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-02-01",
+    "nama": "SUNARSI",
+    "nik": "ub",
+    "saldo": 205000,
+    "alamat": "Nomor Anggota 125",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-03-01",
+    "nama": "NURUL",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 111",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-02-01",
+    "nama": "SITI K",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 140",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-03-01",
+    "nama": "KASIATI",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-06-01",
+    "nama": "DWI SULKA",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 152",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-10-01",
+    "nama": "DASIMA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 168",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-10-01",
+    "nama": "SUGIARTI",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 155",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-10-01",
+    "nama": "ANDIKA",
+    "nik": "ub",
+    "saldo": 305000,
+    "alamat": "Nomor Anggota 169",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-11-01",
+    "nama": "HERLINA",
+    "nik": "ub",
+    "saldo": 386000,
+    "alamat": "Nomor Anggota 117",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-11-01",
+    "nama": "ERWIN",
+    "nik": "ub",
+    "saldo": 451000,
+    "alamat": "Nomor Anggota 118",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-11-01",
+    "nama": "NURUL",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 162",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-11-01",
+    "nama": "DIAN K",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 166",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2023-12-01",
+    "nama": "TIKA OKTAVIA",
+    "nik": "ub",
+    "saldo": 180000,
+    "alamat": "Nomor Anggota 174",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-01-01",
+    "nama": "DEWI G",
+    "nik": "ub",
+    "saldo": 550000,
+    "alamat": "Nomor Anggota 179",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-03-01",
+    "nama": "LENI",
+    "nik": "ub",
+    "saldo": 770000,
+    "alamat": "Nomor Anggota 175",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-03-01",
+    "nama": "DEWI ASMONA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 193",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-03-01",
+    "nama": "SITI NIHAYATUN",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 194",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-03-01",
+    "nama": "YULIANI",
+    "nik": "ub",
+    "saldo": 310000,
+    "alamat": "Nomor Anggota 188",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-06-01",
+    "nama": "MUJIANTI EKO",
+    "nik": "ub",
+    "saldo": 760000,
+    "alamat": "Nomor Anggota 199",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-07-01",
+    "nama": "ANITA",
+    "nik": "ub",
+    "saldo": 255000,
+    "alamat": "Nomor Anggota 203",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-07-01",
+    "nama": "SHOLIKATI",
+    "nik": "ub",
+    "saldo": 60000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-07-01",
+    "nama": "ST HIDAYATUL",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 210",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-07-01",
+    "nama": "ST HALIMATUS",
+    "nik": "ub",
+    "saldo": 590000,
+    "alamat": "Nomor Anggota 199",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-08-01",
+    "nama": "LILIS",
+    "nik": "ub",
+    "saldo": 30000,
+    "alamat": "Nomor Anggota 215",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-08-01",
+    "nama": "SULIS",
+    "nik": "ub",
+    "saldo": 110000,
+    "alamat": "Nomor Anggota 216",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-08-01",
+    "nama": "ESTY",
+    "nik": "ub",
+    "saldo": 155000,
+    "alamat": "Nomor Anggota 217",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-08-01",
+    "nama": "SOIMA",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 193",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-09-01",
+    "nama": "PUJA",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 214",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-09-01",
+    "nama": "SUMIATI",
+    "nik": "ub",
+    "saldo": 460000,
+    "alamat": "Nomor Anggota 217",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-09-01",
+    "nama": "ST SUSMINAH",
+    "nik": "ub",
+    "saldo": 165000,
+    "alamat": "Nomor Anggota 218",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-09-01",
+    "nama": "SITI HAWA",
+    "nik": "ub",
+    "saldo": 255000,
+    "alamat": "Nomor Anggota 219",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-09-01",
+    "nama": "SUMIATI",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 222",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-09-01",
+    "nama": "PONIAH",
+    "nik": "ub",
+    "saldo": 30000,
+    "alamat": "Nomor Anggota 223",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-09-01",
+    "nama": "SITI KHOTIJAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 224",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-10-01",
+    "nama": "LINTANG",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 226",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-10-01",
+    "nama": "SUPIAN",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 227",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-10-01",
+    "nama": "SITI ANEKA",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 156",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-12-01",
+    "nama": "GILANG",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 243",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-12-01",
+    "nama": "DIANI",
+    "nik": "ub",
+    "saldo": 567000,
+    "alamat": "Nomor Anggota 214",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-12-01",
+    "nama": "PUTRI EKAWATI",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 168",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-12-01",
+    "nama": "IDA",
+    "nik": "ub",
+    "saldo": 210000,
+    "alamat": "Nomor Anggota 240",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-12-01",
+    "nama": "NUR MASIH",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 231",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2024-12-01",
+    "nama": "SUHARSIH",
+    "nik": "ub",
+    "saldo": 680000,
+    "alamat": "Nomor Anggota 192",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-01-01",
+    "nama": "DWI RETNO",
+    "nik": "ub",
+    "saldo": 50000,
+    "alamat": "Nomor Anggota 209",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-01-01",
+    "nama": "SOLIKA",
+    "nik": "ub",
+    "saldo": 30000,
+    "alamat": "Nomor Anggota 244",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-01-01",
+    "nama": "YUNDRININGSIH",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 207",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-01-01",
+    "nama": "ST WARDIANI",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 216",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-02-01",
+    "nama": "YATINI",
+    "nik": "ub",
+    "saldo": 335000,
+    "alamat": "Nomor Anggota 147",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-02-01",
+    "nama": "BELA",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 215",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-02-01",
+    "nama": "SUCIATI",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 241",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-02-01",
+    "nama": "RATNA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 236",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-02-01",
+    "nama": "SAPTANI",
+    "nik": "ub",
+    "saldo": 312000,
+    "alamat": "Nomor Anggota 233",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-03-01",
+    "nama": "DINAR",
+    "nik": "ub",
+    "saldo": 210000,
+    "alamat": "Nomor Anggota 184",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-04-01",
+    "nama": "UMIANA",
+    "nik": "ub",
+    "saldo": 85000,
+    "alamat": "Nomor Anggota 248",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 1,
+    "tanggal": "2025-04-01",
+    "nama": "SUNARIYA",
+    "nik": "ub",
+    "saldo": 1040000,
+    "alamat": "Nomor Anggota 149",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2022-03-01",
+    "nama": "KARYATI",
+    "nik": "ub",
+    "saldo": 1343000,
+    "alamat": "Nomor Anggota 29",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2022-08-01",
+    "nama": "HARTATIK",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 74",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2022-10-01",
+    "nama": "NENENG",
+    "nik": "ub",
+    "saldo": 485000,
+    "alamat": "Nomor Anggota 124",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2022-10-01",
+    "nama": "SUSIYANI",
+    "nik": "ub",
+    "saldo": 1270000,
+    "alamat": "Nomor Anggota 37",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2022-11-01",
+    "nama": "DEWI P",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 118",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2022-11-01",
+    "nama": "NURHASANAH",
+    "nik": "ub",
+    "saldo": 310000,
+    "alamat": "Nomor Anggota 4",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-01-01",
+    "nama": "SITI M",
+    "nik": "ub",
+    "saldo": 315000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-06-01",
+    "nama": "DINDA A",
+    "nik": "ub",
+    "saldo": 310000,
+    "alamat": "Nomor Anggota 153",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-06-01",
+    "nama": "HUMAIDA",
+    "nik": "ub",
+    "saldo": 550000,
+    "alamat": "Nomor Anggota 159",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-08-01",
+    "nama": "SULISTYOWATI",
+    "nik": "ub",
+    "saldo": 305000,
+    "alamat": "Nomor Anggota 166",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-09-01",
+    "nama": "EVA SRI",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 170",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-09-01",
+    "nama": "IKA RIRIN",
+    "nik": "ub",
+    "saldo": 255000,
+    "alamat": "Nomor Anggota 149",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-11-01",
+    "nama": "KARTI",
+    "nik": "ub",
+    "saldo": 292000,
+    "alamat": "Nomor Anggota 175",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-12-01",
+    "nama": "MOH. YASIN",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 181",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2023-12-01",
+    "nama": "SUIDAH",
+    "nik": "ub",
+    "saldo": 430000,
+    "alamat": "Nomor Anggota 182",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-02-01",
+    "nama": "EKA TYAS",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 193",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-02-01",
+    "nama": "YUNI RAHAYU",
+    "nik": "ub",
+    "saldo": 980000,
+    "alamat": "Nomor Anggota 154",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-03-01",
+    "nama": "ROHMATIN",
+    "nik": "ub",
+    "saldo": 500000,
+    "alamat": "Nomor Anggota 201",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-03-01",
+    "nama": "TUTIK",
+    "nik": "ub",
+    "saldo": 400000,
+    "alamat": "Nomor Anggota 190",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-03-01",
+    "nama": "AKUAH",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 191",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-05-01",
+    "nama": "JAMILAH",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 202",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-06-01",
+    "nama": "BUNI",
+    "nik": "ub",
+    "saldo": 780000,
+    "alamat": "Nomor Anggota 127",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-07-01",
+    "nama": "IKA RIRIN",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 210",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-07-01",
+    "nama": "SRI ASTUTIK",
+    "nik": "ub",
+    "saldo": 430000,
+    "alamat": "Nomor Anggota 212",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-07-01",
+    "nama": "SULASTRI",
+    "nik": "ub",
+    "saldo": 345000,
+    "alamat": "Nomor Anggota 173",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-07-01",
+    "nama": "IDA QOMARIA",
+    "nik": "ub",
+    "saldo": 740000,
+    "alamat": "Nomor Anggota 147",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-08-01",
+    "nama": "YULIATI",
+    "nik": "ub",
+    "saldo": 275000,
+    "alamat": "Nomor Anggota 215",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-08-01",
+    "nama": "IKA PUJI R",
+    "nik": "ub",
+    "saldo": 250000,
+    "alamat": "Nomor Anggota 217",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-08-01",
+    "nama": "NUR EVI T",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 200",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-08-01",
+    "nama": "SARINAH",
+    "nik": "ub",
+    "saldo": 340000,
+    "alamat": "Nomor Anggota 218",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-08-01",
+    "nama": "NIMAS AYU",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 207",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "DWI ARINI",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 208",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "SULIHA",
+    "nik": "ub",
+    "saldo": 265000,
+    "alamat": "Nomor Anggota 205",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "PAINEM",
+    "nik": "ub",
+    "saldo": 330000,
+    "alamat": "Nomor Anggota 206",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "SUPIKAH",
+    "nik": "ub",
+    "saldo": 335000,
+    "alamat": "Nomor Anggota 221",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "SANIYAH",
+    "nik": "ub",
+    "saldo": 340000,
+    "alamat": "Nomor Anggota 222",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "SULIYATI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 223",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "SUMIANI",
+    "nik": "ub",
+    "saldo": 170000,
+    "alamat": "Nomor Anggota 226",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "SUWARNI",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 229",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-09-01",
+    "nama": "HALNYALI",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 230",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-11-01",
+    "nama": "FITRI EKA",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 227",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-11-01",
+    "nama": "B ARINI",
+    "nik": "ub",
+    "saldo": 165000,
+    "alamat": "Nomor Anggota 239",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-11-01",
+    "nama": "SULIYANAH",
+    "nik": "ub",
+    "saldo": 220000,
+    "alamat": "Nomor Anggota 249",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-11-01",
+    "nama": "NURHIDAYAH",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 250",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-11-01",
+    "nama": "SUAENAH",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 254",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-11-01",
+    "nama": "HADIYAH",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-11-01",
+    "nama": "HENI MUTIAH",
+    "nik": "ub",
+    "saldo": 94000,
+    "alamat": "Nomor Anggota 225",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-12-01",
+    "nama": "SUPIATIK",
+    "nik": "ub",
+    "saldo": 225000,
+    "alamat": "Nomor Anggota 231",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-12-01",
+    "nama": "PENI S",
+    "nik": "ub",
+    "saldo": 145000,
+    "alamat": "Nomor Anggota 255",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-12-01",
+    "nama": "RISKA YAROH",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 259",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-12-01",
+    "nama": "EKA NANIK",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 260",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2024-12-01",
+    "nama": "PONIAH",
+    "nik": "ub",
+    "saldo": 60000,
+    "alamat": "Nomor Anggota 263",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-01-01",
+    "nama": "SULASTRI",
+    "nik": "ub",
+    "saldo": 375000,
+    "alamat": "Nomor Anggota 253",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-01-01",
+    "nama": "IDA RAHAYU",
+    "nik": "ub",
+    "saldo": 605000,
+    "alamat": "Nomor Anggota 252",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-01-01",
+    "nama": "SITI SUMINI",
+    "nik": "ub",
+    "saldo": 650000,
+    "alamat": "Nomor Anggota 254",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-01-01",
+    "nama": "SUNARSI",
+    "nik": "ub",
+    "saldo": 275000,
+    "alamat": "Nomor Anggota 219",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-02-01",
+    "nama": "NENENG F",
+    "nik": "ub",
+    "saldo": 225000,
+    "alamat": "Nomor Anggota 260",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-02-01",
+    "nama": "SRI HARTATIK",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 258",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-02-01",
+    "nama": "HUSNATI",
+    "nik": "ub",
+    "saldo": 275000,
+    "alamat": "Nomor Anggota 259",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-02-01",
+    "nama": "ISLAMIAH",
+    "nik": "ub",
+    "saldo": 395000,
+    "alamat": "Nomor Anggota 264",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-02-01",
+    "nama": "ISNIYAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 256",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-02-01",
+    "nama": "ERLINA",
+    "nik": "ub",
+    "saldo": 40000,
+    "alamat": "Nomor Anggota 237",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-02-01",
+    "nama": "RETNO DWI",
+    "nik": "ub",
+    "saldo": 160000,
+    "alamat": "Nomor Anggota 257",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-03-01",
+    "nama": "HALIMATUS",
+    "nik": "ub",
+    "saldo": 45000,
+    "alamat": "Nomor Anggota 216",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-03-01",
+    "nama": "TATIK",
+    "nik": "ub",
+    "saldo": 632000,
+    "alamat": "Nomor Anggota 247",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-03-01",
+    "nama": "KARTINI",
+    "nik": "ub",
+    "saldo": 125000,
+    "alamat": "Nomor Anggota 242",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-03-01",
+    "nama": "SITI AISYAH",
+    "nik": "ub",
+    "saldo": 480000,
+    "alamat": "Nomor Anggota 238",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "2025-03-01",
+    "nama": "SUYATI",
+    "nik": "ub",
+    "saldo": 255000,
+    "alamat": "Nomor Anggota 245",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 2,
+    "tanggal": "ARIL 25",
+    "nama": "SALAMAH",
+    "nik": "ub",
+    "saldo": 475000,
+    "alamat": "Nomor Anggota 262",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-08-01",
+    "nama": "SRIWATI",
+    "nik": "ub",
+    "saldo": 860000,
+    "alamat": "Nomor Anggota 68",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-08-01",
+    "nama": "SRI WAHYUNI",
+    "nik": "ub",
+    "saldo": 845000,
+    "alamat": "Nomor Anggota 69",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-08-01",
+    "nama": "BIBIT",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 73",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-01-01",
+    "nama": "WIWIT RIBUT",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 81",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-01-01",
+    "nama": "SENIATI",
+    "nik": "ub",
+    "saldo": 1755000,
+    "alamat": "Nomor Anggota 19",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-02-01",
+    "nama": "ANITA DWI",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 102",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-07-01",
+    "nama": "NIKMAH",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 103",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-06-01",
+    "nama": "GEWI",
+    "nik": "ub",
+    "saldo": 264000,
+    "alamat": "Nomor Anggota 81",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-03-01",
+    "nama": "INDAH",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 89",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-03-01",
+    "nama": "ARI KUSNA",
+    "nik": "ub",
+    "saldo": 191000,
+    "alamat": "Nomor Anggota 110",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-03-01",
+    "nama": "SITI HATIJAH",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 119",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-03-01",
+    "nama": "NURHASNAH",
+    "nik": "ub",
+    "saldo": 480000,
+    "alamat": "Nomor Anggota 106",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-03-01",
+    "nama": "REVI MARYA",
+    "nik": "ub",
+    "saldo": 485000,
+    "alamat": "Nomor Anggota 121",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-11-01",
+    "nama": "ENY IDAYATI",
+    "nik": "ub",
+    "saldo": 270000,
+    "alamat": "Nomor Anggota 124",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-12-01",
+    "nama": "GABRIEL",
+    "nik": "ub",
+    "saldo": 940000,
+    "alamat": "Nomor Anggota 129",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-12-01",
+    "nama": "JEMINAH",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 131",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-12-01",
+    "nama": "SUPIYATUN",
+    "nik": "ub",
+    "saldo": 300000,
+    "alamat": "Nomor Anggota 122",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-12-01",
+    "nama": "NISANI",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 134",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-12-01",
+    "nama": "NUR HARIYATI",
+    "nik": "ub",
+    "saldo": 270000,
+    "alamat": "Nomor Anggota 135",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2022-12-01",
+    "nama": "RODYAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 123",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-02-01",
+    "nama": "MUNTAMAH",
+    "nik": "ub",
+    "saldo": 285000,
+    "alamat": "Nomor Anggota 111",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-02-01",
+    "nama": "ITA",
+    "nik": "ub",
+    "saldo": 940000,
+    "alamat": "Nomor Anggota 130",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-03-01",
+    "nama": "YULI SUSANA",
+    "nik": "ub",
+    "saldo": 184000,
+    "alamat": "Nomor Anggota 137",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-03-01",
+    "nama": "VERA DIANA",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 133",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-05-01",
+    "nama": "NINIK",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 140",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-07-01",
+    "nama": "NOVI",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 148",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-08-01",
+    "nama": "ETTY K",
+    "nik": "ub",
+    "saldo": 890000,
+    "alamat": "Nomor Anggota 126",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-09-01",
+    "nama": "MURTINI",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-09-01",
+    "nama": "IRMA W",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 107",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-10-01",
+    "nama": "GINAH",
+    "nik": "ub",
+    "saldo": 245000,
+    "alamat": "Nomor Anggota 162",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-10-01",
+    "nama": "WAGIRAH",
+    "nik": "ub",
+    "saldo": 370000,
+    "alamat": "Nomor Anggota 161",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-12-01",
+    "nama": "SOLEKAH",
+    "nik": "ub",
+    "saldo": 575000,
+    "alamat": "Nomor Anggota 142",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-12-01",
+    "nama": "KUSWATI",
+    "nik": "ub",
+    "saldo": 250000,
+    "alamat": "Nomor Anggota 170",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-12-01",
+    "nama": "YUANA",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 169",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2023-12-01",
+    "nama": "HOSMANIYA",
+    "nik": "ub",
+    "saldo": 725000,
+    "alamat": "Nomor Anggota 146",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-01-01",
+    "nama": "YENI FARIDA",
+    "nik": "ub",
+    "saldo": 295000,
+    "alamat": "Nomor Anggota 158",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-01-01",
+    "nama": "SULASMIATI",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 174",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-06-01",
+    "nama": "RIZA MELDIANA",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 186",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-07-01",
+    "nama": "URIP SUPRAPTI",
+    "nik": "ub",
+    "saldo": 540000,
+    "alamat": "Nomor Anggota 171",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-08-01",
+    "nama": "SURATI",
+    "nik": "ub",
+    "saldo": 395000,
+    "alamat": "Nomor Anggota 202",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-08-01",
+    "nama": "ANTIKAH",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 199",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-08-01",
+    "nama": "SUMIATI",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 159",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-08-01",
+    "nama": "FITRI",
+    "nik": "ub",
+    "saldo": 70000,
+    "alamat": "Nomor Anggota 176",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-09-01",
+    "nama": "WAGIYATI",
+    "nik": "ub",
+    "saldo": 65000,
+    "alamat": "Nomor Anggota 202",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-09-01",
+    "nama": "WINDY EKA",
+    "nik": "ub",
+    "saldo": 385000,
+    "alamat": "Nomor Anggota 201",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-09-01",
+    "nama": "PONIYEM",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 205",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-09-01",
+    "nama": "ISTIQOMAH",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 217",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-09-01",
+    "nama": "SUGIATI",
+    "nik": "ub",
+    "saldo": 615000,
+    "alamat": "Nomor Anggota 154",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-09-01",
+    "nama": "HARIYATIK",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 175",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-10-01",
+    "nama": "ASIATUN",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 208",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-10-01",
+    "nama": "SUNARTI",
+    "nik": "ub",
+    "saldo": 105000,
+    "alamat": "Nomor Anggota 217",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-10-01",
+    "nama": "TITI WAGIRAH",
+    "nik": "ub",
+    "saldo": 215000,
+    "alamat": "Nomor Anggota 211",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-10-01",
+    "nama": "MENIK",
+    "nik": "ub",
+    "saldo": 110000,
+    "alamat": "Nomor Anggota 216",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-11-01",
+    "nama": "SULISTYOWATI",
+    "nik": "ub",
+    "saldo": 25000,
+    "alamat": "Nomor Anggota 224",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-11-01",
+    "nama": "NURHALIMAH",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 225",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-11-01",
+    "nama": "SUCI W",
+    "nik": "ub",
+    "saldo": 150000,
+    "alamat": "Nomor Anggota 193",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-11-01",
+    "nama": "DWI W",
+    "nik": "ub",
+    "saldo": 155000,
+    "alamat": "Nomor Anggota 226",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-12-01",
+    "nama": "SUKINI",
+    "nik": "ub",
+    "saldo": 25000,
+    "alamat": "Nomor Anggota 213",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-12-01",
+    "nama": "IIN FARIDA",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 231",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-12-01",
+    "nama": "ULIPAH",
+    "nik": "ub",
+    "saldo": 180000,
+    "alamat": "Nomor Anggota 832",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-12-01",
+    "nama": "RODIYAH",
+    "nik": "ub",
+    "saldo": 45000,
+    "alamat": "Nomor Anggota 214",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2024-12-01",
+    "nama": "ZAQIYATUL",
+    "nik": "ub",
+    "saldo": 385000,
+    "alamat": "Nomor Anggota 233",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-01-01",
+    "nama": "HARTATIK",
+    "nik": "ub",
+    "saldo": 280000,
+    "alamat": "Nomor Anggota 188",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-01-01",
+    "nama": "MISTIYAH",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 235",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-01-01",
+    "nama": "MARISA",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 236",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-02-01",
+    "nama": "NGATINI",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 228",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-02-01",
+    "nama": "ST MAIMUNAH",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 220",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-02-01",
+    "nama": "SRI LESTARI",
+    "nik": "ub",
+    "saldo": 165000,
+    "alamat": "Nomor Anggota 212",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-03-01",
+    "nama": "SRI ANITASARI",
+    "nik": "ub",
+    "saldo": 270000,
+    "alamat": "Nomor Anggota 216",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-03-01",
+    "nama": "SUJARWATI",
+    "nik": "ub",
+    "saldo": 730000,
+    "alamat": "Nomor Anggota 107",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-03-01",
+    "nama": "ST MUNAWAROH",
+    "nik": "ub",
+    "saldo": 230000,
+    "alamat": "Nomor Anggota 198",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-04-01",
+    "nama": "ANI S",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 243",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 3,
+    "tanggal": "2025-04-01",
+    "nama": "SUMIATI",
+    "nik": "ub",
+    "saldo": 890000,
+    "alamat": "Nomor Anggota 190",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2021-11-01",
+    "nama": "FEBY ULAN",
+    "nik": "ub",
+    "saldo": 740000,
+    "alamat": "Nomor Anggota 80",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2021-12-01",
+    "nama": "SITI",
+    "nik": "ub",
+    "saldo": 1120000,
+    "alamat": "Nomor Anggota 82",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2021-12-01",
+    "nama": "VITA",
+    "nik": "ub",
+    "saldo": 525000,
+    "alamat": "Nomor Anggota 108",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2021-12-01",
+    "nama": "NUR AINI",
+    "nik": "ub",
+    "saldo": 440000,
+    "alamat": "Nomor Anggota 54",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-02-01",
+    "nama": "HENIK",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 105",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-03-01",
+    "nama": "SITI H",
+    "nik": "ub",
+    "saldo": 550000,
+    "alamat": "Nomor Anggota 92",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-03-01",
+    "nama": "SITI NURAINI",
+    "nik": "ub",
+    "saldo": 1400000,
+    "alamat": "Nomor Anggota 10",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-03-01",
+    "nama": "YULIANA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 120",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-03-01",
+    "nama": "RATNA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 116",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-07-01",
+    "nama": "LUSIA H",
+    "nik": "ub",
+    "saldo": 736000,
+    "alamat": "Nomor Anggota 134",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-07-01",
+    "nama": "NINA AYU",
+    "nik": "ub",
+    "saldo": 545000,
+    "alamat": "Nomor Anggota 129",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-09-01",
+    "nama": "ANITA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-09-01",
+    "nama": "ENDANG",
+    "nik": "ub",
+    "saldo": 485000,
+    "alamat": "Nomor Anggota 137",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-10-01",
+    "nama": "MARTINI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 122",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-10-01",
+    "nama": "LILIYAH",
+    "nik": "ub",
+    "saldo": 408000,
+    "alamat": "Nomor Anggota 145",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-10-01",
+    "nama": "ERNAWATI",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 147",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-10-01",
+    "nama": "NUR MINA",
+    "nik": "ub",
+    "saldo": 540000,
+    "alamat": "Nomor Anggota 139",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-11-01",
+    "nama": "MIRNA",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 150",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2022-11-01",
+    "nama": "DESI W",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 151",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-01-01",
+    "nama": "KADEK S",
+    "nik": "ub",
+    "saldo": 1150000,
+    "alamat": "Nomor Anggota 161",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-06-01",
+    "nama": "RIKA HAZAH",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 174",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-07-01",
+    "nama": "SUNARSIH",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 177",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-08-01",
+    "nama": "YENI TRI",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 169",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-08-01",
+    "nama": "SRIATUN",
+    "nik": "ub",
+    "saldo": 360000,
+    "alamat": "Nomor Anggota 176",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-10-01",
+    "nama": "DEWI L",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 192",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-12-01",
+    "nama": "MISNATUN",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 186",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2023-12-01",
+    "nama": "LILIK S",
+    "nik": "ub",
+    "saldo": 1080000,
+    "alamat": "Nomor Anggota 131",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-01-01",
+    "nama": "LULUS S",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 211",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-01-01",
+    "nama": "PIPIT E",
+    "nik": "ub",
+    "saldo": 345000,
+    "alamat": "Nomor Anggota 202",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-02-01",
+    "nama": "NARI'AH",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 207",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-03-01",
+    "nama": "SETIA A",
+    "nik": "ub",
+    "saldo": 1300000,
+    "alamat": "Nomor Anggota 200",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-06-01",
+    "nama": "YURI",
+    "nik": "ub",
+    "saldo": 560000,
+    "alamat": "Nomor Anggota 229",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-07-01",
+    "nama": "KARTINI",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 215",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-08-01",
+    "nama": "MUT SODAH",
+    "nik": "ub",
+    "saldo": 180000,
+    "alamat": "Nomor Anggota 221",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-08-01",
+    "nama": "RIRIN S",
+    "nik": "ub",
+    "saldo": 355000,
+    "alamat": "Nomor Anggota 203",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-09-01",
+    "nama": "LULUK",
+    "nik": "ub",
+    "saldo": 340000,
+    "alamat": "Nomor Anggota 231",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-09-01",
+    "nama": "MENIK FANDA",
+    "nik": "ub",
+    "saldo": 2600000,
+    "alamat": "Nomor Anggota 206",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-09-01",
+    "nama": "SITI AISYAH",
+    "nik": "ub",
+    "saldo": 206000,
+    "alamat": "Nomor Anggota 191",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-09-01",
+    "nama": "LITA ENDAH",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 218",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-10-01",
+    "nama": "A SUPRIH",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 237",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-10-01",
+    "nama": "NANAH P",
+    "nik": "ub",
+    "saldo": 220000,
+    "alamat": "Nomor Anggota 232",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-11-01",
+    "nama": "SUIDAH",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 210",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-11-01",
+    "nama": "NURJANAH",
+    "nik": "ub",
+    "saldo": 130000,
+    "alamat": "Nomor Anggota 143",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-11-01",
+    "nama": "SUMINIH",
+    "nik": "ub",
+    "saldo": 235000,
+    "alamat": "Nomor Anggota 219",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2024-12-01",
+    "nama": "IGA P",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 236",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-01-01",
+    "nama": "LENI E",
+    "nik": "ub",
+    "saldo": 125000,
+    "alamat": "Nomor Anggota 228",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-01-01",
+    "nama": "ARISTA M",
+    "nik": "ub",
+    "saldo": 65000,
+    "alamat": "Nomor Anggota 224",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-01-01",
+    "nama": "AMANDA",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 227",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-01-01",
+    "nama": "DWI S",
+    "nik": "ub",
+    "saldo": 305000,
+    "alamat": "Nomor Anggota 249",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-01-01",
+    "nama": "SUSIANAH",
+    "nik": "ub",
+    "saldo": 357000,
+    "alamat": "Nomor Anggota 215",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-01-01",
+    "nama": "ST KHOTIJAH",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 239",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-02-01",
+    "nama": "NINIS P",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 227",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-02-01",
+    "nama": "NUR AINI",
+    "nik": "ub",
+    "saldo": 485000,
+    "alamat": "Nomor Anggota 245",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-02-01",
+    "nama": "ARDINI W",
+    "nik": "ub",
+    "saldo": 700000,
+    "alamat": "Nomor Anggota 226",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-02-01",
+    "nama": "ANISA",
+    "nik": "ub",
+    "saldo": 40000,
+    "alamat": "Nomor Anggota 252",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-02-01",
+    "nama": "VIM VAWI",
+    "nik": "ub",
+    "saldo": 285000,
+    "alamat": "Nomor Anggota 220",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-03-01",
+    "nama": "WAHYUNI",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 199",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-04-01",
+    "nama": "WULAN F",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 256",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-04-01",
+    "nama": "ZAKIYAH",
+    "nik": "ub",
+    "saldo": 175000,
+    "alamat": "Nomor Anggota 240",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 4,
+    "tanggal": "2025-04-01",
+    "nama": "JAWISTRI",
+    "nik": "ub",
+    "saldo": 120000,
+    "alamat": "Nomor Anggota 241",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-06-01",
+    "nama": "MASHULAH",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 114",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-07-01",
+    "nama": "SUNARTI",
+    "nik": "ub",
+    "saldo": 830000,
+    "alamat": "Nomor Anggota 117",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-10-01",
+    "nama": "TINUK",
+    "nik": "ub",
+    "saldo": 936000,
+    "alamat": "Nomor Anggota 115",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-10-01",
+    "nama": "MADIAL",
+    "nik": "ub",
+    "saldo": 900000,
+    "alamat": "Nomor Anggota 98",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-10-01",
+    "nama": "IIS",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 99",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-11-01",
+    "nama": "WENI R",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 119",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-12-01",
+    "nama": "MISWAN",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-12-01",
+    "nama": "NETIK",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 120",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2022-12-01",
+    "nama": "SITI S",
+    "nik": "ub",
+    "saldo": 780000,
+    "alamat": "Nomor Anggota 118",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-01-01",
+    "nama": "NUR H",
+    "nik": "ub",
+    "saldo": 530000,
+    "alamat": "Nomor Anggota 101",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-01-01",
+    "nama": "LULUK S",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 138",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-01-01",
+    "nama": "YULIA",
+    "nik": "ub",
+    "saldo": 570000,
+    "alamat": "Nomor Anggota 104",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-07-01",
+    "nama": "SITI L",
+    "nik": "ub",
+    "saldo": 480000,
+    "alamat": "Nomor Anggota 149",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-07-01",
+    "nama": "WALIMATUS",
+    "nik": "ub",
+    "saldo": 395000,
+    "alamat": "Nomor Anggota 150",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-07-01",
+    "nama": "SITI MUSI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 151",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-07-01",
+    "nama": "SITI A",
+    "nik": "ub",
+    "saldo": 415000,
+    "alamat": "Nomor Anggota 133",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-11-01",
+    "nama": "EVA PUTRI",
+    "nik": "ub",
+    "saldo": 632000,
+    "alamat": "Nomor Anggota 143",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2023-12-01",
+    "nama": "NUR BARIYATI",
+    "nik": "ub",
+    "saldo": 246000,
+    "alamat": "Nomor Anggota 167",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-01-01",
+    "nama": "SANI",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 164",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-01-01",
+    "nama": "SESA M",
+    "nik": "ub",
+    "saldo": 270000,
+    "alamat": "Nomor Anggota 165",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-02-01",
+    "nama": "HENI M",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 174",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-02-01",
+    "nama": "ALIYA",
+    "nik": "ub",
+    "saldo": 370000,
+    "alamat": "Nomor Anggota 166",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-03-01",
+    "nama": "SITI MUDAYATIN",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 185",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-05-01",
+    "nama": "BIRA ANGGRAINI",
+    "nik": "ub",
+    "saldo": 780000,
+    "alamat": "Nomor Anggota 63",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-06-01",
+    "nama": "SUPIATUN",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 255",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-06-01",
+    "nama": "YOHANA",
+    "nik": "ub",
+    "saldo": 340000,
+    "alamat": "Nomor Anggota 210",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-07-01",
+    "nama": "MARIYATI",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 197",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-07-01",
+    "nama": "SUPIYATIN",
+    "nik": "ub",
+    "saldo": 305000,
+    "alamat": "Nomor Anggota 192",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-07-01",
+    "nama": "AIFUL",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 199",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-08-01",
+    "nama": "SUGIYATI",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 211",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-09-01",
+    "nama": "SUMIATI",
+    "nik": "ub",
+    "saldo": 445000,
+    "alamat": "Nomor Anggota 175",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-09-01",
+    "nama": "RUSTI",
+    "nik": "ub",
+    "saldo": 430000,
+    "alamat": "Nomor Anggota 228",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-09-01",
+    "nama": "SITI RUHU",
+    "nik": "ub",
+    "saldo": 330000,
+    "alamat": "Nomor Anggota 230",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-10-01",
+    "nama": "RIRIN EVI",
+    "nik": "ub",
+    "saldo": 575000,
+    "alamat": "Nomor Anggota 234",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-10-01",
+    "nama": "ERNA WIDYA",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 235",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-11-01",
+    "nama": "DEWI M",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 226",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-11-01",
+    "nama": "JUMIATI",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 244",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-11-01",
+    "nama": "UMI KHOLIFAH",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 245",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-11-01",
+    "nama": "SRI ISNATUN",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 191",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-12-01",
+    "nama": "MILA R",
+    "nik": "ub",
+    "saldo": 350000,
+    "alamat": "Nomor Anggota 209",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-12-01",
+    "nama": "DINA AYU",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 248",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-12-01",
+    "nama": "HERMIN",
+    "nik": "ub",
+    "saldo": 145000,
+    "alamat": "Nomor Anggota 249",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-12-01",
+    "nama": "MOHAH",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 206",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2024-12-01",
+    "nama": "SRI RAHAYU",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-01-01",
+    "nama": "HEMI",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 216",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-01-01",
+    "nama": "SULASTRI",
+    "nik": "ub",
+    "saldo": 435000,
+    "alamat": "Nomor Anggota 207",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-01-01",
+    "nama": "DEWI LESTARI",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 240",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-01-01",
+    "nama": "ALIF",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 254",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-02-01",
+    "nama": "YUSTINA",
+    "nik": "ub",
+    "saldo": 415000,
+    "alamat": "Nomor Anggota 251",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-02-01",
+    "nama": "SUDIYANI",
+    "nik": "ub",
+    "saldo": 155000,
+    "alamat": "Nomor Anggota 252",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-02-01",
+    "nama": "INTARTIK",
+    "nik": "ub",
+    "saldo": 495000,
+    "alamat": "Nomor Anggota 262",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-02-01",
+    "nama": "YUNI ASTUTIK",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 263",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-03-01",
+    "nama": "ERNAWATI",
+    "nik": "ub",
+    "saldo": 75000,
+    "alamat": "Nomor Anggota 268",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 5,
+    "tanggal": "2025-04-01",
+    "nama": "SURTI NT",
+    "nik": "ub",
+    "saldo": 100000,
+    "alamat": "Nomor Anggota 275",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2022-12-01",
+    "nama": "NURIYATI",
+    "nik": "ub",
+    "saldo": 440000,
+    "alamat": "Nomor Anggota 141",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-01-01",
+    "nama": "HAMIYAH",
+    "nik": "ub",
+    "saldo": 350000,
+    "alamat": "Nomor Anggota 179",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-02-01",
+    "nama": "SITI KATIJAH",
+    "nik": "ub",
+    "saldo": 936000,
+    "alamat": "Nomor Anggota 168",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-02-01",
+    "nama": "ERNI",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 170",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-03-01",
+    "nama": "RIA K",
+    "nik": "ub",
+    "saldo": 700000,
+    "alamat": "Nomor Anggota 170",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-03-01",
+    "nama": "BINTI T",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 179",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-04-01",
+    "nama": "RIRIN H",
+    "nik": "ub",
+    "saldo": 1092000,
+    "alamat": "Nomor Anggota 151",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-04-01",
+    "nama": "SUSANA H",
+    "nik": "ub",
+    "saldo": 809000,
+    "alamat": "Nomor Anggota 177",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-04-01",
+    "nama": "MUHATI",
+    "nik": "ub",
+    "saldo": 350000,
+    "alamat": "Nomor Anggota 161",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-04-01",
+    "nama": "DWI SITI K",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 185",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-04-01",
+    "nama": "MARIA",
+    "nik": "ub",
+    "saldo": 628000,
+    "alamat": "Nomor Anggota 186",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-04-01",
+    "nama": "SRI W",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 172",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-05-01",
+    "nama": "MARIA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 148",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-05-01",
+    "nama": "KOMARIYAH",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 186",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-05-01",
+    "nama": "SUNANTI",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 188",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-06-01",
+    "nama": "ENDANG F",
+    "nik": "ub",
+    "saldo": 360000,
+    "alamat": "Nomor Anggota 196",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-06-01",
+    "nama": "DEWI E",
+    "nik": "ub",
+    "saldo": 415000,
+    "alamat": "Nomor Anggota 197",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-06-01",
+    "nama": "SOFIA",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 198",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-06-01",
+    "nama": "IMSIYAH",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 203",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-07-01",
+    "nama": "RUBAIYAH",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 209",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-08-01",
+    "nama": "ROMI",
+    "nik": "ub",
+    "saldo": 370000,
+    "alamat": "Nomor Anggota 212",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-09-01",
+    "nama": "RUSILA",
+    "nik": "ub",
+    "saldo": 230000,
+    "alamat": "Nomor Anggota 205",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-09-01",
+    "nama": "HOTIM",
+    "nik": "ub",
+    "saldo": 270000,
+    "alamat": "Nomor Anggota 210",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-09-01",
+    "nama": "YULIYATIN",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 158",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-09-01",
+    "nama": "WATIN",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 191",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-10-01",
+    "nama": "HAMIDAH",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 120",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-10-01",
+    "nama": "NUROHMAH",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 207",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-10-01",
+    "nama": "ARBOATI",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 307",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-11-01",
+    "nama": "SUPIYATI",
+    "nik": "ub",
+    "saldo": 736000,
+    "alamat": "Nomor Anggota 189",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-11-01",
+    "nama": "SITIA",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 308",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2023-12-01",
+    "nama": "NURI O",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 316",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-01-01",
+    "nama": "WIWIK W",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 322",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "LASMINI",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 192",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "SITI ISKAROMAH",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 324",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "HERNA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 199",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "SURIPAH",
+    "nik": "ub",
+    "saldo": 780000,
+    "alamat": "Nomor Anggota 304",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "HONIM EKA",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 315",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "MULYANI",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 328",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "SITI KHOMARIYAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 330",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "DINA PUJI",
+    "nik": "ub",
+    "saldo": 435000,
+    "alamat": "Nomor Anggota 332",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-02-01",
+    "nama": "KURNIA A",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 305",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-06-01",
+    "nama": "SITI MASKANAH",
+    "nik": "ub",
+    "saldo": 225000,
+    "alamat": "Nomor Anggota 309",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-08-01",
+    "nama": "SUWARNI",
+    "nik": "ub",
+    "saldo": 225000,
+    "alamat": "Nomor Anggota 368",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-08-01",
+    "nama": "EPITA SARI",
+    "nik": "ub",
+    "saldo": 1120000,
+    "alamat": "Nomor Anggota 351",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-09-01",
+    "nama": "NUR R",
+    "nik": "ub",
+    "saldo": 175000,
+    "alamat": "Nomor Anggota 376",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-09-01",
+    "nama": "ISKANAH",
+    "nik": "ub",
+    "saldo": 250000,
+    "alamat": "Nomor Anggota 377",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-09-01",
+    "nama": "NURI INDAH",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 337",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-09-01",
+    "nama": "ERNI MARIYANI",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 340",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-09-01",
+    "nama": "BUANAH",
+    "nik": "ub",
+    "saldo": 776000,
+    "alamat": "Nomor Anggota 195",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-10-01",
+    "nama": "SITI NURAIDA",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 369",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-10-01",
+    "nama": "NIKEN AYU",
+    "nik": "ub",
+    "saldo": 305000,
+    "alamat": "Nomor Anggota 380",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-11-01",
+    "nama": "SUCI A",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 288",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-11-01",
+    "nama": "NUR HIDAYAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 289",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-11-01",
+    "nama": "ASIYAH",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 356",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-12-01",
+    "nama": "MAS TITIK",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 343",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-12-01",
+    "nama": "HUSNUL",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 352",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-12-01",
+    "nama": "TIANI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 297",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-12-01",
+    "nama": "ELISA DWI",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 298",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2024-12-01",
+    "nama": "LILA L",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 385",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-01-01",
+    "nama": "MAYA WATI",
+    "nik": "ub",
+    "saldo": 395000,
+    "alamat": "Nomor Anggota 374",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-01-01",
+    "nama": "ASPIAH",
+    "nik": "ub",
+    "saldo": 440000,
+    "alamat": "Nomor Anggota 307",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-01-01",
+    "nama": "ELLY R",
+    "nik": "ub",
+    "saldo": 40000,
+    "alamat": "Nomor Anggota 287",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-01-01",
+    "nama": "ANJAR LILIK",
+    "nik": "ub",
+    "saldo": 200000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-02-01",
+    "nama": "HOIRIYAH",
+    "nik": "ub",
+    "saldo": 25000,
+    "alamat": "Nomor Anggota 364",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-02-01",
+    "nama": "DWI ASRI",
+    "nik": "ub",
+    "saldo": 210000,
+    "alamat": "Nomor Anggota 301",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-02-01",
+    "nama": "CATUR OKTA",
+    "nik": "ub",
+    "saldo": 270000,
+    "alamat": "Nomor Anggota 361",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-02-01",
+    "nama": "SRIYANI",
+    "nik": "ub",
+    "saldo": 220000,
+    "alamat": "Nomor Anggota 360",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-02-01",
+    "nama": "AR MELITA",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 300",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-02-01",
+    "nama": "AR SELLA",
+    "nik": "ub",
+    "saldo": 185000,
+    "alamat": "Nomor Anggota 303",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-03-01",
+    "nama": "MISNAH",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 373",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-03-01",
+    "nama": "NUR KUMALA",
+    "nik": "ub",
+    "saldo": 315000,
+    "alamat": "Nomor Anggota 371",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-04-01",
+    "nama": "FIKA",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 318",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-04-01",
+    "nama": "M.JAKAR",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 319",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-04-01",
+    "nama": "KARTINI",
+    "nik": "ub",
+    "saldo": 110000,
+    "alamat": "Nomor Anggota 302",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 6,
+    "tanggal": "2025-04-01",
+    "nama": "AGUSTIN DWI",
+    "nik": "ub",
+    "saldo": 712000,
+    "alamat": "Nomor Anggota 310",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "FEB",
+    "nama": "SITI HOLIPAH",
+    "nik": "ub",
+    "saldo": 1530000,
+    "alamat": "Nomor Anggota 10",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "FEB",
+    "nama": "TITIK MUSIYANI",
+    "nik": "ub",
+    "saldo": 950000,
+    "alamat": "Nomor Anggota 60",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "MAR",
+    "nama": "FITRI K",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 87",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "MAR",
+    "nama": "SEPTA RAHAYU",
+    "nik": "ub",
+    "saldo": 295000,
+    "alamat": "Nomor Anggota 88",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "MAR",
+    "nama": "ANIK",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 63",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "MAR",
+    "nama": "YUNI ASTUTI",
+    "nik": "ub",
+    "saldo": 840000,
+    "alamat": "Nomor Anggota 65",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "MAR",
+    "nama": "EKO WAHYUNI",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 73",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "AGS",
+    "nama": "LUSI IRAWATI",
+    "nik": "ub",
+    "saldo": 610000,
+    "alamat": "Nomor Anggota 64",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "NOV",
+    "nama": "MAH RURUH",
+    "nik": "ub",
+    "saldo": 519000,
+    "alamat": "Nomor Anggota 92",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "OKT",
+    "nama": "BUANI",
+    "nik": "ub",
+    "saldo": 225000,
+    "alamat": "Nomor Anggota 95",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "NOV",
+    "nama": "SITI KHOLIPAH",
+    "nik": "ub",
+    "saldo": 640000,
+    "alamat": "Nomor Anggota 103",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "NOV",
+    "nama": "ANIS N",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 117",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "NOV",
+    "nama": "NUR LAILI",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 96",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "NOV",
+    "nama": "JUMANI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 111",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "JUN",
+    "nama": "RATNA WATI",
+    "nik": "ub",
+    "saldo": 280000,
+    "alamat": "Nomor Anggota 102",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "JUL",
+    "nama": "ULIPAH",
+    "nik": "ub",
+    "saldo": 360000,
+    "alamat": "Nomor Anggota 107",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "JUL",
+    "nama": "NAWANG K",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 133",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "JUL",
+    "nama": "SUKATI",
+    "nik": "ub",
+    "saldo": 250000,
+    "alamat": "Nomor Anggota 79",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "AGS",
+    "nama": "ITA IRMANSYAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 125",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "AGS",
+    "nama": "SRI WINARTI",
+    "nik": "ub",
+    "saldo": 630000,
+    "alamat": "Nomor Anggota 36",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "AGS",
+    "nama": "KIKI O",
+    "nik": "ub",
+    "saldo": 780000,
+    "alamat": "Nomor Anggota 70",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "AGS",
+    "nama": "SUMIYATI",
+    "nik": "ub",
+    "saldo": 780000,
+    "alamat": "Nomor Anggota 101",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "SEP",
+    "nama": "MARSIANA",
+    "nik": "ub",
+    "saldo": 355000,
+    "alamat": "Nomor Anggota 114",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "SEP",
+    "nama": "HJ SITI A",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 128",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "SEP",
+    "nama": "NANIK",
+    "nik": "ub",
+    "saldo": 355000,
+    "alamat": "Nomor Anggota 126",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "SEP",
+    "nama": "ZAIH A",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 127",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "DES",
+    "nama": "SRI WAHYUNI",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 116",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "JAN",
+    "nama": "DWI WULANDARI",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "JAN",
+    "nama": "SUTIYNAI",
+    "nik": "ub",
+    "saldo": 940000,
+    "alamat": "Nomor Anggota 104",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "FEB",
+    "nama": "ROHMATIN",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 153",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "FEB",
+    "nama": "MURYANTO",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 164",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-03-01",
+    "nama": "EVIANA SITI",
+    "nik": "ub",
+    "saldo": 640000,
+    "alamat": "Nomor Anggota 158",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-03-01",
+    "nama": "SITI NOER AINI",
+    "nik": "ub",
+    "saldo": 840000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-03-01",
+    "nama": "SITI ATIKAH",
+    "nik": "ub",
+    "saldo": 355000,
+    "alamat": "Nomor Anggota 151",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-05-01",
+    "nama": "SITI NUR",
+    "nik": "ub",
+    "saldo": 355000,
+    "alamat": "Nomor Anggota 171",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-06-01",
+    "nama": "SITIT NUR H",
+    "nik": "ub",
+    "saldo": 495000,
+    "alamat": "Nomor Anggota 183",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-06-01",
+    "nama": "SUCI",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 185",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-07-01",
+    "nama": "SUTAMI",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 165",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-07-01",
+    "nama": "ITA ADJI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 167",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-08-01",
+    "nama": "MARSIYANA",
+    "nik": "ub",
+    "saldo": 116000,
+    "alamat": "Nomor Anggota 176",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-10-01",
+    "nama": "ANITA ANDIKA",
+    "nik": "ub",
+    "saldo": 1460000,
+    "alamat": "Nomor Anggota 12",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-10-01",
+    "nama": "RODIYAH",
+    "nik": "ub",
+    "saldo": 295000,
+    "alamat": "Nomor Anggota 180",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "EVI YULIANTI",
+    "nik": "ub",
+    "saldo": 185000,
+    "alamat": "Nomor Anggota 195",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "TONA",
+    "nik": "ub",
+    "saldo": 40000,
+    "alamat": "Nomor Anggota 196",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "SINUNG SUWENDI",
+    "nik": "ub",
+    "saldo": 90000,
+    "alamat": "Nomor Anggota 198",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "SUPIYATI",
+    "nik": "ub",
+    "saldo": 210000,
+    "alamat": "Nomor Anggota 203",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "SARIPAH",
+    "nik": "ub",
+    "saldo": 820000,
+    "alamat": "Nomor Anggota 147",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "YULIANI AYU",
+    "nik": "ub",
+    "saldo": 235000,
+    "alamat": "Nomor Anggota 199",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "SITI MARIANA",
+    "nik": "ub",
+    "saldo": 105000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-11-01",
+    "nama": "MARIA D",
+    "nik": "ub",
+    "saldo": 1200000,
+    "alamat": "Nomor Anggota 33",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "SITI NGAISAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 175",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "LAILI  NURUL",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 172",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "ENDANG",
+    "nik": "ub",
+    "saldo": 180000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "ROHMANIA",
+    "nik": "ub",
+    "saldo": 150000,
+    "alamat": "Nomor Anggota 205",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "RIA KUSUMA",
+    "nik": "ub",
+    "saldo": 50000,
+    "alamat": "Nomor Anggota 206",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "YULI INDRAWATI",
+    "nik": "ub",
+    "saldo": 85000,
+    "alamat": "Nomor Anggota 207",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "SATUMI",
+    "nik": "ub",
+    "saldo": 210000,
+    "alamat": "Nomor Anggota 179",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2024-12-01",
+    "nama": "RIRIN HASANAH",
+    "nik": "ub",
+    "saldo": 230000,
+    "alamat": "Nomor Anggota 182",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-01-01",
+    "nama": "MUTMAINAH",
+    "nik": "ub",
+    "saldo": 54000,
+    "alamat": "Nomor Anggota 50",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-01-01",
+    "nama": "ST ISTIANAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 135",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-01-01",
+    "nama": "ROSEKA F",
+    "nik": "ub",
+    "saldo": 462000,
+    "alamat": "Nomor Anggota 170",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-01-01",
+    "nama": "NOVIATUS S",
+    "nik": "ub",
+    "saldo": 375000,
+    "alamat": "Nomor Anggota 197",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-01-01",
+    "nama": "DYAH S",
+    "nik": "ub",
+    "saldo": 1040000,
+    "alamat": "Nomor Anggota 201",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-01-01",
+    "nama": "HOSNAH",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 202",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-01-01",
+    "nama": "LASMIATI",
+    "nik": "ub",
+    "saldo": 55000,
+    "alamat": "Nomor Anggota 209",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-02-01",
+    "nama": "SUSILO DWI",
+    "nik": "ub",
+    "saldo": 73000,
+    "alamat": "Nomor Anggota 180",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-02-01",
+    "nama": "ANIS SWATIN",
+    "nik": "ub",
+    "saldo": 725000,
+    "alamat": "Nomor Anggota 213",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-04-01",
+    "nama": "SUPARNO",
+    "nik": "ub",
+    "saldo": 145000,
+    "alamat": "Nomor Anggota 222",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 7,
+    "tanggal": "2025-04-01",
+    "nama": "NURUL KHOTIMAH",
+    "nik": "ub",
+    "saldo": 235000,
+    "alamat": "Nomor Anggota 216",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2021-11-01",
+    "nama": "ERLI",
+    "nik": "ub",
+    "saldo": 1605000,
+    "alamat": "Nomor Anggota 66",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2022-03-01",
+    "nama": "DIAN",
+    "nik": "ub",
+    "saldo": 1114000,
+    "alamat": "Nomor Anggota 78",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2022-05-01",
+    "nama": "ISTIQOMAH",
+    "nik": "ub",
+    "saldo": 680000,
+    "alamat": "Nomor Anggota 128",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2022-10-01",
+    "nama": "RUSMI",
+    "nik": "ub",
+    "saldo": 890000,
+    "alamat": "Nomor Anggota 124",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2022-10-01",
+    "nama": "YULI",
+    "nik": "ub",
+    "saldo": 525000,
+    "alamat": "Nomor Anggota 135",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-01-01",
+    "nama": "ERFAN",
+    "nik": "ub",
+    "saldo": 760000,
+    "alamat": "Nomor Anggota 115",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-01-01",
+    "nama": "SINDI",
+    "nik": "ub",
+    "saldo": 760000,
+    "alamat": "Nomor Anggota 114",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-01-01",
+    "nama": "MARATUS",
+    "nik": "ub",
+    "saldo": 450000,
+    "alamat": "Nomor Anggota 23",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-01-01",
+    "nama": "HELIN",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 142",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-01-01",
+    "nama": "SRI W",
+    "nik": "ub",
+    "saldo": 410000,
+    "alamat": "Nomor Anggota 134",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-01-01",
+    "nama": "IKA YULI",
+    "nik": "ub",
+    "saldo": 940000,
+    "alamat": "Nomor Anggota 133",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-06-01",
+    "nama": "LINDA",
+    "nik": "ub",
+    "saldo": 540000,
+    "alamat": "Nomor Anggota 122",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-06-01",
+    "nama": "SITI R",
+    "nik": "ub",
+    "saldo": 825000,
+    "alamat": "Nomor Anggota 152",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-06-01",
+    "nama": "RETNO",
+    "nik": "ub",
+    "saldo": 470000,
+    "alamat": "Nomor Anggota 144",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-07-01",
+    "nama": "TITIN",
+    "nik": "ub",
+    "saldo": 495000,
+    "alamat": "Nomor Anggota 151",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-07-01",
+    "nama": "KHOIRIYAH",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 141",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-08-01",
+    "nama": "RISKI",
+    "nik": "ub",
+    "saldo": 395000,
+    "alamat": "Nomor Anggota 168",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-08-01",
+    "nama": "MANA",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 156",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-12-01",
+    "nama": "HARTATIK",
+    "nik": "ub",
+    "saldo": 695000,
+    "alamat": "Nomor Anggota 165",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-12-01",
+    "nama": "EKO W",
+    "nik": "ub",
+    "saldo": 800000,
+    "alamat": "Nomor Anggota 158",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2023-12-01",
+    "nama": "BIBIT S",
+    "nik": "ub",
+    "saldo": 780000,
+    "alamat": "Nomor Anggota 166",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-01-01",
+    "nama": "HARTATIK",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 189",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-01-01",
+    "nama": "TYA SUSILOWATI",
+    "nik": "ub",
+    "saldo": 790000,
+    "alamat": "Nomor Anggota 180",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-02-01",
+    "nama": "NURUL UMAMI",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 162",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-05-01",
+    "nama": "SITI MAULIDAH",
+    "nik": "ub",
+    "saldo": 288000,
+    "alamat": "Nomor Anggota 194",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-07-01",
+    "nama": "YUYUN R",
+    "nik": "ub",
+    "saldo": 360000,
+    "alamat": "Nomor Anggota 176",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-07-01",
+    "nama": "DWI M",
+    "nik": "ub",
+    "saldo": 1040000,
+    "alamat": "Nomor Anggota 219",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-07-01",
+    "nama": "INTAN SUCI",
+    "nik": "ub",
+    "saldo": 455000,
+    "alamat": "Nomor Anggota 221",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-08-01",
+    "nama": "PUTRI FUJI",
+    "nik": "ub",
+    "saldo": 611000,
+    "alamat": "Nomor Anggota 205",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-08-01",
+    "nama": "DJULIANA",
+    "nik": "ub",
+    "saldo": 260000,
+    "alamat": "Nomor Anggota 211",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-08-01",
+    "nama": "NUR JANNAH",
+    "nik": "ub",
+    "saldo": 360000,
+    "alamat": "Nomor Anggota 171",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-09-01",
+    "nama": "SRI MIASIH",
+    "nik": "ub",
+    "saldo": 401000,
+    "alamat": "Nomor Anggota 201",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-09-01",
+    "nama": "SUKAIMAH",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 228",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-09-01",
+    "nama": "SUKANI",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 227",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-10-01",
+    "nama": "EFI YULIARTI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 213",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-11-01",
+    "nama": "IDA PUSPITASARI",
+    "nik": "ub",
+    "saldo": 79000,
+    "alamat": "Nomor Anggota 234",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-11-01",
+    "nama": "SITI ISTIAROH",
+    "nik": "ub",
+    "saldo": 459000,
+    "alamat": "Nomor Anggota 226",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-11-01",
+    "nama": "SITI MASRIKAH",
+    "nik": "ub",
+    "saldo": 305000,
+    "alamat": "Nomor Anggota 235",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-12-01",
+    "nama": "UMI TOHAMAH",
+    "nik": "ub",
+    "saldo": 300000,
+    "alamat": "Nomor Anggota 223",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-12-01",
+    "nama": "IRUL HASANAH",
+    "nik": "ub",
+    "saldo": 105000,
+    "alamat": "Nomor Anggota 242",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-12-01",
+    "nama": "WINARTI",
+    "nik": "ub",
+    "saldo": 395000,
+    "alamat": "Nomor Anggota 243",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-12-01",
+    "nama": "ARDHINI",
+    "nik": "ub",
+    "saldo": 65000,
+    "alamat": "Nomor Anggota 240",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2024-12-01",
+    "nama": "PATIMAH",
+    "nik": "ub",
+    "saldo": 890000,
+    "alamat": "Nomor Anggota 231",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-01-01",
+    "nama": "SUWANTRI",
+    "nik": "ub",
+    "saldo": 230000,
+    "alamat": "Nomor Anggota 244",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-01-01",
+    "nama": "NURUL AINI",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 184",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-02-01",
+    "nama": "MUNIA F",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 238",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-02-01",
+    "nama": "NOVITASARI",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 232",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-02-01",
+    "nama": "MAYASARI",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 258",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-02-01",
+    "nama": "KOMARIYAH",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 261",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-02-01",
+    "nama": "ANISA L",
+    "nik": "ub",
+    "saldo": 248000,
+    "alamat": "Nomor Anggota 225",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-03-01",
+    "nama": "SUGIANI",
+    "nik": "ub",
+    "saldo": 123000,
+    "alamat": "Nomor Anggota 264",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 8,
+    "tanggal": "2025-04-01",
+    "nama": "DARMIYANTI",
+    "nik": "ub",
+    "saldo": 318000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-09-01",
+    "nama": "SRIYANI",
+    "nik": "ub",
+    "saldo": 855000,
+    "alamat": "Nomor Anggota 64",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-09-01",
+    "nama": "RENI",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 96",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-02-01",
+    "nama": "SANIYAM",
+    "nik": "ub",
+    "saldo": 535000,
+    "alamat": "Nomor Anggota 100",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-02-01",
+    "nama": "SITI N",
+    "nik": "ub",
+    "saldo": 1224000,
+    "alamat": "Nomor Anggota 25",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-02-01",
+    "nama": "SITI L",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 93",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-02-01",
+    "nama": "SITI M",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 92",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-09-01",
+    "nama": "ADESTA",
+    "nik": "ub",
+    "saldo": 1140000,
+    "alamat": "Nomor Anggota 103",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-09-01",
+    "nama": "LUCK",
+    "nik": "ub",
+    "saldo": 660000,
+    "alamat": "Nomor Anggota 104",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2022-09-01",
+    "nama": "KOMARIYAH",
+    "nik": "ub",
+    "saldo": 540000,
+    "alamat": "Nomor Anggota 130",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2023-03-01",
+    "nama": "SRIANI",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 133",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2023-03-01",
+    "nama": "SUPRIYATUN",
+    "nik": "ub",
+    "saldo": 375000,
+    "alamat": "Nomor Anggota 134",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2023-03-01",
+    "nama": "FITRIYANI",
+    "nik": "ub",
+    "saldo": 450000,
+    "alamat": "Nomor Anggota 129",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2023-05-01",
+    "nama": "ZENI",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 204",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2023-06-01",
+    "nama": "NURI SETYO",
+    "nik": "ub",
+    "saldo": 340000,
+    "alamat": "Nomor Anggota 202",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2023-12-01",
+    "nama": "SANIYEM",
+    "nik": "ub",
+    "saldo": 280000,
+    "alamat": "Nomor Anggota 196",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2023-12-01",
+    "nama": "SULIS",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 235",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-01-01",
+    "nama": "SITI M",
+    "nik": "ub",
+    "saldo": 630000,
+    "alamat": "Nomor Anggota 233",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-01-01",
+    "nama": "SRIYANI",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 242",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-01-01",
+    "nama": "SUPRIYATIN",
+    "nik": "ub",
+    "saldo": 420000,
+    "alamat": "Nomor Anggota 229",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-02-01",
+    "nama": "NURUL H",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 231",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-03-01",
+    "nama": "WIWIN W",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 237",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-05-01",
+    "nama": "SENIRAH",
+    "nik": "ub",
+    "saldo": 290000,
+    "alamat": "Nomor Anggota 254",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-06-01",
+    "nama": "SITI M",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 247",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-07-01",
+    "nama": "SUSILO",
+    "nik": "ub",
+    "saldo": 405000,
+    "alamat": "Nomor Anggota 271",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-07-01",
+    "nama": "YUNNY ROFI",
+    "nik": "ub",
+    "saldo": 520000,
+    "alamat": "Nomor Anggota 198",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-07-01",
+    "nama": "FARIDA",
+    "nik": "ub",
+    "saldo": 375000,
+    "alamat": "Nomor Anggota 257",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-08-01",
+    "nama": "PURWATININGSIH",
+    "nik": "ub",
+    "saldo": 975000,
+    "alamat": "Nomor Anggota 215",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-08-01",
+    "nama": "UMI RAHAYU",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 269",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-08-01",
+    "nama": "NABILA",
+    "nik": "ub",
+    "saldo": 280000,
+    "alamat": "Nomor Anggota 270",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-09-01",
+    "nama": "RAHAYU",
+    "nik": "ub",
+    "saldo": 410000,
+    "alamat": "Nomor Anggota 159",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-09-01",
+    "nama": "TASEMI",
+    "nik": "ub",
+    "saldo": 20000,
+    "alamat": "Nomor Anggota 258",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-10-01",
+    "nama": "YULIA H",
+    "nik": "ub",
+    "saldo": 184000,
+    "alamat": "Nomor Anggota 284",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-10-01",
+    "nama": "SUKMA S",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 268",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-10-01",
+    "nama": "NUR AINI",
+    "nik": "ub",
+    "saldo": 565000,
+    "alamat": "Nomor Anggota 239",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-11-01",
+    "nama": "SITI JUANAH",
+    "nik": "ub",
+    "saldo": 580000,
+    "alamat": "Nomor Anggota 249",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-11-01",
+    "nama": "SARMINI",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 207",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-11-01",
+    "nama": "MEGA",
+    "nik": "ub",
+    "saldo": 70000,
+    "alamat": "Nomor Anggota 276",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-11-01",
+    "nama": "SUTIASIH",
+    "nik": "ub",
+    "saldo": 280000,
+    "alamat": "Nomor Anggota 277",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-11-01",
+    "nama": "SITI MUTORIQOH",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 282",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-12-01",
+    "nama": "SINTA O",
+    "nik": "ub",
+    "saldo": 910000,
+    "alamat": "Nomor Anggota 286",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-12-01",
+    "nama": "ISRO' W",
+    "nik": "ub",
+    "saldo": 110000,
+    "alamat": "Nomor Anggota 289",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2024-12-01",
+    "nama": "SARMI",
+    "nik": "ub",
+    "saldo": 890000,
+    "alamat": "Nomor Anggota 214",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-01-01",
+    "nama": "WAHYUNI",
+    "nik": "ub",
+    "saldo": 640000,
+    "alamat": "Nomor Anggota 215",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-01-01",
+    "nama": "SRIANI",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 279",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-01-01",
+    "nama": "SARIYA",
+    "nik": "ub",
+    "saldo": 540000,
+    "alamat": "Nomor Anggota 262",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-01-01",
+    "nama": "SULISTIYAWATI",
+    "nik": "ub",
+    "saldo": 160000,
+    "alamat": "Nomor Anggota 298",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-02-01",
+    "nama": "KATINAH",
+    "nik": "ub",
+    "saldo": 740000,
+    "alamat": "Nomor Anggota 265",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-02-01",
+    "nama": "SUMIATI",
+    "nik": "ub",
+    "saldo": 150000,
+    "alamat": "Nomor Anggota 218",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-02-01",
+    "nama": "ST KOMARIYAH",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 285",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-03-01",
+    "nama": "ST ALFIYAH",
+    "nik": "ub",
+    "saldo": 1200000,
+    "alamat": "Nomor Anggota 230",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-03-01",
+    "nama": "SRI W",
+    "nik": "ub",
+    "saldo": 1170000,
+    "alamat": "Nomor Anggota 278",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-03-01",
+    "nama": "SUPRIHATIN",
+    "nik": "ub",
+    "saldo": 585000,
+    "alamat": "Nomor Anggota 279",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-03-01",
+    "nama": "BIBIT",
+    "nik": "ub",
+    "saldo": 195000,
+    "alamat": "Nomor Anggota 295",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-04-01",
+    "nama": "SRI SUSANTI",
+    "nik": "ub",
+    "saldo": 175000,
+    "alamat": "Nomor Anggota 288",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-04-01",
+    "nama": "WAHYUNI",
+    "nik": "ub",
+    "saldo": 740000,
+    "alamat": "Nomor Anggota 276",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 9,
+    "tanggal": "2025-04-01",
+    "nama": "SUSES W",
+    "nik": "ub",
+    "saldo": 650000,
+    "alamat": "Nomor Anggota 286",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2021-11-01",
+    "nama": "SUSYANI",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 42",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2021-12-01",
+    "nama": "ROSITA",
+    "nik": "ub",
+    "saldo": 600000,
+    "alamat": "Nomor Anggota 78",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2021-12-01",
+    "nama": "ALFIYAH",
+    "nik": "ub",
+    "saldo": 370000,
+    "alamat": "Nomor Anggota 82",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-01-01",
+    "nama": "YAYUK",
+    "nik": "ub",
+    "saldo": 1110000,
+    "alamat": "Nomor Anggota 44",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-02-01",
+    "nama": "PUJAYANTI",
+    "nik": "ub",
+    "saldo": 480000,
+    "alamat": "Nomor Anggota 23",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-03-01",
+    "nama": "BEGIMAH",
+    "nik": "ub",
+    "saldo": 285000,
+    "alamat": "Nomor Anggota 87",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-03-01",
+    "nama": "SARTINA",
+    "nik": "ub",
+    "saldo": 451000,
+    "alamat": "Nomor Anggota 8",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-03-01",
+    "nama": "ANISA",
+    "nik": "ub",
+    "saldo": 440000,
+    "alamat": "Nomor Anggota 40",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-03-01",
+    "nama": "RIA",
+    "nik": "ub",
+    "saldo": 299000,
+    "alamat": "Nomor Anggota 88",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-07-01",
+    "nama": "IKA WAHYUNI",
+    "nik": "ub",
+    "saldo": 549000,
+    "alamat": "Nomor Anggota 26",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-07-01",
+    "nama": "PONIDI",
+    "nik": "ub",
+    "saldo": 309000,
+    "alamat": "Nomor Anggota 99",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-08-01",
+    "nama": "NUR FATIMAH",
+    "nik": "ub",
+    "saldo": 338000,
+    "alamat": "Nomor Anggota 102",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-08-01",
+    "nama": "YENI SUSANTI",
+    "nik": "ub",
+    "saldo": 1250000,
+    "alamat": "Nomor Anggota 16",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-08-01",
+    "nama": "TOGIMA",
+    "nik": "ub",
+    "saldo": 840000,
+    "alamat": "Nomor Anggota 36",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-08-01",
+    "nama": "NUR HASANAH",
+    "nik": "ub",
+    "saldo": 224000,
+    "alamat": "Nomor Anggota 88",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-09-01",
+    "nama": "NURI VINA",
+    "nik": "ub",
+    "saldo": 485000,
+    "alamat": "Nomor Anggota 106",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-09-01",
+    "nama": "SULASTRI",
+    "nik": "ub",
+    "saldo": 252000,
+    "alamat": "Nomor Anggota 64",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-09-01",
+    "nama": "MUSRIFAH",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 92",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-09-01",
+    "nama": "SUGIARTI",
+    "nik": "ub",
+    "saldo": 210000,
+    "alamat": "Nomor Anggota 93",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-11-01",
+    "nama": "NITA",
+    "nik": "ub",
+    "saldo": 427000,
+    "alamat": "Nomor Anggota 113",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-11-01",
+    "nama": "SANIYAH",
+    "nik": "ub",
+    "saldo": 240000,
+    "alamat": "Nomor Anggota 114",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-11-01",
+    "nama": "SUTRI",
+    "nik": "ub",
+    "saldo": 300000,
+    "alamat": "Nomor Anggota 116",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-11-01",
+    "nama": "SULEHA",
+    "nik": "ub",
+    "saldo": 610000,
+    "alamat": "Nomor Anggota 96",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-12-01",
+    "nama": "RIFATUL",
+    "nik": "ub",
+    "saldo": 510000,
+    "alamat": "Nomor Anggota 94",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-12-01",
+    "nama": "SAMINEM",
+    "nik": "ub",
+    "saldo": 370000,
+    "alamat": "Nomor Anggota 108",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2022-12-01",
+    "nama": "UMIYAH",
+    "nik": "ub",
+    "saldo": 990000,
+    "alamat": "Nomor Anggota 84",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-03-01",
+    "nama": "ELA NURDINA",
+    "nik": "ub",
+    "saldo": 530000,
+    "alamat": "Nomor Anggota 127",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-04-01",
+    "nama": "LILIK",
+    "nik": "ub",
+    "saldo": 565000,
+    "alamat": "Nomor Anggota 120",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-06-01",
+    "nama": "DIAH EKA",
+    "nik": "ub",
+    "saldo": 213000,
+    "alamat": "Nomor Anggota 126",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-08-01",
+    "nama": "BEGINA",
+    "nik": "ub",
+    "saldo": 320000,
+    "alamat": "Nomor Anggota 147",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-09-01",
+    "nama": "UMAR JUNAIDI",
+    "nik": "ub",
+    "saldo": 269000,
+    "alamat": "Nomor Anggota 150",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-10-01",
+    "nama": "NUR FADILA",
+    "nik": "ub",
+    "saldo": 174000,
+    "alamat": "Nomor Anggota 156",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-10-01",
+    "nama": "FARIDA",
+    "nik": "ub",
+    "saldo": 170000,
+    "alamat": "Nomor Anggota 137",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-10-01",
+    "nama": "SINDI AULIA",
+    "nik": "ub",
+    "saldo": 490000,
+    "alamat": "Nomor Anggota 140",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-10-01",
+    "nama": "NURHAYATI",
+    "nik": "ub",
+    "saldo": 230000,
+    "alamat": "Nomor Anggota 136",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-11-01",
+    "nama": "ANIS TIARA",
+    "nik": "ub",
+    "saldo": 675000,
+    "alamat": "Nomor Anggota 110",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-11-01",
+    "nama": "MONIKA",
+    "nik": "ub",
+    "saldo": 325000,
+    "alamat": "Nomor Anggota 117",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2023-12-01",
+    "nama": "NUR CAHYA",
+    "nik": "ub",
+    "saldo": 225000,
+    "alamat": "Nomor Anggota 160",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2024-01-01",
+    "nama": "SAMINEM",
+    "nik": "ub",
+    "saldo": 334000,
+    "alamat": "Nomor Anggota 164",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2024-02-01",
+    "nama": "SITI KOMARIYAH",
+    "nik": "ub",
+    "saldo": 537000,
+    "alamat": "Nomor Anggota 146",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 53,
+    "kelompok": 10,
+    "tanggal": "2024-02-01",
+    "nama": "NUR AZIZAH",
+    "nik": "ub",
+    "saldo": 205000,
+    "alamat": "Nomor Anggota 151",
+    "hari": "senin"
+  },
+  {
+    "branch_id": 54,
+    "kelompok": 10,
+    "tanggal": "2024-04-01",
+    "nama": "SINDI ASMA",
+    "nik": "ub",
+    "saldo": 390000,
+    "alamat": "Nomor Anggota 165",
+    "hari": "senin"
+  }
+]
