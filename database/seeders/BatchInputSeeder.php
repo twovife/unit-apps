@@ -18,7 +18,7 @@ class BatchInputSeeder extends Seeder
    */
   public function run(): void
   {
-    $nasabah = collect(json_decode(file_get_contents(storage_path('macetsenin.json'))));
+    $nasabah = collect(json_decode(file_get_contents(storage_path('macetrabu.json'))));
 
     $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 53)->get();
 
