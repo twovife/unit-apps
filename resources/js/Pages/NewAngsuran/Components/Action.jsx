@@ -32,13 +32,16 @@ import { Copy } from 'lucide-react';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 import { Button } from '@/shadcn/ui/button';
 import Pengajuan from './Pengajuan';
+import Loading from '@/Components/Loading';
+import '../../../../css/loader.css';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
-
   const isMobile = useIsMobile();
   const {
+    auth,
     server_filter: { closed_transaction },
   } = usePage().props;
+  const hasPermission = auth?.permissions?.includes('maintenance worker');
 
   const [loading, setLoading] = useState(false);
   const [erorAxios, setErorAxios] = useState(false);
@@ -82,7 +85,6 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
-      {/* <Loading show={loading} /> */}
       <DialogContent className={`w-[95vw] p-1 lg:p-6`}>
         <DialogHeader className={'max-h-10'}>
           <DialogTitle className="p-2">Isi Angsurans</DialogTitle>
@@ -195,8 +197,8 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                       ) : erorAxios ? (
                         <TableRow>
                           <TableCell className="font-semibold text-red-500">
-                            TERJADI KESALAHAN SAAT PENGAMBILAN DATA, REFRESH
-                            ATAU HUBUNGI IT
+                            TERJADI KESALAHAN SAAT PENGAMBILAN DATA, MOHON
+                            REFRESH BROWSER
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -217,22 +219,34 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
                 )
               )}
-              <BayarAngsuran
-                triggeredId={customerData.id}
-                triggeredPinjaman={customerData}
-                instalment={instalment}
-              />
-              <Pengajuan
-                triggeredId={customerData.id}
-                triggeredPinjaman={customerData}
-                instalment={instalment}
-              />
-              <JenisNasabah loan={customerData} />
-
-              <div className="flex items-center justify-end gap-3 p-3">
-                <div className="font-semibold">Hapus Pinjaman</div>
-                <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
-              </div>
+              {loading ? (
+                <div>Loading</div>
+              ) : (
+                <>
+                  <BayarAngsuran
+                    triggeredId={customerData.id}
+                    triggeredPinjaman={customerData}
+                    instalment={instalment}
+                  />
+                  <Pengajuan
+                    triggeredId={customerData.id}
+                    triggeredPinjaman={customerData}
+                    instalment={instalment}
+                  />
+                  <JenisNasabah loan={customerData} />
+                  {hasPermission ||
+                    (dayjs().diff(dayjs(customerData.tanggal_drop), 'day') <
+                      7 && (
+                      <div className="flex items-center justify-end gap-3 p-3">
+                        <div className="font-semibold">Hapus Pinjaman</div>
+                        <DeleteLoan
+                          id={customerData.id}
+                          onClosed={modalIsClosed}
+                        />
+                      </div>
+                    ))}
+                </>
+              )}
             </div>
           </div>
         </div>

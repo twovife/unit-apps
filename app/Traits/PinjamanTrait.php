@@ -223,15 +223,22 @@ trait PinjamanTrait
         $item->orderByDesc('transaction_date');
       }, 'manage_customer' => function ($item) {
         $item->with('loan');
-      }, 'branch', 'customer', 'loan_officer_grouping']
+      }, 'branch', 'customer', 'loan_officer_grouping', 'white_off']
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
       ->where('hari', $hari)
       ->where('transaction_loan_officer_grouping_id', $groupingId->id)
-      ->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
-        $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
-          ->where('nominal', '>', 0);
+      ->where(function ($item) use ($transaction_start_date, $transaction_date) {
+        $item->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
+          $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+            ->where('nominal', '>', 0);
+        })->orWhereHas('white_off', function ($query) use ($transaction_start_date, $transaction_date) {
+          $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+            ->where('nominal', '>', 0);
+        });
       })
+
+      //
       ->where('status', 'success')
       ->orderBy('drop_date')
       ->get();

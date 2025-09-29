@@ -837,7 +837,7 @@ class TransactionLoanController extends Controller
       }
 
       if ($request->transaction_date == $transactionLoan->drop_date) {
-        return redirect()->back()->withErrors('Yang ini baru didrop pak, isi yang bulan sebelumnya (pelunasan)');
+        return redirect()->back()->withErrors('Ini drop Baru, isi yang bulan sebelumnya (pelunasan)');
       }
 
       if ($request->transaction_date < $transactionLoan->drop_date) {
@@ -902,6 +902,10 @@ class TransactionLoanController extends Controller
       'transaction_date' => ['required', 'date'],
     ]);
 
+    if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
+      return redirect()->back()->withErrors('Hari Tidak Sama');
+    }
+
     try {
       DB::beginTransaction();
 
@@ -909,7 +913,9 @@ class TransactionLoanController extends Controller
       $reason = $transactionLoan->transaction_out_reasons_id;
 
       $transactionLoan->out_date = $outDate ? $outDate : $request->transaction_date;
+      $transactionLoan->out_status = 'LUNAS';
       $transactionLoan->transaction_out_reasons_id = $reason ? $reason : 4;
+      $transactionLoan->total_angsuran = $transactionLoan->loan_instalment()->sum('nominal') + $request->nominal;
 
 
       $transactionLoan->white_off()->create([
@@ -917,6 +923,7 @@ class TransactionLoanController extends Controller
         'transaction_date' => $request->transaction_date,
         'nominal' => $request->nominal,
       ]);
+
 
       $transactionLoan->save();
       DB::commit();
