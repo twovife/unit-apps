@@ -234,17 +234,10 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                     instalment={instalment}
                   />
                   <JenisNasabah loan={customerData} />
-                  {hasPermission ||
-                    (dayjs().diff(dayjs(customerData.tanggal_drop), 'day') <
-                      7 && (
-                      <div className="flex items-center justify-end gap-3 p-3">
-                        <div className="font-semibold">Hapus Pinjaman</div>
-                        <DeleteLoan
-                          id={customerData.id}
-                          onClosed={modalIsClosed}
-                        />
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-end gap-3 p-3">
+                    <div className="font-semibold">Hapus Pinjaman</div>
+                    <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
+                  </div>
                 </>
               )}
             </div>
