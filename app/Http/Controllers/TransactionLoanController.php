@@ -84,7 +84,7 @@ class TransactionLoanController extends Controller
     )->where('nik', $request->nik)->first();
 
 
-    $mapingBranch = $nasabah->manage_customer
+    $mapingBranch = $nasabah?->manage_customer
       ->groupBy(
         function ($customer) {
           return $customer->loan_officer_grouping->id; // Group by branch ID
