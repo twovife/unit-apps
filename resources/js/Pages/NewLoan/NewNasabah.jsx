@@ -542,7 +542,7 @@ const NewNasabah = ({
         <Tabs defaultValue="pengajuan" className="w-auto">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pengajuan">Kantor</TabsTrigger>
-            <TabsTrigger value="pinjaman">Kantor Lain (ML)</TabsTrigger>
+            <TabsTrigger value="pinjaman">Kantor Lain (NT)</TabsTrigger>
             <TabsTrigger value="pinjaman2">Kantor Lain (T)</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">

@@ -96,7 +96,7 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                     {loading ? 'Loading...' : 'Crash Kantor'}
                   </TabsTrigger>
                   <TabsTrigger disabled={loading} value="crashubmml">
-                    {loading ? 'Loading...' : 'Crash (ML)'}
+                    {loading ? 'Loading...' : 'Crash (NT)'}
                   </TabsTrigger>
                   <TabsTrigger disabled={loading} value="crashubm">
                     {loading ? 'Loading...' : 'Crash (T)'}

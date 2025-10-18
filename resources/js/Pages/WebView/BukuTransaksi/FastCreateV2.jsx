@@ -588,11 +588,12 @@ const FastCreateV2 = () => {
             data.request_nominal > 0 ? 'lg:w-1/2' : 'lg:w-full'
           }`}
         >
-          <div>History</div>
+          <div>Crash</div>
           <Tabs defaultValue="pengajuan" className="w-auto">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="pengajuan">Crash Kantor</TabsTrigger>
-              <TabsTrigger value="pinjaman">Crash Kantor Lain</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="pengajuan">Kantor</TabsTrigger>
+              <TabsTrigger value="pinjaman">Kantor Lain (NT)</TabsTrigger>
+              <TabsTrigger value="pinjaman2">Kantor Lain (T)</TabsTrigger>
             </TabsList>
             <TabsContent value="pengajuan">
               <div className="overflow-auto shadow-sm scrollbar-thin h-max">
@@ -601,7 +602,12 @@ const FastCreateV2 = () => {
             </TabsContent>
             <TabsContent value="pinjaman">
               <div className="overflow-auto shadow-sm scrollbar-thin h-max">
-                <RiwayatPengajuan data={customerData?.history_lain} />
+                <RiwayatPengajuan data={customerData?.history_macet_lain} />
+              </div>
+            </TabsContent>
+            <TabsContent value="pinjaman2">
+              <div className="overflow-auto shadow-sm scrollbar-thin h-max">
+                <RiwayatPengajuan data={customerData?.history_target} />
               </div>
             </TabsContent>
           </Tabs>

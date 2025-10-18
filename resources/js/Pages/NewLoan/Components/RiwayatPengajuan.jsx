@@ -60,16 +60,16 @@ const RiwayatPengajuan = ({ data }) => {
         header: 'Status',
         cell: ({ row, getValue }) =>
           getValue() ? (
-            <div className="flex flex-col lg:flex-row gap-2">
-              <div className="flex-1 lg:text-right">
+            <div className="flex gap-2">
+              <div className="flex-1/3 lg:flex-1/2 lg:text-right">
                 <BadgeStatus
-                  className="justify-center w-16"
+                  className="justify-center w-full lg:w-16"
                   value={row.original.status}
                 />
               </div>
-              <div className="flex-1 lg:text-left">
+              <div className="flex-2/3 lg:flex-1/2 lg:text-left">
                 <BadgeStatus
-                  className="w-24 justify-center"
+                  className="lg:w-24 w-full justify-center"
                   value={row.original.lunas}
                 />
               </div>
