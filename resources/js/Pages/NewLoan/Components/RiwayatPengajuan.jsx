@@ -17,6 +17,7 @@ import {
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
 
 const RiwayatPengajuan = ({ data }) => {
   const [customerData, setCustomerData] = useState([]);
@@ -28,11 +29,17 @@ const RiwayatPengajuan = ({ data }) => {
   const columns = useMemo(
     () => [
       {
+        accessorKey: 'branch',
+        header: 'Kantor',
+        cell: ({ row, getValue }) => <div>{getValue()}</div>,
+      },
+      {
         accessorKey: 'kelompok',
         header: 'Kelompok',
         cell: ({ row, getValue }) => (
           <div>
-            <div>{row.original.unit}</div> Kelompok {getValue()}
+            <div>{row.original.unit}</div>
+            {getValue()}
           </div>
         ),
       },
@@ -43,10 +50,31 @@ const RiwayatPengajuan = ({ data }) => {
       },
       {
         accessorKey: 'pinjaman',
-        header: 'Tgl Pinjaman',
+        header: 'Tgl Drop',
         cell: ({ row, getValue }) => (
-          <div>{dayjs(getValue()).format('DD-MM-YYYY')}</div>
+          <div>{dayjs(getValue()).format('DD-MM-YY')}</div>
         ),
+      },
+      {
+        accessorKey: 'status_show',
+        header: 'Status',
+        cell: ({ row, getValue }) =>
+          getValue() ? (
+            <div className="flex flex-col lg:flex-row gap-2">
+              <div className="flex-1 lg:text-right">
+                <BadgeStatus
+                  className="justify-center w-16"
+                  value={row.original.status}
+                />
+              </div>
+              <div className="flex-1 lg:text-left">
+                <BadgeStatus
+                  className="w-24 justify-center"
+                  value={row.original.lunas}
+                />
+              </div>
+            </div>
+          ) : null,
       },
     ],
     []
@@ -102,10 +130,6 @@ const RiwayatPengajuan = ({ data }) => {
           </TableRow>
         )}
       </TableBody>
-      <caption className="text-center text-xs text-red-500 mt-3">
-        Perubahan Sementara, Hasil Dari Rapim 03-JULI-2025, Selanjutnya akan
-        dibahas lebih detail
-      </caption>
     </Table>
   );
 };

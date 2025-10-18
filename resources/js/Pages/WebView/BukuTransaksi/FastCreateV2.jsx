@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Input } from '@/shadcn/ui/input';
 import InputLabel from '@/Components/InputLabel';
@@ -162,41 +162,46 @@ const FastCreateV2 = () => {
     );
   };
 
+  const controllerRef = useRef();
+
   const onNikSubmit = async (e) => {
     e.preventDefault();
+
+    // Cancel request sebelumnya kalau masih jalan
+    controllerRef.current?.abort();
+
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
     reset();
     setData('kelompok', currentKelompok);
-
     setAngsuran([]);
     setIsSaldoAkhir(false);
-
     setLoading(true);
     setErorAxios();
 
-    await axios({
-      method: 'post',
-      url: route('transaction.nasabah_buku_transaksi'),
-      data: {
-        nik: nik,
-      },
-    })
-      .then(function ({ data }) {
+    try {
+      const { data } = await axios.post(
+        route('transaction.nasabah_buku_transaksi'),
+        { nik },
+        { signal: controller.signal }
+      );
+
+      setLoading(false);
+      setData((prev) => ({
+        ...prev,
+        nik: data.return_nik,
+        isActiveMember: !!data.data,
+      }));
+      setCustomerData(data.data ?? []);
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log('Request dibatalkan (race condition prevented)');
+      } else {
+        setErorAxios(error.response?.data?.message || 'Terjadi kesalahan');
         setLoading(false);
-        setData((prevData) => ({
-          ...prevData,
-          nik: data.return_nik,
-          isActiveMember: data.data ? true : false,
-        }));
-        if (data.data) {
-          setCustomerData(data.data);
-        } else {
-          setCustomerData([]);
-        }
-      })
-      .catch(function ({ response }) {
-        setErorAxios(response.data.message);
-        setLoading(false);
-      });
+      }
+    }
   };
 
   const buttonValue = [
@@ -587,7 +592,7 @@ const FastCreateV2 = () => {
           <Tabs defaultValue="pengajuan" className="w-auto">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="pengajuan">Crash Kantor</TabsTrigger>
-              <TabsTrigger value="pinjaman">Crash UBM</TabsTrigger>
+              <TabsTrigger value="pinjaman">Crash Kantor Lain</TabsTrigger>
             </TabsList>
             <TabsContent value="pengajuan">
               <div className="overflow-auto shadow-sm scrollbar-thin h-max">

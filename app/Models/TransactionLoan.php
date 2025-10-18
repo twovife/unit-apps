@@ -143,6 +143,7 @@ class TransactionLoan extends Model
   {
     return $this->belongsTo(TransactionManageCustomer::class, 'transaction_manage_customer_id', 'id');
   }
+
   public function branch()
   {
     return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class);

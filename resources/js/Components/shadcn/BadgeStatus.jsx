@@ -10,11 +10,13 @@ const variantMap = {
   lama: 'outline',
   baru: 'yellow',
   true: 'green',
-false: 'destructive',
+  false: 'destructive',
   ml: 'default',
   mb: 'destructive',
   cm: 'yellow',
   normal: 'green',
+  lunas: 'greenoutline',
+  belum_lunas: 'outline',
 };
 const BadgeStatus = ({ value, onClick, children, ...props }) => {
   const variant = variantMap[value] || 'default';

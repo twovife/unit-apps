@@ -15,7 +15,7 @@ import { Label } from '@/shadcn/ui/label';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Search, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import useOptionGenerator from '@/Hooks/useOptionGenerator';
 import SelectComponent from '@/Components/shadcn/SelectComponent';
@@ -26,6 +26,7 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import RiwayatPengajuanLain from './Components/RiwayatPengajuanLain';
+import RiwayatPengajuanNonBranch from '@/Pages/NewLoan/Components/RiwayatPengajuanNonBranch';
 
 const NewNasabah = ({
   onClosed,
@@ -150,36 +151,51 @@ const NewNasabah = ({
     setNik(value);
   };
 
+  const controllerRef = useRef(null);
+
   const onNikSubmit = async (e) => {
     e.preventDefault();
+
+    // Batalkan request sebelumnya kalau masih aktif
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
     reset();
     setLoading(true);
     setErorAxios();
-    await axios({
-      method: 'post',
-      url: route('transaction.nasabah_buku_transaksi'),
-      data: {
-        nik: nik,
-      },
-    })
-      .then(function ({ data }) {
+
+    try {
+      const { data } = await axios.post(
+        route('transaction.nasabah_buku_transaksi'),
+        { nik },
+        { signal: controller.signal }
+      );
+
+      setLoading(false);
+      setData((prevData) => ({
+        ...prevData,
+        nik: data.return_nik,
+        isActiveMember: !!data.data,
+      }));
+
+      if (data.data) {
+        console.log(data.data);
+        setCustomerData(data.data);
+      } else {
+        setCustomerData([]);
+      }
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log('Request dibatalkan karena ada fetch baru.');
+      } else {
+        setErorAxios(error.response?.data?.message || 'Terjadi kesalahan.');
         setLoading(false);
-        setData((prevData) => ({
-          ...prevData,
-          nik: data.return_nik,
-          isActiveMember: data.data ? true : false,
-        }));
-        if (data.data) {
-          console.log(data.data);
-          setCustomerData(data.data);
-        } else {
-          setCustomerData([]);
-        }
-      })
-      .catch(function ({ response }) {
-        setErorAxios(response.data.message);
-        setLoading(false);
-      });
+      }
+    }
   };
 
   const modalIsClosed = (e) => {
@@ -522,10 +538,12 @@ const NewNasabah = ({
         </div>
       </div>
       <div className="w-auto lg:w-full">
+        <div className="text-xl mb-3 font-semibold">CRASH</div>
         <Tabs defaultValue="pengajuan" className="w-auto">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pengajuan">Crash Kantor</TabsTrigger>
-            <TabsTrigger value="pinjaman">Crash UBM</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pengajuan">Kantor</TabsTrigger>
+            <TabsTrigger value="pinjaman">Kantor Lain (ML)</TabsTrigger>
+            <TabsTrigger value="pinjaman2">Kantor Lain (T)</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">
             <div className="overflow-auto shadow-sm scrollbar-thin h-max">
@@ -534,7 +552,12 @@ const NewNasabah = ({
           </TabsContent>
           <TabsContent value="pinjaman">
             <div className="overflow-auto shadow-sm scrollbar-thin h-max">
-              <RiwayatPengajuanLain data={customerData?.history_lain} />
+              <RiwayatPengajuan data={customerData?.history_macet_lain} />
+            </div>
+          </TabsContent>
+          <TabsContent value="pinjaman2">
+            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
+              <RiwayatPengajuan data={customerData?.history_target} />
             </div>
           </TabsContent>
         </Tabs>

@@ -34,7 +34,7 @@ trait PinjamanTrait
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
-    $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer')
+    $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer', 'branch')
       ->where(function ($data) use ($startOfMonth, $endOfMonth) {
         $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
           ->orWhereBetween('request_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')]);

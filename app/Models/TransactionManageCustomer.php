@@ -31,6 +31,12 @@ class TransactionManageCustomer extends Model
     return $this->hasMany(TransactionLoan::class, 'transaction_manage_customer_id', 'id');
   }
 
+  public function latestTransaction()
+  {
+    return $this->hasOne(TransactionLoan::class, 'transaction_manage_customer_id', 'id')
+      ->latest('drop_date'); // atau pakai 'drop_date' kalau itu kolom waktunya
+  }
+
   // Di model ManageCustomer.php
 
 
