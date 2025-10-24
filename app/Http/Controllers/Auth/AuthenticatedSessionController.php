@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -36,7 +37,18 @@ class AuthenticatedSessionController extends Controller
 
     $request->session()->regenerate();
 
-    if (auth()->user()->hasPermissionTo('area')) {
+    $authUser = auth()->user();
+
+    if (!$authUser->isactive) {
+      // dd($authUser);
+      Auth::logout();
+
+      throw ValidationException::withMessages([
+        'username' => 'Akun Anda tidak aktif. Silakan hubungi administrator.',
+      ]);
+    }
+
+    if ($authUser->hasPermissionTo('area')) {
       return redirect()->route('mobile_apps.index');
     }
 
