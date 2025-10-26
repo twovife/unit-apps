@@ -23,10 +23,8 @@ class BatchInputSeeder extends Seeder
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw->map(function ($ns) {
       // dump($ns);
-      $ns->drop_date = $ns->drop_date;
       $ns->new_nik = AppHelper::callUnknownNik($ns, true);
       $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
-      $ns->saldo = $ns->saldo;
       $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
       return $ns;
     });
@@ -79,20 +77,20 @@ class BatchInputSeeder extends Seeder
             'status' => "open",
             'user_input' => $mantri,
             'drop_before' => 0,
-            'request_nominal' => $ns->pinjaman,
+            'request_nominal' => $ns->nominal,
           ]);
 
           $loan->update([
             'user_drop' => $mantri,
             'status' => "success",
-            'nominal_drop' => $ns->pinjaman,
+            'nominal_drop' => $ns->nominal,
             'request_nominal' => null,
           ]);
 
           if ($ns->saldo == 0) {
             $loan->loan_instalment()->create([
               'transaction_date' => $ns->tanggal_angsuran,
-              'nominal' => $ns->pinjaman * 1.3,
+              'nominal' => $ns->nominal * 1.3,
               'danatitipan' => 0,
               'transaction_loan_officer_grouping_id' => $mantriChoice->id,
               'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $ns->tanggal_angsuran),
