@@ -22,7 +22,7 @@ class BatchInputSeeder extends Seeder
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw->map(function ($ns) {
-      $ns->drop_date = $ns->drop;
+      $ns->drop_date = $ns->drop_date;
       $ns->new_nik = AppHelper::callUnknownNik($ns, true);
       $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
       $ns->saldo = $ns->saldo;
@@ -37,13 +37,13 @@ class BatchInputSeeder extends Seeder
 
     // Proses per 100 data
     $nasabah->chunk(100)->each(function ($batch) use ($officerGrouping) {
+
       DB::beginTransaction();
 
       try {
+
         // preload customer yang udah ada biar gak query berulang
-        $existingCustomers = TransactionCustomer::whereIn('nik', $batch->pluck('new_nik'))
-          ->get()
-          ->keyBy('nik');
+
 
         foreach ($batch as $ns) {
           $mantriChoice = $officerGrouping[$ns->kelompok] ?? null;
@@ -55,12 +55,10 @@ class BatchInputSeeder extends Seeder
           $mantri = AppHelper::getMantriNoauth($mantriChoice);
 
           // ambil customer dari cache atau buat baru
-          $customer = $existingCustomers[$ns->new_nik] ?? TransactionCustomer::create([
-            'nik' => $ns->new_nik,
+          $customer =  TransactionCustomer::firstOrCreate(['nik' => $ns->new_nik], [
             'nama' => $ns->nama,
             'alamat' => $ns->alamat,
           ]);
-          $existingCustomers[$ns->new_nik] = $customer;
 
           // relasi manage_customer
           $manage = $customer->manage_customer()->firstOrCreate([

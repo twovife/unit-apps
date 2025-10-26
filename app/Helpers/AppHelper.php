@@ -29,11 +29,11 @@ class AppHelper
 
   private static function generateUnknownNik2($request)
   {
-    $drop_date = Carbon::parse($request->drop_date)->format('ym');
+    $drop_date = Carbon::parse($request->drop_date)->format('dym');
     $branch_id = sprintf("%04d",  $request->branch_id);
     $kelompok_id = sprintf("%02d",  $request->kelompok);
     $randomNumber = random_int(1, 999999);
-    $formattedNumber = sprintf("%06d", $randomNumber);
+    $formattedNumber = sprintf("%04d", $randomNumber);
     // dd([$branch_id, $kelompok_id, $drop_date, $formattedNumber]);
     return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
   }
