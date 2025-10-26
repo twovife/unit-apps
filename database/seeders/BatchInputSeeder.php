@@ -30,13 +30,15 @@ class BatchInputSeeder extends Seeder
       return $ns;
     });
 
+    $totalBatch = ceil($nasabah->count() / 100);
+    $batchIndex = 1;
     // Preload grouping biar gak query berulang
     $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 21)
       ->get()
       ->keyBy('kelompok');
 
     // Proses per 100 data
-    $nasabah->chunk(100)->each(function ($batch) use ($officerGrouping) {
+    $nasabah->chunk(100)->each(function ($batch) use ($officerGrouping, &$batchIndex, $totalBatch) {
 
       DB::beginTransaction();
 
@@ -104,6 +106,13 @@ class BatchInputSeeder extends Seeder
         }
 
         DB::commit();
+
+        echo "✅ Batch {$batchIndex}/{$totalBatch} sukses (" . count($batch) . " data)\n";
+
+        // jeda biar server gak panas (0.05 detik)
+        usleep(100000);
+
+        $batchIndex++; // kasih jeda 0.1 detik biar gak kebanyakan transaksi per detik
       } catch (\Throwable $e) {
         DB::rollBack();
         echo "❌ Error batch: " . $e->getMessage() . "\n";
