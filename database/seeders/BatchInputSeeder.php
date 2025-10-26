@@ -22,7 +22,7 @@ class BatchInputSeeder extends Seeder
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw->map(function ($ns) {
-      dump($ns);
+      // dump($ns);
       $ns->drop_date = $ns->drop_date;
       $ns->new_nik = AppHelper::callUnknownNik($ns, true);
       $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
