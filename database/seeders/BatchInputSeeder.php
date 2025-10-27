@@ -32,7 +32,7 @@ class BatchInputSeeder extends Seeder
     $totalBatch = ceil($nasabah->count() / 100);
     $batchIndex = 1;
     // Preload grouping biar gak query berulang
-    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 21)
+    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 116)
       ->get()
       ->keyBy('kelompok');
 
