@@ -34,6 +34,7 @@ class TransactionManageCustomer extends Model
   public function latestTransaction()
   {
     return $this->hasOne(TransactionLoan::class, 'transaction_manage_customer_id', 'id')
+      ->where('status', 'success')
       ->latest('drop_date'); // atau pakai 'drop_date' kalau itu kolom waktunya
   }
 
