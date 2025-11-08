@@ -51,3 +51,7 @@ class TransactionManageCustomer extends Model
     return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class);
   }
 }
+
+
+
+

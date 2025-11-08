@@ -18,7 +18,7 @@ class BatchInputSeeder extends Seeder
    */
   public function run(): void
   {
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('datauploadbabat2_1.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('tuban2.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw->map(function ($ns) {
@@ -32,7 +32,7 @@ class BatchInputSeeder extends Seeder
     $totalBatch = ceil($nasabah->count() / 100);
     $batchIndex = 1;
     // Preload grouping biar gak query berulang
-    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 116)
+    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 26)
       ->get()
       ->keyBy('kelompok');
 
