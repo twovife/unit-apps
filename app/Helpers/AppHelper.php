@@ -65,28 +65,15 @@ class AppHelper
     return $mantri;
   }
 
-  public static function getMantriNoauth($officerGrouping)
+  public static function getMantriNoauth($officerGrouping, $idpimpinan)
   {
-
-    $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
+    $mantri = Employee::where('branch_id', $officerGrouping->branch_id)
       ->where('area', $officerGrouping->kelompok)
+      ->whereNull('date_resign')
       ->orderBy('id', 'desc')
-      ->get();
+      ->value('id');
 
-    // Coba temukan mantri yang aktif (tidak resign)
-    $mantri = $get_mantri->whereNull('date_resign')->first()?->id;
-
-    // Jika tidak ada mantri aktif yang ditemukan, ambil mantri pertama dari daftar
-    if (!$mantri) {
-      $mantri = $get_mantri->first()?->id;
-    }
-
-    // Jika daftar mantri kosong, gunakan ID employee dari user yang sedang login
-    if (!$mantri) {
-      $mantri = auth()->user()->employee->id;
-    }
-
-    return $mantri;
+    return $mantri ?? $idpimpinan;
   }
 
 

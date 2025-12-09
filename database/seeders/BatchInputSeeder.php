@@ -18,7 +18,7 @@ class BatchInputSeeder extends Seeder
    */
   public function run(): void
   {
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('kamismdn1.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('jumatmdn1.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
@@ -51,7 +51,7 @@ class BatchInputSeeder extends Seeder
             continue;
           }
 
-          $mantri = 1706;
+          $mantri = AppHelper::getMantriNoauth($mantriChoice, 1706);
 
           // ambil customer dari cache atau buat baru
           $customer =  TransactionCustomer::firstOrCreate(['nik' => $ns->new_nik], [
