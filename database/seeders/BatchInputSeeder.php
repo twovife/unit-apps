@@ -51,7 +51,7 @@ class BatchInputSeeder extends Seeder
             continue;
           }
 
-          $mantri = AppHelper::getMantriNoauth($mantriChoice) ?? 1706;
+          $mantri = 1706;
 
           // ambil customer dari cache atau buat baru
           $customer =  TransactionCustomer::firstOrCreate(['nik' => $ns->new_nik], [
