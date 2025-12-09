@@ -59,13 +59,11 @@ class BatchInputSeeder extends Seeder
             'alamat' => $ns->alamat,
           ]);
 
-
           // relasi manage_customer
           $manage = $customer->manage_customer()->firstOrCreate([
             'transaction_loan_officer_grouping_id' => $mantriChoice->id,
             'day' => $ns->day,
           ]);
-
 
           // buat loan
           $loan = $manage->loan()->create([
@@ -80,14 +78,12 @@ class BatchInputSeeder extends Seeder
             'request_nominal' => $ns->nominal,
           ]);
 
-
           $loan->update([
             'user_drop' => $mantri,
             'status' => "success",
             'nominal_drop' => $ns->nominal,
             'request_nominal' => null,
           ]);
-
 
           if ($ns->saldo == 0) {
             $loan->loan_instalment()->create([
@@ -115,7 +111,7 @@ class BatchInputSeeder extends Seeder
         DB::commit();
       } catch (\Throwable $e) {
         DB::rollBack();
-        echo "❌ Error batch: " . $e->getMessage() . "\n";
+        echo "❌ Error batch: " . $e->getMessage() . $ns->nik . "\n";
       }
     });
 
