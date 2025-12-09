@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TransactionLoan;
-use App\Models\TransactionLoanOfficerGrouping;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -20,12 +19,10 @@ class LunasSeeder extends Seeder
     try {
       DB::beginTransaction();
 
-      // $grouping = [301];
-      // $grouping = TransactionLoanOfficerGrouping::where('branch_id', 2)->pluck('id');
       TransactionLoan::with([
         'loan_instalment:id,transaction_loan_id,nominal,transaction_date',
         'white_off:id,transaction_loan_id,nominal'
-      ])->where('transaction_loan_officer_grouping_id', 188)
+      ])->where('transaction_loan_officer_grouping_id', 18)
         ->where('status', 'success')
         ->chunk(1000, function ($loans) {
           foreach ($loans as $loan) {
@@ -54,13 +51,6 @@ class LunasSeeder extends Seeder
                 'out_date'       => $latestDate,
                 'out_status'     => 'LUNAS Xs',
                 'transaction_out_reasons_id' => 6
-              ]);
-            } elseif ($totalAngsuran < $loan->pinjaman) {
-              $loan->update([
-                'total_angsuran' => $totalAngsuran,
-                'out_date'       => null,
-                'out_status'     => null,
-                'transaction_out_reasons_id' => null
               ]);
             }
 

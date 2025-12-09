@@ -64,6 +64,13 @@ return [
       'level' => env('LOG_LEVEL', 'debug'),
     ],
 
+    'swaplog' => [
+      'driver' => 'single',
+      'path' => storage_path('logs/swap.log'),
+      'level' => 'info',
+      'formatter' => JsonFormatter::class,
+    ],
+
 
     'scheduler_reports' => [
       'driver' => 'daily',
