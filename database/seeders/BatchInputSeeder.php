@@ -21,6 +21,7 @@ class BatchInputSeeder extends Seeder
     $nasabahRaw = collect(json_decode(file_get_contents(storage_path('kamismdn1.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
+
     $nasabah = $nasabahRaw->map(function ($ns) {
       // dump($ns);
       $ns->new_nik = AppHelper::callUnknownNik($ns, true);
@@ -58,11 +59,13 @@ class BatchInputSeeder extends Seeder
             'alamat' => $ns->alamat,
           ]);
 
+
           // relasi manage_customer
           $manage = $customer->manage_customer()->firstOrCreate([
             'transaction_loan_officer_grouping_id' => $mantriChoice->id,
             'day' => $ns->day,
           ]);
+
 
           // buat loan
           $loan = $manage->loan()->create([
@@ -77,12 +80,14 @@ class BatchInputSeeder extends Seeder
             'request_nominal' => $ns->nominal,
           ]);
 
+
           $loan->update([
             'user_drop' => $mantri,
             'status' => "success",
             'nominal_drop' => $ns->nominal,
             'request_nominal' => null,
           ]);
+
 
           if ($ns->saldo == 0) {
             $loan->loan_instalment()->create([
@@ -97,11 +102,8 @@ class BatchInputSeeder extends Seeder
           }
           // buat cicilan pertama
 
-
-          echo "✅ Loan {$loan->id} sukses di-generate\n";
+          echo "✅ Loan {$loan->id} || nik {$ns->nik} sukses di-generate\n";
         }
-
-        DB::commit();
 
         echo "✅ Batch {$batchIndex}/{$totalBatch} sukses (" . count($batch) . " data)\n";
 
@@ -109,6 +111,8 @@ class BatchInputSeeder extends Seeder
         usleep(100000);
 
         $batchIndex++; // kasih jeda 0.1 detik biar gak kebanyakan transaksi per detik
+
+        DB::commit();
       } catch (\Throwable $e) {
         DB::rollBack();
         echo "❌ Error batch: " . $e->getMessage() . "\n";
