@@ -18,7 +18,7 @@ class BatchInputSeeder extends Seeder
    */
   public function run(): void
   {
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('seninmdn5.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('mdn8rabu.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
@@ -33,7 +33,7 @@ class BatchInputSeeder extends Seeder
     $totalBatch = ceil($nasabah->count() / 100);
     $batchIndex = 1;
     // Preload grouping biar gak query berulang
-    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 59)
+    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 62)
       ->get()
       ->keyBy('kelompok');
 
@@ -51,7 +51,7 @@ class BatchInputSeeder extends Seeder
             continue;
           }
 
-          $mantri = AppHelper::getMantriNoauth($mantriChoice, 1723);
+          $mantri = AppHelper::getMantriNoauth($mantriChoice, 1804);
 
           // ambil customer dari cache atau buat baru
           $customer =  TransactionCustomer::firstOrCreate(['nik' => $ns->new_nik], [
@@ -73,7 +73,7 @@ class BatchInputSeeder extends Seeder
             'drop_date' => $ns->drop_date,
             'hari' => AppHelper::dateName($ns->drop_date),
             'status' => "open",
-            'user_input' => $mantri,
+            'user_input' => 4955,
             'drop_before' => 0,
             'request_nominal' => $ns->nominal,
           ]);
@@ -92,7 +92,7 @@ class BatchInputSeeder extends Seeder
               'danatitipan' => 0,
               'transaction_loan_officer_grouping_id' => $mantriChoice->id,
               'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $ns->tanggal_angsuran),
-              'user_input' => $mantri,
+              'user_input' => 4955,
               'user_mantri' => $mantri,
             ]);
           }
