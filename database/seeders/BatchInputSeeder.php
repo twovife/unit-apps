@@ -99,7 +99,7 @@ class BatchInputSeeder extends Seeder
           }
           // buat cicilan pertama
 
-          echo "✅ Loan {$loan->id} || nik {$ns->nik} sukses di-generate\n";
+          echo "✅ Loan {$loan->id} ||{$ns->drop_date} || nik {$ns->nik} sukses di-generate\n";
         }
 
         echo "✅ Batch {$batchIndex}/{$totalBatch} sukses (" . count($batch) . " data)\n";
