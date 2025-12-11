@@ -24,6 +24,7 @@ class BatchInputSeeder extends Seeder
 
     $nasabah = $nasabahRaw->map(function ($ns) {
       // dump($ns);
+      $ns->drop_date = Carbon::parse($ns->drop_date)->format('Y-m-d');
       $ns->new_nik = AppHelper::callUnknownNik($ns, true);
       $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
       $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
