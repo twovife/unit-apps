@@ -18,13 +18,12 @@ class BatchInputSeeder extends Seeder
    */
   public function run(): void
   {
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('mdn5rabu.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('madin5rabu.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
     $nasabah = $nasabahRaw->map(function ($ns) {
       // dump($ns);
-      $ns->drop_date = Carbon::parse($ns->drop_date)->format('Y-m-d');
       $ns->new_nik = AppHelper::callUnknownNik($ns, true);
       $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
       $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
