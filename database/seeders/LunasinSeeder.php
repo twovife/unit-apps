@@ -20,13 +20,12 @@ class LunasinSeeder extends Seeder
 
     try {
       DB::beginTransaction();
-      $grouping = TransactionLoanOfficerGrouping::where('branch_id', 29)
-        ->where('kelompok', 10)
+      $grouping = TransactionLoanOfficerGrouping::where('branch_id', 125)
         ->pluck('id');
       $loan = TransactionLoan::where('status', 'success')
-        ->whereBetween('drop_date', ["2025-06-01", "2025-06-31"])
+        ->whereBetween('drop_date', ["2025-06-01", "2025-10-31"])
         ->whereIn('transaction_loan_officer_grouping_id', $grouping)
-        ->where('hari', 'jumat')
+        ->whereIn('hari', ['senin', 'selasa', 'rabu'])
         ->get();
 
 
