@@ -18,7 +18,7 @@ class BatchInputSeeder extends Seeder
    */
   public function run(): void
   {
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('madin5rabu.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('mdn5kamis.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
@@ -29,6 +29,7 @@ class BatchInputSeeder extends Seeder
       $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
       return $ns;
     });
+
 
     $totalBatch = ceil($nasabah->count() / 100);
     $batchIndex = 1;
