@@ -738,8 +738,8 @@
     "nik": 3521114306810001,
     "nama": "WIWIN A",
     "alamat": "JATIGEMBOL 4/3",
-    "nominal": "",
-    "saldo": 0,
+    "nominal": 1000000,
+    "saldo": 1300000,
     "kelompok": 7,
     "branch_id": 56
   },
