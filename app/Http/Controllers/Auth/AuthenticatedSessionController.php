@@ -48,6 +48,8 @@ class AuthenticatedSessionController extends Controller
       ]);
     }
 
+
+
     if ($authUser->hasPermissionTo('area')) {
       return redirect()->route('mobile_apps.index');
     }
