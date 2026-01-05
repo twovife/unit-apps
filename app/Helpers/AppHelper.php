@@ -17,6 +17,7 @@ class AppHelper
 
 
 
+  // 2
   private static function generateUnknownNik($request)
   {
     $drop_date = Carbon::parse($request->drop_date)->format('ym');
@@ -27,6 +28,7 @@ class AppHelper
     return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
   }
 
+  // 3
   private static function generateUnknownNik2($request)
   {
     $drop_date = Carbon::parse($request->drop_date)->format('dym');
@@ -84,6 +86,8 @@ class AppHelper
     return strtolower(Carbon::parse($date)->locale('id')->dayName);
   }
 
+
+  // 1
   public static function callUnknownNik($request, $batch = false)
   {
 

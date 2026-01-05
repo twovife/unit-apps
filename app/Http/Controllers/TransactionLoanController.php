@@ -28,6 +28,7 @@ class TransactionLoanController extends Controller
   }
 
 
+  // 1
   public function fastcreatev2(Request $request)
   {
 
@@ -50,6 +51,8 @@ class TransactionLoanController extends Controller
   }
 
 
+
+  // 2
 
   //  GET NIK FOR AXIOS
   public function nasabah_buku_transaksi(Request $request)
