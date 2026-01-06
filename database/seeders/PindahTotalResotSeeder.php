@@ -20,10 +20,12 @@ class PindahTotalResotSeeder extends Seeder
     $kelompok_asal = TransactionLoanOfficerGrouping::where('branch_id', 34)
       ->where('kelompok', 9)
       ->firstOrFail();
-
+    echo 'dari kelompok' . $kelompok_asal->id . PHP_EOL;
     $kelompok_tujuan = TransactionLoanOfficerGrouping::where('branch_id', 34)
       ->where('kelompok', 6)
       ->firstOrFail();
+
+    echo 'ke kelompok' . $kelompok_tujuan->id . PHP_EOL;
 
     DB::transaction(function () use ($kelompok_asal, $kelompok_tujuan) {
 
@@ -32,8 +34,11 @@ class PindahTotalResotSeeder extends Seeder
         ->where('hari', 'SELASA')
         ->pluck('id');
 
+      echo 'jumlah loan yang dipindah: ' . $loanIds->count() . PHP_EOL;
+
       if ($loanIds->isEmpty()) {
         return;
+        echo "tidak ada loan yang dipindah" . PHP_EOL;
       }
 
       TransactionLoanInstalment::whereIn('transaction_loan_id', $loanIds)
@@ -41,10 +46,13 @@ class PindahTotalResotSeeder extends Seeder
           'transaction_loan_officer_grouping_id' => $kelompok_tujuan->id
         ]);
 
+      echo "instalment berhasil diupdate" . PHP_EOL;
+
       TransactionLoan::whereIn('id', $loanIds)
         ->update([
           'transaction_loan_officer_grouping_id' => $kelompok_tujuan->id
         ]);
+      echo "loan berhasil diupdate" . PHP_EOL;
 
       // export log id mana yang berhasil diupdate
 
