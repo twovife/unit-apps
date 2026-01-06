@@ -30,7 +30,7 @@ class PindahTotalResotSeeder extends Seeder
     DB::transaction(function () use ($kelompok_asal, $kelompok_tujuan) {
 
       $loanIds = TransactionLoan::where('transaction_loan_officer_grouping_id', $kelompok_asal->id)
-        ->where('out_status', '!=', 'LUNAS')
+        ->whereNull('out_status')
         ->where('hari', 'SELASA')
         ->pluck('id');
 
