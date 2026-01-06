@@ -27,6 +27,9 @@ class BatchInputSeeder extends Seeder
       $ns->new_nik = AppHelper::callUnknownNik($ns, true);
       $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
       $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
+      $ns->pinjaman = $ns->nominal * 1.3;
+      $ns->angsuran_pertama = ($ns->nominal * 1.3) - ($ns->saldo ?? 0);
+
       return $ns;
     });
 
@@ -89,10 +92,10 @@ class BatchInputSeeder extends Seeder
             'request_nominal' => null,
           ]);
 
-          if ($ns->saldo == 0) {
+          if ($ns->saldo ?? 0 == 0) {
             $loan->loan_instalment()->create([
               'transaction_date' => $ns->tanggal_angsuran,
-              'nominal' => $ns->nominal * 1.3,
+              'nominal' => $ns->pinjaman,
               'danatitipan' => 0,
               'transaction_loan_officer_grouping_id' => $mantriChoice->id,
               'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $ns->tanggal_angsuran),
@@ -100,6 +103,20 @@ class BatchInputSeeder extends Seeder
               'user_mantri' => $mantri,
             ]);
           }
+
+          if ($ns->pinjaman < $ns->saldo && ($ns->saldo ?? 0) > 0) {
+            $loan->loan_instalment()->create([
+              'transaction_date' => $ns->tanggal_angsuran,
+              'nominal' => $ns->angsuran_pertama,
+              'danatitipan' => 0,
+              'transaction_loan_officer_grouping_id' => $mantriChoice->id,
+              'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $ns->tanggal_angsuran),
+              'user_input' => 4955,
+              'user_mantri' => $mantri,
+            ]);
+          }
+
+
           // buat cicilan pertama
 
           echo "✅ Loan {$loan->id} ||{$ns->drop_date} || nik {$ns->nik} sukses di-generate\n";
