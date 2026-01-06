@@ -92,19 +92,7 @@ class BatchInputSeeder extends Seeder
             'request_nominal' => null,
           ]);
 
-          if ($ns->saldo ?? 0 == 0) {
-            $loan->loan_instalment()->create([
-              'transaction_date' => $ns->tanggal_angsuran,
-              'nominal' => $ns->pinjaman,
-              'danatitipan' => 0,
-              'transaction_loan_officer_grouping_id' => $mantriChoice->id,
-              'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $ns->tanggal_angsuran),
-              'user_input' => 4955,
-              'user_mantri' => $mantri,
-            ]);
-          }
-
-          if ($ns->pinjaman < $ns->saldo && ($ns->saldo ?? 0) > 0) {
+          if ($ns->pinjaman < $ns->saldo) {
             $loan->loan_instalment()->create([
               'transaction_date' => $ns->tanggal_angsuran,
               'nominal' => $ns->angsuran_pertama,
