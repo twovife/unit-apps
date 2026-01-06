@@ -92,7 +92,7 @@ class BatchInputSeeder extends Seeder
             'request_nominal' => null,
           ]);
 
-          if ($ns->pinjaman < $ns->saldo) {
+          if (($ns->nominal * 1.3) < $ns->saldo) {
             echo "⚠️ Nik {$ns->nik} saldo lebih besar dari pinjaman, lewati pembuatan angsuran\n";
             $loan->loan_instalment()->create([
               'transaction_date' => $ns->tanggal_angsuran,
