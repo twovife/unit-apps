@@ -18,7 +18,7 @@ class BatchInputSeeder extends Seeder
    */
   public function run(): void
   {
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('kts1.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('kts22.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
@@ -37,7 +37,7 @@ class BatchInputSeeder extends Seeder
     $totalBatch = ceil($nasabah->count() / 100);
     $batchIndex = 1;
     // Preload grouping biar gak query berulang
-    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 34)
+    $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', 35)
       ->get()
       ->keyBy('kelompok');
 
@@ -58,7 +58,7 @@ class BatchInputSeeder extends Seeder
           // 1804 mdn8
           // 1723 mdn5
           // 1622 mdn2
-          $mantri = AppHelper::getMantriNoauth($mantriChoice, 2566);
+          $mantri = AppHelper::getMantriNoauth($mantriChoice, 969);
 
           // ambil customer dari cache atau buat baru
           $customer =  TransactionCustomer::firstOrCreate(['nik' => $ns->new_nik], [
