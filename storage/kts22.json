@@ -14555,7 +14555,7 @@
     "nama": "LUKI ENDAH",
     "alamat": "PERAK/LEMAH PUTIH",
     "nominal": 750000,
-    "saldo": "",
+    "saldo": 0,
     "kelompok": 3,
     "branch_id": 35
   },
@@ -14581,7 +14581,7 @@
     "nama": "ROHIM",
     "alamat": "JL BROMO",
     "nominal": 500000,
-    "saldo": "",
+    "saldo": 0,
     "kelompok": 3,
     "branch_id": 35
   },
@@ -23720,7 +23720,7 @@
     "nama": "M DAFI",
     "alamat": "KUNIRAN",
     "nominal": 1000000,
-    "saldo": "",
+    "saldo": 0,
     "kelompok": 5,
     "branch_id": 35
   },
@@ -49603,7 +49603,7 @@
     "nama": "KARMILA",
     "alamat": "TAMBAKREJO",
     "nominal": 500000,
-    "saldo": "",
+    "saldo": 0,
     "kelompok": 10,
     "branch_id": 35
   },
