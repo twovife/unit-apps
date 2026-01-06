@@ -8,6 +8,7 @@ use App\Models\TransactionLoanOfficerGrouping;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PindahTotalResotSeeder extends Seeder
 {
@@ -45,6 +46,11 @@ class PindahTotalResotSeeder extends Seeder
           'transaction_loan_officer_grouping_id' => $kelompok_tujuan->id
         ]);
 
+      // export log id mana yang berhasil diupdate
+
+      Log::channel('swaplog')->info("BEFORE", [
+        'loans_moved' => $loanIds->toArray(),
+      ]);
       // optional: log sukses
     });
   }
