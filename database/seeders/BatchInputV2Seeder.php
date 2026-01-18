@@ -11,7 +11,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class BatchInputSeeder extends Seeder
+class BatchInputV2Seeder extends Seeder
 {
   /**
    * Run the database seeds.
