@@ -72,7 +72,7 @@ class BatchInputV2Seeder extends Seeder
       ->keyBy('kelompok');
 
     // Proses per 100 data
-    $nasabah->chunk(100)->each(function ($batch) use ($id_mantri_default, $officerGrouping, &$batchIndex, $totalBatch, $date_angs1, $date_angs2) {
+    $nasabah->chunk(100)->each(function ($batch) use ($id_mantri_default, $officerGrouping, &$batchIndex, $totalBatch) {
 
       DB::beginTransaction();
 
@@ -139,32 +139,39 @@ class BatchInputV2Seeder extends Seeder
               $date_angs1 = "2026-01-02";
               $date_angs2 = "2026-01-09";
               $date_angs3 = "2026-01-23";
+              break;
             case 'sabtu':
               $date_angs1 = "2026-01-03";
               $date_angs2 = "2026-01-10";
               $date_angs3 = "2026-01-17";
-              // minggu
+              break;
+            // minggu
             case 'senin':
               $date_angs1 = "2026-01-05";
               $date_angs2 = "2026-01-12";
               $date_angs3 = "2026-01-19";
+              break;
             case 'selasa':
               $date_angs1 = "2026-01-06";
               $date_angs2 = "2026-01-13";
               $date_angs3 = "2026-01-20";
+              break;
             case 'rabu':
               $date_angs1 = "2026-01-07";
               $date_angs2 = "2026-01-14";
               $date_angs3 = "2026-01-21";
+              break;
             case 'kamis':
               $date_angs1 = "2026-01-08";
               $date_angs2 = "2026-01-15";
               $date_angs3 = "2026-01-22";
+              break;
 
             default:
               $date_angs1 = "2026-01-05";
               $date_angs2 = "2026-01-12";
               $date_angs3 = "2026-01-19";
+              break;
           }
 
           if (is_numeric($ns->angs_1) && $ns->angs_1 > 0) {
