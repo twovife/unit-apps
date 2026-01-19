@@ -44,7 +44,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('pati5senin.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('selasakamispati5.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
@@ -62,8 +62,7 @@ class BatchInputV2Seeder extends Seeder
 
     $id_branch = 72;
     $id_mantri_default = 2565;
-    $date_angs1 = "2026-01-05";
-    $date_angs2 = "2026-01-12";
+
 
     $totalBatch = ceil($nasabah->count() / 100);
     $batchIndex = 1;
@@ -135,6 +134,39 @@ class BatchInputV2Seeder extends Seeder
             ]);
           }
 
+          switch (AppHelper::dateName($ns->drop_date)) {
+            case 'jumat':
+              $date_angs1 = "2026-01-02";
+              $date_angs2 = "2026-01-09";
+              $date_angs3 = "2026-01-23";
+            case 'sabtu':
+              $date_angs1 = "2026-01-03";
+              $date_angs2 = "2026-01-10";
+              $date_angs3 = "2026-01-17";
+              // minggu
+            case 'senin':
+              $date_angs1 = "2026-01-05";
+              $date_angs2 = "2026-01-12";
+              $date_angs3 = "2026-01-19";
+            case 'selasa':
+              $date_angs1 = "2026-01-06";
+              $date_angs2 = "2026-01-13";
+              $date_angs3 = "2026-01-20";
+            case 'rabu':
+              $date_angs1 = "2026-01-07";
+              $date_angs2 = "2026-01-14";
+              $date_angs3 = "2026-01-21";
+            case 'kamis':
+              $date_angs1 = "2026-01-08";
+              $date_angs2 = "2026-01-15";
+              $date_angs3 = "2026-01-22";
+
+            default:
+              $date_angs1 = "2026-01-05";
+              $date_angs2 = "2026-01-12";
+              $date_angs3 = "2026-01-19";
+          }
+
           if (is_numeric($ns->angs_1) && $ns->angs_1 > 0) {
             $this->createAngsuran(
               $loan,
@@ -150,6 +182,15 @@ class BatchInputV2Seeder extends Seeder
               $loan,
               $date_angs2,
               $ns->angs_2,
+              $mantriChoice,
+              $mantri
+            );
+          }
+          if (is_numeric($ns->angs_3) && $ns->angs_3 > 0) {
+            $this->createAngsuran(
+              $loan,
+              $date_angs3,
+              $ns->angs_3,
               $mantriChoice,
               $mantri
             );
