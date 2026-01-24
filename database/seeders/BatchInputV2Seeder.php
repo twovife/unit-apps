@@ -44,7 +44,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('rembang1sr.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('patriss.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
@@ -60,7 +60,7 @@ class BatchInputV2Seeder extends Seeder
     });
 
 
-    $id_branch = 65;
+    $id_branch = 70;
     $id_mantri_default = 2565;
 
 
