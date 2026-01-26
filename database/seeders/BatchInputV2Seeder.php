@@ -44,7 +44,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('r3sera.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('re3sera.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
