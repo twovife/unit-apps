@@ -15,17 +15,9 @@ class GantiMantriSeeder extends Seeder
    */
   public function run(): void
   {
-    $oldUserIds = [
-      6151,
-      6152,
-      6153,
-      6155,
-      6156,
-      6157,
-      6161
-    ];
+    $oldUserIds = [5776, 5777, 5778, 5779, 5780, 5781, 5782, 5783, 5784];
 
-    $newUserId = 9;
+    $newUserId = 370;
 
     DB::transaction(function () use ($oldUserIds, $newUserId) {
 
