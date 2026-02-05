@@ -1403,7 +1403,7 @@
     "nama": "SITI MAHMUDAH",
     "alamat": "KP PUNGKURAN KUTOHARJO 4/3",
     "nominal": 500000,
-    "saldo": "",
+    "saldo": 0,
     "kelompok": 2,
     "branch_id": 87
   },
