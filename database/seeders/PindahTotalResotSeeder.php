@@ -31,7 +31,7 @@ class PindahTotalResotSeeder extends Seeder
 
       $loanIds = TransactionLoan::where('transaction_loan_officer_grouping_id', $kelompok_asal->id)
         ->whereNull('out_status')
-        ->where('hari', 'selasa')
+        ->where('hari', 'rabu')
         ->pluck('id');
 
       echo 'jumlah loan yang dipindah: ' . $loanIds->count() . PHP_EOL;
