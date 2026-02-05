@@ -34,6 +34,8 @@ trait PinjamanTrait
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
+
+
     $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer', 'branch')
       ->where(function ($data) use ($startOfMonth, $endOfMonth) {
         $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
@@ -44,12 +46,18 @@ trait PinjamanTrait
       ->orderBy('drop_date')
       ->get();
 
+
+
     $loanCustId = collect($loan->pluck('transaction_manage_customer_id'))->unique();
+
+    
     $transactionManageCustomer = TransactionLoan::whereIn('transaction_manage_customer_id', $loanCustId)
       ->where('status', 'success')
       ->orderBy('id', 'desc')
       ->get()
       ->groupBy('transaction_manage_customer_id');
+
+
 
     $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer) {
       $countPinjaman = $transactionManageCustomer->get($drop->transaction_manage_customer_id, collect())->count('id') + 1;
@@ -139,7 +147,7 @@ trait PinjamanTrait
 
     return [
       'datas' => $sortDesc ? $pengajuan->sortKeysDesc()->values() : $pengajuan->values(),
-      'buku_rencana' => $buku_rencana_drop,
+      'buku_rencana' => $buku_rencana_drop ?? [],
       'server_filter' => [
         'month' => $transaction_date,
         'wilayah' => $wilayah,

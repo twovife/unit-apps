@@ -24,7 +24,7 @@ class MobileAppsMantriController extends Controller
 
   public function transaksi(Request $request)
   {
-    $data = $this->getTransactionLoan($request, true, true);
+    $data = $this->getTransactionLoan($request, false, true);
     return Inertia::render('MobileApps/BukuTransaksiMantri/TransaksiMantri', $data);
   }
 

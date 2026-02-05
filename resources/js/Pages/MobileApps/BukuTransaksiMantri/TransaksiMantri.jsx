@@ -26,8 +26,8 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
-            urlLink={route('mobile_apps.buku_transaksi_kepala')}
-            localState={'mobile_apps.buku_transaksi_kepala'}
+            urlLink={route('mobile_apps.transaksi')}
+            localState={'mobile_apps.transaksi'}
             searchMonth={true}
             searchHari={true}
             searchKelompok={server_filter.userAuthorized.canShowKelompok}
@@ -47,8 +47,8 @@ const TransaksiMantri = ({ datas, buku_rencana, auth, ...props }) => {
             </PopoverTrigger>
             <PopoverContent>
               <SearchComponent
-                urlLink={route('mobile_apps.buku_transaksi_kepala')}
-                localState={'mobile_apps.buku_transaksi_kepala'}
+                urlLink={route('mobile_apps.transaksi')}
+                localState={'mobile_apps.transaksi'}
                 searchMonth={true}
                 searchHari={true}
                 searchKelompok={server_filter.userAuthorized.canShowKelompok}

@@ -43,6 +43,8 @@ class TransactionLoanController extends Controller
 
     return Inertia::render('WebView/BukuTransaksi/InputMacet');
   }
+
+
   public function index_buku_transaksi(Request $request)
   {
 
