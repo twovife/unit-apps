@@ -15,7 +15,7 @@ class GantiMantriSeeder extends Seeder
    */
   public function run(): void
   {
-    $oldUserIds = [5776, 5777, 5778, 5779, 5780, 5781, 5782, 5783, 5784];
+    $oldUserIds = [5799];
 
     $newUserId = 370;
 

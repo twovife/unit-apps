@@ -18,11 +18,11 @@ class PindahTotalResotSeeder extends Seeder
   public function run(): void
   {
     $kelompok_asal = TransactionLoanOfficerGrouping::where('branch_id', 34)
-      ->where('kelompok', 9)
+      ->where('kelompok', 7)
       ->firstOrFail();
     echo 'dari kelompok' . $kelompok_asal->id . PHP_EOL;
     $kelompok_tujuan = TransactionLoanOfficerGrouping::where('branch_id', 34)
-      ->where('kelompok', 6)
+      ->where('kelompok', 1)
       ->firstOrFail();
 
     echo 'ke kelompok' . $kelompok_tujuan->id . PHP_EOL;
@@ -31,7 +31,7 @@ class PindahTotalResotSeeder extends Seeder
 
       $loanIds = TransactionLoan::where('transaction_loan_officer_grouping_id', $kelompok_asal->id)
         ->whereNull('out_status')
-        ->where('hari', 'sabtu')
+        ->where('hari', 'selasa')
         ->pluck('id');
 
       echo 'jumlah loan yang dipindah: ' . $loanIds->count() . PHP_EOL;
