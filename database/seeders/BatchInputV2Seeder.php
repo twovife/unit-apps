@@ -44,7 +44,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('senin1.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('senin2.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
 
@@ -146,8 +146,8 @@ class BatchInputV2Seeder extends Seeder
             // minggu
             case 'senin':
               $date_angs1 = "2026-02-02";
-              $date_angs2 = "2026-01-12";
-              $date_angs3 = "2026-01-19";
+              $date_angs2 = "2026-02-09";
+              $date_angs3 = "2026-02-16";
               break;
             case 'selasa':
               $date_angs1 = "2026-01-06";
