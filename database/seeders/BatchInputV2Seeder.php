@@ -145,7 +145,7 @@ class BatchInputV2Seeder extends Seeder
               break;
             // minggu
             case 'senin':
-              $date_angs1 = "2026-01-05";
+              $date_angs1 = "2026-02-02";
               $date_angs2 = "2026-01-12";
               $date_angs3 = "2026-01-19";
               break;
