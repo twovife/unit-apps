@@ -150,9 +150,9 @@ class BatchInputV2Seeder extends Seeder
               $date_angs3 = "2026-02-16";
               break;
             case 'selasa':
-              $date_angs1 = "2026-01-06";
-              $date_angs2 = "2026-01-13";
-              $date_angs3 = "2026-01-20";
+              $date_angs1 = "2026-02-03";
+              $date_angs2 = "2026-02-10";
+              $date_angs3 = "2026-02-17";
               break;
             case 'rabu':
               $date_angs1 = "2026-01-07";
