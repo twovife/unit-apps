@@ -47,17 +47,29 @@ class BatchInputV2Seeder extends Seeder
     $nasabahRaw = collect(json_decode(file_get_contents(storage_path('rabu.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
+    $nasabah = $nasabahRaw
+      ->filter(fn($ns) => ($ns->nik ?? null) === 'ub')
+      ->values() // reset index
+      ->map(function ($ns) {
+        $ns->new_nik = AppHelper::callUnknownNik($ns, true);
+        $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
+        $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
+        $ns->pinjaman = $ns->nominal * 1.3;
+        $ns->angsuran_pertama = ($ns->nominal * 1.3) - ($ns->saldo ?? 0);
 
-    $nasabah = $nasabahRaw->map(function ($ns) {
-      // dump($ns);
-      $ns->new_nik = AppHelper::callUnknownNik($ns, true);
-      $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
-      $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
-      $ns->pinjaman = $ns->nominal * 1.3;
-      $ns->angsuran_pertama = ($ns->nominal * 1.3) - ($ns->saldo ?? 0);
+        return $ns;
+      });
 
-      return $ns;
-    });
+    // $nasabah = $nasabahRaw->map(function ($ns) {
+    //   // dump($ns);
+    //   $ns->new_nik = AppHelper::callUnknownNik($ns, true);
+    //   $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
+    //   $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
+    //   $ns->pinjaman = $ns->nominal * 1.3;
+    //   $ns->angsuran_pertama = ($ns->nominal * 1.3) - ($ns->saldo ?? 0);
+
+    //   return $ns;
+    // });
 
     $id_branch = 87;
     $id_mantri_default = 2474;
