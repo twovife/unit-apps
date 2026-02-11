@@ -44,12 +44,12 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('rabu.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('kamis.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
-      ->filter(fn($ns) => ($ns->nik ?? null) === 'ub')
-      ->values() // reset index
+      // ->filter(fn($ns) => ($ns->nik ?? null) === 'ub')
+      // ->values() // reset index
       ->map(function ($ns) {
         $ns->new_nik = AppHelper::callUnknownNik($ns, true);
         $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
