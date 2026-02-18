@@ -44,7 +44,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('kamis.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('slg1kms.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
@@ -71,8 +71,8 @@ class BatchInputV2Seeder extends Seeder
     //   return $ns;
     // });
 
-    $id_branch = 87;
-    $id_mantri_default = 2474;
+    $id_branch = 81;
+    $id_mantri_default = 2445;
 
     $totalBatch = ceil($nasabah->count() / 100);
     $batchIndex = 1;
@@ -112,110 +112,126 @@ class BatchInputV2Seeder extends Seeder
             'day' => $ns->day,
           ]);
 
-          // buat loan
-          $loan = $manage->loan()->create([
-            'transaction_loan_officer_grouping_id' => $mantriChoice->id,
-            'request_date' => $ns->drop_date,
-            'user_mantri' => $mantri,
-            'drop_date' => $ns->drop_date,
-            'hari' => AppHelper::dateName($ns->drop_date),
-            'status' => "open",
-            'user_input' => 4955,
-            'drop_before' => 0,
-            'request_nominal' => $ns->nominal,
-          ]);
-
-          $loan->update([
-            'user_drop' => $mantri,
-            'status' => "success",
-            'nominal_drop' => $ns->nominal,
-            'request_nominal' => null,
-          ]);
-
-          if (($ns->nominal * 1.3) > $ns->saldo) {
-            $loan->loan_instalment()->create([
-              'transaction_date' => $ns->tanggal_angsuran,
-              'nominal' => $ns->angsuran_pertama,
-              'danatitipan' => 0,
+          if ($ns->type == "s") {
+            $loan = $manage->loan()->create([
               'transaction_loan_officer_grouping_id' => $mantriChoice->id,
-              'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $ns->tanggal_angsuran),
-              'user_input' => 4955,
+              'request_date' => $ns->drop_date,
               'user_mantri' => $mantri,
+              'drop_date' => $ns->drop_date,
+              'hari' => AppHelper::dateName($ns->drop_date),
+              'status' => "open",
+              'user_input' => 4955,
+              'drop_before' => 0,
+              'request_nominal' => $ns->nominal,
+            ]);
+
+            $loan->update([
+              'user_drop' => $mantri,
+              'status' => "success",
+              'nominal_drop' => $ns->nominal,
+              'request_nominal' => null,
+            ]);
+
+            if (($ns->nominal * 1.3) > $ns->saldo) {
+              $loan->loan_instalment()->create([
+                'transaction_date' => $ns->tanggal_angsuran,
+                'nominal' => $ns->angsuran_pertama,
+                'danatitipan' => 0,
+                'transaction_loan_officer_grouping_id' => $mantriChoice->id,
+                'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $ns->tanggal_angsuran),
+                'user_input' => 4955,
+                'user_mantri' => $mantri,
+              ]);
+            }
+
+            switch (AppHelper::dateName($ns->drop_date)) {
+              // case 'jumat':
+              //   $date_angs1 = "2026-01-02";
+              //   $date_angs2 = "2026-01-09";
+              //   $date_angs3 = "2026-01-23";
+              //   break;
+              // case 'sabtu':
+              //   $date_angs1 = "2026-01-03";
+              //   $date_angs2 = "2026-01-10";
+              //   $date_angs3 = "2026-01-17";
+              //   break;
+              // // minggu
+              // case 'senin':
+              //   $date_angs1 = "2026-02-02";
+              //   $date_angs2 = "2026-02-09";
+              //   $date_angs3 = "2026-02-16";
+              //   break;
+              // case 'selasa':
+              //   $date_angs1 = "2026-02-03";
+              //   $date_angs2 = "2026-02-10";
+              //   $date_angs3 = "2026-02-17";
+              //   break;
+              // case 'rabu':
+              //   $date_angs1 = "2026-02-04";
+              //   $date_angs2 = "2026-02-11";
+              //   $date_angs3 = "2026-02-18";
+              //   break;
+              case 'kamis':
+                $date_angs1 = "2026-02-05";
+                $date_angs2 = "2026-02-12";
+                $date_angs3 = "2026-02-19";
+                break;
+
+              default:
+                $date_angs1 = "2026-01-05";
+                $date_angs2 = "2026-01-12";
+                $date_angs3 = "2026-01-19";
+                break;
+            }
+
+            if (isset($ns->angs_1) && is_numeric($ns->angs_1) && $ns->angs_1 > 0) {
+              $this->createAngsuran(
+                $loan,
+                $date_angs1,
+                $ns->angs_1,
+                $mantriChoice,
+                $mantri
+              );
+            }
+
+            if (isset($ns->angs_2) && is_numeric($ns->angs_2) && $ns->angs_2 > 0) {
+              $this->createAngsuran(
+                $loan,
+                $date_angs2,
+                $ns->angs_2,
+                $mantriChoice,
+                $mantri
+              );
+            }
+            if (isset($ns->angs_3) && is_numeric($ns->angs_3) && $ns->angs_3 > 0) {
+              $this->createAngsuran(
+                $loan,
+                $date_angs3,
+                $ns->angs_3,
+                $mantriChoice,
+                $mantri
+              );
+            }
+
+            // buat cicilan pertama
+
+            echo "✅ Loan {$loan->id} ||{$ns->drop_date} || nik {$ns->nik} sukses di-generate\n";
+          } else if ($ns->type == "p") {
+            $loan = $manage->loan()->create([
+              'transaction_loan_officer_grouping_id' => $mantriChoice->id,
+              'request_date' => '2026-02-12',
+              'user_mantri' => $mantri,
+              'drop_date' => $ns->drop_date,
+              'hari' => AppHelper::dateName($ns->drop_date),
+              'status' => "open",
+              'user_input' => 4955,
+              'drop_before' => $ns->nominal,
+              'request_nominal' => $ns->nominal,
             ]);
           }
 
-          switch (AppHelper::dateName($ns->drop_date)) {
-            case 'jumat':
-              $date_angs1 = "2026-01-02";
-              $date_angs2 = "2026-01-09";
-              $date_angs3 = "2026-01-23";
-              break;
-            case 'sabtu':
-              $date_angs1 = "2026-01-03";
-              $date_angs2 = "2026-01-10";
-              $date_angs3 = "2026-01-17";
-              break;
-            // minggu
-            case 'senin':
-              $date_angs1 = "2026-02-02";
-              $date_angs2 = "2026-02-09";
-              $date_angs3 = "2026-02-16";
-              break;
-            case 'selasa':
-              $date_angs1 = "2026-02-03";
-              $date_angs2 = "2026-02-10";
-              $date_angs3 = "2026-02-17";
-              break;
-            case 'rabu':
-              $date_angs1 = "2026-02-04";
-              $date_angs2 = "2026-02-11";
-              $date_angs3 = "2026-02-18";
-              break;
-            case 'kamis':
-              $date_angs1 = "2026-01-08";
-              $date_angs2 = "2026-01-15";
-              $date_angs3 = "2026-01-22";
-              break;
+          // buat loan
 
-            default:
-              $date_angs1 = "2026-01-05";
-              $date_angs2 = "2026-01-12";
-              $date_angs3 = "2026-01-19";
-              break;
-          }
-
-          if (isset($ns->angs_1) && is_numeric($ns->angs_1) && $ns->angs_1 > 0) {
-            $this->createAngsuran(
-              $loan,
-              $date_angs1,
-              $ns->angs_1,
-              $mantriChoice,
-              $mantri
-            );
-          }
-
-          if (isset($ns->angs_2) && is_numeric($ns->angs_2) && $ns->angs_2 > 0) {
-            $this->createAngsuran(
-              $loan,
-              $date_angs2,
-              $ns->angs_2,
-              $mantriChoice,
-              $mantri
-            );
-          }
-          if (isset($ns->angs_3) && is_numeric($ns->angs_3) && $ns->angs_3 > 0) {
-            $this->createAngsuran(
-              $loan,
-              $date_angs3,
-              $ns->angs_3,
-              $mantriChoice,
-              $mantri
-            );
-          }
-
-          // buat cicilan pertama
-
-          echo "✅ Loan {$loan->id} ||{$ns->drop_date} || nik {$ns->nik} sukses di-generate\n";
         }
 
         echo "✅ Batch {$batchIndex}/{$totalBatch} sukses (" . count($batch) . " data)\n";
