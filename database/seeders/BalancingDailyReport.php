@@ -2,11 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Jobs\CountingBalance;
 use App\Models\TransactionDailyRecap;
 use App\Models\VIsBalanceDropWithDailyReport;
 use App\Models\VIsBalanceLoanWithDailyReport;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
 
