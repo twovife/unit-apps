@@ -44,7 +44,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('sabtu.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('senin.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
@@ -145,42 +145,42 @@ class BatchInputV2Seeder extends Seeder
             }
 
             switch (AppHelper::dateName($ns->drop_date)) {
-              // case 'jumat':
-              //   $date_angs1 = "2026-01-02";
-              //   $date_angs2 = "2026-01-09";
-              //   $date_angs3 = "2026-01-23";
-              //   break;
-              // case 'sabtu':
-              //   $date_angs1 = "2026-01-03";
-              //   $date_angs2 = "2026-01-10";
-              //   $date_angs3 = "2026-01-17";
-              //   break;
-              // // minggu
-              // case 'senin':
-              //   $date_angs1 = "2026-02-02";
-              //   $date_angs2 = "2026-02-09";
-              //   $date_angs3 = "2026-02-16";
-              //   break;
-              // case 'selasa':
-              //   $date_angs1 = "2026-02-03";
-              //   $date_angs2 = "2026-02-10";
-              //   $date_angs3 = "2026-02-17";
-              //   break;
-              // case 'rabu':
-              //   $date_angs1 = "2026-02-04";
-              //   $date_angs2 = "2026-02-11";
-              //   $date_angs3 = "2026-02-18";
-              //   break;
+              case 'senin':
+                $date_angs1 = "2026-02-02";
+                $date_angs2 = "2026-02-09";
+                $date_angs3 = "2026-02-16";
+                break;
+              case 'selasa':
+                $date_angs1 = "2026-02-03";
+                $date_angs2 = "2026-02-10";
+                $date_angs3 = "2026-02-17";
+                break;
+              // minggu
+              case 'rabu':
+                $date_angs1 = "2026-02-04";
+                $date_angs2 = "2026-02-11";
+                $date_angs3 = "2026-02-18";
+                break;
               case 'kamis':
                 $date_angs1 = "2026-02-05";
                 $date_angs2 = "2026-02-12";
                 $date_angs3 = "2026-02-19";
                 break;
+              case 'jumat':
+                $date_angs1 = "2026-02-06";
+                $date_angs2 = "2026-02-13";
+                $date_angs3 = "2026-02-20";
+                break;
+              case 'sabtu':
+                $date_angs1 = "2026-02-07";
+                $date_angs2 = "2026-02-14";
+                $date_angs3 = "2026-02-21";
+                break;
 
               default:
-                $date_angs1 = "2026-01-05";
-                $date_angs2 = "2026-01-12";
-                $date_angs3 = "2026-01-19";
+                $date_angs1 = "2026-02-02";
+                $date_angs2 = "2026-02-09";
+                $date_angs3 = "2026-02-16";
                 break;
             }
 
