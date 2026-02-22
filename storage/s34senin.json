@@ -2086,7 +2086,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "s",
+    "type": "p",
     "kelompok": 1,
     "branch_id": 84
   },
@@ -2103,7 +2103,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "s",
+    "type": "p",
     "kelompok": 1,
     "branch_id": 84
   },
@@ -15465,7 +15465,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "s",
+    "type": "p",
     "kelompok": 8,
     "branch_id": 84
   },
@@ -15482,7 +15482,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "s",
+    "type": "p",
     "kelompok": 8,
     "branch_id": 84
   },
@@ -15499,7 +15499,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "s",
+    "type": "p",
     "kelompok": 8,
     "branch_id": 84
   },
@@ -20021,7 +20021,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "P",
+    "type": "p",
     "kelompok": 3,
     "branch_id": 84
   },
@@ -20038,7 +20038,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "P",
+    "type": "p",
     "kelompok": 3,
     "branch_id": 84
   },
@@ -20055,7 +20055,7 @@
     "angs_1": "",
     "angs_2": "",
     "angs_3": "",
-    "type": "P",
+    "type": "p",
     "kelompok": 3,
     "branch_id": 84
   },
