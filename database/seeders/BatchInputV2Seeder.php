@@ -6,8 +6,6 @@ use App\Helpers\AppHelper;
 use App\Models\TransactionCustomer;
 use App\Models\TransactionLoanOfficerGrouping;
 use Carbon\Carbon;
-use Exception;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -44,7 +42,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('rabupos1.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('rabupos4.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
@@ -70,11 +68,11 @@ class BatchInputV2Seeder extends Seeder
     //   return $ns;
     // });
 
-    $id_branch = 81;
-    $id_mantri_default = 2445;
+    // $id_branch = 81;
+    // $id_mantri_default = 2445;
 
-    // $id_branch = 84;
-    // $id_mantri_default = 2400;
+    $id_branch = 84;
+    $id_mantri_default = 2400;
 
     // $id_branch = 85;
     // $id_mantri_default = 2429;
