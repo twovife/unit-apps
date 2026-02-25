@@ -70,11 +70,11 @@ class BatchInputV2Seeder extends Seeder
     //   return $ns;
     // });
 
-    $id_branch = 81;
-    $id_mantri_default = 2445;
+    // $id_branch = 81;
+    // $id_mantri_default = 2445;
 
-    // $id_branch = 84;
-    // $id_mantri_default = 2400;
+    $id_branch = 84;
+    $id_mantri_default = 2400;
 
     // $id_branch = 85;
     // $id_mantri_default = 2429;
