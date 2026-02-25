@@ -48,7 +48,7 @@ class BatchInputV2Seeder extends Seeder
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
-      ->filter(fn($ns) => ($ns->kelompok) === '10' || ($ns->kelompok) === '9') // filter kelompok 10, 11, 12
+      ->filter(fn($ns) => ($ns->kelompok) === 10 || ($ns->kelompok) === 9) // filter kelompok 10, 11, 12
       ->values() // reset index
       ->map(function ($ns) {
         $ns->new_nik = AppHelper::callUnknownNik($ns, true);
