@@ -44,19 +44,18 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('rabupos1.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('rabupos4.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
-      // ->filter(fn($ns) => ($ns->nik ?? null) === 'ub')
-      // ->values() // reset index
+      ->filter(fn($ns) => ($ns->kelompok) === '10' || ($ns->kelompok) === '9') // filter kelompok 10, 11, 12
+      ->values() // reset index
       ->map(function ($ns) {
         $ns->new_nik = AppHelper::callUnknownNik($ns, true);
         $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
         $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
         $ns->pinjaman = $ns->nominal * 1.3;
         $ns->angsuran_pertama = ($ns->nominal * 1.3) - ($ns->saldo ?? 0);
-
         return $ns;
       });
 
