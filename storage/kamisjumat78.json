@@ -827,7 +827,7 @@
     "saldo": 156000,
     "angs_1": 26000,
     "angs_2": 26000,
-    "angs_3": 5000260000,
+    "angs_3": 26000,
     "kelompok": 7,
     "type": "s",
     "branch_id": 84
@@ -892,10 +892,10 @@
     "nama": "SETIASIH",
     "alamat": "KARANG SALAM",
     "nominal": 2000000,
-    "saldo": 234000,
+    "saldo": 2340000,
     "angs_1": 260000,
     "angs_2": 260000,
-    "angs_3": 260,
+    "angs_3": 260000,
     "kelompok": 7,
     "type": "s",
     "branch_id": 84
