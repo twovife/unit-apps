@@ -42,7 +42,7 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('seninpos5.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('sabtupos5.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
@@ -152,7 +152,6 @@ class BatchInputV2Seeder extends Seeder
                 $date_angs1 = "2026-02-02";
                 $date_angs2 = "2026-02-09";
                 $date_angs3 = "2026-02-16";
-                $date_angs4 = "2026-02-23";
                 break;
               case 'selasa':
                 $date_angs1 = "2026-02-03";
@@ -212,15 +211,6 @@ class BatchInputV2Seeder extends Seeder
                 $loan,
                 $date_angs3,
                 $ns->angs_3,
-                $mantriChoice,
-                $mantri
-              );
-            }
-            if (isset($ns->angs_4) && is_numeric($ns->angs_4) && $ns->angs_4 > 0) {
-              $this->createAngsuran(
-                $loan,
-                $date_angs4,
-                $ns->angs_4,
                 $mantriChoice,
                 $mantri
               );
