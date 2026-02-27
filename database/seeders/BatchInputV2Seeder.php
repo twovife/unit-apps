@@ -42,18 +42,21 @@ class BatchInputV2Seeder extends Seeder
   public function run(): void
   {
 
-    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('sabtupos5.json'))));
+    $nasabahRaw = collect(json_decode(file_get_contents(storage_path('jumatpos5.json'))));
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
-      // ->filter(fn($ns) => ($ns->kelompok) === 10 || ($ns->kelompok) === 9) // filter kelompok 10, 11, 12
-      // ->values() // reset index
+      ->filter(fn($ns) => empty($ns->nik))   // hanya nik null / kosong
+      ->values()
       ->map(function ($ns) {
+        $ns->nik = 'ub';   // set nik baru
+
         $ns->new_nik = AppHelper::callUnknownNik($ns, true);
         $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
         $ns->tanggal_angsuran = Carbon::parse($ns->drop_date)->addWeek()->toDateString();
         $ns->pinjaman = $ns->nominal * 1.3;
         $ns->angsuran_pertama = ($ns->nominal * 1.3) - ($ns->saldo ?? 0);
+
         return $ns;
       });
 
@@ -126,6 +129,7 @@ class BatchInputV2Seeder extends Seeder
               'user_input' => 4955,
               'drop_before' => 0,
               'request_nominal' => $ns->nominal,
+              'notes' => 'upload batch upload eror'
             ]);
 
             $loan->update([
