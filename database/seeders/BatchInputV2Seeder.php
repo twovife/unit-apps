@@ -129,7 +129,6 @@ class BatchInputV2Seeder extends Seeder
               'user_input' => 4955,
               'drop_before' => 0,
               'request_nominal' => $ns->nominal,
-              'notes' => 'upload batch upload eror'
             ]);
 
             $loan->update([
