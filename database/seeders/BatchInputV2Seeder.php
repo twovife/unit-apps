@@ -119,6 +119,7 @@ class BatchInputV2Seeder extends Seeder
           ]);
 
           if ($ns->type == "s") {
+            echo "🔄 Processing NIK {$ns->nik} (new: {$ns->new_nik}) - Kelompok: {$ns->kelompok} - Mantri: {$mantri} - Drop: {$ns->drop_date} - Nominal: {$ns->nominal}\n";
             $loan = $manage->loan()->create([
               'transaction_loan_officer_grouping_id' => $mantriChoice->id,
               'request_date' => $ns->drop_date,
