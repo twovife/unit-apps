@@ -190,34 +190,34 @@ class BatchInputV2Seeder extends Seeder
                 break;
             }
 
-            if (isset($ns->angs_1) && is_numeric($ns->angs_1) && $ns->angs_1 > 0) {
-              $this->createAngsuran(
-                $loan,
-                $date_angs1,
-                $ns->angs_1,
-                $mantriChoice,
-                $mantri
-              );
-            }
+            // if (isset($ns->angs_1) && is_numeric($ns->angs_1) && $ns->angs_1 > 0) {
+            //   $this->createAngsuran(
+            //     $loan,
+            //     $date_angs1,
+            //     $ns->angs_1,
+            //     $mantriChoice,
+            //     $mantri
+            //   );
+            // }
 
-            if (isset($ns->angs_2) && is_numeric($ns->angs_2) && $ns->angs_2 > 0) {
-              $this->createAngsuran(
-                $loan,
-                $date_angs2,
-                $ns->angs_2,
-                $mantriChoice,
-                $mantri
-              );
-            }
-            if (isset($ns->angs_3) && is_numeric($ns->angs_3) && $ns->angs_3 > 0) {
-              $this->createAngsuran(
-                $loan,
-                $date_angs3,
-                $ns->angs_3,
-                $mantriChoice,
-                $mantri
-              );
-            }
+            // if (isset($ns->angs_2) && is_numeric($ns->angs_2) && $ns->angs_2 > 0) {
+            //   $this->createAngsuran(
+            //     $loan,
+            //     $date_angs2,
+            //     $ns->angs_2,
+            //     $mantriChoice,
+            //     $mantri
+            //   );
+            // }
+            // if (isset($ns->angs_3) && is_numeric($ns->angs_3) && $ns->angs_3 > 0) {
+            //   $this->createAngsuran(
+            //     $loan,
+            //     $date_angs3,
+            //     $ns->angs_3,
+            //     $mantriChoice,
+            //     $mantri
+            //   );
+            // }
 
             // buat cicilan pertama
 
