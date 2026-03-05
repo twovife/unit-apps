@@ -46,10 +46,10 @@ class BatchInputV2Seeder extends Seeder
 
     // Pre-process JSON dulu (biar gak hitung carbon/helper berulang kali)
     $nasabah = $nasabahRaw
-      // ->filter(fn($ns) => empty($ns->nik))   // hanya nik null / kosong
-      // ->values()
+      ->filter(fn($ns) => empty($ns->nik))   // hanya nik null / kosong
+      ->values()
       ->map(function ($ns) {
-        // $ns->nik = 'ub';   // set nik baru
+        $ns->nik = 'ub';   // set nik baru
 
         $ns->new_nik = AppHelper::callUnknownNik($ns, true);
         $ns->day = Carbon::parse($ns->drop_date)->dayOfWeek;
