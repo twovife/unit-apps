@@ -6154,7 +6154,7 @@
     "nama": "JUDAS G",
     "alamat": "SERUT",
     "nominal": 500000,
-    "saldo": "",
+    "saldo": 0,
     "type": "s",
     "kelompok": 6,
     "branch_id": 76
@@ -12299,7 +12299,7 @@
     "nik": "ub",
     "nama": "titik Hartatik",
     "alamat": "mandak",
-    "nominal": "",
+    "nominal": 500000,
     "saldo": 0,
     "type": "s",
     "kelompok": 10,
