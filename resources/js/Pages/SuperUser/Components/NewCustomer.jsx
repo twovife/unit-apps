@@ -33,7 +33,7 @@ const NewCustomer = ({
         status_angsuran_: "",
     });
     const [inputColumns, setInputColumns] = useState([{ id: 1 }]);
-    console.log();
+
 
     const addInputColumn = () => {
         const newId = inputColumns[inputColumns.length - 1].id + 1;
@@ -95,7 +95,6 @@ const NewCustomer = ({
     const onHandleCurencyChange = (value, name) => {
         setData(name, value);
     };
-    console.log(data);
     const onSubmitCreate = (e) => {
         e.preventDefault();
         post(url);
@@ -216,7 +215,7 @@ const NewCustomer = ({
                     <CurrencyInput
                         name="pinjaman"
                         id="pinjaman"
-                        className={`border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200 disabled:bg-black/10 dark:disabled:bg-white/10 block w-full text-sm mt-2`}
+                        className={`border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200 disabled:bg-black/10 dark:disabled:bg-white/10 block w-full text-sm mt-2`}
                         allowDecimals={false}
                         prefix="Rp. "
                         min={1}
@@ -267,7 +266,7 @@ const NewCustomer = ({
                                 <CurrencyInput
                                     name={`angsuran_${column.id}`}
                                     id={`angsuran_${column.id}`}
-                                    className={`border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200 disabled:bg-black/10 dark:disabled:bg-white/10 block w-full`}
+                                    className={`border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200 disabled:bg-black/10 dark:disabled:bg-white/10 block w-full`}
                                     allowDecimals={false}
                                     prefix="Rp. "
                                     min={1}

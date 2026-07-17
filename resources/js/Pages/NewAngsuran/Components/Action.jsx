@@ -31,17 +31,23 @@ import { useIsMobile } from '@/Hooks/use-mobile';
 import { Copy } from 'lucide-react';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 import { Button } from '@/shadcn/ui/button';
+import Pengajuan from './Pengajuan';
+import Loading from '@/Components/Loading';
+import '../../../../css/loader.css';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   const isMobile = useIsMobile();
   const {
+    auth,
     server_filter: { closed_transaction },
   } = usePage().props;
+  const hasPermission = auth?.permissions?.includes('maintenance worker');
 
   const [loading, setLoading] = useState(false);
   const [erorAxios, setErorAxios] = useState(false);
   const { isCreator } = useFrontEndPermission();
   const [customerData, setCustomerData] = useState({});
+  const [pemutihan, setPemutihan] = useState(null);
 
   const [instalment, setInstalment] = useState([]);
 
@@ -56,28 +62,13 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
         setLoading(false);
         setCustomerData(data.pinjaman);
         setInstalment(data.instalment);
+        setPemutihan(data.pemutihan);
       })
       .catch(function ({ response }) {
-        setErorAxios();
+        setErorAxios(true);
       });
   };
   // check is pengajuan exist
-  const checkPengajuanUlang = async (triggeredId) => {
-    // console.log(triggeredId);
-    setLoading(true);
-    setErorAxios();
-    await axios({
-      method: 'get',
-      url: route('pinjaman.checkpengajuan', triggeredId),
-    })
-      .then(function ({ data }) {
-        setLoading(false);
-        console.log(data);
-      })
-      .catch(function ({ response }) {
-        setErorAxios();
-      });
-  };
 
   useEffect(() => {
     if (triggeredId) {
@@ -89,18 +80,15 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
     onClosed();
     setCustomerData({});
     setInstalment([]);
+    setPemutihan(null);
   };
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
-      {/* <Loading show={loading || processing} /> */}
       <DialogContent className={`w-[95vw] p-1 lg:p-6`}>
         <DialogHeader className={'max-h-10'}>
-          <DialogTitle className="p-2">Isi Angsuran</DialogTitle>
-          <Button
-            type="button"
-            onClick={() => checkPengajuanUlang(triggeredId)}
-          />
+          <DialogTitle className="p-2">Isi Angsurans</DialogTitle>
+          {/* <Button type="button" /> */}
         </DialogHeader>
         <div className="h-[80vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
           <Card className="w-full">
@@ -119,11 +107,43 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
             </CardContent>
           </Card>
           <div className="flex flex-col w-full gap-3 mt-3 lg:flex-row">
-            <Card className="flex-[5]">
+            <Card className="flex-5">
               <CardHeader>
                 <CardTitle>Rincian Angsuran</CardTitle>
               </CardHeader>
               <CardContent className="p-1 lg:p-5">
+                {pemutihan && (
+                  <div className="w-full">
+                    <Table className="text-xs">
+                      <TableHeader className="bg-gray-200">
+                        <TableRow>
+                          <TableHead className="text-center">
+                            Tanggal Pemutihan
+                          </TableHead>
+                          <TableHead className="text-center">
+                            Nominal Pemutihan
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow className="text-center">
+                          <TableCell>
+                            {dayjs(pemutihan.transaction_date).format(
+                              'DD-MM-YYYY'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <FormatNumbering
+                              className="text-center"
+                              value={pemutihan.nominal}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
                 <div className="w-full overflow-auto">
                   <Table className="text-xs">
                     <TableHeader className="bg-gray-200">
@@ -162,7 +182,9 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                             >
                               <FormatNumbering value={item.nominal} />
                             </TableCell>
-                            <TableCell>{item.saldo}</TableCell>
+                            <TableCell>
+                              <FormatNumbering value={item.saldo} />
+                            </TableCell>
                             <TableCell className="hidden lg:block">
                               {item.mantri}
                             </TableCell>
@@ -172,6 +194,13 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                             </TableCell>
                           </TableRow>
                         ))
+                      ) : erorAxios ? (
+                        <TableRow>
+                          <TableCell className="font-semibold text-red-500">
+                            TERJADI KESALAHAN SAAT PENGAMBILAN DATA, MOHON
+                            REFRESH BROWSER
+                          </TableCell>
+                        </TableRow>
                       ) : (
                         <TableRow>
                           <TableCell>Menunggu data . . .</TableCell>
@@ -182,7 +211,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 </div>
               </CardContent>
             </Card>
-            <div className="flex-[2] relative">
+            <div className="flex-2 relative">
               {customerData.lunas == true ? (
                 <NoEditOverlay value="Pinjaman Sudah Lunas" />
               ) : (
@@ -190,17 +219,27 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
                 )
               )}
-              <BayarAngsuran
-                triggeredId={customerData.id}
-                triggeredPinjaman={customerData}
-                instalment={instalment}
-              />
-              <JenisNasabah loan={customerData} />
-
-              <div className="flex items-center justify-end gap-3 p-3">
-                <div className="font-semibold">Hapus Pinjaman</div>
-                <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
-              </div>
+              {loading ? (
+                <div>Loading</div>
+              ) : (
+                <>
+                  <BayarAngsuran
+                    triggeredId={customerData.id}
+                    triggeredPinjaman={customerData}
+                    instalment={instalment}
+                  />
+                  <Pengajuan
+                    triggeredId={customerData.id}
+                    triggeredPinjaman={customerData}
+                    instalment={instalment}
+                  />
+                  <JenisNasabah loan={customerData} />
+                  <div className="flex items-center justify-end gap-3 p-3">
+                    <div className="font-semibold">Hapus Pinjaman</div>
+                    <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -228,6 +267,7 @@ const PinjamanWebTable = ({ customerData }) => {
           <TableHead className="text-center">Nama Mantri</TableHead>
           <TableHead className="text-center">Status</TableHead>
           <TableHead className="text-center">Ket</TableHead>
+          <TableHead className="text-center">Keluar Target</TableHead>
           <TableHead className="text-center">Lunas</TableHead>
         </TableRow>
       </TableHeader>
@@ -252,6 +292,11 @@ const PinjamanWebTable = ({ customerData }) => {
               <StatusPinjaman value={customerData.status_pinjaman} />
             </TableCell>
             <TableCell>{customerData.notes}</TableCell>
+            <TableCell>
+              {customerData.out_date
+                ? dayjs(customerData.out_date).format('DD/MM')
+                : ''}
+            </TableCell>
             <TableCell>
               <StatusPinjaman value={customerData.lunas ? 'Lunas' : 'Belum'} />
             </TableCell>
@@ -339,6 +384,14 @@ const MobileCardList = ({ customerData }) => {
           <div className="flex justify-between">
             <span className="font-medium text-gray-600">Ket:</span>
             <span className="text-gray-800">{customerData.notes}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-600">Keluar Target:</span>
+            <span className="text-gray-800">
+              {customerData.out_date
+                ? dayjs(customerData.out_date).format('DD/MM')
+                : ''}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="font-medium text-gray-600">LUNAS:</span>

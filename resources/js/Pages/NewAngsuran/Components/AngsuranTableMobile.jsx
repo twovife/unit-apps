@@ -14,8 +14,10 @@ import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
+import { Input } from '@/shadcn/ui/input';
 import TextInput from '@/Components/TextInput';
-import { Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 
 const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
   const [data, setData] = useState([]);
@@ -40,14 +42,6 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
       setData(filteredData);
     }
   }, [datas, filterName]);
-
-  const calculateInstalment = (data, keyToSum) => {
-    const result = data.reduce(
-      acc + parseInt(item.instalment[keyToSum]?.total_nominal ?? 0),
-      0
-    );
-    return result;
-  };
 
   const calculateTotals = (data, keyToSum) => {
     const result = data.reduce(
@@ -82,26 +76,29 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
       }
     });
   };
-
   return (
-    <div className="relative overflow-scroll h-[70vh] lg:h-[85vh] ">
-      <div className="relative w-full mb-2 lg:w-auto lg:max-w-60">
-        <TextInput
-          type="text"
-          placeholder="Cari Nama"
-          value={filterName}
-          onChange={(e) => setFilterName(e.target.value)}
-          className="w-full text-xs"
-        />
-        <X
-          className="absolute right-0 w-auto h-5 text-gray-400 -translate-x-1/2 -translate-y-1/2 top-1/2"
-          onClick={(e) => setFilterName('')}
-        />
-      </div>
-      <Table className="text-[0.6rem]/tight sm:text-xs/tight">
+    <div className="relative overflow-auto h-[70vh] lg:h-[85vh] scrollbar-none">
+      <Table className="text-xs rounded-lg">
         <TableHeader className="sticky top-0 left-0 z-10">
+          <TableRow>
+            <TableHead colSpan="4" className="bg-white">
+              <div className="relative w-full mb-2 lg:w-auto lg:max-w-60">
+                <TextInput
+                  type="text"
+                  placeholder="Cari Nama"
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  className="w-full text-xs"
+                />
+                <X
+                  className="absolute right-0 w-auto h-5 text-gray-400 -translate-x-1/2 -translate-y-1/2 top-1/2"
+                  onClick={(e) => setFilterName('')}
+                />
+              </div>
+            </TableHead>
+          </TableRow>
           <TableRow className="bg-gray-200">
-            {/* <TableHead className="text-center">No</TableHead> */}
+            <TableHead className="text-center">No</TableHead>
             <TableHead className="text-center">Tanggal</TableHead>
             <TableHead className="text-center">Nasabah</TableHead>
             <TableHead className="text-center border-x border-x-black">
@@ -109,7 +106,7 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
             </TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="text-tinny">
           {data ? (
             data.map((row, i) => (
               <React.Fragment key={i}>
@@ -123,14 +120,18 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                 {row.data.map((subrow, i) => (
                   <TableRow
                     className={`${
-                      subrow.is_paid ? 'bg-green-200 hover:bg-green-50' : ''
+                      subrow.is_paid
+                        ? subrow.angs_today == 0
+                          ? 'bg-red-300 hover:bg-red-400'
+                          : 'bg-green-200 hover:bg-green-50'
+                        : ''
                     }}`}
                     key={i}
                   >
-                    {/* <TableCell onClick={() => handleRowClick(subrow.id)}>
+                    <TableCell onClick={() => handleRowClick(subrow.id)}>
                       {i + 1}
-                    </TableCell> */}
-                    <TableCell className="p-1">
+                    </TableCell>
+                    <TableCell>
                       <div className="space-y-2 text-center">
                         <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
                         <div>
@@ -145,29 +146,33 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
                             }
                             onClick={() => onCreateShowOpen(subrow.id)}
                           >
-                            {subrow.lunas ? (
-                              <Check className="text-xs" />
-                            ) : subrow.is_paid ? (
-                              'Paid'
-                            ) : (
-                              'Pay'
-                            )}
+                            {subrow.lunas
+                              ? 'Lunas'
+                              : subrow.is_paid
+                              ? 'Dibayar'
+                              : 'Bayar'}
                           </Button>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="p-1">
-                      <div className="text-xs font-semibold">{subrow.nama}</div>
-                      <div>{subrow.nik}</div>
-                      <div className="text-ellipsis overflow-hidden ...">
-                        {subrow.alamat}
+                    <TableCell>
+                      <div className="text-xs font-semibold">
+                        {subrow.nama}
+                        {subrow.notes && (
+                          <BadgeStatus className="ml-2">
+                            {subrow.notes}
+                          </BadgeStatus>
+                        )}
                       </div>
+                      <div>{subrow.nik}</div>
+                      <div>{subrow.alamat}</div>
                     </TableCell>
-                    <TableCell className="p-1 border-x border-x-black">
-                      <div className="flex justify-between gap-6">
+                    <TableCell className="border-x border-x-black">
+                      <div className="flex justify-between gap-6 ">
                         <div>P</div>
                         <FormatNumbering value={subrow.pinjaman} />
                       </div>
+
                       <div className="flex justify-between gap-6 border-b-2 border-b-black ">
                         <div>A</div>
                         <div className="flex gap-3">
@@ -184,13 +189,24 @@ const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
 
                       <div className="flex justify-between gap-6">
                         <div>S</div>
-                        <FormatNumbering value={subrow.saldo} />
+                        <div className="flex gap-3">
+                          {subrow.pemutihan_today !== 0 && (
+                            <div className="italic whitespace-nowrap">
+                              <FormatNumbering
+                                value={subrow.pemutihan_today}
+                                prefix={'('}
+                                suffix={')'}
+                              />
+                            </div>
+                          )}
+                          <FormatNumbering value={subrow.saldo} />
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-gray-100">
-                  <TableCell className="py-3" colSpan={2}>
+                  <TableCell className="py-3" colSpan={3}>
                     TOTAL
                   </TableCell>
                   <TableCell className="border-x border-x-black">

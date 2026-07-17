@@ -8,13 +8,15 @@ const variantMap = {
   tolak: 'default',
   gagal: 'destructive',
   lama: 'outline',
-  baru: 'green',
+  baru: 'yellow',
   true: 'green',
   false: 'destructive',
   ml: 'default',
   mb: 'destructive',
   cm: 'yellow',
   normal: 'green',
+  lunas: 'greenoutline',
+  belum_lunas: 'outline',
 };
 const BadgeStatus = ({ value, onClick, children, ...props }) => {
   const variant = variantMap[value] || 'default';

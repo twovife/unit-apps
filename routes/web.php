@@ -31,11 +31,11 @@ Route::get('/', function () {
   return Inertia::render('Dashboard');
 })->middleware(['auth'])->name('home');
 
-Route::get('/routetest', [AdminController::class, 'routetest']);
-
 Route::middleware('auth')->group(function () {
 
   Route::controller(LoanController::class)->group(function () {
+
+
     Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
       Route::get('/', 'batch_create')->name('batch_create');
       Route::post('/', 'batch_post')->name('batch_post');
@@ -48,14 +48,14 @@ Route::middleware('auth')->group(function () {
   });
 
 
-
   Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
-      Route::post('/{transactionLoan}', "get_instalment_nasabah")->name('get_instalment_nasabah');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
-      Route::get('/fastcreate', "fastcreate")->name('fastcreate');
+      Route::get('/fastcreate', "fastcreatev2")->name('fastcreate');
+      Route::get('/fastcreatev2', "fastcreatev2")->name('fastcreatev2');
+      Route::get('/inputmacet', "inputmacet")->name('inputmacet');
       Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');
       Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');
       Route::put('/updateEverything/{transactionLoan}', "updateEverything")->name('updateEverything');
@@ -68,8 +68,12 @@ Route::middleware('auth')->group(function () {
       Route::get('/drop_date', "index_pinjaman_search")->name('index_pinjaman_search');
       Route::get('/pinjaman-macet', "index_pinjaman_macet")->name('index_pinjaman_macet');
       Route::get('/actionloan/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
+      Route::post('/get-synch-angsuran/{transactionLoan}', "get_synch_angsuran")->name('get_synch_angsuran');
+      Route::post('/synch-angsuran/{transactionLoan}', "synch_angsuran")->name('synch_angsuran');
       Route::get('/checkpengajuan/{transactionLoan}', "checkpengajuan")->name('checkpengajuan');
       Route::post('/actionloan/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
+      Route::post('/store-pengajuan-lama/{transactionLoan}', "store_pengajuan_lama")->name('store_pengajuan_lama');
+      Route::post('/white-off-loan/{transactionLoan}', "white_off_loan")->name('white_off_loan'); //router pemutihan
       Route::delete('/actionloan/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
       Route::delete('/deleteloan/{transactionLoan}', "destroy_loan")->name('destroy_loan');
     });

@@ -167,7 +167,6 @@ const SearchComponent = ({
     };
   }, [nexOrPrevious]);
 
-  // console.log(typeof data.kelompok);
 
   return (
     <>

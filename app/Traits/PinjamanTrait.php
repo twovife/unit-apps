@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Helpers\AppHelper;
 use App\Models\Branch;
+use App\Models\OnlineBranch;
 use App\Models\TransactionDailyRecap;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
@@ -33,7 +34,9 @@ trait PinjamanTrait
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
-    $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer')
+
+
+    $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer', 'branch')
       ->where(function ($data) use ($startOfMonth, $endOfMonth) {
         $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
           ->orWhereBetween('request_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')]);
@@ -43,12 +46,18 @@ trait PinjamanTrait
       ->orderBy('drop_date')
       ->get();
 
+
+
     $loanCustId = collect($loan->pluck('transaction_manage_customer_id'))->unique();
+
+    
     $transactionManageCustomer = TransactionLoan::whereIn('transaction_manage_customer_id', $loanCustId)
       ->where('status', 'success')
       ->orderBy('id', 'desc')
       ->get()
       ->groupBy('transaction_manage_customer_id');
+
+
 
     $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer) {
       $countPinjaman = $transactionManageCustomer->get($drop->transaction_manage_customer_id, collect())->count('id') + 1;
@@ -138,7 +147,7 @@ trait PinjamanTrait
 
     return [
       'datas' => $sortDesc ? $pengajuan->sortKeysDesc()->values() : $pengajuan->values(),
-      'buku_rencana' => $buku_rencana_drop,
+      'buku_rencana' => $buku_rencana_drop ?? [],
       'server_filter' => [
         'month' => $transaction_date,
         'wilayah' => $wilayah,
@@ -164,18 +173,20 @@ trait PinjamanTrait
     }
 
 
-
     $now = Carbon::now();
     $transaction_date = $dailyView
       ? $now->copy()->endOfMonth()
       : Carbon::parse($request->month ?? $now)->endOfMonth();
-
+    // dd($transaction_date->format('Y-m-d'));
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
     $hari = $request->hari ?? AppHelper::dateName($now->format('Y-m-d'));
 
     $tanggalSeleksi  = AppHelper::getStortingShowDate($hari);
+
+    // dd($tanggalSeleksi);
+
 
     $authorized = auth()->user();
     $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
@@ -203,7 +214,7 @@ trait PinjamanTrait
         $item->orderByDesc('transaction_date');
       }, 'manage_customer' => function ($item) {
         $item->with('loan');
-      }, 'branch', 'customer', 'loan_officer_grouping']
+      }, 'branch', 'customer', 'white_off', 'loan_officer_grouping']
     )
       ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
       ->where('hari', $hari)
@@ -215,28 +226,30 @@ trait PinjamanTrait
         return Carbon::parse($item->drop_date)->format('Y-m');
       });
 
-
-
-
     $loanMl = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
         $item->orderByDesc('transaction_date');
       }, 'manage_customer' => function ($item) {
         $item->with('loan');
-      }, 'branch', 'customer', 'loan_officer_grouping']
+      }, 'branch', 'customer', 'loan_officer_grouping', 'white_off']
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
       ->where('hari', $hari)
       ->where('transaction_loan_officer_grouping_id', $groupingId->id)
-      ->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
-        $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
-          ->where('nominal', '>', 0);
+      ->where(function ($item) use ($transaction_start_date, $transaction_date) {
+        $item->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
+          $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+            ->where('nominal', '>', 0);
+        })->orWhereHas('white_off', function ($query) use ($transaction_start_date, $transaction_date) {
+          $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+            ->where('nominal', '>', 0);
+        });
       })
+
+      //
       ->where('status', 'success')
       ->orderBy('drop_date')
       ->get();
-
-
 
     $dataMlGenerate = [
       'month' => "ML",
@@ -244,6 +257,12 @@ trait PinjamanTrait
       'type2' => "ML",
       'date' => Carbon::parse($begin_transaction)->subMonthNoOverflow(1)->format('Y-m-d'),
       'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
+        $pemutihan = $item->white_off?->transaction_date == $tanggalSeleksi ? $item->white_off->nominal : 0;
+
+        $pemutihan_before_month = $item->white_off ? ($item->white_off->transaction_date < $transaction_start_date->format('Y-m-d') ? $item->white_off->nominal : 0) : 0;
+        $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
+        $saldo =  ($item->pinjaman - $pemutihan_before_month) - ($item->loan_instalment->where('transaction_date', '<=', $transaction_date->format('Y-m-d'))->sum('nominal') + $pemutihan_this_month);
+
         $data = [
           'tanggal_drop' => $item->drop_date,
           'nama' => $item->customer->nama,
@@ -251,12 +270,13 @@ trait PinjamanTrait
           'nomor_anggota' => $item->manage_customer->id,
 
           'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
-          'lunas' => $item->loan_instalment->sum('nominal') == $item->pinjaman,
+
+          // ini status lunas
+          'lunas' => $saldo <= 0,
           'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
           'drop' => $item->nominal_drop,
           'pinjaman' => $item->pinjaman,
           'hari' => $item->hari,
-          'note' => $item->note,
           'nik' => $item->customer->nik,
           'kelompok' => $item->loan_officer_grouping->kelompok,
           'jumlah_angsuran' => $item->loan_instalment->count(),
@@ -272,15 +292,17 @@ trait PinjamanTrait
             ];
           }),
           'angs_today' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)?->sum('nominal') ?? 0,
+          'pemutihan_today' => $pemutihan,
+          'pemutihanThisMonth' => $pemutihan_this_month,
           'x_angs' => $item->loan_instalment->count(),
-          'saldo_sebelumnya' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
-          'saldo' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<=', $transaction_date->format('Y-m-d'))->sum('nominal'),
+          'saldo_sebelumnya' => ($item->pinjaman - $pemutihan_before_month) - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
+          'saldo' => $saldo,
           'notes' => $item->notes
         ];
 
         if ($dailyView) {
           $data['angsuran'] = $item->loan_instalment->sum('nominal');
-          $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty();
+          $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty() || $item->white_off?->transaction_date == $tanggalSeleksi;
         } else {
           $data['angsuran'] = $item->loan_instalment->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])->sum('nominal');
         }
@@ -297,6 +319,12 @@ trait PinjamanTrait
         'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
         'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
+          $pemutihan = $item->white_off?->transaction_date == $tanggalSeleksi ? $item->white_off->nominal : 0;
+
+          $pemutihan_before_month = $item->white_off ? ($item->white_off->transaction_date < $transaction_start_date->format('Y-m-d') ? $item->white_off->nominal : 0) : 0;
+          $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
+          $saldo =  ($item->pinjaman - $pemutihan_before_month) - ($item->loan_instalment->where('transaction_date', '<=', $transaction_date->format('Y-m-d'))->sum('nominal') + $pemutihan_this_month);
+
           $data = [
             'tanggal_drop' => $item->drop_date,
             'nama' => $item->customer->nama,
@@ -304,12 +332,12 @@ trait PinjamanTrait
             'nomor_anggota' => $item->manage_customer->id,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
-            'lunas' => $item->loan_instalment->sum('nominal') == $item->pinjaman,
+            // ini adalah status lunas
+            'lunas' => $saldo <= 0,
             'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
-            'note' => $item->note,
             'nik' => $item->customer->nik,
             'kelompok' => $item->loan_officer_grouping->kelompok,
             'jumlah_angsuran' => $item->loan_instalment->count(),
@@ -325,16 +353,18 @@ trait PinjamanTrait
               ];
             }),
             'angs_today' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)?->sum('nominal') ?? 0,
+            'pemutihan_today' => $pemutihan,
+            'pemutihanThisMonth' => $pemutihan_this_month,
             'x_angs' => $item->loan_instalment->count(),
-            'saldo_sebelumnya' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
-            'saldo' => $item->pinjaman - $item->loan_instalment->where('transaction_date', '<=', $transaction_date->format('Y-m-d'))->sum('nominal'),
+            'saldo_sebelumnya' => ($item->pinjaman - $pemutihan_before_month) - $item->loan_instalment->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))->sum('nominal'),
+            'saldo' => $saldo,
             'notes' => $item->notes
           ];
 
 
           if ($dailyView) {
             $data['angsuran'] = $item->loan_instalment->sum('nominal');
-            $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty();
+            $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty() ||  $item->white_off?->transaction_date == $tanggalSeleksi;
           } else {
             $data['angsuran'] = $item->loan_instalment->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])->sum('nominal');
           }
@@ -344,6 +374,8 @@ trait PinjamanTrait
       ];
     })->values();
 
+    // ddd($groupByMonth);
+
     $mergedData = collect([$dataMlGenerate])->merge($groupByMonth)->values();
 
     $dateOfWeek = [];
@@ -352,6 +384,220 @@ trait PinjamanTrait
         $dateOfWeek[] = $date->copy()->format('Y-m-d');
       }
     }
+    return [
+      'datas' => $mergedData,
+      'dateOfWeek' => $dateOfWeek,
+      'sirkulasi' => $transactionSirkulan,
+      'server_filter' => [
+        'closed_transaction' => $ClosedTransaction,
+        'month' => $transaction_date->format('Y-m'),
+        'hari' => $hari,
+        'wilayah' => $wilayah,
+        'branch' => $userAuthorized['branches'],
+        'userAuthorized' => $userAuthorized,
+        'branch_id' => $branch_id,
+        'kelompok' => $kelompok,
+        'groupId' => $groupingId->id,
+        'today' => $dayClosedParams
+      ],
+    ];
+  }
+  public function getLoanMantri(Request $request, $dailyView = true)
+  {
+
+    $date = $request->date ?? null;
+    if ($date) {
+      $request->merge([
+        'month' => Carbon::parse($date)->format('Y-m'),
+        'hari' => AppHelper::dateName($date)
+      ]);
+    }
+
+
+    $now = Carbon::now();
+    $transaction_date = $dailyView
+      ? $now->copy()->endOfMonth()
+      : Carbon::parse($request->month ?? $now)->endOfMonth();
+    // dd($transaction_date->format('Y-m-d'));
+    $transaction_start_date = $transaction_date->copy()->startOfMonth();
+    $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
+
+    $hari = $request->hari ?? AppHelper::dateName($now->format('Y-m-d'));
+
+    $tanggalSeleksi  = AppHelper::getStortingShowDate($hari);
+
+    // dd($tanggalSeleksi);
+
+
+    $authorized = auth()->user();
+    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
+    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
+
+
+
+    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+
+
+    $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
+    $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
+    $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
+    $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
+
+    $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where('day', $hari)
+      ->where('date', $transaction_start_date->format('Y-m-d'))
+      ->first();
+    // dd($transaction_date);
+    $loan = TransactionLoan::with(
+      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer', 'white_off']
+    )
+      ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
+      ->where('hari', $hari)
+      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where('status', 'success')
+      ->orderBy('drop_date')
+      ->get()
+      ->groupBy(function ($item) {
+        return Carbon::parse($item->drop_date)->format('Y-m');
+      });
+    // dd($loan);
+
+    $loanMl = TransactionLoan::with(
+      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer']
+    )
+      ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
+      ->where('hari', $hari)
+      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
+        $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
+          ->where('nominal', '>', 0);
+      })
+      ->where('status', 'success')
+      ->orderBy('drop_date')
+      ->get();
+
+
+    $dataMlGenerate = [
+      'month' => "ML",
+      'type' => "ml",
+      'type2' => "ML",
+      'date' => Carbon::parse($begin_transaction)->subMonthNoOverflow(1)->format('Y-m-d'),
+      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
+        $pemutihan = $item->white_off ? $item->white_off->nominal : 0;
+
+        $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
+        $saldo =  $item->pinjaman - ($pemutihan + $item->total_angsuran);
+
+        $data = [
+          'tanggal_drop' => $item->drop_date,
+          'nama' => $item->customer->nama,
+          'alamat' => $item->customer->alamat,
+          'nomor_anggota' => $item->manage_customer->id,
+
+          'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
+
+          // ini status lunas
+          'lunas' => $saldo <= 0,
+          'drop' => $item->nominal_drop,
+          'pinjaman' => $item->pinjaman,
+          'hari' => $item->hari,
+          'nik' => $item->customer->nik,
+          'id' => $item->id,
+
+          'angs_today' => $item->loan_instalment?->sum('nominal') ?? 0,
+          'instalment' => $item->loan_instalment->groupBy(function ($instalment) {
+            return Carbon::parse($instalment->transaction_date)->format('Y-m-d');
+          })->map(function ($instalments) {
+            return [
+              'total_nominal' => $instalments->sum('nominal'),
+              'is_active' => $instalments->contains(function ($instalment) {
+                return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
+              })
+            ];
+          }),
+          'pemutihan_today' => $pemutihan,
+          'pemutihanThisMonth' => $pemutihan_this_month,
+          'saldo' => $saldo,
+          'notes' => $item->notes
+        ];
+
+        if ($dailyView) {
+          $data['angsuran'] = $item->total_angsuran;
+          $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty() || $item->white_off?->transaction_date == $tanggalSeleksi; //
+        }
+
+        return $data;
+      })->sortBy('nama')->sortBy('tanggal_drop')->values(),
+    ];
+    // dd($dataMlGenerate);
+
+    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView) {
+      return [
+        'month' => Carbon::parse($key)->format('FY'),
+        'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
+        'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
+        'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
+        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
+          $pemutihan = $item->white_off ? $item->white_off->nominal : 0;
+
+          $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
+          $saldo =  $item->pinjaman - ($pemutihan + $item->total_angsuran);
+
+          $data = [
+            'tanggal_drop' => $item->drop_date,
+            'nama' => $item->customer->nama,
+            'alamat' => $item->customer->alamat,
+            'nomor_anggota' => $item->manage_customer->id,
+
+            'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
+
+            // ini status lunas
+            'lunas' => $saldo <= 0,
+            'drop' => $item->nominal_drop,
+            'pinjaman' => $item->pinjaman,
+            'hari' => $item->hari,
+            'nik' => $item->customer->nik,
+            'id' => $item->id,
+
+            'angs_today' => $item->loan_instalment?->sum('nominal') ?? 0,
+            'instalment' => $item->loan_instalment->groupBy(function ($instalment) {
+              return Carbon::parse($instalment->transaction_date)->format('Y-m-d');
+            })->map(function ($instalments) {
+              return [
+                'total_nominal' => $instalments->sum('nominal'),
+                'is_active' => $instalments->contains(function ($instalment) {
+                  return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
+                })
+              ];
+            }),
+            'pemutihan_today' => $pemutihan,
+            'pemutihanThisMonth' => $pemutihan_this_month,
+            'saldo' => $saldo,
+            'notes' => $item->notes
+          ];
+
+          if ($dailyView) {
+            $data['angsuran'] = $item->total_angsuran;
+            $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty() || $item->white_off?->transaction_date == $tanggalSeleksi; //
+          }
+
+          return $data;
+        })->sortBy('nama')->sortBy('tanggal_drop')->values(),
+      ];
+    })->values();
+
+    // ddd($groupByMonth);
+
+    $mergedData = collect([$dataMlGenerate])->merge($groupByMonth)->values();
+
+    $dateOfWeek = [$tanggalSeleksi];
+    // for ($date = $transaction_start_date; $date->lte($transaction_date); $date->addDay()) {
+    //   if (AppHelper::dateName($date) == $hari) {
+    //     $dateOfWeek[] = $date->copy()->format('Y-m-d');
+    //   }
+    // }
     return [
       'datas' => $mergedData,
       'dateOfWeek' => $dateOfWeek,
@@ -436,7 +682,6 @@ trait PinjamanTrait
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
 
-            'note' => $item->note,
             'nik' => $item->customer->nik,
 
             'kelompok' => $item->loan_officer_grouping->kelompok,
@@ -486,12 +731,14 @@ trait PinjamanTrait
       $transaction_date = Carbon::now()->endOfMonth();
     }
 
+
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
 
     $authorized = auth()->user();
     $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
+    // dd($branch_id);
     $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
     $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
@@ -500,6 +747,8 @@ trait PinjamanTrait
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+    $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
+
 
 
     $loan = TransactionLoan::with(
@@ -519,6 +768,8 @@ trait PinjamanTrait
       ->groupBy(function ($item) {
         return Carbon::parse($item->drop_date)->format('Y-m');
       });
+
+
 
 
 
@@ -549,7 +800,6 @@ trait PinjamanTrait
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
-            'note' => $item->note,
             'nik' => $item->customer->nik,
             'kelompok' => $item->loan_officer_grouping->kelompok,
             'jumlah_angsuran' => $item->loan_instalment->count(),
@@ -605,7 +855,8 @@ trait PinjamanTrait
         'branch_id' => $branch_id,
         'kelompok' => $kelompok,
         'type_show' => 'macet',
-        'searchMonth' => false
+        'searchMonth' => false,
+        'onlineDate' => $onlineDate,
       ],
     ];
   }

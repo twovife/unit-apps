@@ -34,12 +34,6 @@ const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
         </div>
         <div className="flex flex-1 w-full gap-6 underline">
           <Link
-            href="#"
-            className="transition-colors text-muted-foreground hover:text-foreground"
-          >
-            Home
-          </Link>
-          <Link
             href={route('mobile_apps.index')}
             className="transition-colors text-muted-foreground hover:text-foreground"
           >
@@ -60,12 +54,15 @@ const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
             <DropdownMenuSeparator />
 
             <DropdownMenuItem>
-              <Link href={route('profile.edit')}>Profile</Link>
+              <Link className="w-full" href={route('profile.edit')}>
+                Profile
+              </Link>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <Link
+                className="w-full text-left"
                 href={route('logout')}
                 method="post"
                 as="button"
@@ -100,7 +97,7 @@ const Navbar = ({ toggleSidebar, isOpen, auth, header }) => {
                                     <span className="inline-flex rounded-md">
                                         <button
                                             type="button"
-                                            className="inline-flex items-center text-sm font-medium leading-4 text-white transition duration-150 ease-in-out bg-red-700 border border-transparent rounded-md hover:text-gray-50 focus:outline-none"
+                                            className="inline-flex items-center text-sm font-medium leading-4 text-white transition duration-150 ease-in-out bg-red-700 border border-transparent rounded-md hover:text-gray-50 focus:outline-hidden"
                                         >
                                             {auth.user.username}
 

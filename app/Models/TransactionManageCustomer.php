@@ -31,6 +31,16 @@ class TransactionManageCustomer extends Model
     return $this->hasMany(TransactionLoan::class, 'transaction_manage_customer_id', 'id');
   }
 
+  public function latestTransaction()
+  {
+    return $this->hasOne(TransactionLoan::class, 'transaction_manage_customer_id', 'id')
+      ->where('status', 'success')
+      ->latest('drop_date'); // atau pakai 'drop_date' kalau itu kolom waktunya
+  }
+
+  // Di model ManageCustomer.php
+
+
   public function loan_officer_grouping()
   {
     return $this->belongsTo(TransactionLoanOfficerGrouping::class, 'transaction_loan_officer_grouping_id', 'id');
@@ -41,3 +51,7 @@ class TransactionManageCustomer extends Model
     return $this->belongsToThrough(Branch::class, TransactionLoanOfficerGrouping::class);
   }
 }
+
+
+
+

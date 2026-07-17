@@ -120,7 +120,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
         <NoEditOverlay value="Hanya bisa dilakukan oleh Pimpinan / Staff" />
       )}
       <Loading show={processing} />
-      <div className="mb-1 ">
+      {/* <div className="mb-1 ">
         <div className="flex w-full gap-3">
           <div className="flex-1">
             <Label htmlFor="request_date">Tanggal Pengajuan</Label>
@@ -157,9 +157,9 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
             PENGAJUAN DROP
           </div>
         )}
-      </div>
+      </div> */}
 
-      <div className="mb-3">
+      {/* <div className="mb-3">
         <div className="text-xs text-blue-500">
           Perubahan Tanggal Mempengaruhi Perolehan Drop dan Rencana Drop
         </div>
@@ -170,15 +170,15 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
             Drop Lama / Pengajuan
           </span>
         </div>
-      </div>
+      </div> */}
 
-      <div className="flex w-full gap-3 mb-1">
+      {/* <div className="flex w-full gap-3 mb-1">
         {data.drop_langsung == 'lama' && (
           <>
             <div className="flex-1">
-              <Label htmlFor="request_nominal">Nominal Pengajuan</Label>
+              <Label htmlFor="request_nominal">Pengajuan</Label>
               <CurrencyInput
-                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 name="request_nominal"
                 allowDecimals={false}
                 prefix="Rp. "
@@ -192,9 +192,9 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
 
             {data.approved_nominal && (
               <div className="flex-1">
-                <Label htmlFor="approved_nominal">Nominal Acc</Label>
+                <Label htmlFor="approved_nominal">Acc</Label>
                 <CurrencyInput
-                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   name="approved_nominal"
                   allowDecimals={false}
                   prefix="Rp. "
@@ -213,7 +213,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
           <div className="flex-1">
             <Label htmlFor="nominal_drop">Drop Jadi</Label>
             <CurrencyInput
-              className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               name="nominal_drop"
               allowDecimals={false}
               prefix="Rp. "
@@ -225,7 +225,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
             />
           </div>
         )}
-      </div>
+      </div> */}
       <div className="mb-3">
         <div className="text-xs text-blue-500">
           Perubahan Nominal Mempengaruhi Perolehan Drop dan Rencana Drop
@@ -236,9 +236,9 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <Button onClick={() => handleSubmit('detailchange')} type="submit">
+        {/* <Button onClick={() => handleSubmit('detailchange')} type="submit">
           Ubah
-        </Button>
+        </Button> */}
         {triggeredData?.drop_langsung == 'lama' && (
           <Button
             onClick={() => handleSubmit('resetdata')}

@@ -18,7 +18,6 @@ import { Button } from '@/shadcn/ui/button';
 import { Play } from 'lucide-react';
 
 const DetailRiwayat = ({ detailData }) => {
-  console.log(detailData);
 
   const [data, setData] = useState([]);
   const [expanded, setExpanded] = useState();

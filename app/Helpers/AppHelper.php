@@ -8,6 +8,7 @@ use App\Models\EmploymentPermission;
 use App\Models\TransactionCustomer;
 use Carbon\Carbon;
 use Faker\Core\Number;
+use Illuminate\Bus\Batch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,6 +17,7 @@ class AppHelper
 
 
 
+  // 2
   private static function generateUnknownNik($request)
   {
     $drop_date = Carbon::parse($request->drop_date)->format('ym');
@@ -26,14 +28,24 @@ class AppHelper
     return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
   }
 
+  // 3
+  private static function generateUnknownNik2($request)
+  {
+    $drop_date = Carbon::parse($request->drop_date)->format('dym');
+    $branch_id = sprintf("%04d",  $request->branch_id);
+    $kelompok_id = sprintf("%02d",  $request->kelompok);
+    $randomNumber = random_int(1, 999999);
+    $formattedNumber = sprintf("%04d", $randomNumber);
+    // dd([$branch_id, $kelompok_id, $drop_date, $formattedNumber]);
+    return  $branch_id . $kelompok_id . $drop_date .  $formattedNumber;
+  }
+
   public static function getMantri($officerGrouping)
   {
-    // Periksa jika user memiliki izin tertentu
+
     if (auth()->user()->hasAnyPermission(['unit pimpinan', 'unit mantri', 'unit km'])) {
       return auth()->user()->employee->id;
     }
-
-    // Dapatkan daftar mantri berdasarkan branch_id dan area dari request
     $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
       ->where('area', $officerGrouping->kelompok)
       ->orderBy('id', 'desc')
@@ -55,10 +67,30 @@ class AppHelper
     return $mantri;
   }
 
-
-
-  public static function callUnknownNik($request)
+  public static function getMantriNoauth($officerGrouping, $idpimpinan)
   {
+    $mantri = Employee::where('branch_id', $officerGrouping->branch_id)
+      ->where('area', $officerGrouping->kelompok)
+      ->whereNull('date_resign')
+      ->orderBy('id', 'desc')
+      ->value('id');
+
+    return $mantri ?? $idpimpinan;
+  }
+
+
+
+
+  public static function dateName($date)
+  {
+    return strtolower(Carbon::parse($date)->locale('id')->dayName);
+  }
+
+
+  // 1
+  public static function callUnknownNik($request, $batch = false)
+  {
+
     $prefix = strtoupper(substr($request->nik, 0, 2));
     // Inisialisasi variabel untuk menyimpan newNik
     $newNik = null;
@@ -69,49 +101,25 @@ class AppHelper
       // Lakukan looping sampai menemukan newNik yang unik
       do {
         // Generate newNik
-        $newNik = self::generateUnknownNik($request);
+        $newNik = $batch ? self::generateUnknownNik2($request) : self::generateUnknownNik($request);
         // Cari nasabah dengan newNik di database
         $nasabah = TransactionCustomer::where('nik', $newNik)->first();
       } while ($nasabah); // Ulangi jika nasabah ditemukan
+
       return $newNik;
     }
 
     return $request->nik;
   }
 
-  // mengubah tanggal menjadi nama hari
-  public static function dateName($date)
-  {
-    return strtolower(Carbon::parse($date)->locale('id')->dayName);
-  }
 
-  // mengubah dari tanggal menjadi format Y-m
   public static function monthNumber($date)
   {
     return strtolower(Carbon::parse($date)->format('Y-m'));
   }
-
-  // mengubah tanggal menjadi nama bulan dalam indonesia
   public static function monthName($date)
   {
     return strtolower(Carbon::parse($date)->locale('id')->monthName);
-  }
-
-  // mengubah hari menjadi angka
-  public static function getNumbDays($request)
-  {
-    $mapping = [
-      'senin' => 1,
-      'selasa' => 2,
-      'rabu' => 3,
-      'kamis' => 4,
-      'jumat' => 5,
-      'sabtu' => 6,
-      'minggu' => 0,
-    ];
-    $hariLower = strtolower($request); // Normalisasi ke huruf kecil
-    return $mapping[$hariLower] ?? null; // Kembalikan angka, atau null jika tidak ditemukan
-
   }
 
   public static function status_pinjaman($parameter)
@@ -144,7 +152,55 @@ class AppHelper
       return false;
     }
   }
+  public static function getNumbDays($request)
+  {
+    $req = strtolower($request);
 
+    if ($req == "senin") {
+      return 1;
+    }
+    if ($req == "selasa") {
+      return 2;
+    }
+    if ($req == "rabu") {
+      return 3;
+    }
+    if ($req == "kamis") {
+      return 4;
+    }
+    if ($req == "jumat") {
+      return 5;
+    }
+    if ($req == "sabtu") {
+      return 6;
+    }
+    return 0;
+  }
+
+  public static function getNumberToNameDays($request)
+  {
+    $req = strtolower($request);
+
+    if ($req == 1) {
+      return "senin";
+    }
+    if ($req == 2) {
+      return "selasa";
+    }
+    if ($req == 3) {
+      return "rabu";
+    }
+    if ($req == 4) {
+      return "kamis";
+    }
+    if ($req == 5) {
+      return "jumat";
+    }
+    if ($req == 6) {
+      return "sabtu";
+    }
+    return "minggu";
+  }
 
   public static function getIsPaid($max_date, $req_day)
   {
@@ -278,7 +334,11 @@ class AppHelper
       $result['canShowBranch'] = false;
       $result['canShowKelompok'] = true;
       $result['canCreate'] = false;
-      $result['branches'] = Branch::all();
+      if ($authorized->hasPermissionTo('staffkontrol4')) {
+        $result['branches'] = Branch::where('wilayah', 4)->get();
+      } else {
+        $result['branches'] = Branch::all();
+      }
       return $result;
     } else {
       $result['canShowGroupingBranch'] = false;
@@ -297,7 +357,11 @@ class AppHelper
       return Branch::whereIn('id', $employmentPermission)->get();
     }
     if ($authorized->hasPermissionTo('can show branch')) {
-      return Branch::all();
+      if ($authorized->hasPermissionTo('staffkontrol4')) {
+        $result['branches'] = Branch::where('wilayah', 4)->get();
+      } else {
+        $result['branches'] = Branch::all();
+      }
     } else {
       return Branch::where('id', $authorized->employee->branch_id)->get();
     }
@@ -351,5 +415,27 @@ class AppHelper
       return true;
     }
     return false;
+  }
+
+  public static function getFirstDayOfMonthID($dayNameID, $month)
+  {
+    $dayMap = [
+      'minggu' => 'Sunday',
+      'senin' => 'Monday',
+      'selasa' => 'Tuesday',
+      'rabu' => 'Wednesday',
+      'kamis' => 'Thursday',
+      'jumat' => 'Friday',
+      'sabtu' => 'Saturday'
+    ];
+
+    $dayName = $dayMap[strtolower($dayNameID)] ?? null;
+
+    if (!$dayName) {
+      return 'Nama hari tidak valid!';
+    }
+
+    $date = Carbon::parse($month)->startOfMonth();
+    return $date->copy()->isSameDay($date->copy()->next($dayName)->subWeek()) ? $date : $date->next($dayName);
   }
 }

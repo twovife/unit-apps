@@ -33,7 +33,6 @@ import ChangeDetail from './Components/ChangeDetail';
 import { usePage } from '@inertiajs/react';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
-import { ScrollArea } from '@radix-ui/react-scroll-area';
 
 const Action = ({ show = false, onClosed, triggeredData }) => {
   const [data, setData] = useState([]);
@@ -49,205 +48,209 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
     setAcc(triggeredData?.request);
   }, [triggeredData]);
 
-  const onNikSubmit = async (e) => {
+  const onNikSubmit = async (signal) => {
     setLoading(true);
     setErorAxios();
-    await axios({
-      method: 'post',
-      url: route('transaction.nasabah_buku_transaksi'),
-      data: {
-        nik: triggeredData.nik,
-      },
-    })
-      .then(function ({ data }) {
-        setLoading(false);
-        if (data.data) {
-          setCustomerData(data.data);
-        } else {
-          setCustomerData([]);
-        }
-      })
-      .catch(function ({ response }) {
-        setErorAxios(response.data.message);
-        setLoading(false);
-      });
+
+    try {
+      const { data } = await axios.post(
+        route('transaction.nasabah_buku_transaksi'),
+        { nik: triggeredData.nik },
+        { signal } // 👈 inject signal buat cancel
+      );
+
+      setCustomerData(data.data ?? []);
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log('Request dibatalkan');
+      } else {
+        setErorAxios(error.response?.data?.message || 'Terjadi kesalahan');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (triggeredData?.nik) {
-      onNikSubmit();
-    }
+    if (!triggeredData?.nik) return;
+
+    const controller = new AbortController();
+    onNikSubmit(controller.signal);
+
+    return () => {
+      controller.abort(); // ❌ cancel request saat komponen unmount / modal close
+    };
   }, [triggeredData]);
 
   return (
     <>
       <Dialog open={show} onOpenChange={(open) => (open ? '' : onClosed())}>
-        <DialogContent className="w-[95vw] h-auto px-1 overflow-hidden">
-          {erorAxios && <div>terjadi kesalahan saat memuat data</div>}
-          {loading ? (
-            <div>Data Sedang Dimuat</div>
-          ) : (
-            <DialogHeader>
-              <DialogTitle>Check Transaksi Mantri</DialogTitle>
-              <DialogDescription>
-                <Tabs defaultValue="account" className="w-full h-max">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="account">Action</TabsTrigger>
-                    <TabsTrigger value="history">Crash Kantor</TabsTrigger>
-                    <TabsTrigger value="historylain">Crash UBM</TabsTrigger>
-                  </TabsList>
-                  <TabsContent
-                    value="account"
-                    className="overflow-scroll h-[70vh]"
-                  >
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Detail Pengajuan</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-1 space-y-2">
-                        <div className="overflow-auto border rounded-lg scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                          <DetailTableOnAction datas={data} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <div className="flex flex-col gap-3 mt-3 lg:flex-row">
-                      <div className="w-full">
-                        <Card className="relative mb-3">
-                          <CardHeader>
-                            <CardTitle>ACC / DROP</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-2">
-                            <div className="flex items-end justify-center gap-2 mx-auto mb-3">
-                              <Acc
-                                id={data?.nomor_pengajuan}
-                                triggeredData={data}
-                                onClosed={onClosed}
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card className="relative">
-                          {!isCreator && (
-                            <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
-                          )}
-                          <CardHeader>
-                            <CardTitle>Admin Edit</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-2">
-                            <div>
-                              {data && (
-                                <ChangeDetail
-                                  onClosed={onClosed}
-                                  triggeredData={triggeredData}
-                                />
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+        <DialogContent className="w-[98vw] p-2">
+          <DialogHeader>
+            <DialogTitle className="p-2">Check Transaksi Mantri</DialogTitle>
+            <DialogDescription>
+              <Tabs defaultValue="account" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="account">Action</TabsTrigger>
+                  <TabsTrigger disabled={loading} value="history">
+                    {loading ? 'Loading...' : 'Crash Kantor'}
+                  </TabsTrigger>
+                  <TabsTrigger disabled={loading} value="crashubmml">
+                    {loading ? 'Loading...' : 'Crash (NT)'}
+                  </TabsTrigger>
+                  <TabsTrigger disabled={loading} value="crashubm">
+                    {loading ? 'Loading...' : 'Crash (T)'}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent
+                  value="account"
+                  className="h-[80vh] overflow-auto scrollbar-thin"
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Detail Pengajuan</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="overflow-auto border rounded-lg scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+                        <DetailTableOnAction datas={data} />
                       </div>
-                      <Card className="relative w-full">
+                    </CardContent>
+                  </Card>
+                  <div className="flex flex-col gap-3 mt-3 lg:flex-row">
+                    <div className="w-full">
+                      <Card className="relative mb-3">
+                        <CardHeader>
+                          <CardTitle>ACC / DROP</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="flex items-end justify-center gap-2 mx-auto mb-3">
+                            <Acc
+                              id={data?.nomor_pengajuan}
+                              triggeredData={data}
+                              onClosed={onClosed}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="relative">
                         {!isCreator && (
                           <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
                         )}
                         <CardHeader>
-                          <CardTitle>Remove Loan</CardTitle>
+                          <CardTitle>Admin Edit</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                          <div className="w-full mt-6 mb-3 text-start">
-                            <p className="text-lg font-semibold text-red-500">
-                              Hapus Pinjaman
-                            </p>
-                            <p className="mb-1 text-xs italic font-light text-red-500">
-                              Perhatian !!!, Jika pengajuan berstatus sukses,
-                              maka pengajuan sudah masuk dalam daftar angsuran,
-                              jika tetap dihapus akan mempengaruhi data pada
-                              angsuran, dan angsuran akan ikut terhapus.
-                              <br /> ( Penghapusan hanya bisa dilakukan 2hari
-                              dari tanggal drop (Mantri) dan 2bulan (Admin &
-                              Kepala))
-                            </p>
-                            <div className="text-right">
-                              <RemoveLoan
-                                triggeredId={data?.nomor_pengajuan}
+                          <div>
+                            {data && (
+                              <ChangeDetail
                                 onClosed={onClosed}
+                                triggeredData={triggeredData}
                               />
-                            </div>
+                            )}
                           </div>
-                          <Accordion className="mb-3" type="single" collapsible>
-                            <AccordionItem value="item-1">
-                              <AccordionTrigger>Tambahan</AccordionTrigger>
-                              <AccordionContent>
-                                <div className="text-sm">
-                                  <ul className="list-disc list-outside">
-                                    <li>
-                                      1. Jika ada kesalahan pada angsuran baru (
-                                      angsuran hari ini ) utamakan menghapus,
-                                      dan buat angsuran lagi.
-                                    </li>
-                                    <li>
-                                      2. Jika terjadi kesalahan Status *
-                                      Tanggal, usahakan untuk ganti tanggal (
-                                      tanggal drop / tanggal request ) dan dan
-                                      reset status setelah itu
-                                    </li>
-                                    <li>
-                                      3. Setelah mengganti Detail pada angsuran,
-                                      dimohon untuk cek ulang, storting & dan
-                                      transaksi lagi, dikarenakan perubahan pada
-                                      detail, akan mempengaruhi laporan lainnya
-                                    </li>
-                                    <li className="text-red-500">
-                                      4. Reset Status Hanya Tersedia jika
-                                      pinjaman adalah drop lama / pengajuan
-                                    </li>
-                                  </ul>
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
                         </CardContent>
                       </Card>
                     </div>
-                  </TabsContent>
-                  <TabsContent value="history">
-                    <Card>
+                    <Card className="relative w-full">
+                      {!isCreator && (
+                        <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
+                      )}
                       <CardHeader>
-                        <CardTitle>Riwayat Pengajuan</CardTitle>
-                        <CardDescription>
-                          Riwayat Pengajuan Nasabah dilihat berdasarkan NIK yang
-                          tertera dari semua cabang
-                        </CardDescription>
+                        <CardTitle>Remove Loan</CardTitle>
                       </CardHeader>
-                      <CardContent className="p-1 space-y-2">
-                        <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                          <RiwayatPengajuan
-                            data={customerData?.history_branch}
-                          />
+                      <CardContent className="space-y-2">
+                        <div className="w-full mt-6 mb-3 text-start">
+                          <p className="text-lg font-semibold text-red-500">
+                            Hapus Pinjaman
+                          </p>
+                          <p className="mb-1 text-xs italic font-light text-red-500">
+                            Perhatian !!!, Jika pengajuan berstatus sukses, maka
+                            pengajuan sudah masuk dalam daftar angsuran, jika
+                            tetap dihapus akan mempengaruhi data pada angsuran,
+                            dan angsuran akan ikut terhapus.
+                            <br /> ( Penghapusan hanya bisa dilakukan 2hari dari
+                            tanggal drop (Mantri) dan 2bulan (Admin & Kepala))
+                          </p>
+                          <div className="text-right">
+                            <RemoveLoan
+                              triggeredId={data?.nomor_pengajuan}
+                              onClosed={onClosed}
+                            />
+                          </div>
                         </div>
+                        <Accordion className="mb-3" type="single" collapsible>
+                          <AccordionItem value="item-1">
+                            <AccordionTrigger>Tambahan</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="text-sm">
+                                <ul className="list-disc list-outside">
+                                  <li>
+                                    1. Jika ada kesalahan pada angsuran baru (
+                                    angsuran hari ini ) utamakan menghapus, dan
+                                    buat angsuran lagi.
+                                  </li>
+                                  <li>
+                                    2. Jika terjadi kesalahan Status * Tanggal,
+                                    usahakan untuk ganti tanggal ( tanggal drop
+                                    / tanggal request ) dan dan reset status
+                                    setelah itu
+                                  </li>
+                                  <li>
+                                    3. Setelah mengganti Detail pada angsuran,
+                                    dimohon untuk cek ulang, storting & dan
+                                    transaksi lagi, dikarenakan perubahan pada
+                                    detail, akan mempengaruhi laporan lainnya
+                                  </li>
+                                  <li className="text-red-500">
+                                    4. Reset Status Hanya Tersedia jika pinjaman
+                                    adalah drop lama / pengajuan
+                                  </li>
+                                </ul>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
                       </CardContent>
                     </Card>
-                  </TabsContent>
-                  <TabsContent value="historylain">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Riwayat Pengajuan</CardTitle>
-                        <CardDescription>
-                          Riwayat Pengajuan Nasabah dilihat berdasarkan NIK yang
-                          tertera dari semua cabang
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-1 space-y-2">
-                        <div className="h-[50vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-                          <RiwayatPengajuan data={customerData?.history_lain} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              </DialogDescription>
-            </DialogHeader>
-          )}
+                  </div>
+                </TabsContent>
+                <TabsContent
+                  value="history"
+                  className="h-[80vh] overflow-auto scrollbar-thin"
+                >
+                  <div className="overflow-auto scrollbar-thin h-max">
+                    <div className="mb-1">
+                      Crash Antar Kelompok Dalam 1 Kantor
+                    </div>
+                    <RiwayatPengajuan data={customerData.history_branch} />
+                  </div>
+                </TabsContent>
+                <TabsContent
+                  value="crashubmml"
+                  className="h-[80vh] overflow-auto scrollbar-thin"
+                >
+                  <div className="overflow-auto scrollbar-thin h-max">
+                    <div className="mb-1">
+                      Crash Kantor Lain Dalam UBM (Macet)
+                    </div>
+                    <RiwayatPengajuan data={customerData.history_macet_lain} />
+                  </div>
+                </TabsContent>
+                <TabsContent
+                  value="crashubm"
+                  className="h-[80vh] overflow-auto scrollbar-thin"
+                >
+                  <div className="overflow-auto scrollbar-thin h-max">
+                    <div className="mb-1">
+                      Crash Kantor Lain Dalam UBM (Target)
+                    </div>
+                    <RiwayatPengajuan data={customerData.history_target} />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </DialogDescription>
+          </DialogHeader>
         </DialogContent>
       </Dialog>
     </>

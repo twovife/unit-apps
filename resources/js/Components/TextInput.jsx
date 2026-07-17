@@ -27,7 +27,7 @@ export default forwardRef(function TextInput(
                 readOnly={readOnly}
                 required={required}
                 className={
-                    "border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm read-only:bg-gray-100 read-only:cursor-not-allowed " +
+                    "border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-xs read-only:bg-gray-100 read-only:cursor-not-allowed " +
                     className
                 }
                 ref={input}

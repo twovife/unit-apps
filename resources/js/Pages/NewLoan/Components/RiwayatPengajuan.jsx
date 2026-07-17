@@ -14,16 +14,10 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Button } from '@/shadcn/ui/button';
-import { Play } from 'lucide-react';
-import DetailRiwayat from '../../BukuTransaksi/Components/DetailRiwayat';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
-import axios from 'axios';
-import Loading from '@/Components/Loading';
-import ModalShowAngsuran from './ModalShowAngsuran';
 
 const RiwayatPengajuan = ({ data }) => {
   const [customerData, setCustomerData] = useState([]);
@@ -32,75 +26,55 @@ const RiwayatPengajuan = ({ data }) => {
     setCustomerData(data ?? []);
   }, [data]);
 
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [triggeredData, setTriggeredData] = useState(null);
-
-  const handleExpandedTogled = async (id) => {
-    setLoading(true);
-    setShowModal(false);
-
-    try {
-      const response = await axios.post(
-        route('transaction.get_instalment_nasabah', id)
-      );
-      setTriggeredData(response.data.data);
-      setShowModal(true);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onClosedModal = () => {
-    setShowModal(false);
-    setTriggeredData(null);
-  };
-
   const columns = useMemo(
     () => [
+      {
+        accessorKey: 'branch',
+        header: 'Kantor',
+        cell: ({ row, getValue }) => <div>{getValue()}</div>,
+      },
       {
         accessorKey: 'kelompok',
         header: 'Kelompok',
         cell: ({ row, getValue }) => (
-          <div className="text-start">
+          <div>
             <div>{row.original.unit}</div>
-            <div>Kel {getValue()}</div>
+            {getValue()}
           </div>
         ),
       },
       {
-        accessorKey: 'drop_date',
-        header: 'Tgl Drop',
-        cell: ({ row, getValue }) => (
-          <div className="text-start">
-            <div>{row.original.hari}</div>
-            <div>{dayjs(getValue()).format('DD-MM-YY')}</div>
-          </div>
-        ),
+        accessorKey: 'day',
+        header: 'Hari',
+        cell: ({ row, getValue }) => <div>{getValue()}</div>,
       },
       {
         accessorKey: 'pinjaman',
-        header: 'Pinjaman',
-        cell: ({ row, getValue }) => <FormatNumbering value={getValue()} />,
-      },
-      {
-        accessorKey: 'lunas',
-        header: 'Lunas',
+        header: 'Tgl Drop',
         cell: ({ row, getValue }) => (
-          <div>{getValue() ? 'Lunas' : 'Belum'}</div>
+          <div>{dayjs(getValue()).format('DD-MM-YY')}</div>
         ),
       },
       {
-        accessorKey: 'status',
-        header: 'status',
-        cell: ({ row, getValue }) => (
-          <BargeStatus
-            onClick={(e) => handleExpandedTogled(row.original.id)}
-            value={getValue()}
-          />
-        ),
+        accessorKey: 'status_show',
+        header: 'Status',
+        cell: ({ row, getValue }) =>
+          getValue() ? (
+            <div className="flex gap-2">
+              <div className="flex-1/3 lg:flex-1/2 lg:text-right">
+                <BadgeStatus
+                  className="justify-center w-full lg:w-16"
+                  value={row.original.status}
+                />
+              </div>
+              <div className="flex-2/3 lg:flex-1/2 lg:text-left">
+                <BadgeStatus
+                  className="lg:w-24 w-full justify-center"
+                  value={row.original.lunas}
+                />
+              </div>
+            </div>
+          ) : null,
       },
     ],
     []
@@ -115,12 +89,6 @@ const RiwayatPengajuan = ({ data }) => {
 
   return (
     <Table className="w-full table-auto">
-      <Loading show={loading} />
-      <ModalShowAngsuran
-        show={showModal}
-        triggeredData={triggeredData}
-        onClosed={onClosedModal}
-      />
       <TableHeader className="sticky top-0 z-10 bg-gray-100">
         {table.getHeaderGroups().map((headerGroup, key) => (
           <TableRow key={key}>
@@ -140,12 +108,7 @@ const RiwayatPengajuan = ({ data }) => {
           table.getRowModel().rows.map((row, key) => (
             <React.Fragment key={key}>
               <>
-                <TableRow
-                  className={`text-center ${
-                    row.original.lunas ? 'bg-green-100 hover:bg-green-50' : ''
-                  }`}
-                  key={key}
-                >
+                <TableRow className={`text-center`} key={key}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
@@ -163,7 +126,7 @@ const RiwayatPengajuan = ({ data }) => {
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan="5">Belum Ada Catatan Pinjaman</TableCell>
+            <TableCell colSpan="4">Belum Ada Catatan Pinjaman</TableCell>
           </TableRow>
         )}
       </TableBody>

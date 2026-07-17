@@ -13,8 +13,13 @@ import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
+import { usePage } from '@inertiajs/react';
+import SyncAngsuran from './SyncAngsuran';
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
+  const is_maintenaner =
+    usePage().props.auth.permissions.includes('maintenance worker');
+
   const [data, setData] = useState([]);
   useEffect(() => {
     setData(datas);
@@ -43,9 +48,19 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     setTriggeredId(id);
     setShow(true);
   };
-
   const onClosedShowOpen = () => {
     setShow(false);
+    setTriggeredId(null);
+  };
+
+  // state untuk sincron
+  const [showSync, setShowSync] = useState(false);
+  const onShowSyncModal = (id) => {
+    setTriggeredId(id);
+    setShowSync(true);
+  };
+  const onClosedSyncModal = () => {
+    setShowSync(false);
     setTriggeredId(null);
   };
 
@@ -96,9 +111,11 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               Angsuran
             </TableHead>
             <TableHead className="text-center border-x border-x-black">
+              (MD)
+            </TableHead>
+            <TableHead className="text-center border-x border-x-black">
               Saldo
             </TableHead>
-            <TableHead className="text-center">Note</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -125,6 +142,18 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
                         <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
+                        {is_maintenaner && (
+                          <div>
+                            <Button
+                              variant="blue"
+                              size="xs"
+                              onClick={() => onShowSyncModal(subrow.id)}
+                            >
+                              Sync
+                            </Button>
+                          </div>
+                        )}
+
                         <div>
                           <Button
                             size="xs"
@@ -145,7 +174,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       ) : (
                         ''
                       )}
-                      {subrow.status_pinjaman == 'normal' ? (
+                      {/* {subrow.status_pinjaman == 'normal' ? (
                         <span className="px-2 py-1 mr-1 text-xs border rounded">
                           {subrow.status_pinjaman}
                         </span>
@@ -163,7 +192,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         </span>
                       ) : (
                         <div>{subrow.status_pinjaman}</div>
-                      )}
+                      )} */}
                       {subrow.notes !== null ? (
                         <Badge>{subrow.notes}</Badge>
                       ) : (
@@ -223,6 +252,15 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering value={subrow.angsuran} />
                     </TableCell>
                     <TableCell
+                      className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black ${
+                        selectedId.includes(subrow.id)
+                          ? 'bg-green-200 hover:bg-green-50'
+                          : ''
+                      }`}
+                    >
+                      <FormatNumbering value={subrow.pemutihanThisMonth} />
+                    </TableCell>
+                    <TableCell
                       className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? 'bg-green-200 hover:bg-green-50'
@@ -231,7 +269,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     >
                       <FormatNumbering value={subrow.saldo} />
                     </TableCell>
-                    <TableCell>{subrow.notes}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-gray-100">
@@ -267,13 +304,19 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     />
                   </TableCell>
                   <TableCell
+                    className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black `}
+                  >
+                    <FormatNumbering
+                      value={calculateTotals(row.data, 'pemutihanThisMonth')}
+                    />
+                  </TableCell>
+                  <TableCell
                     className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
                   >
                     <FormatNumbering
                       value={calculateTotals(row.data, 'saldo')}
                     />
                   </TableCell>
-                  <TableCell></TableCell>
                 </TableRow>
               </React.Fragment>
             ))
@@ -284,6 +327,12 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
           )}
         </TableBody>
       </Table>
+
+      <SyncAngsuran
+        show={showSync}
+        onClosed={onClosedSyncModal}
+        triggeredId={triggeredId}
+      />
       <Action
         datas={data}
         show={show}

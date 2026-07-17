@@ -9,12 +9,13 @@ const SearchByDate = ({ datas, dateOfWeek, server_filter, ...props }) => {
     server_filter.type_show == 'macet' ? 'MACET' : 'Cari Angsuran';
   const urlLink =
     server_filter.type_show == 'macet'
-      ? route('mobile_apps.byDates')
-      : route('mobile_apps.macet');
+      ? route('mobile_apps.macet')
+      : route('mobile_apps.byDates');
   const localState =
     server_filter.type_show == 'macet'
-      ? 'mobile_apps_byDates'
-      : 'mobile_apps_macet';
+      ? 'mobile_apps_macet'
+      : 'mobile_apps_byDates';
+
   return (
     <MobileLayout header={<Head>{headerName}</Head>}>
       <AngsuranByDate

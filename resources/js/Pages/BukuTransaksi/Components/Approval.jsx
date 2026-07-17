@@ -78,7 +78,6 @@ const Approval = ({
     const getIsGenerateRencanaDropMingguDepan = datas?.filter(
       (item) => item.tanggal > triggeredDate && item.is_generated === true
     )[0];
-    // console.log(getIsGenerateRencanaDropMingguDepan);
 
     const triggeredData = Object.assign({}, getSelecterDateRencanaDropData[0]);
     setTriggeredData(triggeredData);
@@ -184,7 +183,6 @@ const Approval = ({
 
         // Ambil elemen pertama dari nilai unik tanggal_drop
         uniqueDropDatesString = uniqueDropDates[0];
-        console.log(uniqueDropDatesString);
 
         // Filter data berdasarkan tanggal_drop yang sama dengan elemen pertama dari nilai unik
         const filteredData2 = filteredData.filter((item) => {
@@ -255,7 +253,6 @@ const Approval = ({
 
   const onSubmitForm = (e) => {
     e.preventDefault();
-    // console.log(data);
 
     post(route('kasir.rekap.ceklist_kepala'), {
       onSuccess: () => {
@@ -264,7 +261,6 @@ const Approval = ({
       },
     });
   };
-  // console.log(data);
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : closedModal())}>
@@ -282,7 +278,7 @@ const Approval = ({
                 <div className="mb-1 font-semibold underline">
                   Total Transaksi Hari Ini
                 </div>
-                <Table className="mb-3 border shadow">
+                <Table className="mb-3 border shadow-sm">
                   <TableHeader>
                     <TableRow className="bg-gray-100">
                       <TableHead className="text-center">Target</TableHead>
@@ -334,7 +330,7 @@ const Approval = ({
                     </TableRow>
                   </TableBody>
                 </Table>
-                <Table className="mb-3 border shadow">
+                <Table className="mb-3 border shadow-sm">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-center bg-green-200">
@@ -470,7 +466,7 @@ const Approval = ({
                         <Label htmlFor="target">Target</Label>
 
                         <CurrencyInput
-                          className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           name="target"
                           readOnly={data.status_dayly_approval}
                           allowDecimals={false}
@@ -492,7 +488,7 @@ const Approval = ({
                     <div className="mb-3">
                       <Label htmlFor="masuk">Masuk</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="masuk"
                         readOnly={data.status_dayly_approval}
                         allowDecimals={false}
@@ -507,7 +503,7 @@ const Approval = ({
                     <div className="mb-3">
                       <Label htmlFor="keluar">Keluar</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="keluar"
                         readOnly={data.status_dayly_approval}
                         allowDecimals={false}
@@ -552,7 +548,7 @@ const Approval = ({
                         Rencana Drop Minggu Depan
                       </Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="rencana_minggu_depan"
                         allowDecimals={false}
                         readOnly={data.status_dayly_approval}
@@ -569,7 +565,7 @@ const Approval = ({
                         Target Minggu Depan
                       </Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="target_minggu_depan"
                         allowDecimals={false}
                         readOnly={data.status_dayly_approval}

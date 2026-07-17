@@ -82,13 +82,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
     const x =
       triggeredData.tunai - triggeredData.kasbon + triggeredData.transport;
 
-    console.log(x);
 
-    console.log(
-      triggeredData.tunai,
-      triggeredData.kasbon,
-      triggeredData.transport
-    );
 
     return parseFloat(x) + parseFloat(kasbon) - parseFloat(transport);
   };
@@ -138,7 +132,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
                   <Label htmlFor="kasbon">Kasbon</Label>
 
                   <CurrencyInput
-                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     name="kasbon"
                     allowDecimals={false}
                     ref={focusInputAngka}
@@ -153,7 +147,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
                 <div className="mb-3">
                   <Label htmlFor="transport">Transport</Label>
                   <CurrencyInput
-                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     name="transport"
                     allowDecimals={false}
                     prefix="Rp. "
@@ -167,7 +161,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
                 <div className="mb-3">
                   <Label htmlFor="tunai">Tunai</Label>
                   <CurrencyInput
-                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     name="tunai"
                     allowDecimals={false}
                     readOnly

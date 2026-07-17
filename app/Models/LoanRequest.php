@@ -29,10 +29,12 @@ class LoanRequest extends Model
   {
     return $this->belongsTo(Customer::class, 'customer_id', 'id');
   }
+
   public function droper()
   {
     return $this->belongsTo(Employee::class, 'mantri', 'id');
   }
+
   public function approver()
   {
     return $this->belongsTo(Employee::class, 'approved_by', 'id');

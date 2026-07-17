@@ -64,7 +64,7 @@ const BatchUpdate = ({ max_date, min_date, ...props }) => {
       <Head title="Batch Upload" />
       <div className="relative">
         <div className="flex p-4">
-          <div className="flex-[2]">
+          <div className="flex-2">
             <div className="mb-3">
               <InputLabel htmlFor="nik" value="Input Nik Customer" />
               <div className="flex items-center justify-start gap-3 mt-1">
@@ -113,12 +113,12 @@ const BatchUpdate = ({ max_date, min_date, ...props }) => {
             )}
             <div className="mb-3"></div>
           </div>
-          <div className="flex-[3]">
+          <div className="flex-3">
             <div className="mb-3">
               <div className="text-lg font-semibold">
                 History Pinjaman Customer
               </div>
-              <div className="p-4 mb-3 overflow-hidden rounded shadow">
+              <div className="p-4 mb-3 overflow-hidden rounded shadow-sm">
                 <table className="w-full text-sm text-left text-gray-500">
                   <thead className="sticky top-0 text-xs text-gray-900 uppercase bg-gray-200 whitespace-nowrap">
                     <tr>

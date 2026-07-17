@@ -57,7 +57,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
             )}
             <Label htmlFor="approved_nominal">Nominal ACC</Label>
             <CurrencyInput
-              className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               name="approved_nominal"
               allowDecimals={false}
               prefix="Rp. "
@@ -67,7 +67,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
               value={data.approved_nominal}
               placeholder={'Inputkan angka tanpa sparator'}
             />
-            <div className="flex items-center justify-end gap-3 mt-3">
+            <div className="flex items-center justify-end gap-3 mt-2">
               <Button variant="green" onClick={() => accPinjaman('acc')}>
                 ACC
               </Button>
@@ -95,7 +95,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 Drop Jadi
               </Label>
               <CurrencyInput
-                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 name="drop"
                 allowDecimals={false}
                 prefix="Rp. "
@@ -105,7 +105,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 value={data.drop}
                 placeholder={'Inputkan angka tanpa sparator'}
               />
-              <div className="flex items-center justify-end gap-3 mt-3">
+              <div className="flex items-center justify-end gap-3 mt-2">
                 <Button variant="green" onClick={() => accPinjaman('success')}>
                   DROP
                 </Button>

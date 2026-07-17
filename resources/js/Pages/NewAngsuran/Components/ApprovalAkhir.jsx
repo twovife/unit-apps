@@ -129,7 +129,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="amount">Sirkulasi Awal</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="amount"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -144,7 +144,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="ml_amount">Saldo Awal (ML)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="ml_amount"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -159,7 +159,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="mb_amount">Saldo Awal (MB)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="mb_amount"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -174,7 +174,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="cm_amount">Saldo Awal (CM)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="cm_amount"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -191,7 +191,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                         Saldo Awal (Calon CM)
                       </Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="calon_cm_amount"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -206,7 +206,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="normal">Saldo Awal (Normal)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="normal"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -223,7 +223,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label>Sirkulasi Akhir</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         allowDecimals={false}
                         prefix="Rp. "
                         min={0}
@@ -236,7 +236,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="ml_amount_akhir">Saldo Akhir (ML)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="ml_amount_akhir"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -251,7 +251,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="mb_amount_akhir">Saldo Akhir (MB)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="mb_amount_akhir"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -266,7 +266,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="cm_amount_akhir">Saldo Akhir (CM)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="cm_amount_akhir"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -283,7 +283,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                         Saldo Akhir (Calon CM)
                       </Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="calon_cm_amount_akhir"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -298,7 +298,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="normal_akhir">Saldo Akhir (Normal)</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="normal_akhir"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -317,7 +317,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                         Sirkulasi Awal Bulan Depan
                       </Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="amount_next"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -331,7 +331,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="ml_next">Saldo ML Awal Bulan Depan</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="ml_next"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -345,7 +345,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="mb_next">Saldo MB Awal Bulan Depan</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="mb_next"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -359,7 +359,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <div className="mb-3">
                       <Label htmlFor="cm_next">Saldo CM Awal Bulan Depan</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="cm_next"
                         allowDecimals={false}
                         prefix="Rp. "
@@ -375,7 +375,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                         Saldo Normal Awal Bulan Depan
                       </Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="normal_next"
                         allowDecimals={false}
                         prefix="Rp. "

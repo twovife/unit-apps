@@ -16,7 +16,6 @@ return new class extends Migration
       $table->bigInteger('transaction_loan_officer_grouping_id')->nullable();
       $table->date('date')->nullable();
 
-
       $table->bigInteger('kasbon')->default(0);
       $table->bigInteger('storting')->default(0);
 

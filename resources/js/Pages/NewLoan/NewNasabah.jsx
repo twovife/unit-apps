@@ -15,7 +15,7 @@ import { Label } from '@/shadcn/ui/label';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Search, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import useOptionGenerator from '@/Hooks/useOptionGenerator';
 import SelectComponent from '@/Components/shadcn/SelectComponent';
@@ -25,8 +25,15 @@ import Checkbox from '@/Components/Checkbox';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import NoEditOverlay from '@/Components/NoEditOverlay';
+import RiwayatPengajuanLain from './Components/RiwayatPengajuanLain';
+import RiwayatPengajuanNonBranch from '@/Pages/NewLoan/Components/RiwayatPengajuanNonBranch';
 
-const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
+const NewNasabah = ({
+  onClosed,
+  generateAngsuran = false,
+  submitUrl,
+  typeInput = 'number',
+}) => {
   // getLink after generate
   const { printUrl } = usePage().props;
   const { isUnit, isMantri, isCanShowKelompok, isCreator } =
@@ -51,8 +58,6 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     request_nominal: 0,
     angsuran: [],
   });
-
-  console.log(data);
 
   // handlingForAngsuranBatchProssess
   const [elements, setElements] = useState([]);
@@ -146,35 +151,51 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     setNik(value);
   };
 
+  const controllerRef = useRef(null);
+
   const onNikSubmit = async (e) => {
     e.preventDefault();
+
+    // Batalkan request sebelumnya kalau masih aktif
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
     reset();
     setLoading(true);
     setErorAxios();
-    await axios({
-      method: 'post',
-      url: route('transaction.nasabah_buku_transaksi'),
-      data: {
-        nik: nik,
-      },
-    })
-      .then(function ({ data }) {
+
+    try {
+      const { data } = await axios.post(
+        route('transaction.nasabah_buku_transaksi'),
+        { nik },
+        { signal: controller.signal }
+      );
+
+      setLoading(false);
+      setData((prevData) => ({
+        ...prevData,
+        nik: data.return_nik,
+        isActiveMember: !!data.data,
+      }));
+
+      if (data.data) {
+        console.log(data.data);
+        setCustomerData(data.data);
+      } else {
+        setCustomerData([]);
+      }
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log('Request dibatalkan karena ada fetch baru.');
+      } else {
+        setErorAxios(error.response?.data?.message || 'Terjadi kesalahan.');
         setLoading(false);
-        setData((prevData) => ({
-          ...prevData,
-          nik: data.return_nik,
-          isActiveMember: data.data ? true : false,
-        }));
-        if (data.data) {
-          setCustomerData(data.data);
-        } else {
-          setCustomerData([]);
-        }
-      })
-      .catch(function ({ response }) {
-        setErorAxios(response.data.message);
-        setLoading(false);
-      });
+      }
+    }
   };
 
   const modalIsClosed = (e) => {
@@ -192,6 +213,18 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     });
   };
 
+  const buttonValue = [
+    { value: 300000, label: '300rb' },
+    { value: 400000, label: '400rb' },
+    { value: 500000, label: '500rb' },
+    { value: 700000, label: '700rb' },
+    { value: 800000, label: '800rb' },
+    { value: 1000000, label: '1 jt' },
+    { value: 1300000, label: '1,3 jt' },
+    { value: 1500000, label: '1,5 jt' },
+    { value: 2000000, label: '2 jt' },
+  ];
+
   const buttonValueClick = (e) => {
     const value = e.target.getAttribute('data-value');
     setData('request_nominal', value);
@@ -201,42 +234,33 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
     <div className="flex flex-col w-full gap-3 lg:flex-row">
       <Loading show={loading || processing} />
       <div className="w-auto">
-        <fieldset className="min-w-[20vw] p-3 mb-3 border rounded-lg">
+        <fieldset className="min-w-[20vw] p-4 mb-3 border rounded-lg">
           <legend className="px-1 -ml-1 text-sm font-medium">
             CEK NIK NASABAH
           </legend>
-          <form className="w-full" onSubmit={onNikSubmit}>
-            <Label>NIK</Label>
-            <div className="grid grid-cols-3 grid-rows-2 gap-2">
-              <div className="col-span-3">
-                <Input
-                  type="number"
-                  name="nik"
-                  value={nik}
-                  onChange={onNikChange}
-                  placeholder="Cek NIK"
-                />
-                {erorAxios && (
-                  <div>
-                    <InputError message={erorAxios} className="mt-1" />
-                  </div>
-                )}
-              </div>
-              <div
-                className={`font-semibold mt-1 col-span-2 ${
-                  nik.length == 16 ? 'text-green-500' : 'text-red-500'
-                }`}
-              >
-                {nik.length} Digit
-              </div>
-              <div className="col-span-1 text-end">
-                <Button className="text-xs" size="sm">
-                  <Search className="w-auto h-4 mr-1" />
-                  Cari
-                </Button>
-              </div>
+          <form className="w-full mb-3" onSubmit={onNikSubmit}>
+            <Label optional>NIK</Label>
+            <div className="flex items-center gap-3">
+              <Input
+                type={typeInput}
+                name="nik"
+                value={nik}
+                onChange={onNikChange}
+                placeholder="Cek NIK"
+              />
+              <Button className="text-xs" size="sm">
+                <Search className="w-auto h-4 mr-1" />
+                Cari
+              </Button>
             </div>
-
+            {erorAxios && <InputError message={erorAxios} className="mt-1" />}
+            <div
+              className={`font-semibold mt-1 ${
+                nik.length == 16 ? 'text-green-500' : 'text-red-500'
+              }`}
+            >
+              {nik.length} Digit
+            </div>
             <div>
               {newGenerate && (
                 <a href={newGenerate ?? '#'} target="_blank">
@@ -253,12 +277,12 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                 <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Menambah Pinjaman" />
               )}
               <legend className="px-1 -ml-1 text-sm font-medium">
-                Detail Pengajuan
+                Detail Pinjaman
               </legend>
               <form className="w-full mb-3" onSubmit={onSubmitCreate}>
                 <div className="flex flex-col gap-5 lg:flex-row">
                   <div className="flex-1">
-                    <div className="gap-3 lg:flex">
+                    <div className="flex gap-3">
                       <div className="w-full mb-3">
                         <Label>Tanggal Pengajuan</Label>
                         <Input
@@ -377,7 +401,7 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                     <div className="w-full mb-3">
                       <Label>Nominal Pinjaman</Label>
                       <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         name="request_nominal"
                         defaultValue={0}
                         allowDecimals={false}
@@ -390,70 +414,18 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                       />
                       <InputError message={errors.request_nominal} />
                     </div>
-                    <div className="flex flex-wrap w-full gap-2 mb-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="400000"
-                      >
-                        400rb
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="500000"
-                      >
-                        500rb
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="700000"
-                      >
-                        700rb
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="800000"
-                      >
-                        800rb
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="1000000"
-                      >
-                        1 Jt
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="1500000"
-                      >
-                        1,5 Jt
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="xs"
-                        onClick={buttonValueClick}
-                        data-value="0"
-                      >
-                        reset
-                      </Button>
+                    <div className="grid grid-cols-4 mb-3 gap-x-2 gap-y-1">
+                      {buttonValue.map((button, key) => (
+                        <Button
+                          type="button"
+                          size="xs"
+                          key={key}
+                          data-value={button.value}
+                          onClick={buttonValueClick}
+                        >
+                          {button.label}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                   {elements.length > 0 && (
@@ -487,7 +459,7 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
                             <div className="flex items-center justify-start gap-3">
                               <div className="flex-1 min-w-32">
                                 <CurrencyInput
-                                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                   name="nominal"
                                   defaultValue={0}
                                   allowDecimals={false}
@@ -565,21 +537,27 @@ const NewNasabah = ({ onClosed, generateAngsuran = false, submitUrl }) => {
           )}
         </div>
       </div>
-
       <div className="w-auto lg:w-full">
+        <div className="text-xl mb-3 font-semibold">CRASH</div>
         <Tabs defaultValue="pengajuan" className="w-auto">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pengajuan">Crash Kantor</TabsTrigger>
-            <TabsTrigger value="pinjaman">Crash UBM</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pengajuan">Kantor</TabsTrigger>
+            <TabsTrigger value="pinjaman">Kantor Lain (NT)</TabsTrigger>
+            <TabsTrigger value="pinjaman2">Kantor Lain (T)</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">
-            <div className="max-h-[70vh] h-min overflow-auto scrollbar-thin rounded">
+            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
               <RiwayatPengajuan data={customerData?.history_branch} />
             </div>
           </TabsContent>
           <TabsContent value="pinjaman">
-            <div className="max-h-[70vh] h-min overflow-auto scrollbar-thin rounded">
-              <RiwayatPengajuan data={customerData?.history_lain} />
+            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
+              <RiwayatPengajuan data={customerData?.history_macet_lain} />
+            </div>
+          </TabsContent>
+          <TabsContent value="pinjaman2">
+            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
+              <RiwayatPengajuan data={customerData?.history_target} />
             </div>
           </TabsContent>
         </Tabs>

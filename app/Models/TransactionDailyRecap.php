@@ -37,6 +37,12 @@ class TransactionDailyRecap extends Model
     "monthly_kepala_approval_user",
     "monthly_kasir_approval",
     "monthly_kasir_approval_user",
+    "month1_amount",
+    "month2_amount",
+    "ccm_amount",
+    "cm_amount",
+    "mb_amount",
+    "ml_amount",
 
   ];
 
@@ -44,12 +50,6 @@ class TransactionDailyRecap extends Model
   {
     parent::boot();
 
-    // static::saving(function ($transactionDailyRecap) {
-    //   if ($transactionDailyRecap->wasChanged('storting') || $transactionDailyRecap->wasChanged('drop')) {
-    //     $day = AppHelper::dateName($transactionDailyRecap->date);
-    //     dd($day);
-    //   }
-    // });
 
     static::updating(function ($transactionDailyRecap) {
       if ($transactionDailyRecap->isDirty('keluar') || $transactionDailyRecap->isDirty('drop')) {

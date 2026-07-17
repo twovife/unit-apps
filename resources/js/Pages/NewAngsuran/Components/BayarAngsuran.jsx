@@ -66,7 +66,6 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
     });
   };
 
-  // const [pelunasan, setPelunasan] = useState(0);
   const [nominalPembayaran, setNominalPembayaran] = useState([
     50000, 52000, 60000, 65000, 100000, 130000, 195000, 260000, 390000,
   ]);
@@ -140,7 +139,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
           <div className="mb-3">
             <Label htmlFor="nominal">Nominal</Label>
             <CurrencyInput
-              className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               name="nominal"
               allowDecimals={false}
               prefix="Rp. "
@@ -151,6 +150,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
               placeholder={'Inputkan angka tanpa sparator'}
             />
           </div>
+
           <div className="flex flex-wrap gap-3">
             <Button
               type="button"
@@ -192,6 +192,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
                 </Button>
               ))}
           </div>
+
           <div className="flex items-center justify-between mt-6">
             <div>
               {triggeredData.status_pinjaman !== 'normal' && (
@@ -207,7 +208,9 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
                 </label>
               )}
             </div>
-            <Button type="submit">Submit</Button>
+            <Button disabled={processing} type="submit">
+              Submit
+            </Button>
           </div>
         </form>
       </CardContent>
