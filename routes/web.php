@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\BatchInputController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\MobileAppsMantriController;
+use App\Http\Controllers\PindahResortController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionDailyRecapController;
 use App\Http\Controllers\TransactionLoanController;
@@ -47,6 +49,15 @@ Route::middleware('auth')->group(function () {
     dd($data);
   });
 
+  Route::controller(BatchInputController::class)->name('batch_input.')->prefix('batch-input')->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::post('/', 'store')->name('store');
+    Route::post('/check', 'validateData')->name('validateData');
+  });
+
+  Route::controller(PindahResortController::class)->group(function () {
+    Route::get('/pindah-resort', 'PindahResort')->name('pindah_resort');
+  });
 
   Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
