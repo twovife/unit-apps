@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:public/build/assets/createLucideIcon-BmBwl5om.js
 import{r as n}from"./app-DGVigBOE.js";/**
+========
+import{r as n}from"./app-89964f60.js";/**
+>>>>>>>> merge-latest-docker:public/build/assets/createLucideIcon-6426f9be.js
  * @license lucide-react v0.424.0 - ISC
  *
  * This source code is licensed under the ISC license.
