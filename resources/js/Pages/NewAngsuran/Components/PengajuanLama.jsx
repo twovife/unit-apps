@@ -4,18 +4,28 @@ import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { useForm } from '@inertiajs/react';
+import axios from 'axios';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
+import { getLastDateForHari } from '@/lib/utils';
+import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 
 const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
   const { data, setData, errors, post, processing, reset } = useForm({
-    request_date: dayjs().format('YYYY-MM-DD'),
+    request_date: getLastDateForHari(triggeredPinjaman?.hari),
     tanggal_drop: '',
     request_nominal: 0,
+    nomor_anggota: triggeredPinjaman?.nomor_anggota ?? '',
+    residential_address: triggeredPinjaman?.domisili ?? '',
     type: 'pengajuan', //type have pengajuan,baru,TD
   });
-  const [isActiveTarget, setIsActiveTarget] = useState();
+
+  // Nasabah yang pinjaman ini sudah punya pengajuan pengganti yang masih
+  // berjalan (open/acc/success) tidak boleh diajukan lagi - form diganti
+  // ringkasan pengajuan yang sudah ada + link ke drop hari itu. `null`
+  // berarti belum dicek / boleh mengajukan.
+  const [existingPengajuan, setExistingPengajuan] = useState(null);
 
   const [mixDate, setMixDate] = useState();
 
@@ -28,14 +38,6 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
         .format('YYYY-MM-DD'),
     }));
   }, [data.request_date]);
-
-  const isTargetActive = (params) => {
-    if (params) {
-      setIsActiveTarget(true);
-    } else {
-      setIsActiveTarget(false);
-    }
-  };
 
   const onInputChange = (e) => {
     const { name, value } = e.target;
@@ -56,8 +58,8 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
       const response = await axios.get(
         route('pinjaman.checkpengajuan', triggeredId)
       );
-
-      isTargetActive(response.data.data.loan_out_status);
+      const { sudah_diajukan, pengajuan } = response.data.data;
+      setExistingPengajuan(sudah_diajukan ? pengajuan : null);
     } catch (error) {
       console.log(error);
     }
@@ -81,8 +83,50 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
   };
   return (
     <div>
-      {isActiveTarget ? (
-        <div>Ada Pengajuan</div>
+      {existingPengajuan ? (
+        <div className="space-y-2 text-sm">
+          <p className="font-medium text-foreground">
+            Nasabah ini sudah diajukan pinjaman baru — tidak bisa diajukan
+            lagi.
+          </p>
+          <div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-muted/40">
+            <div>
+              <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Status
+              </div>
+              <div className="capitalize">{existingPengajuan.status}</div>
+            </div>
+            <div>
+              <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Tanggal Drop
+              </div>
+              <div>{dayjs(existingPengajuan.tanggal_drop).format('DD-MM-YYYY')}</div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                {existingPengajuan.status === 'success' ? 'Drop' : 'Pengajuan'}
+              </div>
+              <FormatNumbering
+                value={
+                  existingPengajuan.nominal_drop ??
+                  existingPengajuan.request_nominal
+                }
+                className="font-semibold"
+              />
+            </div>
+          </div>
+          <a
+            href={route('pinjaman.index_pinjaman', {
+              date: existingPengajuan.tanggal_drop,
+              kelompok: existingPengajuan.kelompok,
+            })}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block text-blue-500 underline"
+          >
+            Lihat Drop Hari Itu
+          </a>
+        </div>
       ) : (
         <div>
           <Loading show={processing} />
@@ -108,6 +152,40 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
               onChange={onInputChange}
             />
             <InputError message={errors.tanggal_drop} />
+          </div>
+
+          <div className="w-full mb-3">
+            <Label>Kelompok</Label>
+            <Input type="text" value={triggeredPinjaman?.kelompok ?? ''} disabled />
+          </div>
+
+          <div className="w-full mb-3">
+            <Label>Nomor Anggota</Label>
+            <Input
+              type="text"
+              name="nomor_anggota"
+              required={true}
+              value={data.nomor_anggota}
+              onChange={onInputChange}
+            />
+            <InputError message={errors.nomor_anggota} />
+          </div>
+
+          <div className="w-full mb-3">
+            <Label>Domisili Nasabah</Label>
+            <Input
+              type="text"
+              name="residential_address"
+              value={data.residential_address}
+              onChange={onInputChange}
+              placeholder={triggeredPinjaman?.alamat}
+            />
+            <InputError message={errors.residential_address} />
+            {!data.residential_address && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Kosong berarti pakai alamat identitas: {triggeredPinjaman?.alamat ?? '—'}
+              </p>
+            )}
           </div>
 
           <div className="w-full mb-3">

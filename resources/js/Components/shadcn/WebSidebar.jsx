@@ -15,6 +15,8 @@ import {
   SidebarRail,
 } from '@/shadcn/ui/sidebar';
 
+import GlobalBranchFilter from '../GlobalBranchFilter';
+
 // This is sample data.
 const data = {
   navMain: [
@@ -59,15 +61,19 @@ const data = {
       url: '#',
       items: [
         {
-          title: 'Angsuran Lancar',
+          title: 'Laporan Harian',
           url: '#',
         },
         {
-          title: 'Macet',
+          title: 'Data Angsuran',
           url: '#',
         },
         {
-          title: 'Perbulan',
+          title: 'Sirkulasi Bulanan',
+          url: '#',
+        },
+        {
+          title: 'Lunas Total',
           url: '#',
         },
       ],
@@ -101,6 +107,7 @@ export function WebSidebar({ ...props }) {
   return (
     <Sidebar {...props}>
       <SidebarHeader>
+        <GlobalBranchFilter />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>

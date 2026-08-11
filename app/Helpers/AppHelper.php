@@ -43,9 +43,16 @@ class AppHelper
   public static function getMantri($officerGrouping)
   {
 
-    if (auth()->user()->hasAnyPermission(['unit pimpinan', 'unit mantri', 'unit km'])) {
-      return auth()->user()->employee->id;
-    }
+    // CATATAN: dulu di sini ada cabang
+    //   if (hasAnyPermission(['unit pimpinan','unit mantri','unit km']))
+    //       return employee id user yang login;
+    // Ketiga nama itu tidak pernah ada di tabel `permissions`, sehingga
+    // hasAnyPermission() selalu mengembalikan false (diam, tidak melempar) dan
+    // cabang tersebut TIDAK PERNAH jalan. Seluruh data historis terbentuk lewat
+    // jalur pencarian di bawah. Cabang itu sengaja dihapus, bukan diperbaiki
+    // jadi cek role, agar atribusi `user_mantri` tetap konsisten dengan data
+    // lama. Kalau suatu saat pimpinan/KM ingin tercatat atas nama dirinya
+    // sendiri, itu perubahan aturan bisnis yang harus diputuskan terpisah.
     $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
       ->where('area', $officerGrouping->kelompok)
       ->orderBy('id', 'desc')
@@ -301,87 +308,44 @@ class AppHelper
 
   public static function user_permission(): string
   {
-    $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit'
-      : (auth()->user()->hasPermissionTo('area') ? 'mantri'
-        : (auth()->user()->hasPermissionTo('wilayah') ? 'wilayah'
-          : "pusat"));
-    return $previledge;
+    // Cukup gunakan Role pertama yang dimiliki user
+    $roles = auth()->user()->getRoleNames();
+    return $roles->first() ?? 'mantri';
   }
 
   public static function branch_permission($authorized, $branch_id)
   {
-    $result = collect([
+    // Backward compatibility shim untuk UI lama
+    return collect([
       'canShowGroupingBranch' => false,
-      'canShowBranch' => false,
-      'canShowKelompok' => false,
-      'canCreate' => false,
-      'branches' => collect()
+      'canShowBranch' => false, // Global filter digunakan, matikan lokal
+      'canShowKelompok' => $authorized->hasPermissionTo('view-all-groups'),
+      'canCreate' => $authorized->hasPermissionTo('can-create'),
+      'branches' => collect() // Dikosongkan karena menggunakan Global Selector
     ]);
-
-    if ($authorized->hasPermissionTo('unit_pengawas')) {
-      $result['canShowGroupingBranch'] = false;
-      $result['canShowBranch'] = true;
-      $result['canShowKelompok'] = true;
-      $result['canCreate'] = auth()->user()->branch->id == $branch_id ? true : false;
-
-      $employmentPermission = EmploymentPermission::where('employee_id', $authorized->employee->id)->pluck('branch_id');
-      $result['branches'] = Branch::whereIn('id', $employmentPermission)->get();
-      return $result;
-    }
-
-    if ($authorized->hasPermissionTo('can show branch')) {
-      $result['canShowGroupingBranch'] = true;
-      $result['canShowBranch'] = false;
-      $result['canShowKelompok'] = true;
-      $result['canCreate'] = false;
-      if ($authorized->hasPermissionTo('staffkontrol4')) {
-        $result['branches'] = Branch::where('wilayah', 4)->get();
-      } else {
-        $result['branches'] = Branch::all();
-      }
-      return $result;
-    } else {
-      $result['canShowGroupingBranch'] = false;
-      $result['canShowBranch'] = false;
-      $result['canShowKelompok'] = $authorized->can('can show kelompok') ?? false;
-      $result['canCreate'] = true;
-      $result['branches'] = Branch::where('id', $authorized->employee->branch_id)->get();
-      return $result;
-    }
   }
 
   public static function user_authorized($authorized)
   {
-    if ($authorized->hasPermissionTo('unit_pengawas')) {
-      $employmentPermission = EmploymentPermission::where('employee_id', $authorized->employee->id)->pluck('id');
-      return Branch::whereIn('id', $employmentPermission)->get();
-    }
-    if ($authorized->hasPermissionTo('can show branch')) {
-      if ($authorized->hasPermissionTo('staffkontrol4')) {
-        $result['branches'] = Branch::where('wilayah', 4)->get();
-      } else {
-        $result['branches'] = Branch::all();
-      }
-    } else {
-      return Branch::where('id', $authorized->employee->branch_id)->get();
-    }
+    // Global filter digunakan, data branches dihandle oleh Middleware
+    return collect();
   }
   public static function get_closed_date($date)
   {
 
-    if (auth()->user()->hasPermissionTo('pusat apps')) {
+    if (auth()->user()->hasRole('superuser') || auth()->user()->hasRole('stafkontrol')) {
       return null;
     }
 
-    if (auth()->user()->hasPermissionTo('maintenance worker')) {
+    if (auth()->user()->hasPermissionTo('can-edit')) {
       return null;
     }
 
-    if (auth()->user()->hasPermissionTo('unit apps')) {
+    if (auth()->user()->hasAnyRole(['kasir', 'pimpinan', 'kepala-mantri', 'pengawas'])) {
       $closedUnitTransaction = Carbon::parse($date)->copy()->subMonth(1)->startOfMonth()->format('Y-m-d');
       return $closedUnitTransaction;
     }
-    if (auth()->user()->hasPermissionTo('mantri apps')) {
+    if (auth()->user()->hasRole('mantri')) {
       return $date;
     }
     return $date;
@@ -392,21 +356,90 @@ class AppHelper
     $date = Carbon::parse($date);
     $now = Carbon::now();
 
-    if (auth()->user()->hasPermissionTo('area')) {
+    if (auth()->user()->hasRole('mantri')) {
       if ($date->lt($now->subDays(2))) {
-        return ["status" => false, 'message' => 'Tanggal Sudah Lewat 2 Hari, Hubungi Pimpinan Untuk Merubah']; // Tanggal lebih dari 2 hari yang lalu
+        return ["status" => false, 'message' => 'Tanggal Sudah Lewat 2 Hari, Hubungi Pimpinan Untuk Merubah'];
       }
       return ["status" => true];
     }
 
-    if (auth()->user()->hasPermissionTo('unit')) {
+    if (auth()->user()->hasAnyRole(['kasir', 'pimpinan', 'kepala-mantri', 'pengawas'])) {
       if ($date->lt($now->subMonthsNoOverflow(2))) {
-        return ["status" => true]; // Tanggal lebih dari 2 hari yang lalu
+        return ["status" => true];
       }
       return ["status" => true];
     }
 
-    return ["status" => false, 'message' => 'User Tidak Punya Akses Merubah Data']; // Tanggal lebih dari 2 hari yang lalu
+    return ["status" => false, 'message' => 'User Tidak Punya Akses Merubah Data'];
+  }
+
+  /**
+   * Gerbang khusus HAPUS PINJAMAN (destroy_loan). Sengaja dipisah dari
+   * havePermissionByDate() - aturan tanggal 2 hari & bug "selalu true" di
+   * sana tidak relevan untuk hapus, dan havePermissionByDate masih dipakai
+   * destroy_angsuran/updateEverything jadi tidak boleh diubah di sini.
+   *
+   *  - mantri     : boleh hanya jika drop_date ATAU request_date pinjaman itu
+   *                 adalah HARI INI. Selain itu ditolak, tanpa pengecualian.
+   *  - can-approve (kasir, pimpinan, kepala-mantri, pengawas, stafkontrol,
+   *                 superuser): boleh selama rekap harian tanggal drop BELUM
+   *                 di-ACC kepala (transaction_daily_recaps.daily_kepala_approval
+   *                 masih null). Begitu terkunci, TIDAK ADA pengecualian
+   *                 (termasuk superuser - beda dengan Reset Pinjaman).
+   *  - lainnya    : ditolak.
+   */
+  /**
+   * true = pinjaman ini sudah dijadikan dasar pengajuan lain yang masih
+   * aktif (top-up lewat previous_loan_id ATAU Tundaan lewat
+   * postponed_loan_id, status open/acc/success). Dipakai `canDeleteLoan()`
+   * dan gerbang Reset Pinjaman di `updateEverything()` - keduanya harus
+   * memblokir tanpa pengecualian role apa pun, sama seperti gerbang
+   * tampilan di RemoveLoan.jsx/ChangeDetail.jsx.
+   */
+  public static function sudahDiajukanPengganti(\App\Models\TransactionLoan $transactionLoan): bool
+  {
+    return \App\Models\TransactionLoan::where(function ($q) use ($transactionLoan) {
+      $q->where('previous_loan_id', $transactionLoan->id)
+        ->orWhere('postponed_loan_id', $transactionLoan->id);
+    })
+      ->whereIn('status', ['open', 'acc', 'success'])
+      ->exists();
+  }
+
+  public static function canDeleteLoan(\App\Models\TransactionLoan $transactionLoan): array
+  {
+    $user = auth()->user();
+
+    if (self::sudahDiajukanPengganti($transactionLoan)) {
+      return ["status" => false, 'message' => 'Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa dihapus.'];
+    }
+
+    if ($user->hasRole('mantri')) {
+      $today = Carbon::now()->format('Y-m-d');
+      $dropDate = $transactionLoan->drop_date ? Carbon::parse($transactionLoan->drop_date)->format('Y-m-d') : null;
+      $requestDate = $transactionLoan->request_date ? Carbon::parse($transactionLoan->request_date)->format('Y-m-d') : null;
+
+      if ($dropDate === $today || $requestDate === $today) {
+        return ["status" => true];
+      }
+
+      return ["status" => false, 'message' => 'Mantri hanya bisa menghapus pinjaman dengan tanggal pengajuan atau tanggal drop hari ini. Hubungi KM / Pimpinan untuk tanggal lain.'];
+    }
+
+    if ($user->hasPermissionTo('can-approve')) {
+      $recapTerkunci = \App\Models\TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
+        ->where('date', $transactionLoan->drop_date)
+        ->whereNotNull('daily_kepala_approval')
+        ->exists();
+
+      if ($recapTerkunci) {
+        return ["status" => false, 'message' => 'Rekap harian tanggal drop ini sudah di-ACC pimpinan, pinjaman tidak bisa dihapus.'];
+      }
+
+      return ["status" => true];
+    }
+
+    return ["status" => false, 'message' => 'Anda tidak mempunyai akses menghapus pinjaman.'];
   }
 
   public static function havePermissionByPermission($params)

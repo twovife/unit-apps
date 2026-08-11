@@ -8,7 +8,6 @@ import { Search, SearchCheck } from 'lucide-react';
 import Loading from '@/Components/Loading';
 import { useForm, usePage } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import { Label } from '@/shadcn/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import axios from 'axios';
@@ -34,8 +33,10 @@ const FastCreateV2 = () => {
   }, [currentMonth, currentKelompok]);
 
   const { printUrl } = usePage().props;
-  const { isUnit, isMantri, isCanShowKelompok, isCreator } =
-    useFrontEndPermission();
+  // 'can show kelompok' tidak pernah ada di tabel permissions - padanan aslinya
+  // adalah 'view-all-groups'. Mantri (tanpa hak ini) tetap terkunci di areanya.
+  const isCanShowKelompok =
+    usePage().props.auth?.permissions?.includes('view-all-groups');
 
   const [newGenerate, setNewGenerate] = useState(null);
 
@@ -149,16 +150,16 @@ const FastCreateV2 = () => {
   const onInputElementChange = (id, name, value) => {
     setAngsuran(
       angsuran.map((element) =>
-        element.id === id ? { ...element, [name]: value } : element
-      )
+        element.id === id ? { ...element, [name]: value } : element,
+      ),
     );
   };
 
   const onHandleElementCurencyChange = (value, name, id) => {
     setAngsuran(
       angsuran.map((element) =>
-        element.id === id ? { ...element, [name]: value } : element
-      )
+        element.id === id ? { ...element, [name]: value } : element,
+      ),
     );
   };
 
@@ -184,7 +185,7 @@ const FastCreateV2 = () => {
       const { data } = await axios.post(
         route('transaction.nasabah_buku_transaksi'),
         { nik },
-        { signal: controller.signal }
+        { signal: controller.signal },
       );
 
       setLoading(false);
@@ -225,7 +226,7 @@ const FastCreateV2 = () => {
     setAngsuran((prevAngs) =>
       prevAngs.some((item) => item.id === 1)
         ? prevAngs.map((item) =>
-            item.id === 1 ? { ...item, nominal: angsuran } : item
+            item.id === 1 ? { ...item, nominal: angsuran } : item,
           )
         : [
             {
@@ -235,7 +236,7 @@ const FastCreateV2 = () => {
                 .format('YYYY-MM-DD'),
             },
             ...prevAngs,
-          ]
+          ],
     );
   };
 
@@ -517,7 +518,7 @@ const FastCreateV2 = () => {
                                     onHandleElementCurencyChange(
                                       value,
                                       name,
-                                      element.id
+                                      element.id,
                                     )
                                   }
                                   value={element.nominal}
@@ -534,7 +535,7 @@ const FastCreateV2 = () => {
                                     onInputElementChange(
                                       element.id,
                                       e.target.name,
-                                      e.target.checked
+                                      e.target.checked,
                                     )
                                   }
                                 />

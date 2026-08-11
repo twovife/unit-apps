@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 import { Link, usePage } from '@inertiajs/react';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import {
-  BookA,
   BookCheck,
   BookMarked,
   HandCoinsIcon,
@@ -65,14 +64,6 @@ const Index = () => {
         <div className="flex items-center justify-around gap-6">
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href={route('mobile_apps.buku_angsuran')}>
-                <BookA className="h-7 w-7" />
-              </Link>
-            </Button>
-            <div>Buku Angsuran</div>
-          </div>
-          <div className="text-center">
-            <Button size="icon2xl" variant="outline" asChild>
               <Link href={route('mobile_apps.byDates')}>
                 <UserX className="h-7 w-7" />
               </Link>
@@ -105,7 +96,7 @@ const Index = () => {
             </div>
             <div className="text-center">
               <Button size="icon2xl" variant="outline" asChild>
-                <Link href={route('mobile_apps.buku_transaksi_kepala')}>
+                <Link href={route('transaction.index_buku_transaksi')}>
                   <BookMarked className="h-7 w-7" />
                 </Link>
               </Button>

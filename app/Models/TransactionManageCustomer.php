@@ -18,7 +18,8 @@ class TransactionManageCustomer extends Model
     "residential_address",
     "alternative_name",
     "status",
-    'notes'
+    'notes',
+    'nomor_anggota',
   ];
 
   public function customers()

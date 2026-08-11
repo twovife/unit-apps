@@ -7,7 +7,7 @@ import { MobileIcon } from '@radix-ui/react-icons';
 import MobileLayout from '@/Layouts/MobileLayout';
 
 export default function Edit({ auth, mustVerifyEmail, status }) {
-  const permissionMantri = auth.permissions.includes('unit mantri');
+  const permissionMantri = auth.roles.includes('mantri');
   const Layout = permissionMantri ? MobileLayout : AuthenticatedLayout;
 
   return (

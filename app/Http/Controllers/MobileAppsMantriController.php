@@ -25,19 +25,13 @@ class MobileAppsMantriController extends Controller
   public function transaksi(Request $request)
   {
     $data = $this->getTransactionLoan($request, false, true);
-    return Inertia::render('MobileApps/BukuTransaksiMantri/TransaksiMantri', $data);
+    return Inertia::render('BukuTransaksi/Mobile/TransaksiMantri', $data);
   }
 
   public function angsuran(Request $request)
   {
     $data = $this->getLoanMantri($request, true);
     return Inertia::render("MobileApps/Angsuran/Index", $data);
-  }
-
-  public function buku_angsuran(Request $request)
-  {
-    $data = $this->getLoan($request);
-    return Inertia::render("MobileApps/BukuAngsuranMantri/Index", $data);
   }
 
   public function macet(Request $request)
@@ -53,12 +47,6 @@ class MobileAppsMantriController extends Controller
     return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
   }
 
-
-  public function buku_transaksi_kepala(Request $request)
-  {
-    $data = $this->getTransactionLoan($request, true);
-    return Inertia::render('MobileApps/BukuTransaksiKepala/TransaksiMantri', $data);
-  }
 
   public function rencana_drop_kepala(Request $request)
   {

@@ -24,7 +24,7 @@ class AdminController extends Controller
   {
     $role = Role::with('permissions', 'users')->get();
     $user = User::with('rolelist')->get();
-    $maintenen_workers = User::permission('maintenance worker')->with('branch', 'employee')->get();
+    $maintenen_workers = User::permission('can-edit')->with('branch', 'employee')->get();
     // dd($maintenen_workers);
 
     $permission = Permission::all();
@@ -162,14 +162,14 @@ class AdminController extends Controller
     if ($request->type == 1) {
       try {
         $user = User::find($userid);
-        $user->givePermissionTo('maintenance worker');
+        $user->givePermissionTo('can-edit');
       } catch (Exception $e) {
         return redirect()->back()->withErrors('User Assigned Error');
       }
     } else {
       try {
         $user = User::find($userid);
-        $user->revokePermissionTo('maintenance worker');
+        $user->revokePermissionTo('can-edit');
       } catch (Exception $e) {
         return redirect()->back()->withErrors('User Assigned Error');
       }

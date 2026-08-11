@@ -16,10 +16,11 @@ trait RekapTrait
 {
   public function getRencanaDropKepalaData(Request $request)
   {
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
     $transaction_date = $request->month ?? Carbon::now()->format('Y-m');
@@ -99,10 +100,11 @@ trait RekapTrait
 
   public function getRekapDuaData(Request $request)
   {
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
     $transaction_date = Carbon::parse($request->date ?? Carbon::now());
@@ -392,10 +394,11 @@ trait RekapTrait
 
   public function getDataRekapDua(Request $request)
   {
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
     $transaction_date = Carbon::parse($request->date ?? Carbon::now());
@@ -613,10 +616,11 @@ trait RekapTrait
 
   public function getRekapPermantriData(Request $request)
   {
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
     $transaction_date = Carbon::parse($request->month ?? Carbon::now());

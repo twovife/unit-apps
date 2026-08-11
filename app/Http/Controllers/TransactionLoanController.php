@@ -8,6 +8,7 @@ use App\Models\TransactionCustomer;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
 use App\Models\TransactionLoanOfficerGrouping;
+use App\Models\TransactionManageCustomer;
 use App\Traits\PinjamanTrait;
 use Carbon\Carbon;
 use Exception;
@@ -24,7 +25,7 @@ class TransactionLoanController extends Controller
   public function fastcreate(Request $request)
   {
 
-    return Inertia::render('WebView/BukuTransaksi/BatchUpload');
+    return Inertia::render('BukuTransaksi/Web/BatchUpload');
   }
 
 
@@ -33,7 +34,7 @@ class TransactionLoanController extends Controller
   {
 
 
-    return Inertia::render('WebView/BukuTransaksi/FastCreateV2');
+    return Inertia::render('BukuTransaksi/Web/FastCreateV2');
   }
 
 
@@ -41,7 +42,7 @@ class TransactionLoanController extends Controller
   {
 
 
-    return Inertia::render('WebView/BukuTransaksi/InputMacet');
+    return Inertia::render('BukuTransaksi/Web/InputMacet');
   }
 
 
@@ -49,7 +50,7 @@ class TransactionLoanController extends Controller
   {
 
     $data = $this->getTransactionLoan($request, true);
-    return Inertia::render('WebView/BukuTransaksi/TransaksiMantri', $data);
+    return Inertia::render('BukuTransaksi/Web/TransaksiMantri', $data);
   }
 
 
@@ -235,7 +236,7 @@ class TransactionLoanController extends Controller
   public function store_buku_transaksi(Request $request)
   {
 
-    if (!auth()->user()->hasPermissionTo('can create')) {
+    if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
     }
 
@@ -243,12 +244,16 @@ class TransactionLoanController extends Controller
 
 
     $previousRouteName = app('router')->getRoutes()->match(app('request')->create($previousUrl))->getName();
-    if (!auth()->user()->hasPermissionTo('can create')) {
+    if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
 
     if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
       return redirect()->back()->withErrors('Hari Tidak Sama');
+    }
+
+    if (AppHelper::dateName($request->tanggal_drop) === 'minggu') {
+      return redirect()->back()->withErrors('Tidak bisa input transaksi untuk hari Minggu');
     }
 
     $newNik = AppHelper::callUnknownNik($request);
@@ -286,7 +291,8 @@ class TransactionLoanController extends Controller
         $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
       }
 
-      $mantri = AppHelper::getMantri($officerGrouping);
+      // Sesuai request: user_mantri disamakan dengan user_input
+      $mantri = auth()->user()->employee->id;
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
@@ -295,7 +301,7 @@ class TransactionLoanController extends Controller
         'drop_date' => $request->tanggal_drop,
         'hari' => AppHelper::dateName($request->tanggal_drop),
         'status' => "open",
-        'user_input' => auth()->user()->employee->id,
+        'user_input' => $mantri,
 
         'drop_before' => $request['drop_before'],
         'request_nominal' => $request->request_nominal,
@@ -328,13 +334,17 @@ class TransactionLoanController extends Controller
   public function store_buku_transaksi_batch(Request $request)
   {
     // dd($request->all());
-    if (!auth()->user()->hasPermissionTo('can create')) {
+    if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
     }
 
     // if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
     //   return redirect()->back()->withErrors('Hari Tidak Sama');
     // }
+
+    if (AppHelper::dateName($request->tanggal_drop) === 'minggu') {
+      return redirect()->back()->withErrors('Tidak bisa input transaksi untuk hari Minggu');
+    }
 
     $angsuran = collect($request->angsuran)->sortBy('transaction_date')->values();
 
@@ -413,7 +423,8 @@ class TransactionLoanController extends Controller
       }
 
 
-      $mantri = AppHelper::getMantri($officerGrouping);
+      // Sesuai request: user_mantri disamakan dengan user_input
+      $mantri = auth()->user()->employee->id;
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
@@ -422,7 +433,7 @@ class TransactionLoanController extends Controller
         'drop_date' => $request->tanggal_drop,
         'hari' => AppHelper::dateName($request->tanggal_drop),
         'status' => "open",
-        'user_input' => auth()->user()->employee->id,
+        'user_input' => $mantri,
 
         'drop_before' => $request['drop_before'],
         'request_nominal' => $request->request_nominal,
@@ -439,7 +450,7 @@ class TransactionLoanController extends Controller
       } else {
         $loan->update([
           'status' =>  "success",
-          'user_check' => auth()->user()->employee->id,
+          'user_check' => $mantri,
           'check_date' => Carbon::now()->format('Y-m-d'),
           'approved_nominal' => $request->request_nominal,
 
@@ -485,14 +496,14 @@ class TransactionLoanController extends Controller
   public function store_pengajuan_lama(TransactionLoan $transactionLoan, Request $request)
   {
 
-    if (!auth()->user()->hasPermissionTo('can create')) {
+    if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
     }
 
     $previousUrl = url()->previous();
 
     $previousRouteName = app('router')->getRoutes()->match(app('request')->create($previousUrl))->getName();
-    if (!auth()->user()->hasPermissionTo('can create')) {
+    if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
 
@@ -508,6 +519,8 @@ class TransactionLoanController extends Controller
       'request_date' => ['required', 'date'],
       'tanggal_drop' =>  ['required', 'date'],
       'type' =>  ['required'],
+      'nomor_anggota' => ['required', 'string', 'max:255'],
+      'residential_address' => ['nullable', 'string', 'max:255'],
     ], [
       '*.min' => 'minimal diisi 100rb'
     ]);
@@ -519,11 +532,19 @@ class TransactionLoanController extends Controller
       $officerGrouping = TransactionLoanOfficerGrouping::find($transactionLoan->transaction_loan_officer_grouping_id);
       $mantri = AppHelper::getMantri($officerGrouping);
 
-
+      // Domisili & nomor anggota melekat ke manage_customer (per
+      // kelompok/kantor), bukan ke TransactionCustomer (identitas NIK) -
+      // nasabah yang sama bisa punya manage_customer berbeda di kantor lain.
+      TransactionManageCustomer::whereKey($transactionLoan->transaction_manage_customer_id)
+        ->update([
+          'nomor_anggota' => $request->nomor_anggota,
+          'residential_address' => $request->residential_address,
+        ]);
 
       $loan = TransactionLoan::create([
         'transaction_manage_customer_id' => $transactionLoan->transaction_manage_customer_id,
         'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+        'previous_loan_id' => $transactionLoan->id,
         'request_date' => $request->request_date,
         'user_mantri' => $mantri,
         'drop_date' => $request->tanggal_drop,
@@ -544,10 +565,14 @@ class TransactionLoanController extends Controller
         ]);
       }
 
-      $transactionLoan->out_date = $request->tanggal_drop;
-      $transactionLoan->transaction_out_reasons_id = 1;
-      $transactionLoan->save();
-
+      // Penandaan pinjaman lama sebagai LUNAS (out_date/transaction_out_reasons_id
+      // + baris angsuran pelunasan otomatis) TIDAK lagi dilakukan di sini -
+      // dulu terjadi seketika saat pengajuan disubmit, padahal pinjaman
+      // barunya belum tentu jadi di-drop (bisa ditolak/gagal di ACC kepala).
+      // Sekarang ditangani otomatis oleh TransactionLoan::boot() begitu
+      // pinjaman baru ini status-nya benar-benar berubah jadi 'success'
+      // (baik langsung di atas kalau $drop_langsung, maupun belakangan lewat
+      // action_buku_transaksi ketika kepala meng-ACC lalu drop).
 
       DB::commit();
     } catch (Exception $exception) {
@@ -560,14 +585,82 @@ class TransactionLoanController extends Controller
   }
 
 
+  /**
+   * TUNDAAN: pengajuan yang sudah di-ACC KM tapi mau dipindah tanggal
+   * drop-nya. Pengajuan LAMA (ini) otomatis jadi 'gagal' - TIDAK dihapus -
+   * dan dibuat 1 pengajuan BARU dengan tanggal drop baru, status **'open'**
+   * (BUKAN 'acc' - KM tetap harus meng-ACC/Tolak ulang, karena kadang KM
+   * berubah pikiran dan menolak nasabahnya saat itu juga). Ditandai
+   * `postponed_loan_id` supaya kelihatan di UI sebagai badge "TD".
+   *
+   * `previous_loan_id` (kalau ada, berarti pengajuan ini sendiri adalah
+   * top-up/refinance dari pinjaman lain) DIPROPAGASI ke pengajuan baru,
+   * supaya hook auto-pelunasan di TransactionLoan::boot() tetap menemukan
+   * pinjaman ASLI yang mau dilunaskan, walau sudah berapa kali ditunda.
+   */
+  public function tundaan_pengajuan(TransactionLoan $transactionLoan, Request $request)
+  {
+    if (!auth()->user()->hasPermissionTo('can-approve')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menunda Pengajuan');
+    }
+
+    if ($transactionLoan->status !== 'acc') {
+      return redirect()->back()->withErrors('Tundaan cuma bisa dilakukan pada pengajuan yang sudah di-ACC.');
+    }
+
+    $val = $request->validate([
+      'tanggal_drop' => ['required', 'date', 'after:' . $transactionLoan->drop_date],
+    ]);
+
+    if (AppHelper::dateName($request->tanggal_drop) !== $transactionLoan->hari) {
+      return redirect()->back()->withErrors('Hari Tidak Sama');
+    }
+
+    try {
+      DB::beginTransaction();
+
+      // Status 'open' (BUKAN 'acc') - KM tetap harus meng-ACC/Tolak ulang.
+      // Tundaan cuma memindah tanggal drop, tapi kadang KM berubah pikiran
+      // dan menolak nasabahnya saat itu juga - jadi approved_nominal/
+      // user_check/check_date TIDAK diwariskan (masih kosong sampai
+      // benar-benar di-ACC lagi lewat action_buku_transaksi).
+      TransactionLoan::create([
+        'transaction_manage_customer_id' => $transactionLoan->transaction_manage_customer_id,
+        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+        'previous_loan_id' => $transactionLoan->previous_loan_id,
+        'postponed_loan_id' => $transactionLoan->id,
+        'request_date' => $transactionLoan->request_date,
+        'drop_date' => $request->tanggal_drop,
+        'hari' => $transactionLoan->hari,
+        'request_nominal' => $transactionLoan->request_nominal,
+        'user_mantri' => $transactionLoan->user_mantri,
+        'user_input' => auth()->user()->employee->id,
+        'status' => 'open',
+      ]);
+
+      $transactionLoan->update(['status' => 'gagal']);
+
+      DB::commit();
+    } catch (Exception $exception) {
+      DB::rollBack();
+      return redirect()->back()->withErrors($exception->getMessage());
+    }
+
+    return redirect()->back()->with('message', 'Pengajuan berhasil ditunda ke tanggal drop baru');
+  }
+
   // UBAH STATUS PINJAMAN
   public function action_buku_transaksi(TransactionLoan $transactionLoan, Request $request)
   {
 
 
-    $checkPermission = AppHelper::havePermissionByPermission('can create');
+    // 'can create' (pakai spasi) tidak ada di tabel permissions, dan
+    // hasPermissionTo() MELEMPAR PermissionDoesNotExist untuk nama tak dikenal -
+    // artinya endpoint ini selalu 500 sebelum sampai ke logika mana pun.
+    $checkPermission = AppHelper::havePermissionByPermission('can-create');
 
-    $checkPermissionMantri = AppHelper::havePermissionByPermission('unit mantri');
+    // 'unit mantri' juga nama lama. Mantri sekarang dikenali lewat ROLE.
+    $checkPermissionMantri = auth()->user()->hasRole('mantri');
 
     if (!$checkPermission) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Action');
@@ -820,19 +913,35 @@ class TransactionLoanController extends Controller
         'customer',
         'mantri',
         'white_off',
-        'loan_officer_grouping'
+        'loan_officer_grouping',
+        'userinput',
+        'pemeriksa',
+        'pencair',
+        'manage_customer.loan',
       ]
     );
 
     $pemutihan = $loan->white_off?->nominal ?? 0;
     $saldo = ($loan->pinjaman - $pemutihan) - $loan->loan_instalment->sum('nominal');
     $pinjaman = [
-      'nomor_anggota' => $loan->manage_customer->id,
+      'nomor_anggota' => $loan->manage_customer->nomor_anggota,
       'id' => $loan->id,
       'nama' => $loan->customer->nama,
       'alamat' => $loan->customer->alamat,
+      // Domisili per kelompok/kantor (manage_customer) - nasabah yang sama
+      // bisa terdaftar di kantor lain dengan alamat berbeda. Kosong berarti
+      // belum diisi -> tampilkan alamat identitas (TransactionCustomer) saja.
+      'domisili' => $loan->manage_customer->residential_address,
       'nik' => $loan->customer->nik,
-      // 'tanggal_pengajuan' => $loan->request_date,
+      'saldo' => $saldo,
+      // Kolom `pinjaman_ke` di tabel SELALU null (tidak pernah ditulis) -
+      // dihitung dari riwayat, sama seperti PinjamanTrait::getTransactionLoan().
+      'pinjaman_ke' => $loan->manage_customer->loan
+        ->where('drop_date', '<=', $loan->drop_date)
+        ->where('status', 'success')
+        ->count(),
+      'tanggal_pengajuan' => $loan->request_date,
+      'tanggal_acc' => $loan->check_date,
       'tanggal_drop' => $loan->drop_date,
       'hari' => $loan->hari,
       'kelompok' => $loan->loan_officer_grouping->kelompok,
@@ -842,6 +951,22 @@ class TransactionLoanController extends Controller
       'notes' => $loan->notes ?? null,
       'lunas' => $saldo <= 0,
       'mantri' => $loan->mantri->nama_karyawan,
+      // Trio "siapa mengerjakan apa" - sama seperti dipakai StatusPengajuan.jsx
+      // di modal Buku Transaksi (lihat PinjamanTrait::getTransactionLoan()).
+      'diinput_oleh' => $loan->userinput?->nama_karyawan,
+      'acc_oleh' => $loan->pemeriksa?->nama_karyawan,
+      'drop_oleh' => $loan->pencair?->nama_karyawan,
+      // Dipakai BayarAngsuran.jsx untuk mengunci input manual TEPAT di
+      // tanggal drop pengajuan pengganti yang masih pending (open/acc) -
+      // jaga-jaga bentrok dengan auto-pelunasan (TransactionLoan::boot())
+      // kalau pengajuan itu tiba-tiba sukses di-drop hari itu juga. Begitu
+      // pengajuan penggantinya gagal (termasuk lewat Tundaan, yang memindah
+      // previous_loan_id ke pengajuan baru), kuncinya lepas dengan sendirinya
+      // karena query ini hanya menghitung status open/acc.
+      'pengajuan_pengganti' => TransactionLoan::where('previous_loan_id', $loan->id)
+        ->whereIn('status', ['open', 'acc'])
+        ->latest('id')
+        ->first(['id', 'drop_date', 'status']),
     ];
 
     $saldo = $loan->pinjaman - $loan->loan_instalment->sum('nominal');
@@ -867,26 +992,40 @@ class TransactionLoanController extends Controller
 
   public function checkpengajuan(TransactionLoan $transactionLoan, Request $request)
   {
-    // get nasabah id
-    $id_transaksi = $transactionLoan->transaction_manage_customer_id;
-    $transaction_list_by_manage_customer = TransactionLoan::where('transaction_manage_customer_id', $id_transaksi)
-      ->where('drop_date', '>', $transactionLoan->drop_date)
-      ->whereIn('status', ['open', 'acc', 'tolak', 'gagal'])
-      ->get();
+    // Sebelumnya field ini dihitung dari transaction_out_reasons_id /
+    // rentang drop_date - tidak pernah benar-benar mendeteksi "pinjaman ini
+    // sudah diajukan pengganti", dan `cek_pengajuan` yang dihasilkan tidak
+    // pernah dipakai di frontend (dead data). Sekarang pakai `previous_loan_id`
+    // (bagian U) yang memang dibuat untuk menghubungkan pengajuan pengganti
+    // ke pinjaman lama ini. `tolak`/`gagal` TIDAK dianggap "sudah diajukan" -
+    // kalau pengajuan penggantinya ditolak/gagal, nasabah boleh diajukan lagi.
+    $penggantiLoan = TransactionLoan::where('previous_loan_id', $transactionLoan->id)
+      ->whereIn('status', ['open', 'acc', 'success'])
+      ->with('loan_officer_grouping')
+      ->latest('id')
+      ->first();
 
     $data = [
-      'loan_out_status' => $transactionLoan->transaction_out_reasons_id,
-      'cek_pengajuan' => $transaction_list_by_manage_customer
+      'sudah_diajukan' => (bool) $penggantiLoan,
+      'pengajuan' => $penggantiLoan ? [
+        'id' => $penggantiLoan->id,
+        'request_date' => $penggantiLoan->request_date,
+        'tanggal_drop' => $penggantiLoan->drop_date,
+        'status' => $penggantiLoan->status,
+        'nominal_drop' => $penggantiLoan->nominal_drop,
+        'request_nominal' => $penggantiLoan->request_nominal,
+        'kelompok' => $penggantiLoan->loan_officer_grouping?->kelompok,
+      ] : null,
     ];
 
-    return response()->json(['data' => $data ?? null], 200);
+    return response()->json(['data' => $data], 200);
   }
 
   //  NAH INI POST UNTUK BAYAR ASUNYA
   public function bayar_pinjaman(Request $request, TransactionLoan $transactionLoan)
   {
 
-    if (!auth()->user()->hasPermissionTo('can create')) {
+    if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Untuk Melakukan ini');
     }
 
@@ -901,7 +1040,7 @@ class TransactionLoanController extends Controller
 
     $isPaidToday = $transactionLoan->loan_instalment->where('transaction_date', $request->transaction_date);
 
-    if (!auth()->user()->hasPermissionTo('area')) {
+    if (!auth()->user()->hasRole('mantri')) {
       $user_area = auth()->user()->employee->area;
       if ($transactionLoan->loan_officer_grouping->kelompok == $user_area) {
         return redirect()->back()->withErrors('Anda Tidak Boleh Mengubah Angsuran Yang Ditandatangani Oleh Karyawan Lain');
@@ -1038,8 +1177,8 @@ class TransactionLoanController extends Controller
   public function destroy_loan(TransactionLoan $transactionLoan)
   {
 
-    // check permission
-    $permission =  AppHelper::havePermissionByDate($transactionLoan->drop_date);
+    // check permission - gerbang khusus hapus, lihat AppHelper::canDeleteLoan()
+    $permission = AppHelper::canDeleteLoan($transactionLoan);
     if (!$permission['status']) {
       return redirect()->back()->withErrors($permission['message']);
     }
@@ -1067,9 +1206,6 @@ class TransactionLoanController extends Controller
     }
     return redirect()->back()->with('message', 'data berhasil dihapus');
   }
-
-
-
 
   public function updateEverything(TransactionLoan $transactionLoan, Request $request)
   {
@@ -1119,6 +1255,10 @@ class TransactionLoanController extends Controller
         ]);
       }
       if ($request->updateType == "resetdata") {
+        if (AppHelper::sudahDiajukanPengganti($transactionLoan)) {
+          DB::rollBack();
+          return redirect()->back()->withErrors('Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa direset.');
+        }
         $transactionLoan->update([
           "approved_nominal" => null,
           "check_date" => null,
@@ -1134,8 +1274,6 @@ class TransactionLoanController extends Controller
       DB::rollBack();
       return redirect()->back()->withErrors('data gagal diubah');
     }
-
-
 
     return redirect()->back()->with('message', 'data berhasil diubah');
   }

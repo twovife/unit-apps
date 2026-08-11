@@ -13,7 +13,6 @@ import { Search, SearchCheck } from 'lucide-react';
 import Loading from '@/Components/Loading';
 import { useForm, usePage } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import { Label } from '@/shadcn/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import axios from 'axios';
@@ -26,8 +25,10 @@ import DatePicker from '@/Components/shadcn/DatePicker';
 import { format } from 'date-fns';
 
 const InputMacet = ({ show, onClosed }) => {
-  const { isUnit, isMantri, isCanShowKelompok, isCreator } =
-    useFrontEndPermission();
+  // 'can show kelompok' tidak pernah ada di tabel permissions - padanan aslinya
+  // adalah 'view-all-groups'. Mantri (tanpa hak ini) tetap terkunci di areanya.
+  const isCanShowKelompok =
+    usePage().props.auth?.permissions?.includes('view-all-groups');
   const { auth } = usePage().props;
 
   const initialKelompok = isCanShowKelompok
@@ -44,7 +45,7 @@ const InputMacet = ({ show, onClosed }) => {
   const { optKelompok } = useOptionGenerator();
 
   const fiveMonthsAgo = dayjs(
-    usePage().props.server_filter?.onlineDate ?? new Date()
+    usePage().props.server_filter?.onlineDate ?? new Date(),
   ).format('YYYY-MM-DD');
 
   const { data, setData, post, errors, processing, reset } = useForm({
@@ -92,7 +93,7 @@ const InputMacet = ({ show, onClosed }) => {
       setData((prevData) => ({
         ...prevData,
         angsuran: prevData.angsuran.map((item, index) =>
-          index === 0 ? { ...item, transaction_date: nominal } : item
+          index === 0 ? { ...item, transaction_date: nominal } : item,
         ),
       }));
     }
@@ -107,7 +108,7 @@ const InputMacet = ({ show, onClosed }) => {
       setData((prevData) => ({
         ...prevData,
         angsuran: prevData.angsuran.map((item, index) =>
-          index === 0 ? { ...item, transaction_date: nominal } : item
+          index === 0 ? { ...item, transaction_date: nominal } : item,
         ),
       }));
     }
@@ -122,7 +123,7 @@ const InputMacet = ({ show, onClosed }) => {
       request_nominal: value,
       saldo_before: (nominal * 1.3).toString(),
       angsuran: prevData.angsuran.map((item, index) =>
-        index === 0 ? { ...item, nominal: 0 } : item
+        index === 0 ? { ...item, nominal: 0 } : item,
       ),
     }));
   };
@@ -149,7 +150,7 @@ const InputMacet = ({ show, onClosed }) => {
       request_nominal: value,
       saldo_before: (nominal * 1.3).toString(),
       angsuran: prevData.angsuran.map((item, index) =>
-        index === 0 ? { ...item, nominal: 0 } : item
+        index === 0 ? { ...item, nominal: 0 } : item,
       ),
     }));
   };
@@ -159,7 +160,7 @@ const InputMacet = ({ show, onClosed }) => {
     setData((prev) => ({
       ...prev,
       angsuran: prev.angsuran.map((item, index) =>
-        index === 1 ? { ...item, nominal: value } : item
+        index === 1 ? { ...item, nominal: value } : item,
       ),
     }));
   };

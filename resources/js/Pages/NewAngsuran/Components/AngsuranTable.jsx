@@ -18,7 +18,7 @@ import SyncAngsuran from './SyncAngsuran';
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
   const is_maintenaner =
-    usePage().props.auth.permissions.includes('maintenance worker');
+    usePage().props.auth.permissions.includes('can-edit');
 
   const [data, setData] = useState([]);
   useEffect(() => {

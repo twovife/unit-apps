@@ -49,37 +49,6 @@ class GenerateEmpUserSeeder extends Seeder
         'employment_id' => 1,
       ]);
 
-      // $branchCode = Branch::find($request->branch_id)->code;
-      // $_suffix = "_" . strtolower($branchCode);
-      // $request->merge(['username' => $request->username . $_suffix]);
-      // $validate = $request->validate([
-      //   'id' => ['required'],
-      //   'branch_id' => ['required'],
-      //   'username' => ['required', 'unique:users,username'],
-      //   'role' => ['required'],
-      // ]);
-
-
-      // try {
-      //   DB::beginTransaction();
-      //   $employee = Employee::find($request->id);
-      //   $users = $employee->username()->create([
-      //     'username' => $request->username,
-      //     'password' => Hash::make('4343abab'),
-      //     'email' => $request->username . '@usberdigital.com',
-      //     'isactive' => 1
-      //   ]);
-
-      //   $role = Role::findById($request->role);
-      //   $users->syncRoles($role);
-      //   DB::commit();
-      // } catch (Exception $e) {
-      //   DB::rollBack();
-      //   ddd($e);
-      //   return redirect()->back()->withErrors('Gagal Membuat User');
-      // }
-      // return redirect()->back()->with('message', 'Berhasil Membuat User');
-
       $pimpinanUser = User::create([
         'employee_id' => $pimpinan->id,
         'username' => "pimpinan{$suffix}",

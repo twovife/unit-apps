@@ -26,6 +26,7 @@ import { Button } from '@/shadcn/ui/button';
 import { Link } from '@inertiajs/react';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { Separator } from '@/shadcn/ui/separator';
+import GlobalBranchFilter from '../GlobalBranchFilter';
 
 // This is sample data.
 
@@ -33,6 +34,7 @@ export function AppSidebar({ ...props }) {
   return (
     <Sidebar {...props}>
       <SidebarHeader>
+        <GlobalBranchFilter />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>

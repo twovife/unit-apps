@@ -12,12 +12,13 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
+import { usePage } from '@inertiajs/react';
 
 const Rencana = ({ datas, dataTransaksi }) => {
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
-  const { isUnit } = useFrontEndPermission();
+  // Kolom Action membuka dialog approval kepala (ceklist_kepala) -> can-approve
+  const isUnit = usePage().props.auth?.permissions?.includes('can-approve');
 
   useEffect(() => {
     setData(datas);

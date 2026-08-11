@@ -20,12 +20,13 @@ class EmployeeController extends Controller
   public function index(Request $request)
   {
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $request->branch_id ?? $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
-    // dd($userAuthorized);
+    // dd($scope->branch_id);
 
 
     $roles = Role::with('permissions', 'users')->get();
@@ -39,6 +40,7 @@ class EmployeeController extends Controller
 
     $data = $employee->map(function ($item) {
       $username = $item->username->first();
+      $jabatanName = $item->employment?->jabatan ?? '-';
       return [
         'id' => $item->id,
         'branch_id' => $item->branch_id,
@@ -50,9 +52,9 @@ class EmployeeController extends Controller
             'name' => $role->name
           ];
         }),
-        'username_status' => $item->username->first()?->isactive,
+        'username_status' => $username?->isactive,
         'address' => $item->alamat,
-        'employment' => $item->employment->jabatan == "mantri" ? $item->employment->jabatan . " " . $item->area : $item->employment->jabatan,
+        'employment' => strtolower($jabatanName) === "mantri" ? ($jabatanName . " " . $item->area) : $jabatanName,
         'isActive' => $item->date_resign ? false : true,
         'resign_date' => $item->date_resign,
         'hire_date' => $item->hire_date,

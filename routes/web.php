@@ -35,13 +35,15 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
 
+  Route::post('/set-branch', \App\Http\Controllers\SetBranchController::class)->name('set-branch');
+
   Route::controller(LoanController::class)->group(function () {
 
 
     Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
       Route::get('/', 'batch_create')->name('batch_create');
       Route::post('/', 'batch_post')->name('batch_post');
-    })->middleware('permission:unit');
+    })->middleware('role:kasir|pimpinan|kepala-mantri|superuser');
   });
 
   Route::get('/getviewasd', function () {
@@ -70,8 +72,9 @@ Route::middleware('auth')->group(function () {
       Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');
       Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');
       Route::put('/updateEverything/{transactionLoan}', "updateEverything")->name('updateEverything');
+      Route::post('/tundaan/{transactionLoan}', "tundaan_pengajuan")->name('tundaan_pengajuan');
     });
-  });
+  })->middleware('role:superuser|pimpinan|kasir|mantri|kepala-mantri|pengawas|stafkontrol');
 
   Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
@@ -119,11 +122,8 @@ Route::middleware('auth')->group(function () {
       Route::get('/angsuran', "angsuran")->name('angsuran');
       Route::get('/macet', "macet")->name('macet');
       Route::get('/byDates', "byDates")->name('byDates');
-      Route::get('/buku-angsuran', "buku_angsuran")->name('buku_angsuran');
 
       Route::get('/rencana-drop-kepala', "rencana_drop_kepala")->name('rencana_drop_kepala');
-
-      Route::get('/buku-transaksi-kepala', "buku_transaksi_kepala")->name('buku_transaksi_kepala');
 
       Route::get('/rekap-permantri', "rekap_permantri")->name('rekap_permantri');
       Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');

@@ -25,7 +25,7 @@ export default function Register({ employees }) {
   }, []);
 
   const { auth } = usePage().props;
-  const superman = auth.permissions.includes('can update pusat');
+  const superman = auth.roles.includes('superuser');
 
   const handleOnChange = (event) => {
     setData(

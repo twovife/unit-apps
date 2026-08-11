@@ -1,13 +1,11 @@
 import Loading from '@/Components/Loading';
-import NoEditOverlay from '@/Components/NoEditOverlay';
 import SelectList from '@/Components/SelectList';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import { showNominalByStatus } from '@/lib/utils';
 
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 
 import React, { useEffect, useState, useTransition } from 'react';
 import CurrencyInput from 'react-currency-input-field';
@@ -15,7 +13,41 @@ import CurrencyInput from 'react-currency-input-field';
 const ChangeDetail = ({ triggeredData, onClosed }) => {
   //genereate form for put/patch
 
-  const { isUnit, isMantri, isPusat, isCreator } = useFrontEndPermission();
+  // Mantri dikenali lewat ROLE, bukan permission 'area' yang tidak pernah ada
+  const { auth } = usePage().props;
+  const isMantri = auth?.roles?.includes('mantri');
+
+  /**
+   * Gerbang tombol "Reset Pinjaman" (updateType: 'resetdata'), tiga lapis:
+   *  1. Hak akses  - hanya pemegang `can-approve`. Mantri tidak boleh.
+   *  2. Rekap harian - begitu rekap tanggal drop di-ACC kepala
+   *     (`recap_approved`), angka hari itu sudah masuk laporan sehingga status
+   *     tidak boleh diputar balik. Superuser dikecualikan.
+   *  3. Sudah diajukan pengganti - pinjaman ini sudah dijadikan dasar
+   *     pengajuan lain yang masih aktif (top-up ATAU Tundaan). Reset di sini
+   *     akan bikin data pengajuan pengganti itu jadi tidak konsisten (dia
+   *     merujuk balik ke pinjaman ini lewat previous_loan_id/postponed_loan_id).
+   *     TIDAK ada pengecualian superuser untuk yang ini.
+   */
+  const canApprove = auth?.permissions?.includes('can-approve');
+  const isSuperUser = auth?.roles?.includes('superuser');
+  const terkunciRekap = triggeredData?.recap_approved && !isSuperUser;
+  const terkunciPengganti = triggeredData?.sudah_diajukan_pengganti;
+  const bolehReset = canApprove && !terkunciRekap && !terkunciPengganti;
+
+  /**
+   * Satu keterangan saja yang tampil, bukan ditumpuk - kalau tombolnya bisa
+   * diklik, tampilkan penjelasan dasar (cara pakai). Kalau mati, tampilkan
+   * SATU alasan paling relevan kenapa (bukan digabung semua kemungkinan
+   * sekaligus, supaya tidak membingungkan).
+   */
+  const pesanTidakBisa = !canApprove
+    ? 'JIKA ADA KESALAHAN SAAT KLICK TOMBOL, BISA HUBUNGI KM / PIMPINAN UNTUK MENGUBAHNYA'
+    : terkunciPengganti
+      ? 'Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa direset.'
+      : terkunciRekap
+        ? 'Rekap harian tanggal drop ini sudah di-ACC pimpinan, pinjaman tidak bisa direset lagi. Hubungi superuser bila memang harus diubah.'
+        : null;
 
   const { data, setData, put, processing, reset, transform, errors } = useForm({
     request_date: '',
@@ -58,7 +90,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
 
     if (istrue && statusBefore) {
       setErrorClient(
-        'Status GAGAL / TOLAK tidak bisa diubah ke drop Langsung / Pengajuan'
+        'Status GAGAL / TOLAK tidak bisa diubah ke drop Langsung / Pengajuan',
       );
       return null;
     }
@@ -71,22 +103,22 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
       request_nominal: istrue
         ? null
         : triggeredData.drop_langsung == 'baru'
-        ? triggeredData.drop_jadi
-        : triggeredData.request,
+          ? triggeredData.drop_jadi
+          : triggeredData.request,
 
       approved_nominal: istrue
         ? null
         : triggeredData.drop_langsung == 'baru'
-        ? triggeredData.drop_jadi
-        : triggeredData.acc,
+          ? triggeredData.drop_jadi
+          : triggeredData.acc,
 
       nominal_drop: istrue
         ? triggeredData.drop_langsung == 'baru'
           ? triggeredData.drop_jadi
           : triggeredData.request
         : triggeredData.status == 'success'
-        ? triggeredData.drop_jadi
-        : null,
+          ? triggeredData.drop_jadi
+          : null,
     }));
   };
 
@@ -117,7 +149,9 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
   return (
     <form onSubmit={(e) => e.preventDefault()}>
       {isMantri && (
-        <NoEditOverlay value="Hanya bisa dilakukan oleh Pimpinan / Staff" />
+        <p className="mb-2 text-xs font-medium text-amber-600">
+          Hanya bisa dilakukan oleh Pimpinan / Staff
+        </p>
       )}
       <Loading show={processing} />
       {/* <div className="mb-1 ">
@@ -227,23 +261,38 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
         )}
       </div> */}
       <div className="mb-3">
-        <div className="text-xs text-blue-500">
-          Perubahan Nominal Mempengaruhi Perolehan Drop dan Rencana Drop
-        </div>
-        <div className="text-xs text-yellow-500">
-          Reset Pinjaman akan menghilangkan semua data angsuran pada pinjaman
-          ini
-        </div>
+        {pesanTidakBisa ? (
+          <div
+            className={`text-xs font-medium leading-relaxed ${
+              canApprove ? 'text-destructive' : 'text-amber-600'
+            }`}
+          >
+            {pesanTidakBisa}
+          </div>
+        ) : (
+          <>
+            <div className="text-xs text-muted-foreground">
+              Jika ada kesalahan status, reset pinjaman agar status kembali{' '}
+              <span className="font-semibold text-foreground">open</span>, lalu
+              lakukan ACC ulang.
+            </div>
+            <div className="text-xs text-yellow-500">
+              Setelah Transaksi Hari Ini Dikunci Pinjaman Tidak Bisa Direset
+              Lagi
+            </div>
+          </>
+        )}
       </div>
       <div className="flex items-center justify-between">
         {/* <Button onClick={() => handleSubmit('detailchange')} type="submit">
           Ubah
         </Button> */}
-        {triggeredData?.drop_langsung == 'lama' && (
+        {triggeredData?.drop_langsung == 'lama' && canApprove && (
           <Button
             onClick={() => handleSubmit('resetdata')}
             variant="yellow"
             type="submit"
+            disabled={!bolehReset}
           >
             Reset Pinjaman
           </Button>
