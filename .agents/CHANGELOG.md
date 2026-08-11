@@ -735,3 +735,16 @@ Sesuai kewajiban `.agents/AGENTS.md` §"DOKUMENTASI ALUR (FLOW & TABEL)".
 - Kolom `status` di angsuran + tiga fungsi `generateStatusAngsuran*` — dibiarkan, masih dipakai alur lama; ember baru dihitung dari `drop_date` vs `transaction_date`
 - `transaction_daily_recaps` & `transaction_sirculations` — dipensiunkan per kantor, bukan dihapus; tetap melayani kantor yang belum migrasi
 - Pelunasan otomatis top-up (`settled_by_loan_id`) — **tetap dihitung sebagai storting**, jangan ditandai penyesuaian: drop hari itu juga naik sebesar itu sehingga saling meniadakan
+
+---
+
+## AB — Verifikasi ulang peta-aplikasi terhadap DB live (2026-08-11)
+
+User minta analisa menu + database untuk bikin gambaran relasi tabel. Dokumentasi `peta-aplikasi` ternyata sudah lengkap dari sesi-sesi sebelumnya (terakhir bagian AA, 2026-08-05) — bukan bikin baru dari nol, cukup verifikasi ulang ke `ubmi_db` live dan refresh angka yang basi.
+
+| Berkas | Perubahan | Tabel tersentuh |
+|---|---|---|
+| `references/02_database_schema.md` | Refresh row count 9 tabel transaksi inti dari snapshot 08-01 → live 08-11 (semua naik wajar kecuali `transaction_white_offs` turun 18.876→18.813, belum ditelusuri sebabnya). Konfirmasi ulang 5 tabel legacy (`loans`, `loan_requests`, `instalments`, `customers`, `debt_reliefs`) row count-nya **identik persis** dengan snapshot lama — bukti kuat memang benar-benar mati, bukan cuma "jarang ditulis" | BACA saja — `transaction_loans`, `transaction_loan_instalments`, `transaction_manage_customers`, `transaction_customers`, `transaction_daily_recaps`, `transaction_sirculations`, `transaction_white_offs`, `employees`, `users`, + 5 tabel legacy |
+| `references/03_auth_roles_scope.md` | Refresh `role_has_permissions` 43→53 dan `model_has_roles` 2.469→2.624. Per-role breakdown permission (tabel "8 Role") sudah cocok persis dengan live — tidak ada drift baru di situ, cuma angka total agregat yang belum sempat disinkron sebelumnya | BACA — `role_has_permissions`, `model_has_roles`, `roles`, `permissions` |
+
+**Tidak ada kode yang diubah** — murni verifikasi dokumentasi. Cross-check routing (`routes/web.php`), model relations (`app/Models/*.php`), dan `AuthScope`/`Branch::getAllowedBranchIds` terhadap isi `01_routing_map.md`/`03_auth_roles_scope.md` — semuanya masih akurat, termasuk yang menyangkut `SetBranchController` dan restrukturisasi `Pages/BukuTransaksi/{Web,Mobile}` yang baru saja di-commit ke git (sebelumnya `.agents/` untracked, jadi dokumentasi ini sudah ada di working tree tapi belum pernah masuk riwayat git).

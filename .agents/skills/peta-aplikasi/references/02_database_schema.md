@@ -4,20 +4,20 @@ Diambil langsung dari DB live (`information_schema`), bukan dari migration.
 Akses: `docker exec laravel-db mysql -ularavel -psecret ubmi_db -e "..."`
 Total 93 tabel di `ubmi_db`; di bawah ini hanya yang disentuh `unit-apps`. Sisanya milik `app_laravel` (HRIS, tabungan, aset, BOP) — **jangan diubah dari sini**.
 
-Jumlah baris = snapshot per 2026-08-01, gunakan sebagai indikator beban query.
+Jumlah baris = snapshot per 2026-08-11, gunakan sebagai indikator beban query.
 
 ---
 
 ## 1. Inti transaksi (milik unit-apps)
 
-### `transaction_loan_officer_groupings` — 1.590 baris
+### `transaction_loan_officer_groupings` — 1.590 baris (stabil sejak 08-01)
 Kunci scoping **semua** data transaksi. Satu cabang = 10 kelompok (Mantri 1–10).
 ```
 id, branch_id [idx], kelompok int, timestamps
 ```
 Relasi: `belongsTo Branch`, `hasMany TransactionDailyRecap`, `hasMany TransactionSirculation`.
 
-### `transaction_customers` — 493.741 baris
+### `transaction_customers` — 496.656 baris
 Identitas nasabah.
 ```
 id, nama, nik [idx], no_kk, alamat, timestamps
@@ -25,7 +25,7 @@ id, nama, nik [idx], no_kk, alamat, timestamps
 Relasi: `hasMany TransactionManageCustomer`, `hasManyThrough` ke loan.
 NIK prefix `UB`/`ML` → NIK sintetis dari `AppHelper::callUnknownNik()`.
 
-### `transaction_manage_customers` — 867.516 baris
+### `transaction_manage_customers` — 870.464 baris
 Keanggotaan nasabah pada satu kelompok + hari setoran. Nasabah yang sama bisa punya beberapa baris di sini (satu per kelompok/kantor tempat dia pinjam).
 ```
 id, transaction_customer_id [idx], transaction_loan_officer_grouping_id,
@@ -36,7 +36,7 @@ nomor_anggota varchar (BARU 2026-08-03, nullable, manual input), timestamps
 - `residential_address` — "Domisili Nasabah", ada sejak migrasi Nov 2024 tapi baru disambungkan ke UI 2026-08-03 (form `PengajuanLama.jsx`). Alamat alternatif PER kelompok/kantor (beda dari `transaction_customers.alamat` yang levelnya per-NIK) — kosong berarti pakai alamat identitas sebagai fallback tampilan.
 - `nomor_anggota` — sebelum 2026-08-03 UI selalu menampilkan `id` baris ini sebagai "nomor anggota" (keliru). Sekarang field asli, diisi manual & wajib lewat form pengajuan baru, tapi utamanya masih `NULL` untuk mayoritas baris lama (belum ada mekanisme backfill massal).
 
-### `transaction_loans` — 1.791.918 baris ⚠️ TERPANAS
+### `transaction_loans` — 1.954.557 baris ⚠️ TERPANAS
 ```
 id
 previous_loan_id (BARU 2026-08-03, nullable, indexed, tanpa FK)
@@ -65,7 +65,7 @@ Relasi: `hasMany loan_instalment`, `belongsTo manage_customer`, `belongsTo loan_
 
 > `hari` disimpan **redundan** terhadap `drop_date`. Banyak validasi membandingkan keduanya (`AppHelper::dateName($drop_date) !== $hari`) — `AdminController@loan_balancing` dibuat untuk mencari yang tidak sinkron.
 
-### `transaction_loan_instalments` — 10.796.411 baris ⚠️ TERBESAR
+### `transaction_loan_instalments` — 11.750.392 baris ⚠️ TERBESAR
 ```
 id
 transaction_loan_id [idx]
@@ -79,7 +79,7 @@ user_input, user_mantri, timestamps
 **Selalu filter minimal `transaction_loan_officer_grouping_id` + rentang tanggal.**
 - `settled_by_loan_id` — terisi HANYA pada baris yang dibuat otomatis oleh hook pelunasan top-up (`TransactionLoan::boot()`, bagian U/Y di CHANGELOG). Nilainya = id pinjaman yang sukses drop dan memicu baris ini. Dipakai `reverseAutoSettlement()` untuk membongkar baris ini secara presisi kalau pinjaman pemicunya di-Reset/dihapus.
 
-### `transaction_daily_recaps` — 472.403 baris
+### `transaction_daily_recaps` — 482.076 baris
 Rekap harian per kelompok. Kunci unik logis: `{transaction_loan_officer_grouping_id, date}` (dipakai `firstOrNew`/`firstOrCreate`).
 ```
 id, transaction_loan_officer_grouping_id [idx], date, target_on
@@ -94,7 +94,7 @@ timestamps
 ```
 Alur approval: **kepala dulu** (`ceklist_kepala`) → **baru kasir** (`rekap_post` dengan `type=2`).
 
-### `transaction_sirculations` — 69.595 baris
+### `transaction_sirculations` — 69.879 baris
 Saldo sirkulasi awal bulan per kelompok.
 ```
 id, transaction_loan_officer_grouping_id [idx], date, day varchar, amount bigint,
@@ -102,7 +102,7 @@ month1_amount, month2_amount, ccm_amount (int), cm_amount, mb_amount, ml_amount 
 ```
 Rumus sirkulasi berjalan (di `RekapTrait`): `round(saldo_awal + (total_drop * 1.3) - total_storting)`. Angka **1.3** = pokok + bunga 30%, muncul juga di `BatchInputController`.
 
-### `transaction_white_offs` — 18.876 baris
+### `transaction_white_offs` — 18.813 baris (turun dari 18.876 di 08-01 — kemungkinan ada baris dibersihkan/dikoreksi manual, belum ditelusuri)
 Pemutihan pinjaman.
 ```
 id, transaction_loan_id [idx], transaction_loan_officer_grouping_id, transaction_date, nominal, timestamps
@@ -127,7 +127,7 @@ id, type enum('pusat','cabang'), wilayah int, opening_date, unit varchar, isacti
 ```
 `wilayah` 0 = pusat, 1–12 = wilayah operasional. `code` dipakai sebagai suffix username (`EmployeeController@store`).
 
-### `employees` — 6.906 baris
+### `employees` — 7.378 baris
 ```
 id, nip, nama_karyawan, nik, alamat, kota, hire_date,
 area int              -- = nomor kelompok mantri (1..10)
@@ -141,7 +141,7 @@ timestamps
 🔴 **Tidak ada kolom `jabatan`** — jabatan ada di `employments.jabatan` via `employment_id`. `BatchInputController@store` salah di sini.
 `date_resign IS NULL` = karyawan aktif (dipakai `AppHelper::getMantri`).
 
-### `users` — 2.606 baris
+### `users` — 2.625 baris
 ```
 id, employee_id int, username, email, email_verified_at, password, remember_token, isactive int, timestamps
 ```
@@ -157,7 +157,7 @@ Zona pantau staf kontrol → dibaca kalau punya `view-zone-branches`.
 ### `online_branches` — 51 baris — `id, branch_id, online_date, timestamps`
 
 ### Spatie Permission
-`roles` (8), `permissions` (20), `model_has_roles` (2.469), `model_has_permissions` (0), `role_has_permissions` (43). Detail isi: `03_auth_roles_scope.md`.
+`roles` (8), `permissions` (21), `model_has_roles` (2.624), `model_has_permissions` (0), `role_has_permissions` (53). Detail isi: `03_auth_roles_scope.md`.
 
 ---
 
@@ -174,7 +174,7 @@ Skema pinjaman generasi sebelumnya di bawah ini **sudah mati** — jangan dibaca
 | `Customer` | `customers` | 8.086 | **2024-09-25** |
 | `DebtRelief` | `debt_reliefs` | 0 | — |
 
-Pembanding: `transaction_loans` = 1.954.553 baris, tulis terakhir **2026-07-27** (aktif).
+Pembanding: `transaction_loans` = 1.954.557 baris (per 08-11), tulis terakhir **2026-07-27** waktu snapshot 08-01, masih aktif bertambah tiap hari. Kelima tabel legacy di atas terverifikasi **row count identik persis** dengan snapshot 08-01 — konfirmasi kuat bahwa memang benar-benar tidak ada tulisan baru sejak itu.
 
 **Terverifikasi tidak ada pemakaian nyata di kode.** Semua rujukan hanyalah:
 - `LoanController.php` — import `Customer`, `Loan`, `LoanRequest`, `Instalment`, tapi **badan kelas kosong** (`//`)
@@ -199,14 +199,14 @@ Padanannya di sistem sekarang:
 ```
 branches (157)
    └─< transaction_loan_officer_groupings (1.590)   [branch_id + kelompok]
-          ├─< transaction_manage_customers (867rb) >── transaction_customers (494rb)
-          │        └─< transaction_loans (1,79jt)
-          │               ├─< transaction_loan_instalments (10,8jt)
-          │               └─o transaction_white_offs (18,9rb)
-          ├─< transaction_daily_recaps (472rb)      [+ date]
-          └─< transaction_sirculations (69,6rb)     [+ date]
+          ├─< transaction_manage_customers (870rb) >── transaction_customers (497rb)
+          │        └─< transaction_loans (1,95jt)
+          │               ├─< transaction_loan_instalments (11,75jt)
+          │               └─o transaction_white_offs (18,8rb)
+          ├─< transaction_daily_recaps (482rb)      [+ date]
+          └─< transaction_sirculations (69,9rb)     [+ date]
 
-employees (6.906) ──< users (2.606) ──< model_has_roles ──> roles (8) ──< role_has_permissions ──> permissions (20)
+employees (7.378) ──< users (2.625) ──< model_has_roles ──> roles (8) ──< role_has_permissions ──> permissions (21)
    ├─ branch_id ────> branches            (cabang utama)
    ├─< employee_branches (31)  ──> branches   (delegasi struktural)
    ├─< employee_zones (16)     ──> branches   (zona staf kontrol)

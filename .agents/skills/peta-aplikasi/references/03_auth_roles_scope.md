@@ -34,7 +34,7 @@ Semua `guard_name = web`. Didefinisikan di `app_laravel/database/seeders/RolesAn
 
 > `maintenance-worker` masih ada di tabel tapi **sudah tidak dirujuk kode unit-apps** — seluruh pemakaiannya dipindah ke `can-edit` (2026-08-02). Aman dihapus kalau `app_laravel` juga tidak memakainya.
 
-> ⚠️ **Seeder ≠ DB live.** Seeder mengawali dengan `truncate()` pada `permissions`, `roles`, `role_has_permissions`, **dan `model_has_roles`**, lalu meng-assign ulang role semua user dari `employment_id`. Menjalankannya akan membuang ±2.624 penetapan role yang ada. Untuk mengubah mapping permission pada DB yang sudah jalan, pakai sinkronisasi tertarget lewat tinker (`givePermissionTo`/`revokePermissionTo` + `forgetCachedPermissions()`), lihat bagian 8.
+> ⚠️ **Seeder ≠ DB live.** Seeder mengawali dengan `truncate()` pada `permissions`, `roles`, `role_has_permissions`, **dan `model_has_roles`**, lalu meng-assign ulang role semua user dari `employment_id`. Menjalankannya akan membuang ±2.624 penetapan role yang ada (live per 2026-08-11; `role_has_permissions` = 53 baris, cocok persis dengan breakdown per-role di tabel atas). Untuk mengubah mapping permission pada DB yang sudah jalan, pakai sinkronisasi tertarget lewat tinker (`givePermissionTo`/`revokePermissionTo` + `forgetCachedPermissions()`), lihat bagian 8.
 
 > Drift yang diketahui: seeder memberi `stafkontrol` permission `view-all-branches`, tapi DB live tidak punya. Belum disamakan.
 
