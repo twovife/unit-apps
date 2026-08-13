@@ -805,7 +805,9 @@ transaction_loan_officer_grouping_id, hari, periode   UNIQUE   (periode = tgl 1)
 
 -- JANGKAR
 awal_month1..awal_ml, awal_total
-awal_ml_belum_terinput        -- Z, satu-satunya angka yang ditetapkan manual
+awal_ml_belum_terinput        -- Z = Y - X saat serah terima, TERAMATI bukan ditetapkan (§13.3).
+                              -- Setelah itu turun tiap nasabah lama diinput, dan jadi KUOTA
+                              -- yang membatasi berapa banyak lagi yang boleh masuk.
 
 -- ARUS (HITUNG ULANG PENUH tiap tanda tangan harian — BUKAN increment)
 drop, storting, storting_month1..storting_ml
@@ -897,6 +899,15 @@ cocok, tidak pernah menangkap apa pun.
 Baru setelah itu dibandingkan. Kalau meleset: ada pinjaman yang embernya melompat, `drop_date`
 diubah belakangan, atau mutasi tercatat sebelah.
 
+> **Pengecualian: `awal_ml_belum_terinput` (sisa kuota) DIBAWA TURUN, bukan dihitung ulang.**
+> Semua kolom `awal_*`/`akhir_*` lain diturunkan dari portofolio — tapi sisa kuota justru menghitung
+> orang yang **tidak ada** di portofolio, jadi memang tidak bisa diturunkan dari sana.
+>
+> Ini bukan kelonggaran, ini keharusan: kalau tiap bulan sisa kuota dihitung ulang sebagai
+> `ml_amount − data`, kebocoran di §13.3 masuk lagi lewat pintu belakang — kuota terisi ulang sendiri
+> tiap kali nasabah ML membayar. Sisa kuota hanya berkurang lewat input, dan hanya bertambah lewat
+> `can-edit` beralasan.
+
 ---
 
 ## 12. Tahapan pengerjaan
@@ -978,7 +989,7 @@ tutup buku terakhir sistem lama (30 Sep)
   → saldo akhir per kelompok, per hari tagih, per ember
     ← dihitung dari PORTOFOLIO NYATA, bukan dari transaction_sirculations
       (tabel itu tidak punya month1/month2/ccm, dan 23% kelompok tidak punya barisnya)
-  → + Z (ML belum terinput) yang ditetapkan kantor
+  → + Z (ML belum terinput) = Y - X, teramati per (grouping, hari) - lihat §13.3
       ↓
   awal_* bulan pertama sistem baru
 ```
@@ -986,23 +997,137 @@ tutup buku terakhir sistem lama (30 Sep)
 Pemeriksaan `akhir(lama) == awal(baru)` dilakukan **sekali seumur hidup per kantor**. Kalau meleset,
 **migrasinya ditunda — bukan angkanya dipaksa cocok.** Setelah itu keduanya tidak pernah bersentuhan lagi.
 
-### 13.3 Stock-take ML: definisi "sudah valid" yang terukur
+### 13.3 Stock-take ML & gerbang input susulan
+
+> **Menggantikan aturan "Z ditetapkan manual" dari versi awal dokumen ini.** Lihat akhir bagian ini.
 
 ```
-X = saldo ML dari data nyata    (dihitung sistem, naik terus selama staf input)
-Y = ml_amount lama              (angka berjalan sekarang)
-Z = sisa yang belum terinput    (DITETAPKAN kantor — BUKAN Y − X otomatis)
+X = saldo ML dari data nyata   (dihitung sistem, naik tiap nasabah lama diinput)
+Y = ml_amount lama             (angka berjalan di transaction_sirculations)
+Z = Y − X                      (TERAMATI, bukan ditetapkan — berfungsi sebagai KUOTA)
 ```
 
-`Z` sengaja ditetapkan manual: `Y` sendiri sudah terbukti melenceng dua arah (186 pasangan kelebihan
-Rp 6,19 M, 48 pasangan nol padahal ada orangnya). Menghitung otomatis cuma memindahkan kesalahan lama
-ke sistem baru dengan wajah baru.
+**Grain: per `(grouping, hari)`, bukan per mantri.** Ini keputusan sadar, tiga alasan: `ml_amount`
+memang sudah disimpan per `(grouping, day, bulan)` sehingga menggabungkannya membuang informasi;
+sejalan dengan buku storting yang di-group per hari; dan input nasabahnya sendiri selalu jatuh ke
+satu hari tertentu, jadi kuota harus bisa diperiksa di grain itu — kalau tidak, nasabah Senin bisa
+memakai kuota Rabu.
 
-Kantor siap kalau `Z` **sudah ditetapkan dan ditandatangani** — **bukan** kalau `Z = 0`. Itu target
-jangka panjang, bukan syarat migrasi.
+> Diukur Juli 2026: menggabung per mantri **menyembunyikan Rp 1,11 miliar** selisih hari, karena
+> mantri yang Senin-nya kelebihan dan Rabu-nya kurang akan terbaca "cocok" padahal dua-duanya salah.
+> Itu persis pola penyakit di §1 — satu angka menyerap kesalahan angka lain sampai kelihatan rapi.
 
-Arti barunya: `sirkulasi ML = saldo ML dari data nyata + Z`. Tiap nasabah lama diinput, sisi terhitung
-naik dan `Z` turun sebesar itu — total tidak berubah, tapi porsi yang bisa dipertanggungjawabkan makin besar.
+#### Gerbang input ML susulan — `ml_amount` sebagai KUOTA
+
+`ml_amount` diperlakukan sebagai **kuota**: total ML yang menurut kantor seharusnya ada. Data nyata
+mengisinya dari bawah. Begitu penuh, pintu ditutup.
+
+| Kondisi saat serah terima | Input ML susulan | Alasan |
+|---|---|---|
+| `Y = X` | **DITUTUP** | kuota sudah penuh sejak awal |
+| `Y > X` | **DIBUKA**, kuota = `Y − X` | selisihnya = nasabah yang orangnya belum masuk sistem |
+| `Y < X` | **DITUTUP** | sistem sudah tahu lebih banyak dari angka berjalan; menambah malah memperburuk |
+
+**Selisih yang tidak cocok TIDAK dipaksa sama.** Tidak ada penyesuaian otomatis — cukup dilaporkan
+apa adanya. Yang dipakai dari selisih itu hanya **arahnya** (buka/tutup) dan **besarnya** (kuota).
+
+#### ⚠️ Penguncian harus berupa PALANG, bukan perbandingan yang dievaluasi ulang
+
+Ini yang paling gampang salah dikerjakan. Kalau sistem terus-menerus menanyakan *"apakah X sudah
+sama dengan Y?"*, pintunya akan **buka-tutup sendiri**, karena `X` bergerak TURUN tiap kali nasabah
+ML membayar:
+
+```
+Agustus  : Y = 100jt, X = 100jt   → cocok, pintu ditutup      ✓
+September: ML membayar 5jt        → X turun jadi 95jt
+           Y = 100jt > X = 95jt   → pintu TERBUKA LAGI, kuota 5jt   ✗
+```
+
+Rp 5 juta itu **bukan** "nasabah yang belum terinput" — itu uang yang baru saja masuk. Pintu terbuka
+justru karena penagihan berhasil, dan staf dipersilakan menambah ML fiktif senilai setoran yang baru
+diterima. Berulang tiap bulan. Aturan yang dimaksudkan mencegah data palsu malah jadi mesin
+pembuatnya.
+
+> Terverifikasi Juli 2026: nasabah ML membayar **19.347 kali senilai Rp 2,22 miliar** dari 11.478
+> pinjaman. `X` memang menyusut terus — ini bukan kasus teoretis.
+
+**Bentuk yang benar**: perbandingan `Y` vs `X` dilakukan **sekali saja saat serah terima**. Setelah
+itu yang berjalan adalah sisa kuota yang **tidak punya satu pun jalur naik**:
+
+```
+Serah terima   : sisa_kuota = maks(0, Y − X)      ← sekali, per (grouping, hari)
+Tiap input ML  : sisa_kuota berkurang sebesar saldo yang diinput
+sisa_kuota = 0 : TERKUNCI PERMANEN
+```
+
+Penguncian permanennya jadi **sifat bawaan cara hitungnya**, bukan aturan tambahan yang harus
+dijaga. Setoran ML dan pemutihan tidak lagi mengganggu apa pun, karena keduanya menyentuh `X`
+sedangkan pintu dijaga `sisa_kuota`.
+
+Rumahnya: `transaction_monthly_closings.awal_ml_belum_terinput` (§10.2), **dibawa turun antar bulan,
+bukan dihitung ulang** — lihat pengecualian di §11.2.
+
+#### Input ML vs Penyesuaian — dua jalur, dua pembatas
+
+| | **Input ML** | **Penyesuaian** |
+|---|---|---|
+| Jenis | `saldo_awal` | `duplikat` / `kurang_input` / `lebih_input` |
+| Kapan | selama kuota masih ada | kapan saja, termasuk setelah terkunci |
+| Siapa | staf berakses biasa | **`can-edit`** bongkar-pasang superuser |
+| Pembatas | **kuota** (angka keras) | persetujuan orang kedua + log + laporan pantau |
+| Volume | ribuan baris | satuan, jarang |
+
+**`saldo_awal` sengaja TIDAK butuh persetujuan orang kedua** — pembatasnya sudah kuota, dan kuota itu
+berasal dari angka kantor sendiri. Mewajibkan dua orang untuk ribuan baris hanya akan mendorong orang
+mencari jalan pintas, dan jalan pintas yang tersedia adalah `inputmacet` lama yang justru membuat
+drop palsu. Yang butuh orang kedua adalah tiga jenis koreksi.
+
+> ⚠️ **Penyesuaian tidak punya kuota — tata kelolanya yang jadi pembatas.** `kurang_input` bisa
+> menambah saldo tanpa batas. Aman selama `can-edit` benar-benar dipasang-cabut dan jarang. Kalau
+> suatu hari `can-edit` ditempelkan ke sebuah role supaya "praktis", **kuota di atas berubah jadi
+> hiasan** — pintu depan terkunci, pintu samping terbuka lebar. Jangan disederhanakan.
+
+#### Kuota hanya boleh naik lewat jalur bergembok
+
+Kasusnya nyata: staf memasukkan nasabah Rp 5 jt, kuota turun 5 jt, lalu ketahuan orangnya dobel.
+Kalau kuota tidak pernah bisa kembali, kantor kehilangan 5 jt kuota gara-gara salah ketik padahal
+nasabah aslinya masih ada yang belum masuk.
+
+**Aturan**: kuota boleh naik, **hanya lewat `can-edit` + alasan tercatat** — jalur yang sama dengan
+membuka kunci hari (§4.7). Defaultnya tetap permanen; pengecualiannya selalu meninggalkan jejak.
+Ini sekaligus jalan keluar untuk kelompok yang terlanjur terkunci karena salah hitung saat serah
+terima.
+
+#### Keadaan nyata (Juli 2026, 7.377 pasangan grouping×hari)
+
+| Kasus | Pasangan | Selisih |
+|---|---:|---:|
+| `Y = X` → ditutup | 2.208 (30%) | 0 |
+| `Y > X` → **dibuka** | 4.268 (58%) | **+Rp 54,25 M** |
+| `Y < X` → ditutup | 901 (12%) | −Rp 3,71 M |
+
+Dari 2.208 yang cocok, **1.412 karena dua-duanya nol** (kelompok itu memang tidak punya ML sama
+sekali); hanya **796** yang benar-benar cocok di angka bukan nol.
+
+#### ⚠️ Kasus yang BELUM tercakup aturan: `Y` tidak terdefinisi
+
+**229 pasangan grouping×hari punya ML nyata Rp 2,97 M tapi tidak punya baris
+`transaction_sirculations` sama sekali** — sisa dari cakupan bolong ±23% (§10.2). Di situ `Y` bukan
+nol, melainkan **tidak ada**.
+
+Dua bacaan, belum diputuskan:
+- **Diperlakukan `Y = 0`** → jatuh ke kasus `Y < X` → input ditutup. Aman, tapi kalau kelompok itu
+  sebenarnya masih punya ML belum terinput, pintunya terkunci tanpa alasan yang benar.
+- **Diperlakukan "belum ditetapkan"** → kelompok itu **tidak boleh migrasi** sampai `Y` diisi.
+  Sejalan dengan §13.2 (kalau serah terima tidak cocok, migrasi ditunda — bukan angka dipaksa cocok).
+
+#### Yang berubah dari versi awal dokumen ini
+
+Versi awal menyuruh kantor **menetapkan `Z` secara manual**, dengan alasan `Y` sudah melenceng dua
+arah sehingga `Y − X` otomatis cuma memindahkan kesalahan lama. Aturan di atas **membatalkannya**:
+`Z` tidak perlu dikarang sama sekali. Karena selisihnya tidak dipaksa cocok dan hanya dipakai sebagai
+arah + kuota, tidak ada angka buatan yang masuk ke sistem baru — dan satu langkah kerja manual hilang
+dari alur migrasi.
 
 ### 13.4 Rollout
 

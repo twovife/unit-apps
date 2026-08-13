@@ -852,3 +852,110 @@ dari dua tabel berbeda di dua halaman berbeda — bug yang baru ketahuan berbula
   dilakukan lewat tinker read-only. **Jangan jalankan `php artisan test` sebelum baris itu diaktifkan.**
 - **Tidak ada kantor yang di-set migrasi.** Pengisian `mulai_pendataan_baru` adalah keputusan
   operasional per kantor (target: 1–2 kantor percontohan, 1 Okt 2026).
+
+---
+
+## AE — Gerbang input ML susulan: aturan + grain ditetapkan (2026-08-12)
+
+Pelurusan arah sebelum Tahap 1 dikerjakan. **Dokumentasi saja, tidak ada kode yang diubah.**
+
+| Berkas | Perubahan | Tabel |
+|---|---|---|
+| `.agents/agregasi_rekap.md` §13.3 | Ditulis ulang: gerbang input ML, grain `(grouping, hari)`, angka Juli 2026, kasus `Y` tidak terdefinisi | `transaction_loans`, `transaction_white_offs`, `transaction_sirculations` — **BACA** |
+| `.agents/agregasi_rekap.md` §10.2, §13.2 | Penjelasan `awal_ml_belum_terinput` disesuaikan (teramati, bukan ditetapkan) | — |
+
+### Aturan yang ditetapkan user
+
+| Kondisi | Input ML susulan |
+|---|---|
+| `ml_amount` = data nyata | **ditutup** |
+| `ml_amount` > data nyata | **dibuka**, kuota = selisihnya |
+| `ml_amount` < data nyata | **ditutup** |
+
+Selisih yang tidak cocok **tidak dipaksa sama** — hanya dilaporkan. Yang dipakai cuma arahnya
+(buka/tutup) dan besarnya (kuota). Penyesuaian ML tetap lewat `can-edit` bongkar-pasang superuser.
+
+### MEMBATALKAN keputusan sebelumnya
+
+Versi awal dokumen menyuruh kantor **menetapkan `Z` manual** (alasan: `Y` sudah melenceng dua arah,
+jadi `Y − X` otomatis dianggap memindahkan kesalahan lama). Aturan di atas membatalkannya — `Z`
+cukup teramati sebagai `Y − X` dan berfungsi sebagai kuota, karena selisihnya toh tidak dipaksa
+cocok. **Satu langkah kerja manual hilang dari alur migrasi, dan tidak ada angka karangan yang
+masuk sistem baru.**
+
+### Grain: per (grouping, hari), BUKAN per mantri
+
+Diverifikasi dengan menghitung dua-duanya untuk Juli 2026:
+
+| | per grouping+hari | per mantri |
+|---|---:|---:|
+| Unit dinilai | 7.377 pasangan | 1.238 mantri |
+| Dibuka (`Y>X`) | 4.268 (58%) — Rp 54,25 M | 855 (69%) — Rp 53,14 M |
+| Ditutup (`Y=X`) | 2.208 (30%) | 226 (18%) |
+| Ditutup (`Y<X`) | 901 (12%) — −Rp 3,71 M | 157 (13%) — −Rp 2,60 M |
+
+**Menggabung per mantri menyembunyikan Rp 1,11 miliar** selisih hari — mantri yang Senin kelebihan
+dan Rabu kekurangan terbaca "cocok" padahal dua-duanya salah. Itu pola penyakit §1 persis.
+Dari 2.208 yang cocok, 1.412 karena dua-duanya nol; hanya 796 benar-benar cocok di angka bukan nol.
+
+### Temuan tambahan: jalur nasabah lama yang sebenarnya
+
+Sempat salah sasaran ke `BatchInputController` (menu upload global — **user konfirmasi sudah tidak
+dipakai lagi**, dan akan dibatasi superuser saja). Jalur yang benar-benar dipakai staf:
+
+- **`BukuTransaksi/Web/InputMacet.jsx`** — staf mengisi **sisa saldo**, frontend menghitung
+  `angsuran[0].nominal = pinjaman − sisa_saldo` (`:170,175`). Ini "angsuran penyesuaian"-nya.
+- Dikirim ke **`TransactionLoanController@store_buku_transaksi_batch`** (`:332`), yang membuat
+  pinjaman `status='success'` + `nominal_drop` (**drop naik**, `:443-459`) lalu baris angsuran dari
+  array (**storting naik**, `:461-478`).
+- **`FastCreateV2.jsx` memakai endpoint yang sama** — mengubahnya menyentuh dua layar sekaligus.
+
+Konfirmasi penting: staf **sudah** berpikir dalam "sisa saldo", jadi keputusan §7.4 (input sisa
+saldo, bukan "sudah terbayar") memang cocok dengan kebiasaan yang ada — bukan cara baru.
+
+Jejak `BatchInputController` (penanda `user_input=4955`, **batas atas** karena penanda yang sama
+juga dipakai fallback id pimpinan/kasir): 98.317 pinjaman (Rp 54,0 M) dan 361.259 angsuran
+(Rp 109,0 M), 184 kelompok, `drop_date` 2002–2026.
+
+### Penguncian permanen: PALANG, bukan perbandingan berulang
+
+`ml_amount` = **kuota**; data nyata mengisinya dari bawah; penuh → terkunci. Tapi penguncian harus
+berupa palang, bukan perbandingan yang dievaluasi ulang tiap saat — karena `X` bergerak TURUN tiap
+nasabah ML membayar. **Terverifikasi Juli 2026: ML membayar 19.347 kali senilai Rp 2,22 miliar dari
+11.478 pinjaman** (pemutihan ML bulan itu: 0).
+
+Tanpa palang: `X` menyentuh `Y` → tutup; bulan depan ML bayar 5jt → `X` turun → `Y > X` → **pintu
+terbuka lagi dengan kuota 5jt**, padahal 5jt itu uang yang baru masuk, bukan nasabah belum terinput.
+Aturan yang dimaksudkan mencegah data palsu malah jadi mesin pembuatnya.
+
+Bentuk final: bandingkan `Y` vs `X` **sekali saat serah terima** → `sisa_kuota = maks(0, Y−X)`.
+Setelah itu sisa kuota hanya berkurang. Nol = terkunci permanen, dan permanennya jadi sifat bawaan
+cara hitung, bukan aturan yang harus dijaga.
+
+Konsekuensi: `awal_ml_belum_terinput` **dibawa turun antar bulan, bukan dihitung ulang** —
+pengecualian terhadap §11.2, karena sisa kuota menghitung orang yang justru tidak ada di portofolio.
+
+### Persetujuan: TERJAWAB lewat pemisahan jalur
+
+| | Input ML (`saldo_awal`) | Penyesuaian (3 jenis koreksi) |
+|---|---|---|
+| Pembatas | **kuota** (angka keras) | persetujuan orang kedua + log + laporan |
+| Siapa | staf berakses biasa | `can-edit` bongkar-pasang superuser |
+| Volume | ribuan baris | satuan |
+
+`saldo_awal` **tidak butuh persetujuan orang kedua** — pembatasnya sudah kuota. Mewajibkan dua orang
+untuk ribuan baris justru mendorong jalan pintas, dan jalan pintasnya adalah `inputmacet` lama yang
+membuat drop palsu.
+
+⚠️ Dicatat tegas di dokumen: penyesuaian **tidak punya kuota**, jadi tata kelolanya yang jadi
+pembatas. Kalau `can-edit` suatu hari ditempelkan ke role supaya praktis, kuota berubah jadi hiasan.
+
+Kuota **hanya boleh naik lewat `can-edit` + alasan tercatat** (jalur sama dengan buka kunci hari) —
+supaya salah input yang menghabiskan kuota tetap bisa dipulihkan tanpa membuka jalur bebas.
+
+### Yang masih TERBUKA
+
+1. **229 pasangan grouping×hari punya ML nyata Rp 2,97 M tapi tanpa baris `transaction_sirculations`**
+   → `Y` tidak terdefinisi. Diperlakukan `Y=0` (input ditutup) atau "belum ditetapkan" (kelompok
+   tidak boleh migrasi sampai diisi)? Belum diputuskan.
+2. Lingkup Tahap 1 — apakah `store_buku_transaksi_batch` ikut diubah, atau menunggu Tahap 3?
