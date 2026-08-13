@@ -11,10 +11,10 @@
     "/build/assets/DeleteUserForm-BAvS6V3C.js"
   ],
   "resources/js/Components/FilterBar.jsx": [
-    "/build/assets/TransaksiMantri-J9n2viqT.js"
+    "/build/assets/FilterBar-DxJSo2b4.js"
   ],
   "resources/js/Components/GlobalBranchFilter.jsx": [
-    "/build/assets/AuthenticatedLayout-DZz9QSGc.js"
+    "/build/assets/AuthenticatedLayout-BEPqRHWf.js"
   ],
   "resources/js/Components/InputError.jsx": [
     "/build/assets/InputError-cRVTeK4i.js"
@@ -33,7 +33,7 @@
     "/build/assets/DeleteUserForm-BAvS6V3C.js"
   ],
   "resources/js/Components/Navbar.jsx": [
-    "/build/assets/AuthenticatedLayout-DZz9QSGc.js"
+    "/build/assets/AuthenticatedLayout-BEPqRHWf.js"
   ],
   "resources/js/Components/NoEditOverlay.jsx": [
     "/build/assets/NoEditOverlay-GIB1h_zq.js"
@@ -48,91 +48,88 @@
     "/build/assets/SelectList-DrCNDu1u.js"
   ],
   "resources/js/Components/Sidebar.jsx": [
-    "/build/assets/AuthenticatedLayout-DZz9QSGc.js"
+    "/build/assets/AuthenticatedLayout-BEPqRHWf.js"
   ],
   "resources/js/Components/SweetAlert.jsx": [
-    "/build/assets/AuthenticatedLayout-DZz9QSGc.js"
+    "/build/assets/AuthenticatedLayout-BEPqRHWf.js"
   ],
   "resources/js/Components/TextInput.jsx": [
     "/build/assets/TextInput-GCtCMl-T.js"
   ],
   "resources/js/Components/shadcn/AppBadge.jsx": [
-    "/build/assets/statusVariants-kLBpdvOH.js"
+    "/build/assets/AppBadge-CfINLLYj.js"
   ],
   "resources/js/Components/shadcn/AppButton.jsx": [
-    "/build/assets/Acc-Da2yqG-0.js"
+    "/build/assets/Tundaan-DTErNWMQ.js"
   ],
   "resources/js/Components/shadcn/BadgeStatus.jsx": [
-    "/build/assets/BadgeStatus-BDnUSm56.js"
+    "/build/assets/BadgeStatus-Cj6LHx_M.js"
   ],
   "resources/js/Components/shadcn/BargeStatus.jsx": [
-    "/build/assets/BargeStatus-B_JPokIk.js"
+    "/build/assets/BargeStatus-KjUuqjtj.js"
   ],
   "resources/js/Components/shadcn/DatePicker.jsx": [
-    "/build/assets/InputMacet-DpUAFdPM.js"
+    "/build/assets/InputMacet-NyI8lJt_.js"
   ],
   "resources/js/Components/shadcn/FormatNumbering.jsx": [
     "/build/assets/FormatNumbering-CTESXtjE.js"
   ],
   "resources/js/Components/shadcn/SearchComponent.jsx": [
-    "/build/assets/SearchComponent-Eb6Mvc9B.js"
+    "/build/assets/SearchComponent-uiqzPovZ.js"
   ],
   "resources/js/Components/shadcn/SelectComponent.jsx": [
     "/build/assets/SelectComponent-DUhN-d41.js"
   ],
   "resources/js/Components/shadcn/StatusPinjaman.jsx": [
-    "/build/assets/StatusPinjaman-BcI4A1Iw.js"
+    "/build/assets/Action-DpQc2jIx.js"
   ],
   "resources/js/Components/shadcn/statusVariants.js": [
-    "/build/assets/statusVariants-kLBpdvOH.js"
-  ],
-  "resources/js/Hooks/use-mobile.jsx": [
-    "/build/assets/Action-DduzpCFw.js"
+    "/build/assets/ActionTable-C05_T-Rr.js"
   ],
   "resources/js/Hooks/useOptionGenerator.js": [
     "/build/assets/SelectComponent-DUhN-d41.js"
   ],
   "resources/js/Hooks/useServerFilter.js": [
-    "/build/assets/BatchUpdate-C7Ju9MVC.js"
+    "/build/assets/BatchUpdate-D4pZ_N5B.js"
   ],
   "resources/js/Layouts/AuthenticatedLayout.jsx": [
-    "/build/assets/AuthenticatedLayout-DZz9QSGc.js"
+    "/build/assets/AuthenticatedLayout-BEPqRHWf.js"
   ],
   "resources/js/Layouts/GuestLayout.jsx": [
     "/build/assets/GuestLayout-DWRj8wt9.js"
   ],
   "resources/js/Layouts/MobileLayout.jsx": [
-    "/build/assets/MobileLayout-DDtr65-l.js"
+    "/build/assets/MobileLayout-COPh3ryR.js"
   ],
   "resources/js/Pages/AdminPanel/Components/AssignRoles.jsx": [
-    "/build/assets/AssignRoles-D6mUC1iA.js"
+    "/build/assets/AssignRoles-D6pRb8Kf.js"
   ],
   "resources/js/Pages/AdminPanel/Components/MaintenerWorker.jsx": [
-    "/build/assets/MaintenerWorker-l9-VQa8t.js"
+    "/build/assets/MaintenerWorker-B4JHcSAe.js"
   ],
   "resources/js/Pages/AdminPanel/Components/Permission.jsx": [
-    "/build/assets/Permission-DDvAOj-O.js"
+    "/build/assets/Permission-a9tLyW6Y.js"
   ],
   "resources/js/Pages/AdminPanel/Components/Role.jsx": [
-    "/build/assets/Role-twcrNh6z.js"
+    "/build/assets/Role-CXiINoKZ.js"
   ],
   "resources/js/Pages/AdminPanel/Index.jsx": [
-    "/build/assets/Index-BMJte6ay.js"
+    "/build/assets/Index-BHSpmoUY.js"
   ],
   "resources/js/Pages/AdminPanel/MonitoringStaff.jsx": [
-    "/build/assets/MonitoringStaff-BWOKFuKM.js"
+    "/build/assets/MonitoringStaff-DHhbyX5-.js"
   ],
   "resources/js/Pages/Administrasi/BatchInput/EditableRow.jsx": [
     "/build/assets/EditableRow-DFKXrTC7.js"
   ],
   "resources/js/Pages/Administrasi/BatchInput/Index.jsx": [
-    "/build/assets/Index-CCpKJNgO.js"
+    "/build/assets/Index-B-GdZvue.js"
   ],
   "resources/js/Pages/Administrasi/ManPower/GenerateUser.jsx": [
-    "/build/assets/GenerateUser-BmXWbla_.js"
+    "/build/assets/GenerateUser-CDVmf-DK.js"
   ],
   "resources/js/Pages/Administrasi/ManPower/ManPower.jsx": [
-    "/build/assets/ManPower-_g5xzqD6.js"
+    "/build/assets/ManPower-veeqUnMW.js"
   ],
   "resources/js/Pages/Auth/ConfirmPassword.jsx": [
     "/build/assets/ConfirmPassword-BGC3lnBb.js"
@@ -141,10 +138,10 @@
     "/build/assets/ForgotPassword-B62fVdfp.js"
   ],
   "resources/js/Pages/Auth/Login.jsx": [
-    "/build/assets/Login-OXpzYBQc.js"
+    "/build/assets/Login-DBfCQ4uG.js"
   ],
   "resources/js/Pages/Auth/Register.jsx": [
-    "/build/assets/Register-yWDTyN8W.js"
+    "/build/assets/Register-DDa4d7eP.js"
   ],
   "resources/js/Pages/Auth/ResetPassword.jsx": [
     "/build/assets/ResetPassword-DzdNQU-7.js"
@@ -153,211 +150,223 @@
     "/build/assets/VerifyEmail-Ct35X4Sc.js"
   ],
   "resources/js/Pages/BukuTransaksi/Action.jsx": [
-    "/build/assets/Action-C2J8cASZ.js"
+    "/build/assets/Action-BRGYrfG0.js"
   ],
   "resources/js/Pages/BukuTransaksi/BukuTransaksi.jsx": [
-    "/build/assets/BukuTransaksi-k6YJzkAX.js"
+    "/build/assets/BukuTransaksi-B7LdFPS8.js"
   ],
   "resources/js/Pages/BukuTransaksi/BukuTransaksiKepala.jsx": [
-    "/build/assets/BukuTransaksiKepala-CWhJUMsc.js"
+    "/build/assets/BukuTransaksiKepala-DKvwYTd2.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/Acc.jsx": [
-    "/build/assets/Acc-Da2yqG-0.js"
+    "/build/assets/Acc-D3ukg6cl.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/ActionTable.jsx": [
-    "/build/assets/ActionTable-DgcU1sbJ.js"
+    "/build/assets/ActionTable-C05_T-Rr.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/Approval.jsx": [
-    "/build/assets/Approval-DhEJMphL.js"
+    "/build/assets/Approval-D9gJ0K-F.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/ChangeDetail.jsx": [
-    "/build/assets/ChangeDetail-CbB0pkrV.js"
+    "/build/assets/ChangeDetail-ChsDycND.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/DetailRiwayat.jsx": [
-    "/build/assets/DetailRiwayat-Cu24LX1N.js"
+    "/build/assets/DetailRiwayat-BVeewgZ0.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/ReStatus.jsx": [
-    "/build/assets/ReStatus-CuPsPicK.js"
+    "/build/assets/ReStatus-DcIHlZdg.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/RemoveLoan.jsx": [
-    "/build/assets/RemoveLoan-EwLhVElw.js"
+    "/build/assets/RemoveLoan-BCXe6fgS.js"
   ],
   "resources/js/Pages/BukuTransaksi/Components/StatusPengajuan.jsx": [
     "/build/assets/StatusPengajuan-BBMso_U9.js"
   ],
+  "resources/js/Pages/BukuTransaksi/Components/Tundaan.jsx": [
+    "/build/assets/Tundaan-DTErNWMQ.js"
+  ],
+  "resources/js/Pages/BukuTransaksi/Mobile/TransaksiMantri.jsx": [
+    "/build/assets/TransaksiMantri-F3PQ2kZY.js"
+  ],
   "resources/js/Pages/BukuTransaksi/Rencana.jsx": [
-    "/build/assets/Rencana-C31xzvQj.js"
+    "/build/assets/Rencana-YiCaEn-G.js"
+  ],
+  "resources/js/Pages/BukuTransaksi/Web/BatchUpload.jsx": [
+    "/build/assets/BatchUpload-CDHKkX3c.js"
+  ],
+  "resources/js/Pages/BukuTransaksi/Web/Create.jsx": [
+    "/build/assets/Create-BU9WPEJw.js"
+  ],
+  "resources/js/Pages/BukuTransaksi/Web/FastCreateV2.jsx": [
+    "/build/assets/FastCreateV2-BUAaMrwj.js"
+  ],
+  "resources/js/Pages/BukuTransaksi/Web/InputMacet.jsx": [
+    "/build/assets/InputMacet-NyI8lJt_.js"
+  ],
+  "resources/js/Pages/BukuTransaksi/Web/TransaksiMantri.jsx": [
+    "/build/assets/TransaksiMantri-9dNOmstO.js"
   ],
   "resources/js/Pages/Dashboard.jsx": [
-    "/build/assets/Dashboard-DchH4Xf_.js"
+    "/build/assets/Dashboard-Cv608IaJ.js"
   ],
   "resources/js/Pages/Dashboard/MantriDashboard.jsx": [
-    "/build/assets/MantriDashboard-B9rvBdFj.js"
+    "/build/assets/MantriDashboard-BsdSM5Qp.js"
   ],
   "resources/js/Pages/Kasir/Rekap/Components/Action.jsx": [
-    "/build/assets/Action-CrIqHAjP.js"
+    "/build/assets/Action-DaTCdMbi.js"
   ],
   "resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx": [
-    "/build/assets/TableRekap-D8lehBfC.js"
+    "/build/assets/TableRekap-Cbt9FDS1.js"
   ],
   "resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx": [
-    "/build/assets/TableRekapKasir-D1hP0HXY.js"
+    "/build/assets/TableRekapKasir-CNoEbOQt.js"
   ],
   "resources/js/Pages/Kasir/Rekap/Components/TableRekapPerMantri.jsx": [
-    "/build/assets/TableRekapPerMantri-BNQdYg-I.js"
+    "/build/assets/TableRekapPerMantri-C0sR7Bbr.js"
   ],
   "resources/js/Pages/Kasir/Rekap/Components/TunaiMantri.jsx": [
-    "/build/assets/TunaiMantri-Cd1XmTmd.js"
+    "/build/assets/TunaiMantri-pVTng2IG.js"
   ],
   "resources/js/Pages/Kasir/Rekap/Permantri.jsx": [
-    "/build/assets/Permantri-DTxseENp.js"
+    "/build/assets/Permantri-B9ZuckPn.js"
   ],
   "resources/js/Pages/Kasir/Rekap/RekapContent.jsx": [
-    "/build/assets/RekapContent-CGu7flJO.js"
+    "/build/assets/RekapContent-DfCYrFV7.js"
   ],
   "resources/js/Pages/Kasir/RencanaDrop/Content.jsx": [
-    "/build/assets/Content-DVHJ1kFl.js"
+    "/build/assets/Content-DjGNilRg.js"
   ],
   "resources/js/Pages/Kasir/RencanaDrop/TableRekap.jsx": [
-    "/build/assets/TableRekap-BXZ_zJtu.js"
+    "/build/assets/TableRekap-DwuJoj6R.js"
+  ],
+  "resources/js/Pages/Migrasi/StockTakeMl.jsx": [
+    "/build/assets/StockTakeMl-DOiRH2Qe.js"
   ],
   "resources/js/Pages/MobileApps/Angsuran/Index.jsx": [
-    "/build/assets/Index-BUXzR5lc.js"
+    "/build/assets/Index-Ci_nnJ93.js"
   ],
   "resources/js/Pages/MobileApps/Angsuran/SearchByDate.jsx": [
-    "/build/assets/SearchByDate-BW1YnHiN.js"
-  ],
-  "resources/js/Pages/MobileApps/BukuAngsuranMantri/Index.jsx": [
-    "/build/assets/Index-LIyPhf-n.js"
-  ],
-  "resources/js/Pages/MobileApps/BukuTransaksiKepala/TransaksiMantri.jsx": [
-    "/build/assets/TransaksiMantri-CiHxFmUW.js"
-  ],
-  "resources/js/Pages/MobileApps/BukuTransaksiMantri/TransaksiMantri.jsx": [
-    "/build/assets/TransaksiMantri-J9n2viqT.js"
+    "/build/assets/SearchByDate-BzCMnLs3.js"
   ],
   "resources/js/Pages/MobileApps/Create/Index.jsx": [
-    "/build/assets/Index-BGBuococ.js"
+    "/build/assets/Index-Q4AUAHzp.js"
   ],
   "resources/js/Pages/MobileApps/Index.jsx": [
-    "/build/assets/Index-PqRvTOcn.js"
+    "/build/assets/Index-CB037QNQ.js"
   ],
   "resources/js/Pages/MobileApps/Rekap/RekapDua.jsx": [
-    "/build/assets/RekapDua-D5ZWhBcs.js"
+    "/build/assets/RekapDua-cnTAAg-l.js"
   ],
   "resources/js/Pages/MobileApps/Rekap/RekapPerMantri.jsx": [
-    "/build/assets/RekapPerMantri-BR3bv1L7.js"
+    "/build/assets/RekapPerMantri-i77v6G-r.js"
   ],
   "resources/js/Pages/MobileApps/Rekap/RekapSatu.jsx": [
-    "/build/assets/RekapSatu-BIIPuDkG.js"
+    "/build/assets/RekapSatu-DewgTbLD.js"
   ],
   "resources/js/Pages/MobileApps/RencanaDropKepala/Index.jsx": [
-    "/build/assets/Index-C6mmXhJD.js"
+    "/build/assets/Index-BkSN-EbE.js"
   ],
   "resources/js/Pages/MobileApps/_Index.jsx": [
-    "/build/assets/_Index-CKKKIPqK.js"
+    "/build/assets/_Index-DoQ7zfRk.js"
   ],
   "resources/js/Pages/NewAngsuran/Angsuran.jsx": [
-    "/build/assets/Angsuran-B98QnP9q.js"
+    "/build/assets/Angsuran-Av09JfK-.js"
   ],
   "resources/js/Pages/NewAngsuran/AngsuranByDate.jsx": [
-    "/build/assets/AngsuranByDate-ePJHrCaA.js"
+    "/build/assets/AngsuranByDate-DPIgIFrI.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/Action.jsx": [
-    "/build/assets/Action-DduzpCFw.js"
-  ],
-  "resources/js/Pages/NewAngsuran/Components/Action22.jsx": [
-    "/build/assets/Action22-BHKijsu3.js"
+    "/build/assets/Action-DpQc2jIx.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/AngsuranByDateTable.jsx": [
-    "/build/assets/AngsuranByDateTable-BZA3s7eI.js"
+    "/build/assets/AngsuranByDateTable-DNKS8rBt.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx": [
-    "/build/assets/AngsuranTable-Cdjh5vDC.js"
+    "/build/assets/AngsuranTable-DI6QpaRs.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx": [
-    "/build/assets/AngsuranTableMobile-9Xppv0xY.js"
+    "/build/assets/AngsuranTableMobile-B5SR5SOw.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/AngsuranTableMobilexxx.jsx": [
-    "/build/assets/AngsuranTableMobilexxx-BUtPwAgt.js"
+    "/build/assets/AngsuranTableMobilexxx-BFLiPCGW.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/ApprovalAkhir.jsx": [
-    "/build/assets/ApprovalAkhir-BwNfT9Nz.js"
+    "/build/assets/ApprovalAkhir-CoeltRBs.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx": [
-    "/build/assets/BayarAngsuran-Daoj1Mle.js"
+    "/build/assets/BayarAngsuran-Clafpzjb.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/BukuStorting.jsx": [
-    "/build/assets/BukuStorting-pBhtx7gw.js"
+    "/build/assets/BukuStorting-Oq86KW-Q.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/BukuStortingMobile.jsx": [
-    "/build/assets/BukuStortingMobile-Sq83CKoE.js"
+    "/build/assets/BukuStortingMobile-CS9BISWv.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/ButtonAngsuran.jsx": [
-    "/build/assets/ButtonAngsuran-B3tUEJFO.js"
+    "/build/assets/ButtonAngsuran-BPylzf7g.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/DeleteAngsuran.jsx": [
-    "/build/assets/DeleteAngsuran-CXER3cr1.js"
+    "/build/assets/DeleteAngsuran-CW726sUL.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/DeleteLoan.jsx": [
-    "/build/assets/DeleteLoan-BRMUEAf1.js"
+    "/build/assets/DeleteLoan-Bn49vLtL.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/JenisNasabah.jsx": [
-    "/build/assets/JenisNasabah-CaYZthxZ.js"
+    "/build/assets/JenisNasabah-B8ab0q_P.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/Pengajuan.jsx": [
-    "/build/assets/Pengajuan-CCPOcjv6.js"
+    "/build/assets/Pengajuan-BGZhLqwe.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/PengajuanLama.jsx": [
-    "/build/assets/PengajuanLama-CPWXFCy0.js"
+    "/build/assets/PengajuanLama-N_52jNMR.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/SyncAngsuran.jsx": [
-    "/build/assets/SyncAngsuran-Cizd7Nhv.js"
+    "/build/assets/SyncAngsuran-CbJogwZT.js"
   ],
   "resources/js/Pages/NewAngsuran/Components/WhiteOff.jsx": [
-    "/build/assets/WhiteOff-CmM5sBlW.js"
+    "/build/assets/WhiteOff-BL9r_Gno.js"
   ],
   "resources/js/Pages/NewLoan/BatchUpload.jsx": [
-    "/build/assets/BatchUpload-BALcrkzp.js"
+    "/build/assets/BatchUpload-D-3IBZ-1.js"
   ],
   "resources/js/Pages/NewLoan/BatchUploadx.jsx": [
-    "/build/assets/BatchUploadx-Drjx2LHY.js"
+    "/build/assets/BatchUploadx-COQnMSka.js"
   ],
   "resources/js/Pages/NewLoan/Components/ModalShowAngsuran.jsx": [
-    "/build/assets/ModalShowAngsuran-Bk6Evxvh.js"
+    "/build/assets/ModalShowAngsuran-CVdvAxGC.js"
   ],
   "resources/js/Pages/NewLoan/Components/RiwayatPengajuan.jsx": [
-    "/build/assets/RiwayatPengajuan-C1LEAz5f.js"
+    "/build/assets/RiwayatPengajuan-BgwqMR0N.js"
   ],
   "resources/js/Pages/NewLoan/Components/RiwayatPengajuanLain.jsx": [
-    "/build/assets/RiwayatPengajuanLain-C26ipk4u.js"
+    "/build/assets/RiwayatPengajuanLain-Cn1bvqTT.js"
   ],
   "resources/js/Pages/NewLoan/Components/RiwayatPengajuanMacet.jsx": [
-    "/build/assets/RiwayatPengajuanMacet-4YfinBSn.js"
+    "/build/assets/RiwayatPengajuanMacet-p_dcJfxs.js"
   ],
   "resources/js/Pages/NewLoan/Components/RiwayatPengajuanNonBranch.jsx": [
-    "/build/assets/RiwayatPengajuanNonBranch-D9ociZ2u.js"
+    "/build/assets/RiwayatPengajuanNonBranch-CLnCBpLX.js"
   ],
   "resources/js/Pages/NewLoan/Components/RiwayatPengajuanOri.jsx": [
-    "/build/assets/RiwayatPengajuanOri-CcouajAp.js"
+    "/build/assets/RiwayatPengajuanOri-Br7hCqSv.js"
   ],
   "resources/js/Pages/NewLoan/NewNasabah.jsx": [
-    "/build/assets/NewNasabah-C18zRyWG.js"
+    "/build/assets/NewNasabah-yQyYQS-j.js"
   ],
   "resources/js/Pages/Profile/Edit.jsx": [
-    "/build/assets/Edit-BG2eV50M.js"
+    "/build/assets/Edit-CZyUNfB2.js"
   ],
   "resources/js/Pages/Profile/Partials/DeleteUserForm.jsx": [
     "/build/assets/DeleteUserForm-BAvS6V3C.js"
   ],
   "resources/js/Pages/Profile/Partials/UpdatePasswordForm.jsx": [
-    "/build/assets/UpdatePasswordForm-BINw7Pni.js"
+    "/build/assets/UpdatePasswordForm-RwIvHpZs.js"
   ],
   "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.jsx": [
     "/build/assets/UpdateProfileInformationForm-C_BkfLV9.js"
   ],
   "resources/js/Pages/SuperUser/BatchUpdate.jsx": [
-    "/build/assets/BatchUpdate-C7Ju9MVC.js"
+    "/build/assets/BatchUpdate-D4pZ_N5B.js"
   ],
   "resources/js/Pages/SuperUser/Components/NewCustomer.jsx": [
     "/build/assets/NewCustomer-DLrjyqsZ.js"
@@ -366,109 +375,94 @@
     "/build/assets/OldCustomer-CHEizQGR.js"
   ],
   "resources/js/Pages/WebView/Angsuran/Index.jsx": [
-    "/build/assets/Index-BVJvoNPc.js"
+    "/build/assets/Index-CwrapdSE.js"
   ],
   "resources/js/Pages/WebView/Angsuran/SearchByDate.jsx": [
-    "/build/assets/SearchByDate-C5RVTw7k.js"
-  ],
-  "resources/js/Pages/WebView/BukuTransaksi/BatchUpload.jsx": [
-    "/build/assets/BatchUpload-BKhBsqB7.js"
-  ],
-  "resources/js/Pages/WebView/BukuTransaksi/Create.jsx": [
-    "/build/assets/Create-CXX8akyK.js"
-  ],
-  "resources/js/Pages/WebView/BukuTransaksi/FastCreateV2.jsx": [
-    "/build/assets/FastCreateV2-Bu7_v_Hx.js"
-  ],
-  "resources/js/Pages/WebView/BukuTransaksi/InputMacet.jsx": [
-    "/build/assets/InputMacet-DpUAFdPM.js"
-  ],
-  "resources/js/Pages/WebView/BukuTransaksi/TransaksiMantri.jsx": [
-    "/build/assets/TransaksiMantri-BfdXKlSG.js"
+    "/build/assets/SearchByDate-CWbY4zhc.js"
   ],
   "resources/js/Pages/WebView/ManPower/Index.jsx": [
-    "/build/assets/Index-BzlE0knC.js"
+    "/build/assets/Index-BcaOVKo9.js"
   ],
   "resources/js/Pages/WebView/Rekap/RekapDua.jsx": [
-    "/build/assets/RekapDua-Dmu10aH2.js"
+    "/build/assets/RekapDua-XNU2bm5d.js"
   ],
   "resources/js/Pages/WebView/Rekap/RekapPerMantri.jsx": [
-    "/build/assets/RekapPerMantri-CJBi2yVI.js"
+    "/build/assets/RekapPerMantri-DXivqzM0.js"
   ],
   "resources/js/Pages/WebView/Rekap/RekapSatu.jsx": [
-    "/build/assets/RekapSatu-B0iCw-6Y.js"
+    "/build/assets/RekapSatu-CeRhUL7S.js"
   ],
   "resources/js/Pages/WebView/RencanaDropKepala/Index.jsx": [
-    "/build/assets/Index-D34tvuxX.js"
+    "/build/assets/Index-B6-B43wU.js"
   ],
   "resources/js/Pages/Welcome.jsx": [
     "/build/assets/Welcome-C0juehjj.js"
   ],
   "resources/js/hooks/use-mobile.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/lib/utils.js": [
-    "/build/assets/utils-H80jjgLf.js"
+    "/build/assets/utils-DzFuPzol.js"
   ],
   "resources/js/shadcn/ui/accordion.jsx": [
-    "/build/assets/accordion-Bo7Hup67.js"
+    "/build/assets/accordion-EOARN4Ag.js"
   ],
   "resources/js/shadcn/ui/badge.jsx": [
-    "/build/assets/badge-BDQK5pqs.js"
+    "/build/assets/badge-CBTu05xj.js"
   ],
   "resources/js/shadcn/ui/button.jsx": [
-    "/build/assets/button-StO46bLt.js"
+    "/build/assets/button-MTjEwktD.js"
   ],
   "resources/js/shadcn/ui/calendar.jsx": [
-    "/build/assets/InputMacet-DpUAFdPM.js"
+    "/build/assets/InputMacet-NyI8lJt_.js"
   ],
   "resources/js/shadcn/ui/card.jsx": [
-    "/build/assets/card-DK9akThy.js"
+    "/build/assets/card-WipCscFv.js"
   ],
   "resources/js/shadcn/ui/command.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/shadcn/ui/dialog.jsx": [
-    "/build/assets/dialog-DqsN44pN.js"
+    "/build/assets/dialog-8a8NNlps.js"
   ],
   "resources/js/shadcn/ui/dropdown-menu.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/shadcn/ui/input.jsx": [
-    "/build/assets/input-BH-oxdzi.js"
+    "/build/assets/input-BHD-__le.js"
   ],
   "resources/js/shadcn/ui/label.jsx": [
-    "/build/assets/label-e-KMhPKP.js"
+    "/build/assets/label-F4MKz6SO.js"
   ],
   "resources/js/shadcn/ui/popover.jsx": [
-    "/build/assets/popover-QnCQXRdU.js"
+    "/build/assets/popover-B9xSK2Gy.js"
   ],
   "resources/js/shadcn/ui/select.jsx": [
-    "/build/assets/InputMacet-DpUAFdPM.js"
+    "/build/assets/InputMacet-NyI8lJt_.js"
   ],
   "resources/js/shadcn/ui/separator.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/shadcn/ui/sheet.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/shadcn/ui/sidebar.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/shadcn/ui/skeleton.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/shadcn/ui/sonner.jsx": [
-    "/build/assets/Action-DduzpCFw.js"
+    "/build/assets/Action-DpQc2jIx.js"
   ],
   "resources/js/shadcn/ui/table.jsx": [
-    "/build/assets/table-DgsbovDN.js"
+    "/build/assets/table-Dwx5kZ1B.js"
   ],
   "resources/js/shadcn/ui/tabs.jsx": [
-    "/build/assets/tabs-DpwcYzou.js"
+    "/build/assets/tabs-BAdW7Ajv.js"
   ],
   "resources/js/shadcn/ui/tooltip.jsx": [
-    "/build/assets/command-BgotNnHx.js"
+    "/build/assets/command-int9mZp7.js"
   ],
   "resources/js/ssr.jsx": [],
   "vendor/tightenco/ziggy/dist/index.m.js": []

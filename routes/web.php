@@ -99,6 +99,15 @@ Route::middleware('auth')->group(function () {
       Route::post('/', "store")->name('store');
     });
   });
+
+  // Perkakas persiapan migrasi ke alur agregasi baru (.agents/agregasi_rekap.md).
+  // Otorisasi dicek di dalam controller, BUKAN lewat middleware 'role:' —
+  // alias itu tidak terdaftar di app/Http/Kernel.php, dan merantai middleware
+  // setelah ->group() juga tidak menempel (lihat 05_temuan_dan_jebakan.md A1).
+  Route::prefix('migrasi')->name('migrasi.')->group(function () {
+    Route::get('/stock-take-ml', [\App\Http\Controllers\MigrasiController::class, 'stockTakeMl'])
+      ->name('stock_take_ml');
+  });
   Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {

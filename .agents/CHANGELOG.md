@@ -1012,3 +1012,48 @@ menempel, dia akan **melempar exception**, bukan menolak dengan rapi. Dipakai pe
   paralel.
 - **`store_buku_transaksi_batch` tidak disentuh** — perubahan `inputmacet`/`FastCreateV2` menunggu
   keputusan lingkup, dan tidak mendesak karena belum ada kantor yang migrasi sebelum 1 Okt.
+
+---
+
+## AG — Tahap 1 (bagian 2): laporan stock-take ML (2026-08-12)
+
+| Berkas | Fungsi/Method | Route | Tabel | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/MigrasiController.php` **(BARU)** | `stockTakeMl`, `susunBarisStockTake`, `saldoMlDariData`, `kuotaDinyatakan`, `tetapkanStatus`, `ringkas`, `ekspresiEfekPenyesuaian` | `migrasi.stock_take_ml` **(BARU)** | `transaction_loans`, `transaction_white_offs`, `transaction_saldo_adjustments`, `transaction_sirculations`, `transaction_loan_officer_groupings`, `branches` — **SEMUA BACA** | Laporan banding kuota vs data nyata per (kelompok, hari) |
+| `resources/js/Pages/Migrasi/StockTakeMl.jsx` **(BARU)** | — | idem | — | Tabel + 4 kartu ringkasan + pemilih periode |
+| `resources/js/Components/Sidebar.jsx` | grup "Persiapan Migrasi" | idem | — | Link menu, di dalam blok `unitAkses` |
+| `routes/web.php` | prefix `migrasi` | idem | — | Otorisasi di controller, **bukan** middleware `role:` |
+
+**Tidak ada satu pun penulisan.** Seluruh method di controller ini baca-saja.
+
+### Keputusan yang tertanam di kode
+
+- **Grain (kelompok, hari)** — bukan per mantri. Menggabungkan per mantri menyembunyikan Rp 1,11 M
+  selisih antar hari yang saling meniadakan.
+- **Batas ML dihitung `periode − 4 bulan`**, kondisi `drop_date < batas`. Untuk Juli 2026 → 1 Maret
+  2026: drop Februari (selisih 5) masuk ML, drop Maret (selisih 4, masih MB) tidak.
+- **`Y = null` dibedakan dari `Y = 0`** → status `belum_dinyatakan`. "Dinyatakan nol" beda dari
+  "belum pernah dinyatakan", dan ±23% kelompok memang tidak punya baris sirkulasi.
+- **Ekspresi arah penyesuaian dibangkitkan dari `TransactionSaldoAdjustment::ARAH`**, tidak ditulis
+  ulang sebagai `CASE` di SQL — supaya tanda tetap punya satu sumber kebenaran.
+- Komentar di `tetapkanStatus()` menegaskan perbandingan ini **hanya sah dipakai sekali saat serah
+  terima**; kalau dijalankan ulang tiap bulan, pintunya terbuka lagi tiap nasabah ML membayar.
+
+### Terverifikasi
+
+- **Angka cocok dengan query manual**: cabang 52 (Genteng 1), kelompok 1 — jumat 3.370.000,
+  kamis 11.676.000, rabu 9.231.000, sabtu 11.234.000, selasa 10.784.000, senin 12.957.000
+- **HTTP kernel penuh** dengan sesi terautentikasi: `status 200`, komponen `Migrasi/StockTakeMl`,
+  props berisi data (65.777 bytes)
+- **Otorisasi menolak**: mantri `herikurnia_kdr` → `403` (tidak punya `view-all-groups`)
+- Tanpa login → `302` ke `/login`, sama seperti route lain
+- `npm run build` bersih, aset terbentuk di `public/build` dan `bootstrap/ssr`
+- Waktu render ±2 detik untuk satu cabang penuh (10 kelompok × 6 hari = 60 baris)
+
+### Catatan
+
+- Halaman ini tetap berguna **setelah** migrasi (memantau sisa kuota), tapi angkanya di sana harus
+  dibaca dari sisa kuota tersimpan, bukan dihitung ulang. Belum dikerjakan — `transaction_monthly_closings`
+  baru ada di Tahap 2.
+- Berkas JSX baru mengikuti gaya kutip ganda seperti berkas-berkas baru lain (`GlobalBranchFilter.jsx`).
+  Proyek ini **tidak punya konfigurasi prettier** dan gayanya memang campur.

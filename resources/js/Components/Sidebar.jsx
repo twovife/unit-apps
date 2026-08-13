@@ -28,6 +28,7 @@ import {
   BookOpen,
   Calendar,
   ChevronsUpDown,
+  ClipboardCheck,
   FileSpreadsheet,
   HandCoins,
   Home,
@@ -281,7 +282,19 @@ export default function AppSidebar({ ...props }) {
               ]}
             />
 
-            {/* Submenu: Rekap Kasir */}
+            {/* Submenu: Persiapan Migrasi Agregasi */}
+            <SidebarSubMenuSection
+              icon={ClipboardCheck}
+              title="Persiapan Migrasi"
+              items={[
+                {
+                  id: 1,
+                  title: 'Stock-take ML',
+                  link: route('migrasi.stock_take_ml'),
+                  active: route().current('migrasi.stock_take_ml'),
+                },
+              ]}
+            />
           </SidebarGroup>
         )}
 
