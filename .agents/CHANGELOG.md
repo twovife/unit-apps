@@ -959,3 +959,56 @@ supaya salah input yang menghabiskan kuota tetap bisa dipulihkan tanpa membuka j
    → `Y` tidak terdefinisi. Diperlakukan `Y=0` (input ditutup) atau "belum ditetapkan" (kelompok
    tidak boleh migrasi sampai diisi)? Belum diputuskan.
 2. Lingkup Tahap 1 — apakah `store_buku_transaksi_batch` ikut diubah, atau menunggu Tahap 3?
+
+---
+
+## AF — Tahap 1 (bagian 1): tabel penyesuaian saldo + kunci BatchInput (2026-08-12)
+
+| Berkas | Fungsi/Method | Route terdampak | Tabel | Dampak |
+|---|---|---|---|---|
+| `app_laravel/database/migrations/2026_08_12_140000_*` **(BARU)** | — | — | `transaction_saldo_adjustments` — **TULIS (DDL)** | Tabel penyesuaian saldo. Dibuat dari `app_laravel` sesuai aturan |
+| `app/Models/TransactionSaldoAdjustment.php` **(BARU)** | `ARAH`, `WAJIB_PERSETUJUAN`, `efek_saldo`, `butuhPersetujuan`, `sudahDisetujui`, `scopeBerlaku` | belum ada pemakai | `transaction_saldo_adjustments` | Model + pemetaan arah |
+| `app/Models/TransactionLoan.php` | `saldo_adjustments()`, `saldo_awal()` **(BARU)** | semua yang memuat TransactionLoan | BACA | Dua relasi baru, dipasang persis di sebelah `white_off()` |
+| `app/Http/Controllers/BatchInputController.php` | `pastikanSuperuser()` **(BARU)**, dipanggil di `index`, `store`, `validateData` | `batch_input.index`, `.store`, `.validateData` | tidak berubah | Batch upload global dibatasi superuser |
+
+### Kenapa arah disimpan di satu konstanta
+
+`nominal` selalu positif; arah terhadap saldo ditentukan `jenis` lewat `TransactionSaldoAdjustment::ARAH`
+(`saldo_awal`/`duplikat`/`lebih_input` = −1, `kurang_input` = +1). Kalau tanda minus ditulis tersebar
+di tiap tempat yang menghitung saldo, satu tempat yang salah tanda menghasilkan saldo meleset tanpa
+ada yang tahu — jenis kesalahan paling sulit dilacak. Rumus pemakaian:
+`saldo = pinjaman − angsuran − pemutihan + SUM(efek_saldo)`.
+
+`scopeBerlaku()` menyaring koreksi yang belum disetujui, supaya penyesuaian yang menunggu orang kedua
+tidak ikut menggeser saldo.
+
+### BatchInput dibatasi superuser
+
+Menu upload global sudah tidak dipakai operasional (konfirmasi user). Jalurnya membuat pinjaman
+`status='success'` + `nominal_drop` (**drop naik**) plus angsuran sebesar selisih saldo (**storting
+naik**) — dua-duanya uang yang tidak pernah bergerak di kas.
+
+🔴 **Sengaja TIDAK memakai middleware `role:`.** Diverifikasi: alias `role` **tidak terdaftar sama
+sekali** di `app/Http/Kernel.php` (`app('router')->getMiddleware()` → tidak ada). Jadi `role:` di
+`routes/web.php` bukan cuma tidak menempel karena dirantai setelah `->group()` (temuan A1) — kalaupun
+menempel, dia akan **melempar exception**, bukan menolak dengan rapi. Dipakai pengecekan eksplisit
+`hasRole('superuser')` + `abort(403)`, sesuai idiom controller lain di proyek ini.
+
+### Terverifikasi
+
+- `php -l` bersih di 4 berkas; aplikasi tetap boot (87 route)
+- Gerbang superuser diuji dengan user nyata: `supermario` → `true`, mantri `herikurnia_kdr` → `false`
+- Ketiga method `BatchInputController` terjaga (`index`, `store`, `validateData`)
+- Menu BatchInput **tidak punya link di Sidebar** — hanya dijangkau lewat URL langsung, jadi tidak
+  ada menu yang perlu disembunyikan
+
+### Yang SENGAJA belum dikerjakan
+
+- **Migrasi belum dijalankan** — perintahnya di luar izin sesi ini. Sampai dijalankan,
+  `TransactionSaldoAdjustment` belum bisa dipakai (tabelnya belum ada). `migrate:status` menunjukkan
+  cuma migrasi ini yang tertunda.
+- **Laporan stock-take X/Y/Z** — bagian berikutnya Tahap 1. Tidak bergantung pada tabel baru
+  (murni membandingkan `transaction_loans` vs `transaction_sirculations`), jadi bisa dikerjakan
+  paralel.
+- **`store_buku_transaksi_batch` tidak disentuh** — perubahan `inputmacet`/`FastCreateV2` menunggu
+  keputusan lingkup, dan tidak mendesak karena belum ada kantor yang migrasi sebelum 1 Okt.

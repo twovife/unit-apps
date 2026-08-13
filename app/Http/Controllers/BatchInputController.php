@@ -13,8 +13,30 @@ use Inertia\Inertia;
 
 class BatchInputController extends Controller
 {
+  /**
+   * Batch upload global DIBATASI SUPERUSER (2026-08-12).
+   *
+   * Menu ini sudah tidak dipakai operasional. Jalur ini membuat pinjaman
+   * status 'success' lengkap dengan nominal_drop (menggelembungkan DROP) plus
+   * baris angsuran sebesar selisih saldo (menggelembungkan STORTING) — dua-duanya
+   * uang yang tidak pernah bergerak di kas. Penggantinya adalah penyesuaian saldo
+   * (.agents/agregasi_rekap.md §7) yang menggeser saldo tanpa menyentuh kas.
+   *
+   * Dicek eksplisit di sini, BUKAN lewat middleware 'role:' — alias itu tidak
+   * terdaftar di app/Http/Kernel.php, jadi pemakaiannya akan melempar
+   * exception, bukan menolak dengan rapi. Lihat 05_temuan_dan_jebakan.md A1.
+   */
+  private function pastikanSuperuser()
+  {
+    if (!auth()->user()?->hasRole('superuser')) {
+      abort(403, 'Batch upload global hanya untuk superuser. Pakai menu penyesuaian saldo.');
+    }
+  }
+
   public function index()
   {
+    $this->pastikanSuperuser();
+
     return Inertia::render('Administrasi/BatchInput/Index', [
       'resorts' => 'halo',
     ]);
@@ -43,6 +65,7 @@ class BatchInputController extends Controller
    */
   public function store(Request $request)
   {
+    $this->pastikanSuperuser();
 
     $payload = $request->input('data');
     $id_branch = $request->input('branch_id');
@@ -249,6 +272,8 @@ class BatchInputController extends Controller
 
   public function validateData(Request $request)
   {
+    $this->pastikanSuperuser();
+
     $items = $request->input('data');
     $id_branch = $request->input('branch_id');
     $results = [];

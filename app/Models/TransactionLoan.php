@@ -285,4 +285,30 @@ class TransactionLoan extends Model
   {
     return $this->hasOne(TransactionWhiteOff::class, 'transaction_loan_id', 'id');
   }
+
+  /**
+   * Penyesuaian saldo yang TIDAK menyentuh kas (.agents/agregasi_rekap.md §7).
+   *
+   * hasMany, bukan hasOne: satu pinjaman bisa punya saldo_awal sekali lalu
+   * koreksi menyusul kemudian.
+   *
+   * Pemakaian saldo: pinjaman − angsuran − pemutihan + SUM(efek_saldo).
+   * Pakai scope berlaku() supaya koreksi yang belum disetujui tidak ikut.
+   */
+  public function saldo_adjustments()
+  {
+    return $this->hasMany(TransactionSaldoAdjustment::class, 'transaction_loan_id', 'id');
+  }
+
+  /**
+   * Baris saldo awal (kalau ada). Kehadirannya menandai pinjaman ini
+   * nasabah lama yang dibawa masuk, sehingga WAJIB dikecualikan dari semua
+   * penjumlahan drop, do11, dan titipan9 — di bulan mana pun, termasuk bulan
+   * drop_date-nya sendiri.
+   */
+  public function saldo_awal()
+  {
+    return $this->hasOne(TransactionSaldoAdjustment::class, 'transaction_loan_id', 'id')
+      ->where('jenis', TransactionSaldoAdjustment::JENIS_SALDO_AWAL);
+  }
 }
