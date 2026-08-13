@@ -809,3 +809,46 @@ dari rancangan 2026-08-05.
 - **`sharingdo` tidak dibuang** dari rencana tabel baru — rancangan lama menyuruh membuangnya, itu keliru.
 - **4.141 rantai target patah tidak diperbaiki surut** — sesuai keputusan §13.1, agregat baru tidak boleh menyentuh tanggal sebelum migrasi; memperbaikinya surut akan melahirkan versi kedua dari bulan yang sudah ditandatangani.
 - **80 tanggal mustahil tidak dibersihkan** — pembersihan data lama masuk lingkup validasi staf (Agustus–September), bukan perubahan kode.
+
+---
+
+## AD — Tahap 0: kolom batas + gerbang pemilih agregasi (2026-08-12)
+
+Langkah pertama rombak agregasi (`.agents/agregasi_rekap.md` §12.2). **Sengaja tidak mengubah
+perilaku apa pun** — memasang sakelarnya dulu, sebelum ada yang disambungkan ke sakelar itu.
+
+| Berkas | Fungsi/Method | Route/Controller terdampak | Tabel | Dampak |
+|---|---|---|---|---|
+| `app/Helpers/AgregasiScope.php` **(BARU)** | `tanggalMulai`, `sudahMigrasi`, `pakaiAgregatBaru`, `batasPenyesuaian`, `bolehDisesuaikan`, `lupakanCache` | **belum ada** — belum dipanggil dari mana pun | `branches` — **BACA** | Gerbang tunggal penentu agregasi lama vs baru. Punya cache per-request supaya satu halaman yang memeriksa banyak tanggal/kelompok tidak query berulang |
+| `app/Models/Branch.php` | — | semua yang memuat Branch | `branches` — BACA | Tambah `$casts` untuk `mulai_pendataan_baru` (date). Model ini sebelumnya tidak punya `$casts` sama sekali |
+| `app_laravel/database/migrations/2026_08_12_090000_*` **(BARU)** | — | — | `branches` — **TULIS (DDL)** | Kolom `mulai_pendataan_baru` date nullable. Dibuat & dijalankan **dari `app_laravel`** sesuai aturan single source of truth. NULL untuk 157 kantor |
+
+### Kenapa satu kelas, bukan `if` di tiap tempat
+
+Rombakan ini menyentuh belasan titik baca (`RekapTrait:204/586/732`, `PinjamanTrait` `getLoan`/
+`getLoanMantri`, `TransactionDailyRecapController@ceklist_kepala`/`@rekap_post`). Kalau tiap titik
+mengecek `$branch->mulai_pendataan_baru` sendiri, satu yang terlewat berarti kantor yang sama dibaca
+dari dua tabel berbeda di dua halaman berbeda — bug yang baru ketahuan berbulan-bulan kemudian.
+
+### Terverifikasi
+
+- Kolom ada, **157 kantor semuanya NULL**, `migrate:status` → `[21] Ran`, **0 pending**
+- Jalur nyata (semua NULL): `pakaiAgregatBaru()` dan `bolehDisesuaikan()` → `false`; `branchId` null → `false`
+- Jalur "sudah migrasi" diuji dengan **mem-prime cache lewat reflection — nol tulisan ke DB**.
+  8 asersi lolos; `batasPenyesuaian` untuk migrasi 1 Okt 2026 = **30 April 2026**, persis tabel §7.5
+  (ML September masuk, MB September tidak)
+- `php -l` bersih, aplikasi tetap boot (87 route), kelas ter-autoload
+- **`grep AgregasiScope` di `app/`, `resources/`, `routes/` → nol pemanggil**, sesuai definisi Tahap 0
+
+### Yang SENGAJA tidak dikerjakan
+
+- **Gerbang belum disambungkan** ke satu pun titik baca. Penyambungan menunggu Tahap 3 (mesin baru);
+  menyambungkannya sekarang cuma menaburkan cabang kosong di 6 tempat.
+- **`opening_date` tidak ikut di-cast.** Sempat kutambahkan lalu kubatalkan: kolom itu tidak dipakai
+  di mana pun di unit-apps, dan cast-nya mengubah bentuk serialisasi JSON tanpa ada yang meminta —
+  padahal Tahap 0 harus mengubah nol perilaku.
+- **Test PHPUnit tidak dijalankan.** `phpunit.xml` punya `DB_CONNECTION` sqlite yang **dikomentari**
+  (baris 24–25), jadi test akan menghantam `ubmi_db` produksi yang dipakai 2 aplikasi. Verifikasi
+  dilakukan lewat tinker read-only. **Jangan jalankan `php artisan test` sebelum baris itu diaktifkan.**
+- **Tidak ada kantor yang di-set migrasi.** Pengisian `mulai_pendataan_baru` adalah keputusan
+  operasional per kantor (target: 1–2 kantor percontohan, 1 Okt 2026).

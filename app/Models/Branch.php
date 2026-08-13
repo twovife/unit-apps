@@ -9,6 +9,18 @@ class Branch extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        // Penanda kantor sudah pindah ke alur agregasi baru.
+        // NULL = belum migrasi (kondisi awal semua kantor).
+        // Dibaca lewat App\Helpers\AgregasiScope, jangan dicek langsung
+        // di controller/trait — lihat .agents/agregasi_rekap.md §12.1.
+        //
+        // `opening_date` SENGAJA tidak ikut di-cast: tidak dipakai di mana pun
+        // di unit-apps, dan menambahkannya mengubah bentuk serialisasi JSON
+        // tanpa ada yang meminta.
+        'mulai_pendataan_baru' => 'date',
+    ];
+
     /**
      * Ambil branch_id default untuk suatu user.
      * Staf Kontrol → cabang pertama dari zone mereka.
