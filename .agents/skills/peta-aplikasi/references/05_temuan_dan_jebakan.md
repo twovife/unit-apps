@@ -138,6 +138,10 @@ Efek samping: `superuser`, `pusat`, dan `stafkontrol` justru **ditolak** (jatuh 
 ### E3. `transaction_loans.hari` redundan terhadap `drop_date`
 Banyak validasi membandingkan `AppHelper::dateName($drop_date)` dengan kolom `hari`. Data lama bisa tidak sinkron (itu tujuan `loan_balancing`). Perubahan `drop_date` **harus** ikut memperbarui `hari`.
 
+> **Diukur 2026-08-12: di data 2026 keduanya cocok 100%** — 691.721 dari 691.721 pinjaman `success` ber-`hari` tidak null. Jadi ketidaksinkronan yang dicari `loan_balancing` adanya di data yang lebih lama, bukan di zona hidup.
+>
+> ⚠️ **Invarian ini akan SENGAJA dilanggar** kalau fitur mutasi nasabah (`.agents/agregasi_rekap.md` §8) dikerjakan — nasabah bisa drop hari Selasa tapi ditagih hari Rabu, dan `drop_date` memang tidak boleh ikut diubah. Begitu itu hidup, `AdminController@loan_balancing` akan menandai **setiap** nasabah yang pernah pindah sebagai data rusak padahal benar. Alat itu **wajib disesuaikan bersamaan**, jangan menyusul.
+
 ### E4. Angka ajaib `1.3`
 Total tagihan = `nominal * 1.3` (pokok + 30%). Muncul di `BatchInputController` dan rumus sirkulasi `RekapTrait` (`saldo_awal + drop*1.3 - storting`). Tidak ada konstanta terpusat.
 
@@ -300,3 +304,106 @@ diperbaiki jadi cek role — keputusan sadar, karena mengaktifkannya akan membua
 alih-alih mantri area, dan itu mengubah atribusi data serta rekap per-mantri.
 Seluruh data historis terbentuk lewat jalur pencarian `branch_id` + `area`.
 Kalau aturan itu mau diubah, itu keputusan bisnis terpisah.
+
+---
+
+## AA. Agregasi & target — terverifikasi 2026-08-12
+
+Semua di bagian ini hasil query langsung ke `ubmi_db`, bukan pembacaan kode saja.
+Rancangan penanganannya ada di `.agents/agregasi_rekap.md` (v2).
+
+### AA1. ⚠️ Enam kolom `transaction_daily_recaps` adalah GENERATED — tidak bisa ditulis
+
+```
+sharingdo = drop * 0.11     debt  = sharingdo + kasbon + storting
+titipan   = drop * 0.09     kred  = drop + transport
+masuk     = drop * 0.13     tunai = debt - kred
+```
+Semua `VIRTUAL GENERATED`, padahal **ada di `$fillable`** (`TransactionDailyRecap.php:16-47`).
+Menulisinya lewat Eloquent akan ditolak MySQL (error 1906) — pola yang sama dengan
+`transaction_loans.pinjaman` yang sudah didokumentasikan.
+
+Konsekuensi terpenting: **`tunai` tidak punya ingatan.** Dia dihitung ulang tiap dibaca,
+jadi begitu `storting` berubah karena koreksi, tunai hari itu ikut berubah **surut dan
+diam-diam**. Angka yang dulu ditandatangani kasir tidak tersimpan di mana pun dan tidak bisa
+direkonstruksi. Kalau membangun fitur koreksi/audit, log **wajib** merekam nilai tunai
+sebelum & sesudah.
+
+Jangan percaya klaim lama bahwa `sharingdo` "kolom mati" — dia menyuplai `debt` → `tunai`.
+
+### AA2. ✅ Rantai `target` patah di 3,1% kasus
+
+```
+133.068 pasangan berantai diuji (2026) → 128.927 cocok, 4.141 MELESET
+```
+Uji: `target(baris) == target(anchor) + drop(anchor)*0.13 − keluar(anchor)`, dijodohkan lewat
+`nxt.target_on = prv.date`. Query lengkap ada di `.agents/agregasi_rekap.md` §17.
+
+### AA3. Dua sumber kebenaran `target` saling menimpa
+
+`TransactionDailyRecapController@ceklist_kepala` melakukan dua hal berurutan:
+1. `update(['keluar'=>…, 'drop'=>…])` → memicu hook `TransactionDailyRecap::updating` (`:55`)
+   yang **menghitung** target minggu depan
+2. `update(['target' => $request->target_minggu_depan])` → **menimpanya** dengan ketikan user
+
+Di alur normal yang manual menang. Kalau `drop`/`keluar` diubah dari tempat lain, yang otomatis
+menang. Keduanya tidak pernah dijodohkan — inilah mesin AA2.
+
+### AA4. Cascade `target` rekursif tanpa batas lewat `increment()`
+
+`$transactionAfter->increment('target', $rangeTarget)` (`TransactionDailyRecap.php:79`).
+`Model::increment()` **memicu event `updating`**, sehingga blok `isDirty('target')` pada baris
+berikutnya ikut jalan → increment baris berikutnya → seterusnya menyusuri seluruh rantai
+`target_on`, semuanya di dalam satu DB transaction milik `ceklist_kepala`.
+
+Tidak ada pembatas kedalaman. Untuk rantai panjang ini jadi puluhan update model bersarang yang
+tidak kelihatan dari kode controller.
+
+### AA5. Tanggal mustahil lolos tanpa validasi
+
+| Kasus | Jumlah |
+|---|---:|
+| `transaction_loans.drop_date` tahun < 2015 atau > 2027 | **80** |
+| `drop_date` di masa depan | 25 |
+| `transaction_daily_recaps.date` di masa depan | **151** |
+
+Contoh nyata: `0225-06-04`, `0025-07-12`, `1923-12-07`, dan satu drop bertanggal **`3026-07-07`**.
+Salah ketik tahun.
+
+**Kenapa ini bukan kosmetik**: ember dihitung dari selisih bulan `drop_date` → sekarang.
+Pinjaman bertanggal tahun 0025 punya selisih ribuan bulan → **selamanya ML**, saldonya ikut
+terhitung di sirkulasi, dan tidak akan pernah bisa keluar dari ember ML dengan cara apa pun.
+
+### AA6. `transaction_sirculations` — 3 dari 6 ember tidak pernah diisi, cakupan bolong 23%
+
+| Kolom | Terisi (2026) |
+|---|---:|
+| `amount`, `cm_amount`, `mb_amount`, `ml_amount` | 32rb–41rb |
+| **`month1_amount`, `month2_amount`, `ccm_amount`** | **0** |
+
+Juli 2026 cuma **7.377 baris dari 9.540** yang seharusnya (1.590 kelompok × 6 hari), dan cuma
+**1.238 dari 1.590 kelompok** punya baris. Sisanya **tidak punya saldo awal sama sekali**.
+
+Jangan pakai tabel ini sebagai sumber saldo awal — hitung dari portofolio.
+
+### AA7. Fitur Pengajuan/topup (`previous_loan_id`) praktis belum dipakai
+
+`previous_loan_id` terisi di **3 baris saja, semuanya status `open`**. Ditambahkan 2026-08-03,
+tapi topup produksi masih dibuat sebagai pinjaman baru **tanpa tautan** ke pinjaman lama.
+Artinya "nasabah ini hasil topup" tidak bisa dideteksi dari data untuk 1,6 juta pinjaman lama.
+
+Terkait: nilai `status` di `transaction_loans` ada **lima** — `success` (1.614.010), `gagal`
+(288.240), `acc` (34.224), `tolak` (12.718), **`open` (5.365)**. Dokumen lama menyebut hanya 4 +
+`null`; `null` **tidak ada**, yang dipakai adalah `open`.
+
+### AA8. `transaction_out_reasons` — separuh kode alasan tidak pernah dipakai
+
+| id | reason | dipakai |
+|---:|---|---:|
+| 1 | LUNAS | 149.830 |
+| 4 | MD (meninggal) | 18.743 |
+| 6 | LUNASX | 13 |
+| 2, 3, **5** | IST, BHT, **MACET** | **0** |
+
+`out_status` pun hanya pernah berisi `LUNAS` (1.161.114) dan `LUNAS Xs` (7). Jadi keputusan KM
+"macet tak tertagih" **tidak pernah tercatat di mana pun**, walau kode alasannya sudah tersedia.

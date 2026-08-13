@@ -748,3 +748,64 @@ User minta analisa menu + database untuk bikin gambaran relasi tabel. Dokumentas
 | `references/03_auth_roles_scope.md` | Refresh `role_has_permissions` 43→53 dan `model_has_roles` 2.469→2.624. Per-role breakdown permission (tabel "8 Role") sudah cocok persis dengan live — tidak ada drift baru di situ, cuma angka total agregat yang belum sempat disinkron sebelumnya | BACA — `role_has_permissions`, `model_has_roles`, `roles`, `permissions` |
 
 **Tidak ada kode yang diubah** — murni verifikasi dokumentasi. Cross-check routing (`routes/web.php`), model relations (`app/Models/*.php`), dan `AuthScope`/`Branch::getAllowedBranchIds` terhadap isi `01_routing_map.md`/`03_auth_roles_scope.md` — semuanya masih akurat, termasuk yang menyangkut `SetBranchController` dan restrukturisasi `Pages/BukuTransaksi/{Web,Mobile}` yang baru saja di-commit ke git (sebelumnya `.agents/` untracked, jadi dokumentasi ini sudah ada di working tree tapi belum pernah masuk riwayat git).
+
+---
+
+## AC — Brainstorming rombak agregasi: rancangan v2 (2026-08-12)
+
+Sesi brainstorming 9 topik. **TIDAK ADA KODE YANG DIUBAH** — seluruh tabel disentuh **BACA** saja.
+Keluarannya dokumentasi, plus verifikasi langsung ke `ubmi_db` yang **membatalkan tiga klaim**
+dari rancangan 2026-08-05.
+
+| Berkas | Perubahan |
+|---|---|
+| `.agents/agregasi_rekap.md` | **Ditulis ulang jadi v2.** Diagnosis tunggal, keputusan final 9 topik, struktur tabel, rumus 4 pintu, tahapan pengerjaan, §15 daftar klaim lama yang dibatalkan, §17 query rujukan |
+| `.agents/skills/peta-aplikasi/references/02_database_schema.md` | Bagian `transaction_daily_recaps`: 6 kolom ditandai `VIRTUAL GENERATED` beserta ekspresinya — sebelumnya tertulis seolah kolom biasa yang bisa ditulis |
+| `.agents/skills/peta-aplikasi/references/05_temuan_dan_jebakan.md` | Bagian **AA** (8 temuan baru) + catatan pengukuran di E3 |
+
+**Tabel yang dibaca** (semua **BACA**, tidak ada TULIS): `transaction_loans`,
+`transaction_loan_instalments`, `transaction_daily_recaps`, `transaction_sirculations`,
+`transaction_out_reasons`, `transaction_white_offs`, `transaction_manage_customers`,
+`transaction_customers`, `branches`, `employees`, `users`, `roles`, `permissions`,
+`role_has_permissions`, `model_has_roles`, `information_schema.columns`.
+
+### Tiga klaim rancangan 2026-08-05 yang DIBATALKAN
+
+| Klaim lama | Kenyataan | Kalau diikuti |
+|---|---|---|
+| `sharingdo` "kolom mati, cuma nongol di `$fillable`" | `VIRTUAL GENERATED` `drop * 0.11`, menyuplai `debt` → `tunai` | tabel baru dibuat tanpa penggantinya → **`tunai` pincang** |
+| Ember 4-vs-6 = "cacat struktural" di `generateStatusAngsuran()` | Bukan cacat: **6 ember penyimpanan, 4 kategori tampilan** (lancar = month1+month2+ccm) | fungsi lama "diperbaiki" padahal tugasnya memang begitu |
+| Target tidak dibahas | **Sudah terimplementasi penuh** (`TransactionDailyRecap.php:62`, 133rb baris aktif 2026) | dibangun dari nol, padahal cukup menambal 2 penyakitnya |
+
+### Temuan baru terverifikasi (detail + query di `05_temuan_dan_jebakan.md` bagian AA)
+
+- **4.141 rantai `target` patah** dari 133.068 pasangan diuji (3,1%) — kembaran dari 8.703 storting-mismatch
+- Penyebabnya **dua sumber kebenaran berebut** di `ceklist_kepala` (hook menghitung → controller menimpa dengan ketikan user), plus **cascade rekursif tanpa batas** lewat `increment()` yang memicu event `updating` berantai
+- **6 kolom `transaction_daily_recaps` adalah GENERATED** (`sharingdo`, `titipan`, `debt`, `kred`, `tunai`, `masuk`) — ada di `$fillable` tapi ditolak MySQL. `tunai` **tidak punya ingatan**: berubah surut diam-diam saat `storting` dikoreksi
+- **Tidak ada satu pun field untuk uang fisik / setoran mantri / selisih** di seluruh aplikasi
+- **80 pinjaman ber-`drop_date` mustahil** (`0225-06-04`, `0025-07-12`, `1923-12-07`, satu `3026-07-07`), 25 drop masa depan, 151 rekap masa depan. Yang bertahun 0025 **selamanya ML**
+- `transaction_sirculations`: **`month1_amount`/`month2_amount`/`ccm_amount` 0 baris terisi**, cakupan bolong **23%** (Juli 2026: 7.377 dari 9.540; 1.238 dari 1.590 kelompok)
+- `previous_loan_id` baru **3 baris**, semuanya `open` → topup produksi masih tidak tertaut
+- `status` `transaction_loans` ada **5 nilai** termasuk `open` (5.365) — dokumen lama menyebut `null`, padahal `null` tidak ada
+- `transaction_out_reasons`: **MACET (id 5) 0 baris** — keputusan KM "macet tak tertagih" tidak pernah tercatat
+- `hari` vs `drop_date` **cocok 100%** (691.721/691.721 pinjaman 2026) — invarian ini akan sengaja dilanggar mutasi, dan `AdminController@loan_balancing` wajib disesuaikan bersamaan
+
+### Keputusan yang diambil (ringkas — lengkapnya di `agregasi_rekap.md`)
+
+1. `tunai` **tetap generated column**; yang dikunci inputnya. Tambah `setoran_mantri` (uang fisik) + `selisih` generated. Kalkulator kasir **haram** menyentuh drop/storting.
+2. Kunci mencakup **sumber + kolom manual** (`kasbon`, `transport`, `keluar`, `setoran_mantri`). Penegakan lewat **trigger DB**, bukan hanya hook model.
+3. Agregat bulanan dipicu tanda tangan harian, aksinya **hitung ulang total, BUKAN increment**. Tanda tangan bulanan disyaratkan hari terkunci lengkap.
+4. Target **tetap manual sekarang**; tambah `target_source` + laporan bayangan read-only; recount menyusul ±2 bulan.
+5. Enam ember untuk penyimpanan, empat kategori untuk tampilan.
+6. Tabel penyesuaian saldo **terpisah dari `transaction_white_offs`**; input **sisa saldo**, bukan "sudah terbayar"; dibatasi **hanya pinjaman yang sudah ML di bulan terakhir sistem lama** (`bulan(drop_date) ≤ bulan(mulai_pendataan_baru) − 6`) — himpunannya beku sejak migrasi dan hanya mengecil.
+7. Mutasi: `grouping_id` tidak pernah diubah; mutasi masuk adalah **arus, bukan saldo awal**; harus terbagi **per ember**; hanya superuser.
+8. Kalender kerja **nasional**; drop kena libur **mundur seminggu** (bukan lompat ke hari kerja terdekat, karena itu diam-diam memindahkan nasabah antar mantri).
+9. **Cutover kantor percontohan 1 Oktober 2026**, 1–2 kantor.
+
+### Yang SENGAJA tidak dikerjakan sesi ini
+
+- **Tidak ada kode, tidak ada migrasi.** Tahap 0 (kolom `mulai_pendataan_baru` + gerbang pemilih tabel) menunggu persetujuan terpisah.
+- **Tiga fungsi `generateStatusAngsuran*` tidak disentuh** — sudah dipastikan bukan cacat, dan alur lama masih memakainya.
+- **`sharingdo` tidak dibuang** dari rencana tabel baru — rancangan lama menyuruh membuangnya, itu keliru.
+- **4.141 rantai target patah tidak diperbaiki surut** — sesuai keputusan §13.1, agregat baru tidak boleh menyentuh tanggal sebelum migrasi; memperbaikinya surut akan melahirkan versi kedua dari bulan yang sudah ditandatangani.
+- **80 tanggal mustahil tidak dibersihkan** — pembersihan data lama masuk lingkup validasi staf (Agustus–September), bukan perubahan kode.

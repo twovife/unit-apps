@@ -83,15 +83,35 @@ user_input, user_mantri, timestamps
 Rekap harian per kelompok. Kunci unik logis: `{transaction_loan_officer_grouping_id, date}` (dipakai `firstOrNew`/`firstOrCreate`).
 ```
 id, transaction_loan_officer_grouping_id [idx], date, target_on
-kasbon, storting, drop, transport, kred, tunai, masuk, keluar, target  (bigint)
+kasbon, storting, drop, transport, keluar, target  (bigint, BISA ditulis)
 month1_amount, month2_amount, ccm_amount, cm_amount, mb_amount, ml_amount (int)
-sharingdo, titipan, debt
 daily_kepala_approval   + daily_kepala_approval_user
 daily_kasir_approval    + daily_kasir_approval_user
 monthly_kepala_approval + monthly_kepala_approval_user
 monthly_kasir_approval  + monthly_kasir_approval_user
 timestamps
 ```
+
+⚠️ **ENAM kolom di tabel ini adalah `VIRTUAL GENERATED` — TIDAK BISA DITULIS.**
+Ada di `$fillable` (`TransactionDailyRecap.php:16-47`), tapi MySQL akan menolak.
+Diverifikasi 2026-08-12 lewat `information_schema.columns.generation_expression`:
+```
+sharingdo = `drop` * 0.11                     ← ini do11, BUKAN kolom mati
+titipan   = `drop` * 0.09
+debt      = sharingdo + kasbon + storting
+kred      = `drop` + transport
+tunai     = debt - kred
+masuk     = `drop` * 0.13
+```
+Konsekuensi yang sering salah dipahami:
+- **`tunai` tidak pernah tersimpan.** Dia dihitung ulang tiap dibaca, jadi begitu `storting`
+  berubah karena koreksi, tunai hari itu **ikut berubah surut, diam-diam, tanpa jejak**.
+  Tidak ada cara merekonstruksi angka tunai yang dulu diteken kasir.
+- **`sharingdo` BUKAN kolom mati** (dokumen lama sempat mengklaim begitu) — dia menyuplai
+  `debt` → `tunai`. Membuangnya mematikan perhitungan tunai.
+- `RekapTrait` menghitung ulang `$do11`/`$titipan9`/`$debit` sendiri di PHP (`:168-171`) dengan
+  rumus identik, jadi ada dua perhitungan paralel untuk hal yang sama.
+
 Alur approval: **kepala dulu** (`ceklist_kepala`) → **baru kasir** (`rekap_post` dengan `type=2`).
 
 ### `transaction_sirculations` — 69.879 baris
