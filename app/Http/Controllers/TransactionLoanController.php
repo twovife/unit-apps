@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class TransactionLoanController extends Controller
@@ -486,7 +487,14 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      dd($exception);
+      // `dd($exception)` dihapus 2026-08-12 - membuat baris di bawahnya tidak
+      // pernah tercapai, jadi kegagalan input tampil sebagai layar dump.
+      Log::error('store_buku_transaksi_batch gagal: ' . $exception->getMessage(), [
+        'nik' => $request->nik,
+        'kelompok' => $request->kelompok,
+        'user_id' => auth()->id(),
+        'line' => $exception->getLine(),
+      ]);
       return redirect()->back()->withErrors($exception->getMessage());
     }
 
@@ -1139,8 +1147,16 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      dd($e);
-      return redirect()->back()->with('error', 'data gagal diubah');
+      // `dd($e)` dihapus 2026-08-12.
+      Log::error('bayar_pinjaman gagal: ' . $e->getMessage(), [
+        'loan_id' => $transactionLoan->id,
+        'user_id' => auth()->id(),
+        'line' => $e->getLine(),
+      ]);
+      // `with('error', ...)` diganti `withErrors`: HandleInertiaRequests hanya
+      // meneruskan flash key `message`, jadi 'error' tidak pernah sampai ke UI
+      // (temuan D1) - user melihat aksi "berhasil" padahal gagal.
+      return redirect()->back()->withErrors('Data gagal diubah: ' . $e->getMessage());
     }
     return redirect()->back()->with('message', 'data berhasil diubah');
   }
@@ -1201,9 +1217,16 @@ class TransactionLoanController extends Controller
       $transactionLoanInstalment->delete();
       DB::commit();
     } catch (Exception $e) {
-      ddd($e);
+      // `ddd($e)` dihapus 2026-08-12. Dia MENDAHULUI DB::rollBack(), jadi saat
+      // gagal transaksinya tidak pernah di-rollback secara eksplisit -
+      // eksekusi berhenti total di baris dump.
       DB::rollBack();
-      return redirect()->back()->withErrors('data gagal diubah');
+      Log::error('destroy_angsuran gagal: ' . $e->getMessage(), [
+        'instalment_id' => $transactionLoanInstalment->id,
+        'user_id' => auth()->id(),
+        'line' => $e->getLine(),
+      ]);
+      return redirect()->back()->withErrors('Data gagal dihapus: ' . $e->getMessage());
     }
     return redirect()->back()->with('message', 'data berhasil diubah');
   }

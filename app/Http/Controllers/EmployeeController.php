@@ -8,6 +8,7 @@ use App\Models\Employee;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
@@ -114,8 +115,13 @@ class EmployeeController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      ddd($e);
-      return redirect()->back()->withErrors('Gagal Membuat User');
+      // `ddd($e)` dihapus 2026-08-12 - membuat baris di bawahnya tidak pernah
+      // tercapai, jadi kegagalan pembuatan user tampil sebagai layar dump.
+      Log::error('EmployeeController@store gagal: ' . $e->getMessage(), [
+        'user_id' => auth()->id(),
+        'line' => $e->getLine(),
+      ]);
+      return redirect()->back()->withErrors('Gagal Membuat User: ' . $e->getMessage());
     }
     return redirect()->back()->with('message', 'Berhasil Membuat User');
   }

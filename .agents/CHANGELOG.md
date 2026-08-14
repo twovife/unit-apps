@@ -1305,3 +1305,48 @@ transaksinya **tidak pernah di-rollback secara eksplisit**.
 
 **Sengaja tidak diperbaiki** — di luar lingkup yang diminta, dan menyentuh alur transaksi harian
 (`bayar_pinjaman`, `destroy_angsuran`) butuh persetujuan terpisah.
+
+---
+
+## AL — Empat `dd`/`ddd` sisa di blok catch dibuang (2026-08-12)
+
+Lanjutan AK. Semua `dd`/`ddd` di jalur penanganan error kini bersih.
+
+| Berkas | Method | Perubahan |
+|---|---|---|
+| `TransactionLoanController.php` | `store_buku_transaksi_batch` | `dd($exception)` → `Log::error` (+ `nik`, `kelompok`, `user_id`, `line`) |
+| idem | `bayar_pinjaman` | `dd($e)` → `Log::error`; **`with('error', ...)` → `withErrors(...)`** |
+| idem | `destroy_angsuran` | `ddd($e)` dihapus, **urutan diperbaiki** — `DB::rollBack()` sekarang jalan lebih dulu |
+| `EmployeeController.php` | `store` | `ddd($e)` → `Log::error` |
+
+Pesan error sekarang menyertakan `$e->getMessage()` — mengikuti pola yang sudah dipakai
+`store_buku_transaksi` (`:322`), supaya staf bisa melaporkan sebab yang konkret.
+
+### Dua perbaikan yang lebih dari sekadar menghapus baris
+
+**`destroy_angsuran` — urutan salah.** `ddd($e)` **mendahului** `DB::rollBack()`. Karena `ddd`
+menghentikan eksekusi total, transaksinya **tidak pernah di-rollback secara eksplisit** saat gagal.
+Sekarang `DB::rollBack()` dipanggil lebih dulu.
+
+**`bayar_pinjaman` — errornya tidak akan tampil walau `dd` dibuang.** Baris di bawahnya memakai
+`with('error', ...)`, sementara `HandleInertiaRequests::share()` **hanya meneruskan flash key
+`message`** (temuan D1). Jadi menghapus `dd` saja tetap menyisakan kegagalan senyap — user melihat
+aksi "berhasil" padahal gagal. Diganti `withErrors()`.
+
+### Terverifikasi
+
+- `php -l` bersih di kedua berkas; aplikasi boot, 88 route utuh
+- `grep` `dd(`/`ddd(` aktif di `app/Http/Controllers`, `app/Traits`, `app/Models` → **tinggal satu**
+  (`AdminController:202`, lihat di bawah)
+
+> **Batas verifikasi**: jalur `catch`-nya **tidak diuji dengan kegagalan sungguhan** — memaksa error
+> DB di database produksi bersama tidak sepadan risikonya. Percobaan lewat tinker justru terhalang
+> gerbang izin `havePermissionByDate` (temuan E1: superuser ditolak) sebelum mencapai `try`.
+> Verifikasi yang dilakukan: kompilasi + pembacaan diff.
+
+### Yang SENGAJA tidak diubah
+
+**`AdminController:202` — `dd($inBalanceDay)` di `loan_balancing`.** Ini **bukan** di blok catch:
+dia pernyataan terakhir method, jadi dump itulah satu-satunya keluaran route tersebut. Membuangnya
+membuat route mengembalikan kosong, bukan memperbaiki apa pun. Ini route debug yang tertinggal
+(temuan A5) dan perlu diputuskan terpisah: dihapus rutenya, atau dijadikan halaman sungguhan.
