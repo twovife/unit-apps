@@ -1170,3 +1170,88 @@ meneruskan `flash.message`, jadi `withError()` hilang diam-diam (temuan D1).
 menu yang **dulu terbuka lalu dibatasi**, tautan lama tetap beredar di bookmark, tab, dan
 `intended()` — jadi penolakannya harus mengembalikan user ke tempat yang bisa dipakai, bukan
 meninggalkannya di layar mati.
+
+---
+
+## AJ — Sinkronisasi angsuran dibatasi `can-edit` (2026-08-12)
+
+| Berkas | Method | Route | Tabel | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/TransactionLoanController.php` | `get_synch_angsuran` | `pinjaman.get_synch_angsuran` | BACA | Tanpa `can-edit` → **403 JSON** (dipanggil axios) |
+| idem | `synch_angsuran` | `pinjaman.synch_angsuran` | `transaction_loan_instalments` — TULIS | Tanpa `can-edit` → **302 back + errors** (dipanggil Inertia `useForm`) |
+| idem | konstanta `PESAN_TOLAK_SYNCH` **(BARU)** | — | — | Pesan tolak dipusatkan |
+
+**Tidak ada perubahan frontend.** Tombol Sync di `AngsuranTable.jsx:145` **sudah** disembunyikan lewat
+`is_maintenaner` (`= permissions.includes('can-edit')`, `:19`). Yang bolong justru sisi server —
+sebelumnya kedua method **tidak punya pengecekan izin sama sekali**, padahal endpoint bisa dipanggil
+langsung tanpa lewat tombol.
+
+### Kenapa ini mendesak
+
+`synch_angsuran` jauh lebih destruktif daripada penyesuaian saldo yang justru dijaga ketat:
+
+```php
+$loan->loan_instalment()->delete();      // SELURUH riwayat angsuran dihapus
+$transactionLoan->loan_instalment()->create([
+  'transaction_date' => drop_date + 1 minggu,
+  'nominal' => pinjaman - saldobefore,   // satu angsuran gelondongan
+]);
+// sisanya dibangun ulang dari isian form
+```
+
+- Tanggal asli, penginput asli, penanda dana titipan **hilang permanen**
+- Storting bulan lampau **bergeser surut** — angsuran gelondongan bertanggal jauh ke belakang,
+  untuk nasabah ML sering berbulan/bertahun lalu
+- Sebelum perubahan ini: **siapa pun yang login** bisa memanggilnya
+
+### Yang SENGAJA tidak diubah (keputusan user)
+
+Perilaku hapus-lalu-bangun-ulang **dibiarkan apa adanya**. Alasannya: menu ini dipakai sebagai alat
+pembersih data selama Agustus, lalu **dihilangkan total setelah migrasi**. Distorsi storting masa lalu
+tidak terbawa ke sistem baru karena agregat baru tidak pernah menghitung tanggal sebelum
+`mulai_pendataan_baru` (§13.1) — jadi dia hanya mengotori arsip lama yang memang sudah tidak
+diandalkan.
+
+Usulan mencatat ringkasan angsuran lama sebelum `delete()` **ditolak user** dengan alasan yang sama.
+Konsekuensi yang diterima sadar: kalau ada sengketa "setoran saya hilang", tidak ada jejak untuk
+ditelusuri.
+
+### Terverifikasi
+
+- Mantri `herikurnia_kdr` (`can-edit=false`): `get_synch` → **403 `application/json`** dengan pesan;
+  `synch` → **302** dan errors bag berisi pesan
+- Superuser lolos penjaga (eksekusi menembus ke logika asli)
+- `php -l` bersih; tidak ada perubahan JSX sehingga tidak perlu `npm run build`
+
+### Konteks: kenapa tutup buku jadi gerbang migrasi
+
+`AdminController@sirkulasiAwal` (`:129`) adalah **satu-satunya penulis** `transaction_sirculations`,
+dan dia menulis baris untuk **bulan berikutnya** (`addMonthNoOverflow(1)`) dengan angka yang **diketik
+manual** (`amount_next`, `cm_next`, `mb_next`, `ml_next`). Jadi baris Juli 2026 lahir saat seseorang
+menutup buku Juni. Kalau tidak ada yang menjalankan, barisnya tidak pernah ada.
+
+Adopsi tutup buku naik terus: **82 cabang (Jan) → 125 (Jul)** dari 157. Rencana user: kantor yang
+menutup buku Agustus langsung termigrasi ke alur baru per September, dan mulai September agregat
+bulanan dihitung dari agregat harian — **tidak lagi bergantung pada staf menutup buku**.
+
+Efek sampingnya bagus: kriteria ini **menyeleksi dirinya sendiri**, sehingga kasus "belum dinyatakan"
+(§13.3) berhenti butuh aturan khusus — belum tutup buku berarti belum memenuhi syarat.
+
+> ⚠️ **Jebakan di alur yang jadi gerbang itu**: blok `catch` `sirkulasiAwal` (`AdminController.php:153`)
+> berisi `ddd($e)` — dump-and-die, sehingga `return redirect()->back()->withErrors(...)` di bawahnya
+> **tidak pernah tercapai**. Kalau tutup buku gagal, user tidak pernah tahu sebabnya. Belum diperbaiki.
+
+### Sebaran kantor tanpa baris sirkulasi (Juli 2026)
+
+Terkonsentrasi, bukan tersebar — 4 kantor menyumbang 212 dari 227 pasangan:
+
+| Cabang | Pasangan bolong | Nasabah ML | Data nyata |
+|---|---:|---:|---:|
+| Sawojajar 2 | **60 (semua)** | 2.123 | Rp 927.296.930 |
+| Kertosono 1 | 32 | 2.116 | Rp 892.674.500 |
+| Salatiga 1 | **60 (semua)** | 1.380 | Rp 534.221.000 |
+| Singosari 3 | **60 (semua)** | 1.041 | Rp 425.757.000 |
+| 7 kantor lain | 1–5 masing-masing | 365 | Rp 192.685.000 |
+
+Tiga kantor bolong 60/60 = **tidak punya baris sirkulasi Juli sama sekali**. Karawang 2 dan Genteng 1
+(kandidat percontohan) **0 pasangan bolong** — tidak terdampak.

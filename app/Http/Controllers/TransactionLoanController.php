@@ -22,6 +22,9 @@ class TransactionLoanController extends Controller
 
   use PinjamanTrait;
 
+  /** Pesan tolak untuk kedua endpoint sinkronisasi angsuran (lihat synch_angsuran). */
+  private const PESAN_TOLAK_SYNCH = 'Sinkronisasi angsuran hanya untuk pemegang akses can-edit.';
+
   public function fastcreate(Request $request)
   {
 
@@ -755,6 +758,12 @@ class TransactionLoanController extends Controller
 
   public function get_synch_angsuran(TransactionLoan $transactionLoan, Request $request)
   {
+    // Dipanggil lewat axios -> balas JSON, bukan redirect.
+    // Tombol Sync di AngsuranTable.jsx:145 memang sudah disembunyikan untuk yang
+    // tanpa 'can-edit', tapi itu kosmetik: endpoint-nya bisa dipanggil langsung.
+    if (!auth()->user()->hasPermissionTo('can-edit')) {
+      return response()->json(['message' => self::PESAN_TOLAK_SYNCH], 403);
+    }
 
     $loan = $transactionLoan->load(
       [
@@ -824,8 +833,34 @@ class TransactionLoanController extends Controller
     // $dataset
   }
 
+  /**
+   * ⚠️ Sinkronisasi angsuran — DESTRUKTIF, dibatasi 'can-edit'.
+   *
+   * Method ini MENGHAPUS SELURUH riwayat angsuran pinjaman
+   * (`$loan->loan_instalment()->delete()`) lalu membangunnya ulang dari isian
+   * form, diawali satu angsuran gelondongan bertanggal `drop_date + 1 minggu`
+   * senilai `pinjaman − saldobefore`. Akibatnya:
+   *
+   *   - tanggal asli, penginput asli, dan penanda dana titipan HILANG PERMANEN
+   *   - storting bulan lampau bergeser surut (angsuran gelondongan bertanggal
+   *     jauh ke belakang, sering berbulan/bertahun lalu)
+   *
+   * Dibiarkan apa adanya atas keputusan user (2026-08-12): dipakai sebagai alat
+   * pembersih data selama Agustus, lalu MENUNYA DIHILANGKAN TOTAL setelah
+   * migrasi. Distorsi storting masa lalu tidak terbawa ke sistem baru karena
+   * agregat baru tidak pernah menghitung tanggal sebelum `mulai_pendataan_baru`
+   * (.agents/agregasi_rekap.md §13.1).
+   *
+   * Yang ditambahkan di sini hanya pembatas akses — sebelumnya method ini
+   * TIDAK punya pengecekan izin sama sekali, padahal efeknya lebih merusak
+   * daripada penyesuaian saldo yang justru dijaga ketat.
+   */
   public function synch_angsuran(TransactionLoan $transactionLoan, Request $request)
   {
+    // Dipanggil lewat Inertia useForm -> balas redirect back dengan errors.
+    if (!auth()->user()->hasPermissionTo('can-edit')) {
+      return redirect()->back()->withErrors(self::PESAN_TOLAK_SYNCH);
+    }
 
     $startOfMonth = Carbon::parse($request->month)->startOfMonth()->format('Y-m-d');
     $loan = $transactionLoan->load(
