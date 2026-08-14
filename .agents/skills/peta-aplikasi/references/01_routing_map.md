@@ -87,7 +87,7 @@ Controller: **`TransactionLoanController`** (1152 baris, `use PinjamanTrait`).
 - Validasi: `nik` → `required`, `digits:16`; pesan custom `"Harus Di isi"` / `"Angka Harus 16 Digit"`.
 - Tidak ketemu → `response()->json(['data' => null, 'return_nik' => $nik])`.
 - Ketemu → riwayat pinjaman dikelompokkan per `loan_officer_grouping`, dipecah jadi bucket: **cabang sendiri**, **cabang lain**, **cabang lain status ≥ 3 (macet)**, **cabang lain belum lunas**. Status dihitung `AppHelper::generateStatusAngsuran(drop_date, out_date ?? now)`.
-- Dipanggil dari: `BukuTransaksi/Action.jsx`, `NewLoan/NewNasabah.jsx`, `NewLoan/BatchUpload.jsx`, `BukuTransaksi/Web/FastCreateV2.jsx`, `BukuTransaksi/Web/InputMacet.jsx`.
+- Dipanggil dari: `BukuTransaksi/Action.jsx`, `NewLoan/NewNasabah.jsx`, `BukuTransaksi/Web/FastCreateV2.jsx`, `BukuTransaksi/Web/InputMacet.jsx`. *(`NewLoan/BatchUpload.jsx` dihapus 2026-08-12 — berkas mati.)*
 
 ### C3. `store_buku_transaksi` — input pengajuan satuan
 Validasi: `isActiveMember` (boolean, required), `request_nominal` (required, integer, **min 100000**), `nik` (required, digits:16), `nama`/`alamat` (`required_if:isActiveMember,false`), `request_date` & `tanggal_drop` (required, date).
@@ -310,7 +310,11 @@ Controller: **`AdminController`**.
 | GET | `/api/user` | — | `auth:sanctum`, satu-satunya route API |
 
 **View tanpa route (legacy / hanya dipakai sebagai komponen):**
-`Pages/SuperUser/*` (mereferensikan route mati `transaction.getnik`, `transaction.store`), `Pages/NewLoan/BatchUploadx.jsx`, `Pages/MobileApps/_Index.jsx`, `Pages/NewAngsuran/Components/AngsuranTableMobilexxx.jsx`, `Pages/Welcome.jsx` (route `dashboard` tidak ada — yang ada `home`).
+`Pages/SuperUser/*` (mereferensikan route mati `transaction.getnik`, `transaction.store`), `Pages/MobileApps/_Index.jsx`, `Pages/NewAngsuran/Components/AngsuranTableMobilexxx.jsx`, `Pages/Welcome.jsx` (route `dashboard` tidak ada — yang ada `home`).
+
+`Pages/NewLoan/BatchUpload.jsx` dan `Pages/NewLoan/BatchUploadx.jsx` **sudah dihapus 2026-08-12** — dua-duanya tidak dirender controller mana pun dan tidak diimport dari mana pun.
+
+`Pages/BukuTransaksi/Web/BatchUpload.jsx` **sengaja dipertahankan** walau juga tidak terjangkau: dia dirender `TransactionLoanController@fastcreate` (`:26`), tapi **kedua** route `transaction.fastcreate` dan `transaction.fastcreatev2` sama-sama menunjuk ke method `fastcreatev2`. Jadi `fastcreate()` tidak pernah dipanggil. Keputusan user 2026-08-12: berkasnya dibiarkan.
 
 ---
 

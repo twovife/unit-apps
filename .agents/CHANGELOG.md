@@ -1057,3 +1057,70 @@ menempel, dia akan **melempar exception**, bukan menolak dengan rapi. Dipakai pe
   baru ada di Tahap 2.
 - Berkas JSX baru mengikuti gaya kutip ganda seperti berkas-berkas baru lain (`GlobalBranchFilter.jsx`).
   Proyek ini **tidak punya konfigurasi prettier** dan gayanya memang campur.
+
+---
+
+## AH — Hapus dua halaman BatchUpload yang mati (2026-08-12)
+
+Penelusuran pemanggil `transaction.store_buku_transaksi_batch` menemukan **5 berkas**, ternyata
+hanya 2 yang benar-benar hidup.
+
+| Berkas | Dirender controller? | Nasib |
+|---|---|---|
+| `BukuTransaksi/Web/FastCreateV2.jsx` | ya (`fastcreatev2`, `:37`) | dipakai |
+| `BukuTransaksi/Web/InputMacet.jsx` | ya (`inputmacet`, `:45`) | dipakai |
+| `BukuTransaksi/Web/BatchUpload.jsx` | ya (`fastcreate`, `:26`) tapi **route-nya tidak pernah menunjuk ke sana** | **DIPERTAHANKAN** atas keputusan user |
+| `NewLoan/BatchUpload.jsx` | tidak | **DIHAPUS** (525 baris) |
+| `NewLoan/BatchUploadx.jsx` | tidak | **DIHAPUS** (517 baris) |
+
+### Kenapa `BukuTransaksi/Web/BatchUpload.jsx` tidak terjangkau
+
+`TransactionLoanController` punya dua method yang sekilas tampak sepasang:
+
+```php
+public function fastcreate()   { return Inertia::render('BukuTransaksi/Web/BatchUpload'); }   // :26
+public function fastcreatev2() { return Inertia::render('BukuTransaksi/Web/FastCreateV2'); }  // :33
+```
+
+Tapi di `routes/web.php` **kedua** route menunjuk ke `fastcreatev2`:
+
+```php
+Route::get('/fastcreate',   "fastcreatev2")->name('fastcreate');
+Route::get('/fastcreatev2', "fastcreatev2")->name('fastcreatev2');
+```
+
+Jadi `fastcreate()` **tidak pernah dipanggil**. Berkas & method sengaja dibiarkan (keputusan user),
+tapi dicatat di sini supaya tidak dikira jalur hidup.
+
+**Dampak untuk Tahap 3**: yang perlu disesuaikan saat `store_buku_transaksi_batch` diubah cuma
+**dua layar** (FastCreateV2, InputMacet) — bukan lima seperti dugaan awal.
+
+### Berkas yang diubah
+
+| Berkas | Perubahan |
+|---|---|
+| `resources/js/Pages/NewLoan/BatchUpload.jsx` | **dihapus** |
+| `resources/js/Pages/NewLoan/BatchUploadx.jsx` | **dihapus** |
+| `references/01_routing_map.md` | daftar pemanggil `nasabah_buku_transaksi` + daftar view tanpa route disesuaikan |
+| `references/05_temuan_dan_jebakan.md` | daftar berkas mati disesuaikan |
+
+### Terverifikasi sebelum menghapus
+
+- Tidak dirender `Inertia::render` mana pun
+- Tidak diimport JSX mana pun
+- Tidak disebut di `app/` maupun `routes/`
+- Sapuan seluruh repo: rujukan tersisa **hanya di dokumentasi**, sudah ikut dirapikan
+- `npm run build` bersih; aset `BatchUploadx` hilang dari `public/build` **dan** `bootstrap/ssr`;
+  `FastCreateV2`, `InputMacet`, `BatchUpload`, `StockTakeMl` tetap terbangun; 88 route utuh
+
+Catatan: entri CHANGELOG lama yang menyebut kedua berkas ini **sengaja tidak diedit** — itu catatan
+sejarah, bukan peta kondisi sekarang.
+
+### Yang SENGAJA tidak disentuh
+
+- **`SuperUser/BatchUpdate.jsx`** — juga praktis mati (route `batchupdate` menunjuk
+  `LoanController@batch_create` yang badan kelasnya kosong → 500, temuan A2). Di luar lingkup
+  permintaan; belum dihapus.
+- **Route `transaction.fastcreate`** tetap menunjuk `fastcreatev2`. Membetulkannya akan
+  **menghidupkan** layar BatchUpload yang selama ini tidak pernah tampil — perubahan perilaku yang
+  tidak diminta.

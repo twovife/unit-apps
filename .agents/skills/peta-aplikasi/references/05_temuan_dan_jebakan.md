@@ -167,7 +167,10 @@ Kolom ber-indeks yang tersedia: `transaction_loan_id`, `transaction_loan_officer
 ## G. Berkas legacy (jangan dijadikan contoh)
 
 Tidak diroutekan dan/atau tidak diimport:
-`Pages/SuperUser/*` (merujuk route mati `transaction.getnik`, `transaction.store`), `Pages/NewLoan/BatchUploadx.jsx`, `Pages/MobileApps/_Index.jsx`, `Pages/NewAngsuran/Components/AngsuranTableMobilexxx.jsx`, `Pages/Welcome.jsx` (route `dashboard` tidak ada), `Pages/BukuTransaksi/Web/BatchUpload.jsx` vs `Pages/NewLoan/BatchUpload.jsx`.
+`Pages/SuperUser/*` (merujuk route mati `transaction.getnik`, `transaction.store`), `Pages/MobileApps/_Index.jsx`, `Pages/NewAngsuran/Components/AngsuranTableMobilexxx.jsx`, `Pages/Welcome.jsx` (route `dashboard` tidak ada).
+
+> **Dibersihkan 2026-08-12:** `Pages/NewLoan/BatchUpload.jsx` dan `Pages/NewLoan/BatchUploadx.jsx` **dihapus** — tidak dirender controller mana pun, tidak diimport dari mana pun.
+> `Pages/BukuTransaksi/Web/BatchUpload.jsx` **dipertahankan atas keputusan user** walau juga tidak terjangkau — dia dirender `TransactionLoanController@fastcreate` (`:26`), tapi **kedua** route `transaction.fastcreate` dan `transaction.fastcreatev2` menunjuk method `fastcreatev2`, jadi `fastcreate()` tidak pernah jalan.
 
 > **Dua koreksi atas daftar ini — nama berkas di sini menipu, selalu `grep` dulu sebelum menyebut sesuatu legacy:**
 >
