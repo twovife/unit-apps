@@ -1350,3 +1350,68 @@ aksi "berhasil" padahal gagal. Diganti `withErrors()`.
 dia pernyataan terakhir method, jadi dump itulah satu-satunya keluaran route tersebut. Membuangnya
 membuat route mengembalikan kosong, bukan memperbaiki apa pun. Ini route debug yang tertinggal
 (temuan A5) dan perlu diputuskan terpisah: dihapus rutenya, atau dijadikan halaman sungguhan.
+
+---
+
+## AM — Tahap 2: tabel agregat baru + perintah pembangkit (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app_laravel/.../2026_08_12_160000_create_work_days_table.php` **(BARU)** | kalender kerja nasional | `work_days` — **TULIS (DDL)** |
+| `app_laravel/.../2026_08_12_160100_create_transaction_daily_closings_table.php` **(BARU)** | agregat harian | `transaction_daily_closings` — **TULIS (DDL)** |
+| `app_laravel/.../2026_08_12_160200_create_transaction_monthly_closings_table.php` **(BARU)** | agregat bulanan | `transaction_monthly_closings` — **TULIS (DDL)** |
+| `app/Models/WorkDay.php` **(BARU)** | `hariKerja`, `tanggalWajar`, `hariKerjaBulan`, `sudahDikonfirmasi` | BACA |
+| `app/Models/TransactionDailyClosing.php` **(BARU)** | `KOLOM_TURUNAN`, `KOLOM_MANUAL`, `terkunci()`, `setoranSudahDicatat()` | BACA/TULIS |
+| `app/Models/TransactionMonthlyClosing.php` **(BARU)** | `EMBER`, `GESER_EMBER`, `akhirMenurutArus()`, `selisihArusVsPortofolio()`, `lengkap()`, `kuotaMlHabis()` | BACA/TULIS |
+| `app/Console/Commands/GenerateClosingRows.php` **(BARU)** | `closing:generate {periode} [--branch=] [--dry-run]` | TULIS (baris nol) |
+
+**Belum ada satu pun pembaca.** Ketiga tabel kosong dari sudut pandang aplikasi berjalan.
+
+### Tiga jenis kolom dipisah tegas di daily_closings
+
+| Jenis | Contoh | Sifat |
+|---|---|---|
+| Turunan dari tabel LAIN | `drop`, `storting`, `storting_*`, `pemutihan` | dihitung aplikasi; **tidak bisa** generated (generated column hanya boleh merujuk kolom sebaris) |
+| Input manual | `kasbon`, `transport`, `keluar`, `target`, `setoran_mantri` | sumber kebenaran sendiri → **wajib ikut dikunci**, karena mengunci tabel sumber tidak membekukannya padahal masuk rumus tunai |
+| Generated STORED | `do11`, `titipan9`, `debit`, `kredit`, `tunai`, `selisih` | mustahil melenceng dari input sebaris |
+
+**`STORED`, bukan `VIRTUAL`.** Sifat "mustahil melenceng" sama, tapi hasilnya sudah jadi saat dibaca —
+tabel lama memakai `VIRTUAL` sehingga dihitung ulang tiap baris tiap kali dibaca, dan dashboard
+menjumlah ribuan baris.
+
+**Generated column TIDAK dimasukkan ke `$fillable`.** Tabel lama mencantumkan keenamnya di `$fillable`
+padahal MySQL menolak penulisannya (error 1906) — jebakan yang ditemukan di bagian AC. Model baru
+menghilangkannya sama sekali.
+
+### Terverifikasi (setelah migrasi dijalankan user)
+
+- Ketiga tabel terbentuk; **8 generated column terkonfirmasi `STORED GENERATED`** lewat
+  `information_schema`
+- `closing:generate 2026-10 --branch=90 --dry-run` → 270 harian + 60 bulanan, **0 baris ditulis**
+- Dijalankan sungguhan → 270 harian (10 kelompok × 27 hari kerja) + 60 bulanan (10 × 6)
+- **0 baris jatuh di hari Minggu** — bawaan kalender bekerja
+- `hari_kerja` per hari tagih: Sen/Sel/Rab 4, Kam/Jum/Sab 5 = **27**, cocok dengan kalender
+  Oktober 2026 sungguhan (1 Okt = Kamis)
+- **Idempoten**: dijalankan ulang → tetap 270/60, tidak menggandakan
+- Perhitungan generated diuji dengan angka nyata (drop 1jt, storting 500rb, kasbon 200rb,
+  transport 50rb, setoran 745rb): `do11=110.000`, `titipan9=90.000`, `debit=810.000`,
+  `kredit=1.050.000`, `tunai=-240.000`, `selisih=985.000` — **semua tepat**
+- `selisih` = `NULL` selama `setoran_mantri` masih `NULL` (alarm belum berlaku sebelum kasir mencatat)
+- **Penulisan generated column ditolak**: lewat `$fillable` diabaikan diam-diam; dipaksa lewat
+  query builder → `SQLSTATE[HY000] 1906`
+- Tanpa `--branch`, perintah tidak menghasilkan apa pun karena belum ada kantor bertanda migrasi
+- Data uji sudah direset ke nol
+
+### Catatan keadaan database
+
+**270 baris harian + 60 bulanan untuk Karawang 2 periode Oktober 2026 dibiarkan ada.** Semuanya nol,
+tidak ada yang membacanya (cabang 90 belum ditandai migrasi), dan `closing:generate` idempoten
+sehingga aman dibangkitkan ulang. Kalau kantor percontohan ternyata bukan Karawang 2, baris ini
+bisa dihapus tanpa akibat apa pun.
+
+### Yang SENGAJA belum dikerjakan
+
+- **Pengisian `work_days`** — kalender Oktober belum ditetapkan, jadi perintah jatuh ke bawaan
+  Senin–Sabtu dan memperingatkan "BELUM dikonfirmasi". Menu penetapan kalender belum dibuat.
+- **Perhitungan kolom turunan** (`drop`, `storting`, 6 ember, `pemutihan`) — itu mesin Tahap 3.
+- **Gerbang `AgregasiScope` belum disambungkan** ke satu pun titik baca; alur lama utuh.
