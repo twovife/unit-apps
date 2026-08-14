@@ -1255,3 +1255,53 @@ Terkonsentrasi, bukan tersebar — 4 kantor menyumbang 212 dari 227 pasangan:
 
 Tiga kantor bolong 60/60 = **tidak punya baris sirkulasi Juli sama sekali**. Karawang 2 dan Genteng 1
 (kandidat percontohan) **0 pasangan bolong** — tidak terdampak.
+
+---
+
+## AK — `ddd` di tutup buku dibuang + `is_maintenaner` diganti `canEdit` (2026-08-12)
+
+| Berkas | Perubahan | Tabel |
+|---|---|---|
+| `app/Http/Controllers/AdminController.php` | `sirkulasiAwal()`: `ddd($e)` dihapus, diganti `Log::error` + `withErrors` berisi pesan asli; import `Log` ditambah | `transaction_sirculations` — TULIS (tidak berubah) |
+| `resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx` | `is_maintenaner` → `canEdit` (2 kemunculan, `:20` & `:145`) | — |
+
+### Kenapa `ddd` di sini penting
+
+`ddd($e)` membuat `return redirect()->back()->withErrors('Sirkulasi Awal Error')` di bawahnya
+**tidak pernah tercapai**. Kantor yang gagal menutup buku hanya melihat layar dump — atau respons
+rusak kalau `APP_DEBUG=false` — dan tidak pernah tahu sebabnya.
+
+Ini alur yang sebentar lagi jadi **gerbang migrasi** (§AJ): kegagalan diam-diam di sini berarti
+kantornya tidak punya baris `transaction_sirculations`, tidak lolos syarat migrasi, dan tidak ada
+yang bisa menjelaskan kenapa. Sekarang errornya masuk log lengkap dengan `grouping_id`, `hari`,
+`month`, `user_id`, `line`, dan pesannya sampai ke user.
+
+Penamaan `canEdit` mengikuti gaya camelCase yang dipakai flag izin lain (`unitAkses` di `Sidebar.jsx`).
+Nama lama menyesatkan: mengesankan permission `maintenance-worker` yang **sudah tidak dirujuk kode
+mana pun** sejak 2026-08-02, padahal yang dibaca `can-edit`.
+
+### Terverifikasi
+
+- `php -l` bersih; `npm run build` bersih
+- Tidak ada lagi `is_maintenaner` di seluruh `resources/js/`
+- Tidak ada lagi `ddd`/`dd` aktif di `AdminController@sirkulasiAwal`
+
+### ⚠️ `dd`/`ddd` aktif LAIN yang BELUM disentuh — lebih banyak dari catatan lama
+
+Dokumen `05_temuan_dan_jebakan.md` D2 hanya menyebut dua (`EmployeeController:117`,
+`AdminController:153`). Penyisiran ulang menemukan **lima**, dan tiga di antaranya ada di alur
+transaksi inti yang dipakai tiap hari:
+
+| Lokasi | Method | Akibat kalau gagal |
+|---|---|---|
+| `TransactionLoanController:489` | `store_buku_transaksi_batch` | `dd($exception)` sebelum `withErrors` — **jalur input nasabah lama & FastCreateV2** |
+| `TransactionLoanController:1142` | `bayar_pinjaman` | `dd($e)` sebelum `with('error', ...)` |
+| `TransactionLoanController:1204` | `destroy_angsuran` | `ddd($e)` **sebelum `DB::rollBack()`** — rollback tidak pernah jalan |
+| `EmployeeController:117` | `store` | `ddd($e)` sebelum `withErrors` |
+| `AdminController:202` | `loan_balancing` | `dd($inBalanceDay)` — route debug, sudah tercatat sebagai temuan A5 |
+
+Yang di `destroy_angsuran` paling serius: `ddd()` mendahului `DB::rollBack()`, jadi saat gagal
+transaksinya **tidak pernah di-rollback secara eksplisit**.
+
+**Sengaja tidak diperbaiki** — di luar lingkup yang diminta, dan menyentuh alur transaksi harian
+(`bayar_pinjaman`, `destroy_angsuran`) butuh persetujuan terpisah.

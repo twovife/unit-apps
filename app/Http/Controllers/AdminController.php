@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -150,8 +151,22 @@ class AdminController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      ddd($e);
-      return redirect()->back()->withErrors('Sirkulasi Awal Error');
+
+      // `ddd($e)` dihapus 2026-08-12. Dump-and-die membuat baris `withErrors`
+      // di bawah ini TIDAK PERNAH tercapai: user yang gagal menutup buku cuma
+      // melihat layar dump (atau respons rusak kalau APP_DEBUG=false) dan tidak
+      // pernah tahu sebabnya. Alur ini jadi gerbang migrasi ke agregasi baru —
+      // kegagalan diam-diam di sini berarti kantornya tidak punya baris
+      // sirkulasi, dan tidak ada yang tahu kenapa.
+      Log::error('sirkulasiAwal gagal: ' . $e->getMessage(), [
+        'grouping_id' => $request->transaction_loan_officer_grouping_id,
+        'hari' => $request->hari,
+        'month' => $request->month,
+        'user_id' => auth()->id(),
+        'line' => $e->getLine(),
+      ]);
+
+      return redirect()->back()->withErrors('Sirkulasi Awal gagal: ' . $e->getMessage());
     }
     return redirect()->back()->with('message', 'Sirkulasi Awal Successfully');
   }
