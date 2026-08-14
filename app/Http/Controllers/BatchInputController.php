@@ -26,16 +26,25 @@ class BatchInputController extends Controller
    * terdaftar di app/Http/Kernel.php, jadi pemakaiannya akan melempar
    * exception, bukan menolak dengan rapi. Lihat 05_temuan_dan_jebakan.md A1.
    */
-  private function pastikanSuperuser()
+  private const PESAN_TOLAK = 'Batch upload global hanya untuk superuser. Pakai menu penyesuaian saldo.';
+
+  private function bukanSuperuser(): bool
   {
-    if (!auth()->user()?->hasRole('superuser')) {
-      abort(403, 'Batch upload global hanya untuk superuser. Pakai menu penyesuaian saldo.');
-    }
+    return !auth()->user()?->hasRole('superuser');
   }
 
   public function index()
   {
-    $this->pastikanSuperuser();
+    // Dipulangkan ke beranda, BUKAN abort(403).
+    //
+    // abort() di halaman GET menghasilkan layar error tanpa jalan keluar. Lebih
+    // buruk lagi: login memakai redirect()->intended(), jadi kalau sesi
+    // sebelumnya sempat menuju /batch-input, user non-superuser akan dilempar
+    // ke sini tepat setelah login dan terjebak di layar 403 — pintu masuk
+    // aplikasi jadi buntu untuk mereka.
+    if ($this->bukanSuperuser()) {
+      return redirect()->route('home')->with('message', self::PESAN_TOLAK);
+    }
 
     return Inertia::render('Administrasi/BatchInput/Index', [
       'resorts' => 'halo',
@@ -65,7 +74,10 @@ class BatchInputController extends Controller
    */
   public function store(Request $request)
   {
-    $this->pastikanSuperuser();
+    // axios -> balas JSON, bukan redirect (frontend memakai await axios.post).
+    if ($this->bukanSuperuser()) {
+      return response()->json(['message' => self::PESAN_TOLAK], 403);
+    }
 
     $payload = $request->input('data');
     $id_branch = $request->input('branch_id');
@@ -272,7 +284,10 @@ class BatchInputController extends Controller
 
   public function validateData(Request $request)
   {
-    $this->pastikanSuperuser();
+    // axios -> balas JSON, bukan redirect.
+    if ($this->bukanSuperuser()) {
+      return response()->json(['message' => self::PESAN_TOLAK], 403);
+    }
 
     $items = $request->input('data');
     $id_branch = $request->input('branch_id');

@@ -1124,3 +1124,49 @@ sejarah, bukan peta kondisi sekarang.
 - **Route `transaction.fastcreate`** tetap menunjuk `fastcreatev2`. Membetulkannya akan
   **menghidupkan** layar BatchUpload yang selama ini tidak pernah tampil — perubahan perilaku yang
   tidak diminta.
+
+---
+
+## AI — Perbaikan: gerbang BatchInput jangan jadi jalan buntu (2026-08-12)
+
+**Regresi dari bagian AF**, dilaporkan user lewat tangkapan layar: setelah login sebagai
+non-superuser, muncul layar 403 polos tanpa jalan keluar.
+
+### Penyebab
+
+`AuthenticatedSessionController@store` memakai `redirect()->intended(RouteServiceProvider::HOME)`.
+Kalau sesi sebelumnya sempat menuju `/batch-input` (mis. tab lama, bookmark, atau sesi kadaluarsa
+saat halaman itu terbuka), URL itu tersimpan sebagai *intended* — dan login berikutnya dilempar ke
+sana. Dengan `abort(403)`, user non-superuser **terjebak di layar error tepat setelah login**, tanpa
+tautan kembali. Pintu masuk aplikasi jadi buntu untuk mereka.
+
+Tidak ada apa pun di aplikasi yang mengarahkan ke `/batch-input` (sudah disisir di `app/`, `routes/`,
+`resources/js/`) — jadi murni dari `intended()`.
+
+### Perbaikan
+
+| Method | Dipanggil dari | Sebelum | Sesudah |
+|---|---|---|---|
+| `index()` | halaman biasa | `abort(403)` — jalan buntu | `redirect()->route('home')->with('message', ...)` |
+| `store()` | **axios** | `abort(403)` — HTML di tengah `await axios.post` | `response()->json([...], 403)` |
+| `validateData()` | **axios** | idem | `response()->json([...], 403)` |
+
+`abort()` di endpoint axios juga salah bentuk: frontend memakai `await axios.post` dan mengharap JSON,
+sementara `abort()` mengembalikan halaman error HTML. Pesan tolak dipusatkan di satu konstanta
+`PESAN_TOLAK`.
+
+Memakai `->with('message', ...)`, **bukan** `withError()` — `HandleInertiaRequests::share()` hanya
+meneruskan `flash.message`, jadi `withError()` hilang diam-diam (temuan D1).
+
+### Terverifikasi
+
+- `/batch-input` sebagai mantri → **302 ke beranda** (bukan lagi 403 buntu); sebagai superuser → **200**
+- `store` & `validateData` sebagai mantri → **403 `application/json`** dengan body pesan
+- `php -l` bersih
+
+### Pelajaran untuk gerbang berikutnya
+
+`abort(403)` layak dipakai kalau halamannya memang tidak boleh ada di jangkauan user. Tapi untuk
+menu yang **dulu terbuka lalu dibatasi**, tautan lama tetap beredar di bookmark, tab, dan
+`intended()` — jadi penolakannya harus mengembalikan user ke tempat yang bisa dipakai, bukan
+meninggalkannya di layar mati.
