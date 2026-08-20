@@ -1474,3 +1474,70 @@ kosong sesaat.
 | pilih Juli | 2026-07 | `false` | sama dengan bawaan |
 
 `php -l` bersih, prettier bersih, `npm run build` bersih.
+
+---
+
+## AO — Tahap 3 (bagian 1): mesin penghitung agregat harian (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app/Helpers/Ember.php` **(BARU)** | `dari()`, `dariSelisih()`, `selisihBulan()`, `ekspresiSql()`, `kategori()`, konstanta `SEMUA`/`KATEGORI` | — |
+| `app/Helpers/HitungAgregat.php` **(BARU)** | `harian()`, `harianBanyak()`, `kosong()` | `transaction_loans`, `_instalments`, `_white_offs`, `_saldo_adjustments` — **BACA** |
+| `app/Console/Commands/HitungClosing.php` **(BARU)** | `closing:hitung {periode} [--branch=] [--tulis] [--rinci]` | `transaction_daily_closings` — TULIS (hanya dengan `--tulis`) |
+| `app/Console/Commands/GenerateClosingRows.php` | pembuatan baris BULANAN dikeluarkan | — |
+
+### Satu fungsi acuan ember — kenapa tidak memakai yang lama
+
+`AppHelper` punya tiga fungsi serupa yang **sengaja dibiarkan** untuk alur lama. Ketiganya tidak bisa
+dipakai di sini karena keluarannya cuma 4 nilai, dan nilai `1` melahap `month1`+`month2`+`ccm`
+sekaligus — jadi secara struktur tidak bisa memisahkan tiga ember pertama.
+
+`Ember` menyediakan versi PHP **dan** versi SQL (`ekspresiSql()`) yang dibangkitkan dari konstanta
+yang sama, supaya keduanya tidak bisa menyimpang diam-diam. Versi SQL dipakai agar penjumlahan
+jutaan angsuran tidak perlu ditarik ke PHP.
+
+### Baris bulanan tidak lagi dibangkitkan di muka
+
+Kolom `awal_*` berisi saldo awal; baris kosong berarti mengklaim "saldo awal nol" padahal yang benar
+"belum ditetapkan" — pembedaan yang sama yang kita jaga di stock-take antara `Y=null` dan `Y=0`.
+Barisnya akan lahir saat serah terima atau saat hari pertama dikunci. 60 baris uji yang terlanjur
+dibuat sudah dihapus.
+
+### Bug yang ditemukan saat pengujian, dan diperbaiki
+
+Uji pertama menghasilkan **`drop = 0`** padahal sumbernya Rp 641,9 juta. Sebabnya: `storting()`
+mengembalikan array hasil `kosong()` yang memuat `'drop' => 0`, lalu `array_merge` di `harianBanyak()`
+**menimpa** nilai drop yang sudah dihitung. Diperbaiki dengan membuat `storting()` mengembalikan
+kunci miliknya saja. Ditandai komentar di tempatnya supaya tidak terulang.
+
+### Terverifikasi
+
+**Ember — 8 kasus, versi PHP dan SQL sepakat semua**, termasuk batas geser bulan
+(drop 31 Mei → angsuran 1 Juli = `ccm`, bukan `month2`) dan tanggal rusak (`0025-07-12` → `ml`).
+
+**Mesin vs rekap lama, Karawang 2 Juli 2026 (270 baris):**
+
+| | Mesin baru | Rekap lama | Selisih |
+|---|---:|---:|---:|
+| `drop` | 641.900.000 | 641.900.000 | **0** |
+| `storting` | 690.985.000 | 691.290.000 | −305.000 |
+
+**267 dari 270 baris cocok persis.** Tiga yang beda semuanya **angka lama LEBIH BESAR** dari
+sumbernya. Ditelusuri satu (kel 6, 2026-07-04): sumber berisi 50 baris angsuran = Rp 3.666.000,
+sedangkan rekap lama menulis Rp 3.886.000 — selisih Rp 220.000 tanpa dasar. Diperiksa juga tidak ada
+angsuran bercap `NULL` maupun bercap kelompok lain yang tersembunyi. **Jadi mesin barunya benar dan
+angka lamanya yang pernah disetel** — persis fenomena 8.703 mismatch yang sudah didokumentasikan.
+
+**Setelah `--tulis` (220 baris berubah, 50 sisanya memang nol):**
+- `drop` 641.900.000 dan `storting` 690.985.000 tersimpan tepat
+- **jumlah 6 ember == storting → COCOK**
+- generated column ikut terhitung benar: `do11` 70.609.000 (= drop × 0,11), `tunai` 119.694.000
+
+### Keadaan data & yang belum dikerjakan
+
+**270 baris harian Karawang 2 Juli 2026 kini berisi angka**, bukan nol lagi. Itu data uji — cabang 90
+belum ditandai migrasi, jadi tidak ada halaman yang membacanya. Sebelum kantor benar-benar migrasi,
+baris ini harus dihapus dan dibangkitkan ulang untuk periode migrasi yang sebenarnya.
+
+Belum dikerjakan di Tahap 3: **hitung ulang agregat bulanan** dari harian, **kunci + log**, dan
+penyambungan gerbang `AgregasiScope` ke titik baca. Alur lama masih utuh sepenuhnya.

@@ -6,21 +6,33 @@ use App\Helpers\AgregasiScope;
 use App\Models\Branch;
 use App\Models\TransactionDailyClosing;
 use App\Models\TransactionLoanOfficerGrouping;
-use App\Models\TransactionMonthlyClosing;
 use App\Models\WorkDay;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Membuat baris agregat harian & bulanan untuk satu periode, semuanya nol.
+ * Membuat baris agregat HARIAN untuk satu periode, semuanya nol.
  *
- * KENAPA BARISNYA DIBUAT DI MUKA
- * ------------------------------
+ * KENAPA BARIS HARIAN DIBUAT DI MUKA
+ * ----------------------------------
  * Supaya tanggal itu PASTI ADA walau drop & storting-nya nol — kasbon dan
  * transport toh selalu keluar. Baris yang selalu ada juga membuat rantai
  * penguncian bisa mendeteksi hari yang terlewat: kalau baris cuma lahir saat
  * ada transaksi, hari sepi tidak terbedakan dari hari yang lupa dikunci.
+ *
+ * Itu obat langsung untuk penyakit yang ditemukan di tabel lama:
+ * `transaction_sirculations` hanya lahir kalau ada yang menekan tombol, dan
+ * hasilnya 4 kantor tidak punya baris sama sekali (Sawojajar 2, Salatiga 1,
+ * Singosari 3 bolong 60 dari 60).
+ *
+ * KENAPA BARIS BULANAN TIDAK IKUT
+ * -------------------------------
+ * Kolom `awal_*` di baris bulanan berisi saldo awal. Baris kosong berarti
+ * mengklaim "saldo awal kelompok ini nol", padahal yang benar "saldo awalnya
+ * belum ditetapkan" — pembedaan yang sama yang kita jaga di laporan stock-take
+ * antara Y=null dan Y=0. Barisnya lahir saat serah terima (yang mengisi
+ * `awal_*` dengan angka sungguhan) atau saat hari pertama dikunci.
  *
  * Perintah ini AMAN dijalankan berkali-kali — memakai firstOrCreate, jadi baris
  * yang sudah ada tidak disentuh sama sekali (termasuk yang sudah terkunci).
@@ -34,7 +46,7 @@ class GenerateClosingRows extends Command
                             {--branch= : Batasi ke satu branch_id (untuk uji coba)}
                             {--dry-run : Tampilkan rencananya saja, tidak menulis}';
 
-    protected $description = 'Bangkitkan baris agregat harian & bulanan (nol) untuk satu periode';
+    protected $description = 'Bangkitkan baris agregat harian (nol) untuk satu periode';
 
     public function handle(): int
     {
@@ -73,8 +85,7 @@ class GenerateClosingRows extends Command
             $kering ? '  [DRY RUN - tidak menulis]' : ''
         ));
 
-        $totalHarian = 0;
-        $totalBulanan = 0;
+        $total = 0;
 
         foreach ($branches as $branch) {
             $groupings = TransactionLoanOfficerGrouping::where('branch_id', $branch->id)
@@ -86,28 +97,25 @@ class GenerateClosingRows extends Command
                 continue;
             }
 
-            [$harian, $bulanan] = $kering
-                ? [$groupings->count() * $hariKerja->count(), $groupings->count() * 6]
-                : $this->bangkitkan($groupings, $hariKerja, $periode);
+            $jumlah = $kering
+                ? $groupings->count() * $hariKerja->count()
+                : $this->bangkitkan($groupings, $hariKerja);
 
-            $totalHarian += $harian;
-            $totalBulanan += $bulanan;
+            $total += $jumlah;
 
             $this->line(sprintf(
-                '  %-20s %2d kelompok  →  %4d baris harian, %3d baris bulanan',
+                '  %-20s %2d kelompok  →  %4d baris harian',
                 $branch->unit,
                 $groupings->count(),
-                $harian,
-                $bulanan
+                $jumlah
             ));
         }
 
         $this->newLine();
         $this->info(sprintf(
-            '%s %d baris harian, %d baris bulanan.',
+            '%s %d baris harian. Baris bulanan tidak dibuat di sini (lihat docblock).',
             $kering ? 'Akan dibuat:' : 'Dibuat/sudah ada:',
-            $totalHarian,
-            $totalBulanan
+            $total
         ));
 
         return self::SUCCESS;
@@ -141,19 +149,11 @@ class GenerateClosingRows extends Command
         return Branch::whereNotNull('mulai_pendataan_baru')->orderBy('unit')->get();
     }
 
-    /**
-     * @return array{0:int,1:int} [jumlah baris harian, jumlah baris bulanan]
-     */
-    private function bangkitkan($groupings, $hariKerja, Carbon $periode): array
+    private function bangkitkan($groupings, $hariKerja): int
     {
-        $harian = 0;
-        $bulanan = 0;
+        $jumlah = 0;
 
-        // Jumlah hari kerja per hari tagih, untuk kolom kelengkapan bulanan.
-        $kerjaPerHari = $hariKerja->groupBy(fn(Carbon $t) => strtolower($this->namaHari($t)))
-            ->map->count();
-
-        DB::transaction(function () use ($groupings, $hariKerja, $periode, $kerjaPerHari, &$harian, &$bulanan) {
+        DB::transaction(function () use ($groupings, $hariKerja, &$jumlah) {
             foreach ($groupings as $g) {
                 foreach ($hariKerja as $tanggal) {
                     // firstOrCreate: baris yang sudah ada TIDAK disentuh, jadi
@@ -162,36 +162,11 @@ class GenerateClosingRows extends Command
                         'transaction_loan_officer_grouping_id' => $g->id,
                         'date' => $tanggal->toDateString(),
                     ]);
-                    $harian++;
-                }
-
-                foreach (['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'] as $hari) {
-                    TransactionMonthlyClosing::firstOrCreate(
-                        [
-                            'transaction_loan_officer_grouping_id' => $g->id,
-                            'hari' => $hari,
-                            'periode' => $periode->toDateString(),
-                        ],
-                        ['hari_kerja' => $kerjaPerHari->get($hari, 0)]
-                    );
-                    $bulanan++;
+                    $jumlah++;
                 }
             }
         });
 
-        return [$harian, $bulanan];
-    }
-
-    private function namaHari(Carbon $t): string
-    {
-        return [
-            Carbon::MONDAY => 'senin',
-            Carbon::TUESDAY => 'selasa',
-            Carbon::WEDNESDAY => 'rabu',
-            Carbon::THURSDAY => 'kamis',
-            Carbon::FRIDAY => 'jumat',
-            Carbon::SATURDAY => 'sabtu',
-            Carbon::SUNDAY => 'minggu',
-        ][$t->dayOfWeek];
+        return $jumlah;
     }
 }
