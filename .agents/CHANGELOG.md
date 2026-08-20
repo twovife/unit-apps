@@ -1415,3 +1415,62 @@ bisa dihapus tanpa akibat apa pun.
   Senin–Sabtu dan memperingatkan "BELUM dikonfirmasi". Menu penetapan kalender belum dibuat.
 - **Perhitungan kolom turunan** (`drop`, `storting`, 6 ember, `pemutihan`) — itu mesin Tahap 3.
 - **Gerbang `AgregasiScope` belum disambungkan** ke satu pun titik baca; alur lama utuh.
+
+---
+
+## AN — Data Agustus+ dihapus & stock-take mundur otomatis (2026-08-12)
+
+### Penghapusan data atas permintaan user
+
+Skenario uji: berpura-pura data berhenti di Juli 2026. **Tanpa cadangan (keputusan user).**
+
+| Tabel | Terhapus | Maks tanggal sesudahnya | Sisa |
+|---|---:|---|---:|
+| `transaction_loans` | **7.035** | 2026-07-31 | 1.947.522 |
+| `transaction_loan_instalments` | 5 | 2026-07-27 | 11.750.387 |
+| `transaction_daily_recaps` | 1.262 | 2026-07-31 | 480.814 |
+| `transaction_sirculations` | 561 | 2026-07-01 | 69.319 |
+
+Semua dalam transaksi, kriteria `>= 2026-08-01`. Diperiksa dulu sebelum menghapus: **tidak ada**
+white_off, penyesuaian saldo, `previous_loan_id`, `postponed_loan_id`, atau `settled_by_loan_id`
+yang merujuk pinjaman sasaran — jadi tidak ada baris yatim.
+
+**Yang ikut hilang, sudah disampaikan ke user sebelum eksekusi**: 6.239 pinjaman `acc` dan 705 `open`
+— pengajuan yang belum cair, dibuat antara 25 April–2 Agustus. User memilih cakupan penuh sadar.
+Yang benar-benar cair hanya 21 pinjaman (Rp 11,8 juta).
+
+Efek samping menguntungkan: ikut terbawa 7 pinjaman bertanggal mustahil (2028-06, 2028-10, 2035-10,
+`3026-07`) dan 1 baris rekap bertahun `3026` — yang selama ini nyangkut permanen di ember ML.
+
+Tidak ada baris rekap Agustus yang sudah di-approve kepala/kasir, jadi **tidak ada angka bertanda
+tangan yang hilang**.
+
+Tabel baru tidak tersentuh: `daily_closings` 270, `monthly_closings` 60, `work_days` 0,
+`saldo_adjustments` 0.
+
+### Akibatnya pada laporan stock-take
+
+Baris sirkulasi sebuah periode **lahir saat bulan SEBELUMNYA ditutup**. Karena baris Agustus terhapus,
+di data sekarang **belum ada kantor yang menutup buku Juli** — dan halaman stock-take yang default-nya
+mengambil bulan berjalan akan menampilkan semua kelompok sebagai "belum dinyatakan" dengan kolom
+kuota kosong. Benar secara angka, tapi terbaca seperti halaman rusak.
+
+| Berkas | Perubahan |
+|---|---|
+| `app/Http/Controllers/MigrasiController.php` | `periodeTerakhirBerdata()` **(BARU)**; `stockTakeMl` memakainya untuk periode bawaan; `server_filter` dapat `periode_diminta` + `periode_mundur` |
+| `resources/js/Pages/Migrasi/StockTakeMl.jsx` | Panel kuning saat mundur: menyebut bulan yang diminta, alasannya, dan periode yang ditampilkan |
+
+**Mundur hanya berlaku untuk BAWAAN.** Pilihan eksplisit user dihormati apa adanya — termasuk bulan
+kosong, karena "kosong" itu sendiri jawaban yang mungkin sedang dicari. Ini bukan tambalan untuk
+kondisi data sekarang saja: tiap awal bulan sebelum ada kantor menutup buku, halaman ini akan selalu
+kosong sesaat.
+
+### Terverifikasi
+
+| Cara buka | Tampil | `periode_mundur` | Hasil |
+|---|---|---|---|
+| tanpa parameter | 2026-07 | `true` | 60 baris, 56 dibuka, 4 ditutup |
+| pilih Agustus | 2026-08 | `false` | 60 baris, semua "belum dinyatakan" |
+| pilih Juli | 2026-07 | `false` | sama dengan bawaan |
+
+`php -l` bersih, prettier bersih, `npm run build` bersih.

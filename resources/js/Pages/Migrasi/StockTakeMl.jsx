@@ -141,6 +141,19 @@ const StockTakeMl = ({ datas = [], ringkasan, server_filter }) => {
           />
         </div>
 
+        {server_filter?.periode_mundur && (
+          <div className="p-3 text-xs border rounded-lg border-amber-300 bg-amber-50 text-amber-900">
+            <b>
+              {dayjs(server_filter.periode_diminta).format("MMMM YYYY")} belum
+              punya baris sirkulasi
+            </b>{" "}
+            — belum ada kelompok yang menutup buku bulan sebelumnya. Yang
+            ditampilkan di bawah periode{" "}
+            <b>{dayjs(server_filter.periode).format("MMMM YYYY")}</b>, data
+            terakhir yang tersedia.
+          </div>
+        )}
+
         <p className="text-xs text-slate-500">
           ML dihitung dari selisih 5 bulan — pinjaman dengan tanggal drop
           sebelum <b>{dayjs(server_filter?.batas_ml).format("D MMMM YYYY")}</b>.

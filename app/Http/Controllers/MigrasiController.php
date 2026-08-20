@@ -46,20 +46,30 @@ class MigrasiController extends Controller
 
         $scope = AuthScope::resolve();
 
-        $periode = $request->filled('periode')
-            ? Carbon::parse($request->periode)->startOfMonth()
-            : Carbon::now()->startOfMonth();
+        $groupings = DB::table('transaction_loan_officer_groupings')
+            ->where('branch_id', $scope->branch_id)
+            ->orderBy('kelompok')
+            ->get(['id', 'kelompok']);
+
+        $groupingIds = $groupings->pluck('id')->all();
+
+        $diminta = Carbon::now()->startOfMonth();
+        $mundur = false;
+
+        if ($request->filled('periode')) {
+            // Pilihan eksplisit user selalu menang - termasuk kalau bulannya
+            // memang kosong, karena "kosong" itu sendiri informasi.
+            $periode = Carbon::parse($request->periode)->startOfMonth();
+        } else {
+            $periode = $this->periodeTerakhirBerdata($groupingIds, $diminta);
+            $mundur = !$periode->equalTo($diminta);
+        }
 
         // ML pada periode P = selisih bulan >= 5, yaitu drop_date jatuh
         // sebelum awal bulan (P - 4). Contoh P = Juli 2026 -> batas 1 Maret
         // 2026: drop Februari (selisih 5) masuk, drop Maret (selisih 4, masih
         // MB) tidak.
         $batasMl = $periode->copy()->subMonthsNoOverflow(self::SELISIH_BULAN_ML - 1);
-
-        $groupings = DB::table('transaction_loan_officer_groupings')
-            ->where('branch_id', $scope->branch_id)
-            ->orderBy('kelompok')
-            ->get(['id', 'kelompok']);
 
         $baris = $groupings->isEmpty()
             ? collect()
@@ -69,6 +79,8 @@ class MigrasiController extends Controller
             'datas' => $baris->values(),
             'server_filter' => [
                 'periode' => $periode->format('Y-m-d'),
+                'periode_diminta' => $diminta->format('Y-m-d'),
+                'periode_mundur' => $mundur,
                 'batas_ml' => $batasMl->format('Y-m-d'),
                 'branch_id' => $scope->branch_id,
                 'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
@@ -77,6 +89,43 @@ class MigrasiController extends Controller
             ],
             'ringkasan' => $this->ringkas($baris),
         ]);
+    }
+
+    /**
+     * Periode bawaan: bulan berjalan kalau sudah punya baris sirkulasi, kalau
+     * belum mundur ke periode terakhir yang punya.
+     *
+     * Kenapa perlu: baris sirkulasi sebuah periode baru lahir saat bulan
+     * SEBELUMNYA ditutup. Jadi di awal setiap bulan - sebelum satu pun kantor
+     * menutup buku - bulan berjalan pasti belum punya baris, dan halaman ini
+     * akan menampilkan semua kelompok sebagai "belum dinyatakan" dengan kolom
+     * kuota kosong. Secara angka itu benar, tapi terbaca seperti halaman rusak.
+     *
+     * Mundur hanya berlaku untuk BAWAAN. Kalau user memilih periode sendiri,
+     * pilihannya dihormati apa adanya - termasuk bulan kosong, karena "kosong"
+     * itu sendiri jawaban yang dia cari.
+     */
+    private function periodeTerakhirBerdata(array $groupingIds, Carbon $diminta): Carbon
+    {
+        if (empty($groupingIds)) {
+            return $diminta;
+        }
+
+        $adaDiBulanIni = DB::table('transaction_sirculations')
+            ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+            ->where('date', $diminta->format('Y-m-d'))
+            ->exists();
+
+        if ($adaDiBulanIni) {
+            return $diminta;
+        }
+
+        $terakhir = DB::table('transaction_sirculations')
+            ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+            ->where('date', '<', $diminta->format('Y-m-d'))
+            ->max('date');
+
+        return $terakhir ? Carbon::parse($terakhir)->startOfMonth() : $diminta;
     }
 
     /**
