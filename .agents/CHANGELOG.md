@@ -1541,3 +1541,74 @@ baris ini harus dihapus dan dibangkitkan ulang untuk periode migrasi yang sebena
 
 Belum dikerjakan di Tahap 3: **hitung ulang agregat bulanan** dari harian, **kunci + log**, dan
 penyambungan gerbang `AgregasiScope` ke titik baca. Alur lama masih utuh sepenuhnya.
+
+---
+
+## AP — Tahap 3 (bagian 2): agregat bulanan (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app/Helpers/HitungAgregat.php` | `portofolio()`, `saldoMasuk()`, `ekspresiEfekPenyesuaian()` **(BARU)** | `transaction_loans`, `_instalments`, `_white_offs`, `_saldo_adjustments` — BACA |
+| `app/Helpers/TutupBulanan.php` **(BARU)** | `susun()`, `arusDariHarian()`, `kelengkapan()` | `transaction_daily_closings` BACA, `transaction_monthly_closings` TULIS |
+| `app/Console/Commands/HitungClosing.php` | opsi `--bulanan` + `susunBulanan()` | idem |
+
+### Pergeseran ember jatuh sendiri dari pemisahan dua parameter waktu
+
+`portofolio()` memisahkan **`$asOf`** (saldo dihitung sampai tanggal ini) dari **`$bulanReferensi`**
+(ember ditentukan relatif terhadap bulan ini). Karena dipisah:
+
+```
+akhir(P)  = asOf akhir P,  referensi P
+awal(P+1) = asOf akhir P,  referensi P+1    <- saldo SAMA, ember naik kelas
+```
+
+Jadi pergeseran ember bukan langkah terpisah yang harus dijalankan dan bisa terlewat — dia
+konsekuensi aritmetika dari cara membacanya. Dan karena kedua sisi memakai saldo yang sama persis,
+`akhir_total(P) == awal_total(P+1)` wajib benar; kalau meleset, ada yang salah.
+
+### Hitung ulang penuh, tidak pernah menambahkan
+
+`TutupBulanan::susun()` selalu `= SUM(harian)`, bukan `+= angka harian`. Penambahan bertahap persis
+mekanisme yang membuat 4.141 rantai target patah. Idempoten: dijalankan sekali atau sepuluh kali
+hasilnya sama, jadi koreksi hari lampau otomatis membetulkan bulanannya. Baris bulanan yang sudah
+**terkunci dilewati** — membukanya urusan alur unlock, bukan hitung ulang otomatis.
+
+### Terverifikasi — Karawang 2, Juli 2026, 60 baris bulanan
+
+**Arus bulanan == jumlah harian**, ketiganya cocok: drop 641.900.000, storting 690.985.000,
+pemutihan 0.
+
+**Saldo akhir lewat dua jalur berbeda sepakat**: portofolio **1.465.836.760** vs arus
+(`awal + drop×1,3 + saldo_masuk + mutasi − storting − pemutihan`) **1.465.836.760** — **cocok di 60
+dari 60 baris**. Keduanya dihitung lewat jalur yang tidak berbagi kode sama sekali, jadi
+kecocokannya bukan tautologi.
+
+**Pergeseran ember, akhir Juni → awal Juli (saldo identik, ember bergeser):**
+
+| ember | akhir Juni | awal Juli | harapan |
+|---|---:|---:|---:|
+| month1 | 605.136.000 | 0 | 0 |
+| month2 | 277.066.000 | 605.136.000 | 605.136.000 |
+| ccm | 67.844.000 | 277.066.000 | 277.066.000 |
+| cm | 14.040.000 | 67.844.000 | 67.844.000 |
+| mb | 37.135.000 | 14.040.000 | 14.040.000 |
+| ml | 321.130.760 | **358.265.760** | 358.265.760 *(= mb + ml)* |
+| **TOTAL** | **1.322.351.760** | **1.322.351.760** | **SAMA** |
+
+Harapan dibangkitkan dari konstanta `TransactionMonthlyClosing::GESER_EMBER`, bukan diketik ulang —
+jadi ujinya tidak bisa lolos karena disesuaikan.
+
+> Percobaan pertama melaporkan "mb→ml MELESET". Itu **kesalahan skrip uji**, bukan kode: ember `ml`
+> menerima dari `mb` DAN `ml`, tapi asersinya menganggap pemetaan satu-ke-satu. Kodenya sejak awal
+> benar.
+
+### Yang belum & catatan keadaan
+
+- **`mutasi_masuk`/`mutasi_keluar` masih 0** — tabel mutasi baru ada di Tahap 5. Untuk sekarang nol
+  memang benar, karena belum ada mutasi.
+- **Kunci + log belum dikerjakan**, jadi `hari_terkunci` selalu 0 dan tanda tangan bulanan belum bisa
+  diuji.
+- **Gerbang `AgregasiScope` masih belum tersambung** ke titik baca mana pun. Alur lama utuh.
+- 60 baris bulanan + 270 harian Karawang 2 Juli 2026 **berisi angka uji**. Cabang 90 belum bertanda
+  migrasi sehingga tidak terbaca halaman mana pun, tapi harus dihapus & dibangkitkan ulang sebelum
+  kantor benar-benar migrasi.

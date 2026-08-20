@@ -191,4 +191,145 @@ class HitungAgregat
 
         return $out;
     }
+
+    /**
+     * SALDO PORTOFOLIO per (kelompok, hari), dipilah per ember.
+     *
+     * Dua parameter waktu yang sengaja DIPISAH:
+     *
+     *   $asOf            — saldo dihitung sampai tanggal ini (angsuran &
+     *                      pemutihan sesudahnya tidak ikut)
+     *   $bulanReferensi  — ember ditentukan relatif terhadap bulan ini
+     *
+     * Pemisahan itu yang membuat pergeseran ember jatuh dengan sendirinya:
+     *
+     *   akhir(P)   = asOf akhir P,   referensi P
+     *   awal(P+1)  = asOf akhir P,   referensi P+1     <- saldo SAMA, ember naik kelas
+     *
+     * Karena keduanya memakai saldo yang sama persis, `akhir_total(P)` wajib
+     * sama dengan `awal_total(P+1)`. Kalau meleset, ada yang salah — dan itulah
+     * gunanya menghitung kedua sisi secara mandiri alih-alih menyalin satu ke
+     * yang lain (§11.2).
+     *
+     * @return array<string,array<string,int>>  kunci "groupingId|hari"
+     */
+    public static function portofolio(array $groupingIds, $asOf, $bulanReferensi): array
+    {
+        if (empty($groupingIds)) {
+            return [];
+        }
+
+        $asOf = Carbon::parse($asOf)->toDateString();
+        $ref = Carbon::parse($bulanReferensi)->startOfMonth()->toDateString();
+
+        $ember = Ember::ekspresiSql('l.drop_date', "'$ref'");
+        $efek = self::ekspresiEfekPenyesuaian();
+
+        $saldo = '(l.pinjaman - IFNULL(i.bayar,0) - IFNULL(w.wo,0) + IFNULL(a.efek,0))';
+
+        $rows = DB::table(DB::raw('transaction_loans l'))
+            ->leftJoin(DB::raw(
+                "(SELECT transaction_loan_id, SUM(nominal) bayar
+                    FROM transaction_loan_instalments
+                   WHERE transaction_date <= '$asOf'
+                   GROUP BY transaction_loan_id) i"
+            ), 'i.transaction_loan_id', '=', 'l.id')
+            ->leftJoin(DB::raw(
+                "(SELECT transaction_loan_id, SUM(nominal) wo
+                    FROM transaction_white_offs
+                   WHERE transaction_date <= '$asOf'
+                   GROUP BY transaction_loan_id) w"
+            ), 'w.transaction_loan_id', '=', 'l.id')
+            ->leftJoin(DB::raw(
+                "(SELECT transaction_loan_id, SUM($efek) efek
+                    FROM transaction_saldo_adjustments
+                   WHERE berlaku_bulan <= '$ref'
+                   GROUP BY transaction_loan_id) a"
+            ), 'a.transaction_loan_id', '=', 'l.id')
+            ->whereIn('l.transaction_loan_officer_grouping_id', $groupingIds)
+            ->where('l.status', 'success')
+            ->where('l.drop_date', '<=', $asOf)
+            ->whereNotNull('l.hari')
+            ->whereRaw("$saldo > 0")
+            ->groupBy('l.transaction_loan_officer_grouping_id', DB::raw('LOWER(l.hari)'), DB::raw($ember))
+            ->get([
+                DB::raw('l.transaction_loan_officer_grouping_id AS g'),
+                DB::raw('LOWER(l.hari) AS hari'),
+                DB::raw("$ember AS ember"),
+                DB::raw("SUM($saldo) AS saldo"),
+            ]);
+
+        $nol = [];
+        foreach (Ember::SEMUA as $e) {
+            $nol[$e] = 0;
+        }
+
+        $out = [];
+        foreach ($rows as $r) {
+            $kunci = $r->g . '|' . $r->hari;
+            $out[$kunci] ??= $nol;
+            $out[$kunci][$r->ember] += (int) $r->saldo;
+        }
+
+        return $out;
+    }
+
+    /**
+     * SALDO MASUK — penyesuaian saldo yang berlaku di bulan ini, per
+     * (kelompok, hari).
+     *
+     * Ini "pintu masuk kedua" sirkulasi: menaikkan saldo tanpa membuat drop.
+     * Tandanya dibalik terhadap efek saldo — penyesuaian `saldo_awal` MENGURANGI
+     * saldo pinjaman (nasabah sudah bayar sekian sebelum masuk sistem), tapi
+     * yang MASUK ke sirkulasi kelompok adalah sisa yang dibawanya.
+     *
+     * @return array<string,int>  kunci "groupingId|hari"
+     */
+    public static function saldoMasuk(array $groupingIds, $periode): array
+    {
+        if (empty($groupingIds)) {
+            return [];
+        }
+
+        $ref = Carbon::parse($periode)->startOfMonth()->toDateString();
+        $efek = self::ekspresiEfekPenyesuaian('sa');
+
+        $rows = DB::table(DB::raw('transaction_saldo_adjustments sa'))
+            ->join(DB::raw('transaction_loans l'), 'l.id', '=', 'sa.transaction_loan_id')
+            ->whereIn('sa.transaction_loan_officer_grouping_id', $groupingIds)
+            ->where('sa.berlaku_bulan', $ref)
+            ->whereNotNull('l.hari')
+            ->groupBy('sa.transaction_loan_officer_grouping_id', DB::raw('LOWER(l.hari)'))
+            ->get([
+                DB::raw('sa.transaction_loan_officer_grouping_id AS g'),
+                DB::raw('LOWER(l.hari) AS hari'),
+                DB::raw("SUM($efek) AS efek"),
+            ]);
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[$r->g . '|' . $r->hari] = (int) $r->efek;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ekspresi SQL efek bertanda penyesuaian, dibangkitkan dari
+     * TransactionSaldoAdjustment::ARAH supaya arah tanda tidak pernah
+     * didefinisikan dua kali.
+     */
+    private static function ekspresiEfekPenyesuaian(string $alias = ''): string
+    {
+        $kolomJenis = $alias ? "$alias.jenis" : 'jenis';
+        $kolomNominal = $alias ? "$alias.nominal" : 'nominal';
+
+        $cases = '';
+        foreach (TransactionSaldoAdjustment::ARAH as $jenis => $arah) {
+            $tanda = $arah < 0 ? '-' : '';
+            $cases .= " WHEN " . DB::getPdo()->quote($jenis) . " THEN {$tanda}{$kolomNominal}";
+        }
+
+        return "CASE {$kolomJenis}{$cases} ELSE 0 END";
+    }
 }

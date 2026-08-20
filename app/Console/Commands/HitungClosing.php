@@ -4,9 +4,11 @@ namespace App\Console\Commands;
 
 use App\Helpers\Ember;
 use App\Helpers\HitungAgregat;
+use App\Helpers\TutupBulanan;
 use App\Models\Branch;
 use App\Models\TransactionDailyClosing;
 use App\Models\TransactionLoanOfficerGrouping;
+use App\Models\TransactionMonthlyClosing;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +31,7 @@ class HitungClosing extends Command
                             {periode : Bulan yang dihitung, format YYYY-MM}
                             {--branch= : Batasi ke satu branch_id}
                             {--tulis : Simpan hasilnya ke transaction_daily_closings}
+                            {--bulanan : Susun juga baris agregat bulanan dari harian}
                             {--rinci : Tampilkan baris yang selisih}';
 
     protected $description = 'Hitung agregat harian dari sumber dan bandingkan dengan rekap lama';
@@ -84,6 +87,10 @@ class HitungClosing extends Command
             $ditulis = $this->tulis($baru);
             $this->newLine();
             $this->info("Disimpan ke transaction_daily_closings: {$ditulis} baris.");
+        }
+
+        if ($this->option('bulanan')) {
+            $this->susunBulanan($ids, $periode);
         }
 
         return self::SUCCESS;
@@ -171,6 +178,80 @@ class HitungClosing extends Command
             }
         } elseif ($beda) {
             $this->line('Pakai --rinci untuk melihat baris yang selisih.');
+        }
+    }
+
+    /**
+     * Susun baris bulanan dari harian, lalu periksa dua hal yang harus benar.
+     */
+    private function susunBulanan(array $ids, Carbon $periode): void
+    {
+        $this->newLine();
+        $this->info('Menyusun agregat bulanan dari harian...');
+
+        $r = TutupBulanan::susun($ids, $periode, $this->option('tulis'));
+
+        $this->line(sprintf(
+            '  dibuat %d, diperbarui %d, dilewati (terkunci) %d%s',
+            $r['dibuat'],
+            $r['diperbarui'],
+            $r['dilewati'],
+            $this->option('tulis') ? '' : '  [tidak menulis - pakai --tulis]'
+        ));
+
+        if (!$this->option('tulis')) {
+            return;
+        }
+
+        $baris = TransactionMonthlyClosing::whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereDate('periode', $periode->toDateString())
+            ->get();
+
+        if ($baris->isEmpty()) {
+            return;
+        }
+
+        // Periksa 1: arus bulanan harus sama dengan jumlah harian.
+        $harian = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereBetween('date', [
+                $periode->toDateString(),
+                $periode->copy()->endOfMonth()->toDateString(),
+            ])
+            ->selectRaw('SUM(`drop`) d, SUM(storting) s, SUM(pemutihan) p')
+            ->first();
+
+        $this->newLine();
+        $this->table(
+            ['', 'Bulanan', 'Jumlah harian', 'Cocok?'],
+            [
+                ['drop', number_format($baris->sum('drop')), number_format((int) $harian->d), $baris->sum('drop') == (int) $harian->d ? 'ya' : 'TIDAK'],
+                ['storting', number_format($baris->sum('storting')), number_format((int) $harian->s), $baris->sum('storting') == (int) $harian->s ? 'ya' : 'TIDAK'],
+                ['pemutihan', number_format($baris->sum('pemutihan')), number_format((int) $harian->p), $baris->sum('pemutihan') == (int) $harian->p ? 'ya' : 'TIDAK'],
+            ]
+        );
+
+        // Periksa 2: saldo akhir menurut portofolio vs menurut arus.
+        // Keduanya dihitung lewat jalur yang sama sekali berbeda, jadi
+        // kecocokannya bukan tautologi.
+        $selisih = $baris->filter(fn($b) => $b->selisihArusVsPortofolio() !== 0);
+
+        $this->line(sprintf(
+            'Saldo akhir: portofolio %s vs arus %s  →  %d dari %d baris cocok',
+            number_format($baris->sum('akhir_total')),
+            number_format($baris->sum(fn($b) => $b->akhirMenurutArus())),
+            $baris->count() - $selisih->count(),
+            $baris->count()
+        ));
+
+        if ($selisih->isNotEmpty() && $this->option('rinci')) {
+            $rinci = $selisih->take(15)->map(fn($b) => [
+                $b->hari,
+                number_format($b->awal_total),
+                number_format($b->akhir_total),
+                number_format($b->akhirMenurutArus()),
+                number_format($b->selisihArusVsPortofolio()),
+            ])->all();
+            $this->table(['Hari', 'awal', 'akhir (portofolio)', 'akhir (arus)', 'selisih'], $rinci);
         }
     }
 
