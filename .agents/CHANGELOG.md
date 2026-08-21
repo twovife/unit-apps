@@ -1612,3 +1612,75 @@ jadi ujinya tidak bisa lolos karena disesuaikan.
 - 60 baris bulanan + 270 harian Karawang 2 Juli 2026 **berisi angka uji**. Cabang 90 belum bertanda
   migrasi sehingga tidak terbaca halaman mana pun, tapi harus dihapus & dibangkitkan ulang sebelum
   kantor benar-benar migrasi.
+
+---
+
+## AQ — Tahap 3 (bagian 3): gembok + jejak (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app_laravel/.../2026_08_12_170000_create_transaction_lock_histories_table.php` **(BARU)** | jejak buka-tutup | `transaction_lock_histories` — TULIS (DDL) |
+| `app_laravel/.../2026_08_12_170100_add_closing_lock_triggers.php` **(BARU)** | **5 trigger penegak** | `transaction_loans`, `_instalments` — DDL |
+| `app/Models/TransactionLockHistory.php` **(BARU)** | model jejak | — |
+| `app/Helpers/Gembok.php` **(BARU)** | `bolehKunci()`, `kunci()`, `buka()`, `bolehBuka()`, `barisSebelumnyaBelumTerkunci()` | `transaction_daily_closings`, `_lock_histories` — TULIS |
+
+### Penegakan di trigger, bukan hook model
+
+Hook Eloquent bocor di tiga jalur yang **justru biasa dipakai di proyek ini**: mass update
+(`->update()`/`->delete()` tidak memicu event sama sekali), raw SQL, dan tinker. Trigger jalan di
+level engine sehingga mencakup semuanya.
+
+**Plafon jujurnya**: trigger tidak bisa membedakan siapa manusianya — koneksi `unit-app` satu user
+database untuk semua request. Orang yang lebih dulu `UPDATE ... SET kasir_lock_at=NULL` lewat tinker
+lalu mengedit lalu mengunci lagi **tidak akan tertangkap**; secara state kolom, saat itu memang
+sedang terbuka. Menutupnya butuh privilege separation di level user database. Untuk tujuan "cegah
+kesalahan manusia dan bug kode", ini proporsional.
+
+Catatan: database ini **sudah punya trigger sebelumnya** — `branches_AFTER_INSERT` (otomatis membuat
+10 kelompok tiap cabang baru, itu sebabnya semua cabang punya persis 10) dan `loans_BEFORE_DELETE`.
+Jadi polanya bukan hal baru di sini.
+
+### Terverifikasi — uji tembus ke tanggal terkunci
+
+**Ditolak** (`SQLSTATE[45000] 1644`):
+
+| Jalur | Hasil |
+|---|---|
+| Eloquent `create()` | DITOLAK |
+| Query builder `insert()` | **DITOLAK** ← bocor kalau cuma hook |
+| Raw SQL `DB::insert()` | **DITOLAK** ← bocor kalau cuma hook |
+| Mass `update()` / `delete()` angsuran | **DITOLAK** |
+| Ubah `status` / `nominal_drop` pinjaman | DITOLAK |
+| Hapus pinjaman | DITOLAK |
+
+**Sengaja LOLOS** — gembok menjaga angka, bukan seluruh baris:
+
+| Jalur | Hasil |
+|---|---|
+| Ubah `notes` pinjaman di tanggal terkunci | LOLOS |
+| Insert angsuran di tanggal **tidak** terkunci | LOLOS |
+
+### Terverifikasi — lapisan Gembok
+
+- Syarat belum terpenuhi → `boleh=false` dengan alasan terurai ("Kepala belum menyetujui…",
+  "Setoran mantri belum dicatat kasir.")
+- Setelah kepala approve + setoran dicatat → `boleh=true`
+- `kunci()` menulis `kasir_lock_at` + jejak; **`tunai_sebelum` terekam −1.590.000**
+- **Rantai bekerja**: kunci 3 Juli ditolak karena "Hari sebelumnya (02 Jul 2026) belum dikunci."
+- `buka()` oleh mantri → ditolak (butuh role **dan** `can-edit`)
+- `buka()` tanpa alasan → ditolak
+- `buka()` oleh superuser dengan alasan → berhasil, jejaknya lengkap:
+  `kunci` tunai −1.590.000, lalu `buka` dengan alasan tercatat
+
+Seluruh data uji sudah dibersihkan: 0 baris terkunci, 0 jejak, 0 approval.
+
+### Yang SENGAJA bukan syarat mengunci
+
+**Kas seimbang.** Selisih fisik dibebankan ke penagih lewat pembukuan terpisah; menjadikannya syarat
+membuat rantai penguncian jadi sandera masalah yang penyelesaiannya ada di buku lain.
+
+### Sisa Tahap 3
+
+- **Rekalkulasi berantai** saat hari lampau dikoreksi (§4.6) — belum
+- **UI**: tombol kunci/buka, layar pemantau hari yang belum terkunci — belum
+- **Penyambungan gerbang `AgregasiScope`** ke titik baca — belum. Alur lama masih utuh sepenuhnya.
