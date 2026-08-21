@@ -1740,3 +1740,47 @@ sana belum menggantikan rekap lama, kedua alur masih berjalan sendiri-sendiri. I
 sebenarnya sampai gerbang `AgregasiScope` disambungkan ke titik baca.
 
 Sisa Tahap 3: **rekalkulasi berantai** saat hari lampau dikoreksi, dan **penyambungan gerbang**.
+
+---
+
+## AS — Laporan kesiapan closing lama (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app/Http/Controllers/MigrasiController.php` | `kesiapanClosing()` **(BARU)** | `transaction_daily_recaps`, `_loan_officer_groupings`, `branches` — **BACA** |
+| `resources/js/Pages/Migrasi/KesiapanClosing.jsx` **(BARU)** | deret hari per kelompok, titik putus ditandai | — |
+| `routes/web.php`, `Sidebar.jsx` | route + menu `migrasi.kesiapan_closing` | — |
+
+Baca-saja, tidak menulis apa pun.
+
+### Berhenti di titik putus, bukan menghitung total
+
+Rekap harian hanya bisa dipercaya **sebagai rangkaian**. Karena itu laporan menelusuri hari demi hari
+dari tanggal 1 dan berhenti di hari pertama yang approval kepala **atau** kasirnya belum ada. Hari
+sesudah titik putus ditandai *"di luar rantai"* — angkanya belum tentu salah, tapi tidak lagi bisa
+ditelusuri sebagai rangkaian.
+
+Bedanya besar: **"22 dari 27 hari terisi" terdengar bagus**, padahal kalau yang bolong justru hari
+pertama, rantainya putus sejak awal.
+
+### Temuan: Karawang 2, Juli 2026 — kesepuluh kelompok putus di HARI PERTAMA
+
+| kelompok | hari ada | kepala | kasir | putus di |
+|---|---:|---:|---:|---|
+| 1 | 27 | 22 | 20 | **2026-07-01** |
+| 2 | 27 | 22 | 20 | **2026-07-01** |
+| 3–10 | 27 | 22 | 19 | **2026-07-01** |
+
+Polanya seragam: **1 dan 2 Juli punya approval kepala tapi tidak ada kasir**, lalu 3 Juli ke atas
+lengkap. Jadi walau 19–20 hari dari 27 terisi lengkap, `utuh_sampai` = **tidak ada** untuk semua
+kelompok — rantainya tidak pernah dimulai.
+
+Ini persis kondisi yang membuat closing bulanan lama tidak bisa dipercaya, dan alasan kenapa alur
+baru menuntut hari sebelumnya terkunci sebelum hari berikutnya boleh dikunci.
+
+### Terverifikasi
+
+- HTTP kernel: **200** untuk user ber-`can-approve`
+- Penandaan `di_luar_rantai` benar: 1 Juli (titik putus) → `diluar=0`; 2 Juli ke atas → `diluar=1`,
+  termasuk hari-hari yang sebenarnya lengkap (3–4 Juli `lengkap=1 diluar=1`)
+- `npm run build` bersih

@@ -295,6 +295,12 @@ export default function AppSidebar({ ...props }) {
                 },
                 {
                   id: 2,
+                  title: 'Kesiapan Closing',
+                  link: route('migrasi.kesiapan_closing'),
+                  active: route().current('migrasi.kesiapan_closing'),
+                },
+                {
+                  id: 3,
                   title: 'Closing Harian',
                   link: route('closing.harian'),
                   active: route().current('closing.harian'),

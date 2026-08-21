@@ -92,6 +92,111 @@ class MigrasiController extends Controller
     }
 
     /**
+     * Kesiapan closing lama: telusuri hari demi hari dari tanggal 1, berhenti
+     * di hari pertama yang salah satu approval-nya belum ada.
+     *
+     * KENAPA BERHENTI, BUKAN MENGHITUNG TOTAL
+     * ---------------------------------------
+     * Rekap harian hanya bisa dipercaya sebagai rangkaian. Kalau tanggal 5
+     * belum diteken kasir, angka tanggal 6 ke atas tidak otomatis batal — tapi
+     * saldo berjalannya sudah tidak bisa ditelusuri lewat rantai yang utuh.
+     * Jadi yang berguna diketahui bukan "berapa hari yang lengkap", melainkan
+     * "sampai hari ke berapa rantainya masih utuh".
+     *
+     * Angka 22 dari 27 hari terisi bisa terdengar bagus, padahal kalau yang
+     * bolong justru hari pertama, rantainya putus sejak awal.
+     */
+    public function kesiapanClosing(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
+            abort(403, 'Laporan ini untuk kepala mantri, kasir, dan pimpinan.');
+        }
+
+        $scope = AuthScope::resolve();
+
+        $periode = $request->filled('periode')
+            ? Carbon::parse($request->periode)->startOfMonth()
+            : Carbon::now()->startOfMonth();
+
+        $groupings = DB::table('transaction_loan_officer_groupings')
+            ->where('branch_id', $scope->branch_id)
+            ->orderBy('kelompok')
+            ->get(['id', 'kelompok']);
+
+        $rekap = DB::table('transaction_daily_recaps')
+            ->whereIn('transaction_loan_officer_grouping_id', $groupings->pluck('id'))
+            ->whereBetween('date', [
+                $periode->toDateString(),
+                $periode->copy()->endOfMonth()->toDateString(),
+            ])
+            ->orderBy('date')
+            ->get([
+                'transaction_loan_officer_grouping_id AS g',
+                'date',
+                'drop',
+                'storting',
+                'daily_kepala_approval AS kepala',
+                'daily_kasir_approval AS kasir',
+            ])
+            ->groupBy('g');
+
+        $datas = $groupings->map(function ($g) use ($rekap) {
+            $baris = $rekap->get($g->id, collect());
+            $putus = false;
+
+            $hari = $baris->map(function ($r) use (&$putus) {
+                $adaKepala = $r->kepala !== null;
+                $adaKasir = $r->kasir !== null;
+                $lengkap = $adaKepala && $adaKasir;
+
+                // Begitu satu hari tidak lengkap, seluruh hari sesudahnya
+                // ditandai "di luar rantai" - bukan karena angkanya salah,
+                // tapi karena tidak lagi bisa ditelusuri sebagai rangkaian.
+                $diLuarRantai = $putus;
+                if (!$lengkap) {
+                    $putus = true;
+                }
+
+                return [
+                    'tanggal' => Carbon::parse($r->date)->toDateString(),
+                    'drop' => (int) $r->drop,
+                    'storting' => (int) $r->storting,
+                    'kepala' => $adaKepala,
+                    'kasir' => $adaKasir,
+                    'lengkap' => $lengkap,
+                    'di_luar_rantai' => $diLuarRantai,
+                ];
+            })->values();
+
+            $utuhSampai = null;
+            foreach ($hari as $h) {
+                if (!$h['lengkap']) {
+                    break;
+                }
+                $utuhSampai = $h['tanggal'];
+            }
+
+            return [
+                'kelompok' => $g->kelompok,
+                'hari' => $hari,
+                'jumlah_hari' => $hari->count(),
+                'jumlah_lengkap' => $hari->where('lengkap', true)->count(),
+                'utuh_sampai' => $utuhSampai,
+                'putus_di' => $hari->firstWhere('lengkap', false)['tanggal'] ?? null,
+            ];
+        })->values();
+
+        return Inertia::render('Migrasi/KesiapanClosing', [
+            'datas' => $datas,
+            'server_filter' => [
+                'periode' => $periode->format('Y-m-d'),
+                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+                'branch_id' => $scope->branch_id,
+            ],
+        ]);
+    }
+
+    /**
      * Periode bawaan: bulan berjalan kalau sudah punya baris sirkulasi, kalau
      * belum mundur ke periode terakhir yang punya.
      *
