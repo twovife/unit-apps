@@ -1784,3 +1784,64 @@ baru menuntut hari sebelumnya terkunci sebelum hari berikutnya boleh dikunci.
 - Penandaan `di_luar_rantai` benar: 1 Juli (titik putus) → `diluar=0`; 2 Juli ke atas → `diluar=1`,
   termasuk hari-hari yang sebenarnya lengkap (3–4 Juli `lengkap=1 diluar=1`)
 - `npm run build` bersih
+
+---
+
+## AT — Perintah menandai kantor migrasi (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app/Console/Commands/TandaiMigrasi.php` **(BARU)** | `migrasi:tandai {tanggal} [--branch=*] [--semua] [--batal] [--dry-run]` | `branches` — **TULIS** (`mulai_pendataan_baru`) |
+
+Sebelumnya **tidak ada satu baris kode pun** yang mengisi `mulai_pendataan_baru` — satu-satunya cara
+adalah SQL tangan.
+
+### Batas per kantor dipertahankan, bukan batas tanggal global
+
+User mengusulkan batas tanggal global (semua transaksi mulai tanggal X pakai alur baru, tanpa peduli
+kantor). Lebih sederhana, tapi memindahkan 157 kantor serentak membuang tiga pengaman:
+
+1. **Gemboknya trigger database.** Kalau ada yang salah dan terlanjur terkunci, membukanya harus satu
+   per satu dengan alasan tercatat — bukan sekadar mengembalikan kode.
+2. **Kantor belum migrasi adalah pembanding.** `saldo_masuk = 0` membuat rumus baru menghasilkan
+   angka identik dengan rumus lama. Kalau semua pindah, tidak ada lagi yang bisa dibandingkan.
+3. **Serah terima harus benar di semua kantor sekaligus** — padahal 4 kantor bahkan belum punya baris
+   sirkulasi sama sekali.
+
+Perintah ini tetap bisa memindahkan semuanya (`--semua`) kalau sudah waktunya. Yang dihindari adalah
+**tidak punya pilihan selain serentak**.
+
+### Dua pagar yang ditegakkan
+
+- **Tanggal wajib tanggal 1.** Agregat bulanan ber-grain per periode; kantor yang pindah di tengah
+  bulan punya separuh bulan di tiap alur, dan saldo awalnya tidak punya titik pijak.
+- **Kalau sudah ada hari TERKUNCI, tanggal tidak boleh digeser dan penandaan tidak boleh dibatalkan.**
+  Hari terkunci berarti angkanya sudah disahkan dan sumbernya dibekukan trigger — memindahkan
+  batasnya membuat data itu menggantung tanpa induk.
+
+### Terverifikasi
+
+| Uji | Hasil |
+|---|---|
+| `2026-09-15` (bukan tgl 1) | **ditolak** |
+| `--dry-run` | menampilkan rencana, tidak menulis |
+| Tandai Karawang 2 `2026-08-01` | berhasil |
+| `pakaiAgregatBaru(90, 2026-07-31)` | **false** — tetap alur lama |
+| `pakaiAgregatBaru(90, 2026-08-01)` | **true** — alur baru |
+| `sudahMigrasi(89)` | **false** — cabang lain tidak terpengaruh |
+| `batasPenyesuaian(90)` | **2026-02-28** (= bulan migrasi − 6, akhir bulan) |
+| `closing:generate 2026-09` **tanpa `--branch`** | jalan, mengambil Karawang 2 saja |
+
+### Keadaan data sekarang
+
+- **Karawang 2 (cabang 90) DITANDAI MIGRASI per 2026-08-01** — ini keadaan uji coba
+- Baris harian: Agustus 260, September 260. Baris bulanan: 0 (memang belum waktunya)
+- Agustus & September belum punya data sumber sama sekali (drop/angsuran/rekap ≥ Agustus sudah dihapus)
+
+### ⚠️ Lubang terbesar yang tersisa sebelum cutover sungguhan
+
+**Serah terima saldo awal belum ada alatnya.** Perintah ini sengaja mencetak peringatan setelah
+berhasil: tanpa mengisi `awal_*` per ember dan sisa kuota ML, saldo awal kantor itu **nol dan salah
+sejak hari pertama**. Mesin hitungnya sudah ada (`HitungAgregat::portofolio()`), yang belum ada
+layar/perintah yang menjalankannya di titik cutover — termasuk pemeriksaan §13.2
+(`akhir(lama) == awal(baru)`, kalau meleset migrasinya ditunda).
