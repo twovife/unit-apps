@@ -293,6 +293,12 @@ export default function AppSidebar({ ...props }) {
                   link: route('migrasi.stock_take_ml'),
                   active: route().current('migrasi.stock_take_ml'),
                 },
+                {
+                  id: 2,
+                  title: 'Closing Harian',
+                  link: route('closing.harian'),
+                  active: route().current('closing.harian'),
+                },
               ]}
             />
           </SidebarGroup>

@@ -1684,3 +1684,59 @@ membuat rantai penguncian jadi sandera masalah yang penyelesaiannya ada di buku 
 - **Rekalkulasi berantai** saat hari lampau dikoreksi (§4.6) — belum
 - **UI**: tombol kunci/buka, layar pemantau hari yang belum terkunci — belum
 - **Penyambungan gerbang `AgregasiScope`** ke titik baca — belum. Alur lama masih utuh sepenuhnya.
+
+---
+
+## AR — Tahap 3 (bagian 4): layar closing harian (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app/Http/Controllers/ClosingHarianController.php` **(BARU)** | `index`, `simpanManual`, `approveKepala`, `kunci`, `buka`, `hariTertinggal()` | `transaction_daily_closings` TULIS, `_lock_histories` TULIS (lewat `Gembok`) |
+| `resources/js/Pages/Closing/Harian.jsx` **(BARU)** | tabel per kelompok, isian manual, tombol aksi, dialog buka kunci | — |
+| `routes/web.php` | prefix `closing` (5 route) | — |
+| `resources/js/Components/Sidebar.jsx` | menu "Closing Harian" | — |
+
+### Yang bisa & tidak bisa diketik di layar ini
+
+`drop` dan `storting` **ditampilkan tapi tidak bisa diubah** — keduanya turunan dari angsuran &
+pinjaman, jadi selalu bisa diperiksa ulang ke sumbernya. Yang diisi manusia hanya `kasbon`,
+`transport`, `keluar`, `setoran_mantri`.
+
+`setoran_mantri` memakai input kosong → `null`, **bukan 0**: "kasir belum mencatat serah terima"
+berbeda dari "mantri memang tidak menyetor". Pembedaan yang sama dijaga di seluruh rancangan.
+
+Kolom **selisih** (`setoran_mantri − tunai`) ditampilkan merah kalau bukan nol — itu alarm yang
+selama ini tidak ada padanannya di aplikasi.
+
+### Pemantau hari tertinggal
+
+Chip per kelompok berisi hari terlama yang belum terkunci beserta jumlahnya. Karena rantai menuntut
+hari sebelumnya terkunci, satu hari menggantung menahan seluruh sisanya — pemantau ini yang membuat
+itu ketahuan hari itu juga, bukan berbulan-bulan kemudian.
+
+Tombol **Kunci** dinonaktifkan selama masih ada halangan, dan alasannya ditulis di bawah tombol
+(bukan disembunyikan di tooltip) supaya jelas apa yang kurang.
+
+### Terverifikasi — HTTP kernel penuh
+
+| Peran | Hasil |
+|---|---|
+| kasir | **200**, komponen `Closing/Harian` |
+| mantri | **403** (tidak punya `can-approve`) |
+
+### Terverifikasi — alur lengkap
+
+1. Simpan manual → kasbon 500.000, transport 50.000, setoran `NULL`, **tunai −1.140.000** (generated ikut terhitung)
+2. Kunci tanpa syarat → **ditolak**: *"Kepala belum menyetujui rekap hari ini. Setoran mantri belum dicatat kasir."*
+3. Approve kepala + setoran 1.500.000 → **selisih 2.640.000** muncul
+4. Kunci → berhasil
+5. Edit setelah terkunci → **ditolak**, kasbon tetap 500.000
+6. Data uji dibersihkan: 0 terkunci, 0 jejak
+
+### Catatan
+
+Layar menampilkan peringatan kuning kalau kantornya belum ditandai migrasi — angka yang dikunci di
+sana belum menggantikan rekap lama, kedua alur masih berjalan sendiri-sendiri. Itu keadaan
+sebenarnya sampai gerbang `AgregasiScope` disambungkan ke titik baca.
+
+Sisa Tahap 3: **rekalkulasi berantai** saat hari lampau dikoreksi, dan **penyambungan gerbang**.

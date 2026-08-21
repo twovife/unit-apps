@@ -108,6 +108,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/stock-take-ml', [\App\Http\Controllers\MigrasiController::class, 'stockTakeMl'])
       ->name('stock_take_ml');
   });
+
+  // Layar kerja harian alur agregasi baru. Otorisasi dicek di controller.
+  Route::controller(\App\Http\Controllers\ClosingHarianController::class)
+    ->prefix('closing')->name('closing.')->group(function () {
+      Route::get('/harian', 'index')->name('harian');
+      Route::put('/harian/{closing}', 'simpanManual')->name('simpan_manual');
+      Route::post('/harian/{closing}/approve-kepala', 'approveKepala')->name('approve_kepala');
+      Route::post('/harian/{closing}/kunci', 'kunci')->name('kunci');
+      Route::post('/harian/{closing}/buka', 'buka')->name('buka');
+    });
   Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {
