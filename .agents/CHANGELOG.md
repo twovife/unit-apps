@@ -1845,3 +1845,74 @@ berhasil: tanpa mengisi `awal_*` per ember dan sisa kuota ML, saldo awal kantor 
 sejak hari pertama**. Mesin hitungnya sudah ada (`HitungAgregat::portofolio()`), yang belum ada
 layar/perintah yang menjalankannya di titik cutover — termasuk pemeriksaan §13.2
 (`akhir(lama) == awal(baru)`, kalau meleset migrasinya ditunda).
+
+---
+
+## AU — Pendaftaran migrasi otomatis lewat tutup buku (2026-08-12)
+
+Perubahan arah atas permintaan user: **tutup buku yang mendaftarkan kantor ke alur baru**, bukan
+penandaan manual.
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `config/agregasi.php` **(BARU)** | `bulan_migrasi` dari `AGREGASI_BULAN_MIGRASI` | — |
+| `app/Helpers/DaftarMigrasi.php` **(BARU)** | `bulanMigrasi()`, `cobaDaftarkan()`, `siapkanBaris()`, `kemajuan()` | `branches` TULIS, `transaction_daily_closings` TULIS |
+| `app/Http/Controllers/AdminController.php` | `sirkulasiAwal()` memanggil `cobaDaftarkan()` setelah commit | idem |
+| `app/Http/Controllers/ClosingHarianController.php` | `tanggalBawaan()` → hari **terlama belum terkunci** | BACA |
+| `.env` | `AGREGASI_BULAN_MIGRASI=2026-08` (uji coba) | — |
+
+### Kenapa tutup buku yang jadi pemicu
+
+Menutup buku adalah bukti paling jujur bahwa kantor siap: pembukuan lamanya sudah tuntas sampai punya
+saldo awal. Kantor yang belum menutup buku tidak punya saldo awal yang bisa dipakai, jadi
+memindahkannya cuma memindahkan kekosongan. Ini juga sebabnya `transaction_sirculations` sah dipakai
+sebagai penanda — barisnya **hanya lahir kalau ada yang benar-benar menutup buku**.
+
+### Kenapa masih butuh setelan bulan migrasi
+
+Tutup buku itu kegiatan bulanan biasa. Tanpa penentu, kantor yang menutup buku bulan depan pun ikut
+terdaftar padahal belum ada yang memutuskan migrasinya dimulai. `config('agregasi.bulan_migrasi')`
+yang menentukan sejak kapan tutup buku berlaku sebagai pendaftaran. **NULL = mati total**, dan itu
+keadaan bawaan yang aman.
+
+### Dipanggil setelah commit, dibungkus try sendiri
+
+Tutup buku memanggil `cobaDaftarkan()` hingga **60× per kantor** (10 kelompok × 6 hari). Pekerjaan
+beratnya hanya jalan sekali — panggilan kedua keluar dalam **1 ms**.
+
+Dijalankan **setelah** `DB::commit()` dan dibungkus `try` terpisah: kalau pendaftarannya gagal, tutup
+bukunya tetap sah. Menggagalkan tutup buku gara-gara urusan migrasi akan menahan pekerjaan harian
+kantor.
+
+### Terverifikasi
+
+| Uji | Hasil |
+|---|---|
+| `bulan_migrasi` belum diset | `false` — tidak mendaftarkan apa pun |
+| Tutup buku untuk periode **sebelum** bulan migrasi | `false` |
+| Tutup buku untuk periode = bulan migrasi | **`true`**, 866 ms, 260 baris dibuat |
+| Panggilan ke-2 (dari 60×) | `false`, **1 ms**, baris tetap 260 |
+| Hitung mundur (diuji dengan Juli yang punya data sumber) | 270 baris terisi: **drop 641.900.000, storting 690.985.000** — sama persis dengan mesin hitung yang diverifikasi di AO |
+| Generated column ikut terhitung | `do11` 70.609.000, `tunai` 119.694.000 |
+| Tanggal bawaan Closing Harian | **2026-08-01** walau hari ini 2026-08-21 |
+| `kemajuan()` | 1 dari 157 kantor |
+
+### Tanggal bawaan: hari terlama belum terkunci
+
+Bukan hari ini. Rantai penguncian menuntut hari sebelumnya terkunci lebih dulu, jadi pekerjaan kasir
+selalu mengejar dari depan — membuka layar di hari ini berarti menatap hari yang belum bisa dikunci
+sementara tunggakannya ada di belakang dan tidak kelihatan.
+
+Ini sekaligus menjawab kebutuhan "berpura-pura tanggal 1 Agustus" **tanpa memalsukan tanggal apa pun**.
+
+### Keadaan data
+
+Karawang 2 terdaftar per 2026-08-01 lewat jalur otomatis, 260 baris harian Agustus (semuanya nol —
+Agustus memang belum punya data sumber).
+
+`migrasi:tandai` **tetap ada** sebagai jalur pengecualian (mendaftarkan paksa, membatalkan, atau
+`--semua` saat sudah yakin), bukan lagi jalur utama.
+
+### Belum dikerjakan
+
+**Menu pemantau migrasi** — `DaftarMigrasi::kemajuan()` sudah menyediakan datanya, layarnya belum ada.

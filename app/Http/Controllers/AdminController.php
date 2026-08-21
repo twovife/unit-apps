@@ -149,6 +149,33 @@ class AdminController extends Controller
       ]);
 
       DB::commit();
+
+      // PENDAFTARAN OTOMATIS KE ALUR AGREGASI BARU.
+      //
+      // Menutup buku adalah bukti paling jujur bahwa kantor siap: pembukuan
+      // lamanya sudah tuntas sampai punya saldo awal. Karena itu tutup buku
+      // yang jadi pemicu, bukan penandaan manual.
+      //
+      // Dijalankan SETELAH commit dan dibungkus try sendiri: kalau
+      // pendaftarannya gagal, tutup bukunya tetap sah. Menggagalkan tutup
+      // buku gara-gara urusan migrasi akan menahan pekerjaan harian kantor.
+      //
+      // Dipanggil sampai 60x per kantor (10 kelompok x 6 hari) tapi pekerjaan
+      // beratnya hanya jalan sekali - lihat DaftarMigrasi::cobaDaftarkan().
+      try {
+        $branchId = TransactionLoanOfficerGrouping::whereKey(
+          $request->transaction_loan_officer_grouping_id
+        )->value('branch_id');
+
+        if ($branchId) {
+          \App\Helpers\DaftarMigrasi::cobaDaftarkan($branchId, $tanggal);
+        }
+      } catch (\Throwable $e) {
+        Log::error('Pendaftaran migrasi gagal setelah tutup buku: ' . $e->getMessage(), [
+          'grouping_id' => $request->transaction_loan_officer_grouping_id,
+          'periode' => $tanggal,
+        ]);
+      }
     } catch (Exception $e) {
       DB::rollBack();
 

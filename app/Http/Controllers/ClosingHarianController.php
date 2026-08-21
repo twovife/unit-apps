@@ -157,12 +157,27 @@ class ClosingHarianController extends Controller
     }
 
     /**
-     * Tanggal kerja terakhir yang punya baris — supaya layar tidak terbuka
-     * pada hari yang belum dibangkitkan.
+     * Hari TERLAMA yang belum terkunci — bukan hari ini.
+     *
+     * Rantai penguncian menuntut hari sebelumnya terkunci lebih dulu, jadi
+     * pekerjaan kasir selalu mengejar dari depan. Membuka layar di hari ini
+     * berarti dia menatap hari yang belum bisa dikunci, sementara tunggakannya
+     * ada di belakang dan tidak kelihatan.
+     *
+     * Kalau semua sudah terkunci, jatuh ke hari kerja terakhir yang ada.
      */
     private function tanggalBawaan(int $branchId): Carbon
     {
         $ids = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id');
+
+        $terlama = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereNull('kasir_lock_at')
+            ->whereDate('date', '<=', now())
+            ->min('date');
+
+        if ($terlama) {
+            return Carbon::parse($terlama);
+        }
 
         $terakhir = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $ids)
             ->whereDate('date', '<=', now())
