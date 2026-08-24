@@ -2166,3 +2166,107 @@ Data uji dibersihkan; Karawang 2 kembali ke skenario Agustus.
 | `migrasi:tandai` | jalur pengecualian — pendaftaran normal kini otomatis lewat tutup buku (§AU) |
 
 Tidak ada satu pun yang perlu dijalankan staf dalam pemakaian normal.
+
+## AZ — Cutover Karawang 2 dijalankan sungguhan (2026-08-12)
+
+Bukan perubahan kode. Ini catatan **operasi data**: kantor percontohan
+pertama (Karawang 2, `branch_id` 90) benar-benar dimasukkan ke alur agregasi
+baru, lewat jalur resminya — tutup buku Juli 2026.
+
+### Kenapa dicatat di sini
+
+Karena keadaan basis data berubah dan tidak bisa dibaca dari riwayat git.
+Sesi berikutnya yang membuka `transaction_daily_closings` akan menemukan 260
+baris untuk satu kantor dan perlu tahu dari mana asalnya.
+
+### Yang dijalankan
+
+Bukan `UPDATE branches SET mulai_pendataan_baru = ...`. Pendaftaran dipicu
+`AdminController@sirkulasiAwal`, 60 panggilan (10 kelompok x 6 hari tagih),
+persis seperti kasir menekan tombol di layar Approval Akhir. Angka yang
+disetorkan diambil dari `HitungAgregat::portofolio('2026-07-31', ref Juli)`
+lalu digeser dengan rumus `ApprovalAkhir.jsx:70-74`.
+
+Hasil: `branches.mulai_pendataan_baru = 2026-08-01`, 60 baris
+`transaction_sirculations` tanggal 1 Agu, 260 baris
+`transaction_daily_closings` (10 kelompok x 26 hari kerja), 60 baris
+`transaction_monthly_closings` periode Agustus.
+
+### Yang dibuktikan
+
+**1. Juli yang bolong tidak menular ke Agustus.** Karawang 2 punya lubang
+nyata di alur lama: 1-2 Juli belum dicek kasir, 25 Juli baru 2 dari 10, dan
+27-31 Juli belum dicek kepala maupun kasir. `Gembok::bolehKunci()` untuk 1
+Agustus menyebut dua alasan, keduanya tentang hari itu sendiri (kepala belum
+menyetujui, setoran belum dicatat) — **tidak ada satu pun yang menyebut Juli**.
+Rantai penguncian hanya melihat baris sejak `mulai_pendataan_baru`, dan tidak
+ada baris agregat baru bertanggal Juli sama sekali (diperiksa: 0).
+
+**2. Pergeseran ember: dua implementasi, hasil sama.** `transaction_sirculations`
+diisi lewat pergeseran posisional JSX (`ml_next = ml + mb`, `mb_next = cm`,
+`cm_next = ccm`) atas ember Juli. `awal_*` di agregat bulanan diisi
+`HitungAgregat::portofolio()` yang **menghitung ulang** jarak `drop_date` ke
+Agustus lewat `Ember::dari()`, dan tidak pernah membaca
+`transaction_sirculations`. **60 dari 60 pasangan cocok persis** pada ml, mb,
+cm, dan total.
+
+**3. Tiga ember yang tabel lama tidak pernah punya.** `transaction_sirculations`
+tanggal 1 Agu: `month1 = month2 = ccm = 0` (kolomnya memang tak pernah diisi,
+lihat AC). Agregat baru: `awal_month2 = 663.582.000`, `awal_ccm = 335.489.000`.
+`awal_month1 = 0` benar, bukan cacat — tidak ada drop Agustus per 31 Juli.
+
+**4. Satu hari penuh berjalan.** 1 Agustus dicoba lengkap: kasir mencatat
+kasbon/transport/setoran, kepala menyetujui, kasir mengunci. 10 dari 10
+terkunci; agregat bulanan tersusun **tanpa perintah terpisah**, `hari_terkunci`
+naik ke 1 pada baris hari Sabtu, `hari_kerja` 5 untuk Senin & Sabtu dan 4
+untuk sisanya (26 hari kerja Agustus 2026, cocok dengan 260 baris harian).
+
+### Yang TIDAK dibuktikan — jangan salah baca
+
+`awal_total` agregat baru = `amount` sirkulasi 1 Agu = 1.465.836.760.
+**Ini bukan verifikasi.** Di uji ini sisi sirkulasinya diisi dari
+`HitungAgregat::portofolio()` juga, karena tidak ada kasir sungguhan yang
+mengetik. Dua angka yang berasal dari satu sumber pasti cocok — persis
+tautologi yang jadi diagnosis seluruh rancangan ini (§13.2: `awal` dan `akhir`
+harus tiba mandiri, kalau disalin pemeriksaannya tidak pernah menangkap
+apa pun).
+
+Pemeriksaan §13.2 yang sungguhan baru terjadi saat kantor nyata menutup buku
+dari angka yang tampil di layar Approval Akhir — yang berasal dari
+`PinjamanTrait`, jalur hitung yang berbeda. Yang **memang** independen di sini
+hanyalah butir 2 di atas: pergeseran embernya.
+
+### Dikembalikan sesudah uji
+
+Hari demonstrasi 1 Agustus **dibuka kembali** lewat `Gembok::buka()` dengan
+alasan tercatat, lalu kasbon/transport/setoran dikosongkan
+(`setoran_mantri` kembali `NULL`, bukan 0) dan bulanan disusun ulang.
+Angka transport 25.000 itu karangan uji, tidak boleh tertinggal sebagai data
+lapangan. `transaction_lock_histories` menyimpan 20 baris (10 kunci + 10 buka)
+— jejaknya sengaja dibiarkan.
+
+Keadaan akhir: Karawang 2 terdaftar, 260 baris harian siap, saldo awal
+1.465.836.760 tersimpan, **0 baris terkunci** — hari pertama masih bisa
+dikerjakan dari layar.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `branches` | ya | ya (`mulai_pendataan_baru` Karawang 2) |
+| `transaction_sirculations` | ya | ya (60 baris 2026-08-01) |
+| `transaction_daily_closings` | ya | ya (260 baris, lalu dibersihkan) |
+| `transaction_monthly_closings` | ya | ya (60 baris) |
+| `transaction_lock_histories` | ya | ya (20 baris jejak) |
+| `transaction_loans`, `transaction_loan_instalments` | ya | tidak |
+| `transaction_daily_recaps` | ya | tidak |
+
+### Yang sengaja tidak dikerjakan
+
+- **Kantor lain tidak disentuh** — diperiksa: 0 kantor selain Karawang 2 punya
+  `mulai_pendataan_baru`. Alur lama untuk 156 kantor lain utuh.
+- **Juli tidak diperbaiki.** Lubang cek 1-2 & 25-31 Juli dibiarkan apa adanya.
+  Memperbaikinya berarti membuat versi kedua dari bulan yang sudah lewat.
+- **Serah terima saldo awal belum punya layar.** Angkanya benar sekarang karena
+  dihitung otomatis, tapi pemeriksaan §13.2 dan penetapan `Z` (ML belum
+  terinput) masih belum ada tempatnya di UI.
