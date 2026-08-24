@@ -109,6 +109,8 @@ Route::middleware('auth')->group(function () {
       ->name('stock_take_ml');
     Route::get('/kesiapan-closing', [\App\Http\Controllers\MigrasiController::class, 'kesiapanClosing'])
       ->name('kesiapan_closing');
+    Route::get('/pemantau', [\App\Http\Controllers\MigrasiController::class, 'pemantauMigrasi'])
+      ->name('pemantau');
   });
 
   // Layar kerja harian alur agregasi baru. Otorisasi dicek di controller.

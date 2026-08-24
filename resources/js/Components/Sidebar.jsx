@@ -305,6 +305,12 @@ export default function AppSidebar({ ...props }) {
                   link: route('closing.harian'),
                   active: route().current('closing.harian'),
                 },
+                {
+                  id: 4,
+                  title: 'Pemantau Migrasi',
+                  link: route('migrasi.pemantau'),
+                  active: route().current('migrasi.pemantau'),
+                },
               ]}
             />
           </SidebarGroup>

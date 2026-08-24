@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
+use App\Helpers\DaftarMigrasi;
 use App\Models\Branch;
 use App\Models\TransactionSaldoAdjustment;
 use Carbon\Carbon;
@@ -89,6 +90,97 @@ class MigrasiController extends Controller
             ],
             'ringkasan' => $this->ringkas($baris),
         ]);
+    }
+
+    /**
+     * Pemantau migrasi nasional: berapa kantor sudah menyeberang, dan yang
+     * belum itu tersendat di mana.
+     *
+     * Kantor menyeberang dengan MENUTUP BUKU bulan sebelumnya, jadi yang perlu
+     * dilihat bukan cuma "sudah atau belum", melainkan APA YANG KURANG:
+     * kantor yang sudah menutup buku tapi belum menyeberang berarti ada yang
+     * salah; kantor yang belum menutup buku tinggal dikejar tutup bukunya.
+     */
+    public function pemantauMigrasi(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('view-all-branches')) {
+            abort(403, 'Pemantau migrasi untuk staf pusat dan superuser.');
+        }
+
+        $bulan = DaftarMigrasi::bulanMigrasi();
+
+        $branches = Branch::orderBy('wilayah')->orderBy('unit')
+            ->get(['id', 'unit', 'wilayah', 'type', 'mulai_pendataan_baru']);
+
+        $ids = $branches->pluck('id');
+
+        // Sudah menutup buku untuk bulan migrasi? Barisnya lahir hanya kalau
+        // ada yang benar-benar menutup buku, jadi ini penanda yang jujur.
+        $sudahTutupBuku = collect();
+        if ($bulan) {
+            $sudahTutupBuku = DB::table('transaction_sirculations as s')
+                ->join('transaction_loan_officer_groupings as og', 'og.id', '=', 's.transaction_loan_officer_grouping_id')
+                ->whereIn('og.branch_id', $ids)
+                ->whereDate('s.date', $bulan->toDateString())
+                ->groupBy('og.branch_id')
+                ->pluck(DB::raw('COUNT(*)'), 'og.branch_id');
+        }
+
+        $barisClosing = DB::table('transaction_daily_closings as d')
+            ->join('transaction_loan_officer_groupings as og', 'og.id', '=', 'd.transaction_loan_officer_grouping_id')
+            ->whereIn('og.branch_id', $ids)
+            ->groupBy('og.branch_id')
+            ->get([
+                'og.branch_id',
+                DB::raw('COUNT(*) AS baris'),
+                DB::raw('SUM(d.kasir_lock_at IS NOT NULL) AS terkunci'),
+            ])
+            ->keyBy('branch_id');
+
+        $datas = $branches->map(function ($b) use ($sudahTutupBuku, $barisClosing) {
+            $tutupBuku = (int) ($sudahTutupBuku[$b->id] ?? 0);
+            $closing = $barisClosing->get($b->id);
+            $menyeberang = $b->mulai_pendataan_baru !== null;
+
+            return [
+                'branch_id' => $b->id,
+                'unit' => $b->unit,
+                'wilayah' => $b->wilayah,
+                'menyeberang' => $menyeberang,
+                'mulai' => $b->mulai_pendataan_baru?->toDateString(),
+                'kelompok_tutup_buku' => $tutupBuku,
+                'baris_closing' => (int) ($closing->baris ?? 0),
+                'terkunci' => (int) ($closing->terkunci ?? 0),
+                'status' => $this->statusMigrasi($menyeberang, $tutupBuku),
+            ];
+        })->values();
+
+        return Inertia::render('Migrasi/Pemantau', [
+            'datas' => $datas,
+            'ringkasan' => [
+                'bulan_migrasi' => $bulan?->format('Y-m'),
+                'total' => $datas->count(),
+                'menyeberang' => $datas->where('menyeberang', true)->count(),
+                'siap' => $datas->where('status', 'siap')->count(),
+                'belum_tutup_buku' => $datas->where('status', 'belum_tutup_buku')->count(),
+            ],
+        ]);
+    }
+
+    /**
+     * Status sebuah kantor terhadap migrasi.
+     *
+     * `siap` itu keadaan yang perlu diperiksa: kantornya sudah menutup buku,
+     * jadi pendaftarannya semestinya sudah jalan. Kalau masih tersangkut di
+     * sini, ada yang gagal - bukan sekadar belum dikerjakan.
+     */
+    private function statusMigrasi(bool $menyeberang, int $tutupBuku): string
+    {
+        if ($menyeberang) {
+            return 'menyeberang';
+        }
+
+        return $tutupBuku > 0 ? 'siap' : 'belum_tutup_buku';
     }
 
     /**

@@ -1916,3 +1916,69 @@ Agustus memang belum punya data sumber).
 ### Belum dikerjakan
 
 **Menu pemantau migrasi** — `DaftarMigrasi::kemajuan()` sudah menyediakan datanya, layarnya belum ada.
+
+---
+
+## AV — Pemantau migrasi + penjadwal pembangkit baris (2026-08-12)
+
+| Berkas | Isi | Tabel |
+|---|---|---|
+| `app/Http/Controllers/MigrasiController.php` | `pemantauMigrasi()`, `statusMigrasi()` **(BARU)** | `branches`, `transaction_sirculations`, `transaction_daily_closings` — **BACA** |
+| `resources/js/Pages/Migrasi/Pemantau.jsx` **(BARU)** | 4 kartu ringkasan, saringan status, tabel 157 kantor | — |
+| `app/Console/Kernel.php` | jadwal harian `closing-generate-bulan-depan` 01:00 | `transaction_daily_closings` — TULIS |
+| `routes/web.php`, `Sidebar.jsx` | route + menu `migrasi.pemantau` | — |
+
+Akses pemantau: `view-all-branches` (pusat & superuser) — ini pandangan nasional.
+
+### Lubang yang ditutup penjadwal — penyakit yang sama, satu tingkat lebih tinggi
+
+User menyoroti: *"kalau harus menunggu staf tutup buku manual, sering kali kasir lupa dan sirkulasi
+bulan depannya tidak ada."*
+
+Persis itu yang akan terulang: setelah kantor menyeberang Agustus, **tidak ada apa pun yang
+membangkitkan baris September** — `closing:generate` harus dijalankan tangan. Sekarang dijadwalkan
+tiap hari 01:00 untuk bulan depan.
+
+Aman diulang tiap hari: `closing:generate` memakai `firstOrCreate`, jadi baris yang sudah ada tidak
+disentuh termasuk yang sudah terkunci. Tanpa `--branch`, hanya menyentuh kantor yang sudah migrasi —
+jadi selama belum ada yang menyeberang, penjadwal ini tidak menghasilkan apa pun.
+
+### Tiga status, dan yang tengah itu alarm
+
+| Status | Arti | Tindakan |
+|---|---|---|
+| `menyeberang` | sudah di alur baru | — |
+| **`siap`** | **sudah tutup buku TAPI belum menyeberang** | **periksa log** — pendaftarannya semestinya otomatis, jadi ini bukan sekadar belum dikerjakan, ada yang gagal |
+| `belum_tutup_buku` | belum mulai | kejar tutup bukunya |
+
+Status `siap` sengaja diberi warna merah dan kartu tersendiri. Membedakannya dari "belum tutup buku"
+itu inti gunanya: yang satu tinggal ditunggu, yang satu perlu ditelusuri.
+
+Penanda "sudah tutup buku" dihitung dari baris `transaction_sirculations` untuk bulan migrasi —
+barisnya **hanya lahir kalau ada yang benar-benar menutup buku**, jadi penanda yang jujur.
+
+### Terverifikasi
+
+- Penjadwal terdaftar: `closing-generate-bulan-depan`, `0 1 * * *`
+- Pemantau: **200**, komponen `Migrasi/Pemantau`
+- Ringkasan: bulan migrasi **2026-08**, menyeberang **1**, siap **0**, belum tutup buku **156**, total **157**
+- `npm run build` bersih
+
+> Catatan data uji: Karawang 2 tampil `menyeberang` dengan `tutup_buku=0`, karena saat pengujian aku
+> memanggil `cobaDaftarkan()` langsung tanpa lewat `sirkulasiAwal` dan baris sirkulasi Agustus sudah
+> terhapus lebih dulu. Di pemakaian sungguhan kombinasi itu mustahil — menyeberang mensyaratkan tutup
+> buku.
+
+### Alur lengkapnya sekarang
+
+```
+kantor tutup buku bulan sebelumnya
+   └─ periode >= AGREGASI_BULAN_MIGRASI ?
+        ├─ ya  → mulai_pendataan_baru diisi, baris sebulan dibangkitkan,
+        │        hari yang sudah lewat langsung dihitung
+        └─ tidak → berjalan seperti biasa
+
+tiap hari 01:00 → baris bulan depan dibangkitkan untuk kantor yang sudah migrasi
+
+Pemantau Migrasi → siapa sudah, siapa belum, siapa tersendat
+```
