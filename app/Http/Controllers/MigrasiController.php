@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\DaftarMigrasi;
+use App\Helpers\PemeriksaAgregat;
 use App\Models\Branch;
 use App\Models\TransactionSaldoAdjustment;
 use Carbon\Carbon;
@@ -89,6 +90,42 @@ class MigrasiController extends Controller
                 'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
             ],
             'ringkasan' => $this->ringkas($baris),
+        ]);
+    }
+
+    /**
+     * Pemeriksaan agregat: buktikan angka tersimpan masih sama dengan sumbernya.
+     *
+     * Memakai App\Helpers\PemeriksaAgregat — helper yang sama dengan perintah
+     * CLI `closing:verifikasi`, supaya layar dan perintah mustahil menyimpang.
+     *
+     * BACA-SAJA, dan sengaja tidak menyediakan tombol "perbaiki": memperbaiki
+     * diam-diam menghapus buktinya. Kalau angka terkunci meleset, yang perlu
+     * dilakukan adalah membuka kunci lewat jalur resmi (beralasan, tercatat),
+     * bukan menimpanya tanpa jejak.
+     */
+    public function pemeriksaanAgregat(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
+            abort(403, 'Pemeriksaan agregat untuk kepala mantri, kasir, dan pimpinan.');
+        }
+
+        $scope = AuthScope::resolve();
+
+        $periode = $request->filled('periode')
+            ? Carbon::parse($request->periode)->startOfMonth()
+            : Carbon::now()->startOfMonth();
+
+        $hasil = PemeriksaAgregat::periksa($scope->branch_id, $periode);
+
+        return Inertia::render('Migrasi/PemeriksaanAgregat', [
+            'hasil' => $hasil,
+            'server_filter' => [
+                'periode' => $periode->format('Y-m-d'),
+                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
+                'mulai' => AgregasiScope::tanggalMulai($scope->branch_id)?->format('Y-m-d'),
+            ],
         ]);
     }
 

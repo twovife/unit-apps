@@ -2114,3 +2114,55 @@ Sekarang dipisah tiga:
 | Rusakkan baris **terkunci** (`drop` +999.000) | **tertangkap**: tersimpan 4.999.000, harusnya 4.000.000, terkunci `ya` |
 
 Seluruh data uji dibersihkan; Karawang 2 kembali ke skenario Agustus.
+
+---
+
+## AY — Pemeriksaan agregat dipindah ke menu (2026-08-12)
+
+Permintaan user: staf tidak boleh disuruh menjalankan perintah CLI. Semua lewat menu dan tombol.
+
+| Berkas | Isi |
+|---|---|
+| `app/Helpers/PemeriksaAgregat.php` **(BARU)** | `periksa()`, `periksaBulanan()` — logika pemeriksaan, BACA-SAJA |
+| `app/Console/Commands/VerifikasiAgregat.php` | **dipangkas jadi pembungkus tipis** atas helper yang sama |
+| `app/Http/Controllers/MigrasiController.php` | `pemeriksaanAgregat()` **(BARU)** |
+| `resources/js/Pages/Migrasi/PemeriksaanAgregat.jsx` **(BARU)** | kartu ringkasan, tabel rincian, tombol Periksa ulang |
+| `routes/web.php`, `Sidebar.jsx` | menu **Pemeriksaan Agregat** |
+
+### Logikanya satu tempat, dipakai bersama
+
+Layar dan perintah CLI memanggil helper yang **sama**. Kalau logikanya ditulis dua kali, suatu hari
+salah satunya akan bilang bersih sementara yang lain bilang meleset — dan tidak akan ada yang tahu
+mana yang benar.
+
+Perintah CLI **dipertahankan** untuk satu hal yang tidak masuk akal lewat layar per-cabang:
+memeriksa seluruh kantor sekaligus.
+
+### Tidak ada tombol "perbaiki", dan itu disengaja
+
+Ditulis tegas di layar. Memperbaiki diam-diam menghapus buktinya, dan pemeriksaan yang menyembuhkan
+dirinya sendiri **tidak pernah melaporkan bahwa ada yang salah**. Kalau angka terkunci meleset, yang
+benar adalah membuka kuncinya lewat jalur resmi — beralasan dan tercatat — lalu menguncinya ulang.
+
+### Terverifikasi
+
+| Uji | Hasil |
+|---|---|
+| Rusakkan `drop` baris terkunci (+555.000) | layar melaporkan **beda_terkunci=1**, rincian: tersimpan 4.555.000, harusnya 4.000.000 |
+| Bulanan | ikut terdeteksi meleset (1) |
+| Belum ditetapkan | 1014 kolom, ditandai **wajar** — bukan pelanggaran |
+| Akses kasir | **200** |
+| Akses mantri | **403** |
+
+Data uji dibersihkan; Karawang 2 kembali ke skenario Agustus.
+
+### Perintah CLI yang tersisa dan alasannya
+
+| Perintah | Masih perlu? |
+|---|---|
+| `closing:verifikasi` | ya — pemeriksaan borongan seluruh kantor |
+| `closing:generate` | jarang — baris kini dibangkitkan saat layar dibuka (§AW) |
+| `closing:hitung` | perkakas pengembang — perbandingan mesin baru vs rekap lama |
+| `migrasi:tandai` | jalur pengecualian — pendaftaran normal kini otomatis lewat tutup buku (§AU) |
+
+Tidak ada satu pun yang perlu dijalankan staf dalam pemakaian normal.

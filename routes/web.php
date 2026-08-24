@@ -111,6 +111,8 @@ Route::middleware('auth')->group(function () {
       ->name('kesiapan_closing');
     Route::get('/pemantau', [\App\Http\Controllers\MigrasiController::class, 'pemantauMigrasi'])
       ->name('pemantau');
+    Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
+      ->name('pemeriksaan');
   });
 
   // Layar kerja harian alur agregasi baru. Otorisasi dicek di controller.
