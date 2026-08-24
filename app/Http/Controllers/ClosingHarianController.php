@@ -56,9 +56,19 @@ class ClosingHarianController extends Controller
 
         $user = auth()->user();
 
+        // Angka HIDUP untuk baris yang belum terkunci: dihitung saat layar
+        // dibuka, tidak disimpan. Kepala harus melihat keadaan sekarang, bukan
+        // angka sisa perhitungan terakhir - tapi menyimpannya di sini berarti
+        // membaca halaman ikut menulis, dan itu membuat "kapan angkanya
+        // ditetapkan" jadi kabur. Yang menyimpan hanya aksi kunci.
+        $hidup = HitungAgregat::harianBanyak($groupings->pluck('id')->all(), $tanggal, $tanggal);
+
         return Inertia::render('Closing/Harian', [
-            'datas' => $groupings->map(function ($g) use ($baris) {
+            'datas' => $groupings->map(function ($g) use ($baris, $hidup, $tanggal) {
                 $b = $baris->get($g->id);
+                $angka = $b && $b->terkunci()
+                    ? null   // terkunci: pakai angka tersimpan apa adanya
+                    : ($hidup[$g->id . '|' . $tanggal->toDateString()] ?? null);
 
                 return [
                     'grouping_id' => $g->id,
@@ -66,9 +76,11 @@ class ClosingHarianController extends Controller
                     'ada_baris' => (bool) $b,
                     'id' => $b?->id,
                     // turunan - tidak bisa diubah dari layar ini
-                    'drop' => (int) ($b?->drop ?? 0),
-                    'storting' => (int) ($b?->storting ?? 0),
-                    'pemutihan' => (int) ($b?->pemutihan ?? 0),
+                    'drop' => (int) ($angka['drop'] ?? $b?->drop ?? 0),
+                    'storting' => (int) ($angka['storting'] ?? $b?->storting ?? 0),
+                    'pemutihan' => (int) ($angka['pemutihan'] ?? $b?->pemutihan ?? 0),
+                    // true = angka dihitung saat ini, belum ditetapkan
+                    'angka_hidup' => $angka !== null,
                     // manual
                     'kasbon' => (int) ($b?->kasbon ?? 0),
                     'transport' => (int) ($b?->transport ?? 0),
@@ -129,11 +141,13 @@ class ClosingHarianController extends Controller
             return back()->withErrors('Baris ini sudah dikunci kasir.');
         }
 
-        // Hitung ulang dari sumber SEBELUM ditandai disetujui — supaya yang
-        // disetujui kepala adalah angka hari ini, bukan angka sisa perhitungan
-        // sebelumnya. Menyetujui angka basi sama saja tidak menyetujui apa pun.
-        $this->hitungUlangTurunan($closing);
-
+        // TIDAK menghitung apa pun. Persetujuan kepala murni pengecekan:
+        // "saya sudah melihat". Yang dilihatnya adalah angka hidup yang
+        // dihitung saat layar dibuka (lihat index()), bukan angka tersimpan.
+        //
+        // Perhitungan yang MENYIMPAN terjadi saat kasir mengunci - lihat
+        // kunci(). Memisahkan begini membuat jelas siapa menyatakan apa:
+        // kepala menyatakan sudah memeriksa, kasir menyatakan angkanya final.
         $closing->update([
             'kepala_approval_at' => now(),
             'kepala_approval_user' => auth()->user()->employee->id,
@@ -254,10 +268,44 @@ class ClosingHarianController extends Controller
      */
     private function susunBulanan(TransactionDailyClosing $closing): void
     {
-        TutupBulanan::susun(
-            [$closing->transaction_loan_officer_grouping_id],
-            $closing->date->copy()->startOfMonth()
+        $groupingId = $closing->transaction_loan_officer_grouping_id;
+        $periode = $closing->date->copy()->startOfMonth();
+
+        // Segarkan dulu hari-hari yang BELUM terkunci di bulan ini.
+        //
+        // Baris bulanan menjumlahkan SEMUA hari, bukan hanya yang terkunci -
+        // kalau disaring, hari yang terlewat hilang diam-diam (§4.5). Tapi hari
+        // yang belum terkunci angkanya bisa sudah basi, karena yang menyimpan
+        // hanya aksi kunci. Menyegarkannya lebih dulu membuat jumlah bulanan
+        // mencerminkan keadaan sebenarnya, bukan campuran angka final dan
+        // angka sisa.
+        //
+        // Hari yang SUDAH terkunci tidak disentuh: itu angka yang sudah
+        // ditandatangani, dan sumbernya pun dibekukan trigger.
+        $this->segarkanHariBelumTerkunci($groupingId, $periode);
+
+        TutupBulanan::susun([$groupingId], $periode);
+    }
+
+    /**
+     * Hitung ulang kolom turunan seluruh hari BELUM TERKUNCI dalam satu bulan.
+     */
+    private function segarkanHariBelumTerkunci(int $groupingId, Carbon $periode): void
+    {
+        $angka = HitungAgregat::harianBanyak(
+            [$groupingId],
+            $periode,
+            $periode->copy()->endOfMonth()
         );
+
+        foreach ($angka as $kunci => $nilai) {
+            [$g, $tgl] = explode('|', $kunci);
+
+            TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $g)
+                ->whereDate('date', $tgl)
+                ->whereNull('kasir_lock_at')
+                ->update($nilai);
+        }
     }
 
     /**

@@ -53,11 +53,18 @@ const BarisKelompok = ({ d, bolehBuka, onBuka }) => {
     <TableRow className={beku ? "bg-slate-50" : ""}>
       <TableCell className="font-medium">{d.kelompok}</TableCell>
 
-      <TableCell className="text-right tabular-nums">
+      <TableCell
+        className="text-right tabular-nums"
+        title={
+          d.angka_hidup ? "dihitung saat ini, belum ditetapkan" : undefined
+        }
+      >
         {rupiah(d.drop)}
+        {d.angka_hidup && <span className="ml-1 text-slate-300">~</span>}
       </TableCell>
       <TableCell className="text-right tabular-nums">
         {rupiah(d.storting)}
+        {d.angka_hidup && <span className="ml-1 text-slate-300">~</span>}
       </TableCell>
 
       {["kasbon", "transport", "keluar", "setoran_mantri"].map((k) => (
@@ -280,7 +287,10 @@ const Harian = ({ datas = [], tertinggal = [], server_filter }) => {
           angsuran dan pinjaman, jadi selalu bisa diperiksa ulang ke sumbernya.
           Yang diisi manusia hanya kasbon, transport, keluar, dan setoran mantri
           — dan <b>selisih</b> di kolom terakhir adalah jarak antara uang yang
-          benar-benar diserahkan mantri dengan tunai hasil rumus.
+          benar-benar diserahkan mantri dengan tunai hasil rumus. Tanda{" "}
+          <span className="text-slate-400">~</span> berarti angkanya dihitung
+          saat halaman dibuka dan <b>belum ditetapkan</b> — yang menetapkannya
+          adalah tombol Kunci.
         </div>
       </div>
 

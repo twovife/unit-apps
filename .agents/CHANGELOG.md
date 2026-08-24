@@ -2042,3 +2042,75 @@ itu isian manusia, bukan turunan.
 | Buka kunci | `hari_terkunci` kembali **0**, jejak 2 baris (kunci + buka) |
 
 Seluruh data uji dibersihkan; Karawang 2 dikembalikan ke skenario Agustus.
+
+---
+
+## AX — Alur diperbaiki + perintah verifikasi agregat (2026-08-12)
+
+### Kepala hanya mengecek, kasir yang menetapkan
+
+Koreksi user atas AW: persetujuan kepala **sebatas pengecekan**, tidak menghitung apa pun. Yang
+memicu perhitungan adalah **kunci kasir**, dan setelah harian dihitung, bulanannya ikut.
+
+| Aksi | Menulis? |
+|---|---|
+| Buka layar | **tidak** — angka dihitung hidup untuk ditampilkan saja |
+| Approve kepala | **tidak** — murni menandai "saya sudah memeriksa" |
+| **Kunci kasir** | **ya** — hitung turunan → simpan → susun bulanan |
+| Buka kunci | ya — susun bulanan (jumlah hari terkunci berubah) |
+
+Layar menandai angka hidup dengan `~` dan penjelasan bahwa yang menetapkannya adalah tombol Kunci.
+Memisahkan begini membuat jelas siapa menyatakan apa: kepala menyatakan sudah memeriksa, kasir
+menyatakan angkanya final.
+
+`susunBulanan()` menyegarkan dulu hari-hari **belum terkunci** di bulan itu sebelum menjumlah — karena
+baris bulanan menjumlahkan semua hari (§4.5), dan hari yang belum dikunci angkanya bisa basi. Hari
+yang sudah terkunci tidak disentuh.
+
+### `closing:verifikasi` — jawaban atas "apa yang menjamin angkanya cocok?"
+
+| Berkas | Isi |
+|---|---|
+| `app/Console/Commands/VerifikasiAgregat.php` **(BARU)** | `closing:verifikasi {periode} [--branch=] [--rinci]` |
+
+**Jaminan strukturalnya bertingkat, dan jujurnya begini:**
+
+| Keadaan | Jaminan |
+|---|---|
+| Hari **terkunci** | **Kuat** — trigger database menolak perubahan sumber, jadi angkanya tidak bisa hanyut |
+| Hari belum terkunci | **Tidak ada** — sumber masih bebas berubah, dan itu wajar |
+
+Tapi jaminan trigger punya tiga celah: hari belum terkunci masih bebas; kunci dibuka lalu sumber
+diubah lalu dikunci lagi tanpa hitung ulang; dan bug di kode perhitungan menulis angka salah yang
+lalu dibekukan trigger dengan setia.
+
+Perintah ini **menghitung ulang dari sumber lalu membandingkan** — satu-satunya cara *membuktikan*,
+bukan menganggap. Baca-saja: tidak memperbaiki apa pun, karena memperbaiki diam-diam menghapus
+buktinya.
+
+### Dua jenis temuan dipisah — dan kenapa itu penting
+
+Versi pertama melaporkan **1014 "meleset"** di keadaan yang sebenarnya bersih, karena menghitung
+baris belum-terkunci yang memang belum pernah dihitung. Angka sebesar itu berbahaya: orang akan
+belajar mengabaikannya — persis jebakan alarm palsu yang dihindari sejak §11.
+
+Sekarang dipisah tiga:
+
+| Jenis | Arti |
+|---|---|
+| **Hari terkunci meleset** | **paling serius** — angka bertanda tangan tidak cocok sumbernya |
+| Bulanan ≠ jumlah harian | ada hari berubah setelah bulanan disusun; biasanya hilang sendiri saat dikunci ulang |
+| Belum ditetapkan | **wajar**, ditandai abu-abu, tidak dihitung pelanggaran |
+
+### Terverifikasi
+
+| Uji | Hasil |
+|---|---|
+| Layar dibuka | drop 4.000.000 tampil, **DB tetap 0** — membaca tidak menulis |
+| Approve kepala | DB **tetap 0**, ditandai disetujui |
+| Kunci | DB jadi **4.000.000**, 6 baris bulanan tersusun |
+| Verifikasi keadaan bersih | terkunci **cocok**, 1015 kolom "belum ditetapkan (wajar)" |
+| Rusakkan baris **belum terkunci** | terkunci cocok, **bulanan 1 meleset** — label tepat |
+| Rusakkan baris **terkunci** (`drop` +999.000) | **tertangkap**: tersimpan 4.999.000, harusnya 4.000.000, terkunci `ya` |
+
+Seluruh data uji dibersihkan; Karawang 2 kembali ke skenario Agustus.
