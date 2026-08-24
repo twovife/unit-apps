@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\Gembok;
+use App\Helpers\HitungAgregat;
+use App\Helpers\TutupBulanan;
 use App\Models\Branch;
 use App\Models\TransactionDailyClosing;
 use App\Models\TransactionLockHistory;
 use App\Models\TransactionLoanOfficerGrouping;
+use App\Models\WorkDay;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +40,13 @@ class ClosingHarianController extends Controller
 
         $groupings = TransactionLoanOfficerGrouping::where('branch_id', $scope->branch_id)
             ->orderBy('kelompok')->get();
+
+        // Bangkitkan baris bulan ini kalau belum ada. Sengaja di sini, BUKAN
+        // menggantungkannya ke penjadwal: container ini tidak menjalankan
+        // `schedule:run` sama sekali, dan lebih jauh dari itu — sesuatu yang
+        // harus diingat seseorang adalah persis penyakit yang sedang diobati.
+        // Dibangkitkan saat dibutuhkan, dia tidak bisa terlewat.
+        $this->pastikanBarisAda($scope->branch_id, $groupings, $tanggal);
 
         $baris = TransactionDailyClosing::with('kepala', 'kasir')
             ->whereIn('transaction_loan_officer_grouping_id', $groupings->pluck('id'))
@@ -119,6 +129,11 @@ class ClosingHarianController extends Controller
             return back()->withErrors('Baris ini sudah dikunci kasir.');
         }
 
+        // Hitung ulang dari sumber SEBELUM ditandai disetujui — supaya yang
+        // disetujui kepala adalah angka hari ini, bukan angka sisa perhitungan
+        // sebelumnya. Menyetujui angka basi sama saja tidak menyetujui apa pun.
+        $this->hitungUlangTurunan($closing);
+
         $closing->update([
             'kepala_approval_at' => now(),
             'kepala_approval_user' => auth()->user()->employee->id,
@@ -131,11 +146,19 @@ class ClosingHarianController extends Controller
     {
         $this->pastikanBerwenang();
 
+        // Hitung ulang sekali lagi tepat sebelum dibekukan: transaksi bisa
+        // masuk antara persetujuan kepala dan penguncian kasir, dan yang
+        // dibekukan harus angka sebenarnya - bukan angka saat kepala melihat.
+        $this->hitungUlangTurunan($closing);
+        $closing->refresh();
+
         try {
             Gembok::kunci($closing, auth()->user()->employee->id);
         } catch (\Throwable $e) {
             return back()->withErrors($e->getMessage());
         }
+
+        $this->susunBulanan($closing);
 
         return back()->with('message', 'Terkunci.');
     }
@@ -153,7 +176,88 @@ class ClosingHarianController extends Controller
             return back()->withErrors($e->getMessage());
         }
 
+        // Bulanannya ikut disusun ulang: jumlah hari terkunci berubah, dan
+        // syarat tanda tangan bulanan bergantung pada angka itu.
+        $this->susunBulanan($closing);
+
         return back()->with('message', 'Kunci dibuka dan tercatat.');
+    }
+
+    /**
+     * Pastikan baris harian bulan yang sedang dilihat sudah ada.
+     *
+     * Hanya untuk kantor yang SUDAH migrasi — kantor lain tidak boleh punya
+     * baris agregat baru sama sekali. Memakai firstOrCreate lewat perintah yang
+     * sama dengan penjadwal, jadi tidak ada dua cara membuat baris yang bisa
+     * menyimpang.
+     */
+    private function pastikanBarisAda(int $branchId, $groupings, Carbon $tanggal): void
+    {
+        if (!AgregasiScope::sudahMigrasi($branchId) || $groupings->isEmpty()) {
+            return;
+        }
+
+        $mulai = AgregasiScope::tanggalMulai($branchId);
+        $periode = $tanggal->copy()->startOfMonth();
+
+        // Jangan membuat baris untuk bulan sebelum kantor migrasi.
+        if ($mulai && $periode->lt($mulai->copy()->startOfMonth())) {
+            return;
+        }
+
+        $sudahAda = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $groupings->pluck('id'))
+            ->whereBetween('date', [
+                $periode->toDateString(),
+                $periode->copy()->endOfMonth()->toDateString(),
+            ])
+            ->exists();
+
+        if ($sudahAda) {
+            return;
+        }
+
+        foreach (WorkDay::hariKerjaBulan($periode) as $hari) {
+            foreach ($groupings as $g) {
+                TransactionDailyClosing::firstOrCreate([
+                    'transaction_loan_officer_grouping_id' => $g->id,
+                    'date' => $hari->toDateString(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Hitung ulang kolom turunan satu baris dari tabel SUMBER.
+     *
+     * Kolom manual (kasbon, transport, keluar, setoran_mantri) tidak disentuh —
+     * itu isian manusia, bukan turunan.
+     */
+    private function hitungUlangTurunan(TransactionDailyClosing $closing): void
+    {
+        $angka = HitungAgregat::harian(
+            $closing->transaction_loan_officer_grouping_id,
+            $closing->date
+        );
+
+        $closing->update($angka);
+    }
+
+    /**
+     * Susun ulang baris bulanan yang memuat tanggal ini.
+     *
+     * Dipanggil saat kunci dan saat buka kunci — bukan lewat penjadwal.
+     * Menggantungkannya ke penjadwal berarti mengulang penyakit yang sedang
+     * diobati: sesuatu yang harus dijalankan seseorang, dan kalau terlewat
+     * tidak ada yang tahu. Disambungkan ke aksi, dia tidak bisa terlewat.
+     *
+     * Aksinya HITUNG ULANG TOTAL, bukan penambahan — lihat TutupBulanan.
+     */
+    private function susunBulanan(TransactionDailyClosing $closing): void
+    {
+        TutupBulanan::susun(
+            [$closing->transaction_loan_officer_grouping_id],
+            $closing->date->copy()->startOfMonth()
+        );
     }
 
     /**

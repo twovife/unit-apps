@@ -1982,3 +1982,63 @@ tiap hari 01:00 → baris bulan depan dibangkitkan untuk kantor yang sudah migra
 
 Pemantau Migrasi → siapa sudah, siapa belum, siapa tersendat
 ```
+
+---
+
+## AW — Rekalkulasi disambungkan ke aksi, bukan ke penjadwal (2026-08-12)
+
+Dua temuan user, dua-duanya benar.
+
+### 🔴 RALAT: penjadwal yang kutambahkan di AV TIDAK AKAN PERNAH JALAN
+
+Container `unit-app` **tidak menjalankan `schedule:run` sama sekali** — tidak ada cron, tidak ada
+supervisor, tidak ada penyebutan schedule/cron di `docker-compose.yml`, `Dockerfile.dev`, maupun
+`docker/entrypoint.dev.sh`.
+
+Di AV aku menulis "terdaftar, 01:00 tiap hari". **Terdaftar memang benar, jalan tidak.** Efek
+sampingnya: `app:counting-daily-balance` yang sudah ada di `Kernel.php` (`everySecond()`) juga
+selama ini mati — bukan sesuatu yang aku sebabkan, tapi baru sekarang ketahuan.
+
+Entri jadwalnya **tidak dihapus** (berguna kalau cron dipasang nanti), tapi **tidak lagi diandalkan**.
+
+### Baris dibangkitkan saat dibutuhkan
+
+`ClosingHarianController@index` sekarang memanggil `pastikanBarisAda()`: kalau bulan yang dilihat
+belum punya baris dan kantornya sudah migrasi, barisnya dibuat saat itu juga.
+
+Lebih dari sekadar menambal penjadwal yang mati — **sesuatu yang harus diingat seseorang adalah
+persis penyakit yang sedang diobati**. Dibangkitkan saat dibutuhkan, dia tidak bisa terlewat.
+
+Tidak membuat baris untuk bulan sebelum kantor migrasi, dan tidak menyentuh kantor yang belum migrasi.
+
+### Rekalkulasi disambungkan ke tombol
+
+Rancangan §4.5 sudah bilang agregat bulanan diperbarui saat tanda tangan harian. Mesinnya dibangun di
+AO/AP tapi **hanya bisa dipanggil lewat perintah** — tidak pernah dari aksi. Sekarang:
+
+| Aksi | Yang dijalankan |
+|---|---|
+| **Approve kepala** | hitung ulang turunan dari sumber **lebih dulu**, baru ditandai disetujui |
+| **Kunci** | hitung ulang turunan lagi → kunci → **susun bulanan** |
+| **Buka kunci** | buka → **susun bulanan** (jumlah hari terkunci berubah) |
+
+Kenapa dihitung ulang **dua kali** (saat approve dan saat kunci): transaksi bisa masuk di antara
+kepala melihat dan kasir mengunci. Yang disetujui harus angka saat itu, dan yang **dibekukan** harus
+angka sebenarnya — bukan angka saat kepala melihat.
+
+Kolom manual (`kasbon`, `transport`, `keluar`, `setoran_mantri`) tidak disentuh perhitungan ulang —
+itu isian manusia, bukan turunan.
+
+### Terverifikasi (skenario Juli, yang punya data sumber)
+
+| Langkah | Hasil |
+|---|---|
+| Buka layar bulan tanpa baris | **270 baris dibangkitkan otomatis** |
+| Sebelum approve | drop 0, storting 0 |
+| **Sesudah approve kepala** | **drop 4.000.000, storting 1.970.000** — dihitung dari sumber |
+| Sesudah kunci | **6 baris bulanan tersusun** |
+| Baris bulanan `rabu` (1 Juli = Rabu) | drop 4.000.000, storting 1.970.000, `hari_kerja=5`, **`hari_terkunci=1`** |
+| Hari lain | arus 0 (belum di-approve) tapi `awal_total`/`akhir_total` **tetap terisi** — dihitung dari portofolio, bukan dari arus |
+| Buka kunci | `hari_terkunci` kembali **0**, jejak 2 baris (kunci + buka) |
+
+Seluruh data uji dibersihkan; Karawang 2 dikembalikan ke skenario Agustus.
