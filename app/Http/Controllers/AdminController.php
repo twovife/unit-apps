@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -24,7 +25,7 @@ class AdminController extends Controller
   {
     $role = Role::with('permissions', 'users')->get();
     $user = User::with('rolelist')->get();
-    $maintenen_workers = User::permission('maintenance worker')->with('branch', 'employee')->get();
+    $maintenen_workers = User::permission('can-edit')->with('branch', 'employee')->get();
     // dd($maintenen_workers);
 
     $permission = Permission::all();
@@ -148,10 +149,51 @@ class AdminController extends Controller
       ]);
 
       DB::commit();
+
+      // PENDAFTARAN OTOMATIS KE ALUR AGREGASI BARU.
+      //
+      // Menutup buku adalah bukti paling jujur bahwa kantor siap: pembukuan
+      // lamanya sudah tuntas sampai punya saldo awal. Karena itu tutup buku
+      // yang jadi pemicu, bukan penandaan manual.
+      //
+      // Dijalankan SETELAH commit dan dibungkus try sendiri: kalau
+      // pendaftarannya gagal, tutup bukunya tetap sah. Menggagalkan tutup
+      // buku gara-gara urusan migrasi akan menahan pekerjaan harian kantor.
+      //
+      // Dipanggil sampai 60x per kantor (10 kelompok x 6 hari) tapi pekerjaan
+      // beratnya hanya jalan sekali - lihat DaftarMigrasi::cobaDaftarkan().
+      try {
+        $branchId = TransactionLoanOfficerGrouping::whereKey(
+          $request->transaction_loan_officer_grouping_id
+        )->value('branch_id');
+
+        if ($branchId) {
+          \App\Helpers\DaftarMigrasi::cobaDaftarkan($branchId, $tanggal);
+        }
+      } catch (\Throwable $e) {
+        Log::error('Pendaftaran migrasi gagal setelah tutup buku: ' . $e->getMessage(), [
+          'grouping_id' => $request->transaction_loan_officer_grouping_id,
+          'periode' => $tanggal,
+        ]);
+      }
     } catch (Exception $e) {
       DB::rollBack();
-      ddd($e);
-      return redirect()->back()->withErrors('Sirkulasi Awal Error');
+
+      // `ddd($e)` dihapus 2026-08-12. Dump-and-die membuat baris `withErrors`
+      // di bawah ini TIDAK PERNAH tercapai: user yang gagal menutup buku cuma
+      // melihat layar dump (atau respons rusak kalau APP_DEBUG=false) dan tidak
+      // pernah tahu sebabnya. Alur ini jadi gerbang migrasi ke agregasi baru —
+      // kegagalan diam-diam di sini berarti kantornya tidak punya baris
+      // sirkulasi, dan tidak ada yang tahu kenapa.
+      Log::error('sirkulasiAwal gagal: ' . $e->getMessage(), [
+        'grouping_id' => $request->transaction_loan_officer_grouping_id,
+        'hari' => $request->hari,
+        'month' => $request->month,
+        'user_id' => auth()->id(),
+        'line' => $e->getLine(),
+      ]);
+
+      return redirect()->back()->withErrors('Sirkulasi Awal gagal: ' . $e->getMessage());
     }
     return redirect()->back()->with('message', 'Sirkulasi Awal Successfully');
   }
@@ -162,14 +204,14 @@ class AdminController extends Controller
     if ($request->type == 1) {
       try {
         $user = User::find($userid);
-        $user->givePermissionTo('maintenance worker');
+        $user->givePermissionTo('can-edit');
       } catch (Exception $e) {
         return redirect()->back()->withErrors('User Assigned Error');
       }
     } else {
       try {
         $user = User::find($userid);
-        $user->revokePermissionTo('maintenance worker');
+        $user->revokePermissionTo('can-edit');
       } catch (Exception $e) {
         return redirect()->back()->withErrors('User Assigned Error');
       }

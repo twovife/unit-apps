@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -7,18 +7,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/shadcn/ui/table';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
-import dayjs from 'dayjs';
-import { Button } from '@/shadcn/ui/button';
-import Action from './Action';
-import { Badge } from '@/shadcn/ui/badge';
-import { usePage } from '@inertiajs/react';
-import SyncAngsuran from './SyncAngsuran';
+} from "@/shadcn/ui/table";
+import FormatNumbering from "@/Components/shadcn/FormatNumbering";
+import dayjs from "dayjs";
+import { Button } from "@/shadcn/ui/button";
+import Action from "./Action";
+import { Badge } from "@/shadcn/ui/badge";
+import { usePage } from "@inertiajs/react";
+import SyncAngsuran from "./SyncAngsuran";
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
-  const is_maintenaner =
-    usePage().props.auth.permissions.includes('maintenance worker');
+  const canEdit = usePage().props.auth.permissions.includes("can-edit");
 
   const [data, setData] = useState([]);
   useEffect(() => {
@@ -29,7 +28,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     const result = data.reduce(
       (acc, item) =>
         acc + parseInt(item.instalment[keyToSum]?.total_nominal ?? 0),
-      0
+      0,
     );
     return result;
   };
@@ -37,7 +36,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const calculateTotals = (data, keyToSum) => {
     const result = data.reduce(
       (acc, item) => acc + parseInt(item[keyToSum] ?? 0),
-      0
+      0,
     );
     return result;
   };
@@ -104,7 +103,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                 className="text-center border-x border-x-black"
                 key={i}
               >
-                {dayjs(day).format('DD-MM-YY')}
+                {dayjs(day).format("DD-MM-YY")}
               </TableHead>
             ))}
             <TableHead className="text-center border-x border-x-black">
@@ -131,8 +130,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   <TableRow
                     className={`${
                       selectedId.includes(subrow.id)
-                        ? 'bg-green-200 hover:bg-green-50'
-                        : ''
+                        ? "bg-green-200 hover:bg-green-50"
+                        : ""
                     }}`}
                     key={i}
                   >
@@ -141,8 +140,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
-                        <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
-                        {is_maintenaner && (
+                        <div>{dayjs(subrow.tanggal_drop).format("DD-MM")}</div>
+                        {canEdit && (
                           <div>
                             <Button
                               variant="blue"
@@ -172,7 +171,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           Lunas
                         </span>
                       ) : (
-                        ''
+                        ""
                       )}
                       {/* {subrow.status_pinjaman == 'normal' ? (
                         <span className="px-2 py-1 mr-1 text-xs border rounded">
@@ -196,7 +195,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       {subrow.notes !== null ? (
                         <Badge>{subrow.notes}</Badge>
                       ) : (
-                        ''
+                        ""
                       )}
                     </TableCell>
                     <TableCell>{subrow.alamat}</TableCell>
@@ -213,8 +212,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell
                       className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
-                          ? 'bg-green-200 hover:bg-green-50'
-                          : ''
+                          ? "bg-green-200 hover:bg-green-50"
+                          : ""
                       }`}
                     >
                       <FormatNumbering value={subrow.pinjaman} />
@@ -222,8 +221,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell
                       className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
-                          ? 'bg-green-200 hover:bg-green-50'
-                          : ''
+                          ? "bg-green-200 hover:bg-green-50"
+                          : ""
                       }`}
                     >
                       <FormatNumbering value={subrow.saldo_sebelumnya} />
@@ -232,8 +231,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <TableCell
                         className={`border-x border-x-black ${
                           subrow.instalment[day]?.is_active
-                            ? 'text-red-500 font-semibold'
-                            : ''
+                            ? "text-red-500 font-semibold"
+                            : ""
                         }`}
                         key={i}
                       >
@@ -245,8 +244,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell
                       className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
-                          ? 'bg-green-200 hover:bg-green-50'
-                          : ''
+                          ? "bg-green-200 hover:bg-green-50"
+                          : ""
                       }`}
                     >
                       <FormatNumbering value={subrow.angsuran} />
@@ -254,8 +253,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell
                       className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
-                          ? 'bg-green-200 hover:bg-green-50'
-                          : ''
+                          ? "bg-green-200 hover:bg-green-50"
+                          : ""
                       }`}
                     >
                       <FormatNumbering value={subrow.pemutihanThisMonth} />
@@ -263,8 +262,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell
                       className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
-                          ? 'bg-green-200 hover:bg-green-50'
-                          : ''
+                          ? "bg-green-200 hover:bg-green-50"
+                          : ""
                       }`}
                     >
                       <FormatNumbering value={subrow.saldo} />
@@ -279,14 +278,14 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black`}
                   >
                     <FormatNumbering
-                      value={calculateTotals(row.data, 'pinjaman')}
+                      value={calculateTotals(row.data, "pinjaman")}
                     />
                   </TableCell>
                   <TableCell
                     className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black`}
                   >
                     <FormatNumbering
-                      value={calculateTotals(row.data, 'saldo_sebelumnya')}
+                      value={calculateTotals(row.data, "saldo_sebelumnya")}
                     />
                   </TableCell>
                   {dateOfWeek.map((day, i) => (
@@ -300,21 +299,21 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black `}
                   >
                     <FormatNumbering
-                      value={calculateTotals(row.data, 'angsuran')}
+                      value={calculateTotals(row.data, "angsuran")}
                     />
                   </TableCell>
                   <TableCell
                     className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black `}
                   >
                     <FormatNumbering
-                      value={calculateTotals(row.data, 'pemutihanThisMonth')}
+                      value={calculateTotals(row.data, "pemutihanThisMonth")}
                     />
                   </TableCell>
                   <TableCell
                     className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
                   >
                     <FormatNumbering
-                      value={calculateTotals(row.data, 'saldo')}
+                      value={calculateTotals(row.data, "saldo")}
                     />
                   </TableCell>
                 </TableRow>

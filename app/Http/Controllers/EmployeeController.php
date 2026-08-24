@@ -8,6 +8,7 @@ use App\Models\Employee;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
@@ -20,12 +21,13 @@ class EmployeeController extends Controller
   public function index(Request $request)
   {
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $request->branch_id ?? $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
-    // dd($userAuthorized);
+    // dd($scope->branch_id);
 
 
     $roles = Role::with('permissions', 'users')->get();
@@ -39,6 +41,7 @@ class EmployeeController extends Controller
 
     $data = $employee->map(function ($item) {
       $username = $item->username->first();
+      $jabatanName = $item->employment?->jabatan ?? '-';
       return [
         'id' => $item->id,
         'branch_id' => $item->branch_id,
@@ -50,9 +53,9 @@ class EmployeeController extends Controller
             'name' => $role->name
           ];
         }),
-        'username_status' => $item->username->first()?->isactive,
+        'username_status' => $username?->isactive,
         'address' => $item->alamat,
-        'employment' => $item->employment->jabatan == "mantri" ? $item->employment->jabatan . " " . $item->area : $item->employment->jabatan,
+        'employment' => strtolower($jabatanName) === "mantri" ? ($jabatanName . " " . $item->area) : $jabatanName,
         'isActive' => $item->date_resign ? false : true,
         'resign_date' => $item->date_resign,
         'hire_date' => $item->hire_date,
@@ -112,8 +115,13 @@ class EmployeeController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      ddd($e);
-      return redirect()->back()->withErrors('Gagal Membuat User');
+      // `ddd($e)` dihapus 2026-08-12 - membuat baris di bawahnya tidak pernah
+      // tercapai, jadi kegagalan pembuatan user tampil sebagai layar dump.
+      Log::error('EmployeeController@store gagal: ' . $e->getMessage(), [
+        'user_id' => auth()->id(),
+        'line' => $e->getLine(),
+      ]);
+      return redirect()->back()->withErrors('Gagal Membuat User: ' . $e->getMessage());
     }
     return redirect()->back()->with('message', 'Berhasil Membuat User');
   }

@@ -50,7 +50,7 @@ class AuthenticatedSessionController extends Controller
 
 
 
-    if ($authUser->hasPermissionTo('area')) {
+    if ($authUser->hasRole('mantri')) {
       return redirect()->route('mobile_apps.index');
     }
 

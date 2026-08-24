@@ -21,31 +21,29 @@ import StatusPinjaman from '@/Components/shadcn/StatusPinjaman';
 import BayarAngsuran from './BayarAngsuran';
 import JenisNasabah from './JenisNasabah';
 import DeleteAngsuran from './DeleteAngsuran';
-import DeleteLoan from './DeleteLoan';
 import { usePage } from '@inertiajs/react';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
 import { Toaster } from '@/shadcn/ui/sonner';
-import { useIsMobile } from '@/Hooks/use-mobile';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import { Copy } from 'lucide-react';
-import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 import { Button } from '@/shadcn/ui/button';
 import Pengajuan from './Pengajuan';
 import Loading from '@/Components/Loading';
+import { getLastDateForHari } from '@/lib/utils';
 import '../../../../css/loader.css';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
-  const isMobile = useIsMobile();
   const {
     auth,
     server_filter: { closed_transaction },
   } = usePage().props;
-  const hasPermission = auth?.permissions?.includes('maintenance worker');
+  const hasPermission = auth?.permissions?.includes('can-edit');
 
   const [loading, setLoading] = useState(false);
   const [erorAxios, setErorAxios] = useState(false);
-  const { isCreator } = useFrontEndPermission();
+  // 'can create' (spasi) tidak ada di tabel permissions; server memakai 'can-create'
+  const isCreator = auth?.permissions?.includes('can-create');
   const [customerData, setCustomerData] = useState({});
   const [pemutihan, setPemutihan] = useState(null);
 
@@ -83,6 +81,41 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
     setPemutihan(null);
   };
 
+  /**
+   * Gerbang edit yang sama dipakai di DUA tempat sejak form "Isi Angsuran"
+   * dipindah ke paling atas (terpisah dari blok aksi di bawah). Nilai null
+   * berarti boleh mengedit.
+   */
+  const gateValue =
+    customerData.lunas == true
+      ? 'Pinjaman Sudah Lunas'
+      : !isCreator
+        ? 'User Tidak Dapat Digunakan Untuk Mengedit'
+        : null;
+
+  /**
+   * Gerbang KHUSUS tab "Input Angsuran" - lebih ketat dari `gateValue`.
+   * Kalau pinjaman ini sedang menunggu hasil pengajuan pengganti (top-up,
+   * `previous_loan_id`) yang tanggal drop-nya PAS sama dengan tanggal
+   * koleksi hari ini, input manual dikunci - mencegah bentrok dengan
+   * auto-pelunasan `TransactionLoan::boot()` kalau pengajuan itu tiba-tiba
+   * sukses di-drop hari yang sama. Begitu pengajuan penggantinya gagal
+   * (termasuk lewat Tundaan, yang memindahkan tanggal), kuncinya lepas
+   * sendiri karena server cuma menghitung status open/acc sebagai pending.
+   * TIDAK memengaruhi tab "Detail Pinjaman" atau kartu Pengajuan/Jenis
+   * Nasabah di bawah - keduanya sudah punya gerbangnya sendiri.
+   */
+  const pengganti = customerData.pengajuan_pengganti;
+  const tanggalKoleksiHariIni = getLastDateForHari(customerData.hari);
+  const menungguDropPengganti =
+    pengganti && pengganti.drop_date === tanggalKoleksiHariIni;
+
+  const angsuranGateValue =
+    gateValue ??
+    (menungguDropPengganti
+      ? `Menunggu hasil drop pengajuan pengganti (tanggal ${dayjs(pengganti.drop_date).format('DD-MM-YYYY')}) - input manual dikunci sementara supaya tidak bentrok dengan pelunasan otomatis.`
+      : null);
+
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
       <DialogContent className={`w-[95vw] p-1 lg:p-6`}>
@@ -91,23 +124,39 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
           {/* <Button type="button" /> */}
         </DialogHeader>
         <div className="h-[80vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+          <Toaster />
+          {/* Input Angsuran (aksi utama saat modal dibuka lewat tombol
+              "Bayar") dan Detail Pinjaman digabung jadi tab, ditaruh paling
+              atas supaya tidak perlu digulir dulu. Detail Pinjaman sekarang
+              SELALU kartu label/nilai - tabel 14 kolom dibuang total, bukan
+              cuma disembunyikan di layar sempit. */}
           <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Rincian Nasabah</CardTitle>
-            </CardHeader>
-            <CardContent className="p-1 lg:p-5">
-              <div className="w-full overflow-auto">
-                <Toaster />
-                {isMobile ? (
-                  <MobileCardList customerData={customerData} />
-                ) : (
-                  <PinjamanWebTable customerData={customerData} />
-                )}
-              </div>
+            <CardContent className="p-1 pt-4 lg:p-5">
+              <Tabs defaultValue="input" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="input">Input Angsuran</TabsTrigger>
+                  <TabsTrigger value="detail">Detail Pinjaman</TabsTrigger>
+                </TabsList>
+                <TabsContent value="input" className="relative mt-3">
+                  {angsuranGateValue && <NoEditOverlay value={angsuranGateValue} />}
+                  {loading ? (
+                    <div>Loading</div>
+                  ) : (
+                    <BayarAngsuran
+                      triggeredId={customerData.id}
+                      triggeredPinjaman={customerData}
+                      instalment={instalment}
+                    />
+                  )}
+                </TabsContent>
+                <TabsContent value="detail" className="mt-3">
+                  <LoanDetail customerData={customerData} />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
-          <div className="flex flex-col w-full gap-3 mt-3 lg:flex-row">
-            <Card className="flex-5">
+          <div className="w-full mt-3">
+            <Card className="w-full">
               <CardHeader>
                 <CardTitle>Rincian Angsuran</CardTitle>
               </CardHeader>
@@ -129,7 +178,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                         <TableRow className="text-center">
                           <TableCell>
                             {dayjs(pemutihan.transaction_date).format(
-                              'DD-MM-YYYY'
+                              'DD-MM-YYYY',
                             )}
                           </TableCell>
                           <TableCell>
@@ -211,36 +260,26 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 </div>
               </CardContent>
             </Card>
-            <div className="flex-2 relative">
-              {customerData.lunas == true ? (
-                <NoEditOverlay value="Pinjaman Sudah Lunas" />
-              ) : (
-                !isCreator && (
-                  <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
-                )
-              )}
-              {loading ? (
-                <div>Loading</div>
-              ) : (
-                <>
-                  <BayarAngsuran
-                    triggeredId={customerData.id}
-                    triggeredPinjaman={customerData}
-                    instalment={instalment}
-                  />
+          </div>
+
+          <div className="relative grid w-full grid-cols-1 gap-3 mt-3">
+            {gateValue && <NoEditOverlay value={gateValue} />}
+            {loading ? (
+              <div>Loading</div>
+            ) : (
+              <>
+                <div className="min-w-0">
                   <Pengajuan
                     triggeredId={customerData.id}
                     triggeredPinjaman={customerData}
                     instalment={instalment}
                   />
+                </div>
+                <div className="min-w-0">
                   <JenisNasabah loan={customerData} />
-                  <div className="flex items-center justify-end gap-3 p-3">
-                    <div className="font-semibold">Hapus Pinjaman</div>
-                    <DeleteLoan id={customerData.id} onClosed={modalIsClosed} />
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </DialogContent>
@@ -250,154 +289,121 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
 
 export default Action;
 
-const PinjamanWebTable = ({ customerData }) => {
-  return (
-    <Table>
-      <TableHeader className="bg-gray-200">
-        <TableRow>
-          <TableHead className="text-center">Nomor</TableHead>
-          <TableHead className="text-center">Nasabah</TableHead>
-          <TableHead className="text-center">NIK</TableHead>
-          <TableHead className="text-center">Alamat</TableHead>
-          <TableHead className="text-center">Unit</TableHead>
-          <TableHead className="text-center">Kelompok</TableHead>
-          <TableHead className="text-center">Hari</TableHead>
-          <TableHead className="text-center">Tanggal Drop</TableHead>
-          <TableHead className="text-center">Pinjaman</TableHead>
-          <TableHead className="text-center">Nama Mantri</TableHead>
-          <TableHead className="text-center">Status</TableHead>
-          <TableHead className="text-center">Ket</TableHead>
-          <TableHead className="text-center">Keluar Target</TableHead>
-          <TableHead className="text-center">Lunas</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {Object.keys(customerData).length !== 0 ? (
-          <TableRow className="text-center">
-            <TableCell>{customerData.id}</TableCell>
-            <TableCell>{customerData.nama}</TableCell>
-            <TableCell>{customerData.nik}</TableCell>
-            <TableCell>{customerData.alamat}</TableCell>
-            <TableCell>{customerData.branch}</TableCell>
-            <TableCell>{customerData.kelompok}</TableCell>
-            <TableCell>{customerData.hari}</TableCell>
-            <TableCell>
-              {dayjs(customerData.tanggal_drop).format('DD-MM-YYYY')}
-            </TableCell>
-            <TableCell>
-              <FormatNumbering value={customerData.pinjaman} />
-            </TableCell>
-            <TableCell>{customerData.mantri}</TableCell>
-            <TableCell>
-              <StatusPinjaman value={customerData.status_pinjaman} />
-            </TableCell>
-            <TableCell>{customerData.notes}</TableCell>
-            <TableCell>
-              {customerData.out_date
-                ? dayjs(customerData.out_date).format('DD/MM')
-                : ''}
-            </TableCell>
-            <TableCell>
-              <StatusPinjaman value={customerData.lunas ? 'Lunas' : 'Belum'} />
-            </TableCell>
-          </TableRow>
-        ) : (
-          <TableRow>
-            <TableCell>Menunggu data . . .</TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
-  );
-};
+/** Satu pasang label/nilai - pola yang sama dipakai `BukuTransaksi/Components/ActionTable.jsx`. */
+const Field = ({ label, children }) => (
+  <div className="min-w-0">
+    <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      {label}
+    </div>
+    <div className="text-sm leading-tight break-words text-foreground">
+      {children || <span className="text-muted-foreground">&mdash;</span>}
+    </div>
+  </div>
+);
 
-const MobileCardList = ({ customerData }) => {
+const tanggal = (value, format = 'DD MMM YYYY') =>
+  value ? dayjs(value).format(format) : null;
+
+/**
+ * Tab "Detail Pinjaman" (dulu dinamai "Detail Nasabah" - keliru, isinya
+ * bukan cuma identitas nasabah tapi seluruh riwayat pinjaman: pengajuan,
+ * ACC, drop, siapa mengerjakan tiap tahap). Dipakai di SEMUA lebar layar
+ * (bukan lagi cabang khusus mobile; tabel 14 kolom `PinjamanWebTable` sudah
+ * dibuang).
+ *
+ * Disamakan dengan pola menu Drop (`BukuTransaksi/Components/ActionTable.jsx`):
+ * blok identitas menonjol di atas, lalu nominal pinjaman sebagai jangkar mata,
+ * lalu detail pendukung sebagai grid label/nilai.
+ */
+const LoanDetail = ({ customerData }) => {
   const sooners = (value) => {
     toast('Nik Telah Dicopy');
     navigator.clipboard.writeText(value);
   };
-  if (!customerData || customerData.length === 0) {
-    return <p className="text-center text-muted">Data tidak tersedia.</p>;
+
+  if (!customerData || Object.keys(customerData).length === 0) {
+    return (
+      <p className="py-4 text-sm text-center text-muted-foreground">
+        Menunggu data . . .
+      </p>
+    );
   }
 
   return (
-    <div className="w-full max-w-md overflow-hidden text-xs bg-white rounded-lg shadow-lg">
-      <div className="p-6 space-y-4">
-        <div className="pb-4 border-b">
-          <h3 className="text-lg font-semibold text-center text-red-500">
-            {customerData.nama}
+    <div>
+      {/* Tingkat 1 - identitas nasabah, paling menonjol */}
+      <div className="px-3 py-3 border-b bg-muted/40">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-lg font-bold leading-tight text-foreground">
+            {customerData.nama || (
+              <span className="text-muted-foreground">&mdash;</span>
+            )}
           </h3>
-          <div className="flex items-center justify-center gap-3">
-            <p className="text-sm text-gray-500">NIK: {customerData.nik}</p>
-            <div
-              className="text-blue-500"
-              onClick={() => sooners(customerData.nik)}
-            >
-              <Copy className="h-4" />
-            </div>
-          </div>
-          <div className="text-center">{customerData.alamat}</div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Nomor:</span>
-            <span className="text-gray-800">{customerData.id}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Status:</span>
-            <BadgeStatus value={customerData.status_pinjaman} />
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Unit:</span>
-            <span className="text-gray-800">{customerData.branch}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Kelompok:</span>
-            <span className="text-gray-800">{customerData.kelompok}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Tanggal Drop:</span>
-            <span className="text-gray-800">
-              {customerData.hari}
-              {', '}
-              {dayjs(customerData.tanggal_drop).format('DD-MM-YYYY')}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Pinjaman:</span>
-            <span
-              className={`font-bold ${
-                customerData.acc === 'Ya' ? 'text-green-600' : 'text-red-600'
-              }`}
-            >
-              <FormatNumbering
-                className="text-center"
-                value={customerData.pinjaman}
-              />
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Mantri:</span>
-            <span className="text-gray-800">{customerData.mantri}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Ket:</span>
-            <span className="text-gray-800">{customerData.notes}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">Keluar Target:</span>
-            <span className="text-gray-800">
-              {customerData.out_date
-                ? dayjs(customerData.out_date).format('DD/MM')
-                : ''}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium text-gray-600">LUNAS:</span>
+          <div className="flex items-center gap-1 shrink-0">
+            <StatusPinjaman value={customerData.status_pinjaman} />
             <StatusPinjaman value={customerData.lunas ? 'Lunas' : 'Belum'} />
           </div>
         </div>
+        <div className="mt-1 text-sm text-foreground">
+          {customerData.alamat || (
+            <span className="text-muted-foreground">&mdash;</span>
+          )}
+        </div>
+        <div className="mt-0.5 flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+          <span>NIK {customerData.nik || '—'}</span>
+          {customerData.nik && (
+            <button
+              type="button"
+              className="text-blue-500"
+              onClick={() => sooners(customerData.nik)}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tingkat 2 - nominal pinjaman, jangkar utama mata */}
+      <div className="px-3 py-3 border-b">
+        <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Pinjaman
+        </div>
+        <FormatNumbering
+          value={customerData.pinjaman}
+          className="text-base font-bold leading-tight text-start tabular-nums text-foreground"
+        />
+      </div>
+
+      {/* Tingkat 3 - identitas & lokasi pinjaman */}
+      <div className="grid grid-cols-2 px-3 py-3 border-b gap-x-4 gap-y-3">
+        <Field label="Nomor">{customerData.id}</Field>
+        <Field label="Pinjaman Ke">{customerData.pinjaman_ke}</Field>
+        <Field label="Unit">{customerData.branch}</Field>
+        <Field label="Kelompok">{customerData.kelompok}</Field>
+        <Field label="Hari">
+          <span className="capitalize">{customerData.hari}</span>
+        </Field>
+        <Field label="Mantri">{customerData.mantri}</Field>
+      </div>
+
+      {/* Tingkat 4 - riwayat proses: tanggal + siapa mengerjakan tiap tahap */}
+      <div className="grid grid-cols-2 px-3 py-3 border-b gap-x-4 gap-y-3">
+        <Field label="Tanggal Pengajuan">
+          {tanggal(customerData.tanggal_pengajuan)}
+        </Field>
+        <Field label="Diinput Oleh">{customerData.diinput_oleh}</Field>
+        <Field label="Tanggal ACC">{tanggal(customerData.tanggal_acc)}</Field>
+        <Field label="ACC Oleh">{customerData.acc_oleh}</Field>
+        <Field label="Tanggal Drop">{tanggal(customerData.tanggal_drop)}</Field>
+        <Field label="Drop Oleh">{customerData.drop_oleh}</Field>
+      </div>
+
+      {/* Tingkat 5 - keterangan tambahan */}
+      <div className="grid grid-cols-2 px-3 py-3 gap-x-4 gap-y-3">
+        <Field label="Ket">{customerData.notes}</Field>
+        <Field label="Keluar Target">
+          {tanggal(customerData.out_date, 'DD/MM')}
+        </Field>
       </div>
     </div>
   );

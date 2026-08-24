@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\BatchInputController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\MobileAppsMantriController;
+use App\Http\Controllers\PindahResortController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionDailyRecapController;
 use App\Http\Controllers\TransactionLoanController;
@@ -33,13 +35,15 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
 
+  Route::post('/set-branch', \App\Http\Controllers\SetBranchController::class)->name('set-branch');
+
   Route::controller(LoanController::class)->group(function () {
 
 
     Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
       Route::get('/', 'batch_create')->name('batch_create');
       Route::post('/', 'batch_post')->name('batch_post');
-    })->middleware('permission:unit');
+    })->middleware('role:kasir|pimpinan|kepala-mantri|superuser');
   });
 
   Route::get('/getviewasd', function () {
@@ -47,6 +51,15 @@ Route::middleware('auth')->group(function () {
     dd($data);
   });
 
+  Route::controller(BatchInputController::class)->name('batch_input.')->prefix('batch-input')->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::post('/', 'store')->name('store');
+    Route::post('/check', 'validateData')->name('validateData');
+  });
+
+  Route::controller(PindahResortController::class)->group(function () {
+    Route::get('/pindah-resort', 'PindahResort')->name('pindah_resort');
+  });
 
   Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
@@ -59,8 +72,9 @@ Route::middleware('auth')->group(function () {
       Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');
       Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');
       Route::put('/updateEverything/{transactionLoan}', "updateEverything")->name('updateEverything');
+      Route::post('/tundaan/{transactionLoan}', "tundaan_pengajuan")->name('tundaan_pengajuan');
     });
-  });
+  })->middleware('role:superuser|pimpinan|kasir|mantri|kepala-mantri|pengawas|stafkontrol');
 
   Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
@@ -85,6 +99,31 @@ Route::middleware('auth')->group(function () {
       Route::post('/', "store")->name('store');
     });
   });
+
+  // Perkakas persiapan migrasi ke alur agregasi baru (.agents/agregasi_rekap.md).
+  // Otorisasi dicek di dalam controller, BUKAN lewat middleware 'role:' —
+  // alias itu tidak terdaftar di app/Http/Kernel.php, dan merantai middleware
+  // setelah ->group() juga tidak menempel (lihat 05_temuan_dan_jebakan.md A1).
+  Route::prefix('migrasi')->name('migrasi.')->group(function () {
+    Route::get('/stock-take-ml', [\App\Http\Controllers\MigrasiController::class, 'stockTakeMl'])
+      ->name('stock_take_ml');
+    Route::get('/kesiapan-closing', [\App\Http\Controllers\MigrasiController::class, 'kesiapanClosing'])
+      ->name('kesiapan_closing');
+    Route::get('/pemantau', [\App\Http\Controllers\MigrasiController::class, 'pemantauMigrasi'])
+      ->name('pemantau');
+    Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
+      ->name('pemeriksaan');
+  });
+
+  // Layar kerja harian alur agregasi baru. Otorisasi dicek di controller.
+  Route::controller(\App\Http\Controllers\ClosingHarianController::class)
+    ->prefix('closing')->name('closing.')->group(function () {
+      Route::get('/harian', 'index')->name('harian');
+      Route::put('/harian/{closing}', 'simpanManual')->name('simpan_manual');
+      Route::post('/harian/{closing}/approve-kepala', 'approveKepala')->name('approve_kepala');
+      Route::post('/harian/{closing}/kunci', 'kunci')->name('kunci');
+      Route::post('/harian/{closing}/buka', 'buka')->name('buka');
+    });
   Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {
@@ -108,11 +147,8 @@ Route::middleware('auth')->group(function () {
       Route::get('/angsuran', "angsuran")->name('angsuran');
       Route::get('/macet', "macet")->name('macet');
       Route::get('/byDates', "byDates")->name('byDates');
-      Route::get('/buku-angsuran', "buku_angsuran")->name('buku_angsuran');
 
       Route::get('/rencana-drop-kepala', "rencana_drop_kepala")->name('rencana_drop_kepala');
-
-      Route::get('/buku-transaksi-kepala', "buku_transaksi_kepala")->name('buku_transaksi_kepala');
 
       Route::get('/rekap-permantri', "rekap_permantri")->name('rekap_permantri');
       Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');

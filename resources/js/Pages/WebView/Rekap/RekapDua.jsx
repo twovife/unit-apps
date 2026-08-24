@@ -4,7 +4,7 @@ import { Head } from '@inertiajs/react';
 import React from 'react';
 
 const RekapDua = ({ datas, saldoAwalBulan, auth, ...props }) => {
-  const title = auth.permissions.includes('unit pimpinan')
+  const title = auth.roles.includes('pimpinan')
     ? 'Rekap Pimpinan'
     : 'Rekap 2';
 

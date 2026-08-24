@@ -12,6 +12,7 @@ class TransactionLoanInstalment extends Model
 
   protected $fillable = [
     "transaction_loan_id",
+    "settled_by_loan_id",
     "transaction_loan_officer_grouping_id",
     "transaction_date",
     "nominal",
@@ -33,15 +34,10 @@ class TransactionLoanInstalment extends Model
       }
 
       DB::transaction(function () use ($transactionLoanInstalment) {
-        $recap = TransactionDailyRecap::query()
-          ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
-          ->where('date', $transactionLoanInstalment->transaction_date)
-          ->firstOrCreate([
-            'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-            'date'                                 => $transactionLoanInstalment->transaction_date,
-          ]);
-
-        $recap->increment('storting', $transactionLoanInstalment->nominal);
+        // DIHAPUS 2026-08-02: increment('storting') ke transaction_daily_recaps.
+        // Alur rekap sedang dibangun ulang - lihat catatan di TransactionLoan.
+        // Perhitungan total_angsuran & status LUNAS di bawah TETAP jalan karena
+        // itu state pinjaman, bukan bagian dari rekap.
 
         $sumInstalment = TransactionLoan::withSum('loan_instalment', 'nominal')
           ->where('id', $transactionLoanInstalment->transaction_loan_id)
@@ -122,17 +118,8 @@ class TransactionLoanInstalment extends Model
         // UPDATE parent loan (1 query)
         $sumInstalment->update($attrs);
 
-        /*────────── 2. LOCK & UPDATE REKAP HARIAN ──────────*/
-        $recap = TransactionDailyRecap::query()
-          ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
-          ->where('date', $transactionLoanInstalment->transaction_date)              // row‑level lock
-          ->firstOrCreate([
-            'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-            'date'                                 => $transactionLoanInstalment->transaction_date,
-          ]);
-
-        // Kurangi storting secara atomik
-        $recap->decrement('storting', $transactionLoanInstalment->nominal);
+        // DIHAPUS 2026-08-02: decrement('storting') ke transaction_daily_recaps.
+        // Alur rekap sedang dibangun ulang - lihat catatan di TransactionLoan.
       }, attempts: 3); // retry otomatis bila deadlock
     });
   }

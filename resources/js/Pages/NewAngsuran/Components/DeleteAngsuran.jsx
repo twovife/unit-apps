@@ -15,7 +15,7 @@ export default function DeleteAngsuran({ id }) {
   const passwordInput = useRef();
   const { auth } = usePage().props;
 
-  const unitAkses = auth.permissions.includes('can create');
+  const unitAkses = auth.permissions.includes('can-create');
 
   const {
     data,

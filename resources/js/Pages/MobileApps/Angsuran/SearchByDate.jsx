@@ -26,6 +26,7 @@ const SearchByDate = ({ datas, dateOfWeek, server_filter, ...props }) => {
         localState={localState}
         searchMonth={server_filter.searchMonth}
         searchHari={true}
+        type="mobile"
       />
     </MobileLayout>
   );

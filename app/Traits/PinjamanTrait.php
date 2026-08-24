@@ -19,12 +19,13 @@ trait PinjamanTrait
   public function getTransactionLoan(Request $request, bool $withPlan = false, bool $sortDesc = false)
   {
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
-    $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $userAuthorized = AppHelper::branch_permission($scope->user, $branch_id);
 
+// dd($scope);
 
     $transaction_date = $request->month ?? Carbon::now()->format('Y-m');
     $startOfMonth = Carbon::parse($transaction_date)->copy()->startOfMonth();
@@ -35,8 +36,18 @@ trait PinjamanTrait
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
 
-
-    $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer', 'branch')
+    // mantri/userinput/pemeriksa/pencair di-eager-load agar nama pengaju &
+    // pengesah bisa ditampilkan di dialog Action tanpa memicu N+1.
+    $loan = TransactionLoan::with([
+      'loan_officer_grouping',
+      'customer',
+      'manage_customer',
+      'branch',
+      'mantri:id,nama_karyawan',
+      'userinput:id,nama_karyawan',
+      'pemeriksa:id,nama_karyawan',
+      'pencair:id,nama_karyawan',
+    ])
       ->where(function ($data) use ($startOfMonth, $endOfMonth) {
         $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
           ->orWhereBetween('request_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')]);
@@ -50,17 +61,44 @@ trait PinjamanTrait
 
     $loanCustId = collect($loan->pluck('transaction_manage_customer_id'))->unique();
 
-    
+
     $transactionManageCustomer = TransactionLoan::whereIn('transaction_manage_customer_id', $loanCustId)
       ->where('status', 'success')
       ->orderBy('id', 'desc')
       ->get()
       ->groupBy('transaction_manage_customer_id');
 
+    // Tanggal-tanggal yang rekap hariannya SUDAH di-approve kepala.
+    // Dipakai UI untuk mengunci Reset Status & Hapus Pinjaman: begitu rekap
+    // harian diketuk, angka drop/storting hari itu sudah masuk laporan,
+    // sehingga mengubah pinjaman di belakangnya membuat laporan tidak cocok.
+    $approvedRecapDates = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->whereNotNull('daily_kepala_approval')
+      ->pluck('date')
+      ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+      ->flip();
 
+    // Id pinjaman yang SUDAH punya pengajuan pengganti aktif (top-up lewat
+    // previous_loan_id ATAU Tundaan lewat postponed_loan_id, status masih
+    // open/acc/success) - dipakai mengunci Reset Status & Hapus Pinjaman
+    // supaya tidak menghapus/reset pinjaman yang sudah dijadikan dasar
+    // pengajuan lain. Query dibatch sekali untuk semua baris di halaman ini,
+    // bukan per-baris, biar tidak N+1.
+    $loanIds = $loan->pluck('id');
+    $sudahDiajukanPenggantiIds = TransactionLoan::where(function ($q) use ($loanIds) {
+      $q->whereIn('previous_loan_id', $loanIds)
+        ->orWhereIn('postponed_loan_id', $loanIds);
+    })
+      ->whereIn('status', ['open', 'acc', 'success'])
+      ->get(['previous_loan_id', 'postponed_loan_id'])
+      ->flatMap(fn($item) => [$item->previous_loan_id, $item->postponed_loan_id])
+      ->filter()
+      ->unique()
+      ->flip();
 
-    $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer) {
+    $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer, $approvedRecapDates, $sudahDiajukanPenggantiIds) {
       $countPinjaman = $transactionManageCustomer->get($drop->transaction_manage_customer_id, collect())->count('id') + 1;
+      $dropDateKey = $drop->drop_date ? Carbon::parse($drop->drop_date)->format('Y-m-d') : null;
       return [
         'nama' => $drop->customer->nama,
         'alamat' => $drop->customer->alamat,
@@ -76,6 +114,17 @@ trait PinjamanTrait
 
         'check_date' => $drop->check_date,
 
+        // Jejak siapa-mengerjakan-apa, dipakai di dialog Action.
+        'diajukan_oleh' => $drop->mantri?->nama_karyawan,
+        'diinput_oleh' => $drop->userinput?->nama_karyawan,
+        'acc_oleh' => $drop->pemeriksa?->nama_karyawan,
+        'drop_oleh' => $drop->pencair?->nama_karyawan,
+        'diinput_pada' => $drop->created_at,
+
+        // true = rekap harian tanggal drop ini sudah di-approve kepala,
+        // sehingga Reset Status & Hapus Pinjaman harus dikunci di UI.
+        'recap_approved' => $dropDateKey ? $approvedRecapDates->has($dropDateKey) : false,
+
         'nomor_pengajuan' => $drop->id,
         'nik' => $drop->customer->nik,
         'kelompok' => $drop->loan_officer_grouping->kelompok,
@@ -83,7 +132,15 @@ trait PinjamanTrait
         'hari' => $drop->hari,
         'status' => $drop->status,
         'drop_langsung' => $drop->drop_langsung ? 'baru' : "lama",
-        'drop_langsung_status' => $drop->drop_langsung ? 2 : 1
+        'drop_langsung_status' => $drop->drop_langsung ? 2 : 1,
+        // Badge "TD" - pengajuan ini dibuat lewat Tundaan (menggantikan
+        // pengajuan lain yang tanggal drop-nya dipindah).
+        'is_tundaan' => (bool) $drop->postponed_loan_id,
+
+        // true = pinjaman ini sudah dijadikan dasar pengajuan lain yang
+        // masih aktif (top-up ATAU Tundaan) - Reset Status & Hapus Pinjaman
+        // harus dikunci di UI.
+        'sudah_diajukan_pengganti' => $sudahDiajukanPenggantiIds->has($drop->id),
       ];
     })->sortBy('nama')->sortBy('drop_langsung_status')->sortBy('tanggal_drop')->groupBy('tanggal_drop'));
 
@@ -188,10 +245,11 @@ trait PinjamanTrait
     // dd($tanggalSeleksi);
 
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
 
@@ -429,10 +487,11 @@ trait PinjamanTrait
     // dd($tanggalSeleksi);
 
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
 
@@ -623,10 +682,11 @@ trait PinjamanTrait
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth();
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
 
@@ -652,6 +712,16 @@ trait PinjamanTrait
         $branch->where('branch_id', $branch_id)->where('kelompok', $kelompok);
       })
       ->where('status', 'success')
+      // Cari nama: substring biasa (LIKE). Sempat dicoba tambah SOUNDEX
+      // (toleran typo semacam "azis" -> "Aziz") tapi dibatalkan - SOUNDEX
+      // tanpa index berarti full scan tiap kolom nama dihitung ulang per
+      // baris, dan bikin indexnya (generated column + index) tidak
+      // sepadan untuk sekarang.
+      ->when($request->filled('nama'), function ($query) use ($request) {
+        $query->whereHas('customer', function ($q) use ($request) {
+          $q->where('nama', 'like', '%' . $request->nama . '%');
+        });
+      })
       ->orderBy('drop_date')
       ->get()
       ->groupBy(function ($item) {
@@ -718,6 +788,7 @@ trait PinjamanTrait
         'userAuthorized' => $userAuthorized,
         'branch_id' => $branch_id,
         'kelompok' => $kelompok,
+        'nama' => $request->nama,
         'searchMonth' => true
       ],
     ];
@@ -736,18 +807,28 @@ trait PinjamanTrait
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    // dd($branch_id);
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    // DIPERBAIKI 2026-08-05: sebelumnya pakai auth()->user()->can('can show
+    // branch'/'can show kelompok') - dua nama itu GHOST, tidak pernah ada di
+    // tabel permissions (can() diam-diam selalu false untuk ability yang tak
+    // dikenal, beda dari hasPermissionTo() yang melempar exception). Efeknya
+    // SEMUA user selalu jatuh ke cabang else: $authorized->employee->area.
+    // Untuk role tanpa area spesifik (pimpinan dkk, area=0) itu bukan
+    // kelompok yang valid, jadi $groupingId di bawah jadi null dan
+    // ->id di baris berikutnya bikin 500 ("Attempt to read property on
+    // null"). Disamakan dengan getLoanByDate() (fungsi tetangga di file
+    // ini) yang sudah benar pakai AuthScope::resolve().
+    $scope = \App\Helpers\AuthScope::resolve();
+    $branch_id = $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
 
     $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
-    $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
+    $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()?->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
 
 
 
@@ -763,6 +844,13 @@ trait PinjamanTrait
       ->where('transaction_loan_officer_grouping_id', $groupingId->id)
       ->whereNull('out_status')
       ->where('status', 'success')
+      // Cari nama: substring biasa (LIKE) - lihat catatan lengkap di
+      // getLoanByDate().
+      ->when($request->filled('nama'), function ($query) use ($request) {
+        $query->whereHas('customer', function ($q) use ($request) {
+          $q->where('nama', 'like', '%' . $request->nama . '%');
+        });
+      })
       ->orderBy('drop_date')
       ->get()
       ->groupBy(function ($item) {
@@ -854,6 +942,7 @@ trait PinjamanTrait
         'userAuthorized' => $userAuthorized,
         'branch_id' => $branch_id,
         'kelompok' => $kelompok,
+        'nama' => $request->nama,
         'type_show' => 'macet',
         'searchMonth' => false,
         'onlineDate' => $onlineDate,

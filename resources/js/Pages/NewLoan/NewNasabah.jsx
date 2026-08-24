@@ -23,7 +23,6 @@ import RiwayatPengajuan from './Components/RiwayatPengajuan';
 import dayjs from 'dayjs';
 import Checkbox from '@/Components/Checkbox';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import RiwayatPengajuanLain from './Components/RiwayatPengajuanLain';
 import RiwayatPengajuanNonBranch from '@/Pages/NewLoan/Components/RiwayatPengajuanNonBranch';
@@ -36,8 +35,11 @@ const NewNasabah = ({
 }) => {
   // getLink after generate
   const { printUrl } = usePage().props;
-  const { isUnit, isMantri, isCanShowKelompok, isCreator } =
-    useFrontEndPermission();
+  // Padanan asli dari nama lama: 'can create' -> 'can-create',
+  // 'can show kelompok' -> 'view-all-groups'.
+  const { auth } = usePage().props;
+  const isCreator = auth?.permissions?.includes('can-create');
+  const isCanShowKelompok = auth?.permissions?.includes('view-all-groups');
 
   const [newGenerate, setNewGenerate] = useState(null);
 
@@ -89,8 +91,8 @@ const NewNasabah = ({
             .add(1, 'week')
             .format('YYYY-MM-DD')
         : data.tanggal_drop
-        ? dayjs(data.tanggal_drop).add(1, 'week').format('YYYY-MM-DD')
-        : '';
+          ? dayjs(data.tanggal_drop).add(1, 'week').format('YYYY-MM-DD')
+          : '';
 
     setElements([
       ...elements,
@@ -105,16 +107,16 @@ const NewNasabah = ({
   const onInputElementChange = (id, name, value) => {
     setElements(
       elements.map((element) =>
-        element.id === id ? { ...element, [name]: value } : element
-      )
+        element.id === id ? { ...element, [name]: value } : element,
+      ),
     );
   };
 
   const onHandleElementCurencyChange = (value, name, id) => {
     setElements(
       elements.map((element) =>
-        element.id === id ? { ...element, [name]: value } : element
-      )
+        element.id === id ? { ...element, [name]: value } : element,
+      ),
     );
   };
 
@@ -172,7 +174,7 @@ const NewNasabah = ({
       const { data } = await axios.post(
         route('transaction.nasabah_buku_transaksi'),
         { nik },
-        { signal: controller.signal }
+        { signal: controller.signal },
       );
 
       setLoading(false);
@@ -449,7 +451,7 @@ const NewNasabah = ({
                                 onInputElementChange(
                                   element.id,
                                   e.target.name,
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                             />
@@ -470,7 +472,7 @@ const NewNasabah = ({
                                     onHandleElementCurencyChange(
                                       parseInt(value),
                                       name,
-                                      element.id
+                                      element.id,
                                     )
                                   }
                                   value={element.nominal}
@@ -487,7 +489,7 @@ const NewNasabah = ({
                                     onInputElementChange(
                                       element.id,
                                       e.target.name,
-                                      e.target.checked
+                                      e.target.checked,
                                     )
                                   }
                                 />

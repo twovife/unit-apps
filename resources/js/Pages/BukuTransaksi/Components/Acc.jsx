@@ -1,10 +1,10 @@
 import Loading from '@/Components/Loading';
-import NoEditOverlay from '@/Components/NoEditOverlay';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
-import { Badge } from '@/shadcn/ui/badge';
-import { Button } from '@/shadcn/ui/button';
+import AppBadge from '@/Components/shadcn/AppBadge';
+import AppButton from '@/Components/shadcn/AppButton';
+import { varianStatus } from '@/Components/shadcn/statusVariants';
+import Tundaan from './Tundaan';
 import { Label } from '@/shadcn/ui/label';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
@@ -15,7 +15,14 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
     drop: '',
   });
 
-  const { isMantri, isCreator } = useFrontEndPermission();
+  // Dulu memakai useFrontEndPermission() yang memeriksa nama permission lama
+  // ('can create', 'area') dan sudah tidak ada di tabel `permissions`, sehingga
+  // isCreator selalu false -> NoEditOverlay menutupi seluruh kartu ACC/DROP
+  // untuk SEMUA user. 'can-approve' adalah hak yang benar untuk ACC/Tolak:
+  // dimiliki kasir, pimpinan, kepala-mantri, pengawas, superuser - dan tidak
+  // dimiliki mantri, persis seperti maksud pengecekan lama.
+  const { auth } = usePage().props;
+  const canApprove = auth?.permissions?.includes('can-approve');
 
   useEffect(() => {
     setData((prevData) => ({
@@ -43,18 +50,12 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
   };
 
   return (
-    <form className="w-full" onSubmit={(e) => e.preventDefault()}>
-      {!isCreator && (
-        <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
-      )}
+    <form className="relative w-full" onSubmit={(e) => e.preventDefault()}>
       <Loading show={processing} />
 
       <div className="mb-3">
-        {triggeredData?.status === 'open' ? (
+        {triggeredData?.status === 'open' && (
           <>
-            {isMantri && (
-              <NoEditOverlay value="Tunggu Pimpinan Acc Terlebih Dahulu" />
-            )}
             <Label htmlFor="approved_nominal">Nominal ACC</Label>
             <CurrencyInput
               className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -63,33 +64,44 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
               prefix="Rp. "
               min={1}
               required
+              disabled={!canApprove}
               onValueChange={onHandleCurencyChange}
               value={data.approved_nominal}
               placeholder={'Inputkan angka tanpa sparator'}
             />
+            {/* Tanpa hak ACC: kontrol tetap TAMPIL tapi mati, ditemani alasan.
+                Dulu ditutup NoEditOverlay - overlay menutup seluruh kartu induk
+                sehingga elemen lain yang sebenarnya boleh dipakai ikut mati. */}
+            {!canApprove && (
+              <p className="mt-2 text-xs font-medium text-amber-600">
+                Tunggu Pimpinan / KM meng-ACC terlebih dahulu.
+              </p>
+            )}
             <div className="flex items-center justify-end gap-3 mt-2">
-              <Button variant="green" onClick={() => accPinjaman('acc')}>
+              <AppButton
+                variant="submission"
+                size="sm"
+                disabled={!canApprove}
+                onClick={() => accPinjaman('acc')}
+              >
                 ACC
-              </Button>
-              <Button
-                variant="destructive"
+              </AppButton>
+              <AppButton
+                variant="danger"
+                size="sm"
+                disabled={!canApprove}
                 onClick={() => accPinjaman('tolak')}
               >
                 Tolak
-              </Button>
+              </AppButton>
             </div>
           </>
-        ) : (
-          <Badge size={'lg'} variant={'green'}>
-            Status Pengajuan = {triggeredData?.status}, Pada Tanggal
-            {triggeredData?.check_date}
-          </Badge>
         )}
       </div>
 
       {triggeredData?.status !== 'open' && (
         <div className="mb-3">
-          {triggeredData?.status === 'acc' ? (
+          {triggeredData?.status === 'acc' && (
             <>
               <Label htmlFor="drop" className="whitespace-normal">
                 Drop Jadi
@@ -101,27 +113,42 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 prefix="Rp. "
                 min={1}
                 required
+                disabled={!canApprove}
                 onValueChange={onHandleCurencyChange}
                 value={data.drop}
                 placeholder={'Inputkan angka tanpa sparator'}
               />
-              <div className="flex items-center justify-end gap-3 mt-2">
-                <Button variant="green" onClick={() => accPinjaman('success')}>
+              {!canApprove && (
+                <p className="mt-2 text-xs font-medium text-amber-600">
+                  Hanya Pimpinan / KM / Kasir yang bisa menutup pencairan.
+                </p>
+              )}
+              <div className="flex flex-wrap items-center justify-end gap-3 mt-2">
+                {canApprove && (
+                  <Tundaan
+                    id={id}
+                    dropDateLama={triggeredData?.tanggal_drop}
+                    onClosed={onClosed}
+                  />
+                )}
+                <AppButton
+                  variant="submission"
+                  size="sm"
+                  disabled={!canApprove}
+                  onClick={() => accPinjaman('success')}
+                >
                   DROP
-                </Button>
-                <Button
-                  variant="destructive"
+                </AppButton>
+                <AppButton
+                  variant="danger"
+                  size="sm"
+                  disabled={!canApprove}
                   onClick={() => accPinjaman('gagal')}
                 >
                   GAGAL
-                </Button>
+                </AppButton>
               </div>
             </>
-          ) : (
-            <Badge size={'lg'} variant={'green'}>
-              Status Pengajuan = {triggeredData?.status}, Tanggal
-              {triggeredData?.check_date}
-            </Badge>
           )}
         </div>
       )}

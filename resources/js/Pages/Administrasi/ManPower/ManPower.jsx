@@ -94,7 +94,7 @@ const ManPower = ({ datas, title }) => {
                     <div className="flex items-center">
                       <div className="hidden lg:flex-1 lg:block">{key + 1}</div>
                       <div className="flex-1">
-                        {auth.permissions.includes('superuser') ? (
+                        {auth.roles.includes('superuser') ? (
                           <BargeStatus
                             onClick={() => handleOnCreateUserOpen(data)}
                             value={data.isActive}
@@ -116,7 +116,7 @@ const ManPower = ({ datas, title }) => {
                     >
                       {data.username}
                     </BadgeStatus>
-                    {auth.permissions.includes('superuser') && (
+                    {auth.roles.includes('superuser') && (
                       <div className="flex gap-1">
                         {data.rolelist?.map((item) => (
                           <span>{item.name}</span>
