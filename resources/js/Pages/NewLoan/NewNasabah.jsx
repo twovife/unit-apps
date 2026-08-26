@@ -185,14 +185,14 @@ const NewNasabah = ({
       }));
 
       if (data.data) {
-        console.log(data.data);
         setCustomerData(data.data);
       } else {
         setCustomerData([]);
       }
     } catch (error) {
       if (axios.isCancel(error)) {
-        console.log('Request dibatalkan karena ada fetch baru.');
+        // Dibatalkan karena ada pencarian baru — bukan kegagalan, jangan
+        // tampilkan apa-apa ke user.
       } else {
         setErorAxios(error.response?.data?.message || 'Terjadi kesalahan.');
         setLoading(false);
@@ -233,55 +233,82 @@ const NewNasabah = ({
   };
   // newGenerate
   return (
-    <div className="flex flex-col w-full gap-3 lg:flex-row">
+    <div className="flex flex-col w-full gap-5 xl:flex-row">
       <Loading show={loading || processing} />
-      <div className="w-auto">
-        <fieldset className="min-w-[20vw] p-4 mb-3 border rounded-lg">
-          <legend className="px-1 -ml-1 text-sm font-medium">
-            CEK NIK NASABAH
+      <div className="w-full xl:w-[30rem] xl:shrink-0 space-y-4">
+        <fieldset className="p-4 border rounded-lg bg-muted/20">
+          <legend className="px-1 -ml-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">
+            Cek NIK Nasabah
           </legend>
-          <form className="w-full mb-3" onSubmit={onNikSubmit}>
-            <Label optional>NIK</Label>
-            <div className="flex items-center gap-3">
+          <form className="w-full" onSubmit={onNikSubmit}>
+            <Label htmlFor="cari-nik">NIK</Label>
+            <div className="flex items-center gap-2">
               <Input
+                id="cari-nik"
                 type={typeInput}
                 name="nik"
                 value={nik}
                 onChange={onNikChange}
-                placeholder="Cek NIK"
+                placeholder="16 digit NIK"
+                className="tabular-nums"
               />
-              <Button className="text-xs" size="sm">
-                <Search className="w-auto h-4 mr-1" />
+              <Button size="sm" className="shrink-0">
+                <Search className="w-4 h-4 mr-1" />
                 Cari
               </Button>
             </div>
-            {erorAxios && <InputError message={erorAxios} className="mt-1" />}
-            <div
-              className={`font-semibold mt-1 ${
-                nik.length == 16 ? 'text-green-500' : 'text-red-500'
-              }`}
-            >
-              {nik.length} Digit
-            </div>
-            <div>
-              {newGenerate && (
-                <a href={newGenerate ?? '#'} target="_blank">
-                  Lihat Transaksi Terakhir
-                </a>
+
+            <div className="flex items-center gap-2 mt-2">
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${
+                  nik.length === 16
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {nik.length} / 16 digit
+              </span>
+              {nik.length > 0 && nik.length !== 16 && (
+                <span className="text-xs text-muted-foreground">
+                  NIK harus tepat 16 digit
+                </span>
               )}
             </div>
+
+            {erorAxios && <InputError message={erorAxios} className="mt-2" />}
+
+            {newGenerate && (
+              <a
+                href={newGenerate ?? '#'}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block mt-2 text-sm underline text-primary underline-offset-2"
+              >
+                Lihat transaksi terakhir
+              </a>
+            )}
           </form>
         </fieldset>
         <div className="relative">
+          {!(nik && data.nik == nik) && (
+            <div className="flex flex-col items-center justify-center gap-1 px-6 py-10 text-center border border-dashed rounded-lg">
+              <Search className="w-5 h-5 mb-1 text-muted-foreground" />
+              <div className="text-sm font-medium">Belum ada nasabah dipilih</div>
+              <p className="max-w-xs text-xs text-muted-foreground">
+                Cari NIK di atas dulu. Detail pinjaman terbuka setelah nasabahnya
+                ketemu.
+              </p>
+            </div>
+          )}
           {nik && data.nik == nik && (
             <fieldset className="w-full p-4 border rounded-lg">
               {!isCreator && (
                 <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Menambah Pinjaman" />
               )}
-              <legend className="px-1 -ml-1 text-sm font-medium">
+              <legend className="px-1 -ml-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">
                 Detail Pinjaman
               </legend>
-              <form className="w-full mb-3" onSubmit={onSubmitCreate}>
+              <form className="w-full" onSubmit={onSubmitCreate}>
                 <div className="flex flex-col gap-5 lg:flex-row">
                   <div className="flex-1">
                     <div className="flex gap-3">
@@ -309,16 +336,18 @@ const NewNasabah = ({
                         <InputError message={errors.tanggal_drop} />
                       </div>
                     </div>
-                    {data.request_date &&
-                    data.request_date == data.tanggal_drop ? (
-                      <div className="w-full mb-3 font-semibold text-red-500">
-                        DROP BARU
-                      </div>
-                    ) : (
-                      <div className="w-full mb-3 font-semibold text-red-500">
-                        PENGAJUAN DROP
-                      </div>
-                    )}
+                    <div className="w-full mb-3">
+                      {data.request_date &&
+                      data.request_date == data.tanggal_drop ? (
+                        <span className="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
+                          Drop baru &mdash; cair hari pengajuan
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-sky-800">
+                          Pengajuan drop
+                        </span>
+                      )}
+                    </div>
                     <div className="w-full mb-3">
                       <Label optional>NIK</Label>
                       <Input
@@ -513,52 +542,63 @@ const NewNasabah = ({
                           </div>
                         </div>
                       ))}
-                      <div className="flex justify-end gap-3 font-semibold text-red-500">
-                        <div>Saldo Tersisa</div>
+                      <div
+                        className={`flex items-center justify-end gap-3 rounded-md px-3 py-2 text-sm font-semibold tabular-nums ${
+                          calculatePinjaman === 0
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-red-50 text-red-700'
+                        }`}
+                      >
+                        <span>Saldo Tersisa</span>
                         <FormatNumbering value={calculatePinjaman} />
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="text-end">
+                <div className="flex items-center justify-end gap-2 pt-3 mt-2 border-t">
                   {generateAngsuran && data.tanggal_drop && (
-                    <Button
-                      type="button"
-                      onClick={addElement}
-                      className="mr-3"
-                      variant="outline"
-                    >
-                      Add Angsuran
+                    <Button type="button" onClick={addElement} variant="outline">
+                      Tambah Angsuran
                     </Button>
                   )}
-
-                  <Button>Submit</Button>
+                  <Button type="button" variant="ghost" onClick={modalIsClosed}>
+                    Batal
+                  </Button>
+                  <Button>Simpan Pengajuan</Button>
                 </div>
               </form>
             </fieldset>
           )}
         </div>
       </div>
-      <div className="w-auto lg:w-full">
-        <div className="text-xl mb-3 font-semibold">CRASH</div>
-        <Tabs defaultValue="pengajuan" className="w-auto">
+      <div className="flex flex-col w-full min-w-0 gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">Riwayat Pengajuan</h3>
+          <p className="text-xs text-muted-foreground">
+            {customerData?.nama
+              ? `Rekam jejak ${customerData.nama} sebagai bahan pertimbangan.`
+              : 'Muncul setelah NIK ditemukan.'}
+          </p>
+        </div>
+
+        <Tabs defaultValue="pengajuan" className="flex flex-col w-full min-w-0">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pengajuan">Kantor</TabsTrigger>
-            <TabsTrigger value="pinjaman">Kantor Lain (NT)</TabsTrigger>
-            <TabsTrigger value="pinjaman2">Kantor Lain (T)</TabsTrigger>
+            <TabsTrigger value="pengajuan">Kantor ini</TabsTrigger>
+            <TabsTrigger value="pinjaman">Kantor lain &mdash; macet</TabsTrigger>
+            <TabsTrigger value="pinjaman2">Kantor lain &mdash; target</TabsTrigger>
           </TabsList>
           <TabsContent value="pengajuan">
-            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
+            <div className="overflow-auto border rounded-lg scrollbar-thin max-h-[55vh]">
               <RiwayatPengajuan data={customerData?.history_branch} />
             </div>
           </TabsContent>
           <TabsContent value="pinjaman">
-            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
+            <div className="overflow-auto border rounded-lg scrollbar-thin max-h-[55vh]">
               <RiwayatPengajuan data={customerData?.history_macet_lain} />
             </div>
           </TabsContent>
           <TabsContent value="pinjaman2">
-            <div className="overflow-auto shadow-sm scrollbar-thin h-max">
+            <div className="overflow-auto border rounded-lg scrollbar-thin max-h-[55vh]">
               <RiwayatPengajuan data={customerData?.history_target} />
             </div>
           </TabsContent>

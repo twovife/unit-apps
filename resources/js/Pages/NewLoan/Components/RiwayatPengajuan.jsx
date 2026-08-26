@@ -126,7 +126,14 @@ const RiwayatPengajuan = ({ data }) => {
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan="4">Belum Ada Catatan Pinjaman</TableCell>
+            {/* colSpan mengikuti jumlah kolom sebenarnya. Sebelumnya dipatok 4
+                padahal kolomnya 5, jadi barisnya menyisakan sel menggantung. */}
+            <TableCell
+              colSpan={columns.length}
+              className="py-8 text-sm text-center text-muted-foreground"
+            >
+              Belum ada catatan pinjaman
+            </TableCell>
           </TableRow>
         )}
       </TableBody>
