@@ -50,9 +50,6 @@ const NewNasabah = ({
   }, [printUrl.timestamp]);
 
   const { optKelompok } = useOptionGenerator();
-  const { majuKeHariKerja, siap: kalenderSiap, alasanLibur } = useHariLibur(
-    data?.request_date,
-  );
   const { data, setData, post, errors, processing, reset } = useForm({
     isActiveMember: false,
     nik: '',
@@ -65,6 +62,12 @@ const NewNasabah = ({
     request_nominal: 0,
     angsuran: [],
   });
+
+  // WAJIB sesudah useForm: argumennya membaca `data`, dan memanggilnya di atas
+  // sana membuat `data` diakses sebelum dideklarasikan (TDZ) — komponennya
+  // gagal render sama sekali, bukan cuma salah nilai.
+  const { majuKeHariKerja, siap: kalenderSiap, alasanLibur } =
+    useHariLibur(data.request_date);
 
   // handlingForAngsuranBatchProssess
   const [elements, setElements] = useState([]);

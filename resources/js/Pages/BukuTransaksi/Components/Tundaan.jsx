@@ -4,7 +4,9 @@ import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { useForm } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import React, { useState } from 'react';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
+import useHariLibur from '@/Hooks/useHariLibur';
+import React, { useEffect, useState } from 'react';
 
 /**
  * Tombol "Tundaan" - cuma muncul untuk pengajuan yang sudah di-ACC (dipasang
@@ -15,12 +17,25 @@ import React, { useState } from 'react';
  */
 const Tundaan = ({ id, dropDateLama, onClosed }) => {
   const [open, setOpen] = useState(false);
-  const defaultTanggalBaru = dayjs(dropDateLama).add(1, 'week').format('YYYY-MM-DD');
+  const { majuKeHariKerja, siap: kalenderSiap } = useHariLibur(dropDateLama);
+
   const minTanggalBaru = dayjs(dropDateLama).add(1, 'day').format('YYYY-MM-DD');
+
+  // Tundaan menggeser drop MAJU seminggu — dan kalau minggu depan libur,
+  // lompatannya ke minggu berikutnya lagi. Server juga menuntut harinya sama
+  // dengan drop lama ("Hari Tidak Sama"), jadi lompatannya per minggu.
+  const defaultTanggalBaru = majuKeHariKerja(
+    dayjs(dropDateLama).add(1, 'week').format('YYYY-MM-DD'),
+  );
 
   const { data, setData, post, processing, errors, reset } = useForm({
     tanggal_drop: defaultTanggalBaru,
   });
+
+  // Kalendernya datang belakangan; begitu siap, bawaannya dibetulkan.
+  useEffect(() => {
+    if (open) setData('tanggal_drop', defaultTanggalBaru);
+  }, [kalenderSiap]);
 
   const bukaForm = () => {
     setData('tanggal_drop', defaultTanggalBaru);
@@ -56,11 +71,10 @@ const Tundaan = ({ id, dropDateLama, onClosed }) => {
     <div className="w-full p-3 mt-2 border rounded-md bg-muted/40">
       <Loading show={processing} />
       <Label htmlFor="tanggal_drop_tundaan">Tanggal Drop Baru</Label>
-      <Input
-        type="date"
-        id="tanggal_drop_tundaan"
+      <TanggalKerja
         name="tanggal_drop"
         min={minTanggalBaru}
+        hariTagih={dayjs(dropDateLama).day()}
         required
         value={data.tanggal_drop}
         onChange={(e) => setData('tanggal_drop', e.target.value)}

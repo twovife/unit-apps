@@ -3,6 +3,8 @@ import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Input } from '@/shadcn/ui/input';
 import InputLabel from '@/Components/InputLabel';
 import dayjs from 'dayjs';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
+import useHariLibur from '@/Hooks/useHariLibur';
 import { Button } from '@/shadcn/ui/button';
 import { Search, SearchCheck } from 'lucide-react';
 import Loading from '@/Components/Loading';
@@ -78,9 +80,16 @@ const FastCreateV2 = () => {
   const [angsuran, setAngsuran] = useState([]);
   const [isSaldoAkhir, setIsSaldoAkhir] = useState(false);
 
+  const { majuKeHariKerja } = useHariLibur(data.tanggal_drop);
+
   const generateAngsuranField = (value) => {
     const tanggalDrop = dayjs(value);
-    const awalDrop = tanggalDrop.add(1, 'week').format('YYYY-MM-DD');
+    // Tanggal storting DITURUNKAN dan kolomnya readOnly, jadi kalau hasilnya
+    // jatuh di hari libur user tidak punya cara membetulkannya sementara
+    // server menolaknya. Melompat per minggu supaya hari tagih tidak berubah.
+    const awalDrop = majuKeHariKerja(
+      tanggalDrop.add(1, 'week').format('YYYY-MM-DD'),
+    );
     const endDate = dayjs().format('YYYY-MM-DD');
 
     let date = dayjs(currentMonth);
@@ -231,9 +240,9 @@ const FastCreateV2 = () => {
         : [
             {
               id: 1,
-              transaction_date: dayjs(data.tanggal_drop)
-                .add(1, 'week')
-                .format('YYYY-MM-DD'),
+              transaction_date: majuKeHariKerja(
+                dayjs(data.tanggal_drop).add(1, 'week').format('YYYY-MM-DD'),
+              ),
             },
             ...prevAngs,
           ],
@@ -319,8 +328,7 @@ const FastCreateV2 = () => {
                         <div className="flex gap-3">
                           <div className="w-full mb-3">
                             <Label>Tanggal Drop</Label>
-                            <Input
-                              type="date"
+                            <TanggalKerja
                               name="tanggal_drop"
                               required={true}
                               value={data.tanggal_drop}

@@ -2957,3 +2957,82 @@ karena nama bulannya sudah ada di dropdown; panah geser bulan tetap dipakai.
 | Tabel | BACA | TULIS |
 |---|---|---|
 | `work_days` | ya | tidak |
+
+## BH — Sapu bersih tanggal turunan + perbaikan TDZ (2026-08-12)
+
+Dua laporan user beruntun.
+
+### 1. Layar pengajuan gagal render sama sekali
+
+```
+Uncaught ReferenceError: Cannot access 'data' before initialization
+    at NewNasabah (NewNasabah.jsx:54:5)
+```
+
+Bugku di BG. `useHariLibur(data?.request_date)` kupasang **di atas** `useForm`
+yang mendeklarasikan `data` — temporal dead zone. Optional chaining (`data?.`)
+tidak menolong: yang gagal bukan properti kosong, tapi mengakses binding yang
+belum diinisialisasi. Akibatnya komponennya tidak render sama sekali, bukan
+sekadar salah nilai.
+
+`npm run build` **lolos** — ini error runtime, bukan sintaks. Yang menemukan
+user, dengan membuka layarnya.
+
+Dipindah ke bawah `useForm`, dengan komentar kenapa urutannya wajib. Tiga
+komponen lain yang kusentuh diperiksa ulang: `BayarAngsuran` dan `WhiteOff`
+memanggil tanpa argumen, `TanggalKerja` memakai variabel yang sudah
+dideklarasikan di atasnya, `Tundaan` memakai prop. Aman semua.
+
+### 2. Pengajuan nasabah lama juga harus diblok
+
+Dilaporkan dari `/mobile_apps/angsuran`. `PengajuanLama.jsx` punya ketiganya
+sekaligus:
+
+- `request_date` bawaannya `getLastDateForHari()` — bisa libur
+- `tanggal_drop` diturunkan `+1 minggu` — bisa libur
+- keduanya `<Input type="date">` polos
+
+Ini kejadian **keempat** dari pola yang sama. Jadi sisanya disapu sekalian
+daripada menunggu dilaporkan satu per satu.
+
+### Semua tanggal turunan, sekarang lengkap
+
+| Layar | Tanggal | Arah | Ditemukan |
+|---|---|---|---|
+| Pelunasan | hari tagih terakhir | mundur | BF, sendiri |
+| Pemutihan | hari ini | mundur | BF, sendiri |
+| Pengajuan baru | +1 minggu | maju | BG, **user** |
+| Pengajuan lama | bawaan + 1 minggu | mundur + maju | BH, **user** |
+| Tundaan | drop lama +1 minggu | maju | BH, sapu bersih |
+| FastCreateV2 storting | drop +1 minggu (2 tempat) | maju | BH, sapu bersih |
+
+Arahnya bukan selera: **mundur** untuk tanggal yang sudah lewat, **maju** untuk
+yang belum terjadi. Semuanya melompat per minggu supaya hari tagih kelompok
+tidak berubah.
+
+### Pemilih tanggal juga dipasang di
+
+`PengajuanLama` (2 kolom), `Tundaan` (+ dikunci ke hari drop lama),
+`FastCreateV2` (tanggal drop), `ChangeDetail` (2 kolom).
+
+### Yang sengaja dibiarkan `<Input type="date">`
+
+| Berkas | Alasan |
+|---|---|
+| `BayarAngsuran:136` | `disabled`, tanggalnya diturunkan dan sudah benar |
+| `FastCreateV2:504` | `readOnly`, sama |
+| `Approval:534` | `tanggal_rencana_minggu_depan` — rencana drop kepala, bukan salah satu dari 8 kolom yang dijaga server |
+| `JenisNasabah:47` | `type="date"` nyasar di `SelectList`, bukan kolom tanggal sama sekali |
+
+### Pelajaran yang ditulis, bukan sekadar diperbaiki
+
+Dari empat tanggal turunan, dua kutemukan sendiri dan **dua ditemukan user**.
+Memasang penjaga di satu ujung mewajibkan mencari SEMUA yang memberi makan ujung
+itu — dan yang paling mudah terlewat justru yang tidak punya kolom isian, karena
+tidak terlihat saat menyisir layar.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `work_days` | ya | tidak |

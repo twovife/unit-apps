@@ -10,6 +10,8 @@ import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import { getLastDateForHari } from '@/lib/utils';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
+import useHariLibur from '@/Hooks/useHariLibur';
 
 const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
   const { data, setData, errors, post, processing, reset } = useForm({
@@ -29,15 +31,37 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
 
   const [mixDate, setMixDate] = useState();
 
+  // Sesudah useForm, bukan sebelum: argumennya membaca `data`.
+  const {
+    majuKeHariKerja,
+    mundurKeHariKerja,
+    siap: kalenderSiap,
+    alasanLibur,
+  } = useHariLibur(data.request_date);
+
+  // Bawaan `request_date` = hari tagih terakhir, yang bisa saja libur.
+  // Dibetulkan mundur: tanggal pengajuan menunjuk hari yang sudah lewat.
   useEffect(() => {
+    if (!data.request_date) return;
+
+    const benar = mundurKeHariKerja(data.request_date);
+    if (benar !== data.request_date) setData('request_date', benar);
+  }, [kalenderSiap]);
+
+  // Tanggal drop diturunkan, bukan dipilih — jadi penurunannya ikut melompati
+  // hari libur. MAJU, karena drop belum terjadi. Per minggu, supaya hari tagih
+  // kelompok tidak berubah.
+  useEffect(() => {
+    if (!data.request_date) return;
+
     setMixDate(data.request_date);
     setData((prevData) => ({
       ...prevData,
-      tanggal_drop: dayjs(data.request_date)
-        .add(1, 'week')
-        .format('YYYY-MM-DD'),
+      tanggal_drop: majuKeHariKerja(
+        dayjs(data.request_date).add(1, 'week').format('YYYY-MM-DD'),
+      ),
     }));
-  }, [data.request_date]);
+  }, [data.request_date, kalenderSiap]);
 
   const onInputChange = (e) => {
     const { name, value } = e.target;
@@ -132,8 +156,7 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
           <Loading show={processing} />
           <div className="w-full mb-3">
             <Label>Tanggal Pengajuan</Label>
-            <Input
-              type="date"
+            <TanggalKerja
               name="request_date"
               required={true}
               value={data.request_date}
@@ -143,14 +166,31 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
           </div>
           <div className="w-full mb-3">
             <Label>Tanggal Drop</Label>
-            <Input
-              type="date"
+            <TanggalKerja
               name="tanggal_drop"
               min={mixDate}
               required={true}
               value={data.tanggal_drop}
               onChange={onInputChange}
             />
+            {data.request_date &&
+              data.tanggal_drop &&
+              data.tanggal_drop !==
+                dayjs(data.request_date).add(1, 'week').format('YYYY-MM-DD') && (
+                <p className="mt-1 text-xs text-amber-700">
+                  Minggu depan jatuh hari libur
+                  {alasanLibur(
+                    dayjs(data.request_date).add(1, 'week').format('YYYY-MM-DD'),
+                  )
+                    ? ` (${alasanLibur(
+                        dayjs(data.request_date)
+                          .add(1, 'week')
+                          .format('YYYY-MM-DD'),
+                      )})`
+                    : ''}
+                  , dilompat ke hari tagih berikutnya.
+                </p>
+              )}
             <InputError message={errors.tanggal_drop} />
           </div>
 

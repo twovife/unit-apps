@@ -4,6 +4,7 @@ import { showNominalByStatus } from '@/lib/utils';
 
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
 import { Label } from '@/shadcn/ui/label';
 import { useForm, usePage } from '@inertiajs/react';
 
@@ -158,8 +159,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
         <div className="flex w-full gap-3">
           <div className="flex-1">
             <Label htmlFor="request_date">Tanggal Pengajuan</Label>
-            <Input
-              type="date"
+            <TanggalKerja
               onChange={onDateChange}
               value={data.request_date}
               id={'request_date'}
@@ -171,8 +171,7 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
 
           <div className="flex-1">
             <Label htmlFor="drop_date">Tanggal Drop</Label>
-            <Input
-              type="date"
+            <TanggalKerja
               onChange={onDateChange}
               value={data.drop_date}
               id={'drop_date'}
