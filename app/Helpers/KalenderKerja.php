@@ -67,9 +67,12 @@ class KalenderKerja
             ->get()
             ->keyBy(fn($w) => $w->date->toDateString());
 
+        // Aktivitas dihitung SEKALI lalu dioper. Sebelum ini `bulan()` memanggil
+        // `aktivitasHarian()` langsung DAN lewat `saran()`, jadi kueri termahal
+        // di layar ini jalan dua kali - 30,3 detik, bukan 15,1.
         $aktivitas = self::aktivitasHarian($awal, $akhir);
         $closing = self::closingPerTanggal($awal, $akhir);
-        $saran = self::saran($periode);
+        $saran = self::saran($periode, $aktivitas);
 
         $hari = [];
         $jmlKerja = 0;
@@ -128,7 +131,7 @@ class KalenderKerja
      *
      * @return array<string,string>  tanggal => alasan
      */
-    public static function saran($periode): array
+    public static function saran($periode, ?array $aktivitas = null): array
     {
         $awal = Carbon::parse($periode)->startOfMonth();
         $akhir = $awal->copy()->endOfMonth();
@@ -152,7 +155,7 @@ class KalenderKerja
         // 2. Hari sepi menurut data. Hanya bermakna kalau bulannya sudah
         //    berjalan; bulan kosong tidak menghasilkan saran apa pun, dan itu
         //    benar - lebih baik diam daripada menebak.
-        $aktivitas = self::aktivitasHarian($awal, $akhir);
+        $aktivitas ??= self::aktivitasHarian($awal, $akhir);
 
         if (!empty($aktivitas)) {
             $nilai = array_values($aktivitas);

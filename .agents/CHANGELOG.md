@@ -2497,3 +2497,78 @@ baru; kalau perlu, tinggal dari layar.
   menambah `branch_id` cuma satu migrasi pada tabel berisi ratusan baris.
 - **Penetapan mundur bertahun-tahun.** Layarnya bisa, tapi tidak ada yang
   membangkitkannya otomatis; data lama dibiarkan.
+
+## BC — Layar kalender 30 detik jadi 0,02 detik (2026-08-12)
+
+Dilaporkan user: `/kalender-kerja` load terlalu lama. Terukur **30,3 detik**.
+
+Sinyalnya sebenarnya sudah muncul saat BB dikerjakan — skrip ujinya kena
+timeout 2 menit — dan waktu itu ditepis sebagai "batas tool", bukan ditelusuri.
+Ternyata memang lambat.
+
+### Sebab 1: indeks yang tidak pernah bisa dipakai
+
+`transaction_loan_instalments` berisi **11,75 juta baris** dan punya empat
+indeks yang MEMUAT `transaction_date` — tapi tidak satu pun yang MEMIMPIN
+dengannya:
+
+```
+INDEX            (transaction_loan_officer_grouping_id, transaction_date)
+idx_loanid_date  (transaction_loan_id,                  transaction_date)
+index2           (transaction_loan_officer_grouping_id, transaction_date, status)
+```
+
+Indeks komposit hanya bisa dipakai dari kolom paling kiri. Jadi kueri yang
+menyaring rentang tanggal tanpa menyebut kelompok atau pinjaman **tidak punya
+jalan masuk sama sekali**:
+
+```
+sebelum : type=index  key=INDEX                    rows=11.682.401
+          Using where; Using index; Using temporary; Using filesort   → 15,1 dtk
+sesudah : type=range  key=tli_transaction_date_idx rows=1
+          Using where; Using index                                    → 0,00 dtk
+```
+
+Migrasi `2026_08_12_190000_add_transaction_date_index_to_instalments`
+(dari app_laravel, 2m 15s pada 11,75 juta baris).
+
+### Sebab 2: kueri termahal dijalankan dua kali
+
+`KalenderKerja::bulan()` memanggil `aktivitasHarian()` langsung, lalu memanggil
+`saran()` yang memanggilnya lagi. 15,1 → 30,3 detik. Sekarang dihitung sekali
+lalu dioper; `saran()` menerima parameter opsional dan tetap menghitung sendiri
+kalau dipanggil terpisah.
+
+### Klaim yang ditarik
+
+Docblock migrasi versi pertama menyebut indeks ini juga menolong subkueri saldo
+di `HitungAgregat` (`WHERE transaction_date <= :asOf GROUP BY
+transaction_loan_id`). **Diperiksa sesudah indeksnya terpasang: tidak.**
+Pengoptimal tetap memilih `idx_loanid_date` dan tetap memindai 11,68 juta
+baris — dan itu rencana yang benar, karena `<= asOf` mencakup hampir seluruh
+riwayat sehingga tidak ada rentang untuk dipersempit.
+
+Docblock sudah dibetulkan dan sekarang menyebut secara eksplisit siapa yang
+TIDAK tertolong, supaya pembaca berikutnya tidak mengira sebaliknya.
+
+### Hasil
+
+| | sebelum | sesudah |
+|---|---:|---:|
+| kueri aktivitas 1x | 15,10 dtk | 0,00 dtk |
+| `bulan()` Agustus | 30,30 dtk | 0,02 dtk |
+| `bulan()` Juli (padat) | — | 0,11 dtk |
+| `SerahTerima::periksa` | — | 0,02 dtk |
+
+### Yang masih lambat, dan sengaja dibiarkan
+
+`HitungAgregat::portofolio()` satu kantor: **2,69 detik**. Biaya lama, bukan
+akibat perubahan ini. Belum diapa-apakan karena hanya jalan saat penguncian dan
+penyusunan bulanan — bukan di jalur yang ditunggu orang di depan layar. Kalau
+suatu hari terasa, obatnya bukan indeks tapi mengurangi cakupan subkuerinya.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `transaction_loan_instalments` | ya | tidak (hanya indeks) |
