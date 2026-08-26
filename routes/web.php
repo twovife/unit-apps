@@ -162,6 +162,14 @@ Route::middleware('auth')->group(function () {
     });
   });
 
+  // Kalender kerja nasional. Otorisasi (superuser) dicek di controller.
+  Route::controller(\App\Http\Controllers\KalenderKerjaController::class)
+    ->prefix('kalender-kerja')->name('kalender.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/', 'simpan')->name('simpan');
+      Route::post('/terapkan-saran', 'terapkanSaran')->name('terapkan_saran');
+    });
+
   Route::controller(AdminController::class)->prefix('admin-panel')->name('adminpanel.')->group(function () {
     Route::get('/', "index")->name('index');
 

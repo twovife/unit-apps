@@ -356,6 +356,12 @@ export default function AppSidebar({ ...props }) {
                   link: route('adminpanel.loan_balancing'),
                   active: route().current('adminpanel.loan_balancing'),
                 },
+                {
+                  id: 4,
+                  title: 'Kalender Kerja',
+                  link: route('kalender.index'),
+                  active: route().current('kalender.index'),
+                },
               ]}
             />
           </SidebarGroup>

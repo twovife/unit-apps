@@ -2386,3 +2386,114 @@ Semua uji dikembalikan: `serah_terima_at` NULL, Z NULL di 60 baris, pinjaman
 sisipan dihapus, izin `can-edit` kasir dicabut kembali. Selisih terhadap sistem
 lama 0 dari 60 baris. Serah terimanya **belum diteken** — sengaja, supaya
 dikerjakan dari layar.
+
+## BB — Kalender kerja punya layarnya (2026-08-12)
+
+Tabel `work_days` dan model `WorkDay` sudah ada sejak AT dan sudah dipakai
+pembangkit baris closing — yang belum ada layar penetapnya, jadi tabelnya
+kosong dan semua jatuh ke bawaan Senin-Sabtu.
+
+### Jebakan yang ditutup
+
+17 Agustus 2026 jatuh hari Senin. Tanpa kalender, sistem menghitungnya hari
+kerja biasa dan membangkitkan 10 baris closing untuknya. Tanda tangan bulanan
+mensyaratkan `hari_terkunci >= hari_kerja` — jadi Karawang 2 **tidak akan
+pernah bisa menutup Agustus**, karena ada satu hari yang mustahil dikunci:
+tidak ada yang bekerja hari itu.
+
+Ironisnya justru syarat ketat yang dipasang untuk mencegah "lupa tutup buku"
+yang jadi jebakannya sendiri.
+
+### Lubang kedua, baru kelihatan setelah kalendernya jalan
+
+Menandai 17 Agustus libur **tidak cukup**. `TutupBulanan::kelengkapan()`
+menghitung `hari_kerja` dari `COUNT(*)` baris closing bulan itu — BUKAN dari
+kalender. Jadi 10 baris yatim tetap menuntut dikunci dan bulannya tetap buntu.
+
+Terverifikasi: sesudah 17 Agu ditandai libur, `hari_kerja` bulanan hari senin
+masih 5. Baru setelah baris yatimnya dihapus turun ke 4.
+
+Karena itu `tetapkan()` dan `terapkanSaran()` **menghapus baris closing kosong**
+pada tanggal yang baru ditandai libur. Aman karena `bolehJadikanLibur()` sudah
+membuktikan barisnya kosong dan tidak terkunci; `whereNull('kasir_lock_at')`
+tetap dipasang sebagai jaring kedua, karena pemeriksaan dan penghapusan terjadi
+di dua saat berbeda.
+
+### Kenapa sarannya lahir dari data
+
+Mengetik kalender dari nol tiap bulan adalah pekerjaan yang pasti suatu saat
+terlewat, dan hari libur yang terlewat **tidak bersuara** — dia cuma menyisakan
+satu baris yang tak bisa dikunci.
+
+Jadi sarannya dihitung: hari dengan aktivitas di bawah 10% median bulan itu
+ditawarkan sebagai libur. Terverifikasi di Juli 2026 — 27 Juli muncul sebagai
+"335 angsuran, 1% dari kelaziman bulan ini", sementara 25 hari lainnya berkisar
+83-117%.
+
+Untuk bulan yang **belum berjalan** data tidak bisa bicara, jadi saran hanya
+berisi hari Minggu dan libur bertanggal tetap (1 Jan, 1 Mei, 1 Jun, 17 Agu,
+25 Des). Idul Fitri, Nyepi, Waisak **sengaja tidak ditebak**: tanggalnya
+bergeser tiap tahun, dan tebakan yang salah tetap terlihat meyakinkan. Layar
+mengatakannya terang-terangan.
+
+### Penjaga
+
+| Aksi | Aturan |
+|---|---|
+| jadikan **kerja** | selalu boleh — paling banter menambah baris closing |
+| jadikan **libur** | ditolak kalau ada baris closing terkunci, atau baris berisi angka |
+| tanggal di luar 2015-2035 | ditolak (`WorkDay::tanggalWajar`) |
+| terapkan saran ulang | hanya menyentuh tanggal yang belum ditetapkan |
+
+Menjadikan libur yang berbahaya: `hari_kerja` ikut turun sementara baris
+closing tidak hilang sendiri, sehingga syarat tanda tangan bulanan bisa lolos
+padahal ada hari berisi yang belum dikunci — persis kebocoran yang syarat itu
+dibuat untuk mencegah.
+
+### Otorisasi
+
+**Hanya superuser.** Kalendernya berlaku untuk 157 kantor sekaligus; satu
+tanggal salah tandai menghapus satu hari kerja dari semuanya. Terverifikasi:
+kasir 403, superuser 200.
+
+### Berkas
+
+| Berkas | Tindakan |
+|---|---|
+| `app/Helpers/KalenderKerja.php` | **baru** — `bulan()`, `saran()`, `tetapkan()`, `terapkanSaran()` |
+| `app/Http/Controllers/KalenderKerjaController.php` | **baru** — superuser-only |
+| `resources/js/Pages/Admin/KalenderKerja.jsx` | **baru** — grid bulan, klik untuk mengubah |
+| `routes/web.php` | 3 rute `kalender.*` |
+| `resources/js/Components/Sidebar.jsx` | menu "Kalender Kerja" di Pengaturan Admin |
+
+`WorkDay.php` **tidak disentuh** — sudah benar apa adanya.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `work_days` | ya | ya |
+| `transaction_daily_closings` | ya | ya (hapus baris kosong di tanggal libur) |
+| `transaction_loan_instalments` | ya | tidak |
+
+### Keadaan sesudah sesi ini
+
+Agustus 2026 **ditetapkan** (31 tanggal): 25 hari kerja, 17 Agustus libur.
+Baris closing Karawang 2 turun 260 → 250, `hari_kerja` bulanan senin 5 → 4.
+Ini setelan yang memang harus benar, bukan data uji — jadi sengaja dibiarkan
+terpasang, bukan dikembalikan seperti uji-uji sebelumnya.
+
+Bulan lain masih kosong dan akan jatuh ke bawaan Senin-Sabtu sampai
+ditetapkan — termasuk Juli 2026, yang 28-31-nya dianggap libur tapi belum
+pernah ditandai. Tidak ditetapkan dari sini karena Juli di luar jangkauan alur
+baru; kalau perlu, tinggal dari layar.
+
+### Yang sengaja tidak dikerjakan
+
+- **Pemunduran tanggal drop yang kena libur** (§9: 17 Agt libur → mundur ke
+  24 Agt). Kalendernya sekarang tahu mana yang libur, tapi belum ada yang
+  memakainya di layar pengajuan. Perlu digarap bersama alur drop, bukan di sini.
+- **Kalender per kantor.** Tetap nasional. Kalau suatu hari benar-benar perlu,
+  menambah `branch_id` cuma satu migrasi pada tabel berisi ratusan baris.
+- **Penetapan mundur bertahun-tahun.** Layarnya bisa, tapi tidak ada yang
+  membangkitkannya otomatis; data lama dibiarkan.
