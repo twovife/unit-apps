@@ -2887,3 +2887,73 @@ eksplisit, bukan kebetulan.
 | Tabel | BACA | TULIS |
 |---|---|---|
 | `work_days` | ya | tidak |
+
+## BG — Tanggal drop ikut melompati hari libur (2026-08-12)
+
+Dilaporkan user dari `/mobile_apps/create`: tanggal pengajuan sudah bercoret
+kalau libur, tapi **tanggal drop tidak** — dan mestinya kalau minggu depan
+libur, lompatannya ke minggu berikutnya lagi.
+
+### Pola yang sama, ketiga kalinya
+
+Tanggal drop **tidak dipilih user**, dia diturunkan:
+
+```js
+tanggal_drop: dayjs(data.request_date).add(1, 'week')
+```
+
+Memilih 10 Agustus (Senin) menghasilkan 17 Agustus — hari libur yang pasti
+ditolak server, padahal pemilihnya mematikan tanggal itu untuk klik manual.
+
+Ini kejadian ketiga dari pola yang sama dalam dua hari:
+
+| Layar | Tanggal yang diturunkan | Ditemukan |
+|---|---|---|
+| Pelunasan | hari tagih terakhir | BF |
+| Pemutihan | hari ini | BF |
+| **Pengajuan** | **+1 minggu dari tanggal pengajuan** | **di sini, oleh user** |
+
+Dua yang pertama kutemukan sendiri saat memasang pemilihnya; yang ketiga lolos
+dan user yang menemukan. Pelajarannya cukup jelas untuk ditulis: **setiap
+tanggal yang dihitung sistem wajib dicari dan diperiksa**, bukan cuma yang
+punya kolom isian.
+
+### Arahnya berbeda, dan itu disengaja
+
+`useHariLibur` sekarang punya dua pasangan:
+
+- **`mundurKeHariKerja`** — untuk tanggal yang SUDAH LEWAT. Pelunasan dicatat
+  pada hari tagih terakhir yang benar-benar ada penagihan.
+- **`majuKeHariKerja`** — untuk tanggal yang BELUM TERJADI. Drop yang jatuh di
+  hari libur digeser ke depan; menggesernya mundur berarti mencairkan pinjaman
+  sebelum diajukan.
+
+Keduanya melompat per **minggu**, bukan per hari, supaya hari tagih kelompok
+tidak berubah.
+
+### Terverifikasi
+
+| Pengajuan | +1 minggu | Dipakai |
+|---|---|---|
+| 10 Agu (Senin) | 17 Agu — Hari Kemerdekaan | **24 Agu** |
+| 18 Agu (Selasa) | 25 Agu — Maulid Nabi | **1 Sep** |
+| 11 Agu (Selasa) | 18 Agu | 18 Agu |
+| 3 Agu (Senin) | 10 Agu | 10 Agu |
+
+Berantai — 17 dan 24 Agustus sama-sama dibuat libur: **31 Agustus**. Server
+tetap sepakat: 17 Agu ditolak, 24 Agu diterima.
+
+Layar juga memberi tahu kalau tanggalnya melompat, menyebut alasan liburnya.
+
+### Kapsi kalender
+
+Ikut dibetulkan dari tangkapan layar yang sama: kapsinya "August 2026"
+sementara dropdown di atasnya "Agustus" — satu kalender bicara dua bahasa. Kini
+memakai locale `id` dari `date-fns` (sudah terpasang), dan kapsinya disembunyikan
+karena nama bulannya sudah ada di dropdown; panah geser bulan tetap dipakai.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `work_days` | ya | tidak |

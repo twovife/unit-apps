@@ -5,6 +5,7 @@ import { CalendarIcon, CalendarOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shadcn/ui/button';
 import { Calendar } from '@/shadcn/ui/calendar';
+import { id as localeId } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 
 /**
@@ -166,6 +167,9 @@ const TanggalKerja = ({
 
           <Calendar
             mode="single"
+            // Tanpa ini kapsinya "August 2026" sementara dropdown di atas
+            // "Agustus" - satu kalender bicara dua bahasa sekaligus.
+            locale={localeId}
             selected={terpilih ?? undefined}
             onSelect={pilih}
             month={bulanTampil}
@@ -175,6 +179,9 @@ const TanggalKerja = ({
             modifiersClassNames={{
               libur: 'text-red-600 line-through opacity-70',
             }}
+            // Nama bulannya sudah ada di dropdown; menampilkannya lagi di
+            // kapsi cuma judul dobel. Panah geser bulan tetap dipakai.
+            classNames={{ caption_label: 'sr-only' }}
           />
 
           <div className="px-3 pt-1 pb-3 space-y-1 text-xs border-t text-muted-foreground">

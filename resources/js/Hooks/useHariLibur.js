@@ -127,5 +127,44 @@ export default function useHariLibur(sekitar) {
     [hariKerja],
   );
 
-  return { libur, tahun, siap, alasanLibur, hariKerja, mundurKeHariKerja };
+  /**
+   * MAJU seminggu-seminggu sampai ketemu hari tagih yang benar-benar bekerja.
+   *
+   * Pasangan `mundurKeHariKerja`, dan arahnya memang berbeda karena maksudnya
+   * berbeda:
+   *
+   *   - MUNDUR untuk tanggal yang SUDAH LEWAT — pelunasan dicatat pada hari
+   *     tagih terakhir yang benar-benar ada penagihan.
+   *   - MAJU untuk tanggal yang BELUM TERJADI — drop yang jatuh di hari libur
+   *     digeser ke depan, bukan ke belakang; menggesernya ke belakang berarti
+   *     mencairkan pinjaman sebelum diajukan.
+   *
+   * Hari tagih kelompok tidak berubah, jadi lompatannya per MINGGU, bukan per
+   * hari: 17 Agustus jadi 24 Agustus, bukan 18 Agustus. Kalau 24 Agustus juga
+   * libur, lanjut ke 31 Agustus.
+   */
+  const majuKeHariKerja = useCallback(
+    (tgl) => {
+      if (!tgl) return tgl;
+      if (dayjs(tgl).day() === 0) return dayjs(tgl).format('YYYY-MM-DD');
+
+      let calon = dayjs(tgl);
+      for (let i = 0; i < 8; i++) {
+        if (hariKerja(calon)) return calon.format('YYYY-MM-DD');
+        calon = calon.add(1, 'week');
+      }
+      return dayjs(tgl).format('YYYY-MM-DD');
+    },
+    [hariKerja],
+  );
+
+  return {
+    libur,
+    tahun,
+    siap,
+    alasanLibur,
+    hariKerja,
+    mundurKeHariKerja,
+    majuKeHariKerja,
+  };
 }

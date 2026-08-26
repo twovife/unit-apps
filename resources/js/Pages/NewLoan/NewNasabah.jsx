@@ -25,6 +25,7 @@ import Checkbox from '@/Components/Checkbox';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import TanggalKerja from '@/Components/shadcn/TanggalKerja';
+import useHariLibur from '@/Hooks/useHariLibur';
 import RiwayatPengajuanLain from './Components/RiwayatPengajuanLain';
 import RiwayatPengajuanNonBranch from '@/Pages/NewLoan/Components/RiwayatPengajuanNonBranch';
 
@@ -49,6 +50,9 @@ const NewNasabah = ({
   }, [printUrl.timestamp]);
 
   const { optKelompok } = useOptionGenerator();
+  const { majuKeHariKerja, siap: kalenderSiap, alasanLibur } = useHariLibur(
+    data?.request_date,
+  );
   const { data, setData, post, errors, processing, reset } = useForm({
     isActiveMember: false,
     nik: '',
@@ -129,15 +133,26 @@ const NewNasabah = ({
   const [customerData, setCustomerData] = useState([]);
   const [mixDate, setMixDate] = useState();
 
+  // Tanggal drop DITURUNKAN, tidak dipilih — jadi penurunannya harus tunduk
+  // pada aturan yang sama dengan tanggal yang dipilih orang. Sebelumnya cuma
+  // `+1 minggu`, sehingga memilih 10 Agustus menghasilkan 17 Agustus: hari
+  // libur yang pasti ditolak server, padahal pemilihnya mematikan tanggal itu
+  // untuk klik manual.
+  //
+  // Lompatannya per MINGGU supaya hari tagih kelompok tidak berubah, dan MAJU
+  // karena drop belum terjadi — menggesernya mundur berarti mencairkan
+  // pinjaman sebelum diajukan.
   useEffect(() => {
+    if (!data.request_date) return;
+
     setMixDate(data.request_date);
     setData((prevData) => ({
       ...prevData,
-      tanggal_drop: dayjs(data.request_date)
-        .add(1, 'week')
-        .format('YYYY-MM-DD'),
+      tanggal_drop: majuKeHariKerja(
+        dayjs(data.request_date).add(1, 'week').format('YYYY-MM-DD'),
+      ),
     }));
-  }, [data.request_date]);
+  }, [data.request_date, kalenderSiap]);
 
   const onHandleCurencyChange = (value, name, float) => {
     setData(name, value);
@@ -332,6 +347,28 @@ const NewNasabah = ({
                           value={data.tanggal_drop}
                           onChange={onInputChange}
                         />
+                        {data.request_date &&
+                          data.tanggal_drop &&
+                          data.tanggal_drop !==
+                            dayjs(data.request_date)
+                              .add(1, 'week')
+                              .format('YYYY-MM-DD') && (
+                            <p className="mt-1 text-xs text-amber-700">
+                              Minggu depan jatuh hari libur
+                              {alasanLibur(
+                                dayjs(data.request_date)
+                                  .add(1, 'week')
+                                  .format('YYYY-MM-DD'),
+                              )
+                                ? ` (${alasanLibur(
+                                    dayjs(data.request_date)
+                                      .add(1, 'week')
+                                      .format('YYYY-MM-DD'),
+                                  )})`
+                                : ''}
+                              , dilompat ke hari tagih berikutnya.
+                            </p>
+                          )}
                         <InputError message={errors.tanggal_drop} />
                       </div>
                     </div>
