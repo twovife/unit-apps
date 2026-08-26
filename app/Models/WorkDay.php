@@ -120,6 +120,40 @@ class WorkDay extends Model
         return $hasil;
     }
 
+    /**
+     * Tanggal yang layak ditampilkan di rekap satu bulan.
+     *
+     * Hari kerja menurut kalender, DITAMBAH tanggal apa pun yang ternyata punya
+     * data — walau tanggal itu libur.
+     *
+     * Penambahan itu bukan kelonggaran, tapi syarat. Rekap yang menyaring
+     * tanggal libur begitu saja akan MENYEMBUNYIKAN transaksi yang telanjur
+     * tercatat di sana: angkanya hilang dari layar tapi tetap ada di basis
+     * data, dan totalnya berhenti cocok tanpa ada yang tahu sebabnya. Itu
+     * persis penyakit yang jadi sebab seluruh rombakan ini — dua angka yang
+     * harus cocok, tapi salah satunya diam-diam disetel.
+     *
+     * Jadi: hari libur yang sepi hilang dari rekap (itu gunanya), hari libur
+     * yang ternyata ada isinya tetap muncul (itu alarmnya).
+     *
+     * @param  iterable<string>  $tanggalBerdata  'Y-m-d'
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    public static function tanggalRekapBulan($periode, iterable $tanggalBerdata = [])
+    {
+        $awal = Carbon::parse($periode)->startOfMonth();
+        $akhir = $awal->copy()->endOfMonth();
+
+        $hasil = static::hariKerjaBulan($awal)->map(fn($t) => $t->toDateString());
+
+        $berdata = collect($tanggalBerdata)
+            ->filter()
+            ->map(fn($t) => Carbon::parse($t)->toDateString())
+            ->filter(fn($t) => $t >= $awal->toDateString() && $t <= $akhir->toDateString());
+
+        return $hasil->merge($berdata)->unique()->sort()->values();
+    }
+
     /** Apakah bulan ini sudah dikonfirmasi staf pusat, atau masih pakai bawaan? */
     public static function sudahDikonfirmasi($periode): bool
     {

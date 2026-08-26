@@ -3036,3 +3036,64 @@ tidak terlihat saat menyisir layar.
 | Tabel | BACA | TULIS |
 |---|---|---|
 | `work_days` | ya | tidak |
+
+## BI — Rekap mengikuti kalender kerja (2026-08-12)
+
+Dilaporkan user dari `/kasir/rekap/rekap-dua`: tanggalnya harus ikut kalender.
+
+Benar. Daftar tanggalnya dibangkitkan dengan aturan yang dipatok di kode:
+
+```php
+if ($cursor->dayOfWeek !== Carbon::SUNDAY) { ... }   // RekapTrait:473
+if ($i->dayOfWeek !== 0) { ... }                     // RekapTrait:44
+```
+
+Dua tempat, aturan yang sama disalin. Jadi 17 Agustus tetap muncul sebagai
+kolom kosong padahal libur nasional, dan kalender kerja yang sudah ditetapkan
+tidak berpengaruh apa-apa di sini.
+
+### Kenapa tidak sekadar menyaring tanggal libur
+
+Menyaringnya begitu saja akan **menyembunyikan transaksi yang telanjur
+tercatat** di hari libur: angkanya hilang dari layar tapi tetap ada di basis
+data, dan total rekap berhenti cocok dengan sumbernya tanpa ada yang tahu
+sebabnya. Itu persis penyakit yang jadi sebab seluruh rombakan ini.
+
+Aturannya jadi: **hari kerja menurut kalender, DITAMBAH tanggal apa pun yang
+punya data.** Hari libur yang sepi hilang dari rekap — itu gunanya. Hari libur
+yang ternyata ada isinya tetap muncul — itu alarmnya.
+
+`WorkDay::tanggalRekapBulan($periode, $tanggalBerdata)`, dipakai dua-duanya,
+supaya aturannya tidak lagi disalin.
+
+### Kantor yang belum migrasi tidak berubah
+
+`hariKerjaBulan()` jatuh ke bawaan Senin-Sabtu untuk bulan yang kalendernya
+belum ditetapkan — persis aturan lama. Terverifikasi: Juli 2026 tetap 27
+tanggal, dan 27 Juli (335 angsuran nyata) tetap muncul.
+
+### Terverifikasi
+
+| Uji | Hasil |
+|---|---|
+| Agustus 2026 | **24 tanggal** (31 − 5 Minggu − 17 Agu − 25 Agu) |
+| 17 & 25 Agustus | tidak muncul |
+| 18 Agustus | muncul |
+| Juli 2026 (kalender belum disetel) | 27 tanggal, tak berubah |
+| **angsuran disisipkan di 17 Agustus** | **17 Agustus muncul kembali** |
+| sisipan dihapus | hilang lagi, kembali 24 tanggal |
+| `/rencana`, `/rekap-dua`, `/rekap-satu`, `/permantri` | 200 |
+
+### Efek samping lama yang ikut hilang
+
+Loop di `getRencanaDropKepalaData` memakai `for ($i = $startOfMonth; ...)` —
+memutasi `$startOfMonth` sampai lewat akhir bulan sebagai efek samping.
+Diperiksa: tidak ada yang memakainya sesudah loop, jadi tak pernah jadi bug.
+Sekarang mutasinya hilang sendiri.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `work_days` | ya | tidak |
+| `transaction_daily_recaps`, `transaction_loans`, `transaction_loan_instalments`, `transaction_sirculations` | ya | tidak |

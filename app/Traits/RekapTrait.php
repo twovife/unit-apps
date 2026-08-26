@@ -38,13 +38,12 @@ trait RekapTrait
       ->get()
       ->groupBy('drop_date');
 
-    $datesMatchDay = collect();
-
-    for ($i = $startOfMonth; $i->lte($endOfMonth); $i->addDays()) {
-      if ($i->dayOfWeek !== 0) {
-        $datesMatchDay->push($i->format('Y-m-d'));
-      }
-    }
+    // Sama seperti getDataRekapDua: ikut kalender kerja, tapi tanggal yang
+    // sudah punya drop tetap tampil walau libur - biar kelihatan, bukan hilang.
+    $datesMatchDay = \App\Models\WorkDay::tanggalRekapBulan(
+      $startOfMonth,
+      $loan->keys()->map(fn($t) => Carbon::parse($t)->toDateString())
+    );
 
     $daily_recap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))->whereIn('date', $datesMatchDay)->get()->groupBy('date');
 
@@ -466,15 +465,25 @@ trait RekapTrait
     // GENERATE DATES
     // ============================
 
-    $datesOfMonth = [];
-    $cursor = Carbon::parse($startDateofMonth);
+    // Dulu dipatok "semua hari kecuali Minggu", sehingga 17 Agustus tetap
+    // muncul sebagai kolom kosong padahal libur nasional. Sekarang mengikuti
+    // kalender kerja — yang jatuh ke bawaan Senin-Sabtu untuk bulan yang belum
+    // ditetapkan, jadi kantor yang kalendernya belum disetel tidak berubah
+    // apa-apa.
+    //
+    // Tanggal yang PUNYA DATA tetap ditampilkan walau libur. Menyaringnya
+    // begitu saja akan menyembunyikan transaksi yang telanjur tercatat di
+    // sana, dan totalnya berhenti cocok tanpa ada yang tahu sebabnya.
+    $tanggalBerdata = collect()
+      ->merge($instalmentAgg->flatMap(fn($perTanggal) => $perTanggal->keys()))
+      ->merge($loanAgg->flatMap(fn($perTanggal) => $perTanggal->keys()))
+      ->merge($transactionDailyRecap->pluck('date'))
+      ->map(fn($t) => Carbon::parse($t)->toDateString());
 
-    while ($cursor->format('Y-m-d') <= $endDateofMonth) {
-      if ($cursor->dayOfWeek !== Carbon::SUNDAY) {
-        $datesOfMonth[] = $cursor->format('Y-m-d');
-      }
-      $cursor->addDay();
-    }
+    $datesOfMonth = \App\Models\WorkDay::tanggalRekapBulan(
+      $startDateofMonth,
+      $tanggalBerdata
+    )->all();
 
     // ============================
     // BUILD RESPONSE
