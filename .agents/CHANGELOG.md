@@ -2270,3 +2270,119 @@ dikerjakan dari layar.
 - **Serah terima saldo awal belum punya layar.** Angkanya benar sekarang karena
   dihitung otomatis, tapi pemeriksaan §13.2 dan penetapan `Z` (ML belum
   terinput) masih belum ada tempatnya di UI.
+
+## BA — Serah terima saldo awal (2026-08-12)
+
+Layar untuk satu-satunya kali sistem lama dan sistem baru bertemu. Menutup
+lubang terbesar yang tersisa dari AZ: angka saldo awal sudah benar, tapi tidak
+ada tempat untuk **memeriksanya, menetapkan Z, dan menerimanya**.
+
+### Dua cacat yang ditemukan saat mengerjakannya
+
+**1. `awal_*` dihitung ulang selamanya.** `TutupBulanan::rakit()` menimpa
+`awal_*` tiap kali ada hari dikunci. Artinya satu pinjaman bertanggal mundur
+yang disisipkan ke bulan sebelumnya akan **diam-diam menggeser saldo awal yang
+sudah diperiksa dan diteken kantor** — dan tidak ada yang tahu, karena yang
+berubah justru angka pembandingnya sendiri. Serah terima yang bisa berubah
+sendiri bukan serah terima.
+
+Diperbaiki: begitu `serah_terima_at` terisi, `awal_*` tidak pernah dihitung
+ulang lagi. `akhir_*` **tetap** dihitung ulang — justru selisih `akhir`
+terhadap `awal` yang membuat sisipan semacam itu terlihat alih-alih tersembunyi.
+
+Terbukti: baris kelompok 891/jumat, `awal_total` 20.310.000. Disisipkan
+pinjaman drop 15 Juli senilai 1.300.000, lalu `susun()` dijalankan ulang.
+`awal_total` **tetap** 20.310.000; `akhir_total` naik ke 21.610.000; selisihnya
+1.300.000 — persis nilai sisipan, dan itulah alarmnya. Pembanding: kalau
+`serah_terima_at` dilepas sementara, `awal_total` ikut berubah jadi 21.610.000.
+Jadi yang membekukan memang tanda tangannya, bukan kebetulan.
+
+**2. `awal_ml_belum_terinput` `NOT NULL DEFAULT 0`.** Rancangan §13.2
+menyatakan kantor siap kalau Z **ditetapkan dan diteken**, BUKAN kalau Z = 0.
+Dengan default 0, kedua keadaan itu terlihat sama persis. Pembedaan yang sama
+sudah dijaga di `setoran_mantri` (NULL = belum dicatat, 0 = memang tidak
+menyetor) dan di stock-take (Y=null vs Y=0) — di sini terlewat.
+
+### Migrasi (dijalankan dari app_laravel)
+
+`2026_08_12_180000_add_serah_terima_to_transaction_monthly_closings`
+
+- `awal_ml_belum_terinput` jadi nullable default NULL; 60 baris bernilai 0
+  diubah jadi NULL, karena 0 di sana adalah default, bukan pernyataan siapa pun
+- `serah_terima_at`, `serah_terima_user` — tanda tangan tersendiri.
+  Menumpangkannya ke `kasir_lock_at` akan membuat penguncian bulan kedua
+  seolah-olah mengesahkan ulang saldo awal yang sudah lama diterima
+
+### Yang dibandingkan di layar
+
+Dua angka, dan yang penting keduanya tiba **sendiri-sendiri**:
+
+| sisi | asal |
+|---|---|
+| kiri | `transaction_sirculations` — tutup buku sistem lama, diketik kantor dari layar Approval Akhir (jalur `PinjamanTrait`) |
+| kanan | `awal_*` — `HitungAgregat::portofolio()` langsung dari `transaction_loans` + angsuran, tidak pernah membaca tabel sirkulasi |
+
+`SerahTerima` **tidak punya satu pun jalan untuk menyetel `awal_*`**. Kalau
+meleset, migrasinya yang ditunda. Menyediakan tombol penyama sama saja
+mengulang penyakit yang jadi sebab seluruh rombakan ini.
+
+### Kenapa selisih TIDAK memblokir pengesahan
+
+Syarat menekan tombol hanya satu: setiap baris sudah punya Z. Selisih terhadap
+sistem lama ditampilkan besar-besar tapi tidak menahan.
+
+Kalau selisih memblokir, orang akan menyetel Z sampai selisihnya nol supaya
+bisa lanjut — dan Z berhenti berarti apa pun. Yang menahan bukan sistem,
+melainkan tanda tangan yang tercatat namanya.
+
+### Otorisasi
+
+Melihat: `view-all-groups`. Mengubah Z & meneken: `view-all-groups` **DAN**
+`can-edit` — pola bongkar-pasang yang sudah dipakai untuk membuka kunci. Z
+memotong kuota input ML, dan sekali diteken saldo awalnya beku.
+
+Terverifikasi: mantri 403 pada GET; kasir tanpa `can-edit` 200 pada GET tapi
+403 pada `simpanZ`/`sahkan`; kasir dengan `can-edit` berhasil. Z negatif
+ditolak validasi. Menyahkan sebelum Z lengkap ditolak dengan menyebut jumlah
+barisnya. Meneken dua kali ditolak. Mengubah Z sesudah diteken ditolak.
+
+### Berkas
+
+| Berkas | Tindakan |
+|---|---|
+| `app/Helpers/SerahTerima.php` | **baru** — `periksa()`, `tetapkanZ()`, `sahkan()` |
+| `app/Helpers/TutupBulanan.php` | `rakit()` menerima baris lama; `awal_*` tidak ditimpa sesudah serah terima |
+| `app/Models/TransactionMonthlyClosing.php` | fillable + cast; `kuotaMlHabis()` kini menutup saat NULL; `sudahDiserahTerimakan()` |
+| `app/Http/Controllers/MigrasiController.php` | `serahTerima()`, `simpanZ()`, `sahkanSerahTerima()` + penjaga izin |
+| `resources/js/Pages/Migrasi/SerahTerima.jsx` | **baru** |
+| `routes/web.php` | 3 rute `migrasi.serah_terima*` |
+| `resources/js/Components/Sidebar.jsx` | menu "Serah Terima Saldo Awal" |
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `transaction_monthly_closings` | ya | ya (`awal_ml_belum_terinput`, `serah_terima_*`) |
+| `transaction_sirculations` | ya | tidak |
+| `transaction_loans`, `transaction_loan_instalments` | ya | tidak |
+| `transaction_loan_officer_groupings`, `branches` | ya | tidak |
+
+### Yang sengaja tidak dikerjakan
+
+- **Tidak ada tombol menyamakan `awal_*` dengan sistem lama.** Lihat di atas.
+- **Tidak ada pembatalan serah terima.** Belum jelas siapa yang berhak dan apa
+  syaratnya; menebaknya sekarang berarti membuat pintu belakang untuk masalah
+  yang belum pernah terjadi. Sementara ini lewat superuser di database, dan itu
+  memang seharusnya terasa berat.
+- **`hari_kerja`/`hari_terkunci` tidak jadi syarat.** Serah terima soal saldo
+  awal warisan, bukan soal kelengkapan bulan berjalan.
+- **Penolakan baris kantor lain tidak terverifikasi** — penjaganya ada dan
+  dibaca ulang, tapi belum ada kantor kedua yang punya baris bulanan untuk
+  diuji. Perlu diuji lagi begitu kantor kedua migrasi.
+
+### Keadaan Karawang 2 sesudah sesi ini
+
+Semua uji dikembalikan: `serah_terima_at` NULL, Z NULL di 60 baris, pinjaman
+sisipan dihapus, izin `can-edit` kasir dicabut kembali. Selisih terhadap sistem
+lama 0 dari 60 baris. Serah terimanya **belum diteken** — sengaja, supaya
+dikerjakan dari layar.

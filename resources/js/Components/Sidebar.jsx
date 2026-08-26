@@ -301,18 +301,24 @@ export default function AppSidebar({ ...props }) {
                 },
                 {
                   id: 3,
+                  title: 'Serah Terima Saldo Awal',
+                  link: route('migrasi.serah_terima'),
+                  active: route().current('migrasi.serah_terima'),
+                },
+                {
+                  id: 4,
                   title: 'Closing Harian',
                   link: route('closing.harian'),
                   active: route().current('closing.harian'),
                 },
                 {
-                  id: 4,
+                  id: 5,
                   title: 'Pemantau Migrasi',
                   link: route('migrasi.pemantau'),
                   active: route().current('migrasi.pemantau'),
                 },
                 {
-                  id: 5,
+                  id: 6,
                   title: 'Pemeriksaan Agregat',
                   link: route('migrasi.pemeriksaan'),
                   active: route().current('migrasi.pemeriksaan'),

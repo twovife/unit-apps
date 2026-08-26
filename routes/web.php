@@ -113,6 +113,12 @@ Route::middleware('auth')->group(function () {
       ->name('pemantau');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
+    Route::get('/serah-terima', [\App\Http\Controllers\MigrasiController::class, 'serahTerima'])
+      ->name('serah_terima');
+    Route::put('/serah-terima/{closing}/z', [\App\Http\Controllers\MigrasiController::class, 'simpanZ'])
+      ->name('serah_terima_z');
+    Route::post('/serah-terima/sahkan', [\App\Http\Controllers\MigrasiController::class, 'sahkanSerahTerima'])
+      ->name('serah_terima_sahkan');
   });
 
   // Layar kerja harian alur agregasi baru. Otorisasi dicek di controller.

@@ -47,12 +47,14 @@ class TransactionMonthlyClosing extends Model
         'hari_kerja', 'hari_terkunci',
         'kepala_approval_at', 'kepala_approval_user',
         'kasir_lock_at', 'kasir_lock_user',
+        'serah_terima_at', 'serah_terima_user',
     ];
 
     protected $casts = [
         'periode' => 'date',
         'kepala_approval_at' => 'datetime',
         'kasir_lock_at' => 'datetime',
+        'serah_terima_at' => 'datetime',
     ];
 
     public function loan_officer_grouping()
@@ -113,10 +115,23 @@ class TransactionMonthlyClosing extends Model
         return $this->hari_kerja > 0 && $this->hari_terkunci >= $this->hari_kerja;
     }
 
-    /** Pintu input ML tertutup permanen begitu sisa kuota habis. */
+    /**
+     * Pintu input ML tertutup begitu sisa kuota habis.
+     *
+     * NULL ikut menutup, dan itu disengaja: kuota yang belum pernah ditetapkan
+     * bukan kuota tak terbatas. Selama kantor belum menyatakan berapa ML yang
+     * tercecer, tidak ada angka yang boleh dipakai memotongnya.
+     */
     public function kuotaMlHabis(): bool
     {
-        return (int) $this->awal_ml_belum_terinput <= 0;
+        return $this->awal_ml_belum_terinput === null
+            || (int) $this->awal_ml_belum_terinput <= 0;
+    }
+
+    /** Kantor sudah memeriksa dan menerima saldo awal warisan sistem lama. */
+    public function sudahDiserahTerimakan(): bool
+    {
+        return $this->serah_terima_at !== null;
     }
 
     public function terkunci(): bool

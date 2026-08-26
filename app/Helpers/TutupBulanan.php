@@ -81,7 +81,8 @@ class TutupBulanan
                     $awal[$k] ?? [],
                     $akhir[$k] ?? [],
                     $saldoMasuk[$k] ?? 0,
-                    $kelengkapan[$k] ?? ['hari_kerja' => 0, 'hari_terkunci' => 0]
+                    $kelengkapan[$k] ?? ['hari_kerja' => 0, 'hari_terkunci' => 0],
+                    $baris
                 );
 
                 if (!$tulis) {
@@ -108,8 +109,14 @@ class TutupBulanan
         return $hasil;
     }
 
-    private static function rakit(array $arus, array $awal, array $akhir, int $saldoMasuk, array $kelengkapan): array
-    {
+    private static function rakit(
+        array $arus,
+        array $awal,
+        array $akhir,
+        int $saldoMasuk,
+        array $kelengkapan,
+        ?TransactionMonthlyClosing $baris = null
+    ): array {
         $isi = [
             'drop' => $arus['drop'] ?? 0,
             'storting' => $arus['storting'] ?? 0,
@@ -123,11 +130,30 @@ class TutupBulanan
             'hari_terkunci' => $kelengkapan['hari_terkunci'],
         ];
 
+        // Saldo awal yang SUDAH diserahterimakan tidak pernah dihitung ulang.
+        //
+        // Tanpa pagar ini, satu pinjaman bertanggal mundur yang disisipkan ke
+        // bulan sebelumnya akan diam-diam menggeser saldo awal yang sudah
+        // diperiksa dan diteken kantor — dan tidak ada yang tahu, karena yang
+        // berubah justru angka pembandingnya sendiri. Serah terima yang bisa
+        // berubah sendiri bukan serah terima.
+        //
+        // `akhir_*` TETAP dihitung ulang: itu memang cerminan keadaan sekarang,
+        // dan justru selisih `akhir` terhadap `awal` yang membuat sisipan
+        // semacam itu terlihat, bukan tersembunyi. Lihat §13.2.
+        $sudahSerahTerima = $baris && $baris->serah_terima_at !== null;
+
         foreach (Ember::SEMUA as $e) {
             $isi['storting_' . $e] = $arus['storting_' . $e] ?? 0;
-            $isi['awal_' . $e] = $awal[$e] ?? 0;
             $isi['akhir_' . $e] = $akhir[$e] ?? 0;
+
+            if (!$sudahSerahTerima) {
+                $isi['awal_' . $e] = $awal[$e] ?? 0;
+            }
         }
+
+        // `awal_total` & `akhir_total` TIDAK diisi di sini: keduanya STORED
+        // GENERATED (jumlah keenam embernya). Menulisinya melempar error 1906.
 
         return $isi;
     }

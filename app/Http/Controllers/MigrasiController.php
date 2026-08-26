@@ -6,7 +6,9 @@ use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\DaftarMigrasi;
 use App\Helpers\PemeriksaAgregat;
+use App\Helpers\SerahTerima;
 use App\Models\Branch;
+use App\Models\TransactionMonthlyClosing;
 use App\Models\TransactionSaldoAdjustment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -16,8 +18,13 @@ use Inertia\Inertia;
 /**
  * Perkakas persiapan migrasi ke alur agregasi baru.
  *
- * Isinya laporan BACA-SAJA. Tidak ada satu pun method di sini yang menulis ke
- * tabel transaksi. Lihat .agents/agregasi_rekap.md.
+ * Hampir seluruhnya laporan BACA-SAJA. Dua pengecualian, keduanya milik serah
+ * terima saldo awal: `simpanZ()` mencatat ML yang belum terinput, dan
+ * `sahkanSerahTerima()` membubuhkan tanda tangannya. Tidak ada yang lain di
+ * kelas ini yang menulis, dan tidak ada satu pun — termasuk kedua method itu —
+ * yang bisa menyetel `awal_*`.
+ *
+ * Lihat .agents/agregasi_rekap.md §13.2.
  */
 class MigrasiController extends Controller
 {
@@ -104,6 +111,110 @@ class MigrasiController extends Controller
      * dilakukan adalah membuka kunci lewat jalur resmi (beralasan, tercatat),
      * bukan menimpanya tanpa jejak.
      */
+    /**
+     * Layar serah terima saldo awal — pertemuan sistem lama dan baru.
+     */
+    public function serahTerima(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
+            abort(403, 'Serah terima saldo awal untuk kepala mantri, kasir, dan pimpinan.');
+        }
+
+        $scope = AuthScope::resolve();
+
+        // Bawaannya bulan migrasi kantor ini, bukan bulan berjalan. Serah terima
+        // hanya pernah terjadi di bulan itu; membuka bulan lain sebagai bawaan
+        // cuma menampilkan layar kosong yang membingungkan.
+        $periode = $request->filled('periode')
+            ? Carbon::parse($request->periode)->startOfMonth()
+            : (AgregasiScope::tanggalMulai($scope->branch_id)?->startOfMonth()
+                ?? Carbon::now()->startOfMonth());
+
+        return Inertia::render('Migrasi/SerahTerima', [
+            'hasil' => SerahTerima::periksa($scope->branch_id, $periode),
+            'server_filter' => [
+                'periode' => $periode->format('Y-m-d'),
+                'boleh_ubah' => $this->bolehUbahSerahTerima(),
+            ],
+        ]);
+    }
+
+    /** Catat Z (ML belum terinput) untuk satu baris bulanan. */
+    public function simpanZ(Request $request, TransactionMonthlyClosing $closing)
+    {
+        $this->pastikanBolehUbahSerahTerima($closing);
+
+        $val = $request->validate([
+            // nullable disengaja: mengosongkan kembali berarti "belum
+            // ditetapkan", dan itu keadaan yang sah untuk kembali ke sana
+            // selama belum diteken.
+            'z' => ['nullable', 'integer', 'min:0'],
+        ], [
+            'z.min' => 'ML belum terinput tidak boleh negatif.',
+        ]);
+
+        try {
+            SerahTerima::tetapkanZ($closing, $val['z'] ?? null);
+        } catch (\Throwable $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', 'Tersimpan.');
+    }
+
+    /** Bubuhkan tanda tangan serah terima satu kantor satu periode. */
+    public function sahkanSerahTerima(Request $request)
+    {
+        $this->pastikanBolehUbahSerahTerima();
+
+        $scope = AuthScope::resolve();
+        $periode = Carbon::parse($request->input('periode'))->startOfMonth();
+
+        try {
+            $hasil = SerahTerima::sahkan($scope->branch_id, $periode, auth()->user());
+        } catch (\Throwable $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', sprintf(
+            'Serah terima disahkan untuk %d baris. Saldo awal periode ini tidak dihitung ulang lagi.',
+            $hasil['disahkan']
+        ));
+    }
+
+    /**
+     * Menetapkan Z dan menekennya butuh `can-edit` di atas `view-all-groups`.
+     *
+     * Pola bongkar-pasang yang sudah dipakai untuk membuka kunci: melihat boleh
+     * siapa saja yang berwenang, mengubah butuh izin yang dilepas-pasang
+     * superuser. Z memotong kuota input ML; sekali diteken, saldo awalnya beku.
+     */
+    private function bolehUbahSerahTerima(): bool
+    {
+        $u = auth()->user();
+
+        return $u->hasPermissionTo('view-all-groups') && $u->hasPermissionTo('can-edit');
+    }
+
+    private function pastikanBolehUbahSerahTerima(?TransactionMonthlyClosing $closing = null): void
+    {
+        if (!$this->bolehUbahSerahTerima()) {
+            abort(403, 'Serah terima butuh wewenang kepala mantri/kasir/pimpinan DAN izin can-edit dari superuser.');
+        }
+
+        if ($closing) {
+            $scope = AuthScope::resolve();
+
+            $branchId = DB::table('transaction_loan_officer_groupings')
+                ->where('id', $closing->transaction_loan_officer_grouping_id)
+                ->value('branch_id');
+
+            if ((int) $branchId !== (int) $scope->branch_id) {
+                abort(403, 'Baris ini milik kantor lain.');
+            }
+        }
+    }
+
     public function pemeriksaanAgregat(Request $request)
     {
         if (!auth()->user()->hasPermissionTo('view-all-groups')) {
