@@ -89,6 +89,7 @@ const Pengajuan = ({ triggeredId, triggeredPinjaman, instalment }) => {
                 <WhiteOff
                   triggeredId={triggeredId}
                   nominalWhiteOff={pelunasan ?? 0}
+                  hari={triggeredPinjaman?.hari}
                 />
               )}
             </AccordionContent>

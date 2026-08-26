@@ -166,6 +166,9 @@ Route::middleware('auth')->group(function () {
   Route::controller(\App\Http\Controllers\KalenderKerjaController::class)
     ->prefix('kalender-kerja')->name('kalender.')->group(function () {
       Route::get('/', 'index')->name('index');
+      // Dipakai pemilih tanggal di layar input — bukan superuser-only,
+      // otorisasinya dijelaskan di controller.
+      Route::get('/libur', 'liburJson')->name('libur');
       Route::post('/', 'simpan')->name('simpan');
       Route::post('/terapkan-saran', 'terapkanSaran')->name('terapkan_saran');
     });

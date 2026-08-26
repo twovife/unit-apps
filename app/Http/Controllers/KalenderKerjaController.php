@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\KalenderKerja;
+use App\Models\WorkDay;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,6 +51,44 @@ class KalenderKerjaController extends Controller
                 'sebelumnya' => $periode->copy()->subMonthNoOverflow()->max($batas)->format('Y-m'),
                 'berikutnya' => $periode->copy()->addMonthNoOverflow()->format('Y-m'),
             ],
+        ]);
+    }
+
+    /**
+     * Daftar tanggal libur untuk dipakai pemilih tanggal di frontend.
+     *
+     * SENGAJA TIDAK di balik pastikanSuperuser(). Yang membutuhkannya justru
+     * mantri dan kasir saat menginput transaksi — merekalah yang tidak boleh
+     * bisa memilih tanggal libur. Isinya juga bukan rahasia: tanggal merah
+     * nasional dan hari Minggu.
+     *
+     * Rentangnya dibatasi supaya satu permintaan tidak menyeret seluruh
+     * kalender; pemilih tanggal cuma butuh bulan yang sedang dilihat.
+     */
+    public function liburJson(Request $request)
+    {
+        $val = $request->validate([
+            'dari' => ['required', 'date'],
+            'sampai' => ['required', 'date', 'after_or_equal:dari'],
+        ]);
+
+        $dari = Carbon::parse($val['dari'])->startOfDay();
+        $sampai = Carbon::parse($val['sampai'])->startOfDay();
+
+        // Pagar kewarasan: 18 bulan lebih dari cukup untuk pemilih tanggal.
+        if ($dari->diffInDays($sampai) > 550) {
+            $sampai = $dari->copy()->addDays(550);
+        }
+
+        return response()->json([
+            'libur' => WorkDay::whereBetween('date', [$dari->toDateString(), $sampai->toDateString()])
+                ->where('is_libur', true)
+                ->get()
+                ->mapWithKeys(fn($w) => [
+                    $w->date->toDateString() => $w->keterangan ?: 'Hari libur',
+                ]),
+            'tahun_min' => WorkDay::TAHUN_MIN,
+            'tahun_maks' => WorkDay::TAHUN_MAKS,
         ]);
     }
 

@@ -2784,3 +2784,106 @@ ber-status `acc`.
 |---|---|---|
 | `work_days` | ya | tidak |
 | `transaction_loans`, `transaction_loan_instalments`, `transaction_white_offs` | ya (uji) | tidak |
+
+## BF — Hari libur tidak lagi disediakan di layar (2026-08-12)
+
+Lanjutan BE. User benar bahwa menolak di server saja tidak cukup:
+
+> harusnya, ketika tanggal itu libur, ya udah di frontend tidak usah
+> disediakan tanggal tersebut
+
+`react-day-picker` v8 dan komponen `shadcn/ui/calendar` sudah terpasang sejak
+awal — tinggal dipakai.
+
+### Yang jauh lebih penting daripada mematikan tanggal
+
+Saat memasangnya, ketahuan bahwa gerbang BE **menciptakan jalan buntu**.
+
+Layar pelunasan (`BayarAngsuran.jsx`) tidak meminta user memilih tanggal. Dia
+menurunkannya dari hari tagih pinjaman lewat `getLastDateForHari()`, dan
+kolomnya `disabled`. Fungsi itu tidak tahu kalender.
+
+Jadi kalau hari tagih terakhir jatuh di 17 Agustus: formulir mengisi sendiri
+tanggal yang **pasti ditolak server**, dan user **tidak punya cara
+mengubahnya**. Pembayaran mustahil, tanpa jalan keluar di layar. Buntu itu
+lahir justru karena penjagaannya dipasang.
+
+Pelajarannya: memasang penjaga di satu ujung mewajibkan memeriksa siapa saja
+yang memberi makan ujung itu. Tanggal yang diturunkan sistem harus tunduk pada
+aturan yang sama dengan tanggal yang dipilih orang.
+
+### Bentuknya
+
+`resources/js/Hooks/useHariLibur.js` — satu sumber untuk sisi layar:
+`alasanLibur()`, `hariKerja()`, `mundurKeHariKerja()`. Cache seumur halaman,
+jadi beberapa komponen sekaligus tidak menghujani server.
+
+`resources/js/Components/shadcn/TanggalKerja.jsx` — pengganti langsung
+`<Input type="date">`; `onChange` menerima bentuk `{ target: { name, value } }`
+yang sama, jadi pemasangannya mekanis. Tanggal libur **bercoret dan tidak bisa
+diklik**, dengan pilihan bulan/tahun dan keterangan alasannya.
+
+`KalenderKerjaController@liburJson` (`GET /kalender-kerja/libur`) —
+**sengaja TIDAK di balik `pastikanSuperuser()`**. Yang membutuhkannya justru
+mantri dan kasir: merekalah yang tidak boleh bisa memilih tanggal libur. Isinya
+juga bukan rahasia. Rentangnya wajib dan dipotong di 550 hari.
+
+### Dipasang di
+
+| Layar | Kolom | Perlakuan |
+|---|---|---|
+| `NewLoan/NewNasabah` | `request_date`, `tanggal_drop` | pemilih, libur dimatikan |
+| `NewLoan/NewNasabah` | angsuran `transaction_date` | + dikunci ke hari tagih drop |
+| `NewAngsuran/BayarAngsuran` | `transaction_date` | **turunan dibetulkan** |
+| `NewAngsuran/WhiteOff` | `transaction_date` | pemilih + dikunci hari tagih |
+
+`WhiteOff` sebelumnya berbawaan "hari ini", yang belum tentu hari tagih
+pinjaman itu — server sudah lama menolaknya dengan "Hari Tidak Sama". Sekarang
+`hari` dioper dari `Pengajuan.jsx` dan bawaannya hari tagih terakhir yang
+bekerja.
+
+### Dua jebakan yang ketemu saat mengerjakan
+
+**Nama hari bergantung locale.** Versi pertama mengunci hari tagih memakai
+`dayjs(...).locale('id').format('dddd')`. Diperiksa: `dayJsConfig.js:31` menyetel
+`dayjs.locale('en')` secara global, jadi hasilnya "Monday" dan pencocokannya ke
+`{senin, selasa, ...}` **diam-diam gagal** — penguncian harinya mati tanpa
+bersuara. Diganti angka hari `dayjs().day()`, dan `hariTagih` sekarang menerima
+nama maupun angka.
+
+**Mundur dari hari Minggu tak punya jawaban.** Mundur seminggu dari Minggu
+selalu Minggu lagi. Dikembalikan apa adanya dan dibiarkan server yang menolak,
+daripada layar diam-diam menggeser ke hari tagih yang berbeda. Tidak akan kena
+dalam pemakaian nyata — yang dioper selalu hari tagih pinjaman — tapi sekarang
+eksplisit, bukan kebetulan.
+
+### Terverifikasi
+
+| Uji | Hasil |
+|---|---|
+| `GET /kalender-kerja/libur` sebagai mantri & kasir | 200, daftar libur Agustus |
+| tanpa parameter rentang | ditolak validasi |
+| `sampai` < `dari` | ditolak validasi |
+| rentang 10 tahun | dipotong, 25 tanggal |
+| kasir buka `/kalender-kerja` | tetap **403** |
+| mundur 17 Agu (Senin, libur) | 10 Agustus |
+| mundur 25 Agu (Selasa, Maulid) | 18 Agustus |
+| mundur 24 Agu (hari kerja) | tetap 24 Agustus |
+| `/bukutransaksi`, `/pinjaman` | 200 |
+
+### Yang sengaja tidak dikerjakan
+
+- **Kolom tanggal lain belum diganti**: `Tundaan.jsx`, `FastCreateV2.jsx`,
+  `PengajuanLama.jsx`, `Approval.jsx`, `ChangeDetail.jsx`, `JenisNasabah.jsx`,
+  dan layar SuperUser. Semuanya **sudah dijaga server** lewat BE, jadi tidak ada
+  yang bisa tembus — yang belum cuma kenyamanannya. Digarap saat layarnya
+  disentuh, bukan borongan sekarang.
+- **Gagal mengambil kalender tidak memblokir input.** Tanpa daftarnya, hari
+  Minggu dan rentang tahun tetap dijaga di layar, dan server tetap menolak
+  tanggal libur — user cuma kehilangan petunjuk visualnya.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `work_days` | ya | tidak |

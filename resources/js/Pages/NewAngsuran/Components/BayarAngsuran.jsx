@@ -9,6 +9,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import Loading from '@/Components/Loading';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import { getLastDateForHari } from '@/lib/utils';
+import useHariLibur from '@/Hooks/useHariLibur';
 
 const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   const [triggeredData, setTriggeredData] = useState({});
@@ -19,6 +20,8 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   const {
     server_filter: { closed_transaction },
   } = usePage().props;
+
+  const { mundurKeHariKerja, siap: kalenderSiap, alasanLibur } = useHariLibur();
 
   const { data, setData, post, errors, processing, reset, recentlySuccessful } =
     useForm({
@@ -68,9 +71,16 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   ]);
 
   useEffect(() => {
+    // Tanggalnya diturunkan dari hari tagih pinjaman dan kolomnya dimatikan,
+    // jadi user tidak punya cara membetulkannya. Kalau hari tagih terakhir
+    // ternyata libur, server akan menolaknya (App\Rules\HariKerja) dan
+    // pembayaran jadi BUNTU. Karena itu yang menurunkan tanggal harus ikut
+    // tahu kalender: mundur ke hari tagih terakhir yang benar-benar bekerja.
     setData((prev) => ({
       ...prev,
-      transaction_date: getLastDateForHari(triggeredPinjaman?.hari),
+      transaction_date: mundurKeHariKerja(
+        getLastDateForHari(triggeredPinjaman?.hari),
+      ),
     }));
 
     if (instalment.length > 0) {
@@ -111,7 +121,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
         return updated.sort((a, b) => a - b); // Urutkan dari kecil ke besar
       });
     }
-  }, [instalment, triggeredPinjaman?.hari]);
+  }, [instalment, triggeredPinjaman?.hari, kalenderSiap]);
 
   return (
     // Tanpa Card sendiri - sudah berada di dalam TabsContent "Input
@@ -132,6 +142,17 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             onChange={onInputChange}
             disabled
           />
+          {data.transaction_date &&
+            data.transaction_date !==
+              getLastDateForHari(triggeredPinjaman?.hari) && (
+              <p className="mt-1 text-xs text-amber-700">
+                Hari tagih terakhir jatuh pada hari libur
+                {alasanLibur(getLastDateForHari(triggeredPinjaman?.hari))
+                  ? ` (${alasanLibur(getLastDateForHari(triggeredPinjaman?.hari))})`
+                  : ''}
+                , jadi dimundurkan ke hari tagih sebelumnya.
+              </p>
+            )}
           <p className="mt-1 text-xs text-muted-foreground">
             Tanggal mengikuti hari drop pinjaman ({triggeredData.hari ?? '—'}
             ), tidak bisa diubah manual.

@@ -24,6 +24,7 @@ import dayjs from 'dayjs';
 import Checkbox from '@/Components/Checkbox';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import NoEditOverlay from '@/Components/NoEditOverlay';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
 import RiwayatPengajuanLain from './Components/RiwayatPengajuanLain';
 import RiwayatPengajuanNonBranch from '@/Pages/NewLoan/Components/RiwayatPengajuanNonBranch';
 
@@ -314,8 +315,7 @@ const NewNasabah = ({
                     <div className="flex gap-3">
                       <div className="w-full mb-3">
                         <Label>Tanggal Pengajuan</Label>
-                        <Input
-                          type="date"
+                        <TanggalKerja
                           name="request_date"
                           required={true}
                           value={data.request_date}
@@ -325,8 +325,7 @@ const NewNasabah = ({
                       </div>
                       <div className="w-full mb-3">
                         <Label>Tanggal Drop</Label>
-                        <Input
-                          type="date"
+                        <TanggalKerja
                           name="tanggal_drop"
                           min={mixDate}
                           required={true}
@@ -468,12 +467,16 @@ const NewNasabah = ({
                         >
                           <div className="w-full">
                             <Label>Tanggal Storting</Label>
-                            <Input
-                              type="date"
+                            <TanggalKerja
                               name="transaction_date"
                               min={dayjs(data.tanggal_drop)
                                 .add(1, 'week')
                                 .format('YYYY-MM-DD')}
+                              hariTagih={
+                                data.tanggal_drop
+                                  ? dayjs(data.tanggal_drop).day()
+                                  : null
+                              }
                               required={true}
                               value={element.transaction_date}
                               onChange={(e) =>
