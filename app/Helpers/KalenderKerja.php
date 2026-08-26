@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Helpers\DaftarMigrasi;
 use App\Models\TransactionDailyClosing;
 use App\Models\WorkDay;
 use Carbon\Carbon;
@@ -14,30 +15,40 @@ use Illuminate\Support\Facades\DB;
  * baris closing. Kelas ini sisi lainnya: menyusun bahan layar dan menjaga
  * perubahannya.
  *
- * KENAPA SARANNYA LAHIR DARI DATA
- * -------------------------------
- * Mengetik kalender dari nol tiap bulan adalah pekerjaan yang pasti suatu saat
- * terlewat, dan hari libur yang terlewat tidak bersuara — dia cuma menyisakan
- * satu baris closing yang tak akan pernah bisa dikunci, dan gara-gara itu
- * bulannya tak akan pernah bisa ditandatangani.
+ * KALENDER HANYA BERLAKU MAJU
+ * ---------------------------
+ * Bulan sebelum bulan migrasi TIDAK BISA dibuka. Alasannya bukan kehati-hatian
+ * berlebihan: tidak ada satu pun baris agregat baru bertanggal sebelum itu,
+ * jadi menetapkan kalendernya tidak mengubah apa pun — cuma memberi kesan
+ * bahwa sesuatu sedang diatur.
  *
- * Jadi sarannya dihitung: hari dengan aktivitas jauh di bawah kelaziman bulan
- * itu ditawarkan sebagai libur. Terverifikasi di Juli 2026 — 27 Juli muncul
- * sebagai 1% dari median, dan periode Idul Fitri Maret 2026 turun ke 0,3-2%
- * selama 13 hari berturut-turut. Superuser tinggal mengonfirmasi, bukan
- * mengarang.
+ * Batas itu punya akibat yang menyederhanakan banyak hal. Bulan lampau tidak
+ * terjangkau, dan bulan yang belum berjalan tidak punya transaksi. Jadi
+ * TIDAK ADA keadaan di mana data angsuran bisa berkata apa-apa tentang bulan
+ * yang boleh disetel.
  *
- * Yang TIDAK bisa ditebak dari data adalah bulan yang belum berjalan. Untuk itu
- * saran hanya berisi hari Minggu dan libur bertanggal tetap; sisanya memang
- * harus ditetapkan orang, dan layar mengatakannya terang-terangan.
+ * Versi pertama kelas ini membaca `transaction_loan_instalments` (11,75 juta
+ * baris) untuk menawarkan "hari sepi" sebagai libur. Itu dibuang seluruhnya,
+ * karena dua sebab:
+ *
+ *   1. Sia-sia — untuk bulan yang boleh disetel, kueri itu selalu kosong.
+ *      Terukur menyumbang 30,3 detik dari waktu muat, dan nol saran.
+ *   2. BERBAHAYA. Ambangnya "di bawah 10% median" menyarankan 27 Juli 2026
+ *      sebagai libur padahal hari itu punya 335 angsuran sungguhan. Menyetujui
+ *      saran semacam itu mengubah kenyataan operasional jadi kebohongan
+ *      kalender, dan transaksi 335 nasabah mendarat di hari yang menurut
+ *      sistem tidak ada orang bekerja.
+ *
+ * Dua arah kesalahannya tidak seimbang: hari kerja yang salah ditandai libur
+ * menghapus baris closing dan menguburkan transaksinya; hari libur yang
+ * terlewat cuma perlu ditandai manual. Jadi sarannya sekarang hanya berisi
+ * yang PASTI — hari Minggu dan libur bertanggal tetap. Sisanya ditetapkan
+ * orang, dan layar mengatakannya terang-terangan.
  *
  * Rancangan: .agents/agregasi_rekap.md §9
  */
 class KalenderKerja
 {
-    /** Di bawah persen ini terhadap median bulan itu, sebuah hari ditawarkan sebagai libur. */
-    private const AMBANG_SEPI = 10;
-
     /**
      * Libur nasional bertanggal TETAP. Hanya yang tanggalnya tidak pernah
      * bergeser. Idul Fitri, Nyepi, Waisak dan kawan-kawan sengaja tidak ada di
@@ -51,6 +62,34 @@ class KalenderKerja
         '08-17' => 'Hari Kemerdekaan RI',
         '12-25' => 'Hari Natal',
     ];
+
+    /**
+     * Bulan paling awal yang boleh disetel.
+     *
+     * Bulan migrasi global. Sebelum itu tidak ada baris agregat baru sama
+     * sekali, jadi kalendernya tidak dibaca siapa pun — menetapkannya cuma
+     * memberi kesan sesuatu sedang diatur.
+     *
+     * Kalau bulan migrasi belum ditetapkan (fitur mati), jatuh ke bulan
+     * berjalan: tidak ada alasan menyetel masa lalu.
+     */
+    public static function bulanPalingAwal(): Carbon
+    {
+        return DaftarMigrasi::bulanMigrasi() ?? Carbon::now()->startOfMonth();
+    }
+
+    /** @throws \RuntimeException kalau periodenya sebelum bulan migrasi */
+    private static function pastikanBolehDisetel(Carbon $periode): void
+    {
+        $batas = self::bulanPalingAwal();
+
+        if ($periode->lt($batas)) {
+            throw new \RuntimeException(sprintf(
+                'Kalender hanya berlaku sejak %s — bulan migrasi. Sebelum itu tidak ada agregat baru yang membacanya.',
+                $batas->locale('id')->isoFormat('MMMM Y')
+            ));
+        }
+    }
 
     /**
      * Susun bahan layar satu bulan.
@@ -67,12 +106,8 @@ class KalenderKerja
             ->get()
             ->keyBy(fn($w) => $w->date->toDateString());
 
-        // Aktivitas dihitung SEKALI lalu dioper. Sebelum ini `bulan()` memanggil
-        // `aktivitasHarian()` langsung DAN lewat `saran()`, jadi kueri termahal
-        // di layar ini jalan dua kali - 30,3 detik, bukan 15,1.
-        $aktivitas = self::aktivitasHarian($awal, $akhir);
         $closing = self::closingPerTanggal($awal, $akhir);
-        $saran = self::saran($periode, $aktivitas);
+        $saran = self::saran($periode);
 
         $hari = [];
         $jmlKerja = 0;
@@ -105,7 +140,6 @@ class KalenderKerja
                 'ditetapkan' => (bool) $baris,
                 'keterangan' => $baris?->keterangan ?? ($saran[$tgl] ?? null),
                 'disarankan_libur' => isset($saran[$tgl]),
-                'angsuran' => $aktivitas[$tgl] ?? 0,
                 'closing_baris' => $c['baris'],
                 'closing_terkunci' => $c['terkunci'],
                 'closing_berisi' => $c['berisi'],
@@ -114,9 +148,15 @@ class KalenderKerja
             ];
         }
 
+        $batas = self::bulanPalingAwal();
+
         return [
             'periode' => $awal->format('Y-m'),
             'nama_periode' => $awal->locale('id')->isoFormat('MMMM Y'),
+            'bulan_paling_awal' => $batas->format('Y-m'),
+            'nama_bulan_paling_awal' => $batas->locale('id')->isoFormat('MMMM Y'),
+            'boleh_disetel' => $awal->gte($batas),
+            'ada_bulan_sebelumnya' => $awal->copy()->subMonthNoOverflow()->gte($batas),
             'sudah_dikonfirmasi' => $ditetapkan->isNotEmpty(),
             'hari_kerja' => $jmlKerja,
             'hari_libur' => $jmlLibur,
@@ -131,7 +171,7 @@ class KalenderKerja
      *
      * @return array<string,string>  tanggal => alasan
      */
-    public static function saran($periode, ?array $aktivitas = null): array
+    public static function saran($periode): array
     {
         $awal = Carbon::parse($periode)->startOfMonth();
         $akhir = $awal->copy()->endOfMonth();
@@ -152,29 +192,6 @@ class KalenderKerja
             }
         }
 
-        // 2. Hari sepi menurut data. Hanya bermakna kalau bulannya sudah
-        //    berjalan; bulan kosong tidak menghasilkan saran apa pun, dan itu
-        //    benar - lebih baik diam daripada menebak.
-        $aktivitas ??= self::aktivitasHarian($awal, $akhir);
-
-        if (!empty($aktivitas)) {
-            $nilai = array_values($aktivitas);
-            sort($nilai);
-            $median = $nilai[intdiv(count($nilai), 2)];
-
-            if ($median > 0) {
-                foreach ($aktivitas as $tgl => $n) {
-                    if ($n / $median * 100 < self::AMBANG_SEPI) {
-                        $saran[$tgl] ??= sprintf(
-                            'Sepi — %s angsuran, %d%% dari kelaziman bulan ini',
-                            number_format($n),
-                            round($n / $median * 100)
-                        );
-                    }
-                }
-            }
-        }
-
         ksort($saran);
 
         return $saran;
@@ -188,6 +205,8 @@ class KalenderKerja
     public static function tetapkan($tanggal, bool $isLibur, ?string $keterangan, $user): WorkDay
     {
         $t = Carbon::parse($tanggal)->startOfDay();
+
+        self::pastikanBolehDisetel($t->copy()->startOfMonth());
 
         if (!WorkDay::tanggalWajar($t)) {
             throw new \RuntimeException(sprintf(
@@ -263,6 +282,8 @@ class KalenderKerja
     {
         $awal = Carbon::parse($periode)->startOfMonth();
         $akhir = $awal->copy()->endOfMonth();
+
+        self::pastikanBolehDisetel($awal);
 
         $sudahAda = WorkDay::whereBetween('date', [$awal->toDateString(), $akhir->toDateString()])
             ->pluck('date')
@@ -348,18 +369,6 @@ class KalenderKerja
         }
 
         return ['boleh' => true, 'alasan' => null];
-    }
-
-    /** Jumlah angsuran per tanggal, seluruh kantor. */
-    private static function aktivitasHarian(Carbon $awal, Carbon $akhir): array
-    {
-        return DB::table('transaction_loan_instalments')
-            ->whereBetween('transaction_date', [$awal->toDateString(), $akhir->toDateString()])
-            ->selectRaw('transaction_date AS d, COUNT(*) AS n')
-            ->groupBy('transaction_date')
-            ->pluck('n', 'd')
-            ->map(fn($n) => (int) $n)
-            ->all();
     }
 
     /** Berapa baris closing per tanggal, berapa terkunci, berapa sudah berisi angka. */

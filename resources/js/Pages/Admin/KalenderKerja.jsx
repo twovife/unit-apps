@@ -103,6 +103,12 @@ const KalenderKerja = ({ kalender, server_filter }) => {
             <Button
               variant="outline"
               size="icon"
+              disabled={!kalender?.ada_bulan_sebelumnya}
+              title={
+                kalender?.ada_bulan_sebelumnya
+                  ? undefined
+                  : `Kalender hanya berlaku sejak ${kalender?.nama_bulan_paling_awal}`
+              }
               onClick={() => pindahBulan(server_filter?.sebelumnya)}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -130,9 +136,9 @@ const KalenderKerja = ({ kalender, server_filter }) => {
             nada={kalender?.belum_ditetapkan > 0 ? "ingat" : "baik"}
           />
           <Kartu
-            judul="Saran dari data"
+            judul="Saran"
             utama={kalender?.jumlah_saran}
-            bawah="hari sepi, Minggu, libur tetap"
+            bawah="Minggu dan libur bertanggal tetap"
           />
         </div>
 
@@ -204,12 +210,7 @@ const KalenderKerja = ({ kalender, server_filter }) => {
                     </div>
                   )}
 
-                  <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between text-[10px] text-slate-400">
-                    <span className="tabular-nums">
-                      {h.angsuran > 0
-                        ? new Intl.NumberFormat("id-ID").format(h.angsuran)
-                        : ""}
-                    </span>
+                  <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-end text-[10px] text-slate-400">
                     {!h.ditetapkan && <span>bawaan</span>}
                   </div>
                 </button>
@@ -234,7 +235,7 @@ const KalenderKerja = ({ kalender, server_filter }) => {
           <span className="flex items-center gap-1.5">
             <Lock className="w-3 h-3" /> ada closing terkunci
           </span>
-          <span>angka di bawah = jumlah angsuran hari itu</span>
+          <span>klik tanggal untuk mengubah</span>
         </div>
 
         <Dialog open={!!dipilih} onOpenChange={(o) => !o && setDipilih(null)}>
@@ -247,21 +248,13 @@ const KalenderKerja = ({ kalender, server_filter }) => {
 
             {dipilih && (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="p-2 rounded bg-slate-50">
-                    <div className="text-xs text-slate-500">Sekarang</div>
-                    <div className="font-medium">
-                      {dipilih.is_libur ? "Libur" : "Hari kerja"}
-                      {!dipilih.ditetapkan && (
-                        <span className="text-slate-400"> (bawaan)</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded bg-slate-50">
-                    <div className="text-xs text-slate-500">Angsuran</div>
-                    <div className="font-medium tabular-nums">
-                      {new Intl.NumberFormat("id-ID").format(dipilih.angsuran)}
-                    </div>
+                <div className="p-2 text-sm rounded bg-slate-50">
+                  <div className="text-xs text-slate-500">Sekarang</div>
+                  <div className="font-medium">
+                    {dipilih.is_libur ? "Libur" : "Hari kerja"}
+                    {!dipilih.ditetapkan && (
+                      <span className="text-slate-400"> (bawaan)</span>
+                    )}
                   </div>
                 </div>
 
@@ -319,13 +312,13 @@ const KalenderKerja = ({ kalender, server_filter }) => {
         </Dialog>
 
         <p className="max-w-3xl text-xs text-slate-500">
-          Saran lahir dari <b>data</b>, bukan dari daftar hafalan: hari dengan
-          aktivitas jauh di bawah kelaziman bulan itu ditawarkan sebagai libur.
-          Yang bertanggal tetap (17 Agustus, 25 Desember, dan seterusnya) ikut
-          disarankan. Yang tanggalnya bergeser tiap tahun — Idul Fitri, Nyepi,
-          Waisak — <b>sengaja tidak ditebak</b>: menebaknya salah lebih buruk
-          daripada tidak menebak, karena tebakan yang salah tetap terlihat
-          meyakinkan.
+          Saran hanya berisi yang <b>pasti</b>: hari Minggu dan libur bertanggal
+          tetap (17 Agustus, 25 Desember, dan seterusnya). Yang tanggalnya
+          bergeser tiap tahun — Idul Fitri, Nyepi, Waisak — sengaja tidak
+          ditebak, karena tebakan yang salah tetap terlihat meyakinkan. Kalender
+          juga hanya berlaku maju: bulan sebelum{" "}
+          <b>{kalender?.nama_bulan_paling_awal}</b> tidak bisa dibuka, karena
+          tidak ada agregat baru bertanggal sebelum itu yang membacanya.
         </p>
       </div>
     </Authenticated>

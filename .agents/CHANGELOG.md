@@ -2572,3 +2572,109 @@ suatu hari terasa, obatnya bukan indeks tapi mengurangi cakupan subkuerinya.
 | Tabel | BACA | TULIS |
 |---|---|---|
 | `transaction_loan_instalments` | ya | tidak (hanya indeks) |
+
+## BD — Kalender berlaku maju, dan berhenti membaca tabel angsuran (2026-08-12)
+
+Dua pertanyaan user membongkar rancangan BB:
+
+> kenapa kalenderkerja harus memuat transaction_loan_instalments? bukankah kita
+> memulai kalender kerja ini pada bulan yang baru?
+
+> nah kan kita mulai agustus, berarti harusnya juli sampai dengan sebelumnya
+> gak bisa dipilih dong
+
+Keduanya benar, dan yang kedua menghabiskan sisa alasan yang pertama.
+
+### Batas bulan
+
+Bulan sebelum bulan migrasi (`config('agregasi.bulan_migrasi')`, sekarang
+2026-08) **tidak bisa dibuka**. Bukan kehati-hatian: tidak ada satu pun baris
+agregat baru bertanggal sebelum itu, jadi menetapkan kalendernya tidak mengubah
+apa pun — cuma memberi kesan sesuatu sedang diatur.
+
+`KalenderKerja::bulanPalingAwal()` jadi acuannya. `tetapkan()` dan
+`terapkanSaran()` menolak periode di bawahnya; layar **menjepit**, bukan
+menolak — halaman error untuk sekadar menekan panah mundur adalah hukuman yang
+tidak sepadan. Panah mundur mati di batas.
+
+Kalau bulan migrasi belum ditetapkan (fitur mati), lantainya jatuh ke bulan
+berjalan.
+
+### `transaction_loan_instalments` dibuang seluruhnya
+
+Batas itu menutup dua sisi sekaligus: bulan lampau tidak terjangkau, bulan yang
+belum berjalan tidak punya transaksi. **Tidak ada keadaan** di mana data
+angsuran bisa berkata apa-apa tentang bulan yang boleh disetel.
+
+Dua sebab pembuangannya, dan yang kedua lebih penting:
+
+**1. Sia-sia.** Terukur di BC: menyumbang 30,3 detik waktu muat dan nol saran
+untuk Agustus.
+
+**2. Berbahaya.** Ambangnya "di bawah 10% median" menyarankan 27 Juli 2026
+sebagai libur padahal hari itu punya **335 angsuran sungguhan**. Menyetujui
+saran semacam itu mengubah kenyataan operasional jadi kebohongan kalender, dan
+transaksi 335 nasabah mendarat di hari yang menurut sistem tidak ada orang
+bekerja.
+
+Dua arah kesalahannya tidak seimbang:
+
+| Salah | Akibat |
+|---|---|
+| hari kerja disarankan libur | baris closing dihapus, transaksinya jadi yatim |
+| hari libur tidak disarankan | superuser tandai manual, sedikit repot |
+
+Yang pertama jauh lebih mahal, jadi sarannya sekarang hanya berisi yang PASTI:
+hari Minggu dan libur bertanggal tetap.
+
+### Akibatnya
+
+Menu ini tidak lagi menyentuh satu pun tabel transaksi besar. Yang tersisa:
+`work_days` (puluhan baris) dan `transaction_daily_closings` (ratusan per bulan
+per kantor). `bulan()` turun ke **0,004 detik** — bukan karena indeks, tapi
+karena kuerinya tidak ada lagi.
+
+Indeks `tli_transaction_date_idx` dari BC **tetap dipakai**; kegunaannya di
+tempat lain tidak berubah, dan mencabutnya butuh 2 menit lagi pada tabel 11,75
+juta baris tanpa alasan.
+
+### Terverifikasi
+
+| Uji | Hasil |
+|---|---|
+| saran Juli / Agustus / September | 4 / 6 / 4 — semuanya Minggu + libur tetap |
+| 27 Juli (335 angsuran) | **tidak lagi** disarankan libur |
+| `tetapkan('2026-07-15')` | ditolak, menyebut bulan migrasi |
+| `tetapkan('2026-08-05')` | diterima |
+| `terapkanSaran('2026-07')` | ditolak |
+| layar diminta 2026-07 | dijepit ke 2026-08, panah mundur mati |
+| layar diminta 2026-09 | ditampilkan, panah mundur hidup |
+| `bulan()` Agustus / September | 0,004 / 0,002 detik |
+
+### Berkas
+
+| Berkas | Tindakan |
+|---|---|
+| `app/Helpers/KalenderKerja.php` | `bulanPalingAwal()`, `pastikanBolehDisetel()`; `aktivitasHarian()` & `AMBANG_SEPI` dihapus |
+| `app/Http/Controllers/KalenderKerjaController.php` | periode dijepit ke lantai |
+| `resources/js/Pages/Admin/KalenderKerja.jsx` | kolom angsuran dibuang, panah mundur bisa mati, salinan diperbarui |
+
+### Catatan operasional
+
+Saat memeriksa keadaan sesudah uji, ditemukan **25 Agustus 2026 ditandai
+"Maulid Nabi"** — ditetapkan user dari layar sementara sesi ini berjalan.
+Dibiarkan utuh.
+
+Uji langkah 2 sempat menandai 5 Agustus libur, yang ikut menghapus 10 baris
+closing-nya, lalu hanya baris kalendernya yang dikembalikan. Diperbaiki dengan
+`closing:generate 2026-08 --branch=90` dan menetapkan 5 Agustus sebagai hari
+kerja. Keadaan akhir: `work_days` 31 baris, 24 hari kerja, 240 baris closing
+Karawang 2 (17 & 25 Agustus libur).
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `work_days` | ya | ya |
+| `transaction_daily_closings` | ya | ya (regenerasi perbaikan) |
+| `transaction_loan_instalments` | **tidak lagi** | tidak |

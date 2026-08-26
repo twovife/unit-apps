@@ -30,15 +30,24 @@ class KalenderKerjaController extends Controller
     {
         $this->pastikanSuperuser();
 
+        $batas = KalenderKerja::bulanPalingAwal();
+
         $periode = $request->filled('periode')
             ? Carbon::parse($request->periode)->startOfMonth()
             : Carbon::now()->startOfMonth();
+
+        // Dijepit, bukan ditolak. Bulan sebelum migrasi tidak punya apa-apa
+        // untuk ditampilkan, dan halaman error untuk sekadar menekan panah
+        // mundur adalah hukuman yang tidak sepadan.
+        if ($periode->lt($batas)) {
+            $periode = $batas->copy();
+        }
 
         return Inertia::render('Admin/KalenderKerja', [
             'kalender' => KalenderKerja::bulan($periode),
             'server_filter' => [
                 'periode' => $periode->format('Y-m'),
-                'sebelumnya' => $periode->copy()->subMonthNoOverflow()->format('Y-m'),
+                'sebelumnya' => $periode->copy()->subMonthNoOverflow()->max($batas)->format('Y-m'),
                 'berikutnya' => $periode->copy()->addMonthNoOverflow()->format('Y-m'),
             ],
         ]);
