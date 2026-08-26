@@ -2678,3 +2678,109 @@ Karawang 2 (17 & 25 Agustus libur).
 | `work_days` | ya | ya |
 | `transaction_daily_closings` | ya | ya (regenerasi perbaikan) |
 | `transaction_loan_instalments` | **tidak lagi** | tidak |
+
+## BE — Kalender kerja akhirnya menolak transaksi (2026-08-12)
+
+Dilaporkan user: memilih tanggal drop 17 Agustus 2026 masih diterima, padahal
+tanggal itu sudah ditandai libur.
+
+Benar, dan lubangnya lebih lebar dari satu layar. Sebelum ini `WorkDay` **hanya**
+dibaca `ClosingHarianController` untuk membangkitkan baris. **Nol** jalur
+transaksi memeriksanya, dan validasi tanggalnya cuma `['required', 'date']` —
+tanggal apa pun lolos. Itu juga sebabnya `0025-07-12` dan `3026-07-07` bisa
+masuk dulu: kalendernya punya `tanggalWajar()` sejak AT, tapi tidak ada yang
+memanggilnya.
+
+### Satu Rule, tujuh pintu
+
+`app/Rules/HariKerja.php`. Dibuat sebagai Rule, bukan pemeriksaan di tiap
+controller, karena pintu masuknya delapan:
+
+| Pintu | Kolom |
+|---|---|
+| `store_buku_transaksi` | `request_date`, `tanggal_drop` |
+| `store_buku_transaksi_batch` | `tanggal_drop` |
+| `store_buku_transaksi_batch` | `angsuran[].transaction_date` (manual) |
+| `store_pengajuan_lama` | `request_date`, `tanggal_drop` |
+| `tundaan_pengajuan` | `tanggal_drop` |
+| `bayar_pinjaman` | `transaction_date` — **ini jalur pelunasan** |
+| `white_off_loan` | `transaction_date` |
+
+Menyalin logikanya delapan kali berarti suatu hari salah satunya ketinggalan
+saat aturannya berubah, dan pintu yang ketinggalan **tidak bersuara** — dia cuma
+menerima apa saja. Persis penyakit yang jadi sebab seluruh rombakan ini.
+
+Angsuran di pengajuan batch tidak lewat `$request->validate()` melainkan
+diperiksa manual, jadi Rule-nya tidak ikut jalan sendiri; di sana dipasang
+pemeriksaan setara memakai `WorkDay::hariKerja()` langsung.
+
+### Yang ditolak
+
+1. Tahun di luar 2015-2035
+2. Tanggal bertanda libur di `work_days`
+3. Hari Minggu, untuk tanggal yang kalendernya belum ditetapkan
+
+Butir 3 memakai bawaan yang sama dengan `WorkDay::hariKerja()`, jadi bulan yang
+belum dikonfirmasi tetap terjaga. **Diukur dulu sebelum dipasang**: dari 882.586
+drop dan 5.914.126 angsuran sepanjang 2026, yang jatuh hari Minggu cuma **16 dan
+6**. Itu salah input, bukan alur kerja yang dipatahkan.
+
+### Pesannya menyebut jalan keluar, dan jalan keluarnya diperiksa
+
+Hari tagih kelompok tidak boleh berubah, jadi pengganti yang benar adalah hari
+yang SAMA minggu berikutnya — 17 Agustus jadi 24 Agustus, bukan 18 Agustus.
+
+Dua penyempurnaan setelah membaca keluaran uji pertama:
+
+- **Hari Minggu tidak diberi usulan.** Versi pertama menyarankan "pakai 13
+  September, hari yang sama minggu berikutnya" untuk tanggal 6 September — yang
+  juga hari Minggu. Minggu bukan "libur sekali ini", dia memang bukan hari
+  tagih, jadi pesannya sekarang berhenti di situ.
+- **Usulannya melompat sampai ketemu hari kerja.** Menyarankan tanggal yang
+  ternyata libur juga cuma memindahkan penolakannya satu langkah. Diuji dengan
+  menandai 24 Agustus libur juga: usulan untuk 17 Agustus berpindah ke 31
+  Agustus. Dibatasi 8 minggu; lewat itu pesannya diam soal usulan.
+
+### Terverifikasi
+
+| Tanggal | Hasil |
+|---|---|
+| 17 Agu (Hari Kemerdekaan) | ditolak, usul 24 Agu |
+| 25 Agu (Maulid Nabi) | ditolak, usul 1 Sep |
+| 18 & 24 Agu | lolos |
+| 16 Agu, 6 Sep (Minggu) | ditolak, tanpa usulan |
+| 7 Sep (Senin, kalender belum disetel) | lolos |
+| **27 Jul (335 angsuran nyata)** | **lolos** — kalender tidak berlaku mundur |
+| `0025-07-12`, `3026-07-07` | ditolak |
+| kosong / bukan tanggal | diserahkan ke aturan `required`/`date` |
+
+Lewat controller sungguhan: `bayar_pinjaman` dan `white_off_loan` tanggal 17
+Agustus ditolak dengan pesan lengkap; `bayar_pinjaman` 18 Agustus lolos gerbang
+lalu berhenti di aturan lama "Hari Tidak Sama" — **aturan bisnis yang sudah ada
+tetap utuh**, gerbang ini cuma menambah lapis. Tidak ada satu baris pun tertulis
+ke database.
+
+### Yang TIDAK terverifikasi
+
+`tundaan_pengajuan` tidak sampai teruji lewat jalur nyata: penjaga statusnya
+("harus sudah di-ACC") menyala lebih dulu. Pemasangannya ada di baris 624 dan
+sudah dibaca ulang, tapi belum terbukti berjalan. Perlu diuji dengan pengajuan
+ber-status `acc`.
+
+### Yang sengaja tidak dikerjakan
+
+- **Layar belum mencegah pemilihannya.** `<input type="date">` bawaan browser
+  tidak bisa mematikan tanggal tertentu tanpa pemilih tanggal buatan sendiri.
+  Untuk sekarang penolakannya di server, dengan pesan yang menyebut tanggal
+  pengganti. Peringatan langsung di bawah kolom saat tanggal libur dipilih —
+  sebelum tombol simpan ditekan — butuh daftar libur dikirim ke frontend;
+  belum digarap.
+- **Data lama tidak disentuh.** Kalender tidak berlaku mundur, jadi transaksi
+  bertanggal libur yang sudah telanjur ada dibiarkan.
+
+### Tabel tersentuh
+
+| Tabel | BACA | TULIS |
+|---|---|---|
+| `work_days` | ya | tidak |
+| `transaction_loans`, `transaction_loan_instalments`, `transaction_white_offs` | ya (uji) | tidak |

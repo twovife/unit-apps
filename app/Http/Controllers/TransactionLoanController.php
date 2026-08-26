@@ -9,6 +9,8 @@ use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
 use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionManageCustomer;
+use App\Models\WorkDay;
+use App\Rules\HariKerja;
 use App\Traits\PinjamanTrait;
 use Carbon\Carbon;
 use Exception;
@@ -270,8 +272,8 @@ class TransactionLoanController extends Controller
       'nik' => ['required', 'digits:16'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
-      'request_date' => ['required', 'date'],
-      'tanggal_drop' =>  ['required', 'date'],
+      'request_date' => ['required', 'date', new HariKerja('Tanggal pengajuan')],
+      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
       '*.min' => 'minimal diisi 100rb'
     ]);
@@ -366,7 +368,7 @@ class TransactionLoanController extends Controller
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
 
-      'tanggal_drop' =>  ['required', 'date'],
+      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
       '*.required' => "Wajib Diisi",
       '*.min' => 'minimal diisi 100rb'
@@ -390,6 +392,19 @@ class TransactionLoanController extends Controller
 
       if ($filtered->isNotEmpty()) {
         return redirect()->back()->withErrors('Hari Angsuran Tidak Sama');
+      }
+
+      // Angsuran di sini divalidasi manual, bukan lewat $request->validate(),
+      // jadi Rule HariKerja tidak ikut jalan sendiri. Diperiksa di sini supaya
+      // pintu ini tidak jadi satu-satunya yang menerima tanggal libur.
+      $libur = $angsuran->reject(fn($item) => WorkDay::hariKerja($item['transaction_date']));
+
+      if ($libur->isNotEmpty()) {
+        return redirect()->back()->withErrors(sprintf(
+          'Ada %d angsuran jatuh pada hari libur: %s.',
+          $libur->count(),
+          $libur->pluck('transaction_date')->unique()->implode(', ')
+        ));
       }
 
       if ($duplicates->isNotEmpty()) {
@@ -527,8 +542,8 @@ class TransactionLoanController extends Controller
 
     $val = $request->validate([
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
-      'request_date' => ['required', 'date'],
-      'tanggal_drop' =>  ['required', 'date'],
+      'request_date' => ['required', 'date', new HariKerja('Tanggal pengajuan')],
+      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
       'type' =>  ['required'],
       'nomor_anggota' => ['required', 'string', 'max:255'],
       'residential_address' => ['nullable', 'string', 'max:255'],
@@ -620,7 +635,7 @@ class TransactionLoanController extends Controller
     }
 
     $val = $request->validate([
-      'tanggal_drop' => ['required', 'date', 'after:' . $transactionLoan->drop_date],
+      'tanggal_drop' => ['required', 'date', 'after:' . $transactionLoan->drop_date, new HariKerja('Tanggal drop')],
     ]);
 
     if (AppHelper::dateName($request->tanggal_drop) !== $transactionLoan->hari) {
@@ -1076,7 +1091,7 @@ class TransactionLoanController extends Controller
     $val = $request->validate([
       'type_transaksi' => ['required'],
       'nominal' => ['required_if:type_transaksi,bayar'],
-      'transaction_date' => ['required_if:type_transaksi,bayar', 'date'],
+      'transaction_date' => ['required_if:type_transaksi,bayar', 'date', new HariKerja('Tanggal transaksi')],
     ]);
 
     $transactionLoan->with('loan_instalment', 'loan_officer_grouping');
@@ -1166,7 +1181,7 @@ class TransactionLoanController extends Controller
   {
     $val = $request->validate([
       'nominal' => ['required', 'integer', 'min:1'],
-      'transaction_date' => ['required', 'date'],
+      'transaction_date' => ['required', 'date', new HariKerja('Tanggal pemutihan')],
     ]);
 
     if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
