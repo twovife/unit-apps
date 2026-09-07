@@ -3,6 +3,7 @@ import { router, usePage } from '@inertiajs/react';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import Loading from '@/Components/Loading';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
 
 /**
  * FilterBar - filter inline (bukan dropdown/popover) untuk halaman mobile.
@@ -40,6 +41,7 @@ const FilterBar = ({
   storageKey,
   showHari = true,
   showMonth = true,
+  showTanggal = false,
   showKelompok = false,
   restoreOnMount = true,
   extraParams = {},
@@ -52,9 +54,15 @@ const FilterBar = ({
     () => ({
       hari: server_filter?.hari ?? '',
       month: server_filter?.month ?? '',
+      date: server_filter?.tanggal ?? '',
       kelompok: server_filter?.kelompok ?? '',
     }),
-    [server_filter?.hari, server_filter?.month, server_filter?.kelompok],
+    [
+      server_filter?.hari,
+      server_filter?.month,
+      server_filter?.tanggal,
+      server_filter?.kelompok,
+    ],
   );
 
   // Cermin lokal dari `active`, dipakai untuk umpan balik optimistis supaya
@@ -88,9 +96,10 @@ const FilterBar = ({
     const keys = [];
     if (showHari) keys.push('hari');
     if (showMonth) keys.push('month');
+    if (showTanggal) keys.push('date');
     if (showKelompok) keys.push('kelompok');
     return keys;
-  }, [showHari, showMonth, showKelompok]);
+  }, [showHari, showMonth, showTanggal, showKelompok]);
 
   const buildParams = (source) => {
     const params = { ...extraParams };
@@ -185,6 +194,24 @@ const FilterBar = ({
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {showTanggal && (
+        <div className="px-3 pt-3">
+          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Tanggal
+          </Label>
+          <div className="mt-1">
+            <TanggalKerja
+              name="date"
+              value={local.date || ''}
+              disabled={loading}
+              max={new Date().toISOString().slice(0, 10)}
+              placeholder="Pilih tanggal tarikan"
+              onChange={(e) => applyNow('date', e.target.value)}
+            />
           </div>
         </div>
       )}

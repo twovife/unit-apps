@@ -3190,3 +3190,88 @@ kelompok Senin membuka daftar tagihan pada Selasa 18 Agustus akan melihat
 `tanggalSeleksi = 17 Agustus` (Hari Kemerdekaan, 0 angsuran) — **seluruh
 nasabah tampil belum bayar**. Dipakai di `PinjamanTrait` baris 243, 485, 829.
 Ditunda atas permintaan user.
+
+## BK — Menu angsuran: filter tanggal, bukan hari+bulan (2026-08-12)
+
+Menu `mobile_apps/angsuran` (alur lama, `getLoanMantri`). Filternya dulu hari
+(tombol Sen–Sab) + bulan, yang ambigu — "Jumat September" itu Jumat yang mana?
+Diganti satu **pemilih tanggal** (`TanggalKerja`, anti-libur).
+
+### Kenapa ini sekalian menutup bug hari libur
+
+`getStortingShowDate($hari)` menurunkan "hari tagih terakhir" dari NAMA HARI,
+mundur satu langkah tanpa peduli libur. Kelompok Senin dibuka Selasa 18 Agu →
+menunjuk 17 Agu (Kemerdekaan, 0 tarikan) → SELURUH nasabah tampak nunggak
+(BJ/temuan graphify).
+
+Dengan filter tanggal, `$tanggalSeleksi = $date` **langsung** — tidak ada lagi
+penurunan yang bisa nyasar ke libur. Dan `TanggalKerja` mencoret hari libur,
+jadi mantri tak bisa memilihnya sama sekali.
+
+### Tiga bagian
+
+1. **Backend `getLoanMantri`** — `date` dipakai langsung sebagai
+   `$tanggalSeleksi`. Bawaan (tanpa `date`) = hari ini, dimundurkan ke hari
+   kerja terakhir kalau hari ini libur. Kirim ke frontend: `tanggal`,
+   `is_locked`, `is_kepala_approved`, `is_libur`, `libur_alasan`.
+2. **`FilterBar`** — mode opt-in `showTanggal` (render `TanggalKerja`, kelola
+   param `date`). Menu lain yang memakai `FilterBar` tak tersentuh —
+   `showTanggal` bawaannya false.
+3. **`BayarAngsuran`** — tanggal bayar kini = tanggal yang sedang dibuka
+   (`server_filter.tanggal`), bukan `getLastDateForHari(loan.hari)` yang justru
+   sisi JS dari bug yang sama. Saat `is_locked`, seluruh input mati (nominal,
+   tombol cepat, KATROL, submit).
+
+### "Lock" = kasir kunci
+
+Sesuai prinsip kepala cek = pengecekan, kasir kunci = kunci sebenarnya:
+disable dipicu `daily_kasir_approval` pada rekap tanggal itu. Menu hanya
+MEMBACA status kunci — tidak pernah membukanya; buka kunci tetap jalur resmi
+kasir.
+
+### Libur = daftar disembunyikan
+
+Saat `is_libur` (hanya lewat URL langsung; picker mencegahnya), Tabs
+disembunyikan dan hanya spanduk "hari libur — tidak ada tarikan" yang tampil —
+persis "kosongkan aja terus ditulisi". Bukan daftar penuh yang semuanya
+"belum bayar".
+
+### Terverifikasi
+
+| Kasus | Hasil |
+|---|---|
+| tanpa `date` | tanggal = hari kerja terakhir (7 Sep) |
+| `date=2026-08-18` | hari=selasa, libur=- |
+| `date=2026-08-17` | libur=YA, "Hari Kemerdekaan RI" |
+| `date=2026-08-25` | libur=YA, "Maulid Nabi" |
+| kunci `daily_kasir_approval` grouping 897 | is_locked YA → dipulihkan → tidak |
+| render 3 kasus + endpoint | 200 semua |
+
+### Cakupan & kesalahan yang sempat terjadi
+
+Anchor Python pertama kena `getLoan` (menu drop desktop) yang identik dan lebih
+dulu di berkas — `$isLocked` undefined di return. Diperbaiki: seluruh berkas
+dibalikan ke HEAD, lalu edit dipasang HANYA di tubuh `getLoanMantri`.
+
+`getLoan` (desktop `pinjaman.index_pinjaman`) dan `getLoanByDate` (byDates)
+**tidak disentuh**. `BayarAngsuran` di desktop aman lewat fallback:
+`server_filter.tanggal` absen → pakai turunan lama; `is_locked` absen → tak ada
+yang dimatikan.
+
+### Yang sengaja tidak dikerjakan
+
+- **`getStortingShowDate` masih buta libur** dan masih dipakai `getLoan`
+  (menu desktop `pinjaman`). Menu itu masih filter hari/bulan, jadi bug hari
+  libur yang sama MASIH ADA di sana. Belum diubah karena user meminta hanya
+  menu angsuran mobile; desktop perlu keputusan tersendiri.
+
+### Tabel/berkas
+
+| | BACA | TULIS |
+|---|---|---|
+| `transaction_daily_recaps` (cek `daily_kasir_approval`) | ya | tidak |
+| `work_days` | ya | tidak |
+
+Berkas: `app/Traits/PinjamanTrait.php` (getLoanMantri saja),
+`resources/js/Components/FilterBar.jsx`, `resources/js/Pages/NewAngsuran/Angsuran.jsx`,
+`resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx`.

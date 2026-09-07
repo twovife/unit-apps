@@ -18,7 +18,11 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
   }, [triggeredPinjaman]);
 
   const {
-    server_filter: { closed_transaction },
+    server_filter: {
+      closed_transaction,
+      tanggal: tanggalTerpilih,
+      is_locked: terkunci,
+    },
   } = usePage().props;
 
   const { mundurKeHariKerja, siap: kalenderSiap, alasanLibur } = useHariLibur();
@@ -78,9 +82,9 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
     // tahu kalender: mundur ke hari tagih terakhir yang benar-benar bekerja.
     setData((prev) => ({
       ...prev,
-      transaction_date: mundurKeHariKerja(
-        getLastDateForHari(triggeredPinjaman?.hari),
-      ),
+      transaction_date:
+        tanggalTerpilih ??
+        mundurKeHariKerja(getLastDateForHari(triggeredPinjaman?.hari)),
     }));
 
     if (instalment.length > 0) {
@@ -121,7 +125,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
         return updated.sort((a, b) => a - b); // Urutkan dari kecil ke besar
       });
     }
-  }, [instalment, triggeredPinjaman?.hari, kalenderSiap]);
+  }, [instalment, triggeredPinjaman?.hari, kalenderSiap, tanggalTerpilih]);
 
   return (
     // Tanpa Card sendiri - sudah berada di dalam TabsContent "Input
@@ -142,20 +146,9 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             onChange={onInputChange}
             disabled
           />
-          {data.transaction_date &&
-            data.transaction_date !==
-              getLastDateForHari(triggeredPinjaman?.hari) && (
-              <p className="mt-1 text-xs text-amber-700">
-                Hari tagih terakhir jatuh pada hari libur
-                {alasanLibur(getLastDateForHari(triggeredPinjaman?.hari))
-                  ? ` (${alasanLibur(getLastDateForHari(triggeredPinjaman?.hari))})`
-                  : ''}
-                , jadi dimundurkan ke hari tagih sebelumnya.
-              </p>
-            )}
           <p className="mt-1 text-xs text-muted-foreground">
-            Tanggal mengikuti hari drop pinjaman ({triggeredData.hari ?? '—'}
-            ), tidak bisa diubah manual.
+            Angsuran dicatat pada tanggal yang sedang dibuka, tidak bisa diubah
+            manual di sini. Ganti tanggal lewat filter di atas.
           </p>
         </div>
         <div className="mb-3">
@@ -167,6 +160,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             prefix="Rp. "
             min={0}
             required
+            disabled={terkunci}
             onValueChange={onHandleCurencyChange}
             value={data.nominal}
             placeholder={'Inputkan angka tanpa sparator'}
@@ -179,6 +173,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             variant="outline"
             size="xs"
             onClick={buttonAddNominal}
+            disabled={terkunci}
             data-value={1000}
           >
             +1 Rb
@@ -188,6 +183,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             variant="outline"
             size="xs"
             onClick={buttonAddNominal}
+            disabled={terkunci}
             data-value={5000}
           >
             +5 Rb
@@ -197,6 +193,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
             variant="outline"
             size="xs"
             onClick={buttonAddNominal}
+            disabled={terkunci}
             data-value={10000}
           >
             +10 Rb
@@ -208,6 +205,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
                 variant="outline"
                 size="xs"
                 onClick={buttonValueClick}
+                disabled={terkunci}
                 data-value={item}
               >
                 {(item / 1000).toLocaleString('id-ID')} Rb
@@ -225,6 +223,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
                 <Checkbox
                   name="danatitipan"
                   value={data.danatitipan}
+                  disabled={terkunci}
                   onChange={onInputChange}
                 />
                 <span className="ml-2 text-sm font-semibold text-gray-600">
@@ -233,7 +232,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment }) => {
               </label>
             )}
           </div>
-          <Button disabled={processing} type="submit">
+          <Button disabled={processing || terkunci} type="submit">
             Submit
           </Button>
         </div>

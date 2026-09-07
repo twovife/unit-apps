@@ -44,7 +44,7 @@ const Angsuran = ({
   // Remount SearchComponent (filter Unit) tiap kali hari/bulan/kelompok
   // berubah lewat FilterBar - komponen itu cuma membaca server_filter SEKALI
   // saat mount, jadi tanpa key baru dia bisa submit nilai hari/bulan lama.
-  const searchComponentKey = `${server_filter.hari}-${server_filter.month}-${server_filter.kelompok}`;
+  const searchComponentKey = `${server_filter.tanggal ?? server_filter.hari}-${server_filter.month}-${server_filter.kelompok}`;
 
   return (
     <>
@@ -83,12 +83,35 @@ const Angsuran = ({
             <FilterBar
               urlLink={urlLink}
               storageKey={localState}
-              showHari={true}
-              showMonth={true}
+              showHari={false}
+              showMonth={false}
+              showTanggal={true}
               showKelompok={server_filter.userAuthorized.canShowKelompok}
               extraParams={unitExtraParams}
             />
           </div>
+
+          {server_filter.is_libur && (
+            <div className="p-3 mb-3 text-sm border rounded-lg border-amber-300 bg-amber-50/60 text-amber-900">
+              <b>
+                {server_filter.tanggal} — hari libur
+                {server_filter.libur_alasan
+                  ? ` (${server_filter.libur_alasan})`
+                  : ''}
+              </b>
+              . Tidak ada tarikan pada hari libur, jadi tidak ada yang perlu
+              diisi. Pilih tanggal hari kerja untuk melihat atau mengisi
+              angsuran.
+            </div>
+          )}
+
+          {server_filter.is_locked && (
+            <div className="p-3 mb-3 text-sm border rounded-lg border-slate-300 bg-slate-50 text-slate-700">
+              <b>Tanggal {server_filter.tanggal} sudah dikunci kasir.</b> Data
+              bisa dilihat tapi tidak bisa diubah. Membuka kunci lewat jalur
+              resmi kasir.
+            </div>
+          )}
         </>
       ) : (
         <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center">
@@ -135,6 +158,7 @@ const Angsuran = ({
           </div>
         </div>
       )}
+      {type === 'mobile' && server_filter.is_libur ? null : (
       <Tabs defaultValue="bukuangsuran" className="w-full">
         <div className="flex items-center justify-between">
           <TabsList>
@@ -167,6 +191,7 @@ const Angsuran = ({
           )}
         </TabsContent>
       </Tabs>
+      )}
     </>
   );
 };

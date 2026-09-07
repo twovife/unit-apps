@@ -463,13 +463,25 @@ trait PinjamanTrait
   public function getLoanMantri(Request $request, $dailyView = true)
   {
 
+    // Filter menu angsuran kini berbasis TANGGAL, bukan nama hari + bulan.
+    // Bawaannya hari ini, dimundurkan ke hari kerja terakhir kalau hari ini
+    // libur. Dulu $tanggalSeleksi dihitung dari NAMA HARI lewat
+    // getStortingShowDate(), yang mundur SATU langkah tanpa peduli hari libur —
+    // sehingga kelompok Senin yang dibuka Selasa 18 Agu menunjuk 17 Agu
+    // (Kemerdekaan) dan SELURUH nasabah tampak nunggak.
     $date = $request->date ?? null;
-    if ($date) {
-      $request->merge([
-        'month' => Carbon::parse($date)->format('Y-m'),
-        'hari' => AppHelper::dateName($date)
-      ]);
+    if (!$date) {
+      $cursor = Carbon::today();
+      for ($i = 0; $i < 14 && !\App\Models\WorkDay::hariKerja($cursor); $i++) {
+        $cursor->subDay();
+      }
+      $date = $cursor->format('Y-m-d');
     }
+    $request->merge([
+      'date' => $date,
+      'month' => Carbon::parse($date)->format('Y-m'),
+      'hari' => AppHelper::dateName($date),
+    ]);
 
 
     $now = Carbon::now();
@@ -482,10 +494,8 @@ trait PinjamanTrait
 
     $hari = $request->hari ?? AppHelper::dateName($now->format('Y-m-d'));
 
-    $tanggalSeleksi  = AppHelper::getStortingShowDate($hari);
-
-    // dd($tanggalSeleksi);
-
+    // Tanggal terpilih dipakai LANGSUNG — tidak lagi diturunkan dari nama hari.
+    $tanggalSeleksi = $date;
 
     $scope = \App\Helpers\AuthScope::resolve();
     $branch_id = $scope->branch_id;
@@ -498,6 +508,16 @@ trait PinjamanTrait
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
+    // Status kunci & libur untuk tanggal terpilih — dipakai frontend untuk
+    // mematikan input. "Kunci" = kasir kunci (daily_kasir_approval), sesuai
+    // prinsip: kepala cek = pengecekan, kasir kunci = kunci sebenarnya.
+    $rekapTanggal = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->whereDate('date', $tanggalSeleksi)
+      ->first();
+    $isLocked = $rekapTanggal?->daily_kasir_approval !== null;
+    $isKepalaApproved = $rekapTanggal?->daily_kepala_approval !== null;
+    $hariKerjaTerpilih = \App\Models\WorkDay::hariKerja($tanggalSeleksi);
+    $liburTerpilih = \App\Models\WorkDay::whereDate('date', $tanggalSeleksi)->first();
 
     $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
     $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
@@ -665,6 +685,11 @@ trait PinjamanTrait
         'closed_transaction' => $ClosedTransaction,
         'month' => $transaction_date->format('Y-m'),
         'hari' => $hari,
+        'tanggal' => $tanggalSeleksi,
+        'is_locked' => $isLocked,
+        'is_kepala_approved' => $isKepalaApproved,
+        'is_libur' => !$hariKerjaTerpilih,
+        'libur_alasan' => $hariKerjaTerpilih ? null : ($liburTerpilih?->keterangan ?? 'Hari libur'),
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
