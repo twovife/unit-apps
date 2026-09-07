@@ -130,6 +130,15 @@ Route::middleware('auth')->group(function () {
       Route::post('/harian/{closing}/kunci', 'kunci')->name('kunci');
       Route::post('/harian/{closing}/buka', 'buka')->name('buka');
     });
+  // Layar tutup buku BULANAN alur baru. Otorisasi dicek di controller.
+  Route::controller(\App\Http\Controllers\ClosingBulananController::class)
+    ->prefix('closing/bulanan')->name('closing.bulanan.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/{closing}/approve-kepala', 'approveKepala')->name('approve_kepala');
+      Route::post('/{closing}/kunci', 'kunci')->name('kunci');
+      Route::post('/{closing}/buka', 'buka')->name('buka');
+    });
+
   Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {

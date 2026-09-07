@@ -3275,3 +3275,90 @@ yang dimatikan.
 Berkas: `app/Traits/PinjamanTrait.php` (getLoanMantri saja),
 `resources/js/Components/FilterBar.jsx`, `resources/js/Pages/NewAngsuran/Angsuran.jsx`,
 `resources/js/Pages/NewAngsuran/Components/BayarAngsuran.jsx`.
+
+## BL — Layar Closing Bulanan (2026-08-12)
+
+Menutup Tahap 5 bagian tanda tangan bulanan. Alur harian sudah lengkap
+(Closing Harian: kepala setuju → kasir kunci → agregat bulanan tersusun), tapi
+tidak ada cara menutup BULAN-nya: 60 baris `transaction_monthly_closings`
+terisi, kolom `kepala_approval_at`/`kasir_lock_at` ada, tapi tanpa layar.
+
+### Apa yang dibangun
+
+**Menu baru** "Closing Bulanan" (`/closing/bulanan`), di grup Persiapan Migrasi
+persis di bawah Closing Harian. Alurnya cermin harian, satu tingkat di atas:
+
+```
+kepala "Setujui"  →  kasir "Kunci"
+```
+
+Bedanya dengan harian: layar ini TIDAK menghitung dan tidak punya kolom manual.
+Angka bulanan sudah disusun `TutupBulanan` tiap hari dikunci; layar ini cuma
+tempat menandatanganinya.
+
+### Syarat kunci — inilah intinya
+
+`GembokBulanan::bolehKunci()` menahan sampai KETIGA syarat terpenuhi:
+
+1. Kepala sudah menyetujui (`kepala_approval_at`)
+2. **`lengkap()` — semua hari kerja terkunci** (`hari_terkunci >= hari_kerja`)
+3. Bulan pertama kantor: saldo awal sudah diserahterimakan (`serah_terima_at`)
+
+Syarat 2 yang membuat "lupa tutup buku" mustahil lolos: bukan karena ada yang
+mengingatkan, tapi karena tombol Kunci mati selama masih ada satu hari kerja
+yang belum dikunci. Layar menampilkan `23/24` kuning vs `24/24` hijau, dan
+alasan penahannya muncul di tooltip tombol.
+
+### Kunci hanya menandatangani, tidak menghitung
+
+`TutupBulanan` sudah melewati baris bulanan yang terkunci
+(`kasir_lock_at !== null`), jadi tanda tangan itulah yang membekukannya.
+Terverifikasi: sesudah dikunci, `susun()` dijalankan ulang dan `akhir_total`
+baris itu tetap 20.310.000.
+
+### Buka kunci
+
+Sama dengan harian: role stafkontrol/pusat/superuser DAN permission `can-edit`,
+alasan wajib, tercatat di `transaction_lock_histories` lewat kolom
+`transaction_monthly_closing_id` (yang memang sudah ada). Terverifikasi: kasir
+tanpa `can-edit` ditolak.
+
+### Terverifikasi (happy path penuh)
+
+| Uji | Hasil |
+|---|---|
+| akses kasir / mantri | 200 / 403 |
+| syarat, belum ada hari dikunci | ditolak: kepala + "0 dari 4" + serah terima |
+| kunci 4 hari Jumat kelompok 891 | lengkap 4/4 |
+| approve kepala → kunci bulan | terkunci, jejak 1 baris |
+| susun ulang sesudah kunci | akhir_total tetap (tidak disentuh) |
+| buka oleh kasir tanpa can-edit | ditolak |
+| render `/closing/bulanan` | 200 |
+
+Semua keadaan uji dipulihkan bersih.
+
+### Berkas
+
+| Berkas | Tindakan |
+|---|---|
+| `app/Helpers/GembokBulanan.php` | **baru** — pasangan Gembok, syarat kelengkapan |
+| `app/Http/Controllers/ClosingBulananController.php` | **baru** — index, approveKepala, kunci, buka |
+| `app/Models/TransactionMonthlyClosing.php` | relasi `kepala()`, `kasir()` |
+| `resources/js/Pages/Closing/Bulanan.jsx` | **baru** |
+| `routes/web.php` | 4 rute `closing.bulanan.*` |
+| `resources/js/Components/Sidebar.jsx` | menu "Closing Bulanan" |
+
+### Yang sengaja tidak dikerjakan
+
+- **Tidak ada trigger DB di `transaction_monthly_closings`.** Harian punya
+  trigger (mencegah edit baris terkunci lewat SQL mentah); bulanan belum.
+  Perlindungan level-app ada (`TutupBulanan` melewati baris terkunci), tapi
+  tinker/SQL mentah masih bisa menembusnya. Pengerasan menyusul — migrasi dari
+  app_laravel, konsisten dengan `add_closing_lock_triggers`.
+- **Approve kepala tidak menghitung apa pun** — sengaja, cermin harian: kepala
+  menyatakan sudah melihat, kasir menyatakan final.
+
+### Tahap 5 sesudah ini
+
+Tanda tangan bulanan: SELESAI. Sisa Tahap 5: mutasi nasabah (tabel belum ada),
+recount target, dashboard bayangan.

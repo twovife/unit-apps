@@ -312,6 +312,12 @@ export default function AppSidebar({ ...props }) {
                   active: route().current('closing.harian'),
                 },
                 {
+                  id: 41,
+                  title: 'Closing Bulanan',
+                  link: route('closing.bulanan.index'),
+                  active: route().current('closing.bulanan.index'),
+                },
+                {
                   id: 5,
                   title: 'Pemantau Migrasi',
                   link: route('migrasi.pemantau'),

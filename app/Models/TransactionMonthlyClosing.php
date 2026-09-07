@@ -57,6 +57,16 @@ class TransactionMonthlyClosing extends Model
         'serah_terima_at' => 'datetime',
     ];
 
+    public function kepala()
+    {
+        return $this->belongsTo(\App\Models\Employee::class, 'kepala_approval_user', 'id');
+    }
+
+    public function kasir()
+    {
+        return $this->belongsTo(\App\Models\Employee::class, 'kasir_lock_user', 'id');
+    }
+
     public function loan_officer_grouping()
     {
         return $this->belongsTo(
