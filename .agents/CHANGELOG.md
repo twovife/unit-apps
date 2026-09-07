@@ -3097,3 +3097,96 @@ Sekarang mutasinya hilang sendiri.
 |---|---|---|
 | `work_days` | ya | tidak |
 | `transaction_daily_recaps`, `transaction_loans`, `transaction_loan_instalments`, `transaction_sirculations` | ya | tidak |
+
+## BJ — graphify dijadikan perkakas tetap (2026-08-12)
+
+Keputusan: knowledge graph **dipertahankan**, tapi disetel ulang menurut apa
+yang terbukti bekerja, bukan menurut bawaannya.
+
+### Kenapa layak dipelihara di proyek INI
+
+Bukan karena knowledge graph umumnya bagus. Karena sepanjang migrasi agregasi,
+proyek ini menjalankan **dua sistem yang mengerjakan hal sama** secara
+berdampingan — `transaction_daily_recaps` vs `transaction_daily_closings`,
+`generateStatusAngsuran*` vs `Ember`, dan seterusnya.
+
+Logika kembar tanpa tautan sintaksis adalah bahaya bawaan keadaan itu, dan
+satu-satunya hal yang grep **secara struktural** tidak bisa temukan. Sudah
+terbukti sekali: `getStortingShowDate` (PHP) ↔ `getLastDateForHari` (JS) — beda
+bahasa, beda nama, tidak saling memanggil, lolos dari penyisiran manual empat
+tanggal turunan.
+
+### `.graphifyignore` — prinsipnya
+
+Buang yang **dihasilkan mesin atau vendor**. Simpan semua yang **ditulis
+tangan**, termasuk yang sedang tidak disentuh.
+
+Godaan yang ditolak: mempersempit ke "berkas yang sedang dikerjakan". Bug di
+atas ketemu justru karena `resources/js/` ikut terindeks padahal yang sedang
+digarap sisi PHP-nya. Mempersempit cakupan = membutakan satu-satunya kemampuan
+yang membuat graf ini layak ada.
+
+| Dibuang | Alasan |
+|---|---|
+| `bootstrap/ssr/`, `public/build/` | bundel Vite; 427 simpul, 242 fungsi tercatat dua kali |
+| `package.json`, `composer.json`, `components.json`, `jsconfig.json` | tiap dependensi jadi node — 191 simpul, dua komunitas palsu |
+| `storage/`, `public/`, `node_modules/`, `vendor/` | cache, aset, vendor |
+
+| Sengaja DISIMPAN | Alasan |
+|---|---|
+| `database/seeders/` | skrip tulisan tangan yang menyentuh tabel produksi |
+| `database/migrations/` | riwayat skema |
+| `tests/` | menunjukkan perilaku apa yang dianggap benar |
+| `resources/js/` | separuh logika tanggal ada di sini |
+
+Hasil: 540 → **396 berkas**, 2.650 → **1.509 node**, 222 → **122 komunitas**,
+dan nama komunitasnya jadi modul sungguhan (`Kalender Kerja`, `Gembok Closing
+Harian`, `Serah Terima Saldo Awal`) alih-alih potongan bundel (`cn`,
+`utils-DzFuPzol.js`).
+
+### Hook post-commit: dipasang
+
+Tiap commit menjalankan ulang ekstraksi AST atas berkas yang berubah. **Nol
+token, tanpa LLM.** Terverifikasi: commit ini memicunya, 1.518 node tersusun
+ulang, dan 121 nama komunitas kurasi tetap terjaga.
+
+### Hook PreToolUse: DICABUT
+
+`graphify claude install` juga memasang hook di `.claude/settings.json` yang
+menyuntikkan ke **setiap** panggilan Read/Grep/Bash:
+
+> MANDATORY: you MUST run `graphify query "<question>"` before grepping raw files.
+
+Dicabut, karena mendorong ke pola yang **sudah dicoba dan gagal di sini**:
+
+| Perintah | Hasil |
+|---|---|
+| `explain "AppHelper"` | 78 sambungan + nomor baris — berguna |
+| `path "A" "B"` | jalur terpendek — berguna |
+| `query "<kalimat panjang>"` | **654 node, terpotong batas token, nihil** |
+
+Membiarkannya berarti tiap sesi berikutnya digiring ke jalan buntu itu ratusan
+kali. `.claude/settings.json` dikosongkan hook-nya; `CLAUDE.md` mencatat
+alasannya supaya tidak dinyalakan ulang karena refleks.
+
+### CLAUDE.md dibuat
+
+Sebelumnya proyek ini tidak punya. Isinya sengaja pendek: aturan migrasi dari
+`app_laravel`, larangan `php artisan test`, dan cara memakai graf —
+**sempit, bukan luas** — plus peringatan bahwa sisi `INFERRED` adalah tafsiran
+mesin yang wajib dibuktikan dengan membuka berkasnya.
+
+### Yang belum
+
+15 dokumen `.agents/` belum terekstrak, termasuk `agregasi_rekap.md` dan
+`05_temuan_dan_jebakan.md`. Manifesnya sengaja tidak men-stamp mereka, jadi
+`/graphify --update` akan mengambilnya tanpa mengulang yang lain — tapi itu
+memanggil LLM dan tidak murah (satu run penuh: 219rb token input).
+
+### Temuan yang belum dikerjakan
+
+`getStortingShowDate` masih buta hari libur. Dampaknya terverifikasi: mantri
+kelompok Senin membuka daftar tagihan pada Selasa 18 Agustus akan melihat
+`tanggalSeleksi = 17 Agustus` (Hari Kemerdekaan, 0 angsuran) — **seluruh
+nasabah tampil belum bayar**. Dipakai di `PinjamanTrait` baris 243, 485, 829.
+Ditunda atas permintaan user.
