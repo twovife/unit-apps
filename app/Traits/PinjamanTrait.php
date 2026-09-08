@@ -294,6 +294,22 @@ trait PinjamanTrait
     $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
     $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
 
+    // Koleksi harian ikut hari EFEKTIF (lihat getLoanMantri): mutasi yang
+    // berlaku pada bulan yang dilihat memindahkan nasabah ke hari/kelompok baru.
+    $refMutasi = $transaction_start_date->copy()->startOfMonth()->toDateString();
+    $mut = \App\Helpers\Mutasi::penyesuaianBaca($groupingId->id, $hari, $refMutasi);
+    $filterEfektif = function ($q) use ($groupingId, $hari, $mut) {
+      $q->where(function ($qq) use ($groupingId, $hari, $mut) {
+        $qq->where('transaction_loan_officer_grouping_id', $groupingId->id)->where('hari', $hari);
+        if ($mut['keluar']) {
+          $qq->whereNotIn('id', $mut['keluar']);
+        }
+      });
+      if ($mut['masuk']) {
+        $q->orWhereIn('id', $mut['masuk']);
+      }
+    };
+
     // GERBANG alur baru: saldo awal (grup+hari+bulan) dari monthly_closings
     // awal_*, dipetakan ke nama kolom sirkulasi lama yang dibaca frontend
     // (amount/cm_amount/mb_amount/ml_amount). Belum-migrasi -> jalur lama.
@@ -324,8 +340,7 @@ trait PinjamanTrait
       }, 'branch', 'customer', 'white_off', 'loan_officer_grouping']
     )
       ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
-      ->where('hari', $hari)
-      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where($filterEfektif)
       ->where('status', 'success')
       ->orderBy('drop_date')
       ->get()
@@ -341,8 +356,7 @@ trait PinjamanTrait
       }, 'branch', 'customer', 'loan_officer_grouping', 'white_off']
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
-      ->where('hari', $hari)
-      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where($filterEfektif)
       ->where(function ($item) use ($transaction_start_date, $transaction_date) {
         $item->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
           $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
@@ -557,6 +571,23 @@ trait PinjamanTrait
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
+    // Koleksi harian ikut hari EFEKTIF: mutasi yang berlaku pada bulan tanggal
+    // terpilih memindahkan nasabah ke hari/kelompok barunya. Mayoritas tetap
+    // lewat indeks (grouping,hari); yang pindah ditambal daftar ID kecil.
+    $refMutasi = Carbon::parse($tanggalSeleksi)->startOfMonth()->toDateString();
+    $mut = \App\Helpers\Mutasi::penyesuaianBaca($groupingId->id, $hari, $refMutasi);
+    $filterEfektif = function ($q) use ($groupingId, $hari, $mut) {
+      $q->where(function ($qq) use ($groupingId, $hari, $mut) {
+        $qq->where('transaction_loan_officer_grouping_id', $groupingId->id)->where('hari', $hari);
+        if ($mut['keluar']) {
+          $qq->whereNotIn('id', $mut['keluar']);
+        }
+      });
+      if ($mut['masuk']) {
+        $q->orWhereIn('id', $mut['masuk']);
+      }
+    };
+
     // GERBANG alur baru: kantor migrasi membaca status kunci & saldo awal dari
     // daily_closings / monthly_closings. Untuk kantor belum-migrasi -> jalur
     // lama, IDENTIK dengan sebelumnya.
@@ -611,8 +642,7 @@ trait PinjamanTrait
       ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer', 'white_off']
     )
       ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
-      ->where('hari', $hari)
-      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where($filterEfektif)
       ->where('status', 'success')
       ->orderBy('drop_date')
       ->get()
@@ -625,8 +655,7 @@ trait PinjamanTrait
       ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer']
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
-      ->where('hari', $hari)
-      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where($filterEfektif)
       ->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
         $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
           ->where('nominal', '>', 0);

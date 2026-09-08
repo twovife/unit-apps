@@ -102,6 +102,66 @@ class Mutasi
     }
 
     /**
+     * Penyesuaian pembacaan koleksi harian per (grouping, hari) pada bulan $ref.
+     *
+     * Kolom `hari`/`grouping` ASLI sengaja tak pernah diubah mutasi (demi indeks),
+     * jadi pembacaan berbasis kolom asli MELEWATKAN pinjaman yang pindah MASUK dan
+     * masih ikut menghitung yang pindah KELUAR. Karena mutasi langka, cukup kembalikan
+     * dua daftar ID kecil untuk menambal filter: tambahkan `masuk`, kecualikan `keluar`.
+     * Tanpa mutasi, keduanya kosong dan pembacaan persis seperti semula.
+     *
+     * @return array{masuk: int[], keluar: int[]}
+     */
+    public static function penyesuaianBaca(int $groupingId, string $hari, $ref): array
+    {
+        $refDate = Carbon::parse($ref)->startOfMonth()->toDateString();
+        $hari = strtolower($hari);
+
+        // Mulai dari tabel mutasi (kecil), dibatasi yang MENYENTUH grouping ini
+        // (pindah masuk lewat ke_grouping, atau keluar lewat dari_grouping) —
+        // jadi tak menyapu seluruh mutasi kantor lain.
+        $loanIds = TransactionLoanMutation::where('berlaku_bulan', '<=', $refDate)
+            ->where(function ($q) use ($groupingId) {
+                $q->where('ke_grouping_id', $groupingId)
+                    ->orWhere('dari_grouping_id', $groupingId);
+            })
+            ->distinct()->pluck('transaction_loan_id');
+
+        if ($loanIds->isEmpty()) {
+            return ['masuk' => [], 'keluar' => []];
+        }
+
+        $gEff = self::ekspresiEfektifSql('l', $refDate);
+        $hEff = 'LOWER(' . self::ekspresiHariEfektifSql('l', $refDate) . ')';
+
+        $rows = DB::table(DB::raw('transaction_loans l'))
+            ->whereIn('l.id', $loanIds)
+            ->get([
+                DB::raw('l.id AS id'),
+                DB::raw('l.transaction_loan_officer_grouping_id AS og'),
+                DB::raw('LOWER(l.hari) AS oh'),
+                DB::raw("$gEff AS eg"),
+                DB::raw("$hEff AS eh"),
+            ]);
+
+        $masuk = [];
+        $keluar = [];
+
+        foreach ($rows as $r) {
+            $asli = ((int) $r->og === $groupingId) && ($r->oh === $hari);
+            $efektif = ((int) $r->eg === $groupingId) && ($r->eh === $hari);
+
+            if ($efektif && !$asli) {
+                $masuk[] = (int) $r->id;
+            } elseif ($asli && !$efektif) {
+                $keluar[] = (int) $r->id;
+            }
+        }
+
+        return ['masuk' => $masuk, 'keluar' => $keluar];
+    }
+
+    /**
      * Catat satu mutasi.
      *
      * @throws \RuntimeException
