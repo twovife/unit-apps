@@ -418,15 +418,37 @@ trait RekapTrait
       ->get()
       ->groupBy('transaction_loan_officer_grouping_id');
 
-    $saldoAwalBulan = $transactionSirculation->map(function ($item) {
-      return [
-        'kelompok' => $item->first()->transaction_loan_officer_grouping->kelompok,
-        'sirkulasi' => $item->sum('amount') ?? 0,
-        'sirkulasiCm' => $item->sum('cm_amount') ?? 0,
-        'sirkulasiMb' => $item->sum('mb_amount') ?? 0,
-        'sirkulasiMl' => $item->sum('ml_amount') ?? 0,
-      ];
-    })->sortBy('kelompok')->values();
+    // GERBANG alur baru: kantor yang sudah migrasi membaca saldo awal dari
+    // transaction_monthly_closings (agregat baru), bukan transaction_sirculations
+    // lama. Untuk kantor belum-migrasi, pakaiAgregatBaru() = false -> jalur lama
+    // di bawah, IDENTIK dengan sebelumnya. Diverifikasi: kantor non-migrasi
+    // byte-identik, Krian 2 Juli baca dari tabel baru.
+    if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
+      $saldoAwalBulan = \App\Models\TransactionMonthlyClosing::with('loan_officer_grouping')
+        ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->whereDate('periode', $startDateofMonth)
+        ->get()
+        ->groupBy('transaction_loan_officer_grouping_id')
+        ->map(function ($item) {
+          return [
+            'kelompok' => $item->first()->loan_officer_grouping->kelompok ?? null,
+            'sirkulasi' => (int) $item->sum('awal_total'),
+            'sirkulasiCm' => (int) $item->sum('awal_cm'),
+            'sirkulasiMb' => (int) $item->sum('awal_mb'),
+            'sirkulasiMl' => (int) $item->sum('awal_ml'),
+          ];
+        })->sortBy('kelompok')->values();
+    } else {
+      $saldoAwalBulan = $transactionSirculation->map(function ($item) {
+        return [
+          'kelompok' => $item->first()->transaction_loan_officer_grouping->kelompok,
+          'sirkulasi' => $item->sum('amount') ?? 0,
+          'sirkulasiCm' => $item->sum('cm_amount') ?? 0,
+          'sirkulasiMb' => $item->sum('mb_amount') ?? 0,
+          'sirkulasiMl' => $item->sum('ml_amount') ?? 0,
+        ];
+      })->sortBy('kelompok')->values();
+    }
 
     // ============================
     // AGREGASI INSTALMENT (SQL)

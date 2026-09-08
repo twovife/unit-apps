@@ -3695,3 +3695,38 @@ Krian 2 jadi satu-satunya pilot.
 Jalur baca baru (rekap/angsuran/pinjaman membaca tabel baru untuk kantor
 migrasi) + sambung gerbang, diverifikasi terhadap Krian 2 Juli ini — kantor
 belum-migrasi harus IDENTIK, Krian 2 harus benar dari tabel baru.
+
+
+## BS — Gerbang baca pertama tersambung + terbukti inert (2026-08-12)
+
+Menjawab keberatan user: produksi tidak boleh deploy-tunggu-deploy. Kode
+diselesaikan sekarang, peralihan per kantor lewat data. Ini titik baca PERTAMA
+yang membuktikannya.
+
+### Yang dikerjakan
+
+`RekapTrait::getDataRekapDua` — saldo awal (saldoAwalBulan). Gerbang:
+`if (AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth))` → baca
+`transaction_monthly_closings.awal_*`; else → jalur lama `transaction_sirculations`
+(persis seperti sebelumnya).
+
+### Terbukti (data nyata)
+
+| Kantor | Hasil |
+|---|---|
+| Krian 2 Goro (migrasi Juli) | saldoAwalBulan = 2.462.022.000, cocok monthly_closings.awal_total |
+| Krian 3 (belum migrasi) | controller = sirkulasi lama = 2.180.077.000, **IDENTIK** |
+
+Kantor belum-migrasi byte-identik → gerbang benar-benar inert. Kantor migrasi
+baca tabel baru. Inilah pola yang membuat produksi cukup satu deploy: sambungkan
+gerbang (inert untuk 155 kantor), lalu tiap kantor pindah lewat data (bulan
+migrasi + tutup buku), bukan rilis baru.
+
+### Sisa titik baca (pola sama)
+
+Titik ini membuktikan polanya. Yang belum disambung dengan pola serupa:
+RekapTrait :586 (getDataRekapDua bagian lain), :732 (getRekapPermantriData),
+PinjamanTrait getLoan/getLoanMantri, TransactionDailyRecapController
+ceklist_kepala/rekap_post. Plus: hentikan tulis-ganda daily_recaps untuk kantor
+migrasi. Semua mengikuti gerbang inert yang sama, diverifikasi terhadap Krian 2
+Juli (migrasi = tabel baru) dan kantor lain (belum = identik).
