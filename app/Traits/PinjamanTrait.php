@@ -262,10 +262,27 @@ trait PinjamanTrait
     $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
     $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
 
-    $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
-      ->where('day', $hari)
-      ->where('date', $transaction_start_date->format('Y-m-d'))
-      ->first();
+    // GERBANG alur baru: saldo awal (grup+hari+bulan) dari monthly_closings
+    // awal_*, dipetakan ke nama kolom sirkulasi lama yang dibaca frontend
+    // (amount/cm_amount/mb_amount/ml_amount). Belum-migrasi -> jalur lama.
+    $migrasi = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $transaction_start_date);
+    if ($migrasi) {
+      $mc = \App\Models\TransactionMonthlyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->where('hari', $hari)
+        ->whereDate('periode', $transaction_start_date->format('Y-m-d'))
+        ->first();
+      $transactionSirkulan = $mc ? (object) [
+        'amount' => (int) $mc->awal_total,
+        'cm_amount' => (int) $mc->awal_cm,
+        'mb_amount' => (int) $mc->awal_mb,
+        'ml_amount' => (int) $mc->awal_ml,
+      ] : null;
+    } else {
+      $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->where('day', $hari)
+        ->where('date', $transaction_start_date->format('Y-m-d'))
+        ->first();
+    }
 
     $loan = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
