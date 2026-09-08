@@ -3586,3 +3586,29 @@ hari+kelompok, simpan borongan); `TransactionLoanMutation.php` (fillable);
 - storting/drop harian belum ikut kelompok/hari efektif — baru saldo.
 - `loan_balancing` belum tahu mutasi (kini relevan karena hari bisa berubah).
 - lintas kantor di luar cakupan.
+
+
+## BP — Dua pengerasan: getStortingShowDate sadar libur + trigger kunci bulanan (2026-08-12)
+
+### getStortingShowDate sadar hari libur
+
+Menutup bug hari libur yang MASIH hidup di menu desktop `/pinjaman` (`getLoan`).
+Fungsi ini dulu mundur SATU langkah dari nama hari tanpa peduli libur —
+kelompok Senin dibuka Selasa 18 Agu menunjuk 17 Agu (Kemerdekaan, 0 tarikan),
+seluruh nasabah tampak nunggak. Kini mundur per minggu selama jatuh libur
+(batas 8 minggu). Terbukti: senin/18 Agu → 10 Agu; kamis/20 Agu → 20 Agu.
+
+Ini menutup sisi PHP dari kembaran yang ditemukan graphify
+(`getStortingShowDate` ↔ `getLastDateForHari`). Kedua sisi kini sadar libur.
+
+### Trigger DB kunci bulanan (app_laravel)
+
+Pasangan add_closing_lock_triggers. Trigger harian menjaga tabel sumber;
+`tmc_kunci_before_update`/`_before_delete` menjaga baris
+`transaction_monthly_closings` sendiri: saat terkunci, mengubah kolom angka
+sambil tetap terkunci ditolak, membuka kunci (kasir_lock_at→NULL) diizinkan,
+menghapus baris terkunci ditolak. Terbukti lewat SQL mentah, mass update
+Eloquent, dan delete — semua ditahan; buka kunci + susun ulang sesudahnya
+lolos. Inert saat dipasang (belum ada baris terkunci).
+
+Menutup utang yang dicatat di BL.

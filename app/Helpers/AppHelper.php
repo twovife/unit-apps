@@ -227,13 +227,22 @@ class AppHelper
   {
     $today = Carbon::today()->dayOfWeek;
     $reqday = self::getNumbDays($req_day);
-    // dd($reqday);
-    $prevDay = Carbon::parse(Carbon::today())->previous($reqday)->format('Y-m-d');
-    if ($today == $reqday) {
-      return Carbon::today()->format('Y-m-d');
+
+    // Hari tagih terakhir untuk $req_day: hari ini kalau kebetulan hari tagih,
+    // kalau tidak mundur ke kejadian sebelumnya.
+    $tanggal = ($today == $reqday)
+      ? Carbon::today()
+      : Carbon::parse(Carbon::today())->previous($reqday);
+
+    // Mundur terus selama jatuh di hari libur. Dulu fungsi ini mundur SATU
+    // langkah tanpa peduli libur: kelompok Senin dibuka Selasa 18 Agu menunjuk
+    // 17 Agu (Kemerdekaan, 0 tarikan) sehingga seluruh nasabah tampak nunggak.
+    // Dibatasi 8 minggu supaya tak berputar tanpa henti.
+    for ($i = 0; $i < 8 && !\App\Models\WorkDay::hariKerja($tanggal); $i++) {
+      $tanggal = $tanggal->copy()->subWeek();
     }
 
-    return $prevDay;
+    return $tanggal->format('Y-m-d');
   }
 
   public static function generateStatusAngsuran($tanggal_drop, $request_date): Int
