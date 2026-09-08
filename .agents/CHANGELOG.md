@@ -3650,3 +3650,48 @@ Tombol recount (menulis target dari hitung + set target_source='recount') —
 menyusul per rancangan. Kondisi "tidak sedang punya topup ber-ACC" di rumus
 belum disaring (previous_loan_id baru 3 baris di produksi, dampaknya nihil);
 dicatat kalau topup produksi mulai dipakai.
+
+
+## BR — Pilot nyata: Krian 2 Goro migrasi Juli (2026-08-12)
+
+Bukan perubahan kode — operasi data + validasi. Alih-alih berpura-pura Agustus
+kosong, pilot dipindah ke data Juli yang LENGKAP di kantor bersih: Krian 2 Goro
+(id 12, 10 kelompok, 39.918 pinjaman, 17.725 angsuran Juli, sirkulasi lama
+lengkap 60, 0 tanggal mustahil).
+
+### Yang dijalankan
+
+- `branches.mulai_pendataan_baru` Krian 2 = 2026-07-01
+- 270 baris harian Juli (27 hari kerja Sen-Sab × 10 kelompok), 220 terisi angka
+- 60 baris bulanan disusun dari harian + portofolio, semua dari data Juli nyata
+
+### Validasi berdampingan (Juli, baru vs lama)
+
+| | baru | sumber/lama | |
+|---|---|---|---|
+| drop | 1.318.600.000 | 1.318.600.000 | **COCOK persis** |
+| storting | 1.574.774.000 | 1.574.774.000 | **COCOK persis** |
+| awal_total | 2.462.022.000 | sirkulasi 2.458.400.000 | selisih 3.622.000 (0,15%) |
+
+Arus cocok ke rupiah dengan SUMBER (bukan dengan tabel lama — dengan
+transaction_loans/instalments langsung). Selisih saldo awal terpusat di
+sebagian kecil (kel,hari); sebagian besar 0. Itu drift sirkulasi lama dari
+portofolio sebenarnya — persis yang cutover-dengan-bukti dibuat untuk
+menangkap, kini terlihat di data nyata tanpa menunggu Agustus.
+
+### Keadaan kantor migrasi sekarang
+
+| Kantor | mulai | catatan |
+|---|---|---|
+| Krian 2 Goro (12) | 2026-07-01 | pilot NYATA, tabel baru terisi dari Juli |
+| Karawang 2 (90) | 2026-08-01 | uji lama (Agustus kosong) |
+| Gresik 1 (1) | 2026-08-01 | uji lama (Agustus kosong) |
+
+Karawang 2 & Gresik 1 tinggal sisa uji berpura-pura Agustus; bisa direset kalau
+Krian 2 jadi satu-satunya pilot.
+
+### Berikutnya
+
+Jalur baca baru (rekap/angsuran/pinjaman membaca tabel baru untuk kantor
+migrasi) + sambung gerbang, diverifikasi terhadap Krian 2 Juli ini — kantor
+belum-migrasi harus IDENTIK, Krian 2 harus benar dari tabel baru.
