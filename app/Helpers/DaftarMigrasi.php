@@ -149,6 +149,52 @@ class DaftarMigrasi
                 ->whereNull('kasir_lock_at')
                 ->update($angka);
         }
+
+        self::bawaKolomManual($branchId, $periode);
+    }
+
+    /**
+     * Bawa kolom MANUAL dari daily_recaps lama ke daily_closings bulan migrasi.
+     *
+     * kasbon/transport/keluar/target itu DIKETIK manusia — tak bisa dihitung
+     * ulang dari sumber seperti drop/storting/ember. Kalau tidak ikut dibawa saat
+     * kantor pindah tabel, data yang sudah diinput kasir/kepala di bulan migrasi
+     * HILANG (dan `tunai` yang generated dari kasbon/transport jadi salah). Hanya
+     * menyentuh baris yang BELUM terkunci; baris terkunci dilewati (trigger DB
+     * juga menolaknya). Idempoten — menyalin ulang nilai yang sama.
+     *
+     * @return int jumlah baris daily_closings yang terisi
+     */
+    public static function bawaKolomManual(int $branchId, $periode): int
+    {
+        $periode = Carbon::parse($periode)->startOfMonth();
+        $ids = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id')->all();
+
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $recaps = DB::table('transaction_daily_recaps')
+            ->whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereBetween('date', [$periode->toDateString(), $periode->copy()->endOfMonth()->toDateString()])
+            ->get(['transaction_loan_officer_grouping_id', 'date', 'kasbon', 'transport', 'keluar', 'target', 'target_on']);
+
+        $terbawa = 0;
+
+        foreach ($recaps as $r) {
+            $terbawa += TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $r->transaction_loan_officer_grouping_id)
+                ->whereDate('date', Carbon::parse($r->date)->toDateString())
+                ->whereNull('kasir_lock_at')
+                ->update([
+                    'kasbon' => (int) ($r->kasbon ?? 0),
+                    'transport' => (int) ($r->transport ?? 0),
+                    'keluar' => (int) ($r->keluar ?? 0),
+                    'target' => (int) ($r->target ?? 0),
+                    'target_on' => $r->target_on,
+                ]);
+        }
+
+        return $terbawa;
     }
 
     /**
