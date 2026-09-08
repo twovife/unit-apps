@@ -748,12 +748,42 @@ trait RekapTrait
 
     $transactionOffice = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
-    $transactionDailyRecap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
-      ->whereBetween('date', [$startDateofMonth, $endDateofMonth])->get();
+    // GERBANG alur baru (lihat getDataRekapDua/getRekapDuaData): kantor migrasi
+    // ambil kasbon/transport/tunai + status kunci dari daily_closings, dan saldo
+    // awal per hari dari monthly_closings. awal_* dipetakan ke nama kolom
+    // sirkulasi lama (amount/cm_amount/…) dan hari -> day supaya map & sum() di
+    // bawah tak berubah. Kantor belum-migrasi -> else, IDENTIK jalur lama.
+    if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
+      $transactionDailyRecap = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+        ->whereBetween('date', [$startDateofMonth, $endDateofMonth])->get()
+        ->map(fn($r) => (object) [
+          'date' => Carbon::parse($r->date)->toDateString(),
+          'kasbon' => (int) $r->kasbon,
+          'transport' => (int) $r->transport,
+          'tunai' => (int) $r->tunai,
+          'daily_kepala_approval' => $r->kepala_approval_at !== null,
+          'daily_kasir_approval' => $r->kasir_lock_at !== null,
+        ]);
 
-    $transactionSirculation = TransactionSirculation::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
-      ->where('date', $startDateofMonth)
-      ->get();
+      $transactionSirculation = \App\Models\TransactionMonthlyClosing::with('loan_officer_grouping')
+        ->where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+        ->whereDate('periode', $startDateofMonth)->get()
+        ->map(fn($r) => (object) [
+          'transaction_loan_officer_grouping' => (object) ['kelompok' => $r->loan_officer_grouping->kelompok ?? null],
+          'day' => $r->hari,
+          'amount' => (int) $r->awal_total,
+          'cm_amount' => (int) $r->awal_cm,
+          'mb_amount' => (int) $r->awal_mb,
+          'ml_amount' => (int) $r->awal_ml,
+        ]);
+    } else {
+      $transactionDailyRecap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+        ->whereBetween('date', [$startDateofMonth, $endDateofMonth])->get();
+
+      $transactionSirculation = TransactionSirculation::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+        ->where('date', $startDateofMonth)
+        ->get();
+    }
 
     $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal')
       ->where('transaction_loan_officer_grouping_id', $transactionOffice->id)
