@@ -335,6 +335,12 @@ export default function AppSidebar({ ...props }) {
                   link: route('migrasi.pemeriksaan'),
                   active: route().current('migrasi.pemeriksaan'),
                 },
+                {
+                  id: 7,
+                  title: 'Target Bayangan',
+                  link: route('migrasi.target_bayangan'),
+                  active: route().current('migrasi.target_bayangan'),
+                },
               ]}
             />
           </SidebarGroup>

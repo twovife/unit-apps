@@ -113,6 +113,8 @@ Route::middleware('auth')->group(function () {
       ->name('pemantau');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
+    Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])
+      ->name('target_bayangan');
     Route::get('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'penyesuaianSaldo'])
       ->name('penyesuaian_saldo');
     Route::post('/penyesuaian-saldo/cari', [\App\Http\Controllers\MigrasiController::class, 'cariPenyesuaian'])

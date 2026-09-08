@@ -3612,3 +3612,41 @@ Eloquent, dan delete — semua ditahan; buka kunci + susun ulang sesudahnya
 lolos. Inert saat dipasang (belum ada baris terkunci).
 
 Menutup utang yang dicatat di BL.
+
+
+## BQ — Laporan bayangan target (Tahap 5) + kolom target_source (2026-08-12)
+
+Menutup bagian recount di Tahap 5 yang bisa dikerjakan sekarang: laporan
+bayangan. Tombol recount sendiri sengaja belum ada (rancangan: menyusul ±2
+bulan setelah angka hitung terbukti bersih lewat laporan ini).
+
+### Kolom target_source (app_laravel)
+
+Ditambah ke transaction_daily_recaps: rantai/recount/manual, NULL = warisan.
+Dipasang sekarang walau belum ditulis — tanpa penanda ini, saat recount hidup
+nanti tak ada cara membedakan target valid dari warisan rantai. (Rancangan §5.)
+
+### Laporan bayangan (read-only)
+
+`TargetBayangan::laporan()` + menu "Target Bayangan" (Persiapan Migrasi,
+view-all-groups). Per (kelompok, hari):
+- target_rantai: target tersimpan pada recap terbaru
+- target_hitung: Σ(nominal_drop×0,13) atas pinjaman success, saldo>0,
+  ember ∈ {month1,month2,ccm,cm} (MB/ML bukan target)
+- hanyut = rantai − hitung
+
+Read-only murni — tidak menulis, tidak ada tombol recount.
+
+### Terbukti (Juli Karawang 2)
+
+60 baris. Total rantai 162.864.000 vs hitung 191.594.000 — **hanyut
+−28.730.000 (~15%)**. Persis drift yang laporan ini dibuat untuk mengukur:
+rantai menumpuk pembulatan + keluar-target tak seragam. Memberi ukuran nyata,
+bukan tebakan, kapan recount layak.
+
+### Yang sengaja belum
+
+Tombol recount (menulis target dari hitung + set target_source='recount') —
+menyusul per rancangan. Kondisi "tidak sedang punya topup ber-ACC" di rumus
+belum disaring (previous_loan_id baru 3 baris di produksi, dampaknya nihil);
+dicatat kalau topup produksi mulai dipakai.

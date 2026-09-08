@@ -60,10 +60,10 @@
     "semantic_hash": "356bfe1331b7fbf56eb1384d5b827e0e"
   },
   "app/Helpers/AppHelper.php": {
-    "mtime": 1785823793.6611342,
-    "seen": 1788788555.6278882,
-    "ast_hash": "b0b18da224bf6c22759a4e0eeea62a0f",
-    "semantic_hash": "b0b18da224bf6c22759a4e0eeea62a0f"
+    "mtime": 1788835688.4238937,
+    "seen": 1788835845.4699202,
+    "ast_hash": "88a46b5729eb52b0b892090e16029530",
+    "semantic_hash": ""
   },
   "app/Helpers/AuthScope.php": {
     "mtime": 1785486610.6231306,
@@ -2244,9 +2244,9 @@
     "semantic_hash": "c2e616f3cdfc418af4f0745d84846902"
   },
   ".agents/CHANGELOG.md": {
-    "mtime": 1788835523.9966128,
-    "seen": 1788835527.637032,
-    "ast_hash": "8cde0655eb549aecd4074ce75b646144",
+    "mtime": 1788835842.2036808,
+    "seen": 1788835845.4705925,
+    "ast_hash": "a4ecd926ceced806eb3693e0051444b7",
     "semantic_hash": ""
   },
   "README.md": {

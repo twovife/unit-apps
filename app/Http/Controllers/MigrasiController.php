@@ -7,6 +7,7 @@ use App\Helpers\AuthScope;
 use App\Helpers\DaftarMigrasi;
 use App\Helpers\PemeriksaAgregat;
 use App\Helpers\PenyesuaianSaldo;
+use App\Helpers\TargetBayangan;
 use App\Helpers\SerahTerima;
 use App\Models\Branch;
 use App\Models\TransactionMonthlyClosing;
@@ -113,6 +114,46 @@ class MigrasiController extends Controller
      * dilakukan adalah membuka kunci lewat jalur resmi (beralasan, tercatat),
      * bukan menimpanya tanpa jejak.
      */
+    /**
+     * Laporan bayangan target: rantai (tersimpan) vs hitung (dari sumber).
+     * Read-only, view-all-groups.
+     */
+    public function targetBayangan(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
+            abort(403, 'Laporan target untuk kepala mantri, kasir, dan pimpinan.');
+        }
+
+        $scope = AuthScope::resolve();
+        $periode = $request->filled('periode')
+            ? Carbon::parse($request->periode)->startOfMonth()
+            : Carbon::now()->startOfMonth();
+
+        $ids = DB::table('transaction_loan_officer_groupings')
+            ->where('branch_id', $scope->branch_id)->pluck('id')->all();
+
+        $baris = TargetBayangan::laporan($ids, $periode);
+
+        $totalRantai = array_sum(array_column($baris, 'rantai'));
+        $totalHitung = array_sum(array_column($baris, 'hitung'));
+
+        return Inertia::render('Migrasi/TargetBayangan', [
+            'baris' => $baris,
+            'ringkas' => [
+                'rantai' => $totalRantai,
+                'hitung' => $totalHitung,
+                'selisih' => $totalRantai - $totalHitung,
+                'meleset' => count(array_filter($baris, fn($b) => $b['selisih'] !== 0)),
+            ],
+            'server_filter' => [
+                'periode' => $periode->format('Y-m'),
+                'sebelumnya' => $periode->copy()->subMonthNoOverflow()->format('Y-m'),
+                'berikutnya' => $periode->copy()->addMonthNoOverflow()->format('Y-m'),
+                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+            ],
+        ]);
+    }
+
     /**
      * Layar penyesuaian saldo nasabah lama.
      *
