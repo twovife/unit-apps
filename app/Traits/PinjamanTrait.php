@@ -508,14 +508,27 @@ trait PinjamanTrait
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
+    // GERBANG alur baru: kantor migrasi membaca status kunci & saldo awal dari
+    // daily_closings / monthly_closings. Untuk kantor belum-migrasi -> jalur
+    // lama, IDENTIK dengan sebelumnya.
+    $migrasi = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $transaction_start_date);
+
     // Status kunci & libur untuk tanggal terpilih — dipakai frontend untuk
-    // mematikan input. "Kunci" = kasir kunci (daily_kasir_approval), sesuai
-    // prinsip: kepala cek = pengecekan, kasir kunci = kunci sebenarnya.
-    $rekapTanggal = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)
-      ->whereDate('date', $tanggalSeleksi)
-      ->first();
-    $isLocked = $rekapTanggal?->daily_kasir_approval !== null;
-    $isKepalaApproved = $rekapTanggal?->daily_kepala_approval !== null;
+    // mematikan input. "Kunci" = kasir kunci; kepala cek = pengecekan. Di alur
+    // baru itu kasir_lock_at / kepala_approval_at pada daily_closings.
+    if ($migrasi) {
+      $closingTanggal = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->whereDate('date', $tanggalSeleksi)
+        ->first();
+      $isLocked = $closingTanggal?->kasir_lock_at !== null;
+      $isKepalaApproved = $closingTanggal?->kepala_approval_at !== null;
+    } else {
+      $rekapTanggal = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->whereDate('date', $tanggalSeleksi)
+        ->first();
+      $isLocked = $rekapTanggal?->daily_kasir_approval !== null;
+      $isKepalaApproved = $rekapTanggal?->daily_kepala_approval !== null;
+    }
     $hariKerjaTerpilih = \App\Models\WorkDay::hariKerja($tanggalSeleksi);
     $liburTerpilih = \App\Models\WorkDay::whereDate('date', $tanggalSeleksi)->first();
 
@@ -524,10 +537,26 @@ trait PinjamanTrait
     $dayClosedParams = $hariIni ? Carbon::now()->format('Y-m-d') : $lastDayOfThisWeek;
     $ClosedTransaction = AppHelper::get_closed_date($dayClosedParams);
 
-    $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
-      ->where('day', $hari)
-      ->where('date', $transaction_start_date->format('Y-m-d'))
-      ->first();
+    // Saldo awal (satu baris grup+hari+bulan). Migrasi: dari monthly_closings
+    // awal_*, dipetakan ke nama kolom sirkulasi lama yang dibaca frontend
+    // (amount/cm_amount/mb_amount/ml_amount di ApprovalAkhir.jsx).
+    if ($migrasi) {
+      $mc = \App\Models\TransactionMonthlyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->where('hari', $hari)
+        ->whereDate('periode', $transaction_start_date->format('Y-m-d'))
+        ->first();
+      $transactionSirkulan = $mc ? (object) [
+        'amount' => (int) $mc->awal_total,
+        'cm_amount' => (int) $mc->awal_cm,
+        'mb_amount' => (int) $mc->awal_mb,
+        'ml_amount' => (int) $mc->awal_ml,
+      ] : null;
+    } else {
+      $transactionSirkulan = TransactionSirculation::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->where('day', $hari)
+        ->where('date', $transaction_start_date->format('Y-m-d'))
+        ->first();
+    }
     // dd($transaction_date);
     $loan = TransactionLoan::with(
       ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer', 'white_off']
