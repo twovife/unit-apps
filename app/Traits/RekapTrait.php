@@ -408,9 +408,31 @@ trait RekapTrait
     $transactionOffice = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->get();
     $groupingIds = $transactionOffice->pluck('id');
 
-    $transactionDailyRecap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
-      ->whereBetween('date', [$startDateofMonth, $endDateofMonth])
-      ->get();
+    // GERBANG: kantor migrasi mengambil kasbon/transport dari daily_closings
+    // (alur baru), bukan daily_recaps lama. Dibungkus stdClass berdate-string
+    // supaya `->where('date',$date)` di bawah cocok sama seperti recap lama
+    // (recap.date string mentah; closing.date di-cast Carbon).
+    if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
+      $transactionDailyRecap = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->whereBetween('date', [$startDateofMonth, $endDateofMonth])
+        ->get()
+        ->map(fn($r) => (object) [
+          'transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id,
+          'date' => Carbon::parse($r->date)->toDateString(),
+          'kasbon' => (int) $r->kasbon,
+          'transport' => (int) $r->transport,
+          'tunai' => (int) $r->tunai,
+          // Alur baru: persetujuan kepala & kunci kasir menggantikan dua
+          // checkbox harian lama. Dipetakan ke nama field lama supaya kode
+          // hilir (status_approve_*) tak perlu tahu bedanya.
+          'daily_kepala_approval' => $r->kepala_approval_at !== null,
+          'daily_kasir_approval' => $r->kasir_lock_at !== null,
+        ]);
+    } else {
+      $transactionDailyRecap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->whereBetween('date', [$startDateofMonth, $endDateofMonth])
+        ->get();
+    }
 
     $transactionSirculation = TransactionSirculation::with('transaction_loan_officer_grouping')
       ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
