@@ -3527,3 +3527,62 @@ ditolak "paling cepat bulan depan". Semua mutasi uji dihapus, portofolio pulih.
 - **Storting/drop harian belum ikut kelompok efektif** — hanya saldo
   (portofolio) yang sudah. Perlu kalau tarikan pindah mantri di tengah bulan.
 - **Lintas kantor** dan **pindah hari tagih** — di luar cakupan.
+
+
+## BO — Mutasi borongan + ganti hari tagih (2026-08-12)
+
+Lanjutan BN. Dua koreksi setelah user menjelaskan alur nyata:
+
+### 1. Mutasi bisa ganti HARI tagih, bukan cuma kelompok
+
+Contoh user: kelompok 1 Selasa sepi → digabung ke kelompok 2 Selasa (beda
+kelompok), atau pindah hari di kelompok sama, atau kelompok lain sekaligus beda
+hari. Jadi tujuan = pasangan (kelompok, hari).
+
+Ditambah kolom `ke_hari`/`dari_hari` (migrasi app_laravel), ekspresi HARI
+efektif di `Mutasi` (COALESCE ke hari asli — no-op saat NULL), dan dipasang di
+`portofolio` GROUP BY + SELECT. Terbukti: pindah kelompok 1 senin → kelompok
+892 rabu memindah saldo dari senin ke rabu kelompok tujuan, total kantor kekal.
+
+Karena hari kini bisa berubah, invarian `hari == dateName(drop_date)` yang
+dicek `loan_balancing` MEMANG bisa dilanggar — persis ramalan rancangan. (BN
+sempat menyimpulkan sebaliknya karena waktu itu mutasi belum menyentuh hari.)
+loan_balancing belum diubah — dev tool dd(), dicatat sebagai utang.
+
+### 2. Borongan, bukan satu-satu
+
+Rancangan memperingatkan satu-satu terlalu lambat untuk satu superuser di 157
+kantor. Layar diganti: pilih (hari, kelompok) asal → daftar nasabah BELUM LUNAS
+→ centang → pindah borongan ke (kelompok, hari) tujuan, satu transaksi
+(all-or-nothing). Beroperasi di cabang aktif (Global Branch Selector).
+
+### Kasus uji (semua lolos)
+
+| Kasus | Hasil |
+|---|---|
+| daftar (hari,kelompok) via ekspresi efektif | 891/jumat = 250 pinjaman, 50 belum lunas |
+| borongan pindah kelompok+hari sekaligus | saldo pindah tepat, senin turun = rabu naik |
+| total kantor bulan berlaku | kekal |
+| regresi Juli tanpa mutasi | 1.465.836.760 |
+| superuser / kasir | 200 / 403 |
+
+### Bug yang diperbaiki saat uji
+
+`$dariHari`/`$keHariBersih` tak ikut `use()` di closure transaksi
+`Mutasi::catat` — "Undefined variable". Ketahuan lewat uji borongan, bukan
+lint (runtime). Diperbaiki.
+
+### Berkas
+
+app_laravel `..._add_hari_to_transaction_loan_mutations`; `Mutasi.php`
+(ekspresiHariEfektifSql, hariEfektif, catat+ke_hari); `HitungAgregat.php`
+(hari efektif di portofolio); `MutasiNasabahController.php` (cari per
+hari+kelompok, simpan borongan); `TransactionLoanMutation.php` (fillable);
+`MutasiNasabah.jsx` (layar centang).
+
+### Masih utang (sama seperti BN + tambahan)
+
+- `mutasi_masuk`/`mutasi_keluar` bulanan masih 0 (arus bulan transisi).
+- storting/drop harian belum ikut kelompok/hari efektif — baru saldo.
+- `loan_balancing` belum tahu mutasi (kini relevan karena hari bisa berubah).
+- lintas kantor di luar cakupan.

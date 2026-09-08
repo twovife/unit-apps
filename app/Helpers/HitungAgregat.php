@@ -232,6 +232,9 @@ class HitungAgregat
         // selalu masih di dalam $groupingIds yang sama; whereIn kolom asli tetap
         // dipakai agar kuerinya terindeks.
         $gEfektif = \App\Helpers\Mutasi::ekspresiEfektifSql('l', $ref);
+        // Hari tagih efektif — ikut pindah kalau mutasi mengganti hari; kalau
+        // tidak, jatuh ke l.hari. No-op selama belum ada mutasi ber-ke_hari.
+        $hariEfektif = 'LOWER(' . \App\Helpers\Mutasi::ekspresiHariEfektifSql('l', $ref) . ')';
 
         $saldo = '(l.pinjaman - IFNULL(i.bayar,0) - IFNULL(w.wo,0) + IFNULL(a.efek,0))';
 
@@ -260,10 +263,10 @@ class HitungAgregat
             ->where('l.drop_date', '<=', $asOf)
             ->whereNotNull('l.hari')
             ->whereRaw("$saldo > 0")
-            ->groupBy(DB::raw($gEfektif), DB::raw('LOWER(l.hari)'), DB::raw($ember))
+            ->groupBy(DB::raw($gEfektif), DB::raw($hariEfektif), DB::raw($ember))
             ->get([
                 DB::raw("$gEfektif AS g"),
-                DB::raw('LOWER(l.hari) AS hari'),
+                DB::raw("$hariEfektif AS hari"),
                 DB::raw("$ember AS ember"),
                 DB::raw("SUM($saldo) AS saldo"),
             ]);

@@ -16,7 +16,9 @@ class TransactionLoanMutation extends Model
     protected $fillable = [
         'transaction_loan_id',
         'dari_grouping_id',
+        'dari_hari',
         'ke_grouping_id',
+        'ke_hari',
         'berlaku_bulan',
         'berlaku_sampai',
         'alasan',

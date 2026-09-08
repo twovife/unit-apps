@@ -49,6 +49,29 @@ class Mutasi
     }
 
     /**
+     * Ekspresi SQL HARI TAGIH efektif untuk bulan referensi $ref.
+     *
+     * Sama polanya dengan kelompok efektif: hari tujuan mutasi terakhir yang
+     * berlaku, atau hari asli pinjaman. COALESCE juga menampung ke_hari NULL
+     * (mutasi yang tak mengganti hari) — jatuh ke hari asli.
+     */
+    public static function ekspresiHariEfektifSql(string $aliasLoan, string $ref): string
+    {
+        $refQ = DB::getPdo()->quote($ref);
+
+        return "COALESCE(
+            (SELECT m.ke_hari
+               FROM transaction_loan_mutations m
+              WHERE m.transaction_loan_id = {$aliasLoan}.id
+                AND m.berlaku_bulan <= {$refQ}
+                AND m.ke_hari IS NOT NULL
+              ORDER BY m.berlaku_bulan DESC, m.id DESC
+              LIMIT 1),
+            {$aliasLoan}.hari
+        )";
+    }
+
+    /**
      * Kelompok efektif satu pinjaman pada bulan referensi (versi PHP, untuk
      * pengecekan/tampilan — bukan agregasi massal).
      */
@@ -64,12 +87,26 @@ class Mutasi
         return $m ? (int) $m->ke_grouping_id : (int) $loan->transaction_loan_officer_grouping_id;
     }
 
+    /** Hari tagih efektif satu pinjaman pada bulan referensi (versi PHP). */
+    public static function hariEfektif(TransactionLoan $loan, $ref): string
+    {
+        $r = Carbon::parse($ref)->startOfMonth()->toDateString();
+
+        $m = TransactionLoanMutation::where('transaction_loan_id', $loan->id)
+            ->where('berlaku_bulan', '<=', $r)
+            ->whereNotNull('ke_hari')
+            ->orderByDesc('berlaku_bulan')->orderByDesc('id')
+            ->first();
+
+        return $m ? $m->ke_hari : $loan->hari;
+    }
+
     /**
      * Catat satu mutasi.
      *
      * @throws \RuntimeException
      */
-    public static function catat(TransactionLoan $loan, int $keGroupingId, $berlakuBulan, ?string $alasan, $user): TransactionLoanMutation
+    public static function catat(TransactionLoan $loan, int $keGroupingId, ?string $keHari, $berlakuBulan, ?string $alasan, $user): TransactionLoanMutation
     {
         if (!$user || !$user->hasAnyRole(self::ROLE_PEMUTASI)) {
             throw new \RuntimeException('Hanya superuser yang boleh melakukan mutasi.');
@@ -95,12 +132,14 @@ class Mutasi
             throw new \RuntimeException('Mutasi antar kantor belum didukung — tujuan harus di kantor yang sama.');
         }
 
-        // Kelompok asal = kelompok EFEKTIF pinjaman pada bulan itu (bukan selalu
+        // Asal = kelompok & hari EFEKTIF pinjaman pada bulan itu (bukan selalu
         // kolom asli — pinjaman bisa sudah pernah pindah).
         $dari = self::kelompokEfektif($loan, $bulan);
+        $dariHari = self::hariEfektif($loan, $bulan);
+        $keHariBersih = $keHari ? strtolower($keHari) : $dariHari;
 
-        if ($dari === (int) $keGroupingId) {
-            throw new \RuntimeException('Kelompok tujuan sama dengan kelompok sekarang.');
+        if ($dari === (int) $keGroupingId && $keHariBersih === $dariHari) {
+            throw new \RuntimeException('Tujuan sama dengan kelompok & hari sekarang.');
         }
 
         // Mutasi harus di masa depan yang bukunya belum tutup — minimal bulan
@@ -110,7 +149,7 @@ class Mutasi
             throw new \RuntimeException('Mutasi paling cepat berlaku bulan depan (tanggal 1).');
         }
 
-        return DB::transaction(function () use ($loan, $keGroupingId, $dari, $bulan, $alasan, $user) {
+        return DB::transaction(function () use ($loan, $keGroupingId, $dari, $dariHari, $keHariBersih, $bulan, $alasan, $user) {
             // Tutup rentang mutasi sebelumnya yang masih terbuka: berlaku_sampai
             // = berlaku_bulan mutasi baru. Jadi tiap saat hanya satu yang aktif.
             TransactionLoanMutation::where('transaction_loan_id', $loan->id)
@@ -121,7 +160,10 @@ class Mutasi
             return TransactionLoanMutation::create([
                 'transaction_loan_id' => $loan->id,
                 'dari_grouping_id' => $dari,
+                'dari_hari' => $dariHari,
                 'ke_grouping_id' => $keGroupingId,
+                // ke_hari NULL kalau hari tak berubah — resolusi jatuh ke hari asli.
+                'ke_hari' => $keHariBersih === $dariHari ? null : $keHariBersih,
                 'berlaku_bulan' => $bulan->toDateString(),
                 'alasan' => $alasan ?: null,
                 'user_input' => $user->employee->id,
