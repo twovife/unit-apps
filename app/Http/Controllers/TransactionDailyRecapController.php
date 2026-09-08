@@ -23,8 +23,26 @@ class TransactionDailyRecapController extends Controller
   use RekapTrait;
 
 
+  /** True jika kantor pemilik grouping ini sudah pakai agregat baru pada tanggal itu. */
+  private function sudahMigrasi($groupingId, $date): bool
+  {
+    if (!$groupingId || !$date) {
+      return false;
+    }
+    $branchId = TransactionLoanOfficerGrouping::where('id', $groupingId)->value('branch_id');
+
+    return $branchId ? \App\Helpers\AgregasiScope::pakaiAgregatBaru($branchId, $date) : false;
+  }
+
   public function rekap_post(Request $request)
   {
+    // GERBANG alur baru: kantor migrasi TIDAK menulis daily_recaps lagi (juga
+    // menghindari hook target rekursif TransactionDailyRecap::updating). Simpan
+    // kasbon/transport & kunci kasir lewat Closing Harian (ClosingHarianController).
+    if ($this->sudahMigrasi($request->id, $request->date)) {
+      return redirect()->back()->withError('Kantor ini sudah migrasi — simpan lewat menu Closing Harian, bukan rekap lama.');
+    }
+
     try {
       DB::beginTransaction();
       $dailyTransaction = TransactionDailyRecap::firstOrNew(
@@ -56,6 +74,12 @@ class TransactionDailyRecapController extends Controller
 
   public function ceklist_kepala(Request $request)
   {
+    // GERBANG alur baru: kantor migrasi menyetujui hari lewat Closing Harian
+    // (ClosingHarianController@approveKepala), bukan menulis daily_recaps di sini.
+    if ($this->sudahMigrasi($request->id, $request->date)) {
+      return redirect()->back()->withError('Kantor ini sudah migrasi — setujui lewat menu Closing Harian, bukan rekap lama.');
+    }
+
     $validate = $request->validate([
       'id' => ['required'],
       'date' => ['required'],
