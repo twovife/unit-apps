@@ -484,11 +484,27 @@ trait RekapTrait
         ->get();
     }
 
-    $transactionSirculation = TransactionSirculation::with('transaction_loan_officer_grouping')
-      ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
-      ->whereBetween('date', [$startDateofMonth, $endDateofMonth])
-      ->get()
-      ->groupBy('transaction_loan_officer_grouping_id');
+    // GERBANG alur baru: base grid harian (sirkulasi + saldo cm/mb/ml per hari)
+    // ikut saldo awal baru. Untuk kantor migrasi diambil dari monthly_closings
+    // awal_*, dipetakan ke nama kolom sirkulasi lama supaya sum() di grid tak
+    // berubah — sejajar dgn Rekap 1 & Rekap per-Mantri. Belum-migrasi -> lama.
+    if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
+      $transactionSirculation = \App\Models\TransactionMonthlyClosing::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->whereDate('periode', $startDateofMonth)->get()
+        ->map(fn($r) => (object) [
+          'transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id,
+          'amount' => (int) $r->awal_total,
+          'cm_amount' => (int) $r->awal_cm,
+          'mb_amount' => (int) $r->awal_mb,
+          'ml_amount' => (int) $r->awal_ml,
+        ])->groupBy('transaction_loan_officer_grouping_id');
+    } else {
+      $transactionSirculation = TransactionSirculation::with('transaction_loan_officer_grouping')
+        ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->whereBetween('date', [$startDateofMonth, $endDateofMonth])
+        ->get()
+        ->groupBy('transaction_loan_officer_grouping_id');
+    }
 
     // GERBANG alur baru: kantor yang sudah migrasi membaca saldo awal dari
     // transaction_monthly_closings (agregat baru), bukan transaction_sirculations
