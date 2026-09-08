@@ -3362,3 +3362,91 @@ Semua keadaan uji dipulihkan bersih.
 
 Tanda tangan bulanan: SELESAI. Sisa Tahap 5: mutasi nasabah (tabel belum ada),
 recount target, dashboard bayangan.
+
+## BM — Layar Penyesuaian Saldo nasabah lama (Tahap 1) (2026-08-12)
+
+Menutup satu-satunya alat validasi Tahap 1 yang belum: tabel
+`transaction_saldo_adjustments` + hitungannya sudah ada dan sudah dibaca
+`portofolio()`, tapi tak ada layar input.
+
+### Menu baru
+
+"Penyesuaian Saldo" di grup Persiapan Migrasi (bawah Serah Terima).
+
+### Cara pakai — masukannya SISA SALDO
+
+Staf mencari nasabah by NIK, layar menampilkan pinjaman ML lama yang memenuhi
+syarat beserta saldo sistemnya, lalu staf mengetik **sisa saldo** dari buku
+kertas. Sistem menurunkan sendiri:
+
+```
+saldo_sistem   = pinjaman − angsuran − pemutihan + Σ efek (yang berlaku)
+efek_diperlukan = sisa_saldo − saldo_sistem
+```
+
+Tanda `efek_diperlukan` wajib searah dengan jenis yang dipilih
+(`TransactionSaldoAdjustment::ARAH`). Salah arah ditolak, bukan dipaksa.
+Nominal disimpan positif; arah ada di jenis.
+
+### Pagar (semua terverifikasi)
+
+| Pagar | Cara |
+|---|---|
+| cakupan | hanya drop ≤ bulan migrasi − 6 (`AgregasiScope::bolehDisesuaikan`) |
+| akses lihat | `view-all-groups` |
+| akses ubah/setuju | + `can-edit` (lepas-pasang superuser) |
+| pengaju ≠ penyetuju | `setujui()` menolak kalau `user_input == penyetuju` |
+| kantor lain | ditolak — cek branch_id pinjaman vs scope |
+| laporan | total penyesuaian per penginput bulan ini (pagar §7) |
+
+`saldo_awal` (input nasabah lama, kasus utama) TIDAK butuh persetujuan —
+pembatasnya kuota ML, bukan orang. `duplikat`/`kurang_input`/`lebih_input`
+butuh orang kedua.
+
+### Perbaikan yang menyertainya: filter persetujuan di portofolio
+
+`HitungAgregat::portofolio()` dan `saldoMasuk()` dulu menjumlah SEMUA
+penyesuaian, termasuk yang butuh-persetujuan tapi belum disetujui. Itu lubang
+yang baru bergigi begitu layar ini bisa membuat baris butuh-persetujuan.
+Ditambahkan `TransactionSaldoAdjustment::ekspresiBerlakuSql()` — satu sumber
+klausa "benar-benar berlaku" — dan dipasang di kedua tempat. Aman untuk angka
+yang sudah terverifikasi: tabelnya kosong, jadi hasilnya identik sampai ada
+penyesuaian nyata.
+
+### Terverifikasi (pinjaman #2212276, saldo 185rb)
+
+| Uji | Hasil |
+|---|---|
+| akses kasir/mantri | 200 / 403 |
+| saldo_awal sisa<sistem | berlaku langsung, saldo 185→135rb |
+| arah salah (saldo_awal tapi sisa>sistem) | ditolak |
+| kurang_input | pending, saldo TETAP sampai disetujui |
+| pengaju setuju sendiri | ditolak |
+| orang kedua setuju | saldo berubah 135→165rb |
+| penyesuaian belum disetujui | tidak terhitung di saldo/portofolio |
+| render `/migrasi/penyesuaian-saldo` | 200 |
+
+Semua 3 penyesuaian uji dihapus, saldo pulih ke 185rb, can-edit kasir dicabut.
+
+### Berkas
+
+| Berkas | Tindakan |
+|---|---|
+| `app/Helpers/PenyesuaianSaldo.php` | **baru** — hitungSaldo, cariEligible, buat, setujui |
+| `app/Models/TransactionSaldoAdjustment.php` | `ekspresiBerlakuSql()` |
+| `app/Helpers/HitungAgregat.php` | filter berlaku di portofolio + saldoMasuk |
+| `app/Http/Controllers/MigrasiController.php` | penyesuaianSaldo, cariPenyesuaian, simpanPenyesuaian, setujuiPenyesuaian |
+| `resources/js/Pages/Migrasi/PenyesuaianSaldo.jsx` | **baru** |
+| `routes/web.php` | 4 rute `migrasi.penyesuaian_saldo*` |
+| `resources/js/Components/Sidebar.jsx` | menu "Penyesuaian Saldo" |
+
+### Catatan
+
+- `supermario` (superuser) memegang can-edit sesudah sesi ini. Bisa bawaan,
+  bisa sisa uji langkah-8 (diberikan "kalau belum punya"); tidak dicabut karena
+  mencabut bawaan lebih merusak daripada meninggalkan grant benign pada
+  superuser.
+
+### Tahap 1 sesudah ini
+
+SELESAI. Stock-take, kesiapan closing, dan penyesuaian saldo — ketiganya ada.

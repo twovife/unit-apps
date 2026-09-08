@@ -306,6 +306,12 @@ export default function AppSidebar({ ...props }) {
                   active: route().current('migrasi.serah_terima'),
                 },
                 {
+                  id: 31,
+                  title: 'Penyesuaian Saldo',
+                  link: route('migrasi.penyesuaian_saldo'),
+                  active: route().current('migrasi.penyesuaian_saldo'),
+                },
+                {
                   id: 4,
                   title: 'Closing Harian',
                   link: route('closing.harian'),

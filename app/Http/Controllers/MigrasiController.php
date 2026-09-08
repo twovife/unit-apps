@@ -6,9 +6,11 @@ use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\DaftarMigrasi;
 use App\Helpers\PemeriksaAgregat;
+use App\Helpers\PenyesuaianSaldo;
 use App\Helpers\SerahTerima;
 use App\Models\Branch;
 use App\Models\TransactionMonthlyClosing;
+use App\Models\TransactionLoan;
 use App\Models\TransactionSaldoAdjustment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -111,6 +113,145 @@ class MigrasiController extends Controller
      * dilakukan adalah membuka kunci lewat jalur resmi (beralasan, tercatat),
      * bukan menimpanya tanpa jejak.
      */
+    /**
+     * Layar penyesuaian saldo nasabah lama.
+     *
+     * Melihat: view-all-groups. Membuat/menyetujui: + can-edit (bolehUbah...).
+     */
+    public function penyesuaianSaldo(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
+            abort(403, 'Penyesuaian saldo untuk kepala mantri, kasir, dan pimpinan.');
+        }
+
+        $scope = AuthScope::resolve();
+        $ids = DB::table('transaction_loan_officer_groupings')
+            ->where('branch_id', $scope->branch_id)->pluck('id');
+
+        $periode = Carbon::now()->startOfMonth();
+
+        // Antrean butuh persetujuan (jenis wajib-persetujuan, belum disetujui).
+        $antrean = TransactionSaldoAdjustment::with('loan.customer', 'penginput', 'loan_officer_grouping')
+            ->whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereIn('jenis', TransactionSaldoAdjustment::WAJIB_PERSETUJUAN)
+            ->whereNull('approved_at')
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->map(fn($a) => [
+                'id' => $a->id,
+                'jenis' => $a->jenis,
+                'nominal' => (int) $a->nominal,
+                'kelompok' => $a->loan_officer_grouping->kelompok ?? null,
+                'catatan' => $a->catatan,
+                'penginput' => $a->penginput->nama_karyawan ?? null,
+                'user_input' => $a->user_input,
+            ]);
+
+        // Laporan total penyesuaian per mantri bulan ini — pagar wajib (§7):
+        // penyesuaian yang menumpuk di satu mantri harus terlihat.
+        $perMantri = TransactionSaldoAdjustment::whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereYear('berlaku_bulan', $periode->year)
+            ->whereMonth('berlaku_bulan', $periode->month)
+            ->join('employees', 'employees.id', '=', 'transaction_saldo_adjustments.user_input')
+            ->selectRaw('employees.nama_karyawan AS mantri, COUNT(*) AS jml, SUM(nominal) AS total')
+            ->groupBy('employees.nama_karyawan')
+            ->orderByDesc('total')
+            ->get();
+
+        return Inertia::render('Migrasi/PenyesuaianSaldo', [
+            'antrean' => $antrean,
+            'per_mantri' => $perMantri,
+            'server_filter' => [
+                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
+                'batas' => AgregasiScope::batasPenyesuaian($scope->branch_id)?->toDateString(),
+                'boleh_ubah' => $this->bolehUbahSerahTerima(),
+                'periode' => $periode->format('Y-m'),
+            ],
+            'jenis_opsi' => [
+                ['nilai' => TransactionSaldoAdjustment::JENIS_SALDO_AWAL, 'label' => 'Saldo awal (nasabah lama, mengurangi)', 'butuh_persetujuan' => false],
+                ['nilai' => TransactionSaldoAdjustment::JENIS_DUPLIKAT, 'label' => 'Duplikat (mengurangi)', 'butuh_persetujuan' => true],
+                ['nilai' => TransactionSaldoAdjustment::JENIS_LEBIH_INPUT, 'label' => 'Lebih input (mengurangi)', 'butuh_persetujuan' => true],
+                ['nilai' => TransactionSaldoAdjustment::JENIS_KURANG_INPUT, 'label' => 'Kurang input (menambah)', 'butuh_persetujuan' => true],
+            ],
+        ]);
+    }
+
+    /** Cari pinjaman ML yang memenuhi syarat berdasarkan NIK (axios). */
+    public function cariPenyesuaian(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
+            abort(403);
+        }
+
+        $val = $request->validate(['nik' => ['required', 'digits:16']], [
+            'nik.required' => 'NIK wajib diisi.',
+            'nik.digits' => 'NIK harus 16 digit.',
+        ]);
+
+        $scope = AuthScope::resolve();
+
+        return response()->json([
+            'loans' => PenyesuaianSaldo::cariEligible($scope->branch_id, $val['nik']),
+        ]);
+    }
+
+    /** Simpan satu penyesuaian dari sisa saldo yang diketik. */
+    public function simpanPenyesuaian(Request $request)
+    {
+        $this->pastikanBolehUbahSerahTerima();
+
+        $val = $request->validate([
+            'loan_id' => ['required', 'integer'],
+            'jenis' => ['required', 'string'],
+            'sisa_saldo' => ['required', 'integer', 'min:0'],
+            'catatan' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $loan = TransactionLoan::find($val['loan_id']);
+        if (!$loan) {
+            return back()->withErrors('Pinjaman tidak ditemukan.');
+        }
+
+        // Pastikan pinjamannya di kantor user — tak boleh menyesuaikan kantor lain.
+        $scope = AuthScope::resolve();
+        $branchLoan = DB::table('transaction_loan_officer_groupings')
+            ->where('id', $loan->transaction_loan_officer_grouping_id)->value('branch_id');
+        if ((int) $branchLoan !== (int) $scope->branch_id) {
+            abort(403, 'Pinjaman ini milik kantor lain.');
+        }
+
+        try {
+            PenyesuaianSaldo::buat($loan, $val['jenis'], (int) $val['sisa_saldo'], $val['catatan'] ?? null, auth()->user());
+        } catch (\Throwable $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', 'Penyesuaian tersimpan.');
+    }
+
+    /** Setujui penyesuaian (orang kedua). */
+    public function setujuiPenyesuaian(TransactionSaldoAdjustment $adjustment)
+    {
+        $this->pastikanBolehUbahSerahTerima();
+
+        $scope = AuthScope::resolve();
+        $branchLoan = DB::table('transaction_loan_officer_groupings')
+            ->where('id', $adjustment->transaction_loan_officer_grouping_id)->value('branch_id');
+        if ((int) $branchLoan !== (int) $scope->branch_id) {
+            abort(403, 'Penyesuaian ini milik kantor lain.');
+        }
+
+        try {
+            PenyesuaianSaldo::setujui($adjustment, auth()->user());
+        } catch (\Throwable $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', 'Penyesuaian disetujui.');
+    }
+
     /**
      * Layar serah terima saldo awal — pertemuan sistem lama dan baru.
      */

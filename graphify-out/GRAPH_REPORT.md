@@ -1,42 +1,42 @@
 # Graph Report - unit-apps  (2026-09-07)
 
 ## Corpus Check
-- 397 files · ~173,895 words
+- 400 files · ~176,241 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1518 nodes · 4278 edges · 126 communities (52 shown, 31 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 93 edges (avg confidence: 0.86)
+- 1541 nodes · 4345 edges · 129 communities (51 shown, 35 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 100 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `de0bb2ab`
+- Built from commit: `6c904f16`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- NewNasabah.jsx
-- table.jsx
+- button.jsx
+- NewAngsuran/Components/Action.jsx
 - AuthenticatedLayout.jsx
 - Controller
-- TransactionLoan
+- TransactionLoanInstalment
 - Illuminate\Http\Request
-- TransactionLoanOfficerGrouping
+- TransactionLoan
 - AppHelper
-- Gembok Closing Harian
+- TransactionDailyClosing
 - Illuminate\Database\Eloquent\Model
-- Pemilih Tanggal & Dialog
-- HitungAgregat
+- cn
+- Ember
 - Employee
-- Branch
-- WorkDay
-- Sidebar & Filter Cabang
 - TransactionMonthlyClosing
+- WorkDay
+- Sidebar.jsx
+- Carbon\Carbon
 - User & Cakupan Cabang
-- Sidebar shadcn & Responsif
+- sidebar.jsx
 - RBAC Multi-Cabang (rancangan)
-- Badge Aplikasi & Varian
-- Event & Uji Autentikasi
+- BukuTransaksiKepala.jsx
+- EmailVerificationTest.php
 - Illuminate\Database\Eloquent\Factories\Factory
 - Auto-pelunasan pinjaman lama saat top-up berhasil drop
 - CountingBalance.php
@@ -44,22 +44,22 @@
 - Ghost permission (nama permission tak ada di tabel permissions)
 - TransactionManageCustomer
 - app_laravel & unit-apps berbagi database ubmi_db
-- GenerateClosingRows
+- Gembok
 - dropdown-menu.jsx
 - transaction_daily_closings (agregat harian)
 - AppServiceProvider
-- AuthenticationTest
+- TestCase
 - Penyakit dua sumber kebenaran berebut (hook vs controller)
-- VIsBalanceLoanWithDailyReport
+- HitungAgregat
 - LoginRequest
 - TransactionSaldoAdjustment
 - sheet.jsx
 - Kunci Reset & Hapus berdasarkan approval rekap (daily_kepala_approval)
 - app/Rules/HariKerja.php (satu Rule, tujuh pintu)
-- NewAngsuran/Components/Action.jsx
+- RouteServiceProvider
 - Loan
-- TestCase
-- InputError.jsx
+- Illuminate\Foundation\Testing\RefreshDatabase
+- TransactionLoanInstalmentController
 - PasswordResetTest
 - self
 - LoanRequest
@@ -74,10 +74,10 @@
 - Handler
 - graphify — peta hubungan kode
 - logging.php
-- EmailVerificationTest.php
+- VerifyEmailController.php
 - Authenticate
 - TrustHosts
-- button.jsx
+- HandleInertiaRequests.php
 - AuthServiceProvider
 - CreatesApplication
 - ExampleTest
@@ -94,22 +94,25 @@
 - sanctum.php
 - entrypoint.sh
 - entrypoint.dev.sh
-- Permantri.jsx
-- HitungClosing.php
-- BatchInputController
+- RedirectIfAuthenticated.php
+- .handle
+- TransactionLoanOfficerGrouping
 - EmployeeBranch
+- PasswordConfirmationTest
+- EmployeeZone
+- TransactionWhiteOff
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 130 edges
-2. `TransactionLoan` - 90 edges
+2. `TransactionLoan` - 89 edges
 3. `AppHelper` - 77 edges
-4. `TransactionLoanOfficerGrouping` - 66 edges
-5. `Button` - 64 edges
+4. `TransactionLoanOfficerGrouping` - 67 edges
+5. `Button` - 65 edges
 6. `TransactionDailyClosing` - 47 edges
 7. `User` - 46 edges
 8. `TransactionLoanInstalment` - 41 edges
-9. `Branch` - 39 edges
-10. `Controller` - 38 edges
+9. `Branch` - 40 edges
+10. `TransactionMonthlyClosing` - 39 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `AgregasiScope (gerbang pemilih agregasi lama vs baru)` --semantically_similar_to--> `AuthScope::resolve()`  [INFERRED] [semantically similar]
@@ -131,107 +134,107 @@
 - **Kolom penghubung siklus pinjaman (top-up, tundaan, pelunasan otomatis)** — _agents_changelog_previous_loan_id, _agents_changelog_postponed_loan_id, _agents_changelog_settled_by_loan_id, _agents_changelog_auto_pelunasan, _agents_changelog_reverse_auto_settlement, _agents_changelog_tundaan, _agents_changelog_sudah_diajukan_pengganti [EXTRACTED 1.00]
 - **Penegakan kalender kerja di seluruh jalur tanggal** — _agents_changelog_work_day, _agents_changelog_hari_kerja_rule, _agents_changelog_use_hari_libur, _agents_changelog_tanggal_turunan, _agents_changelog_tanggal_rekap_bulan, _agents_changelog_get_last_date_for_hari [EXTRACTED 1.00]
 
-## Communities (126 total, 31 thin omitted)
+## Communities (129 total, 35 thin omitted)
 
-### Community 0 - "NewNasabah.jsx"
-Cohesion: 0.14
-Nodes (27): HARI_OPTIONS, KELOMPOK_OPTIONS, LinkButton(), Loading(), NoEditOverlay(), SelectList(), HARI_KE_ANGKA, NAMA_BULAN (+19 more)
+### Community 0 - "button.jsx"
+Cohesion: 0.05
+Nodes (71): ApplicationLogo(), Checkbox(), DangerButton(), FilterBar(), HARI_OPTIONS, KELOMPOK_OPTIONS, InputError(), InputLabel() (+63 more)
 
-### Community 1 - "table.jsx"
-Cohesion: 0.09
-Nodes (40): BadgeStatus(), variantMap, BargeStatus(), variantMap, FormatNumbering(), StatusPinjaman(), GenerateUser(), Approval() (+32 more)
+### Community 1 - "NewAngsuran/Components/Action.jsx"
+Cohesion: 0.06
+Nodes (62): BadgeStatus(), variantMap, BargeStatus(), variantMap, FormatNumbering(), StatusPinjaman(), NAMA_HARI, GenerateUser() (+54 more)
 
 ### Community 2 - "AuthenticatedLayout.jsx"
 Cohesion: 0.06
 Nodes (17): Navbar(), AppSidebar(), SweetAlert(), Authenticated(), MobileLayout(), EditableRow(), ManPower(), Permantri() (+9 more)
 
 ### Community 3 - "Controller"
-Cohesion: 0.05
-Nodes (39): App\Helpers\AppHelper, AuthenticatedSessionController, ConfirmablePasswordController, EmailVerificationNotificationController, EmailVerificationPromptController, NewPasswordController, PasswordController, PasswordResetLinkController (+31 more)
+Cohesion: 0.09
+Nodes (22): AuthenticatedSessionController, ConfirmablePasswordController, EmailVerificationNotificationController, EmailVerificationPromptController, NewPasswordController, PasswordController, PasswordResetLinkController, RegisteredUserController (+14 more)
 
-### Community 4 - "TransactionLoan"
-Cohesion: 0.04
-Nodes (13): PindahResortController, TransactionLoanInstalmentController, OnlineBranch, TransactionDailyRecap, TransactionLoan, TransactionLoanInstalment, TransactionSirculation, PinjamanTrait (+5 more)
+### Community 4 - "TransactionLoanInstalment"
+Cohesion: 0.09
+Nodes (9): App\Http\Controllers\TransactionDailyRecapController, TransactionDailyRecap, TransactionLoanInstalment, TransactionSirculation, PinjamanTrait, RekapTrait, CompareSeeder, CompareSeeder (+1 more)
 
 ### Community 5 - "Illuminate\Http\Request"
-Cohesion: 0.05
-Nodes (15): AdminController, MobileAppsMantriController, SetBranchController, TransactionDailyRecapController, TransactionLoanController, HandleInertiaRequests, RedirectIfAuthenticated, HariKerja (+7 more)
-
-### Community 6 - "TransactionLoanOfficerGrouping"
 Cohesion: 0.07
-Nodes (35): TransactionCustomer, TransactionLoanOfficerGrouping, Carbon\Carbon, BatchInputAngsuranSeeder, BatchInputSeeder, ChangeNasabahGroupingSeeder, ChangeWrongDateGlobalSeeder, DailySeeder (+27 more)
+Nodes (6): AdminController, MobileAppsMantriController, TransactionDailyRecapController, TransactionLoanController, HariKerja, Illuminate\Http\Request
+
+### Community 6 - "TransactionLoan"
+Cohesion: 0.06
+Nodes (20): TransactionLoan, BalancingDailyReport, BalancingTargetSeeder, BatchInputAngsuranSeeder, DailySeeder, GantiMantriSeeder, GenerateTotalSeeder, KeubahSeeder (+12 more)
 
 ### Community 7 - "AppHelper"
-Cohesion: 0.08
-Nodes (3): AppHelper, BatchInputV2Seeder, Int
+Cohesion: 0.06
+Nodes (11): App\Helpers\AppHelper, AppHelper, TransactionCustomer, BatchInputSeeder, BatchInputV2Seeder, ChangeNasabahGroupingSeeder, NasabahGrs3Seeder, UpdateSeeder (+3 more)
 
-### Community 8 - "Gembok Closing Harian"
-Cohesion: 0.10
-Nodes (5): Gembok, ClosingHarianController, Carbon, TransactionDailyClosing, TransactionLockHistory
+### Community 8 - "TransactionDailyClosing"
+Cohesion: 0.16
+Nodes (3): ClosingHarianController, Carbon, TransactionDailyClosing
 
 ### Community 9 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.12
+Cohesion: 0.14
 Nodes (18): App\Models\Branch, DebtRelief, Employment, EmploymentPermission, Instalment, App\Models\OnlineBranch, TransactionBranchDailyRecap, App\Models\TransactionDailyRecap (+10 more)
 
-### Community 10 - "Pemilih Tanggal & Dialog"
+### Community 10 - "cn"
 Cohesion: 0.12
-Nodes (24): DatePicker(), cn(), buttonVariants, Calendar(), DrawerContent, DrawerDescription, DrawerFooter(), DrawerHeader() (+16 more)
+Nodes (23): cn(), DialogFooter(), DialogOverlay, DrawerContent, DrawerDescription, DrawerFooter(), DrawerHeader(), DrawerOverlay (+15 more)
 
 ### Community 12 - "Employee"
-Cohesion: 0.14
-Nodes (3): EmployeeController, Employee, GenerateEmpUserSeeder
+Cohesion: 0.08
+Nodes (25): CountingDailyBalance, App\Http\Controllers\AdminController, App\Http\Controllers\BatchInputController, App\Http\Controllers\EmployeeController, EmployeeController, App\Http\Controllers\LoanController, App\Http\Controllers\MantriAppsController, App\Http\Controllers\MobileAppsMantriController (+17 more)
 
-### Community 13 - "Branch"
-Cohesion: 0.17
-Nodes (4): AuthScope, MigrasiController, Carbon, Branch
+### Community 13 - "TransactionMonthlyClosing"
+Cohesion: 0.07
+Nodes (8): AuthScope, GembokBulanan, SerahTerima, ClosingBulananController, MigrasiController, Carbon, TransactionMonthlyClosing, Controller
 
 ### Community 14 - "WorkDay"
-Cohesion: 0.10
-Nodes (6): DaftarMigrasi, Carbon, KalenderKerja, Carbon, KalenderKerjaController, WorkDay
-
-### Community 15 - "Sidebar & Filter Cabang"
 Cohesion: 0.11
-Nodes (30): GlobalBranchFilter(), data, useIsMobile(), Separator, Sidebar, SidebarContent, SidebarContext, SidebarFooter (+22 more)
+Nodes (5): KalenderKerja, Carbon, KalenderKerjaController, WorkDay, Carbon
 
-### Community 16 - "TransactionMonthlyClosing"
-Cohesion: 0.12
-Nodes (5): VerifikasiAgregat, PemeriksaAgregat, Carbon, SerahTerima, TransactionMonthlyClosing
+### Community 15 - "Sidebar.jsx"
+Cohesion: 0.19
+Nodes (16): data, Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu (+8 more)
+
+### Community 16 - "Carbon\Carbon"
+Cohesion: 0.11
+Nodes (14): GenerateClosingRows, TandaiMigrasi, VerifikasiAgregat, App\Helpers\AgregasiScope, AgregasiScope, App\Helpers\AuthScope, DaftarMigrasi, Carbon (+6 more)
 
 ### Community 17 - "User & Cakupan Cabang"
 Cohesion: 0.16
 Nodes (8): User, BelongsToThrough, Illuminate\Foundation\Auth\User, Illuminate\Notifications\Notifiable, Laravel\Sanctum\HasApiTokens, Spatie\Permission\Traits\HasPermissions, Spatie\Permission\Traits\HasRoles, ProfileTest
 
-### Community 18 - "Sidebar shadcn & Responsif"
-Cohesion: 0.22
-Nodes (6): AppButton, appButtonVariants, HARI_TO_DOW, showNominalByStatus(), Skeleton(), TooltipContent
+### Community 18 - "sidebar.jsx"
+Cohesion: 0.13
+Nodes (14): useIsMobile(), Separator, SidebarContext, SidebarGroupAction, SidebarGroupContent, SidebarInput, SidebarInset, SidebarMenuAction (+6 more)
 
 ### Community 19 - "RBAC Multi-Cabang (rancangan)"
 Cohesion: 0.14
 Nodes (18): AuthScope::resolve(), employee_branches (pivot delegasi multi-cabang), employee_zones (pivot multi-zona staf kontrol), Global Branch Scope Flow, Modul F — Panel Admin & Multi-Cabang/Multi-Zona RBAC, SetBranchController (POST /set-branch), AuthScope (helper scope terpusat, rancangan), employment_permissions (mekanisme multi-cabang lama, DEPRECATED) (+10 more)
 
-### Community 20 - "Badge Aplikasi & Varian"
-Cohesion: 0.19
-Nodes (11): AppBadge, appBadgeVariants, VARIAN_JENIS, VARIAN_STATUS, varianJenis(), varianStatus(), Action(), BukuTransaksiKepala() (+3 more)
+### Community 20 - "BukuTransaksiKepala.jsx"
+Cohesion: 0.22
+Nodes (9): AppBadge, appBadgeVariants, VARIAN_JENIS, VARIAN_STATUS, varianJenis(), varianStatus(), BukuTransaksiKepala(), ActionTable() (+1 more)
 
-### Community 21 - "Event & Uji Autentikasi"
-Cohesion: 0.25
-Nodes (5): EventServiceProvider, Illuminate\Auth\Events\Registered, Illuminate\Auth\Listeners\SendEmailVerificationNotification, Illuminate\Foundation\Support\Providers\EventServiceProvider, Illuminate\Support\Facades\Event
+### Community 21 - "EmailVerificationTest.php"
+Cohesion: 0.13
+Nodes (8): EventServiceProvider, Illuminate\Auth\Events\Registered, Illuminate\Auth\Events\Verified, Illuminate\Auth\Listeners\SendEmailVerificationNotification, Illuminate\Foundation\Support\Providers\EventServiceProvider, Illuminate\Support\Facades\Event, Illuminate\Support\Facades\URL, EmailVerificationTest
 
 ### Community 22 - "Illuminate\Database\Eloquent\Factories\Factory"
-Cohesion: 0.16
-Nodes (5): TransactionCustomerFactory, TransactionManageCustomerFactory, UserFactory, Illuminate\Database\Eloquent\Factories\Factory, Illuminate\Support\Str
+Cohesion: 0.24
+Nodes (4): TransactionCustomerFactory, TransactionManageCustomerFactory, UserFactory, Illuminate\Database\Eloquent\Factories\Factory
 
 ### Community 23 - "Auto-pelunasan pinjaman lama saat top-up berhasil drop"
 Cohesion: 0.16
 Nodes (14): Auto-pelunasan pinjaman lama saat top-up berhasil drop, AppHelper::canDeleteLoan(), TransactionLoanController::checkpengajuan(), AppHelper::havePermissionByDate() dan bug E1, NoEditOverlay (pola overlay lama, ditinggalkan), Pola gerbang: kontrol tetap tampil, disabled + keterangan, transaction_loans.postponed_loan_id (Tundaan), transaction_loans.previous_loan_id (top-up / refinance) (+6 more)
 
 ### Community 24 - "CountingBalance.php"
-Cohesion: 0.30
-Nodes (7): CountingBalance, CountingCirculation, Illuminate\Bus\Queueable, Illuminate\Contracts\Queue\ShouldQueue, Illuminate\Foundation\Bus\Dispatchable, Illuminate\Queue\InteractsWithQueue, Illuminate\Queue\SerializesModels
+Cohesion: 0.19
+Nodes (10): CountingBalance, CountingCirculation, VIsBalanceDropWithDailyReport, App\Models\VIsBalanceLoanWithDailyreport, VIsBalanceLoanWithDailyReport, Illuminate\Bus\Queueable, Illuminate\Contracts\Queue\ShouldQueue, Illuminate\Foundation\Bus\Dispatchable (+2 more)
 
 ### Community 25 - "GlobalBranchFilter.jsx"
-Cohesion: 0.29
-Nodes (8): Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut()
+Cohesion: 0.22
+Nodes (10): GlobalBranchFilter(), Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator (+2 more)
 
 ### Community 26 - "Ghost permission (nama permission tak ada di tabel permissions)"
 Cohesion: 0.15
@@ -253,17 +256,17 @@ Nodes (11): Ember (6 ember penyimpanan, 4 kategori tampilan), Gembok harian dite
 Cohesion: 0.24
 Nodes (5): AppServiceProvider, BroadcastServiceProvider, Illuminate\Routing\UrlGenerator, Illuminate\Support\Facades\Broadcast, Illuminate\Support\ServiceProvider
 
+### Community 33 - "TestCase"
+Cohesion: 0.22
+Nodes (4): Illuminate\Foundation\Testing\TestCase, AuthenticationTest, ExampleTest, TestCase
+
 ### Community 34 - "Penyakit dua sumber kebenaran berebut (hook vs controller)"
 Cohesion: 0.27
 Nodes (10): Rancangan agregasi rekap v2, AgregasiScope (gerbang pemilih agregasi lama vs baru), TransactionDailyRecapController@ceklist_kepala (penulis rekap tunggal), Penyakit dua sumber kebenaran berebut (hook vs controller), Grain per (grouping, hari), bukan per mantri, WorkDay::tanggalRekapBulan() (hari kerja + tanggal berdata), WorkDay / work_days (kalender kerja nasional), ceklist_kepala (Approval Rekap oleh Pimpinan) (+2 more)
 
-### Community 35 - "VIsBalanceLoanWithDailyReport"
-Cohesion: 0.36
-Nodes (3): VIsBalanceDropWithDailyReport, VIsBalanceLoanWithDailyReport, BalancingDailyReport
-
 ### Community 36 - "LoginRequest"
-Cohesion: 0.29
-Nodes (3): LoginRequest, ProfileUpdateRequest, Illuminate\Foundation\Http\FormRequest
+Cohesion: 0.13
+Nodes (6): ProfileController, LoginRequest, ProfileUpdateRequest, Illuminate\Auth\Events\Lockout, Illuminate\Foundation\Http\FormRequest, Illuminate\Support\Str
 
 ### Community 38 - "sheet.jsx"
 Cohesion: 0.31
@@ -277,25 +280,21 @@ Nodes (9): Aturan wajib pencatatan perubahan (fungsi, route, tabel), FilterBar (
 Cohesion: 0.25
 Nodes (9): getLastDateForHari() (JS, lib/utils.js), AppHelper::getStortingShowDate() / getNumbDays() (PHP), app/Rules/HariKerja.php (satu Rule, tujuh pintu), Pelajaran: setiap tanggal turunan wajib dicari dan diperiksa, Bug TDZ useHariLibur di atas useForm, useHariLibur (mundurKeHariKerja / majuKeHariKerja), action_buku_transaksi (ACC / Drop / Tolak / Batal), generateUnknownNik / callUnknownNik (+1 more)
 
-### Community 41 - "NewAngsuran/Components/Action.jsx"
-Cohesion: 0.18
-Nodes (17): SelectList(), AssignRoles(), MaintenerWorker(), Permission(), Role(), LoanDetail(), tanggal(), JenisNasabah() (+9 more)
+### Community 41 - "RouteServiceProvider"
+Cohesion: 0.24
+Nodes (5): RouteServiceProvider, Illuminate\Cache\RateLimiting\Limit, Illuminate\Foundation\Support\Providers\RouteServiceProvider, Illuminate\Support\Facades\RateLimiter, Illuminate\Support\Facades\Route
 
-### Community 43 - "TestCase"
-Cohesion: 0.15
-Nodes (7): Illuminate\Foundation\Testing\RefreshDatabase, Illuminate\Foundation\Testing\TestCase, PasswordConfirmationTest, PasswordUpdateTest, RegistrationTest, ExampleTest, TestCase
-
-### Community 44 - "InputError.jsx"
-Cohesion: 0.15
-Nodes (14): ApplicationLogo(), Checkbox(), DangerButton(), InputError(), InputLabel(), Modal(), PrimaryButton(), SecondaryButton() (+6 more)
+### Community 43 - "Illuminate\Foundation\Testing\RefreshDatabase"
+Cohesion: 0.28
+Nodes (3): Illuminate\Foundation\Testing\RefreshDatabase, PasswordUpdateTest, RegistrationTest
 
 ### Community 45 - "PasswordResetTest"
 Cohesion: 0.25
 Nodes (3): Illuminate\Auth\Notifications\ResetPassword, Illuminate\Support\Facades\Notification, PasswordResetTest
 
 ### Community 46 - "self"
-Cohesion: 0.14
-Nodes (5): AgregasiScope, Carbon, Carbon, TutupBulanan, self
+Cohesion: 0.13
+Nodes (4): Carbon, Carbon, TutupBulanan, self
 
 ### Community 51 - "Kernel"
 Cohesion: 0.40
@@ -321,45 +320,45 @@ Nodes (8): Aturan yang tidak boleh dilanggar, Graf menunjuk, bukan membuktikan, 
 Cohesion: 0.40
 Nodes (4): Monolog\Formatter\JsonFormatter, Monolog\Handler\NullHandler, Monolog\Handler\StreamHandler, Monolog\Handler\SyslogUdpHandler
 
-### Community 59 - "EmailVerificationTest.php"
+### Community 59 - "VerifyEmailController.php"
 Cohesion: 0.29
-Nodes (3): Illuminate\Auth\Events\Verified, Illuminate\Support\Facades\URL, EmailVerificationTest
+Nodes (3): VerifyEmailController, SetBranchController, Illuminate\Foundation\Auth\EmailVerificationRequest
 
-### Community 62 - "button.jsx"
-Cohesion: 0.15
-Nodes (12): NAMA_HARI, ChangeDetail(), RemoveLoan(), ReStatus(), Create(), Button, DialogContent, DialogDescription (+4 more)
+### Community 62 - "HandleInertiaRequests.php"
+Cohesion: 0.40
+Nodes (3): HandleInertiaRequests, Inertia\Middleware, Tightenco\Ziggy\Ziggy
 
 ### Community 67 - "AppBadge + appBadgeVariants"
 Cohesion: 0.67
 Nodes (3): AppBadge + appBadgeVariants, AppButton + appButtonVariants, statusVariants.js (VARIAN_STATUS / varianStatus)
 
-### Community 122 - "Permantri.jsx"
-Cohesion: 0.23
-Nodes (14): FilterBar(), SearchComponent(), BukuTransaksi(), Rencana(), Action(), TableRekap(), TableRekapKasir(), TableRekapPerMantri() (+6 more)
+### Community 122 - "RedirectIfAuthenticated.php"
+Cohesion: 0.40
+Nodes (3): RedirectIfAuthenticated, Closure, Illuminate\Contracts\Validation\ValidationRule
 
-### Community 123 - "HitungClosing.php"
-Cohesion: 0.21
-Nodes (5): CountingDailyBalance, HitungClosing, Carbon, TandaiMigrasi, Illuminate\Console\Command
+### Community 124 - "TransactionLoanOfficerGrouping"
+Cohesion: 0.11
+Nodes (8): BatchInputController, App\Http\Controllers\PindahResortController, PindahResortController, OnlineBranch, TransactionLoanOfficerGrouping, ChangeWrongDateGlobalSeeder, DeleteAngsuranSeeder, LunasinMLGantung
 
 ## Knowledge Gaps
 - **46 isolated node(s):** `HARI_OPTIONS`, `KELOMPOK_OPTIONS`, `HARI_KE_ANGKA`, `NAMA_BULAN`, `NAMA_HARI` (+41 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 419 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **31 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 425 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **35 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `User` connect `User & Cakupan Cabang` to `AuthenticationTest`, `Controller`, `LoginRequest`, `Illuminate\Http\Request`, `TransactionLoanOfficerGrouping`, `Illuminate\Database\Eloquent\Model`, `EmailVerificationTest.php`, `TestCase`, `Employee`, `PasswordResetTest`, `self`, `TransactionManageCustomer`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **Why does `TransactionDailyClosing` connect `Gembok Closing Harian` to `TransactionLoanOfficerGrouping`, `TransactionManageCustomer`, `Illuminate\Database\Eloquent\Model`, `Branch`, `WorkDay`, `self`, `TransactionMonthlyClosing`, `HitungClosing.php`, `GenerateClosingRows`?**
+- **Why does `User` connect `User & Cakupan Cabang` to `TestCase`, `Controller`, `LoginRequest`, `Illuminate\Http\Request`, `Illuminate\Database\Eloquent\Model`, `Illuminate\Foundation\Testing\RefreshDatabase`, `Employee`, `PasswordResetTest`, `self`, `EmailVerificationTest.php`, `TransactionManageCustomer`, `PasswordConfirmationTest`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `TransactionLoanOfficerGrouping` connect `TransactionLoanOfficerGrouping` to `HitungAgregat`, `TransactionLoanInstalment`, `Illuminate\Http\Request`, `TransactionLoan`, `AppHelper`, `TransactionDailyClosing`, `Illuminate\Database\Eloquent\Model`, `Employee`, `TransactionMonthlyClosing`, `Carbon\Carbon`, `.handle`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+- **Why does `TransactionLoan` connect `TransactionLoan` to `TransactionLoanInstalment`, `Illuminate\Http\Request`, `AppHelper`, `Illuminate\Database\Eloquent\Model`, `Employee`, `Carbon\Carbon`, `TransactionManageCustomer`, `TransactionLoanOfficerGrouping`?**
   _High betweenness centrality (0.028) - this node is a cross-community bridge._
-- **Why does `TransactionLoan` connect `TransactionLoan` to `Controller`, `Illuminate\Http\Request`, `TransactionLoanOfficerGrouping`, `AppHelper`, `Illuminate\Database\Eloquent\Model`, `TransactionManageCustomer`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
 - **Are the 6 inferred relationships involving `TransactionLoan` (e.g. with `.boot()` and `.getLoan()`) actually correct?**
   _`TransactionLoan` has 6 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 5 inferred relationships involving `AppHelper` (e.g. with `.getLoan()` and `.getLoanByDate()`) actually correct?**
   _`AppHelper` has 5 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 4 inferred relationships involving `TransactionLoanOfficerGrouping` (e.g. with `.getLoan()` and `.getLoanMacet()`) actually correct?**
-  _`TransactionLoanOfficerGrouping` has 4 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 5 inferred relationships involving `TransactionLoanOfficerGrouping` (e.g. with `.index()` and `.getLoan()`) actually correct?**
+  _`TransactionLoanOfficerGrouping` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `HARI_OPTIONS`, `KELOMPOK_OPTIONS`, `HARI_KE_ANGKA` to the rest of the system?**
   _46 weakly-connected nodes found - possible documentation gaps or missing edges._

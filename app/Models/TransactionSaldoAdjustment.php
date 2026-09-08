@@ -82,6 +82,21 @@ class TransactionSaldoAdjustment extends Model
     ];
 
     /**
+     * Klausa SQL "benar-benar berlaku" — pasangan scopeBerlaku() untuk kueri
+     * mentah. Jenis yang wajib disetujui hanya dihitung kalau approved_at
+     * terisi; sisanya selalu berlaku. Didefinisikan sekali di sini supaya
+     * portofolio/saldoMasuk tidak menuliskan aturan yang sama dengan tangan.
+     */
+    public static function ekspresiBerlakuSql(string $alias = ''): string
+    {
+        $jenis = $alias ? "$alias.jenis" : 'jenis';
+        $approved = $alias ? "$alias.approved_at" : 'approved_at';
+        $wajib = "'" . implode("','", self::WAJIB_PERSETUJUAN) . "'";
+
+        return "({$jenis} NOT IN ({$wajib}) OR {$approved} IS NOT NULL)";
+    }
+
+    /**
      * Efek bertanda terhadap saldo pinjaman.
      *
      * Pemakaian: saldo = pinjaman − angsuran − pemutihan + Σ efek_saldo

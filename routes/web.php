@@ -113,6 +113,14 @@ Route::middleware('auth')->group(function () {
       ->name('pemantau');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
+    Route::get('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'penyesuaianSaldo'])
+      ->name('penyesuaian_saldo');
+    Route::post('/penyesuaian-saldo/cari', [\App\Http\Controllers\MigrasiController::class, 'cariPenyesuaian'])
+      ->name('penyesuaian_saldo_cari');
+    Route::post('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'simpanPenyesuaian'])
+      ->name('penyesuaian_saldo_simpan');
+    Route::post('/penyesuaian-saldo/{adjustment}/setujui', [\App\Http\Controllers\MigrasiController::class, 'setujuiPenyesuaian'])
+      ->name('penyesuaian_saldo_setujui');
     Route::get('/serah-terima', [\App\Http\Controllers\MigrasiController::class, 'serahTerima'])
       ->name('serah_terima');
     Route::put('/serah-terima/{closing}/z', [\App\Http\Controllers\MigrasiController::class, 'simpanZ'])

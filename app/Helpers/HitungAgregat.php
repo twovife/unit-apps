@@ -244,6 +244,7 @@ class HitungAgregat
                 "(SELECT transaction_loan_id, SUM($efek) efek
                     FROM transaction_saldo_adjustments
                    WHERE berlaku_bulan <= '$ref'
+                     AND " . TransactionSaldoAdjustment::ekspresiBerlakuSql() . "
                    GROUP BY transaction_loan_id) a"
             ), 'a.transaction_loan_id', '=', 'l.id')
             ->whereIn('l.transaction_loan_officer_grouping_id', $groupingIds)
@@ -298,6 +299,7 @@ class HitungAgregat
             ->join(DB::raw('transaction_loans l'), 'l.id', '=', 'sa.transaction_loan_id')
             ->whereIn('sa.transaction_loan_officer_grouping_id', $groupingIds)
             ->where('sa.berlaku_bulan', $ref)
+            ->whereRaw(TransactionSaldoAdjustment::ekspresiBerlakuSql('sa'))
             ->whereNotNull('l.hari')
             ->groupBy('sa.transaction_loan_officer_grouping_id', DB::raw('LOWER(l.hari)'))
             ->get([
