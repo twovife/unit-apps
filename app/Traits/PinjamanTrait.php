@@ -35,6 +35,10 @@ trait PinjamanTrait
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
+    // GERBANG alur baru: status kunci/approve & rekap harian dibaca dari
+    // daily_closings untuk kantor migrasi. Belum-migrasi -> jalur lama, IDENTIK.
+    $migrasi = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startOfMonth);
+
 
     // mantri/userinput/pemeriksa/pencair di-eager-load agar nama pengaju &
     // pengesah bisa ditampilkan di dialog Action tanpa memicu N+1.
@@ -72,11 +76,19 @@ trait PinjamanTrait
     // Dipakai UI untuk mengunci Reset Status & Hapus Pinjaman: begitu rekap
     // harian diketuk, angka drop/storting hari itu sudah masuk laporan,
     // sehingga mengubah pinjaman di belakangnya membuat laporan tidak cocok.
-    $approvedRecapDates = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)
-      ->whereNotNull('daily_kepala_approval')
-      ->pluck('date')
-      ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
-      ->flip();
+    if ($migrasi) {
+      $approvedRecapDates = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->whereNotNull('kepala_approval_at')
+        ->pluck('date')
+        ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+        ->flip();
+    } else {
+      $approvedRecapDates = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->whereNotNull('daily_kepala_approval')
+        ->pluck('date')
+        ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+        ->flip();
+    }
 
     // Id pinjaman yang SUDAH punya pengajuan pengganti aktif (top-up lewat
     // previous_loan_id ATAU Tundaan lewat postponed_loan_id, status masih
@@ -154,19 +166,51 @@ trait PinjamanTrait
       }
     }
 
-    $lastTransaction = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereNotNull('daily_kepala_approval')->whereNotNull('daily_kasir_approval')->max('date');
+    $lastTransaction = $migrasi
+      ? \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereNotNull('kepala_approval_at')->whereNotNull('kasir_lock_at')->max('date')
+      : TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereNotNull('daily_kepala_approval')->whereNotNull('daily_kasir_approval')->max('date');
     $ClosedTransaction = AppHelper::get_closed_date($lastTransaction);
     // jika beserta plan maka ini yang akan dikembalikan
 
     if ($withPlan) {
-      $daily_recap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('date', $datesMatchDay)->get()->groupBy('date');
+      if ($migrasi) {
+        $daily_recap = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
+          ->whereIn('date', $datesMatchDay)->get()
+          ->map(fn($r) => (object) [
+            'date' => Carbon::parse($r->date)->toDateString(),
+            'kasbon' => (int) $r->kasbon,
+            'transport' => (int) $r->transport,
+            'masuk' => 0,
+            'keluar' => (int) $r->keluar,
+            'target' => (int) $r->target,
+            'storting' => (int) $r->storting,
+            'drop' => (int) $r->drop,
+            // Timestamp (bukan bool): at_approved/at_kasir butuh nilainya.
+            'daily_kepala_approval' => $r->kepala_approval_at,
+            'daily_kasir_approval' => $r->kasir_lock_at,
+          ])->groupBy('date');
+      } else {
+        $daily_recap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('date', $datesMatchDay)->get()->groupBy('date');
+      }
 
       $instalment = TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('transaction_date', $datesMatchDay)->get()->groupBy('transaction_date');
 
-      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId) {
+      // Migrasi: drop jujur (basis daily_closings) supaya drop_validate bermakna,
+      // bukan Σ drop_jadi mentah yang selalu meleset dari drop jujur baru.
+      // CATATAN: $startOfMonth sudah TERMUTASI oleh loop $datesMatchDay di atas
+      // (Carbon by-reference, $i->addDays()). Pakai $endOfMonth (hanya dibaca,
+      // masih utuh) untuk menurunkan ulang awal bulan.
+      $honestDrop = $migrasi
+        ? \App\Helpers\HitungAgregat::harianBanyak([$groupingId->id], $endOfMonth->copy()->startOfMonth(), $endOfMonth)
+        : [];
+
+      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $migrasi, $honestDrop) {
         $thisDailyRecap = $daily_recap->get($tanggal, collect())->first(); //stored as database
         $thisData = $pengajuan->get($tanggal, collect()); //summary of drop
         $thisInstalment = $instalment->get($tanggal, collect())->sum('nominal'); //summary of instalment
+        $dropHitung = $migrasi
+          ? (int) ($honestDrop[$groupingId->id . '|' . $tanggal]['drop'] ?? 0)
+          : $thisData->sum('drop_jadi');
 
         // dd($thisData);
         return [
@@ -185,9 +229,9 @@ trait PinjamanTrait
           'baru' => $thisData->where('drop_langsung', 'baru')->sum('drop_jadi'),
           'lama' => $thisData->where('drop_langsung', 'lama')->sum('drop_jadi'),
 
-          'drop' => $thisData->sum('drop_jadi'),
+          'drop' => $dropHitung,
           'drop_on_database' => $thisDailyRecap?->drop,
-          'drop_validate' => $thisData->sum('drop_jadi') == ($thisDailyRecap?->drop) ? true : false,
+          'drop_validate' => $dropHitung == ($thisDailyRecap?->drop),
 
           'rencana' => $thisData->where('drop_langsung', 'lama')->sum('acc'),
 
