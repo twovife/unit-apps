@@ -72,27 +72,15 @@ trait RekapTrait
 
     $instalment = TransactionLoanInstalment::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))->whereIn('transaction_date', $datesMatchDay)->get()->groupBy('transaction_date');
 
-    // Sisi "drop dihitung" untuk kantor migrasi memakai basis yang SAMA dengan
-    // yang membangun daily_closings (HitungAgregat: success, buang drop palsu
-    // ber-saldo_awal). Tanpa ini drop_validate membandingkan drop jujur baru
-    // dengan Σ nominal_drop mentah (semua status) -> selalu meleset, alarm palsu.
-    $honestDrop = $migrasi
-      ? \App\Helpers\HitungAgregat::harianBanyak($groupingId->pluck('id')->all(), $startOfMonth, $endOfMonth)
-      : [];
-
-    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($loan, $daily_recap, $instalment, $groupingId, $migrasi, $honestDrop) {
+    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($loan, $daily_recap, $instalment, $groupingId) {
       $thisDailyRecap = $daily_recap->get($tanggal, collect()); //stored as database
       $thisData = $loan->get($tanggal, collect()); //summary of drop
       $thisInstalment = $instalment->get($tanggal, collect()); //summary of instalment
 
-      return $groupingId->map(function ($groupingId) use ($tanggal, $thisDailyRecap, $thisData, $thisInstalment, $migrasi, $honestDrop) {
+      return $groupingId->map(function ($groupingId) use ($tanggal, $thisDailyRecap, $thisData, $thisInstalment) {
         $thisDataPerGrup = $thisData->where('transaction_loan_officer_grouping_id', $groupingId->id);
         $thisInstalmentPerGrup = $thisInstalment->where('transaction_loan_officer_grouping_id', $groupingId->id)->sum('nominal');
         $thisDailyRecapPerGrup = $thisDailyRecap->where('transaction_loan_officer_grouping_id', $groupingId->id)->first();
-        // Migrasi: drop jujur (basis daily_closings). Lama: Σ drop_jadi (tak berubah).
-        $dropHitung = $migrasi
-          ? (int) ($honestDrop[$groupingId->id . '|' . $tanggal]['drop'] ?? 0)
-          : $thisDataPerGrup->sum('drop_jadi');
         return [
           'grouping_id' => $groupingId->id,
           'kelompok' => $groupingId->kelompok,
@@ -110,9 +98,9 @@ trait RekapTrait
           'baru' => $thisDataPerGrup->where('drop_langsung', 1)->where('status', 'success')->sum('nominal_drop'),
           'lama' => $thisDataPerGrup->where('drop_langsung', 0)->where('status', 'success')->sum('nominal_drop'),
 
-          'drop' => $migrasi ? $dropHitung : $thisDataPerGrup->sum('nominal_drop'),
+          'drop' => $thisDataPerGrup->sum('nominal_drop'),
           'drop_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->drop : 0,
-          'drop_validate' => $dropHitung == ($thisDailyRecapPerGrup?->drop ?? 0),
+          'drop_validate' => $thisDataPerGrup->sum('drop_jadi') == ($thisDailyRecapPerGrup?->drop ?? 0) ? true : false,
 
           'rencana' => $thisDataPerGrup->where('drop_langsung', 0)->sum('approved_nominal'),
         ];

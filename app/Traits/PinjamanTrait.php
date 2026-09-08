@@ -195,22 +195,10 @@ trait PinjamanTrait
 
       $instalment = TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('transaction_date', $datesMatchDay)->get()->groupBy('transaction_date');
 
-      // Migrasi: drop jujur (basis daily_closings) supaya drop_validate bermakna,
-      // bukan Σ drop_jadi mentah yang selalu meleset dari drop jujur baru.
-      // CATATAN: $startOfMonth sudah TERMUTASI oleh loop $datesMatchDay di atas
-      // (Carbon by-reference, $i->addDays()). Pakai $endOfMonth (hanya dibaca,
-      // masih utuh) untuk menurunkan ulang awal bulan.
-      $honestDrop = $migrasi
-        ? \App\Helpers\HitungAgregat::harianBanyak([$groupingId->id], $endOfMonth->copy()->startOfMonth(), $endOfMonth)
-        : [];
-
-      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $migrasi, $honestDrop) {
+      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId) {
         $thisDailyRecap = $daily_recap->get($tanggal, collect())->first(); //stored as database
         $thisData = $pengajuan->get($tanggal, collect()); //summary of drop
         $thisInstalment = $instalment->get($tanggal, collect())->sum('nominal'); //summary of instalment
-        $dropHitung = $migrasi
-          ? (int) ($honestDrop[$groupingId->id . '|' . $tanggal]['drop'] ?? 0)
-          : $thisData->sum('drop_jadi');
 
         // dd($thisData);
         return [
@@ -229,9 +217,9 @@ trait PinjamanTrait
           'baru' => $thisData->where('drop_langsung', 'baru')->sum('drop_jadi'),
           'lama' => $thisData->where('drop_langsung', 'lama')->sum('drop_jadi'),
 
-          'drop' => $dropHitung,
+          'drop' => $thisData->sum('drop_jadi'),
           'drop_on_database' => $thisDailyRecap?->drop,
-          'drop_validate' => $dropHitung == ($thisDailyRecap?->drop),
+          'drop_validate' => $thisData->sum('drop_jadi') == ($thisDailyRecap?->drop) ? true : false,
 
           'rencana' => $thisData->where('drop_langsung', 'lama')->sum('acc'),
 
