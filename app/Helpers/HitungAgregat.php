@@ -225,6 +225,14 @@ class HitungAgregat
         $ember = Ember::ekspresiSql('l.drop_date', "'$ref'");
         $efek = self::ekspresiEfekPenyesuaian();
 
+        // Kelompok EFEKTIF pada bulan referensi: tujuan mutasi terakhir yang
+        // sudah berlaku, atau kolom asli kalau belum pernah pindah. Selama
+        // belum ada mutasi, ini persis sama dengan kolom asli — angka lama
+        // tidak bergeser. Mutasi dibatasi satu kantor, jadi kelompok efektif
+        // selalu masih di dalam $groupingIds yang sama; whereIn kolom asli tetap
+        // dipakai agar kuerinya terindeks.
+        $gEfektif = \App\Helpers\Mutasi::ekspresiEfektifSql('l', $ref);
+
         $saldo = '(l.pinjaman - IFNULL(i.bayar,0) - IFNULL(w.wo,0) + IFNULL(a.efek,0))';
 
         $rows = DB::table(DB::raw('transaction_loans l'))
@@ -252,9 +260,9 @@ class HitungAgregat
             ->where('l.drop_date', '<=', $asOf)
             ->whereNotNull('l.hari')
             ->whereRaw("$saldo > 0")
-            ->groupBy('l.transaction_loan_officer_grouping_id', DB::raw('LOWER(l.hari)'), DB::raw($ember))
+            ->groupBy(DB::raw($gEfektif), DB::raw('LOWER(l.hari)'), DB::raw($ember))
             ->get([
-                DB::raw('l.transaction_loan_officer_grouping_id AS g'),
+                DB::raw("$gEfektif AS g"),
                 DB::raw('LOWER(l.hari) AS hari'),
                 DB::raw("$ember AS ember"),
                 DB::raw("SUM($saldo) AS saldo"),

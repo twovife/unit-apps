@@ -190,6 +190,14 @@ Route::middleware('auth')->group(function () {
       Route::post('/terapkan-saran', 'terapkanSaran')->name('terapkan_saran');
     });
 
+  // Mutasi nasabah — superuser saja, dicek di controller.
+  Route::controller(\App\Http\Controllers\MutasiNasabahController::class)
+    ->prefix('mutasi-nasabah')->name('mutasi_nasabah.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/cari', 'cari')->name('cari');
+      Route::post('/', 'simpan')->name('simpan');
+    });
+
   Route::controller(AdminController::class)->prefix('admin-panel')->name('adminpanel.')->group(function () {
     Route::get('/', "index")->name('index');
 

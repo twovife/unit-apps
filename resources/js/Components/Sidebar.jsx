@@ -374,6 +374,12 @@ export default function AppSidebar({ ...props }) {
                   link: route('kalender.index'),
                   active: route().current('kalender.index'),
                 },
+                {
+                  id: 5,
+                  title: 'Mutasi Nasabah',
+                  link: route('mutasi_nasabah.index'),
+                  active: route().current('mutasi_nasabah.index'),
+                },
               ]}
             />
           </SidebarGroup>

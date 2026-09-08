@@ -3450,3 +3450,80 @@ Semua 3 penyesuaian uji dihapus, saldo pulih ke 185rb, can-edit kasir dicabut.
 ### Tahap 1 sesudah ini
 
 SELESAI. Stock-take, kesiapan closing, dan penyesuaian saldo — ketiganya ada.
+
+## BN — Mutasi nasabah: pindah kelompok (2026-08-12)
+
+Bagian Tahap 5. Pinjaman berpindah antar kelompok/mantri direkam sebagai ARUS;
+kolom `transaction_loan_officer_grouping_id` di `transaction_loans` TIDAK PERNAH
+ditimpa. Keanggotaan efektif dibaca `basis − keluar + masuk`.
+
+### Kenapa tidak menimpa kolom pinjaman
+
+Kalau kolomnya ditimpa, riwayat "dulu di kelompok mana" hilang, dan agregat
+bulan-bulan lampau yang sudah ditandatangani ikut berubah surut. Mutasi
+disimpan terpisah dengan `berlaku_bulan`, dan agregat tiap bulan membaca
+keanggotaan yang berlaku pada bulan itu.
+
+### Keanggotaan efektif — no-op saat belum ada mutasi
+
+`Mutasi::ekspresiEfektifSql()` = subkueri berkorelasi:
+`COALESCE(ke_grouping_id mutasi terakhir yang berlaku_bulan <= ref, kolom asli)`.
+Selama tabel mutasi kosong, hasilnya PERSIS kolom asli. Dipasang di
+`HitungAgregat::portofolio()` (GROUP BY + SELECT), whereIn tetap pakai kolom
+asli demi indeks.
+
+**Terbukti tak ada regresi:** portofolio Juli Karawang 2 = 1.465.836.760
+sebelum dan sesudah perubahan, dan sesudah semua mutasi uji dihapus.
+
+### Dibatasi satu kantor
+
+Perpindahan lintas kantor akan membuat kelompok efektif keluar dari himpunan
+groupingIds yang dibaca portofolio (yang menyaring kolom asli demi indeks),
+sehingga pinjaman hilang dari kedua kantor. `Mutasi::catat()` menolak tujuan di
+kantor berbeda. Lintas kantor = pekerjaan tersendiri.
+
+### loan_balancing TIDAK jadi diubah
+
+Rancangan menduga mutasi melanggar invarian `hari == dateName(drop_date)` yang
+dicari `AdminController@loan_balancing`. Ternyata tidak: mutasi memindah
+KELOMPOK, tidak menyentuh `hari` maupun `drop_date`. Invariannya utuh, satu
+perubahan berisiko batal.
+
+### Kasus uji — semua lolos
+
+| # | Kasus | Hasil |
+|---|---|---|
+| 1 | kolom grouping pinjaman tidak berubah | tetap 893 |
+| 2 | portofolio September (sebelum berlaku) | masih di A |
+| 3 | portofolio Oktober (sejak berlaku) | A turun 325, B naik 325 |
+| 3b | total kantor Oktober | kekal (uang cuma pindah) |
+| 4 | ember dari drop_date asli | ml, tak tergantung kelompok |
+| 5 | tanpa mutasi, Juli identik | 1.465.836.760 |
+| 6 | non-superuser | ditolak |
+| 7 | mutasi kedua isi berlaku_sampai mutasi pertama | 2026-11-01 |
+
+Lewat controller: superuser 200 / kasir 403; cari NIK; simpan; bulan lampau
+ditolak "paling cepat bulan depan". Semua mutasi uji dihapus, portofolio pulih.
+
+### Berkas
+
+| Berkas | Tindakan |
+|---|---|
+| app_laravel `..._create_transaction_loan_mutations_table` | migrasi baru |
+| `app/Models/TransactionLoanMutation.php` | baru |
+| `app/Helpers/Mutasi.php` | baru — ekspresiEfektifSql, kelompokEfektif, catat |
+| `app/Helpers/HitungAgregat.php` | portofolio pakai kelompok efektif |
+| `app/Http/Controllers/MutasiNasabahController.php` | baru — superuser |
+| `resources/js/Pages/Admin/MutasiNasabah.jsx` | baru |
+| `routes/web.php`, `Sidebar.jsx` | rute + menu (Pengaturan Admin) |
+
+### Yang sengaja BELUM
+
+- **Kolom arus `mutasi_masuk`/`mutasi_keluar` di agregat bulanan masih 0.**
+  `awal_*`/`akhir_*` sudah benar (dari portofolio yang kini sadar mutasi), tapi
+  persamaan arus bulan transisi (akhir = awal + drop + masuk − keluar − ...)
+  belum menyertakan mutasinya. Pemeriksaan arus-vs-portofolio akan menunjukkan
+  selisih sebesar mutasi di bulan transisi sampai ini disambung.
+- **Storting/drop harian belum ikut kelompok efektif** — hanya saldo
+  (portofolio) yang sudah. Perlu kalau tarikan pindah mantri di tengah bulan.
+- **Lintas kantor** dan **pindah hari tagih** — di luar cakupan.
