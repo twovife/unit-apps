@@ -3730,3 +3730,33 @@ PinjamanTrait getLoan/getLoanMantri, TransactionDailyRecapController
 ceklist_kepala/rekap_post. Plus: hentikan tulis-ganda daily_recaps untuk kantor
 migrasi. Semua mengikuti gerbang inert yang sama, diverifikasi terhadap Krian 2
 Juli (migrasi = tabel baru) dan kantor lain (belum = identik).
+
+---
+
+## BT — Gerbang baca kedua tersambung + terbukti inert (2026-09-08)
+
+Menindaklanjuti penyelesaian Rekap 2 (`getDataRekapDua`), sekarang Rekap 1 (`getRekapDuaData`) juga sudah menggunakan gerbang baca agregasi yang baru.
+
+### Yang dikerjakan
+
+`RekapTrait::getRekapDuaData` — saldo awal dan rekap harian (Rekap 1).
+Sama seperti `getDataRekapDua`: `AgregasiScope::pakaiAgregatBaru` menentukan apakah memakai `transaction_monthly_closings` dan `transaction_daily_closings` (untuk kantor migrasi), atau `transaction_sirculations` dan `transaction_daily_recaps` lama (untuk kantor non-migrasi).
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Traits/RekapTrait.php` | `getRekapDuaData()` | `kasir.rekap.rekap_satu` (via web) / `mobile_apps.rekap_satu` | `transaction_daily_closings`, `transaction_monthly_closings` — BACA | Membaca saldo awal (monthly) dan rekap harian kasbon/transport/tunai (daily) dari tabel baru untuk cabang yang sudah migrasi. Cabang lama tetap baca tabel lama. |
+
+### Terbukti (data nyata)
+
+Telah diuji routing melalui simulasi rekap:
+- Krian 2 Goro (migrasi Juli): Saldo Awal CM 243.422.000, Tunai DB -2.446.000 (sukses baca dari tabel closings baru).
+- Krian 3 (belum migrasi): Saldo Awal CM 305.339.000, Tunai DB 986.000 (identik jalur lama).
+
+### Berikutnya
+
+Sisa titik baca (pola sama):
+- `RekapTrait :586` (`getDataRekapDua` bagian lain)
+- `RekapTrait :732` (`getRekapPermantriData`)
+- `PinjamanTrait getLoan/getLoanMantri`
+- `TransactionDailyRecapController ceklist_kepala/rekap_post`
+- Hentikan tulis-ganda `daily_recaps` untuk kantor migrasi.

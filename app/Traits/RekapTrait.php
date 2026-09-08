@@ -113,12 +113,40 @@ trait RekapTrait
     $dateOfCm = $transaction_date->copy()->subMonth(3);
     $transactionOffice = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->get();
 
-    $transactionDailyRecap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
-      ->where('date', $transaction_date->format('Y-m-d'))->get();
+    // GERBANG alur baru (lihat getDataRekapDua): kantor migrasi mengambil
+    // kasbon/transport/tunai + status kunci dari daily_closings, dan saldo awal
+    // dari monthly_closings. awal_* dipetakan ke nama kolom sirkulasi lama
+    // (amount/cm_amount/…) supaya sum() di bawah tak perlu tahu bedanya.
+    // Kantor belum-migrasi -> else, IDENTIK jalur lama.
+    if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
+      $transactionDailyRecap = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+        ->where('date', $transaction_date->format('Y-m-d'))->get()
+        ->map(fn($r) => (object) [
+          'transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id,
+          'kasbon' => (int) $r->kasbon,
+          'transport' => (int) $r->transport,
+          'tunai' => (int) $r->tunai,
+          'daily_kepala_approval' => $r->kepala_approval_at !== null,
+          'daily_kasir_approval' => $r->kasir_lock_at !== null,
+        ]);
 
-    $transactionSirculation = TransactionSirculation::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
-      ->where('date', $startDateofMonth)
-      ->get()->groupBy('transaction_loan_officer_grouping_id');
+      $transactionSirculation = \App\Models\TransactionMonthlyClosing::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+        ->whereDate('periode', $startDateofMonth)->get()
+        ->map(fn($r) => (object) [
+          'transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id,
+          'amount' => (int) $r->awal_total,
+          'cm_amount' => (int) $r->awal_cm,
+          'mb_amount' => (int) $r->awal_mb,
+          'ml_amount' => (int) $r->awal_ml,
+        ])->groupBy('transaction_loan_officer_grouping_id');
+    } else {
+      $transactionDailyRecap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+        ->where('date', $transaction_date->format('Y-m-d'))->get();
+
+      $transactionSirculation = TransactionSirculation::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+        ->where('date', $startDateofMonth)
+        ->get()->groupBy('transaction_loan_officer_grouping_id');
+    }
 
     // dd($transactionSirculation);
 
