@@ -273,12 +273,6 @@ export default function AppSidebar({ ...props }) {
                   link: route('pinjaman.index_pinjaman_macet'),
                   active: route().current('pinjaman.index_pinjaman_macet'),
                 },
-                {
-                  id: 3,
-                  title: 'Cari Angsuran',
-                  link: route('pinjaman.index_pinjaman_search'),
-                  active: route().current('pinjaman.index_pinjaman_search'),
-                },
               ]}
             />
 
