@@ -962,6 +962,22 @@ trait PinjamanTrait
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
     $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()?->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
 
+    // Macet ikut hari EFEKTIF (lihat getLoanMantri): nasabah yang dipindah
+    // muncul di hari barunya. Tanpa mutasi, dua daftar kosong -> tak berubah.
+    $refMutasi = $transaction_start_date->copy()->startOfMonth()->toDateString();
+    $mut = \App\Helpers\Mutasi::penyesuaianBaca($groupingId->id, $hari, $refMutasi);
+    $filterEfektif = function ($q) use ($groupingId, $hari, $mut) {
+      $q->where(function ($qq) use ($groupingId, $hari, $mut) {
+        $qq->where('transaction_loan_officer_grouping_id', $groupingId->id)->where('hari', $hari);
+        if ($mut['keluar']) {
+          $qq->whereNotIn('id', $mut['keluar']);
+        }
+      });
+      if ($mut['masuk']) {
+        $q->orWhereIn('id', $mut['masuk']);
+      }
+    };
+
 
 
     $loan = TransactionLoan::with(
@@ -972,8 +988,7 @@ trait PinjamanTrait
       }, 'branch', 'customer', 'loan_officer_grouping']
     )
       ->where('drop_date', "<", $begin_transaction)
-      ->where('hari', $hari)
-      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
+      ->where($filterEfektif)
       ->whereNull('out_status')
       ->where('status', 'success')
       // Cari nama: substring biasa (LIKE) - lihat catatan lengkap di
