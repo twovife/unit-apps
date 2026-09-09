@@ -3,7 +3,6 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BatchInputController;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\MobileAppsMantriController;
 use App\Http\Controllers\PindahResortController;
@@ -36,15 +35,6 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
 
   Route::post('/set-branch', \App\Http\Controllers\SetBranchController::class)->name('set-branch');
-
-  Route::controller(LoanController::class)->group(function () {
-
-
-    Route::prefix('batchupdate')->name('batchupdate.')->group(function () {
-      Route::get('/', 'batch_create')->name('batch_create');
-      Route::post('/', 'batch_post')->name('batch_post');
-    })->middleware('role:kasir|pimpinan|kepala-mantri|superuser');
-  });
 
   Route::get('/getviewasd', function () {
     $data = VIsBalanceLoanWithDailyReport::all();
