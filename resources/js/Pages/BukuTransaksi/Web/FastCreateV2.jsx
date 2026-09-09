@@ -58,6 +58,8 @@ const FastCreateV2 = () => {
     kelompok: currentKelompok || '',
     request_nominal: 0,
     angsuran: [],
+    // Fastcreate bebas tanggal untuk sementara -> server lewati cek tanggal ketat.
+    bebas: true,
   });
 
   const [calculatePinjaman, setCalculatePinjaman] = useState(0);
@@ -289,7 +291,6 @@ const FastCreateV2 = () => {
             <Input
               type="month"
               value={currentMonth}
-              max={dayjs().format('YYYY-MM')}
               onChange={(e) => setCurrentMonth(e.target.value)}
             />
           </div>
@@ -331,6 +332,7 @@ const FastCreateV2 = () => {
                             <TanggalKerja
                               name="tanggal_drop"
                               required={true}
+                              bebas={true}
                               value={data.tanggal_drop}
                               onChange={onInputChange}
                             />

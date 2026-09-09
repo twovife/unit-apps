@@ -34,6 +34,11 @@ const NewNasabah = ({
   generateAngsuran = false,
   submitUrl,
   typeInput = 'number',
+  // Mobile create: batasi tanggal pengajuan (maks hari ini, maks 7 hari lalu)
+  // dan matikan tanggal drop sampai pengajuan dipilih.
+  batasiPengajuan = false,
+  // Popup bukutransaksi / fastcreate: bebaskan tanggal sepenuhnya (sementara).
+  bebasTanggal = false,
 }) => {
   // getLink after generate
   const { printUrl } = usePage().props;
@@ -61,13 +66,25 @@ const NewNasabah = ({
     kelompok: '',
     request_nominal: 0,
     angsuran: [],
+    // Ikut terkirim ke server: kalau true, cek tanggal ketat dilewati (sementara).
+    bebas: bebasTanggal,
   });
 
   // WAJIB sesudah useForm: argumennya membaca `data`, dan memanggilnya di atas
   // sana membuat `data` diakses sebelum dideklarasikan (TDZ) — komponennya
   // gagal render sama sekali, bukan cuma salah nilai.
-  const { majuKeHariKerja, siap: kalenderSiap, alasanLibur } =
-    useHariLibur(data.request_date);
+  const hariIni = dayjs().format('YYYY-MM-DD');
+
+  const { majuKeHariKerja, mundurKeHariKerja, siap: kalenderSiap, alasanLibur } =
+    useHariLibur(data.request_date || hariIni);
+
+  // Batas tanggal pengajuan: maksimal HARI INI (tak boleh mendatang), paling
+  // lama 7 hari lalu. Kalau batas 7-hari-lalu itu jatuh libur, mundur ke hari
+  // kerja sebelumnya supaya mantri tetap punya tanggal valid di ujung rentang.
+  const minPengajuan = (() => {
+    const mentah = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
+    return kalenderSiap ? mundurKeHariKerja(mentah) : mentah;
+  })();
 
   // handlingForAngsuranBatchProssess
   const [elements, setElements] = useState([]);
@@ -336,6 +353,9 @@ const NewNasabah = ({
                         <TanggalKerja
                           name="request_date"
                           required={true}
+                          min={batasiPengajuan ? minPengajuan : undefined}
+                          max={batasiPengajuan ? hariIni : undefined}
+                          bebas={bebasTanggal}
                           value={data.request_date}
                           onChange={onInputChange}
                         />
@@ -347,6 +367,8 @@ const NewNasabah = ({
                           name="tanggal_drop"
                           min={mixDate}
                           required={true}
+                          disabled={batasiPengajuan && !data.request_date}
+                          bebas={bebasTanggal}
                           value={data.tanggal_drop}
                           onChange={onInputChange}
                         />

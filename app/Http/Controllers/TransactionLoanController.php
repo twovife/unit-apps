@@ -254,11 +254,15 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
 
-    if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
+    // `bebas` (dari popup Buku Transaksi / fastcreate) melewati cek tanggal ketat
+    // untuk sementara. Mobile create TIDAK mengirim flag ini -> tetap dijaga.
+    $bebas = $request->boolean('bebas');
+
+    if (!$bebas && AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
 
-    if (AppHelper::dateName($request->tanggal_drop) === 'minggu') {
+    if (!$bebas && AppHelper::dateName($request->tanggal_drop) === 'minggu') {
       return redirect()->back()->withErrors('Tidak bisa input transaksi untuk hari Minggu');
     }
 
@@ -272,8 +276,8 @@ class TransactionLoanController extends Controller
       'nik' => ['required', 'digits:16'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
-      'request_date' => ['required', 'date', new HariKerja('Tanggal pengajuan')],
-      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
+      'request_date' => ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal pengajuan')])],
+      'tanggal_drop' =>  ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal drop')])],
     ], [
       '*.min' => 'minimal diisi 100rb'
     ]);
@@ -348,7 +352,10 @@ class TransactionLoanController extends Controller
     //   return redirect()->back()->withErrors('Hari Tidak Sama');
     // }
 
-    if (AppHelper::dateName($request->tanggal_drop) === 'minggu') {
+    // `bebas` (fastcreate) melewati cek tanggal ketat untuk sementara.
+    $bebas = $request->boolean('bebas');
+
+    if (!$bebas && AppHelper::dateName($request->tanggal_drop) === 'minggu') {
       return redirect()->back()->withErrors('Tidak bisa input transaksi untuk hari Minggu');
     }
 
@@ -368,7 +375,7 @@ class TransactionLoanController extends Controller
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
 
-      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
+      'tanggal_drop' =>  ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal drop')])],
     ], [
       '*.required' => "Wajib Diisi",
       '*.min' => 'minimal diisi 100rb'
@@ -390,14 +397,14 @@ class TransactionLoanController extends Controller
       });
 
 
-      if ($filtered->isNotEmpty()) {
+      if (!$bebas && $filtered->isNotEmpty()) {
         return redirect()->back()->withErrors('Hari Angsuran Tidak Sama');
       }
 
       // Angsuran di sini divalidasi manual, bukan lewat $request->validate(),
       // jadi Rule HariKerja tidak ikut jalan sendiri. Diperiksa di sini supaya
       // pintu ini tidak jadi satu-satunya yang menerima tanggal libur.
-      $libur = $angsuran->reject(fn($item) => WorkDay::hariKerja($item['transaction_date']));
+      $libur = $bebas ? collect() : $angsuran->reject(fn($item) => WorkDay::hariKerja($item['transaction_date']));
 
       if ($libur->isNotEmpty()) {
         return redirect()->back()->withErrors(sprintf(

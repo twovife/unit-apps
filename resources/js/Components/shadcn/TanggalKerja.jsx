@@ -59,6 +59,9 @@ const TanggalKerja = ({
    * Kosong = hari kerja apa saja.
    */
   hariTagih = null,
+  // Lolos-kan semua tanggal: matikan penjaga libur/min/max/hari-tagih. Dipakai
+  // form yang untuk sementara ingin input tanggal bebas (popup, fastcreate).
+  bebas = false,
   className,
 }) => {
   const [buka, setBuka] = useState(false);
@@ -84,6 +87,8 @@ const TanggalKerja = ({
         : (HARI_KE_ANGKA[String(hariTagih).toLowerCase()] ?? null);
 
   const tidakBoleh = (tgl) => {
+    if (bebas) return false;
+
     const d = dayjs(tgl);
 
     if (min && d.isBefore(dayjs(min), 'day')) return true;
