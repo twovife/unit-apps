@@ -54,4 +54,15 @@ class SiklusRekening
         TransactionManageCustomer::where('id', $manageCustomerId)
             ->update(['siklus_id' => $siklusId]);
     }
+
+    /** Kosongkan siklus rekening (reset). Dipakai saat input ulang / pembatalan. */
+    public static function bersihkan(?int $manageCustomerId): void
+    {
+        if (!$manageCustomerId) {
+            return;
+        }
+
+        TransactionManageCustomer::where('id', $manageCustomerId)
+            ->update(['siklus_id' => null]);
+    }
 }

@@ -123,6 +123,13 @@ class TransactionLoanInstalment extends Model
         } else {
           $attrs['out_date']   = null;
           $attrs['out_status'] = null;
+
+          // Pelunasan dibatalkan (tak lagi lunas) -> siklus 'ist' ikut kosong.
+          // Hanya untuk pelunasan MANUAL; baris settlement topup
+          // (settled_by_loan_id) dibersihkan lewat reverseAutoSettlement.
+          if (!$transactionLoanInstalment->settled_by_loan_id) {
+            \App\Helpers\SiklusRekening::bersihkan($sumInstalment->transaction_manage_customer_id);
+          }
         }
 
         // UPDATE parent loan (1 query)

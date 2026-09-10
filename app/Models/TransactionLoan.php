@@ -52,6 +52,35 @@ class TransactionLoan extends Model
     parent::boot();
 
     /**
+     * SIKLUS rekening pada DROP baru (BUKAN topup — topup ditangani hook
+     * `updating` di bawah -> 'pelunasan'). Prinsipnya: setiap input ulang
+     * MERESET siklus, apa pun nilai sebelumnya (ist/bht/pelunasan/…).
+     *   - drop pertama rekening & drop langsung (tgl pengajuan = tgl drop)
+     *     -> 'nasabah_baru'
+     *   - selain itu (input ulang / ada jeda) -> dikosongkan (reset)
+     * Penanda lunak: menulis ke transaction_manage_customers, tak menyentuh loan.
+     */
+    static::updated(function (self $loan) {
+      if (!$loan->wasChanged('status') || $loan->status !== 'success' || $loan->previous_loan_id) {
+        return;
+      }
+
+      $adaSebelumnya = self::where('transaction_manage_customer_id', $loan->transaction_manage_customer_id)
+        ->where('status', 'success')
+        ->where('id', '!=', $loan->id)
+        ->exists();
+
+      $dropLangsung = !$loan->request_date
+        || \Carbon\Carbon::parse($loan->request_date)->toDateString() === \Carbon\Carbon::parse($loan->drop_date)->toDateString();
+
+      if (!$adaSebelumnya && $dropLangsung) {
+        \App\Helpers\SiklusRekening::tandai($loan->transaction_manage_customer_id, \App\Helpers\SiklusRekening::NASABAH_BARU);
+      } else {
+        \App\Helpers\SiklusRekening::bersihkan($loan->transaction_manage_customer_id);
+      }
+    });
+
+    /**
      * DIHAPUS 2026-08-02 - sinkronisasi rekap otomatis.
      *
      * Dulu ada hook `updating` yang memantau perpindahan status ke/dari
@@ -211,6 +240,10 @@ class TransactionLoan extends Model
         ->where('transaction_out_reasons_id', 1)
         ->update(['transaction_out_reasons_id' => null]);
     }
+
+    // Topup dibatalkan (status success -> open lagi) -> siklus 'pelunasan' yang
+    // sempat ditandai ikut dikosongkan. Reset, konsisten dgn pembatalan lain.
+    \App\Helpers\SiklusRekening::bersihkan($transactionLoan->transaction_manage_customer_id);
   }
 
   public function loan_instalment()
