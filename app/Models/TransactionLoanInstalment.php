@@ -54,6 +54,16 @@ class TransactionLoanInstalment extends Model
           if ($newTotal >= $sumInstalment->pinjaman /* atau $loan->nominal_drop */) {
             $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
             $attrs['out_status'] = 'LUNAS';
+
+            // Rekening -> 'ist' (istirahat): lunas lewat pelunasan MANUAL, tanpa
+            // topup. Settlement topup punya settled_by_loan_id -> dikecualikan
+            // (itu 'pelunasan', ditandai di hook TransactionLoan). Penanda lunak.
+            if (!$transactionLoanInstalment->settled_by_loan_id) {
+              \App\Helpers\SiklusRekening::tandai(
+                $sumInstalment->transaction_manage_customer_id,
+                \App\Helpers\SiklusRekening::IST
+              );
+            }
           } else {
             $attrs['out_date']   = null;
             $attrs['out_status'] = null;

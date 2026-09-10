@@ -325,6 +325,11 @@ class TransactionLoanController extends Controller
           'nominal_drop' => $request->request_nominal,
           'request_nominal' => null,
         ]);
+
+        // Rekening BARU + drop langsung (tgl pengajuan = tgl drop) -> 'nasabah_baru'.
+        if ($manage->wasRecentlyCreated) {
+          \App\Helpers\SiklusRekening::tandai($manage->id, \App\Helpers\SiklusRekening::NASABAH_BARU);
+        }
       }
 
       DB::commit();
@@ -473,6 +478,11 @@ class TransactionLoanController extends Controller
           'nominal_drop' => $request->request_nominal,
           'request_nominal' => null,
         ]);
+
+        // Rekening BARU + drop langsung (tgl pengajuan = tgl drop) -> 'nasabah_baru'.
+        if ($manage->wasRecentlyCreated) {
+          \App\Helpers\SiklusRekening::tandai($manage->id, \App\Helpers\SiklusRekening::NASABAH_BARU);
+        }
       } else {
         $loan->update([
           'status' =>  "success",

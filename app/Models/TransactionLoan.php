@@ -168,6 +168,14 @@ class TransactionLoan extends Model
         self::whereKey($previousLoan->id)->update([
           'transaction_out_reasons_id' => 1, // LUNAS
         ]);
+
+        // Rekening topup ditandai 'pelunasan' — nasabah melunasi lewat topup
+        // (masih bersaldo lalu didrop lagi). Hanya sampai sini kalau saldo > 0,
+        // jadi definisinya terpenuhi. Penanda lunak, tak menggagalkan transaksi.
+        \App\Helpers\SiklusRekening::tandai(
+          $transactionLoan->transaction_manage_customer_id,
+          \App\Helpers\SiklusRekening::PELUNASAN
+        );
       });
     });
   }
