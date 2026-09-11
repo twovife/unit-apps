@@ -293,13 +293,10 @@ class TransactionLoanController extends Controller
       $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', $request->branch)->where('kelompok', $request->kelompok)->first();
       $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id, 'day' => Carbon::parse($request->tanggal_drop)->dayOfWeek]);
 
-      if ($manage->wasRecentlyCreated) {
-        $request['drop_before'] = 0;
-      } else {
-        $drop_before = $manage->loan()->where('status', 'success')->orderBy('drop_date', 'desc')->first();
-        $request['drop_before'] = $drop_before?->nominal_drop ?? 0;
-        $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
-      }
+      // drop_before hanya bermakna untuk topup (punya previous_loan_id), diisi
+      // di store_pengajuan_lama dari nominal_drop pinjaman lama. Create biasa
+      // bukan topup -> selalu 0, tak peduli drop langsung atau rekening lama.
+      $request['drop_before'] = 0;
 
       // Sesuai request: user_mantri disamakan dengan user_input
       $mantri = auth()->user()->employee->id;
@@ -440,13 +437,10 @@ class TransactionLoanController extends Controller
 
 
 
-      if ($manage->wasRecentlyCreated) {
-        $request['drop_before'] = 0;
-      } else {
-        $drop_before = $manage->loan()->where('status', 'success')->orderBy('drop_date', 'desc')->first();
-        $request['drop_before'] = $drop_before?->nominal_drop ?? 0;
-        $request['drop_date_before'] = $drop_before?->drop_date ?? 0;
-      }
+      // drop_before hanya bermakna untuk topup (punya previous_loan_id), diisi
+      // di store_pengajuan_lama dari nominal_drop pinjaman lama. Create biasa
+      // bukan topup -> selalu 0, tak peduli drop langsung atau rekening lama.
+      $request['drop_before'] = 0;
 
 
       // Sesuai request: user_mantri disamakan dengan user_input
