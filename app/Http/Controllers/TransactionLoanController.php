@@ -1012,7 +1012,7 @@ class TransactionLoanController extends Controller
       'status_pinjaman' => AppHelper::status_pinjaman($loan->loan_instalment->first()?->status),
       'notes' => $loan->notes ?? null,
       'lunas' => $saldo <= 0,
-      'mantri' => $loan->mantri->nama_karyawan,
+      'mantri' => $loan->mantri?->nama_karyawan,
       // Trio "siapa mengerjakan apa" - sama seperti dipakai StatusPengajuan.jsx
       // di modal Buku Transaksi (lihat PinjamanTrait::getTransactionLoan()).
       'diinput_oleh' => $loan->userinput?->nama_karyawan,
@@ -1041,7 +1041,7 @@ class TransactionLoanController extends Controller
         'transaction_date' => $instalment->transaction_date,
         'status' => AppHelper::status_pinjaman($instalment->status),
         'danatitipan' => $instalment->danatitipan,
-        'mantri' => $instalment->usermantri->nama_karyawan,
+        'mantri' => $instalment->usermantri?->nama_karyawan,
         'saldo' => $saldoBefore
       ];
     });
