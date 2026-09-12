@@ -298,8 +298,10 @@ class TransactionLoanController extends Controller
       // bukan topup -> selalu 0, tak peduli drop langsung atau rekening lama.
       $request['drop_before'] = 0;
 
-      // Sesuai request: user_mantri disamakan dengan user_input
-      $mantri = auth()->user()->employee->id;
+      // user_input = yang mengetik; user_mantri/user_drop = getMantri (seragam,
+      // bisa null kalau kelompok tanpa mantri aktif & bukan mantri/KM/pimpinan).
+      $userInput = auth()->user()->employee->id;
+      $mantri = AppHelper::getMantri($officerGrouping);
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
@@ -308,7 +310,7 @@ class TransactionLoanController extends Controller
         'drop_date' => $request->tanggal_drop,
         'hari' => AppHelper::dateName($request->tanggal_drop),
         'status' => "open",
-        'user_input' => $mantri,
+        'user_input' => $userInput,
 
         'drop_before' => $request['drop_before'],
         'request_nominal' => $request->request_nominal,
@@ -444,7 +446,8 @@ class TransactionLoanController extends Controller
 
 
       // Sesuai request: user_mantri disamakan dengan user_input
-      $mantri = auth()->user()->employee->id;
+      $userInput = auth()->user()->employee->id;
+      $mantri = AppHelper::getMantri($officerGrouping);
 
       $loan = $manage->loan()->create([
         'transaction_loan_officer_grouping_id' => $officerGrouping->id,
@@ -453,7 +456,7 @@ class TransactionLoanController extends Controller
         'drop_date' => $request->tanggal_drop,
         'hari' => AppHelper::dateName($request->tanggal_drop),
         'status' => "open",
-        'user_input' => $mantri,
+        'user_input' => $userInput,
 
         'drop_before' => $request['drop_before'],
         'request_nominal' => $request->request_nominal,
@@ -470,7 +473,7 @@ class TransactionLoanController extends Controller
       } else {
         $loan->update([
           'status' =>  "success",
-          'user_check' => $mantri,
+          'user_check' => $userInput,
           'check_date' => Carbon::now()->format('Y-m-d'),
           'approved_nominal' => $request->request_nominal,
 

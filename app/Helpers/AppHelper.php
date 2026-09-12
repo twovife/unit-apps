@@ -43,35 +43,22 @@ class AppHelper
   public static function getMantri($officerGrouping)
   {
 
-    // CATATAN: dulu di sini ada cabang
-    //   if (hasAnyPermission(['unit pimpinan','unit mantri','unit km']))
-    //       return employee id user yang login;
-    // Ketiga nama itu tidak pernah ada di tabel `permissions`, sehingga
-    // hasAnyPermission() selalu mengembalikan false (diam, tidak melempar) dan
-    // cabang tersebut TIDAK PERNAH jalan. Seluruh data historis terbentuk lewat
-    // jalur pencarian di bawah. Cabang itu sengaja dihapus, bukan diperbaiki
-    // jadi cek role, agar atribusi `user_mantri` tetap konsisten dengan data
-    // lama. Kalau suatu saat pimpinan/KM ingin tercatat atas nama dirinya
-    // sendiri, itu perubahan aturan bisnis yang harus diputuskan terpisah.
-    $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
+    // Aturan seragam atribusi user_mantri (dan user_drop):
+    //  c. kalau yang login sendiri mantri/KM/pimpinan -> atas nama dia.
+    //  a. selain itu, cari mantri AKTIF (date_resign null) di kelompok itu.
+    //  b. kalau lebih dari satu, ambil yang TERBARU (id terbesar).
+    //  Tak ada -> NULL. Sengaja TIDAK jatuh ke mantri resign atau ke user login,
+    //  supaya kolom mantri jujur kosong saat kelompok memang tanpa mantri aktif.
+    $user = auth()->user();
+    if ($user && $user->hasAnyRole(['mantri', 'kepala-mantri', 'pimpinan'])) {
+      return $user->employee?->id;
+    }
+
+    return Employee::where('branch_id', $officerGrouping->branch_id)
       ->where('area', $officerGrouping->kelompok)
+      ->whereNull('date_resign')
       ->orderBy('id', 'desc')
-      ->get();
-
-    // Coba temukan mantri yang aktif (tidak resign)
-    $mantri = $get_mantri->whereNull('date_resign')->first()?->id;
-
-    // Jika tidak ada mantri aktif yang ditemukan, ambil mantri pertama dari daftar
-    if (!$mantri) {
-      $mantri = $get_mantri->first()?->id;
-    }
-
-    // Jika daftar mantri kosong, gunakan ID employee dari user yang sedang login
-    if (!$mantri) {
-      $mantri = auth()->user()->employee->id;
-    }
-
-    return $mantri;
+      ->value('id');
   }
 
   public static function getMantriNoauth($officerGrouping, $idpimpinan)
