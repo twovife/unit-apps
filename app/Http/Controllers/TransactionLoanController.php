@@ -112,6 +112,7 @@ class TransactionLoanController extends Controller
           'kelompok' => $group->first()->loan_officer_grouping->kelompok,
           'kelompok_id' => $group->first()->loan_officer_grouping->kelompok,
           'day' => AppHelper::getNumberToNameDays($group->first()->day),
+          'day_num' => $group->first()->day, // buat banding hari presisi di alert crash
           'pinjaman' => $latestTransaction->drop_date,
           'out_date' => $latestTransaction->out_date,
           'lunas' => $outDate ? 'lunas' : 'belum_lunas',

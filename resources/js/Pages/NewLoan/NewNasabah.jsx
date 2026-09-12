@@ -20,6 +20,7 @@ import CurrencyInput from 'react-currency-input-field';
 import useOptionGenerator from '@/Hooks/useOptionGenerator';
 import SelectComponent from '@/Components/shadcn/SelectComponent';
 import RiwayatPengajuan from './Components/RiwayatPengajuan';
+import CrashAlert from './Components/CrashAlert';
 import dayjs from 'dayjs';
 import Checkbox from '@/Components/Checkbox';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
@@ -344,6 +345,11 @@ const NewNasabah = ({
               <legend className="px-1 -ml-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">
                 Detail Pinjaman
               </legend>
+              <CrashAlert
+                historyBranch={customerData?.history_branch}
+                kelompok={data.kelompok}
+                tanggalDrop={data.tanggal_drop}
+              />
               <form className="w-full" onSubmit={onSubmitCreate}>
                 <div className="flex flex-col gap-5 lg:flex-row">
                   <div className="flex-1">
