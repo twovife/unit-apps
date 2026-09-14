@@ -72,7 +72,10 @@ class TransactionLoanController extends Controller
       return response()->json(['data' =>  null, 'return_nik' => $request->nik]);
     }
 
-    $userEmp = auth()->user()->employee;
+    // Split riwayat pakai CABANG AKTIF (filter), bukan kantor asal employee.
+    // User multi-cabang: kalau filter di Krian 6, "kantor ini" harus rekening
+    // Krian 6, bukan kantor asalnya. AuthScope sudah validasi lawan allowed_branches.
+    $activeBranchId = (int) \App\Helpers\AuthScope::getActiveBranchId();
 
     $validate = $request->validate([
       'nik' => ['required', 'digits:16']
@@ -128,18 +131,18 @@ class TransactionLoanController extends Controller
         'nik' => $nasabah->nik,
         'nama' => $nasabah->nama,
         'alamat' => $nasabah->alamat,
-        'history_branch' => $mapingBranch->filter(function ($item) use ($userEmp) {
-          return $item['branch_id'] === $userEmp->branch_id;
+        'history_branch' => $mapingBranch->filter(function ($item) use ($activeBranchId) {
+          return $item['branch_id'] === $activeBranchId;
         })->sortBy('kelompok')->values(),
 
 
-        'history_lain' => $mapingBranch->filter(function ($item) use ($userEmp) {
-          return $item['branch_id'] !== $userEmp->branch_id;
+        'history_lain' => $mapingBranch->filter(function ($item) use ($activeBranchId) {
+          return $item['branch_id'] !== $activeBranchId;
         })->sortBy('kelompok')->sortBy('branch2')->sortBy('wilayah')->values(),
 
 
-        'history_macet_lain' => $mapingBranch->filter(function ($item) use ($userEmp) {
-          return $item['branch_id'] !== $userEmp->branch_id && $item['status_id'] >= 3;
+        'history_macet_lain' => $mapingBranch->filter(function ($item) use ($activeBranchId) {
+          return $item['branch_id'] !== $activeBranchId && $item['status_id'] >= 3;
         })
           ->map(function ($item) {
             // sensor nama kantor di sini
@@ -147,8 +150,8 @@ class TransactionLoanController extends Controller
             return $item;
           })->sortBy('kelompok')->sortBy('branch2')->sortBy('wilayah')->values(),
 
-        'history_target' => $mapingBranch->filter(function ($item) use ($userEmp) {
-          return $item['branch_id'] !== $userEmp->branch_id && $item['status_id'] < 3 && $item['lunas'] == 'belum_lunas';
+        'history_target' => $mapingBranch->filter(function ($item) use ($activeBranchId) {
+          return $item['branch_id'] !== $activeBranchId && $item['status_id'] < 3 && $item['lunas'] == 'belum_lunas';
         })
           ->map(function ($item) {
             // sensor nama kantor di sini
