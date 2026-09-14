@@ -20,6 +20,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import PengajuanLink from '@/Components/PengajuanLink';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 
 const SidebarMobile = ({ isOpen, setIsOpen }) => {
@@ -46,9 +47,9 @@ const SidebarMobile = ({ isOpen, setIsOpen }) => {
 
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
-                    <Link href={route('mobile_apps.create')}>
+                    <PengajuanLink>
                       <MagnifyingGlassIcon className="h-7 w-7" />
-                    </Link>
+                    </PengajuanLink>
                   </Button>
                   <div>Pengajuan</div>
                 </div>

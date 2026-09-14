@@ -15,7 +15,33 @@ use Illuminate\Support\Facades\Auth;
 class AppHelper
 {
 
+  // Bisa create pengajuan? Cermin resolusi cabang/kelompok di store: butuh
+  // grouping yang bisa diselesaikan di CABANG AKTIF.
+  //  - view-all-groups: cukup ada grouping mana pun di cabang aktif (bisa pilih
+  //    kelompok lewat selector).
+  //  - selain itu: grouping(cabang aktif, employee->area) harus ada. area 0/null
+  //    (mis. pusat) -> tidak ada grouping -> tidak bisa create.
+  public static function canCreateLoan(?\App\Models\User $user = null): bool
+  {
+    $user = $user ?: auth()->user();
+    if (!$user || !$user->employee) {
+      return false;
+    }
 
+    // Harus punya izin fitur DAN feasible (ada grouping di cabang aktif).
+    if (!$user->can('can-create')) {
+      return false;
+    }
+
+    $branchId = \App\Helpers\AuthScope::getActiveBranchId();
+    $query = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId);
+
+    if ($user->can('view-all-groups')) {
+      return $query->exists();
+    }
+
+    return $query->where('kelompok', $user->employee->area)->exists();
+  }
 
   // 2
   private static function generateUnknownNik($request)

@@ -301,6 +301,12 @@ class TransactionLoanController extends Controller
 
       $customer = TransactionCustomer::firstorCreate(['nik' => $request->nik], ['nama' => $request->nama, 'alamat' => $request->alamat]);
       $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', $request->branch)->where('kelompok', $request->kelompok)->first();
+      // Grouping bisa null kalau kelompok tak ada di cabang aktif (mis. area 0).
+      // Tolak dengan pesan, bukan biarkan $officerGrouping->id fatal 500.
+      if (!$officerGrouping) {
+        DB::rollBack();
+        return redirect()->back()->withErrors('Kelompok ' . $request->kelompok . ' tidak ada di cabang ini. Tidak bisa input pengajuan.');
+      }
       $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id, 'day' => Carbon::parse($request->tanggal_drop)->dayOfWeek]);
 
       // drop_before hanya bermakna untuk topup (punya previous_loan_id), diisi
@@ -446,6 +452,10 @@ class TransactionLoanController extends Controller
 
       $customer = TransactionCustomer::firstorCreate(['nik' => $request->nik], ['nama' => $request->nama, 'alamat' => $request->alamat]);
       $officerGrouping = TransactionLoanOfficerGrouping::where('branch_id', $request->branch)->where('kelompok', $request->kelompok)->first();
+      if (!$officerGrouping) {
+        DB::rollBack();
+        return redirect()->back()->withErrors('Kelompok ' . $request->kelompok . ' tidak ada di cabang ini. Tidak bisa input pengajuan.');
+      }
       // $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id]);
       $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id, 'day' => Carbon::parse($request->tanggal_drop)->dayOfWeek]);
 

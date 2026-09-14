@@ -19,6 +19,13 @@ class MobileAppsMantriController extends Controller
 
   public function create()
   {
+    // User tanpa kelompok di cabang aktif (mis. pusat, area 0) tak bisa create:
+    // hasil grouping null -> dulu fatal di store. Tolak di depan.
+    if (!\App\Helpers\AppHelper::canCreateLoan()) {
+      return redirect()->route('mobile_apps.index')
+        ->with('message', 'Tidak bisa input pengajuan: tidak ada kelompok di cabang aktif ini.');
+    }
+
     return Inertia::render('MobileApps/Create/Index');
   }
 

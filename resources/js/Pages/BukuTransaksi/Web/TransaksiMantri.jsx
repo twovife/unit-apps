@@ -26,7 +26,7 @@ import Rencana from '@/Pages/BukuTransaksi/Rencana';
  * wilayah/pusat - bukan sesuatu yang perlu tampil sebagai chip instan.
  */
 const TransaksiMantri = ({ datas, buku_rencana }) => {
-  const { server_filter } = usePage().props;
+  const { server_filter, auth } = usePage().props;
 
   const [onCreateShow, setOnCreateShow] = useState(false);
   const handleOnCreateShowOpen = () => setOnCreateShow(true);
@@ -78,7 +78,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
               </PopoverContent>
             </Popover>
           )}
-          {server_filter.userAuthorized.canCreate && (
+          {auth?.can_create && (
             <Button type="button" onClick={handleOnCreateShowOpen}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">

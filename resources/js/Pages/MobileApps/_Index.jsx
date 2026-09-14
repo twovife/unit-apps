@@ -2,6 +2,7 @@ import MobileLayout from '@/Layouts/MobileLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 import { Link, usePage } from '@inertiajs/react';
+import PengajuanLink from '@/Components/PengajuanLink';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import {
   BookA,
@@ -24,9 +25,9 @@ const _Indexs = () => {
         <div className="flex items-center justify-around gap-6">
           <div className="text-center">
             <Button size="icon2xl" variant="outline" asChild>
-              <Link href={route('mobile_apps.create')}>
+              <PengajuanLink>
                 <MagnifyingGlassIcon className="h-7 w-7" />
-              </Link>
+              </PengajuanLink>
             </Button>
             {/* CREATE PAGE */}
             <div>Pengajuan</div>

@@ -42,6 +42,9 @@ class HandleInertiaRequests extends Middleware
         // permissions.includes('superuser') / ('unit mantri') selalu false -
         // 'superuser' dan 'mantri' itu ROLE, bukan permission.
         'roles' =>  $request->user() ? $request->user()->getRoleNames() : [],
+        // Bisa create pengajuan di cabang aktif? Dipakai menu untuk disable
+        // tombol "Pengajuan" bagi user tanpa kelompok di cabang ini.
+        'can_create' => fn() => $request->user() ? \App\Helpers\AppHelper::canCreateLoan() : false,
         'global_filter' => function () use ($request) {
             if (!$request->user()) return null;
             $scope = \App\Helpers\AuthScope::resolve();

@@ -24,6 +24,7 @@ import {
 
 import { Button } from '@/shadcn/ui/button';
 import { Link } from '@inertiajs/react';
+import PengajuanLink from '@/Components/PengajuanLink';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { Separator } from '@/shadcn/ui/separator';
 import GlobalBranchFilter from '../GlobalBranchFilter';
@@ -80,13 +81,10 @@ export function AppSidebar({ ...props }) {
                   className="h-16 w-full"
                   asChild
                 >
-                  <Link
-                    className="flex flex-col justify-center"
-                    href={route('mobile_apps.create')}
-                  >
+                  <PengajuanLink className="flex flex-col justify-center">
                     <MagnifyingGlassIcon className="h-7 w-7" />
                     <div className="text-xs">Pengajuan</div>
-                  </Link>
+                  </PengajuanLink>
                 </Button>
               </div>
               <div className="text-center">
@@ -166,13 +164,10 @@ export function AppSidebar({ ...props }) {
                   className="h-16 w-full"
                   asChild
                 >
-                  <Link
-                    className="flex flex-col justify-center"
-                    href={route('mobile_apps.create')}
-                  >
+                  <PengajuanLink className="flex flex-col justify-center">
                     <MagnifyingGlassIcon className="h-7 w-7" />
                     <div className="text-xs">Pengajuan</div>
-                  </Link>
+                  </PengajuanLink>
                 </Button>
               </div>
               <div className="text-center">
@@ -252,13 +247,10 @@ export function AppSidebar({ ...props }) {
                   className="h-16 w-full"
                   asChild
                 >
-                  <Link
-                    className="flex flex-col justify-center"
-                    href={route('mobile_apps.create')}
-                  >
+                  <PengajuanLink className="flex flex-col justify-center">
                     <MagnifyingGlassIcon className="h-7 w-7" />
                     <div className="text-xs">Pengajuan</div>
-                  </Link>
+                  </PengajuanLink>
                 </Button>
               </div>
               <div className="text-center">

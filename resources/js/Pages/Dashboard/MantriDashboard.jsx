@@ -1,5 +1,6 @@
 import { Button } from '@/shadcn/ui/button';
 import { Link, usePage } from '@inertiajs/react';
+import PengajuanLink from '@/Components/PengajuanLink';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { HandCoinsIcon, Home, Layers, UserX } from 'lucide-react';
 import React from 'react';
@@ -94,13 +95,10 @@ const MantriDashboard = () => {
               className="w-full h-16"
               asChild
             >
-              <Link
-                className="flex flex-col justify-center"
-                href={route('mobile_apps.create')}
-              >
+              <PengajuanLink className="flex flex-col justify-center">
                 <MagnifyingGlassIcon className="h-7 w-7" />
                 <div className="text-xs">Pengajuan</div>
-              </Link>
+              </PengajuanLink>
             </Button>
           </div>
           <div className="text-center">
