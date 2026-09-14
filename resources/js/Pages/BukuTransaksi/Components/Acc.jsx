@@ -22,7 +22,13 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
   // dimiliki kasir, pimpinan, kepala-mantri, pengawas, superuser - dan tidak
   // dimiliki mantri, persis seperti maksud pengecekan lama.
   const { auth } = usePage().props;
-  const canApprove = auth?.permissions?.includes('can-approve');
+  // acc/tolak = persetujuan: can-approve, tapi stafkontrol dikecualikan (peran
+  // pengawasan; can-approve-nya dipakai untuk approve closing, bukan ACC pengajuan).
+  const canApprove =
+    auth?.permissions?.includes('can-approve') &&
+    !auth?.roles?.includes('stafkontrol');
+  // success/gagal = realisasi drop: can-create (mantri/pembuat yang nge-drop).
+  const canCreate = auth?.permissions?.includes('can-create');
 
   useEffect(() => {
     setData((prevData) => ({
@@ -113,14 +119,14 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 prefix="Rp. "
                 min={1}
                 required
-                disabled={!canApprove}
+                disabled={!canCreate}
                 onValueChange={onHandleCurencyChange}
                 value={data.drop}
                 placeholder={'Inputkan angka tanpa sparator'}
               />
-              {!canApprove && (
+              {!canCreate && (
                 <p className="mt-2 text-xs font-medium text-amber-600">
-                  Hanya Pimpinan / KM / Kasir yang bisa menutup pencairan.
+                  Anda tidak punya akses untuk menutup pencairan (drop).
                 </p>
               )}
               <div className="flex flex-wrap items-center justify-end gap-3 mt-2">
@@ -134,7 +140,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 <AppButton
                   variant="submission"
                   size="sm"
-                  disabled={!canApprove}
+                  disabled={!canCreate}
                   onClick={() => accPinjaman('success')}
                 >
                   DROP
@@ -142,7 +148,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 <AppButton
                   variant="danger"
                   size="sm"
-                  disabled={!canApprove}
+                  disabled={!canCreate}
                   onClick={() => accPinjaman('gagal')}
                 >
                   GAGAL

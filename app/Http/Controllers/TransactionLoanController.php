@@ -725,21 +725,22 @@ class TransactionLoanController extends Controller
   {
 
 
-    // 'can create' (pakai spasi) tidak ada di tabel permissions, dan
-    // hasPermissionTo() MELEMPAR PermissionDoesNotExist untuk nama tak dikenal -
-    // artinya endpoint ini selalu 500 sebelum sampai ke logika mana pun.
-    $checkPermission = AppHelper::havePermissionByPermission('can-create');
+    // Gate per-status:
+    //  - acc / tolak  = keputusan persetujuan -> butuh 'can-approve'. stafkontrol
+    //    DIKECUALIKAN (peran pengawasan: boleh approve closing lewat 'can-approve',
+    //    tidak boleh ACC pengajuan). Mantri otomatis tertolak (tak punya can-approve).
+    //  - success / gagal = realisasi drop -> butuh 'can-create' (mantri/pembuat).
+    $user = auth()->user();
 
-    // 'unit mantri' juga nama lama. Mantri sekarang dikenali lewat ROLE.
-    $checkPermissionMantri = auth()->user()->hasRole('mantri');
-
-    if (!$checkPermission) {
-      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Action');
+    if ($request->status == 'acc' || $request->status == 'tolak') {
+      if (!$user->hasPermissionTo('can-approve') || $user->hasRole('stafkontrol')) {
+        return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses ACC / Tolak');
+      }
     }
 
-    if ($checkPermissionMantri) {
-      if ($request->status == 'acc' || $request->status == 'tolak') {
-        return redirect()->back()->withErrors('ACC / Tolak Tidak Bisa Dilakukan Oleh Mantri');
+    if ($request->status == 'success' || $request->status == 'gagal') {
+      if (!$user->hasPermissionTo('can-create')) {
+        return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Drop / Gagal');
       }
     }
 
