@@ -289,6 +289,11 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Tidak bisa input transaksi untuk hari Minggu');
     }
 
+    // Drop tidak boleh sebelum pengajuan (drop langsung = sama hari, boleh).
+    if (!$bebas && Carbon::parse($request->tanggal_drop)->lt(Carbon::parse($request->request_date))) {
+      return redirect()->back()->withErrors('Tanggal drop tidak boleh sebelum tanggal pengajuan.');
+    }
+
     $newNik = AppHelper::callUnknownNik($request);
     $request->merge(['nik' => $newNik]);
 

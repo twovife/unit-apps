@@ -372,6 +372,14 @@ const NewNasabah = ({
                         <TanggalKerja
                           name="tanggal_drop"
                           min={mixDate}
+                          // Kunci ke hari tagih = weekday pengajuan (backend juga
+                          // menolak "Hari Tidak Sama"). Drop selalu di hari yang
+                          // sama, minggu ini (langsung) atau minggu berikutnya.
+                          hariTagih={
+                            data.request_date
+                              ? dayjs(data.request_date).day()
+                              : null
+                          }
                           required={true}
                           disabled={batasiPengajuan && !data.request_date}
                           bebas={bebasTanggal}
