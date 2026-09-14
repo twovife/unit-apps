@@ -153,21 +153,13 @@ Route::middleware('auth')->group(function () {
   });
 
 
+  // Menu identik dengan web sudah dihapus (transaksi -> bukutransaksi, macet ->
+  // pinjaman/pinjaman-macet, rekap-* -> kasir/rekap/*, rencana -> kasir/rekap/
+  // rencana, byDates dibuang, landing dibuang). Sisa: input pengajuan + angsuran.
   Route::prefix('mobile_apps')->name('mobile_apps.')->group(function () {
     Route::controller(MobileAppsMantriController::class)->group(function () {
-      Route::get('/', "index")->name('index');
       Route::get('/create', "create")->name('create');
-      Route::post('/create', "store")->name('store');
-      Route::get('/transaksi', "transaksi")->name('transaksi');
       Route::get('/angsuran', "angsuran")->name('angsuran');
-      Route::get('/macet', "macet")->name('macet');
-      Route::get('/byDates', "byDates")->name('byDates');
-
-      Route::get('/rencana-drop-kepala', "rencana_drop_kepala")->name('rencana_drop_kepala');
-
-      Route::get('/rekap-permantri', "rekap_permantri")->name('rekap_permantri');
-      Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');
-      Route::get('/rekap-dua', "rekap_dua")->name('rekap_dua');
     });
   });
 

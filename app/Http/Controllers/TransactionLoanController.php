@@ -373,7 +373,8 @@ class TransactionLoanController extends Controller
     }
 
     if ($previousRouteName == "mobile_apps.create") {
-      return redirect()->route('mobile_apps.transaksi', ['kelompok' => $officerGrouping->kelompok]);
+      // mobile_apps.transaksi sudah dihapus -> masuk ke layar transaksi web.
+      return redirect()->route('transaction.index_buku_transaksi', ['kelompok' => $officerGrouping->kelompok]);
     }
     return redirect()->back()->with('message', 'Berhasil Menambahkan Pengajuan');
   }

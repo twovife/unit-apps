@@ -142,8 +142,8 @@ export default function AppSidebar({ ...props }) {
               {
                 id: 3,
                 title: 'Drop',
-                link: route('mobile_apps.transaksi'),
-                active: route().current('mobile_apps.transaksi'),
+                link: route('transaction.index_buku_transaksi'),
+                active: route().current('transaction.index_buku_transaksi'),
               },
               {
                 id: 4,
@@ -154,8 +154,8 @@ export default function AppSidebar({ ...props }) {
               {
                 id: 5,
                 title: 'ML',
-                link: route('mobile_apps.macet'),
-                active: route().current('mobile_apps.macet'),
+                link: route('pinjaman.index_pinjaman_macet'),
+                active: route().current('pinjaman.index_pinjaman_macet'),
               },
             ]}
           />

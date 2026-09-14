@@ -8,73 +8,29 @@ use App\Traits\RekapTrait;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
+// Menu mobile_apps yang identik dengan menu web sudah dihapus (transaksi, macet,
+// byDates, rekap-*, rencana-drop-kepala, landing). Yang tersisa cuma yang belum
+// punya padanan web 1:1: input pengajuan (create) dan angsuran per-mantri.
 class MobileAppsMantriController extends Controller
 {
   use RekapTrait;
   use PinjamanTrait;
-  public function index()
-  {
-    return Inertia::render('MobileApps/Index');
-  }
 
   public function create()
   {
     // User tanpa kelompok di cabang aktif (mis. pusat, area 0) tak bisa create:
     // hasil grouping null -> dulu fatal di store. Tolak di depan.
     if (!\App\Helpers\AppHelper::canCreateLoan()) {
-      return redirect()->route('mobile_apps.index')
+      return redirect()->route('transaction.index_buku_transaksi')
         ->with('message', 'Tidak bisa input pengajuan: tidak ada kelompok di cabang aktif ini.');
     }
 
     return Inertia::render('MobileApps/Create/Index');
   }
 
-  public function transaksi(Request $request)
-  {
-    $data = $this->getTransactionLoan($request, false, true);
-    return Inertia::render('BukuTransaksi/Mobile/TransaksiMantri', $data);
-  }
-
   public function angsuran(Request $request)
   {
     $data = $this->getLoanMantri($request, true);
     return Inertia::render("MobileApps/Angsuran/Index", $data);
-  }
-
-  public function macet(Request $request)
-  {
-    $data = $this->getLoanMacet($request);
-
-    return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
-  }
-
-  public function byDates(Request $request)
-  {
-    $data = $this->getLoanByDate($request);
-    return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
-  }
-
-
-  public function rencana_drop_kepala(Request $request)
-  {
-    $data = $this->getRencanaDropKepalaData($request);
-    return Inertia::render('MobileApps/RencanaDropKepala/Index', $data);
-  }
-
-  public function rekap_permantri(Request $request)
-  {
-    $data = $this->getRekapPermantriData($request);
-    return Inertia::render('MobileApps/Rekap/RekapPerMantri', $data);
-  }
-
-  public function rekap_dua(Request $request)
-  {
-    $data = $this->getDataRekapDua($request);
-    return Inertia::render('MobileApps/Rekap/RekapDua', $data);
-  }
-  public function rekap_satu(Request $request)
-  {
-    $data = $this->getRekapDuaData($request);
-    return Inertia::render('MobileApps/Rekap/RekapSatu', $data);
   }
 }

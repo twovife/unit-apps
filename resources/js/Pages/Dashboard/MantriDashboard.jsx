@@ -80,7 +80,7 @@ const MantriDashboard = () => {
             >
               <Link
                 className="flex flex-col justify-center"
-                href={route('mobile_apps.index')}
+                href={route('home')}
               >
                 <Home />
                 <div className="text-xs">Home</div>
@@ -110,7 +110,7 @@ const MantriDashboard = () => {
             >
               <Link
                 className="flex flex-col justify-center"
-                href={route('mobile_apps.transaksi')}
+                href={route('transaction.index_buku_transaksi')}
               >
                 <Layers className="h-7 w-7" />
                 <div className="text-xs">Drop</div>
@@ -143,7 +143,7 @@ const MantriDashboard = () => {
             >
               <Link
                 className="flex flex-col justify-center"
-                href={route('mobile_apps.macet')}
+                href={route('pinjaman.index_pinjaman_macet')}
               >
                 <UserX className="h-7 w-7" />
                 <div className="text-xs">Macet</div>

@@ -51,7 +51,8 @@ class AuthenticatedSessionController extends Controller
 
 
     if ($authUser->hasRole('mantri')) {
-      return redirect()->route('mobile_apps.index');
+      // Landing mobile_apps sudah dihapus; mantri masuk ke layar transaksi.
+      return redirect()->route('transaction.index_buku_transaksi');
     }
 
     return redirect()->intended(RouteServiceProvider::HOME);

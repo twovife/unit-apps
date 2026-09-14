@@ -12,8 +12,12 @@ import { Input } from '@/shadcn/ui/input';
 import InputMacet from '../BukuTransaksi/Web/InputMacet';
 
 /**
- * `type === 'mobile'` (dipakai `mobile_apps.macet` & `mobile_apps.byDates`,
- * lewat `MobileApps/Angsuran/SearchByDate.jsx`) filternya disamakan dengan
+ * CATATAN: cabang `type === 'mobile'` sudah tidak dipakai lagi - caller-nya
+ * (`MobileApps/Angsuran/SearchByDate.jsx`, menu `mobile_apps.macet`/`byDates`)
+ * dihapus saat menu mobile yang identik dengan web digabung. Kode cabangnya
+ * dibiarkan untuk sekarang; hanya `type === 'desktop'` yang aktif.
+ *
+ * `type === 'mobile'` (dahulu) filternya disamakan dengan
  * menu Drop/Angsuran: `FilterBar` (chip instan) untuk hari/bulan/kelompok,
  * `SearchComponent` disisakan cuma untuk filter Unit/Wilayah lewat popover
  * kecil terpisah. `type === 'desktop'` (dipakai `pinjaman.index_pinjaman_macet`
