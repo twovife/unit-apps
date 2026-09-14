@@ -126,6 +126,18 @@ class TransactionLoanController extends Controller
         ];
       });
 
+    // Kantor lain: buka sensor kalau user PUNYA AKSES kantor itu (allowed_branches,
+    // null = akses semua). Yang tak berakses tetap '??'. Urutan: kantor berakses
+    // di atas (drop terbaru dulu), lalu kantor '??' di bawah.
+    $allowedBranches = \App\Models\Branch::getAllowedBranchIds(auth()->user());
+    $adaAkses = fn($branchId) => $allowedBranches === null || in_array($branchId, $allowedBranches);
+    $urutkan = function ($a, $b) {
+      if ($a['punya_akses'] !== $b['punya_akses']) {
+        return $a['punya_akses'] ? -1 : 1; // berakses dulu
+      }
+      return strtotime((string) ($b['pinjaman'] ?? '')) <=> strtotime((string) ($a['pinjaman'] ?? '')); // drop terbaru dulu
+    };
+
     $data = $nasabah ?
       [
         'nik' => $nasabah->nik,
@@ -144,22 +156,29 @@ class TransactionLoanController extends Controller
         'history_macet_lain' => $mapingBranch->filter(function ($item) use ($activeBranchId) {
           return $item['branch_id'] !== $activeBranchId && $item['status_id'] >= 3;
         })
-          ->map(function ($item) {
-            // sensor nama kantor di sini
-            $item['kelompok'] = '??';
+          ->map(function ($item) use ($adaAkses) {
+            $item['punya_akses'] = $adaAkses($item['branch_id']);
+            if (!$item['punya_akses']) {
+              $item['kelompok'] = '??'; // sensor hanya kalau tak berakses
+            }
             return $item;
-          })->sortBy('kelompok')->sortBy('branch2')->sortBy('wilayah')->values(),
+          })->sort($urutkan)->values(),
 
         'history_target' => $mapingBranch->filter(function ($item) use ($activeBranchId) {
           return $item['branch_id'] !== $activeBranchId && $item['status_id'] < 3 && $item['lunas'] == 'belum_lunas';
         })
-          ->map(function ($item) {
-            // sensor nama kantor di sini
-            $item['branch'] = '????';
-            $item['kelompok'] = '??';
-            $item['status_show'] = false;
+          ->map(function ($item) use ($adaAkses) {
+            $item['punya_akses'] = $adaAkses($item['branch_id']);
+            if ($item['punya_akses']) {
+              $item['status_show'] = true; // kantor berakses: tampilkan status
+            } else {
+              // sensor kantor tanpa akses
+              $item['branch'] = '????';
+              $item['kelompok'] = '??';
+              $item['status_show'] = false;
+            }
             return $item;
-          })->sortBy('pinjaman')->sortBy('day')->values(),
+          })->sort($urutkan)->values(),
 
 
         // $nasabah->manage_customer
