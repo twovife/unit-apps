@@ -286,8 +286,14 @@ class TransactionLoanController extends Controller
       '*.min' => 'minimal diisi 100rb'
     ]);
 
-    $request['kelompok'] = auth()->user()->can('can show kelompok') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
-    $request['branch'] = auth()->user()->can('can show branch') ? $request->branch_id : auth()->user()->employee->branch_id;
+    // Permission 'can show kelompok'/'can show branch' tidak pernah ada -> can()
+    // selalu false -> dulu SELALU jatuh ke employee->area / employee->branch_id,
+    // mengabaikan kelompok yang dipilih & cabang aktif (filter). Untuk user
+    // multi-cabang berujung salah kantor / grouping null (fatal).
+    // Kelompok: pakai permission asli 'view-all-groups'. Branch: pakai cabang
+    // aktif (AuthScope, sama seperti sisi baca) supaya tulis == tampilan.
+    $request['kelompok'] = auth()->user()->can('view-all-groups') ? ($request->kelompok ?? 1) : auth()->user()->employee->area;
+    $request['branch'] = \App\Helpers\AuthScope::getActiveBranchId();
 
     try {
       DB::beginTransaction();
@@ -427,8 +433,10 @@ class TransactionLoanController extends Controller
     }
 
 
-    $request['kelompok'] = auth()->user()->can('can show kelompok') ? $request->kelompok : auth()->user()->employee->area;
-    $request['branch'] = auth()->user()->can('can show branch') ? $request->branch_id : auth()->user()->employee->branch_id;
+    // Sama seperti store_buku_transaksi: permission lama fiktif. Pakai
+    // 'view-all-groups' untuk kelompok, AuthScope untuk cabang aktif.
+    $request['kelompok'] = auth()->user()->can('view-all-groups') ? $request->kelompok : auth()->user()->employee->area;
+    $request['branch'] = \App\Helpers\AuthScope::getActiveBranchId();
 
     try {
 
