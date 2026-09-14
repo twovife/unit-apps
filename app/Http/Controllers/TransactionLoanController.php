@@ -775,7 +775,10 @@ class TransactionLoanController extends Controller
         $transactionLoan->update([
           'status' =>  $request->status,
           'nominal_drop' => $request->drop,
-          'user_drop' => $transactionLoan->user_mantri,
+          // user_drop bersifat sama dengan user_mantri: pakai aturan getMantri
+          // (role-override pengklik / mantri aktif kelompok / terbaru / null),
+          // bukan copy mentah user_mantri lama.
+          'user_drop' => AppHelper::getMantri($transactionLoan->loan_officer_grouping),
         ]);
       }
 
