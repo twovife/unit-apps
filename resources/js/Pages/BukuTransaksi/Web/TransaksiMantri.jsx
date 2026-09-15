@@ -4,7 +4,7 @@ import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Head, usePage } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
@@ -69,11 +69,20 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   const [oldest, setOldest] = useState(server_filter.month);
   const [loadingMore, setLoadingMore] = useState(false);
   const [bulanKosong, setBulanKosong] = useState(null);
+  // Auto-muat berhenti sendiri setelah kena bulan kosong, supaya scroll tidak
+  // jalan mundur tanpa henti melewati bulan-bulan tanpa transaksi. Tombol tetap
+  // bisa memaksa lebih lama; load yang berisi menyalakan auto lagi.
+  const [autoStop, setAutoStop] = useState(false);
+
+  const boxRef = useRef(null);
+  const sentinelDesktop = useRef(null);
+  const sentinelMobile = useRef(null);
 
   useEffect(() => {
     setGroups(datas ?? []);
     setOldest(server_filter.month);
     setBulanKosong(null);
+    setAutoStop(false);
   }, [datas, server_filter.month, server_filter.hari, server_filter.kelompok]);
 
   const bulanSebelum = (m) => {
@@ -100,15 +109,47 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
         },
       });
       const more = data?.datas ?? [];
+      const kosong = more.length === 0;
       setGroups((g) => [...g, ...more]);
       setOldest(targetSebelum);
-      setBulanKosong(more.length === 0 ? targetSebelum : null);
+      setBulanKosong(kosong ? targetSebelum : null);
+      setAutoStop(kosong); // bulan kosong -> hentikan auto, biar tak mundur terus
     } catch {
       /* biarkan - tombol tetap bisa dicoba lagi */
     } finally {
       setLoadingMore(false);
     }
   };
+
+  // Auto-muat saat sentinel di dasar daftar terlihat (scroll mentok bawah).
+  // loadRef selalu menunjuk versi terbaru supaya observer (dibuat sekali) tidak
+  // menutup nilai state basi. Desktop scroll di dalam box -> root = box; mobile
+  // scroll dokumen -> root = null. Sentinel yang display:none tak pernah memicu.
+  const loadRef = useRef(() => {});
+  loadRef.current = () => {
+    if (!loadingMore && !autoStop) muatSebelumnya();
+  };
+
+  useEffect(() => {
+    const cb = (entries) => {
+      if (entries.some((e) => e.isIntersecting)) loadRef.current();
+    };
+    const observers = [];
+    if (sentinelDesktop.current) {
+      const o = new IntersectionObserver(cb, {
+        root: boxRef.current ?? null,
+        rootMargin: '150px',
+      });
+      o.observe(sentinelDesktop.current);
+      observers.push(o);
+    }
+    if (sentinelMobile.current) {
+      const o = new IntersectionObserver(cb, { root: null, rootMargin: '150px' });
+      o.observe(sentinelMobile.current);
+      observers.push(o);
+    }
+    return () => observers.forEach((o) => o.disconnect());
+  }, []);
 
   return (
     <Authenticated header={<Head>Buku Transaksi</Head>}>
@@ -183,10 +224,15 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
         <TabsContent value="bukutransaksi">
           {/* Desktop: tabel, dibungkus scroll box seperti sebelumnya */}
-          <div className="hidden max-h-[70vh] lg:block border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+          <div
+            ref={boxRef}
+            className="hidden max-h-[70vh] lg:block border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin"
+          >
             {groups.map((item, index) => (
               <BukuTransaksi key={index} datas={item} />
             ))}
+            {/* sentinel auto-muat (root = box ini) */}
+            <div ref={sentinelDesktop} aria-hidden="true" />
           </div>
 
           {/* Mobile: kartu seperti menu Drop. Tanpa max-h/overflow di sini -
@@ -195,6 +241,8 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
             {groups.map((item, index) => (
               <BukuTransaksiKepala key={index} datas={item} />
             ))}
+            {/* sentinel auto-muat (root = dokumen) */}
+            <div ref={sentinelMobile} aria-hidden="true" />
           </div>
 
           {/* Muat bulan sebelumnya - menyambung ke bawah, terus mundur. */}
