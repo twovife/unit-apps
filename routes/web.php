@@ -49,6 +49,9 @@ Route::middleware('auth')->group(function () {
     ->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
+      // JSON daftar drop satu bulan (buku aktif) - dipakai muat-bulan-sebelumnya
+      // (infinite back) di layar Buku Transaksi tanpa reload penuh.
+      Route::get('/drop-bulan', "drop_bulan")->name('drop_bulan');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreatev2")->name('fastcreate');

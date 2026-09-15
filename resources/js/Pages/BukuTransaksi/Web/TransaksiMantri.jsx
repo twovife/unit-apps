@@ -4,7 +4,8 @@ import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Head, usePage } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import BukuTransaksi from '@/Pages/BukuTransaksi/BukuTransaksi';
@@ -59,6 +60,55 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   // berubah lewat FilterBar - komponen itu cuma membaca server_filter SEKALI
   // saat mount, jadi tanpa key baru dia bisa submit nilai hari/bulan lama.
   const searchComponentKey = `${server_filter.hari}-${server_filter.month}-${server_filter.kelompok}`;
+
+  // Infinite-back per bulan: `datas` dari server = bulan berjalan (buku aktif).
+  // Klik "Muat bulan sebelumnya" menyambung bulan-bulan lebih lama ke bawah,
+  // tanpa reload penuh (endpoint transaction.drop_bulan). Reset tiap kali filter
+  // (hari/bulan/kelompok) berubah lewat FilterBar -> server kirim datas baru.
+  const [groups, setGroups] = useState(datas ?? []);
+  const [oldest, setOldest] = useState(server_filter.month);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [bulanKosong, setBulanKosong] = useState(null);
+
+  useEffect(() => {
+    setGroups(datas ?? []);
+    setOldest(server_filter.month);
+    setBulanKosong(null);
+  }, [datas, server_filter.month, server_filter.hari, server_filter.kelompok]);
+
+  const bulanSebelum = (m) => {
+    const [y, mo] = String(m).split('-').map(Number);
+    const d = new Date(y, mo - 2, 1); // mo 1-based; mo-2 = bulan sebelumnya (0-based)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const labelBulanDari = (m) => {
+    const [y, mo] = String(m).split('-');
+    return mo ? `${NAMA_BULAN[parseInt(mo, 10) - 1]} ${y}` : m;
+  };
+  const targetSebelum = bulanSebelum(oldest);
+
+  const muatSebelumnya = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const { data } = await axios.get(route('transaction.drop_bulan'), {
+        params: {
+          month: targetSebelum,
+          hari: server_filter.hari,
+          kelompok: server_filter.kelompok,
+          ...unitExtraParams,
+        },
+      });
+      const more = data?.datas ?? [];
+      setGroups((g) => [...g, ...more]);
+      setOldest(targetSebelum);
+      setBulanKosong(more.length === 0 ? targetSebelum : null);
+    } catch {
+      /* biarkan - tombol tetap bisa dicoba lagi */
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <Authenticated header={<Head>Buku Transaksi</Head>}>
@@ -134,19 +184,38 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
         <TabsContent value="bukutransaksi">
           {/* Desktop: tabel, dibungkus scroll box seperti sebelumnya */}
           <div className="hidden max-h-[70vh] lg:block border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-            {datas &&
-              datas.map((item, index) => (
-                <BukuTransaksi key={index} datas={item} />
-              ))}
+            {groups.map((item, index) => (
+              <BukuTransaksi key={index} datas={item} />
+            ))}
           </div>
 
           {/* Mobile: kartu seperti menu Drop. Tanpa max-h/overflow di sini -
               dokumen jadi satu-satunya area scroll (sama seperti Drop). */}
           <div className="space-y-3 lg:hidden">
-            {datas &&
-              datas.map((item, index) => (
-                <BukuTransaksiKepala key={index} datas={item} />
-              ))}
+            {groups.map((item, index) => (
+              <BukuTransaksiKepala key={index} datas={item} />
+            ))}
+          </div>
+
+          {/* Muat bulan sebelumnya - menyambung ke bawah, terus mundur. */}
+          <div className="flex flex-col items-center gap-1 mt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={muatSebelumnya}
+              disabled={loadingMore}
+            >
+              {loadingMore
+                ? 'Memuat…'
+                : `↑ Muat ${labelBulanDari(targetSebelum)}`}
+            </Button>
+            {bulanKosong && (
+              <p className="text-xs text-muted-foreground">
+                {labelBulanDari(bulanKosong)} tidak ada transaksi — bisa muat
+                lebih lama lagi.
+              </p>
+            )}
           </div>
         </TabsContent>
 
