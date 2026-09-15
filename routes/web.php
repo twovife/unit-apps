@@ -3,16 +3,11 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BatchInputController;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\MantriAppsController;
 use App\Http\Controllers\MobileAppsMantriController;
 use App\Http\Controllers\PindahResortController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionDailyRecapController;
 use App\Http\Controllers\TransactionLoanController;
-use App\Models\TransactionDailyRecap;
-use App\Models\TransactionLoan;
-use App\Models\VIsBalanceLoanWithDailyreport;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -36,11 +31,6 @@ Route::middleware('auth')->group(function () {
 
   Route::post('/set-branch', \App\Http\Controllers\SetBranchController::class)->name('set-branch');
 
-  Route::get('/getviewasd', function () {
-    $data = VIsBalanceLoanWithDailyReport::all();
-    dd($data);
-  });
-
   Route::controller(BatchInputController::class)->name('batch_input.')->prefix('batch-input')->group(function () {
     Route::get('/', 'index')->name('index');
     Route::post('/', 'store')->name('store');
@@ -57,7 +47,6 @@ Route::middleware('auth')->group(function () {
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreatev2")->name('fastcreate');
-      Route::get('/fastcreatev2', "fastcreatev2")->name('fastcreatev2');
       Route::get('/inputmacet', "inputmacet")->name('inputmacet');
       Route::post('/batch', "store_buku_transaksi_batch")->name('store_buku_transaksi_batch');
       Route::put('/action/{transactionLoan}', "action_buku_transaksi")->name('action_buku_transaksi');

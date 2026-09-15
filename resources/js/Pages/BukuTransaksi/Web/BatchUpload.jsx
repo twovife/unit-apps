@@ -14,7 +14,7 @@ const BatchUpload = () => {
         submitUrl={route('transaction.store_buku_transaksi_batch')}
       />
       <div className="absolute z-20 right-2 bottom-2">
-        <LinkButton href={route('transaction.fastcreatev2')} color="outline">
+        <LinkButton href={route('transaction.fastcreate')} color="outline">
           V2
         </LinkButton>
       </div>
