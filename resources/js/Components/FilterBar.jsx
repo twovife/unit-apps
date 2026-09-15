@@ -16,11 +16,16 @@ import TanggalKerja from '@/Components/shadcn/TanggalKerja';
  *  3. Pilihan terakhir disimpan di localStorage per halaman, lalu dipulihkan
  *     saat halaman dibuka lagi tanpa query string - sehingga data yang tampil
  *     tetap sesuai pilihan manual terakhir, bukan default server yang ikut
- *     bergeser mengikuti hari ini.
+ *     bergeser mengikuti hari ini. (Dimatikan oleh `todayFirst`.)
  *
  * Satu-satunya navigasi tanpa tap adalah pemulihan pilihan tersimpan pada
  * poin 3, dan itu hanya terjadi bila URL sama sekali tidak membawa parameter
  * filter. Matikan lewat prop `restoreOnMount={false}` bila tidak diinginkan.
+ *
+ * MODE `todayFirst` (postur "buku hari ini"): banner buku aktif di atas; chip
+ * hari + bulan + kelompok dilipat di balik "Hari lain". Default terbuka = buku
+ * hari ini (restore dimatikan). Kalau sedang meninjau hari lain, banner berubah
+ * jadi peringatan + tombol "Hari Ini" untuk balik.
  */
 
 const HARI_OPTIONS = [
@@ -36,6 +41,15 @@ const KELOMPOK_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 
+const NAMA_HARI_PANJANG = {
+  senin: 'Senin', selasa: 'Selasa', rabu: 'Rabu',
+  kamis: 'Kamis', jumat: 'Jumat', sabtu: 'Sabtu',
+};
+const NAMA_BULAN = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
 const FilterBar = ({
   urlLink,
   storageKey,
@@ -44,6 +58,10 @@ const FilterBar = ({
   showTanggal = false,
   showKelompok = false,
   restoreOnMount = true,
+  // todayFirst: postur "buku hari ini". Banner buku aktif di atas, chip hari/
+  // bulan/kelompok dilipat di balik "Hari lain". Default buka = buku hari ini
+  // (restore localStorage dimatikan supaya server default = hari ini yang tampil).
+  todayFirst = false,
   extraParams = {},
   children,
 }) => {
@@ -159,11 +177,40 @@ const FilterBar = ({
     go(next);
   };
 
+  // Buku aktif = hari ini? (dipakai mode todayFirst untuk pilih banner).
+  const isToday =
+    String(local.hari ?? '') === String(todayHari ?? '') &&
+    (!showMonth || String(local.month ?? '') === String(monthNow));
+
+  const [openHariLain, setOpenHariLain] = useState(false);
+  const autoOpenRef = useRef(false);
+  // Kalau mendarat langsung di hari lain (mis. dari link berparameter), buka
+  // picker sekali supaya user lihat sedang di mana - tanpa memicu navigasi.
+  useEffect(() => {
+    if (todayFirst && !autoOpenRef.current && !isToday) {
+      autoOpenRef.current = true;
+      setOpenHariLain(true);
+    }
+  }, [todayFirst, isToday]);
+
+  const labelBulan = (m) => {
+    const [y, mm] = String(m ?? '').split('-');
+    return mm ? `${NAMA_BULAN[parseInt(mm, 10) - 1]} ${y}` : m || '-';
+  };
+  const hariAktifLabel = local.hari
+    ? NAMA_HARI_PANJANG[local.hari] ?? local.hari
+    : '-';
+  const todayFull = todayHari
+    ? `${NAMA_HARI_PANJANG[todayHari]}, ${_now.getDate()} ${NAMA_BULAN[_now.getMonth()]} ${_now.getFullYear()}`
+    : null;
+
   // Pemulihan pilihan tersimpan - sekali saja, dan hanya bila URL benar-benar
   // tidak membawa parameter filter (artinya kita masuk dari menu, bukan dari
   // hasil pilihan sebelumnya atau dari link yang sudah membawa filter).
   useEffect(() => {
-    if (!restoreOnMount || restoredRef.current || !lsKey) return;
+    // todayFirst sengaja TIDAK memulihkan pilihan tersimpan: default-nya buku
+    // hari ini (server default), bukan buku terakhir yang dilihat.
+    if (!restoreOnMount || todayFirst || restoredRef.current || !lsKey) return;
     restoredRef.current = true;
 
     const search = new URLSearchParams(window.location.search);
@@ -186,130 +233,211 @@ const FilterBar = ({
     setLocal(active);
   }, [active]);
 
+  // Chip hari (dipakai di kedua postur). Chip hari ini bertanda dot + ring.
+  const chipsHari = showHari ? (
+    <div className="grid grid-cols-6 gap-1 mt-1">
+      {HARI_OPTIONS.map((opt) => {
+        const dipilih = local.hari === opt.value;
+        const iniHariIni = opt.value === todayHari;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            disabled={loading}
+            onClick={() => applyNow('hari', opt.value)}
+            aria-pressed={dipilih}
+            title={iniHariIni ? 'Hari ini' : undefined}
+            className={[
+              'relative rounded-md border py-2 text-xs font-medium transition-colors',
+              'disabled:opacity-60',
+              dipilih
+                ? 'border-primary bg-primary text-primary-foreground'
+                : iniHariIni
+                  ? 'border-primary/60 ring-1 ring-primary/40 bg-background text-foreground hover:bg-accent'
+                  : 'border-input bg-background text-foreground hover:bg-accent',
+            ].join(' ')}
+          >
+            {opt.short}
+            {iniHariIni && !dipilih && (
+              <span
+                className="absolute rounded-full top-0.5 right-0.5 h-1.5 w-1.5 bg-primary"
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
+
+  const fieldBulan = showMonth ? (
+    <div className="flex-1 min-w-36">
+      <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        Bulan
+      </Label>
+      <Input
+        type="month"
+        name="month"
+        className="h-9 mt-1"
+        disabled={loading}
+        value={local.month ?? ''}
+        onChange={(e) => {
+          const value = e.target.value;
+          // Selalu pantulkan ketikan ke input; kirim query hanya saat nilainya
+          // sudah lengkap (YYYY-MM), supaya input setengah jadi tak memicu request.
+          setLocal((prev) => ({ ...prev, month: value }));
+          if (MONTH_PATTERN.test(value)) applyNow('month', value);
+        }}
+      />
+    </div>
+  ) : null;
+
+  const fieldKelompok = showKelompok ? (
+    <div className="w-28">
+      <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        Kelompok
+      </Label>
+      <select
+        name="kelompok"
+        disabled={loading}
+        value={local.kelompok ?? ''}
+        onChange={(e) => applyNow('kelompok', e.target.value)}
+        className="flex items-center justify-between w-full h-9 mt-1 px-3 py-2 text-sm bg-transparent border rounded-md shadow-xs border-input focus:outline-hidden focus:ring-1 focus:ring-ring disabled:opacity-60"
+      >
+        {KELOMPOK_OPTIONS.map((k) => (
+          <option key={k} value={k}>
+            {k}
+          </option>
+        ))}
+      </select>
+    </div>
+  ) : null;
+
   return (
     <div className="mb-3 border rounded-lg bg-card">
       <Loading show={loading} />
 
-      {showHari && (
-        <div className="px-3 pt-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Hari
-            </Label>
-            {todayHari && (
+      {todayFirst ? (
+        <div className="p-3 space-y-3">
+          {isToday ? (
+            <div className="flex items-center gap-3 px-3 py-2.5 border rounded-lg border-primary/25 bg-primary/5">
+              <span className="rounded-full h-2.5 w-2.5 bg-primary" aria-hidden="true" />
+              <div>
+                <div className="text-[10.5px] font-bold uppercase tracking-wider text-primary">
+                  Hari ini · buku aktif
+                </div>
+                <div className="text-sm font-semibold">{todayFull}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2 px-3 py-2 border rounded-lg text-amber-700 border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
+              <span className="text-xs font-medium">
+                &#8635; Meninjau: {hariAktifLabel}
+                {showMonth ? ` · ${labelBulan(local.month)}` : ''}
+              </span>
+              {todayHari && (
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => {
+                    setOpenHariLain(false);
+                    applyHariIni();
+                  }}
+                  className="text-xs font-semibold underline disabled:opacity-60"
+                >
+                  Hari Ini
+                </button>
+              )}
+            </div>
+          )}
+
+          {(showHari || showMonth || showKelompok) && (
+            <div>
               <button
                 type="button"
                 disabled={loading}
-                onClick={applyHariIni}
-                className="text-[11px] font-medium text-primary hover:underline disabled:opacity-60"
+                onClick={() => setOpenHariLain((o) => !o)}
+                aria-expanded={openHariLain}
+                className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold border border-dashed rounded-lg border-input bg-muted/40 text-muted-foreground hover:text-foreground disabled:opacity-60"
               >
-                Hari Ini
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-6 gap-1 mt-1">
-            {HARI_OPTIONS.map((opt) => {
-              const dipilih = local.hari === opt.value;
-              const iniHariIni = opt.value === todayHari;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => applyNow('hari', opt.value)}
-                  aria-pressed={dipilih}
-                  title={iniHariIni ? 'Hari ini' : undefined}
-                  className={[
-                    'relative rounded-md border py-2 text-xs font-medium transition-colors',
-                    'disabled:opacity-60',
-                    dipilih
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : iniHariIni
-                        ? 'border-primary/60 ring-1 ring-primary/40 bg-background text-foreground hover:bg-accent'
-                        : 'border-input bg-background text-foreground hover:bg-accent',
-                  ].join(' ')}
+                <span>Hari lain &amp; bulan</span>
+                <span
+                  className={`transition-transform ${openHariLain ? 'rotate-180' : ''}`}
+                  aria-hidden="true"
                 >
-                  {opt.short}
-                  {iniHariIni && !dipilih && (
-                    <span
-                      className="absolute rounded-full top-0.5 right-0.5 h-1.5 w-1.5 bg-primary"
-                      aria-hidden="true"
-                    />
+                  &#9662;
+                </span>
+              </button>
+              {openHariLain && (
+                <div className="mt-2">
+                  {showHari && (
+                    <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Hari
+                    </Label>
                   )}
-                </button>
-              );
-            })}
-          </div>
+                  {chipsHari}
+                  {(showMonth || showKelompok || children) && (
+                    <div className="flex flex-wrap items-end gap-2 mt-3">
+                      {fieldBulan}
+                      {fieldKelompok}
+                      {children}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      ) : (
+        <>
+          {showHari && (
+            <div className="px-3 pt-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Hari
+                </Label>
+                {todayHari && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={applyHariIni}
+                    className="text-[11px] font-medium text-primary hover:underline disabled:opacity-60"
+                  >
+                    Hari Ini
+                  </button>
+                )}
+              </div>
+              {chipsHari}
+            </div>
+          )}
+
+          {showTanggal && (
+            <div className="px-3 pt-3">
+              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Tanggal
+              </Label>
+              <div className="mt-1">
+                <TanggalKerja
+                  name="date"
+                  value={local.date || ''}
+                  disabled={loading}
+                  max={new Date().toISOString().slice(0, 10)}
+                  placeholder="Pilih tanggal tarikan"
+                  onChange={(e) => applyNow('date', e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-end gap-2 px-3 pt-3">
+            {fieldBulan}
+            {fieldKelompok}
+            {children}
+          </div>
+
+          <div className="pb-3" />
+        </>
       )}
-
-      {showTanggal && (
-        <div className="px-3 pt-3">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Tanggal
-          </Label>
-          <div className="mt-1">
-            <TanggalKerja
-              name="date"
-              value={local.date || ''}
-              disabled={loading}
-              max={new Date().toISOString().slice(0, 10)}
-              placeholder="Pilih tanggal tarikan"
-              onChange={(e) => applyNow('date', e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-end gap-2 px-3 pt-3">
-        {showMonth && (
-          <div className="flex-1 min-w-36">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Bulan
-            </Label>
-            <Input
-              type="month"
-              name="month"
-              className="h-9 mt-1"
-              disabled={loading}
-              value={local.month ?? ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Selalu pantulkan ketikan ke input; kirim query hanya saat
-                // nilainya sudah lengkap (YYYY-MM), supaya input setengah jadi
-                // tidak memicu request.
-                setLocal((prev) => ({ ...prev, month: value }));
-                if (MONTH_PATTERN.test(value)) applyNow('month', value);
-              }}
-            />
-          </div>
-        )}
-
-        {showKelompok && (
-          <div className="w-28">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Kelompok
-            </Label>
-            <select
-              name="kelompok"
-              disabled={loading}
-              value={local.kelompok ?? ''}
-              onChange={(e) => applyNow('kelompok', e.target.value)}
-              className="flex items-center justify-between w-full h-9 mt-1 px-3 py-2 text-sm bg-transparent border rounded-md shadow-xs border-input focus:outline-hidden focus:ring-1 focus:ring-ring disabled:opacity-60"
-            >
-              {KELOMPOK_OPTIONS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {children}
-      </div>
-
-      <div className="pb-3" />
     </div>
   );
 };

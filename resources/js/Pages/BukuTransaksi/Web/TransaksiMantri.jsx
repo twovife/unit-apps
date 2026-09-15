@@ -116,6 +116,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
           showHari={true}
           showMonth={true}
           showKelompok={server_filter.userAuthorized.canShowKelompok}
+          todayFirst={true}
           extraParams={unitExtraParams}
         />
       </div>
