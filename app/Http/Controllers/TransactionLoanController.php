@@ -59,14 +59,18 @@ class TransactionLoanController extends Controller
     return Inertia::render('BukuTransaksi/Web/TransaksiMantri', $data);
   }
 
-  // JSON daftar drop satu bulan untuk buku aktif (branch/kelompok dari AuthScope,
-  // hari & month dari request). Dipakai layar Buku Transaksi untuk menyambung
-  // bulan sebelumnya saat scroll / "Muat bulan sebelumnya" - tanpa reload penuh.
-  // Membungkus getTransactionLoan (withPlan=false) supaya logika datas satu sumber.
+  // JSON drop + rencana satu bulan untuk buku aktif (branch/kelompok dari
+  // AuthScope, hari & month dari request). Dipakai layar Buku Transaksi untuk
+  // menyambung bulan sebelumnya saat scroll / "Muat bulan sebelumnya" - tanpa
+  // reload penuh, dan kedua tab (Buku Transaksi + Rencana Drop) ikut memanjang.
+  // Membungkus getTransactionLoan (withPlan=true) supaya satu sumber logika.
   public function drop_bulan(Request $request)
   {
-    $data = $this->getTransactionLoan($request, false);
-    return response()->json(['datas' => $data['datas']]);
+    $data = $this->getTransactionLoan($request, true);
+    return response()->json([
+      'datas' => $data['datas'],
+      'buku_rencana' => $data['buku_rencana'],
+    ]);
   }
 
 

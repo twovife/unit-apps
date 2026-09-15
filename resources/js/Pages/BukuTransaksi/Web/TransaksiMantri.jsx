@@ -66,6 +66,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   // tanpa reload penuh (endpoint transaction.drop_bulan). Reset tiap kali filter
   // (hari/bulan/kelompok) berubah lewat FilterBar -> server kirim datas baru.
   const [groups, setGroups] = useState(datas ?? []);
+  const [rencanaGroups, setRencanaGroups] = useState(buku_rencana ?? []);
   const [oldest, setOldest] = useState(server_filter.month);
   const [loadingMore, setLoadingMore] = useState(false);
   const [bulanKosong, setBulanKosong] = useState(null);
@@ -83,10 +84,11 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
   useEffect(() => {
     setGroups(datas ?? []);
+    setRencanaGroups(buku_rencana ?? []);
     setOldest(server_filter.month);
     setBulanKosong(null);
     setAutoStop(false);
-  }, [datas, server_filter.month, server_filter.hari, server_filter.kelompok]);
+  }, [datas, buku_rencana, server_filter.month, server_filter.hari, server_filter.kelompok]);
 
   const bulanSebelum = (m) => {
     const [y, mo] = String(m).split('-').map(Number);
@@ -113,13 +115,20 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
         },
       });
       const more = data?.datas ?? [];
+      const moreRencana = data?.buku_rencana ?? [];
       const kosong = more.length === 0;
-      // De-dupe per tanggal_drop: kalaupun ada fetch nyelip, tanggal yang sudah
-      // ada tak ditambah dua kali.
+      // De-dupe per tanggal: kalaupun ada fetch nyelip, tanggal yang sudah ada
+      // tak ditambah dua kali. Drop (grup per tanggal) & rencana (baris per
+      // tanggal) sama-sama disambung supaya kedua tab memanjang seiring.
       setGroups((g) => {
         const adaTanggal = new Set(g.map((it) => it?.[0]?.tanggal_drop));
         const baru = more.filter((it) => !adaTanggal.has(it?.[0]?.tanggal_drop));
         return [...g, ...baru];
+      });
+      setRencanaGroups((r) => {
+        const adaTanggal = new Set(r.map((it) => it?.tanggal));
+        const baru = moreRencana.filter((it) => !adaTanggal.has(it?.tanggal));
+        return [...r, ...baru];
       });
       setOldest(targetSebelum);
       setBulanKosong(kosong ? targetSebelum : null);
@@ -285,7 +294,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
         </TabsContent>
 
         <TabsContent value="dailyTarget">
-          <Rencana datas={buku_rencana} dataTransaksi={datas} />
+          <Rencana datas={rencanaGroups} dataTransaksi={groups} />
         </TabsContent>
       </Tabs>
     </Authenticated>
