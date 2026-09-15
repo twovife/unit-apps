@@ -41,7 +41,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/pindah-resort', 'PindahResort')->name('pindah_resort');
   });
 
-  Route::prefix('bukutransaksi')->name('transaction.')->group(function () {
+  // Gate role WAJIB sebelum ->group() supaya menempel (dirantai sesudahnya tidak
+  // berlaku ke route yang sudah terlanjur terdaftar). Alias 'role' didaftarkan di
+  // app/Http/Kernel.php.
+  Route::prefix('bukutransaksi')->name('transaction.')
+    ->middleware('role:superuser|pimpinan|kasir|mantri|kepala-mantri|pengawas|stafkontrol')
+    ->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
@@ -53,7 +58,7 @@ Route::middleware('auth')->group(function () {
       Route::put('/updateEverything/{transactionLoan}', "updateEverything")->name('updateEverything');
       Route::post('/tundaan/{transactionLoan}', "tundaan_pengajuan")->name('tundaan_pengajuan');
     });
-  })->middleware('role:superuser|pimpinan|kasir|mantri|kepala-mantri|pengawas|stafkontrol');
+  });
 
   Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
