@@ -136,6 +136,29 @@ const FilterBar = ({
     go(next);
   };
 
+  // "Hari ini" = weekday sekarang (Senin-Sabtu; Minggu tak ada buku -> null) +
+  // bulan berjalan. Dihitung dari jam lokal, BUKAN dari server. Tidak pernah
+  // auto-jalan; hanya saat tombol "Hari Ini" ditekan -> tetap patuh kontrak.
+  const _now = new Date();
+  const monthNow = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}`;
+  const _jsDay = _now.getDay(); // 0=Minggu, 1=Senin, ... 6=Sabtu
+  const todayHari =
+    _jsDay >= 1 && _jsDay <= 6 ? HARI_OPTIONS[_jsDay - 1].value : null;
+
+  // Loncat ke buku hari ini: set hari + (kalau dikelola) bulan, satu navigasi.
+  const applyHariIni = () => {
+    if (!todayHari) return;
+    const berubah =
+      String(active.hari ?? '') !== String(todayHari) ||
+      (showMonth && String(active.month ?? '') !== String(monthNow));
+    if (!berubah) return;
+    const next = { ...local, hari: todayHari };
+    if (showMonth) next.month = monthNow;
+    setLocal(next);
+    writeSaved(buildParams(next));
+    go(next);
+  };
+
   // Pemulihan pilihan tersimpan - sekali saja, dan hanya bila URL benar-benar
   // tidak membawa parameter filter (artinya kita masuk dari menu, bukan dari
   // hasil pilihan sebelumnya atau dari link yang sudah membawa filter).
@@ -169,12 +192,25 @@ const FilterBar = ({
 
       {showHari && (
         <div className="px-3 pt-3">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Hari
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Hari
+            </Label>
+            {todayHari && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={applyHariIni}
+                className="text-[11px] font-medium text-primary hover:underline disabled:opacity-60"
+              >
+                Hari Ini
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-6 gap-1 mt-1">
             {HARI_OPTIONS.map((opt) => {
               const dipilih = local.hari === opt.value;
+              const iniHariIni = opt.value === todayHari;
               return (
                 <button
                   key={opt.value}
@@ -182,15 +218,24 @@ const FilterBar = ({
                   disabled={loading}
                   onClick={() => applyNow('hari', opt.value)}
                   aria-pressed={dipilih}
+                  title={iniHariIni ? 'Hari ini' : undefined}
                   className={[
-                    'rounded-md border py-2 text-xs font-medium transition-colors',
+                    'relative rounded-md border py-2 text-xs font-medium transition-colors',
                     'disabled:opacity-60',
                     dipilih
                       ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input bg-background text-foreground hover:bg-accent',
+                      : iniHariIni
+                        ? 'border-primary/60 ring-1 ring-primary/40 bg-background text-foreground hover:bg-accent'
+                        : 'border-input bg-background text-foreground hover:bg-accent',
                   ].join(' ')}
                 >
                   {opt.short}
+                  {iniHariIni && !dipilih && (
+                    <span
+                      className="absolute rounded-full top-0.5 right-0.5 h-1.5 w-1.5 bg-primary"
+                      aria-hidden="true"
+                    />
+                  )}
                 </button>
               );
             })}

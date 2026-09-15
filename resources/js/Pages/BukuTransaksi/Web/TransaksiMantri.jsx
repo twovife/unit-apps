@@ -12,6 +12,11 @@ import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
 import Create from './Create';
 import Rencana from '@/Pages/BukuTransaksi/Rencana';
 
+const NAMA_BULAN = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
 /**
  * Satu halaman untuk `/bukutransaksi`, dipakai di semua lebar layar - tidak
  * ada lagi route/halaman terpisah untuk mobile ("buku-transaksi-kepala").
@@ -36,6 +41,14 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
     server_filter.userAuthorized.canShowBranch ||
     server_filter.userAuthorized.canShowGroupingBranch;
 
+  // Buku yang sedang dibuka (dari 60: kelompok x hari). Diumumkan di header
+  // supaya user tahu persis lagi di buku mana, bukan cuma judul generik.
+  const [_thn, _bln] = String(server_filter.month ?? '').split('-');
+  const bulanLabel = _bln ? `${NAMA_BULAN[parseInt(_bln, 10) - 1]} ${_thn}` : server_filter.month;
+  const hariLabel = server_filter.hari
+    ? server_filter.hari.charAt(0).toUpperCase() + server_filter.hari.slice(1)
+    : '-';
+
   // Dibawa serta saat FilterBar bernavigasi, supaya pilihan Unit/Wilayah
   // yang sedang aktif tidak ikut hilang ketika user cuma ganti hari/bulan.
   const unitExtraParams = {};
@@ -50,9 +63,14 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   return (
     <Authenticated header={<Head>Buku Transaksi</Head>}>
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
-        <h1 className="text-xl font-semibold tracking-tight">
-          Buku Transaksi
-        </h1>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">
+            Buku Transaksi
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}
+          </p>
+        </div>
 
         <div className="flex items-center justify-end gap-2">
           {canFilterUnit && (
