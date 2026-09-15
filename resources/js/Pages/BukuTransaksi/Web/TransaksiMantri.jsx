@@ -77,6 +77,9 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   const boxRef = useRef(null);
   const sentinelDesktop = useRef(null);
   const sentinelMobile = useRef(null);
+  // Guard SINKRON. `loadingMore` (state) telat update, jadi klik + observer bisa
+  // sama-sama lolos dan fetch bulan yang sama 2x (baris dobel). Ref langsung set.
+  const loadingRef = useRef(false);
 
   useEffect(() => {
     setGroups(datas ?? []);
@@ -97,7 +100,8 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   const targetSebelum = bulanSebelum(oldest);
 
   const muatSebelumnya = async () => {
-    if (loadingMore) return;
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoadingMore(true);
     try {
       const { data } = await axios.get(route('transaction.drop_bulan'), {
@@ -110,13 +114,20 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       });
       const more = data?.datas ?? [];
       const kosong = more.length === 0;
-      setGroups((g) => [...g, ...more]);
+      // De-dupe per tanggal_drop: kalaupun ada fetch nyelip, tanggal yang sudah
+      // ada tak ditambah dua kali.
+      setGroups((g) => {
+        const adaTanggal = new Set(g.map((it) => it?.[0]?.tanggal_drop));
+        const baru = more.filter((it) => !adaTanggal.has(it?.[0]?.tanggal_drop));
+        return [...g, ...baru];
+      });
       setOldest(targetSebelum);
       setBulanKosong(kosong ? targetSebelum : null);
       setAutoStop(kosong); // bulan kosong -> hentikan auto, biar tak mundur terus
     } catch {
       /* biarkan - tombol tetap bisa dicoba lagi */
     } finally {
+      loadingRef.current = false;
       setLoadingMore(false);
     }
   };
@@ -127,7 +138,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   // scroll dokumen -> root = null. Sentinel yang display:none tak pernah memicu.
   const loadRef = useRef(() => {});
   loadRef.current = () => {
-    if (!loadingMore && !autoStop) muatSebelumnya();
+    if (!loadingRef.current && !autoStop) muatSebelumnya();
   };
 
   useEffect(() => {
@@ -229,7 +240,10 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
             className="hidden max-h-[70vh] lg:block border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin"
           >
             {groups.map((item, index) => (
-              <BukuTransaksi key={index} datas={item} />
+              <BukuTransaksi
+                key={item?.[0]?.tanggal_drop ?? index}
+                datas={item}
+              />
             ))}
             {/* sentinel auto-muat (root = box ini) */}
             <div ref={sentinelDesktop} aria-hidden="true" />
@@ -239,7 +253,10 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
               dokumen jadi satu-satunya area scroll (sama seperti Drop). */}
           <div className="space-y-3 lg:hidden">
             {groups.map((item, index) => (
-              <BukuTransaksiKepala key={index} datas={item} />
+              <BukuTransaksiKepala
+                key={item?.[0]?.tanggal_drop ?? index}
+                datas={item}
+              />
             ))}
             {/* sentinel auto-muat (root = dokumen) */}
             <div ref={sentinelMobile} aria-hidden="true" />
