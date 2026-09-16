@@ -41,6 +41,16 @@ class Kernel extends ConsoleKernel
       $bulanDepan = now()->addMonthNoOverflow()->format('Y-m');
       \Illuminate\Support\Facades\Artisan::call('closing:generate', ['periode' => $bulanDepan]);
     })->dailyAt('01:00')->name('closing-generate-bulan-depan')->withoutOverlapping();
+
+    // Target minggu depan (auto) untuk kantor migrasi, H+1 dini hari. Hari tagih
+    // yang sudah lewat tapi belum dicek KM tetap melahirkan target minggu depan
+    // (source='auto', status belum dicek) supaya rantai tak putus saat kantor
+    // membelot. KM tetap wajib cek; nilai auto ditimpa manual saat dicek.
+    // Jam 02:00 (setelah closing:generate 01:00) supaya baris D+7 sudah ada.
+    $schedule->command('target:auto')
+      ->dailyAt('02:00')
+      ->timezone('Asia/Jakarta')
+      ->withoutOverlapping();
   }
 
   /**
