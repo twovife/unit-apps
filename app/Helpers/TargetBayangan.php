@@ -30,11 +30,16 @@ class TargetBayangan
     /**
      * @return array<int,array{kelompok:?int,hari:string,rantai:int,hitung:int,selisih:int}>
      */
-    public static function laporan(array $groupingIds, $periode): array
+    public static function laporan(array $groupingIds, $periode, bool $migrasi = false): array
     {
         if (empty($groupingIds)) {
             return [];
         }
+
+        // target_rantai dibaca dari tabel yang benar: kantor migrasi menyimpan
+        // target di transaction_daily_closings (alur baru); selain itu di
+        // transaction_daily_recaps (lama). Salah tabel -> rantai basi/0.
+        $tabelRantai = $migrasi ? 'transaction_daily_closings' : 'transaction_daily_recaps';
 
         $periode = Carbon::parse($periode)->startOfMonth();
         $ref = $periode->toDateString();
@@ -64,15 +69,15 @@ class TargetBayangan
                 DB::raw('FLOOR(SUM(l.nominal_drop) * 0.13) AS hitung'),
             ]);
 
-        // --- target_rantai: target tersimpan pada recap TERBARU per (grouping,hari)
-        $rantaiRows = DB::table('transaction_daily_recaps as r')
+        // --- target_rantai: target tersimpan pada baris TERBARU per (grouping,hari)
+        $rantaiRows = DB::table("$tabelRantai as r")
             ->whereIn('r.transaction_loan_officer_grouping_id', $groupingIds)
             ->whereBetween('r.date', [$awal, $asOf])
-            ->whereRaw('r.id = (SELECT r2.id FROM transaction_daily_recaps r2
+            ->whereRaw("r.id = (SELECT r2.id FROM $tabelRantai r2
                                  WHERE r2.transaction_loan_officer_grouping_id = r.transaction_loan_officer_grouping_id
                                    AND LOWER(DAYNAME(r2.date)) = LOWER(DAYNAME(r.date))
                                    AND r2.date BETWEEN ? AND ?
-                                 ORDER BY r2.date DESC, r2.id DESC LIMIT 1)', [$awal, $asOf])
+                                 ORDER BY r2.date DESC, r2.id DESC LIMIT 1)", [$awal, $asOf])
             ->get([
                 DB::raw('r.transaction_loan_officer_grouping_id AS g'),
                 DB::raw("LOWER(ELT(WEEKDAY(r.date)+1,'senin','selasa','rabu','kamis','jumat','sabtu','minggu')) AS hari"),

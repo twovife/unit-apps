@@ -132,7 +132,10 @@ class MigrasiController extends Controller
         $ids = DB::table('transaction_loan_officer_groupings')
             ->where('branch_id', $scope->branch_id)->pluck('id')->all();
 
-        $baris = TargetBayangan::laporan($ids, $periode);
+        // Kantor migrasi: rantai dibaca dari daily_closings (alur baru), bukan
+        // daily_recaps yang beku sejak migrasi.
+        $migrasi = \App\Helpers\AgregasiScope::pakaiAgregatBaru($scope->branch_id, $periode);
+        $baris = TargetBayangan::laporan($ids, $periode, $migrasi);
 
         $totalRantai = array_sum(array_column($baris, 'rantai'));
         $totalHitung = array_sum(array_column($baris, 'hitung'));
