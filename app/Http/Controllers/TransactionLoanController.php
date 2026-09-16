@@ -177,6 +177,26 @@ class TransactionLoanController extends Controller
     return redirect()->back()->with('message', 'Cek kepala tersimpan; target minggu depan diperbarui.');
   }
 
+  // Cek #2 kasir dari tab Rencana Drop (alur baru): catat setoran mantri lalu
+  // KUNCI. Penguncian (hitung ulang turunan + Gembok + susun bulanan) sepenuhnya
+  // DIDELEGASIKAN ke ClosingHarianController@kunci -> satu logika, bukan kembar.
+  // Otorisasi (can-approve) & prasyarat (kepala sudah ACC, setoran dicatat, hari
+  // sebelumnya terkunci) dicek di dalam kunci()/Gembok.
+  public function kasir_kunci(Request $request, \App\Models\TransactionDailyClosing $closing)
+  {
+    $request->validate([
+      'setoran_mantri' => ['required', 'integer', 'min:0'],
+    ]);
+
+    if ($closing->kasir_lock_at) {
+      return redirect()->back()->withErrors('Baris ini sudah dikunci.');
+    }
+
+    $closing->update(['setoran_mantri' => (int) $request->setoran_mantri]);
+
+    return app(\App\Http\Controllers\ClosingHarianController::class)->kunci($closing);
+  }
+
 
 
   // 2

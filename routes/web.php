@@ -58,6 +58,9 @@ Route::middleware('auth')->group(function () {
       // Cek #1 pimpinan alur BARU (daily_closings): verifikasi drop/storting +
       // materialisasi target minggu depan (manual). Otorisasi dicek controller.
       Route::post('/ceklist-kepala-baru', "ceklist_kepala_baru")->name('ceklist_kepala_baru');
+      // Cek #2 kasir (alur baru) dari tab Rencana: catat setoran + kunci.
+      // Penguncian didelegasikan ke ClosingHarianController@kunci (satu logika).
+      Route::post('/kasir-kunci/{closing}', "kasir_kunci")->name('kasir_kunci');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreatev2")->name('fastcreate');

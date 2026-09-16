@@ -177,6 +177,8 @@ trait PinjamanTrait
         $daily_recap = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
           ->whereIn('date', $datesMatchDay)->get()
           ->map(fn($r) => (object) [
+            'closing_id' => $r->id,               // dipakai tombol kunci kasir di Rencana
+            'setoran_mantri' => $r->setoran_mantri, // null = belum dicatat kasir
             'date' => Carbon::parse($r->date)->toDateString(),
             'kasbon' => (int) $r->kasbon,
             'transport' => (int) $r->transport,
@@ -205,6 +207,8 @@ trait PinjamanTrait
         return [
           'is_generated' => $thisDailyRecap ? true : false,
           'grouping_id' => $groupingId->id,
+          'closing_id' => $thisDailyRecap?->closing_id,     // alur baru: id baris daily_closings (tombol kunci)
+          'setoran_mantri' => $thisDailyRecap?->setoran_mantri,
           'kelompok' => $groupingId->kelompok,
           'tanggal' => $tanggal,
           'kasbon' =>  $thisDailyRecap?->kasbon,
