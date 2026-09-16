@@ -1,6 +1,6 @@
 import Authenticated from "@/Layouts/AuthenticatedLayout";
-import React from "react";
-import { Head, router } from "@inertiajs/react";
+import React, { useState } from "react";
+import { Head, router, usePage } from "@inertiajs/react";
 import {
   Table,
   TableBody,
@@ -35,8 +35,25 @@ const Kartu = ({ judul, utama, bawah, nada = "netral" }) => (
 );
 
 const TargetBayangan = ({ baris = [], ringkas, server_filter }) => {
+  const { auth } = usePage().props;
+  const isSuperuser = auth?.roles?.includes("superuser");
+  const [recounting, setRecounting] = useState(null); // "kelompok|hari" yang sedang diproses
+
   const pindah = (periode) =>
     router.get(route("migrasi.target_bayangan"), { periode }, { preserveScroll: true });
+
+  // Recount SEED satu buku (superuser): setel target hari tagih berikutnya ke
+  // hitung portofolio. Rantai lanjut dari basis benar.
+  const recount = (kelompok, hari) => {
+    const key = `${kelompok}|${hari}`;
+    if (recounting) return;
+    setRecounting(key);
+    router.post(
+      route("migrasi.recount_target"),
+      { kelompok, hari, periode: server_filter?.periode },
+      { preserveScroll: true, onFinish: () => setRecounting(null) },
+    );
+  };
 
   return (
     <Authenticated>
@@ -90,12 +107,13 @@ const TargetBayangan = ({ baris = [], ringkas, server_filter }) => {
                 <TableHead className="text-right">Target rantai</TableHead>
                 <TableHead className="text-right">Target hitung</TableHead>
                 <TableHead className="text-right">Hanyut</TableHead>
+                {isSuperuser && <TableHead className="text-right">Aksi</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {baris.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-slate-500">
+                  <TableCell colSpan={isSuperuser ? 6 : 5} className="py-8 text-center text-slate-500">
                     Tidak ada data untuk periode ini.
                   </TableCell>
                 </TableRow>
@@ -113,6 +131,21 @@ const TargetBayangan = ({ baris = [], ringkas, server_filter }) => {
                     >
                       {rupiah(b.selisih)}
                     </TableCell>
+                    {isSuperuser && (
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={recounting === `${b.kelompok}|${b.hari}`}
+                          onClick={() => recount(b.kelompok, b.hari)}
+                          title="Setel target hari tagih berikutnya ke hitung portofolio"
+                        >
+                          {recounting === `${b.kelompok}|${b.hari}`
+                            ? "…"
+                            : "Recount"}
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}
@@ -122,9 +155,10 @@ const TargetBayangan = ({ baris = [], ringkas, server_filter }) => {
 
         <p className="max-w-3xl text-xs text-slate-500">
           Hanyut besar bukan berarti data salah — rantai memang menumpuk
-          pembulatan dan keluar-target yang tak seragam. Tombol recount (setel
-          ulang target dari hitung) sengaja belum ada; dinyalakan nanti setelah
-          angka hitung terbukti bersih lewat laporan ini.
+          pembulatan dan keluar-target yang tak seragam.
+          {isSuperuser
+            ? " Tombol Recount (superuser) menyetel target hari tagih berikutnya yang belum terkunci ke angka hitung portofolio (target_source='recount'); rantai lanjut dari basis itu."
+            : " Recount (setel ulang target dari hitung) hanya untuk superuser."}
         </p>
       </div>
     </Authenticated>

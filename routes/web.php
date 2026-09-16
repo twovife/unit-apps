@@ -111,6 +111,9 @@ Route::middleware('auth')->group(function () {
       ->name('pemeriksaan');
     Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])
       ->name('target_bayangan');
+    // Recount SEED satu buku (superuser): setel target ke portofolio, rantai lanjut.
+    Route::post('/target-bayangan/recount', [\App\Http\Controllers\MigrasiController::class, 'recountTarget'])
+      ->name('recount_target');
     Route::get('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'penyesuaianSaldo'])
       ->name('penyesuaian_saldo');
     Route::post('/penyesuaian-saldo/cari', [\App\Http\Controllers\MigrasiController::class, 'cariPenyesuaian'])

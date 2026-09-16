@@ -158,6 +158,81 @@ class MigrasiController extends Controller
     }
 
     /**
+     * Recount (stok-opname) SEED satu buku: setel target hari tagih berikutnya
+     * yang belum terkunci = target_hitung portofolio, target_source='recount'.
+     * Rantai lanjut dari basis yang sudah benar. Superuser + kantor migrasi saja.
+     */
+    public function recountTarget(Request $request)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            abort(403, 'Hanya superuser yang boleh recount target.');
+        }
+
+        $request->validate([
+            'kelompok' => ['required'],
+            'hari' => ['required', 'string'],
+            'periode' => ['nullable'],
+        ]);
+
+        $branchId = (int) AuthScope::getActiveBranchId();
+        if (!AgregasiScope::sudahMigrasi($branchId)) {
+            return redirect()->back()->withErrors('Kantor ini belum migrasi ke alur baru.');
+        }
+
+        $grouping = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)
+            ->where('kelompok', $request->kelompok)->first();
+        if (!$grouping) {
+            return redirect()->back()->withErrors('Kelompok tidak ditemukan di cabang aktif.');
+        }
+
+        $periode = $request->filled('periode')
+            ? Carbon::parse($request->periode)->startOfMonth()
+            : Carbon::now()->startOfMonth();
+
+        // target_hitung dari portofolio - reuse laporan (bukan logika kembar).
+        $rows = TargetBayangan::laporan([$grouping->id], $periode, true);
+        $hitung = collect($rows)->firstWhere('hari', strtolower($request->hari))['hitung'] ?? null;
+        if ($hitung === null) {
+            return redirect()->back()->withErrors('Tidak ada data hitung untuk buku ini.');
+        }
+
+        // Seed = hari tagih berikutnya (>= hari ini) yang belum terkunci kasir.
+        $weekday = \App\Helpers\AppHelper::getNumbDays($request->hari); // Carbon dayOfWeek
+        $today = Carbon::today();
+
+        $seed = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $grouping->id)
+            ->whereNull('kasir_lock_at')
+            ->whereDate('date', '>=', $today->toDateString())
+            ->whereRaw('DAYOFWEEK(date) = ?', [$weekday + 1])
+            ->orderBy('date')->first();
+
+        if (!$seed) {
+            $tgl = $today->copy();
+            while ($tgl->dayOfWeek !== $weekday) {
+                $tgl->addDay();
+            }
+            $seed = \App\Models\TransactionDailyClosing::firstOrCreate([
+                'transaction_loan_officer_grouping_id' => $grouping->id,
+                'date' => $tgl->toDateString(),
+            ]);
+        }
+
+        $seed->update([
+            'target' => (int) $hitung,
+            'target_on' => $today->toDateString(),
+            'target_source' => 'recount',
+        ]);
+
+        return redirect()->back()->with('message', sprintf(
+            'Recount: target %s (kelompok %s, %s) disetel ke %s dari portofolio.',
+            Carbon::parse($seed->date)->format('d M Y'),
+            $request->kelompok,
+            $request->hari,
+            number_format((int) $hitung, 0, ',', '.')
+        ));
+    }
+
+    /**
      * Layar penyesuaian saldo nasabah lama.
      *
      * Melihat: view-all-groups. Membuat/menyetujui: + can-edit (bolehUbah...).
