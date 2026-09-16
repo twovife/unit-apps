@@ -123,6 +123,22 @@ const Rencana = ({ datas, dataTransaksi }) => {
               </TableCell>
               <TableCell>
                 <FormatNumbering value={item.target} />
+                {item.target_source === 'auto' && (
+                  <span
+                    className="ml-1 inline-block rounded px-1 text-[10px] font-semibold bg-amber-100 text-amber-700"
+                    title="Target otomatis — minggu lalu belum dicek KM"
+                  >
+                    auto
+                  </span>
+                )}
+                {item.target_source === 'manual' && (
+                  <span
+                    className="ml-1 text-green-600"
+                    title="Target dari cek KM"
+                  >
+                    ✓
+                  </span>
+                )}
               </TableCell>
               <TableCell>
                 <FormatNumbering value={item.masuk} />

@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shadcn/ui/table';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { Label } from '@radix-ui/react-label';
 import { flattenBy } from '@tanstack/react-table';
 import dayjs from 'dayjs';
@@ -251,10 +251,17 @@ const Approval = ({
     setErorRequest(false);
   };
 
+  // Kantor migrasi -> alur baru (daily_closings), selain itu alur lama.
+  const migrasi = usePage().props.server_filter?.migrasi;
+
   const onSubmitForm = (e) => {
     e.preventDefault();
 
-    post(route('kasir.rekap.ceklist_kepala'), {
+    const url = migrasi
+      ? route('transaction.ceklist_kepala_baru')
+      : route('kasir.rekap.ceklist_kepala');
+
+    post(url, {
       onSuccess: () => {
         reset();
         onClosed();
