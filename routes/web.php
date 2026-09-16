@@ -55,6 +55,9 @@ Route::middleware('auth')->group(function () {
       // Superuser: paksa materialisasi target auto untuk 1 buku (kelompok+hari
       // di cabang aktif) tanpa nunggu cron. Otorisasi superuser dicek controller.
       Route::post('/generate-target-auto', "generate_target_auto")->name('generate_target_auto');
+      // Cek #1 pimpinan alur BARU (daily_closings): verifikasi drop/storting +
+      // materialisasi target minggu depan (manual). Otorisasi dicek controller.
+      Route::post('/ceklist-kepala-baru', "ceklist_kepala_baru")->name('ceklist_kepala_baru');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreatev2")->name('fastcreate');

@@ -183,6 +183,7 @@ trait PinjamanTrait
             'masuk' => 0,
             'keluar' => (int) $r->keluar,
             'target' => (int) $r->target,
+            'target_source' => $r->target_source, // manual/auto/null - dipakai badge status cek KM
             'storting' => (int) $r->storting,
             'drop' => (int) $r->drop,
             // Timestamp (bukan bool): at_approved/at_kasir butuh nilainya.
@@ -211,6 +212,9 @@ trait PinjamanTrait
           'masuk' => $thisDailyRecap?->masuk,
           'keluar' => $thisDailyRecap?->keluar,
           'target' => $thisDailyRecap?->target,
+          // Sumber target: 'manual' = sudah dicek KM, 'auto' = placeholder cron
+          // (belum dicek), null = belum ada. Dipakai badge status di UI.
+          'target_source' => $thisDailyRecap?->target_source,
           'storting_on_database' => $thisDailyRecap?->storting,
           'storting' => $thisInstalment,
           'storting_validate' => $thisInstalment == ($thisDailyRecap?->storting) ? true : false,
@@ -245,7 +249,8 @@ trait PinjamanTrait
         'branch_id' => $branch_id,
         'kelompok' => $kelompok,
         'hari' => $hari,
-        'closed_transaction' => $ClosedTransaction
+        'closed_transaction' => $ClosedTransaction,
+        'migrasi' => $migrasi, // true = kantor pakai alur baru (daily_closings)
       ]
     ];
   }

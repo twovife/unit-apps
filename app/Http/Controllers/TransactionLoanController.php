@@ -106,6 +106,77 @@ class TransactionLoanController extends Controller
     return redirect()->back()->with('message', "Target otomatis dibuat: {$jumlah} baris (kelompok {$request->kelompok}, {$request->hari}).");
   }
 
+  // Cek #1 pimpinan, alur BARU (daily_closings). Pimpinan verifikasi drop &
+  // storting hari D benar -> set kepala_approval + keluar (manual), lalu
+  // materialisasi target minggu depan (D+7) sebagai 'manual':
+  //   target(D+7) = target(D) + drop(D)*0,13 - keluar
+  // EVENT, bukan hook rekursif; drop satu sumber (HitungAgregat). Menimpa nilai
+  // 'auto' (verifikasi manusia mengalahkan placeholder cron).
+  public function ceklist_kepala_baru(Request $request)
+  {
+    $user = auth()->user();
+    if (!$user->hasPermissionTo('can-approve') || $user->hasRole('stafkontrol')) {
+      return redirect()->back()->withErrors('Anda tidak punya akses cek kepala.');
+    }
+
+    $request->validate([
+      'id' => ['required'],            // grouping id
+      'date' => ['required', 'date'],
+      'keluar' => ['required', 'integer', 'min:0'],
+    ]);
+
+    $groupingId = (int) $request->id;
+    $date = Carbon::parse($request->date)->toDateString();
+
+    $grouping = TransactionLoanOfficerGrouping::find($groupingId);
+    if (!$grouping || !\App\Helpers\AgregasiScope::sudahMigrasi($grouping->branch_id)) {
+      return redirect()->back()->withErrors('Kantor ini belum migrasi ke alur baru.');
+    }
+
+    try {
+      DB::beginTransaction();
+
+      $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
+        'transaction_loan_officer_grouping_id' => $groupingId,
+        'date' => $date,
+      ]);
+
+      if ($closing->kasir_lock_at) {
+        DB::rollBack();
+        return redirect()->back()->withErrors('Baris ini sudah dikunci kasir.');
+      }
+
+      // drop hari D satu sumber (bukan kolom tersimpan yang bisa basi).
+      $drop = (int) (\App\Helpers\HitungAgregat::harian($groupingId, $date)['drop'] ?? 0);
+
+      // Verifikasi pimpinan: simpan keluar manual + tanda cek kepala.
+      $closing->update([
+        'keluar' => (int) $request->keluar,
+        'kepala_approval_at' => now(),
+        'kepala_approval_user' => $user->employee->id,
+      ]);
+
+      // Materialisasi target minggu depan (manual), menimpa auto.
+      $tanggalDepan = Carbon::parse($date)->addDays(7)->toDateString();
+      $depan = \App\Models\TransactionDailyClosing::firstOrCreate([
+        'transaction_loan_officer_grouping_id' => $groupingId,
+        'date' => $tanggalDepan,
+      ]);
+      $depan->update([
+        'target' => (int) $closing->target + (int) round($drop * 0.13) - (int) $request->keluar,
+        'target_on' => $date,
+        'target_source' => 'manual',
+      ]);
+
+      DB::commit();
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      return redirect()->back()->withErrors('Gagal menyimpan cek kepala. Ulangi / hubungi IT.');
+    }
+
+    return redirect()->back()->with('message', 'Cek kepala tersimpan; target minggu depan diperbarui.');
+  }
+
 
 
   // 2
