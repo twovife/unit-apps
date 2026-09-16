@@ -52,6 +52,9 @@ Route::middleware('auth')->group(function () {
       // JSON daftar drop satu bulan (buku aktif) - dipakai muat-bulan-sebelumnya
       // (infinite back) di layar Buku Transaksi tanpa reload penuh.
       Route::get('/drop-bulan', "drop_bulan")->name('drop_bulan');
+      // Superuser: paksa materialisasi target auto untuk 1 buku (kelompok+hari
+      // di cabang aktif) tanpa nunggu cron. Otorisasi superuser dicek controller.
+      Route::post('/generate-target-auto', "generate_target_auto")->name('generate_target_auto');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreatev2")->name('fastcreate');

@@ -73,6 +73,39 @@ class TransactionLoanController extends Controller
     ]);
   }
 
+  // Superuser: paksa materialisasi target auto untuk SATU buku (kelompok + hari
+  // di cabang aktif), tanpa nunggu cron `target:auto`. Memanggil service yang
+  // SAMA dengan cron (TargetMingguan) - bukan logika kembar. Cabang aktif dari
+  // AuthScope; hanya kantor migrasi.
+  public function generate_target_auto(Request $request)
+  {
+    if (!auth()->user()->hasRole('superuser')) {
+      return redirect()->back()->withErrors('Hanya superuser yang bisa memaksa generate target.');
+    }
+
+    $request->validate([
+      'kelompok' => ['required'],
+      'hari' => ['required', 'string'],
+    ]);
+
+    $branchId = (int) \App\Helpers\AuthScope::getActiveBranchId();
+
+    if (!\App\Helpers\AgregasiScope::sudahMigrasi($branchId)) {
+      return redirect()->back()->withErrors('Kantor ini belum migrasi ke alur baru.');
+    }
+
+    $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branchId)
+      ->where('kelompok', $request->kelompok)->first();
+    if (!$grouping) {
+      return redirect()->back()->withErrors('Kelompok tidak ditemukan di cabang aktif.');
+    }
+
+    $weekday = AppHelper::getNumbDays($request->hari); // Carbon dayOfWeek (senin=1..sabtu=6)
+    $jumlah = \App\Helpers\TargetMingguan::materialisasiAuto($grouping->id, $weekday);
+
+    return redirect()->back()->with('message', "Target otomatis dibuat: {$jumlah} baris (kelompok {$request->kelompok}, {$request->hari}).");
+  }
+
 
 
   // 2
