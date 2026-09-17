@@ -917,8 +917,8 @@ trait PinjamanTrait
 
     return  [
       'datas' => $groupByMonth,
-      'select_branch' => auth()->user()->can('can show branch'),
-      'select_kelompok' => auth()->user()->can('can show kelompok'),
+      'select_branch' => auth()->user()->can('view-all-branches'),
+      'select_kelompok' => auth()->user()->can('view-all-groups'),
       'server_filter' => [
         'closed_transaction' => $ClosedTransaction,
         'today' => $dayClosedParams,
@@ -1087,8 +1087,8 @@ trait PinjamanTrait
 
     return  [
       'datas' => $groupByMonth,
-      'select_branch' => auth()->user()->can('can show branch'),
-      'select_kelompok' => auth()->user()->can('can show kelompok'),
+      'select_branch' => auth()->user()->can('view-all-branches'),
+      'select_kelompok' => auth()->user()->can('view-all-groups'),
       'server_filter' => [
         'closed_transaction' => $ClosedTransaction,
         'today' => $dayClosedParams,

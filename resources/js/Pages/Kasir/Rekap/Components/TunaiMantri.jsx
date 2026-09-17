@@ -63,7 +63,7 @@ const TunaiMantri = ({
                 ? getValue()
                 : dayjs(cell.row.original.tanggal).format('DD-MM')}
             </div>
-            {auth.permissions.includes('can update') && (
+            {auth.permissions.includes('can-edit') && (
               <BargeStatus
                 onClick={() => onClickStatusHandler(cell.row.original, 2)}
                 value={cell.row.original.status_dayly_approval}
