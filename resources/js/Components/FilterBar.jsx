@@ -411,29 +411,37 @@ const FilterBar = ({
             </div>
           )}
 
+          {/* Mode tanggal: tanggal + kelompok sejajar dalam satu baris. */}
           {showTanggal && (
-            <div className="px-3 pt-3">
-              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Tanggal
-              </Label>
-              <div className="mt-1">
-                <TanggalKerja
-                  name="date"
-                  value={local.date || ''}
-                  disabled={loading}
-                  max={new Date().toISOString().slice(0, 10)}
-                  placeholder="Pilih tanggal tarikan"
-                  onChange={(e) => applyNow('date', e.target.value)}
-                />
+            <div className="grid grid-cols-[1fr_auto] items-end gap-2 px-3 pt-3">
+              <div className="min-w-0">
+                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Tanggal
+                </Label>
+                <div className="mt-1">
+                  <TanggalKerja
+                    name="date"
+                    value={local.date || ''}
+                    disabled={loading}
+                    // Hari ini waktu lokal (locale 'sv' = YYYY-MM-DD). toISOString = UTC,
+                    // sebelum 07.00 WIB hasilnya kemarin.
+                    max={new Date().toLocaleDateString('sv')}
+                    placeholder="Pilih tanggal tarikan"
+                    onChange={(e) => applyNow('date', e.target.value)}
+                  />
+                </div>
               </div>
+              {fieldKelompok}
             </div>
           )}
 
-          <div className="flex flex-wrap items-end gap-2 px-3 pt-3">
-            {fieldBulan}
-            {fieldKelompok}
-            {children}
-          </div>
+          {(fieldBulan || (!showTanggal && fieldKelompok) || children) && (
+            <div className="flex flex-wrap items-end gap-2 px-3 pt-3">
+              {fieldBulan}
+              {!showTanggal && fieldKelompok}
+              {children}
+            </div>
+          )}
 
           <div className="pb-3" />
         </>

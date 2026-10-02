@@ -532,6 +532,17 @@ trait PinjamanTrait
       ],
     ];
   }
+  /**
+   * Keluar target per tanggal: sudah dicap keluar (out_date) sampai tanggal itu,
+   * ATAU embernya MB/ML (aturan BHT: masuk MB = keluar target). Penanda BHT di
+   * database belum dibangun, jadi MB/ML diturunkan dari ember.
+   */
+  private static function keluarTarget($loan, string $tanggal): bool
+  {
+    return ($loan->out_date && $loan->out_date <= $tanggal)
+      || in_array(\App\Helpers\Ember::dari($loan->drop_date, $tanggal), [\App\Helpers\Ember::MB, \App\Helpers\Ember::ML], true);
+  }
+
   public function getLoanMantri(Request $request, $dailyView = true)
   {
 
@@ -557,10 +568,9 @@ trait PinjamanTrait
 
 
     $now = Carbon::now();
-    $transaction_date = $dailyView
-      ? $now->copy()->endOfMonth()
-      : Carbon::parse($request->month ?? $now)->endOfMonth();
-    // dd($transaction_date->format('Y-m-d'));
+    // Jendela ikut BULAN TANGGAL TERPILIH, bukan bulan hari ini: membuka tanggal
+    // lampau harus menampilkan keadaan saat itu (ember, saldo awal, kunci).
+    $transaction_date = Carbon::parse($date)->endOfMonth();
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
@@ -650,7 +660,8 @@ trait PinjamanTrait
     $loan = TransactionLoan::with(
       ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer', 'white_off']
     )
-      ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
+      // Pinjaman yang di-drop SESUDAH tanggal terpilih belum ada pada tanggal itu.
+      ->whereBetween('drop_date', [$begin_transaction, $tanggalSeleksi])
       ->where($filterEfektif)
       ->where('status', 'success')
       ->orderBy('drop_date')
@@ -690,6 +701,8 @@ trait PinjamanTrait
           'nama' => $item->customer->nama,
           'alamat' => $item->customer->alamat,
           'nomor_anggota' => $item->manage_customer->nomor_anggota,
+          'keluar_target' => self::keluarTarget($item, $tanggalSeleksi),
+          'drop_baru' => $item->drop_date == $tanggalSeleksi,
 
           'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
@@ -713,6 +726,7 @@ trait PinjamanTrait
             ];
           }),
           'pemutihan_today' => $pemutihan,
+          'md_hari_ini' => $item->white_off?->transaction_date == $tanggalSeleksi ? (int) $item->white_off->nominal : 0,
           'pemutihanThisMonth' => $pemutihan_this_month,
           'saldo' => $saldo,
           'notes' => $item->notes
@@ -745,6 +759,8 @@ trait PinjamanTrait
             'nama' => $item->customer->nama,
             'alamat' => $item->customer->alamat,
             'nomor_anggota' => $item->manage_customer->nomor_anggota,
+            'keluar_target' => self::keluarTarget($item, $tanggalSeleksi),
+            'drop_baru' => $item->drop_date == $tanggalSeleksi,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
@@ -768,6 +784,7 @@ trait PinjamanTrait
               ];
             }),
             'pemutihan_today' => $pemutihan,
+            'md_hari_ini' => $item->white_off?->transaction_date == $tanggalSeleksi ? (int) $item->white_off->nominal : 0,
             'pemutihanThisMonth' => $pemutihan_this_month,
             'saldo' => $saldo,
             'notes' => $item->notes

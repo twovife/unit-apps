@@ -55,6 +55,8 @@
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  /* Garis hitung mundur tombol konfirmasi (DeleteAngsuran). */
+  --animate-susut: susut 3s linear forwards;
 
   --text-tinny: 0.6rem;
   --text-tinny--line-height: 0.75rem;
@@ -73,6 +75,14 @@
     }
     to {
       height: 0;
+    }
+  }
+  @keyframes susut {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0;
     }
   }
 }

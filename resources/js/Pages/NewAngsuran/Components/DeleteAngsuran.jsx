@@ -1,129 +1,52 @@
-import { useRef, useState } from 'react';
-import DangerButton from '@/Components/DangerButton';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
-import TextInput from '@/Components/TextInput';
-import { useForm, usePage } from '@inertiajs/react';
-import { Button } from '@/shadcn/ui/button';
-import { Dialog } from '@headlessui/react';
-import Loading from '@/Components/Loading';
+import { useEffect, useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
 
+const BATAS_YAKIN_MS = 3000;
+
+/**
+ * Hapus angsuran dua ketukan: "Hapus" -> merah "Yakin?" -> hapus.
+ * Konfirmasi kedaluwarsa sendiri setelah 3 detik (garis di bawah tombol
+ * menyusut sebagai hitung mundur). Dulu pembatalnya cuma onMouseLeave, jadi
+ * di HP (tanpa mouse) tombol "Yakin?" tertinggal aktif selamanya.
+ */
 export default function DeleteAngsuran({ id }) {
-  const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
-  const passwordInput = useRef();
   const { auth } = usePage().props;
+  const boleh = auth.permissions.includes('can-create');
+  const [yakin, setYakin] = useState(false);
+  const [proses, setProses] = useState(false);
 
-  const unitAkses = auth.permissions.includes('can-create');
+  useEffect(() => {
+    if (!yakin || proses) return;
+    const t = setTimeout(() => setYakin(false), BATAS_YAKIN_MS);
+    return () => clearTimeout(t);
+  }, [yakin, proses]);
 
-  const {
-    data,
-    setData,
-    delete: destroy,
-    processing,
-    reset,
-    errors,
-  } = useForm();
-
-  const confirmUserDeletion = () => {
-    setConfirmingUserDeletion(true);
-  };
-
-  const cancelUserDeletion = () => {
-    setTimeout(() => {
-      setConfirmingUserDeletion(false);
-    }, 200);
-  };
-
-  const buttonArea = useRef(null);
-
-  const deleteUser = (e) => {
-    e.preventDefault();
-
-    destroy(route('pinjaman.destroy_angsuran', id), {
+  const klik = () => {
+    if (!yakin) {
+      setYakin(true);
+      return;
+    }
+    router.delete(route('pinjaman.destroy_angsuran', id), {
       preserveScroll: true,
+      onStart: () => setProses(true),
+      onFinish: () => {
+        setProses(false);
+        setYakin(false);
+      },
     });
   };
 
   return (
-    <div ref={buttonArea} onMouseLeave={cancelUserDeletion}>
-      <Loading show={processing} />
-      <form onSubmit={deleteUser}>
-        <div className="flex flex-col h-6 overflow-hidden">
-          <div
-            className={`inline transition-all duration-300
-              ${confirmingUserDeletion ? 'translate-y-full' : 'translate-y-0'}
-              `}
-          >
-            <Button
-              disabled={!unitAkses}
-              type="button"
-              size="xs"
-              onClick={confirmUserDeletion}
-            >
-              Hapus
-            </Button>
-          </div>
-          <div
-            className={`inline transition-all duration-300
-              ${
-                confirmingUserDeletion ? '-translate-y-full' : 'translate-y-0'
-              }`}
-          >
-            <Button
-              type="submit"
-              size="xs"
-              variant="destructive"
-              onClick={confirmUserDeletion}
-            >
-              Yakin?
-            </Button>
-          </div>
-        </div>
-      </form>
-
-      {/* <Modal show={confirmingUserDeletion} onClose={closeModal}>
-          <h2 className="text-lg font-medium text-gray-900">
-            Apakah Anda Yakin ? Menghapus Transaksi Tersebut
-          </h2>
-
-          <p className="mt-1 text-sm text-gray-600">
-            Menghapus Transaksi Dapat Mengubah Status Transaksi, Perolehan
-            Storting, dan Neraca Kas
-          </p>
-
-          <div className="mt-6">
-            <InputLabel
-              htmlFor="password"
-              value="Password"
-              className="sr-only"
-            />
-
-            <TextInput
-              id="password"
-              type="password"
-              name="password"
-              ref={passwordInput}
-              value={data.password}
-              onChange={(e) => setData('password', e.target.value)}
-              className="block w-3/4 mt-1"
-              isFocused
-              placeholder="Password"
-            />
-
-            <InputError message={errors.password} className="mt-2" />
-          </div>
-
-          <div className="flex justify-end mt-6">
-            <SecondaryButton onClick={closeModal}>Cancel</SecondaryButton>
-
-            <DangerButton className="ml-3" disabled={processing}>
-              Hapus Transaksi
-            </DangerButton>
-          </div>
-
-      </Modal> */}
-    </div>
+    <button
+      type="button"
+      disabled={!boleh || proses}
+      onClick={klik}
+      className={`relative inline-flex items-center h-6 px-2 overflow-hidden text-[11px] font-semibold rounded-md border transition-colors duration-200 disabled:opacity-40 ${
+        yakin ? 'bg-red-600 border-red-600 text-white' : 'bg-white text-red-600 border-red-200 hover:border-red-400'
+      }`}
+    >
+      {proses ? 'Menghapus…' : yakin ? 'Yakin?' : 'Hapus'}
+      {yakin && !proses && <span className="absolute bottom-0 left-0 h-0.5 bg-white/80 animate-susut" />}
+    </button>
   );
 }

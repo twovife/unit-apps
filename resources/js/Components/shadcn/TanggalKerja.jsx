@@ -133,7 +133,7 @@ const TanggalKerja = ({
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-[18rem] p-0" align="start">
           <div className="flex items-center gap-2 px-3 pt-3">
             <select
               className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
@@ -151,7 +151,7 @@ const TanggalKerja = ({
               ))}
             </select>
             <select
-              className="px-2 py-1 text-sm border rounded-md bg-background tabular-nums"
+              className="w-[5.5rem] px-2 py-1 text-sm border rounded-md bg-background tabular-nums"
               value={dayjs(bulanTampil).year()}
               onChange={(e) =>
                 setBulanTampil(
@@ -171,6 +171,7 @@ const TanggalKerja = ({
           </div>
 
           <Calendar
+            className="w-full"
             mode="single"
             // Tanpa ini kapsinya "August 2026" sementara dropdown di atas
             // "Agustus" - satu kalender bicara dua bahasa sekaligus.
@@ -186,7 +187,19 @@ const TanggalKerja = ({
             }}
             // Nama bulannya sudah ada di dropdown; menampilkannya lagi di
             // kapsi cuma judul dobel. Panah geser bulan tetap dipakai.
-            classNames={{ caption_label: 'sr-only' }}
+            // Sel melar mengisi lebar popover (bawaannya 7 × 32px tetap, sisa
+            // kanan kosong) — sekalian target sentuh lebih besar.
+            classNames={{
+              caption_label: 'sr-only',
+              months: 'flex flex-col w-full',
+              month: 'flex flex-col gap-4 w-full',
+              table: 'w-full border-collapse',
+              head_row: 'flex w-full',
+              row: 'flex w-full mt-2',
+              head_cell: 'flex-1 text-muted-foreground font-normal text-[0.8rem]',
+              cell: 'flex-1 relative p-0 text-center text-sm [&:has([aria-selected])]:rounded-md',
+              day: 'inline-flex items-center justify-center h-9 w-full p-0 text-sm font-normal rounded-md hover:bg-accent hover:text-accent-foreground aria-selected:opacity-100 disabled:pointer-events-none',
+            }}
           />
 
           <div className="px-3 pt-1 pb-3 space-y-1 text-xs border-t text-muted-foreground">

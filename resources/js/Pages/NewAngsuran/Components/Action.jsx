@@ -5,6 +5,8 @@ import {
   DialogTitle,
 } from '@/shadcn/ui/dialog';
 import React, { useEffect, useState } from 'react';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
+import WhiteOff from './WhiteOff';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 import axios from 'axios';
 import {
@@ -26,17 +28,16 @@ import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
 import { Toaster } from '@/shadcn/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import { Copy } from 'lucide-react';
+import { Copy, CircleX } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import Pengajuan from './Pengajuan';
 import Loading from '@/Components/Loading';
-import { getLastDateForHari } from '@/lib/utils';
 import '../../../../css/loader.css';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   const {
     auth,
-    server_filter: { closed_transaction },
+    server_filter: { closed_transaction, tanggal: tanggalTerpilih },
   } = usePage().props;
   const hasPermission = auth?.permissions?.includes('can-edit');
 
@@ -94,36 +95,33 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
         : null;
 
   /**
-   * Gerbang KHUSUS tab "Input Angsuran" - lebih ketat dari `gateValue`.
-   * Kalau pinjaman ini sedang menunggu hasil pengajuan pengganti (top-up,
-   * `previous_loan_id`) yang tanggal drop-nya PAS sama dengan tanggal
-   * koleksi hari ini, input manual dikunci - mencegah bentrok dengan
-   * auto-pelunasan `TransactionLoan::boot()` kalau pengajuan itu tiba-tiba
-   * sukses di-drop hari yang sama. Begitu pengajuan penggantinya gagal
-   * (termasuk lewat Tundaan, yang memindahkan tanggal), kuncinya lepas
-   * sendiri karena server cuma menghitung status open/acc sebagai pending.
-   * TIDAK memengaruhi tab "Detail Pinjaman" atau kartu Pengajuan/Jenis
-   * Nasabah di bawah - keduanya sudah punya gerbangnya sendiri.
+   * Pinjaman yang sudah punya pengajuan pelunasan (top-up, `previous_loan_id`)
+   * yang masih open/acc: angsurannya diselesaikan lewat drop pelunasan. Form
+   * tetap tampil, tapi begitu nominal/Simpan disentuh muncul peringatan (lihat
+   * BayarAngsuran) - server juga menolak.
    */
-  const pengganti = customerData.pengajuan_pengganti;
-  const tanggalKoleksiHariIni = getLastDateForHari(customerData.hari);
-  const menungguDropPengganti =
-    pengganti && pengganti.drop_date === tanggalKoleksiHariIni;
-
-  const angsuranGateValue =
-    gateValue ??
-    (menungguDropPengganti
-      ? `Menunggu hasil drop pengajuan pengganti (tanggal ${dayjs(pengganti.drop_date).format('DD-MM-YYYY')}) - input manual dikunci sementara supaya tidak bentrok dengan pelunasan otomatis.`
-      : null);
+  const pelunasanTertunda = !!customerData.pengajuan_pengganti;
+  const angsuranGateValue = gateValue;
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
-      <DialogContent className={`w-[95vw] p-1 lg:p-6`}>
+      {/* Layar penuh di HP; di layar lebar tetap kotak besar di tengah. */}
+      <DialogContent className="flex flex-col gap-2 w-screen max-w-none h-[100dvh] p-2 rounded-none sm:rounded-none lg:max-w-4xl lg:h-[90vh] lg:p-6 lg:rounded-lg"
+        closeClassName="right-2 top-2 rounded-full opacity-100 data-[state=open]:bg-transparent data-[state=open]:text-red-600 data-[state=open]:hover:bg-red-50"
+        closeIcon={<CircleX className="w-8 h-8" strokeWidth={1.75} />}
+      >
         <DialogHeader className={'max-h-10'}>
-          <DialogTitle className="p-2">Isi Angsurans</DialogTitle>
+          <DialogTitle className="flex items-center justify-center min-w-0 gap-2 px-11 py-2 text-center">
+            <span className="truncate">{customerData.nama || 'Isi Angsuran'}</span>
+            {customerData.tanggal_drop && (
+              <BargeStatus value={kategoriEmber(customerData.tanggal_drop, tanggalTerpilih)}>
+                {kategoriEmber(customerData.tanggal_drop, tanggalTerpilih).toUpperCase()}
+              </BargeStatus>
+            )}
+          </DialogTitle>
           {/* <Button type="button" /> */}
         </DialogHeader>
-        <div className="h-[80vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
           <Toaster />
           {/* Input Angsuran (aksi utama saat modal dibuka lewat tombol
               "Bayar") dan Detail Pinjaman digabung jadi tab, ditaruh paling
@@ -134,130 +132,173 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
             <CardContent className="p-1 pt-4 lg:p-5">
               <Tabs defaultValue="input" className="w-full">
                 <TabsList>
-                  <TabsTrigger value="input">Input Angsuran</TabsTrigger>
-                  <TabsTrigger value="detail">Detail Pinjaman</TabsTrigger>
+                  <TabsTrigger value="input" className="text-xs">
+                    Input Angs
+                  </TabsTrigger>
+                  <TabsTrigger value="detail" className="text-xs">
+                    Detail Pinj
+                  </TabsTrigger>
+                  <TabsTrigger value="pemutihan" className="text-xs">
+                    Pemutihan
+                  </TabsTrigger>
                 </TabsList>
-                <TabsContent value="input" className="relative mt-3">
-                  {angsuranGateValue && <NoEditOverlay value={angsuranGateValue} />}
-                  {loading ? (
-                    <div>Loading</div>
+                <TabsContent value="input" className="mt-3 space-y-3">
+                  <div className="relative">
+                  {customerData.lunas ? (
+                    // Sudah lunas: tidak ada lagi yang diinput, form diganti kartu.
+                    <div className="flex flex-col items-center gap-1 px-4 py-6 text-center border border-green-200 rounded-lg bg-green-50">
+                      <div className="text-base font-semibold text-green-800">Angsuran sudah lunas</div>
+                      {customerData.pay_off_date && (
+                        <div className="text-xs text-green-700">
+                          Lunas pada{' '}
+                          {new Date(`${customerData.pay_off_date}T00:00:00`).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </div>
+                      )}
+                    </div>
                   ) : (
+                    angsuranGateValue && <NoEditOverlay value={angsuranGateValue} />
+                  )}
+                  {/* Form TIDAK dibongkar saat data dimuat ulang (habis kirim, gagal
+                      maupun sukses) - kalau dibongkar, isian & pesan error hilang. */}
+                  {!customerData.id ? (
+                    loading && <div className="text-xs text-muted-foreground">Memuat…</div>
+                  ) : customerData.lunas ? null : (
                     <BayarAngsuran
                       triggeredId={customerData.id}
                       triggeredPinjaman={customerData}
                       instalment={instalment}
+                      pelunasanTertunda={pelunasanTertunda}
                     />
+                  )}
+                  </div>
+                  {customerData.id && !customerData.lunas && (
+                    <Pengajuan triggeredId={customerData.id} triggeredPinjaman={customerData} terkunci={gateValue} />
                   )}
                 </TabsContent>
                 <TabsContent value="detail" className="mt-3">
                   <LoanDetail customerData={customerData} />
+                </TabsContent>
+                <TabsContent value="pemutihan" className="relative mt-3">
+                  {gateValue && <NoEditOverlay value={gateValue} />}
+                  {customerData.id && (
+                    <WhiteOff
+                      triggeredId={customerData.id}
+                      nominalWhiteOff={Math.max(Number(customerData.saldo) || 0, 0)}
+                      hari={customerData.hari}
+                    />
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
           <div className="w-full mt-3">
             <Card className="w-full">
-              <CardHeader>
-                <CardTitle>Rincian Angsuran</CardTitle>
+              <CardHeader className="px-3 py-2.5 lg:px-5">
+                <CardTitle className="text-sm">Rincian Angsuran</CardTitle>
               </CardHeader>
-              <CardContent className="p-1 lg:p-5">
+              <CardContent className="px-2 pb-3 lg:px-5">
                 {pemutihan && (
-                  <div className="w-full">
-                    <Table className="text-xs">
-                      <TableHeader className="bg-gray-200">
-                        <TableRow>
-                          <TableHead className="text-center">
-                            Tanggal Pemutihan
-                          </TableHead>
-                          <TableHead className="text-center">
-                            Nominal Pemutihan
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow className="text-center">
-                          <TableCell>
-                            {dayjs(pemutihan.transaction_date).format(
-                              'DD-MM-YYYY',
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <FormatNumbering
-                              className="text-center"
-                              value={pemutihan.nominal}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
+                  <div className="flex items-center justify-between px-3 py-2 mb-2 text-xs text-red-800 border border-red-200 rounded-md bg-red-50">
+                    <span>Pemutihan {dayjs(pemutihan.transaction_date).format('DD-MM-YYYY')}</span>
+                    <FormatNumbering value={pemutihan.nominal} className="inline font-semibold" />
                   </div>
                 )}
 
-                <div className="w-full overflow-auto">
-                  <Table className="text-xs">
-                    <TableHeader className="bg-gray-200">
-                      <TableRow>
-                        <TableHead className="text-center">Action</TableHead>
-                        <TableHead className="text-center">Tanggal</TableHead>
-                        <TableHead className="text-center">Jumlah</TableHead>
-                        <TableHead className="text-center">Saldo</TableHead>
-                        <TableHead className="hidden text-center lg:table-cell">
-                          Mantri
+                {/* table-fixed + lebar kolom: muat di modal HP tanpa geser
+                    horizontal; Mantri mengambil sisa ruang dan dipotong. */}
+                <Table className="text-xs table-fixed">
+                  <colgroup>
+                    <col className="w-[3.4rem]" />
+                    <col className="w-[2.9rem]" />
+                    <col className="w-[4.8rem]" />
+                    <col />
+                  </colgroup>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      {['', 'Tgl', 'Angsuran', 'Mantri'].map((judul) => (
+                        <TableHead
+                          key={judul}
+                          className={`h-8 px-1 text-[10px] font-semibold tracking-wide uppercase ${judul === 'Angsuran' ? 'text-right' : 'text-left'}`}
+                        >
+                          {judul}
                         </TableHead>
-                        <TableHead className="text-center">Status</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.keys(customerData).length !== 0 ? (
+                      rincianPerBulan(instalment, customerData.pinjaman, pemutihan, customerData.tanggal_drop).map(
+                        (bulan, i, arr) => (
+                          <React.Fragment key={bulan.kunci}>
+                            {bulan.rows.map((item) => (
+                              <TableRow key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <TableCell className="px-1 py-1.5">
+                                  {item.pelunasan ? (
+                                    <span className="text-[10px] font-semibold text-muted-foreground">Pelunasan</span>
+                                  ) : (
+                                    (!closed_transaction || closed_transaction <= item.transaction_date) && (
+                                      <DeleteAngsuran id={item.id} />
+                                    )
+                                  )}
+                                </TableCell>
+                                <TableCell className="px-1 py-1.5 text-muted-foreground whitespace-nowrap">
+                                  {dayjs(item.transaction_date).format('DD-MM')}
+                                </TableCell>
+                                <TableCell
+                                  className={`px-1 py-1.5 text-right font-medium tabular-nums whitespace-nowrap ${
+                                    item.danatitipan == 1 ? 'text-red-600 font-semibold' : ''
+                                  }`}
+                                >
+                                  {item.is_transfer && (
+                                    <span className="mr-1 text-[9px] font-bold text-violet-600">TF</span>
+                                  )}
+                                  <FormatNumbering value={item.nominal} className="inline" />
+                                </TableCell>
+                                <TableCell className="px-1 py-1.5 truncate text-muted-foreground">{item.mantri}</TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow className={`border-0 font-semibold ${WARNA_EMBER[bulan.kategori]}`}>
+                              <TableCell colSpan={2} className="px-1 py-2">
+                                <div className="truncate">
+                                  {bulan.nama}
+                                  <span className="font-normal opacity-70"> · {bulan.kategori.toUpperCase()}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="px-1 py-2 text-right tabular-nums whitespace-nowrap">
+                                <FormatNumbering value={bulan.total} className="inline" />
+                              </TableCell>
+                              <TableCell className="px-1 py-2 text-right tabular-nums whitespace-nowrap">
+                                <span className="font-normal opacity-70">Sisa </span>
+                                <FormatNumbering value={bulan.saldo} className="inline" />
+                              </TableCell>
+                            </TableRow>
+                            {i < arr.length - 1 && (
+                              <TableRow className="border-0 hover:bg-transparent">
+                                <TableCell colSpan={4} className="h-3 p-0" />
+                              </TableRow>
+                            )}
+                          </React.Fragment>
+                        ),
+                      )
+                    ) : erorAxios ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="font-semibold text-red-500">
+                          TERJADI KESALAHAN SAAT PENGAMBILAN DATA, MOHON REFRESH BROWSER
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {Object.keys(customerData).length !== 0 ? (
-                        instalment.map((item) => (
-                          <TableRow className="text-center">
-                            <TableCell>
-                              {(!closed_transaction ||
-                                closed_transaction <=
-                                  item.transaction_date) && (
-                                <DeleteAngsuran id={item.id} />
-                              )}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {dayjs(item.transaction_date).format('DD-MM-YY')}
-                            </TableCell>
-
-                            <TableCell
-                              className={`${
-                                item.danatitipan == 1
-                                  ? 'text-red-500 font-semibold'
-                                  : ''
-                              }`}
-                            >
-                              <FormatNumbering value={item.nominal} />
-                            </TableCell>
-                            <TableCell>
-                              <FormatNumbering value={item.saldo} />
-                            </TableCell>
-                            <TableCell className="hidden lg:block">
-                              {item.mantri}
-                            </TableCell>
-                            <TableCell>
-                              {' '}
-                              <StatusPinjaman value={item.status} />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : erorAxios ? (
-                        <TableRow>
-                          <TableCell className="font-semibold text-red-500">
-                            TERJADI KESALAHAN SAAT PENGAMBILAN DATA, MOHON
-                            REFRESH BROWSER
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        <TableRow>
-                          <TableCell>Menunggu data . . .</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-muted-foreground">
+                          Menunggu data . . .
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
@@ -267,18 +308,9 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
             {loading ? (
               <div>Loading</div>
             ) : (
-              <>
-                <div className="min-w-0">
-                  <Pengajuan
-                    triggeredId={customerData.id}
-                    triggeredPinjaman={customerData}
-                    instalment={instalment}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <JenisNasabah loan={customerData} />
-                </div>
-              </>
+              <div className="min-w-0">
+                <JenisNasabah loan={customerData} />
+              </div>
             )}
           </div>
         </div>
@@ -408,3 +440,57 @@ const LoanDetail = ({ customerData }) => {
     </div>
   );
 };
+
+/**
+ * Rincian angsuran dikelompokkan per bulan (terbaru di atas, sama dengan urutan
+ * server); ringkasan bulan di bawah grupnya, antar bulan diberi jarak. Saldo
+ * cukup satu per bulan = sisa pokok di akhir bulan itu:
+ * pinjaman − angsuran s/d akhir bulan − pemutihan yang tanggalnya s/d akhir bulan.
+ */
+const rincianPerBulan = (instalment, pinjaman, pemutihan, tanggalDrop) => {
+  const grup = {};
+  instalment.forEach((i) => {
+    const kunci = String(i.transaction_date).slice(0, 7);
+    (grup[kunci] ??= []).push(i);
+  });
+
+  let kumulatif = 0;
+  const naik = Object.keys(grup)
+    .sort()
+    .map((kunci) => {
+      const total = grup[kunci].reduce((t, i) => t + (Number(i.nominal) || 0), 0);
+      kumulatif += total;
+      const akhirBulan = dayjs(`${kunci}-01`).endOf('month').format('YYYY-MM-DD');
+      const putih = pemutihan && pemutihan.transaction_date <= akhirBulan ? Number(pemutihan.nominal) || 0 : 0;
+      return {
+        kunci,
+        nama: new Date(`${kunci}-01T00:00:00`).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
+        rows: grup[kunci],
+        kategori: kategoriEmber(tanggalDrop, `${kunci}-01`),
+        total,
+        saldo: (Number(pinjaman) || 0) - kumulatif - putih,
+      };
+    });
+
+  return naik.reverse();
+};
+
+/**
+ * Kategori ember pinjaman pada tanggal yang dibuka (aturan Ember::dari):
+ * selisih bulan kalender drop -> tanggal < 3 normal, 3 cm, 4 mb, >= 5 ml.
+ */
+const kategoriEmber = (tanggalDrop, tanggal) => {
+  const [y1, m1] = String(tanggalDrop).split('-').map(Number);
+  const [y2, m2] = String(tanggal || dayjs().format('YYYY-MM-DD')).split('-').map(Number);
+  const selisih = y2 * 12 + m2 - (y1 * 12 + m1);
+  return selisih >= 5 ? 'ml' : selisih === 4 ? 'mb' : selisih === 3 ? 'cm' : 'normal';
+};
+
+/** Latar baris Total bulan menurut ember (warna sama dengan badge status). */
+const WARNA_EMBER = {
+  normal: 'bg-green-50 text-green-900 hover:bg-green-50',
+  cm: 'bg-amber-50 text-amber-900 hover:bg-amber-50',
+  mb: 'bg-red-50 text-red-900 hover:bg-red-50',
+  ml: 'bg-gray-200 text-gray-900 hover:bg-gray-200',
+};
+

@@ -1,261 +1,257 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/shadcn/ui/table';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
+import React, { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { Button } from '@/shadcn/ui/button';
-import Action from './Action';
-import { Badge } from '@/shadcn/ui/badge';
-import BargeStatus from '@/Components/shadcn/BargeStatus';
-import { Input } from '@/shadcn/ui/input';
-import TextInput from '@/Components/TextInput';
 import { X } from 'lucide-react';
+import TextInput from '@/Components/TextInput';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
 import BadgeStatus from '@/Components/shadcn/BadgeStatus';
+import Action from './Action';
+import { Button } from '@/shadcn/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
-const AngsuranTableMobile = ({ dateOfWeek, datas }) => {
-  const [data, setData] = useState([]);
+// Angka dalam ribuan: 650000 -> "650", 1300000 -> "1.300", 35500 -> "35,5".
+const ribuan = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
+const rb = (v) => ribuan.format((Number(v) || 0) / 1000);
+
+const jumlah = (rows, key) => rows.reduce((t, r) => t + (Number(r[key]) || 0), 0);
+
+// Angsuran wajib per minggu = pinjaman / 10 (= drop × 13%). Angsuran terakhir
+// cukup sebesar sisanya, jadi dibatasi sisa sebelum bayar hari ini.
+const wajib = (r) => Math.min(Number(r.pinjaman) / 10, Number(r.saldo) + Number(r.angs_today));
+
+// Status hari ini: drop baru (belum bisa ditagih) / belum dicatat / dicatat
+// tidak bayar (0) / bayar.
+const statusHariIni = (r) =>
+  r.drop_baru ? 'baru' : !r.is_paid ? 'belum' : Number(r.angs_today) > 0 ? 'bayar' : 'tidak';
+
+// Urutan dalam grup: tanggal drop -> yang punya nomor anggota dulu (kecil ke
+// besar, angka dibanding sebagai angka) -> yang belum punya nomor: nama A-Z.
+const urut = (a, b) =>
+  String(a.tanggal_drop).localeCompare(String(b.tanggal_drop)) ||
+  !a.nomor_anggota - !b.nomor_anggota ||
+  String(a.nomor_anggota ?? '').localeCompare(String(b.nomor_anggota ?? ''), 'id', { numeric: true }) ||
+  String(a.nama).localeCompare(String(b.nama), 'id');
+
+const FILTER = [
+  ['semua', 'Semua'],
+  ['belum', 'Belum'],
+  ['bayar', 'Bayar'],
+  ['tidak', 'Tidak bayar'],
+];
+
+// Dua baris per nasabah, satu template kolom untuk semua baris -> angka sejajar:
+//   no.anggota | drop | nama   | ANGS (melebar 2 kolom, besar)
+//   (TG)       |      | alamat | pinj | sisa   (kecil, abu)
+const KOLOM = 'grid grid-cols-[2.2rem_2.4rem_1fr_3.2rem_3.2rem] gap-x-1 tabular-nums';
+const ANGS = 'col-span-2 text-right pr-1 bg-amber-50';
+const KECIL = 'text-[11px] text-gray-500';
+
+const AngsuranTableMobile = ({ datas }) => {
   const [filterName, setFilterName] = useState('');
-
-  useEffect(() => {
-    if (datas) {
-      const filterData = (data) => {
-        return data.map((monthData) => ({
-          ...monthData,
-          data: monthData.data.filter(
-            (item) =>
-              !(item.lunas && !item.is_paid) &&
-              (!filterName ||
-                item.nama.toLowerCase().includes(filterName.toLowerCase()))
-          ),
-        }));
-      };
-
-      const filteredData = filterData(datas);
-
-      setData(filteredData);
-    }
-  }, [datas, filterName]);
-
-  const calculateTotals = (data, keyToSum) => {
-    const result = data.reduce(
-      (acc, item) => acc + parseInt(item[keyToSum] ?? 0),
-      0
-    );
-    return result;
-  };
-
+  const [filterStatus, setFilterStatus] = useState('semua');
   const [triggeredId, setTriggeredId] = useState(null);
   const [show, setShow] = useState(false);
-  const onCreateShowOpen = (id) => {
+  const [dropBaru, setDropBaru] = useState(null);
+
+  // Lunas yang tidak dibayar hari ini tidak perlu ditagih -> disembunyikan.
+  const grup = useMemo(
+    () => (datas ?? []).map((g) => ({ ...g, data: g.data.filter((r) => !(r.lunas && !r.is_paid)).sort(urut) })),
+    [datas]
+  );
+
+  const semua = grup.flatMap((g) => g.data);
+  const banyak = (s) => (s === 'semua' ? semua.length : semua.filter((r) => statusHariIni(r) === s).length);
+
+  // Angka total = jumlah baris yang TAMPIL, supaya cocok dengan isi tabel.
+  const tampil = (r) =>
+    (!filterName || r.nama.toLowerCase().includes(filterName.toLowerCase())) &&
+    (filterStatus === 'semua' || statusHariIni(r) === filterStatus);
+  const grupTampil = grup.map((g) => ({ ...g, data: g.data.filter(tampil) })).filter((g) => g.data.length);
+  const semuaTampil = grupTampil.flatMap((g) => g.data);
+
+  const buka = (id) => {
     setTriggeredId(id);
     setShow(true);
   };
 
-  const onClosedShowOpen = () => {
-    setShow(false);
-    setTriggeredId(null);
-  };
-
-  const [selectedId, setSelectedId] = useState([]);
-
-  const handleRowClick = (id) => {
-    setSelectedId((prevSelectedRows) => {
-      if (prevSelectedRows.includes(id)) {
-        // Jika ID sudah ada, hapus dari array (toggle)
-        return prevSelectedRows.filter((rowId) => rowId !== id);
-      } else {
-        // Jika ID belum ada, tambahkan ke array
-        return [...prevSelectedRows, id];
-      }
-    });
-  };
   return (
-    <div className="relative overflow-auto h-[70vh] lg:h-[85vh] scrollbar-none">
-      <Table className="text-xs rounded-lg">
-        <TableHeader className="sticky top-0 left-0 z-10">
-          <TableRow>
-            <TableHead colSpan="4" className="bg-white">
-              <div className="relative w-full mb-2 lg:w-auto lg:max-w-60">
-                <TextInput
-                  type="text"
-                  placeholder="Cari Nama"
-                  value={filterName}
-                  onChange={(e) => setFilterName(e.target.value)}
-                  className="w-full text-xs"
-                />
-                <X
-                  className="absolute right-0 w-auto h-5 text-gray-400 -translate-x-1/2 -translate-y-1/2 top-1/2"
-                  onClick={(e) => setFilterName('')}
-                />
-              </div>
-            </TableHead>
-          </TableRow>
-          <TableRow className="bg-gray-200">
-            <TableHead className="text-center">No</TableHead>
-            <TableHead className="text-center">Tanggal</TableHead>
-            <TableHead className="text-center">Nasabah</TableHead>
-            <TableHead className="text-center border-x border-x-black">
-              Nominal
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody className="text-tinny">
-          {data ? (
-            data.map((row, i) => (
-              <React.Fragment key={i}>
-                <TableRow>
-                  <TableCell colSpan={17 + (dateOfWeek.length ?? 0)}>
-                    <div className="flex items-center gap-3">
-                      <BargeStatus value={row.type2} /> <div>{row.month}</div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-                {row.data.map((subrow, i) => (
-                  <TableRow
-                    className={`${
-                      subrow.is_paid
-                        ? subrow.angs_today == 0
-                          ? 'bg-red-300 hover:bg-red-400'
-                          : 'bg-green-200 hover:bg-green-50'
-                        : ''
-                    }}`}
-                    key={i}
-                  >
-                    <TableCell onClick={() => handleRowClick(subrow.id)}>
-                      {i + 1}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2 text-center">
-                        <div>{dayjs(subrow.tanggal_drop).format('DD-MM')}</div>
-                        <div>
-                          <Button
-                            size="xs"
-                            variant={
-                              subrow.lunas
-                                ? 'green'
-                                : subrow.is_paid
-                                ? 'blue'
-                                : 'default'
-                            }
-                            onClick={() => onCreateShowOpen(subrow.id)}
-                          >
-                            {subrow.lunas
-                              ? 'Lunas'
-                              : subrow.is_paid
-                              ? 'Dibayar'
-                              : 'Bayar'}
-                          </Button>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-xs font-semibold">
-                        {subrow.nama}
-                        {subrow.notes && (
-                          <BadgeStatus className="ml-2">
-                            {subrow.notes}
-                          </BadgeStatus>
-                        )}
-                      </div>
-                      <div>{subrow.nik}</div>
-                      <div>{subrow.alamat}</div>
-                    </TableCell>
-                    <TableCell className="border-x border-x-black">
-                      <div className="flex justify-between gap-6 ">
-                        <div>P</div>
-                        <FormatNumbering value={subrow.pinjaman} />
-                      </div>
-
-                      <div className="flex justify-between gap-6 border-b-2 border-b-black ">
-                        <div>A</div>
-                        <div className="flex gap-3">
-                          <div className="italic whitespace-nowrap">
-                            <FormatNumbering
-                              value={subrow.angs_today}
-                              prefix={'('}
-                              suffix={')'}
-                            />
-                          </div>
-                          <FormatNumbering value={subrow.angsuran} />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between gap-6">
-                        <div>S</div>
-                        <div className="flex gap-3">
-                          {subrow.pemutihan_today !== 0 && (
-                            <div className="italic whitespace-nowrap">
-                              <FormatNumbering
-                                value={subrow.pemutihan_today}
-                                prefix={'('}
-                                suffix={')'}
-                              />
-                            </div>
-                          )}
-                          <FormatNumbering value={subrow.saldo} />
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="bg-gray-100">
-                  <TableCell className="py-3" colSpan={3}>
-                    TOTAL
-                  </TableCell>
-                  <TableCell className="border-x border-x-black">
-                    <div className="flex justify-between gap-6">
-                      <div>P</div>
-                      <FormatNumbering
-                        value={calculateTotals(row.data, 'pinjaman')}
-                      />
-                    </div>
-                    <div className="flex justify-between gap-6 border-b-2 border-b-black ">
-                      <div>A</div>
-                      <div className="flex gap-3">
-                        <div className="italic whitespace-nowrap">
-                          <FormatNumbering
-                            value={calculateTotals(row.data, 'angs_today')}
-                            prefix={'('}
-                            suffix={')'}
-                          />
-                        </div>
-                        <FormatNumbering
-                          value={calculateTotals(row.data, 'angsuran')}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between gap-6">
-                      <div>S</div>
-                      <FormatNumbering
-                        value={calculateTotals(row.data, 'saldo')}
-                      />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </React.Fragment>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell>a</TableCell>
-            </TableRow>
+    // Satu scroll saja (halaman): filter tanggal/kelompok ikut tergulung, blok
+    // chip + judul kolom menempel di bawah navbar (h-14), TOTAL di dasar layar.
+    <div className="text-xs">
+      <div className="sticky z-20 bg-white shadow-sm top-14">
+        <div className="flex flex-wrap gap-1.5 px-2 pt-1">
+          {FILTER.map(([nilai, label]) => (
+            <button
+              key={nilai}
+              type="button"
+              onClick={() => setFilterStatus(nilai)}
+              className={`px-2.5 py-1 rounded-full border ${
+                filterStatus === nilai ? 'bg-gray-900 text-white border-gray-900' : 'bg-white'
+              } ${nilai === 'tidak' && filterStatus !== nilai ? 'text-red-600' : ''}`}
+            >
+              {label} {banyak(nilai)}
+            </button>
+          ))}
+        </div>
+        <div className="relative px-2 py-1.5">
+          <TextInput
+            type="text"
+            placeholder="Cari nama"
+            value={filterName}
+            onChange={(e) => setFilterName(e.target.value)}
+            className="w-full pr-8 text-xs"
+          />
+          {filterName && (
+            <X
+              className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-4 top-1/2"
+              onClick={() => setFilterName('')}
+            />
           )}
-        </TableBody>
-      </Table>
+        </div>
+        <div className="px-2 pb-1 text-[10px] text-gray-500">
+          Ketuk baris untuk bayar / lihat detail · angka dalam ribuan · Angs:{' '}
+          <span className="font-semibold text-green-700">sesuai</span>{' '}
+          <span className="font-semibold text-orange-600">kurang</span>{' '}
+          <span className="font-semibold text-red-600">0</span>
+        </div>
+
+        <div className={`${KOLOM} px-2 py-1 text-gray-500 border-t`}>
+          <div className={`${KECIL} row-span-2 self-center text-center`}>No</div>
+          <div>Drop</div>
+          <div>Nasabah</div>
+          <div className={`${ANGS} font-semibold text-gray-700`}>Angs</div>
+          <div />
+          <div className={KECIL}>Alamat</div>
+          <div className={`${KECIL} text-right`}>Pinj</div>
+          <div className={`${KECIL} text-right`}>Sisa</div>
+        </div>
+      </div>
+
+      {grupTampil.map((g, gi) => (
+        <section key={gi} className="mt-4 first:mt-0">
+          <div className="flex items-center gap-2 px-2 py-1.5 font-semibold text-white bg-gray-800">
+            <BargeStatus value={g.type2} />
+            <span className="truncate">{g.month}</span>
+            <span className="ml-auto text-[11px] font-normal text-gray-300">{g.data.length} nasabah</span>
+          </div>
+
+          {g.data.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => (r.drop_baru ? setDropBaru(r) : buka(r.id))}
+              className={`${KOLOM} w-full px-2 py-1.5 text-left border-b active:bg-gray-100 ${
+                r.drop_baru ? 'bg-gray-50 text-gray-400' : ''
+              }`}
+            >
+              <NoAnggota r={r} />
+              <div className="text-gray-500">{dayjs(r.tanggal_drop).format('DD-MM')}</div>
+              <div className="min-w-0 text-sm font-semibold truncate">
+                {r.nama}
+                {r.notes && <BadgeStatus className="ml-1">{r.notes}</BadgeStatus>}
+              </div>
+              <div className={ANGS}>
+                <Angs r={r} />
+              </div>
+
+              <div />
+              <div className={`${KECIL} min-w-0 truncate`}>
+                {r.alamat}
+                {Number(r.pemutihan_today) > 0 && ` · pemutihan ${rb(r.pemutihan_today)}`}
+              </div>
+              <div className={`${KECIL} text-right`}>{rb(r.pinjaman)}</div>
+              <div className={`${KECIL} text-right`}>
+                {r.lunas ? <span className="text-green-700">lunas</span> : rb(r.saldo)}
+              </div>
+            </button>
+          ))}
+
+          <Jumlah label={`Jumlah ${g.month}`} rows={g.data} />
+        </section>
+      ))}
+
+      <Jumlah label={`TOTAL (${semuaTampil.length})`} rows={semuaTampil} total />
+
+      <Dialog open={!!dropBaru} onOpenChange={(open) => !open && setDropBaru(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Drop baru</DialogTitle>
+            <DialogDescription>
+              {dropBaru?.nama} di-drop hari ini, tidak bisa diangsur hari ini.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setDropBaru(null)}>OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Action
-        datas={data}
+        datas={grup}
         show={show}
-        onClosed={onClosedShowOpen}
+        onClosed={() => {
+          setShow(false);
+          setTriggeredId(null);
+        }}
         triggeredId={triggeredId}
       />
     </div>
+  );
+};
+
+// Baris jumlah dengan susunan kolom yang sama. Subtotal: garis atas tebal di
+// bawah grupnya. Total: bar gelap yang menempel di dasar layar.
+const Jumlah = ({ label, rows, total = false }) => (
+  <div
+    className={`${KOLOM} px-2 py-1.5 font-bold ${
+      total ? 'sticky bottom-0 z-10 mt-4 bg-gray-900 text-white' : 'bg-gray-50 border-t-2 border-gray-400'
+    }`}
+  >
+    <div className="min-w-0 col-span-3 truncate">{label}</div>
+    <div className={`col-span-2 pr-1 text-base text-right ${total ? 'text-green-300' : 'text-green-700 bg-amber-50'}`}>
+      {rb(jumlah(rows, 'angs_today'))}
+    </div>
+    <div className="col-span-3" />
+    <div className={`text-[11px] text-right ${total ? 'text-gray-300' : 'text-gray-600'}`}>{rb(jumlah(rows, 'pinjaman'))}</div>
+    <div className={`text-[11px] text-right ${total ? 'text-gray-300' : 'text-gray-600'}`}>{rb(jumlah(rows, 'saldo'))}</div>
+  </div>
+);
+
+// Nomor anggota: dilingkari kalau sudah keluar target, "TG" di bawahnya kalau masih target.
+const NoAnggota = ({ r }) => (
+  <div className="flex flex-col items-center row-span-2 gap-0.5 pt-0.5">
+    <span
+      className={`text-[11px] font-semibold leading-none truncate max-w-full ${
+        r.keluar_target
+          ? 'inline-flex items-center justify-center min-w-6 h-6 px-1 rounded-full border-2 border-red-600 text-red-600'
+          : 'text-gray-800'
+      }`}
+    >
+      {r.nomor_anggota || '–'}
+    </span>
+    {!r.keluar_target && <span className="text-[10px] font-bold text-blue-700">TG</span>}
+  </div>
+);
+
+// Angsuran hari ini: "–" = belum dicatat, merah 0 = dicatat tidak bayar.
+const Angs = ({ r }) => {
+  const s = statusHariIni(r);
+
+  if (s === 'baru') {
+    return <span className="px-1.5 py-0.5 text-[10px] font-bold text-sky-700 bg-sky-100 rounded">BARU</span>;
+  }
+
+  if (s === 'belum') {
+    return <span className="text-base text-gray-300">–</span>;
+  }
+
+  return (
+    <span
+      className={`text-base font-bold ${
+        s === 'tidak' ? 'text-red-600' : Number(r.angs_today) < wajib(r) ? 'text-orange-600' : 'text-green-700'
+      }`}
+    >
+      {rb(r.angs_today)}
+    </span>
   );
 };
 
