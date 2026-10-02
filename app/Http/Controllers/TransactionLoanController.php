@@ -440,12 +440,14 @@ class TransactionLoanController extends Controller
       'isActiveMember' => ['boolean', 'required'],
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'nik' => ['required', 'digits:16'],
+      'nomor_anggota' => ['required', 'string', 'max:255'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
       'request_date' => ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal pengajuan')])],
       'tanggal_drop' =>  ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal drop')])],
     ], [
-      '*.min' => 'minimal diisi 100rb'
+      '*.min' => 'minimal diisi 100rb',
+      'nomor_anggota.required' => 'Nomor anggota wajib diisi (lihat promes / buku manual).',
     ]);
 
     // Permission 'can show kelompok'/'can show branch' tidak pernah ada -> can()
@@ -470,6 +472,10 @@ class TransactionLoanController extends Controller
         return redirect()->back()->withErrors('Kelompok ' . $request->kelompok . ' tidak ada di cabang ini. Tidak bisa input pengajuan.');
       }
       $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id, 'day' => Carbon::parse($request->tanggal_drop)->dayOfWeek]);
+      // Nomor anggota melekat ke rekening (kelompok+hari), sama seperti store_pengajuan_lama.
+      if ($request->filled('nomor_anggota')) {
+        $manage->update(['nomor_anggota' => $request->nomor_anggota]);
+      }
 
       // drop_before hanya bermakna untuk topup (punya previous_loan_id), diisi
       // di store_pengajuan_lama dari nominal_drop pinjaman lama. Create biasa
@@ -549,6 +555,7 @@ class TransactionLoanController extends Controller
 
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'kelompok' => ['required'],
+      'nomor_anggota' => ['nullable', 'string', 'max:255'],
 
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
@@ -621,6 +628,10 @@ class TransactionLoanController extends Controller
       }
       // $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id]);
       $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id, 'day' => Carbon::parse($request->tanggal_drop)->dayOfWeek]);
+      // Nomor anggota melekat ke rekening (kelompok+hari), sama seperti store_pengajuan_lama.
+      if ($request->filled('nomor_anggota')) {
+        $manage->update(['nomor_anggota' => $request->nomor_anggota]);
+      }
 
 
 

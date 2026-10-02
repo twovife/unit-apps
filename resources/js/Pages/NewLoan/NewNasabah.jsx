@@ -65,6 +65,7 @@ const NewNasabah = ({
     nama: '',
     alamat: '',
     kelompok: '',
+    nomor_anggota: '',
     request_nominal: 0,
     angsuran: [],
     // Ikut terkirim ke server: kalau true, cek tanggal ketat dilewati (sementara).
@@ -490,6 +491,20 @@ const NewNasabah = ({
                         </div>
                       </>
                     )}
+                    <div className="w-full mb-3">
+                      <Label>
+                        Nomor Anggota{' '}
+                        <span className="font-normal text-gray-500">(nomor anggota di promes / buku manual)</span>
+                      </Label>
+                      <Input
+                        type="text"
+                        name="nomor_anggota"
+                        value={data.nomor_anggota}
+                        onChange={onInputChange}
+                        required={true}
+                      />
+                      <InputError message={errors.nomor_anggota} />
+                    </div>
                     {isCanShowKelompok && (
                       <div className="w-full mb-3">
                         <Label>Kelompok</Label>

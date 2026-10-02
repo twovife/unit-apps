@@ -114,7 +114,7 @@ trait PinjamanTrait
       return [
         'nama' => $drop->customer->nama,
         'alamat' => $drop->customer->alamat,
-        'nomor_anggota' => $drop->manage_customer->id,
+        'nomor_anggota' => $drop->manage_customer->nomor_anggota,
         'pinjaman_ke' => $countPinjaman,
         'tanggal_drop' => $drop->drop_date,
         'request_date' => $drop->request_date,
@@ -397,7 +397,7 @@ trait PinjamanTrait
           'tanggal_drop' => $item->drop_date,
           'nama' => $item->customer->nama,
           'alamat' => $item->customer->alamat,
-          'nomor_anggota' => $item->manage_customer->id,
+          'nomor_anggota' => $item->manage_customer->nomor_anggota,
 
           'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
@@ -459,7 +459,7 @@ trait PinjamanTrait
             'tanggal_drop' => $item->drop_date,
             'nama' => $item->customer->nama,
             'alamat' => $item->customer->alamat,
-            'nomor_anggota' => $item->manage_customer->id,
+            'nomor_anggota' => $item->manage_customer->nomor_anggota,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
             // ini adalah status lunas
@@ -689,7 +689,7 @@ trait PinjamanTrait
           'tanggal_drop' => $item->drop_date,
           'nama' => $item->customer->nama,
           'alamat' => $item->customer->alamat,
-          'nomor_anggota' => $item->manage_customer->id,
+          'nomor_anggota' => $item->manage_customer->nomor_anggota,
 
           'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
@@ -744,7 +744,7 @@ trait PinjamanTrait
             'tanggal_drop' => $item->drop_date,
             'nama' => $item->customer->nama,
             'alamat' => $item->customer->alamat,
-            'nomor_anggota' => $item->manage_customer->id,
+            'nomor_anggota' => $item->manage_customer->nomor_anggota,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
@@ -882,7 +882,7 @@ trait PinjamanTrait
             'nama' => $item->customer->nama,
 
             'alamat' => $item->customer->alamat,
-            'nomor_anggota' => $item->manage_customer->id,
+            'nomor_anggota' => $item->manage_customer->nomor_anggota,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
             'lunas' => $item->loan_instalment->sum('nominal') == $item->pinjaman,
@@ -1036,7 +1036,7 @@ trait PinjamanTrait
             'tanggal_drop' => $item->drop_date,
             'nama' => $item->customer->nama,
             'alamat' => $item->customer->alamat,
-            'nomor_anggota' => $item->manage_customer->id,
+            'nomor_anggota' => $item->manage_customer->nomor_anggota,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
             'lunas' => $item->loan_instalment->sum('nominal') == $item->pinjaman,
