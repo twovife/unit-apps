@@ -18,6 +18,7 @@ class TransactionLoanInstalment extends Model
     "status",
     "instalment_notes",
     "danatitipan",
+    "is_transfer",
     "user_mantri",
     "user_input"
   ];
@@ -26,6 +27,13 @@ class TransactionLoanInstalment extends Model
   protected static function boot()
   {
     parent::boot();
+
+    // Penjaga terakhir untuk semua jalur tulis (bayar, fastcreate, sinkron, batch).
+    static::creating(function (self $angsuran) {
+      if ($angsuran->nominal < 0) {
+        throw new \DomainException('Nominal angsuran tidak boleh minus.');
+      }
+    });
 
     // F1: angsuran masuk/keluar -> status lunas induk dihitung ulang penuh dari
     // sumber (TransactionLoan::hitungUlangPelunasan). Di created/deleted, bukan

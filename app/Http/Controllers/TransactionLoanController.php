@@ -725,6 +725,9 @@ class TransactionLoanController extends Controller
     if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
     }
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
 
     $previousUrl = url()->previous();
 
@@ -1107,6 +1110,10 @@ class TransactionLoanController extends Controller
       ];
     });
 
+    if ($loan->loan_instalment()->whereNotNull('settled_by_loan_id')->exists()) {
+      return redirect()->back()->withErrors('Pinjaman ini dilunasi drop pengganti. Reset / hapus drop itu dulu.');
+    }
+
     if ($request->saldobefore - collect($request->instalment)->sum('nominal') < 0) {
       return redirect()->back()->withErrors('Tidak Boleh Minus');
     }
@@ -1164,6 +1171,9 @@ class TransactionLoanController extends Controller
 
   public function get_loan_pinjaman(TransactionLoan $transactionLoan)
   {
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return response()->json(['message' => AppHelper::PESAN_BUKAN_WILAYAH], 403);
+    }
 
     $loan = $transactionLoan->load(
       [
@@ -1243,6 +1253,8 @@ class TransactionLoanController extends Controller
         'transaction_date' => $instalment->transaction_date,
         'status' => AppHelper::status_pinjaman($instalment->status),
         'danatitipan' => $instalment->danatitipan,
+        'is_transfer' => (bool) $instalment->is_transfer,
+        'pelunasan' => (bool) $instalment->settled_by_loan_id,
         'mantri' => $instalment->usermantri?->nama_karyawan,
         'saldo' => $saldoBefore
       ];
@@ -1296,22 +1308,26 @@ class TransactionLoanController extends Controller
 
     $val = $request->validate([
       'type_transaksi' => ['required'],
-      'nominal' => ['required_if:type_transaksi,bayar'],
-      'transaction_date' => ['required_if:type_transaksi,bayar', 'date', new HariKerja('Tanggal transaksi')],
+      'nominal' => ['required_if:type_transaksi,bayar', 'nullable', 'integer', 'min:0'],
+      // Sama dengan pemilih tanggal di filter: hari kerja, paling jauh hari ini.
+      'transaction_date' => ['required_if:type_transaksi,bayar', 'date', 'before_or_equal:today', new HariKerja('Tanggal transaksi')],
+    ], [
+      'nominal.min' => 'Nominal angsuran tidak boleh minus.',
+      'transaction_date.before_or_equal' => 'Tanggal bayar tidak boleh melewati hari ini.',
     ]);
 
-    $transactionLoan->with('loan_instalment', 'loan_officer_grouping');
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
 
     $isPaidToday = $transactionLoan->loan_instalment->where('transaction_date', $request->transaction_date);
 
-    if (!auth()->user()->hasRole('mantri')) {
-      $user_area = auth()->user()->employee->area;
-      if ($transactionLoan->loan_officer_grouping->kelompok == $user_area) {
-        return redirect()->back()->withErrors('Anda Tidak Boleh Mengubah Angsuran Yang Ditandatangani Oleh Karyawan Lain');
-      };
-    }
-
     if ($request->type_transaksi == 'bayar') {
+      // Sedang diajukan pelunasan (pengganti open/acc): angsurannya lewat drop pelunasan.
+      if (TransactionLoan::where('previous_loan_id', $transactionLoan->id)->whereIn('status', ['open', 'acc'])->exists()) {
+        return redirect()->back()->withErrors('Angsuran ini ada di drop pelunasan, klik drop untuk mengisi pelunasan / gagalkan terlebih dahulu.');
+      }
+
       if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
         return redirect()->back()->withErrors('Hari Tidak Sama');
       }
@@ -1322,6 +1338,16 @@ class TransactionLoanController extends Controller
 
       if ($request->transaction_date < $transactionLoan->drop_date) {
         return redirect()->back()->withErrors('tanggal bayar tidak boleh kurang dari tanggal drop');
+      }
+
+      // Katrol (danatitipan) tidak mungkin dibayar lewat transfer.
+      if ($request->boolean('danatitipan') && $request->boolean('is_transfer')) {
+        return redirect()->back()->withErrors('Pilih salah satu: katrol atau transfer.');
+      }
+
+      // Katrol hanya untuk pinjaman CM sampai ML (selisih bulan kalender >= 3).
+      if ($request->boolean('danatitipan') && \App\Helpers\Ember::selisihBulan($transactionLoan->drop_date, $request->transaction_date) < 3) {
+        return redirect()->back()->withErrors('Katrol hanya untuk pinjaman CM sampai ML.');
       }
 
       if ($isPaidToday->isNotEmpty()) {
@@ -1354,6 +1380,7 @@ class TransactionLoanController extends Controller
           'transaction_date' => $request->transaction_date,
           'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date, $request->transaction_date),
           'danatitipan' => $request->danatitipan ? 1 : 0,
+          'is_transfer' => $request->boolean('is_transfer'),
           'user_input' => auth()->user()->employee->id,
           'user_mantri' => $employee,
         ]);
@@ -1385,9 +1412,15 @@ class TransactionLoanController extends Controller
 
   public function  white_off_loan(TransactionLoan $transactionLoan, Request $request)
   {
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+
     $val = $request->validate([
       'nominal' => ['required', 'integer', 'min:1'],
-      'transaction_date' => ['required', 'date', new HariKerja('Tanggal pemutihan')],
+      'transaction_date' => ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal pemutihan')],
+    ], [
+      'transaction_date.before_or_equal' => 'Tanggal pemutihan tidak boleh melewati hari ini.',
     ]);
 
     if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
@@ -1421,6 +1454,18 @@ class TransactionLoanController extends Controller
    */
   public function destroy_angsuran(TransactionLoanInstalment $transactionLoanInstalment)
   {
+    // Angsuran pelunasan otomatis (topup) ikut drop penggantinya: hanya hilang
+    // lewat reset / hapus drop itu. Dihapus sendiri = pinjaman lama aktif lagi
+    // padahal sudah dilunasi drop baru -> nasabah tertagih dua kali.
+    if ($transactionLoanInstalment->settled_by_loan_id) {
+      return redirect()->back()->withErrors('Angsuran pelunasan hanya bisa dibatalkan lewat reset / hapus drop penggantinya.');
+    }
+    if (!auth()->user()->hasPermissionTo('can-create')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
+    }
+    if (!AppHelper::bolehAksesPinjaman($transactionLoanInstalment->loan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
 
     $permission =  AppHelper::havePermissionByDate($transactionLoanInstalment->transaction_date);
     if (!$permission['status']) {

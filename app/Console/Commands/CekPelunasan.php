@@ -51,6 +51,14 @@ class CekPelunasan extends Command
         ]);
         $kosong = ['pay_off_date' => null, 'out_date' => null, 'transaction_out_reasons_id' => null];
 
+        try {
+            $angsuran(-1);
+            $tolak = 'lolos';
+        } catch (\DomainException) {
+            $tolak = 'ditolak';
+        }
+        $this->baris[] = ['0 angsuran minus', 'nominal', 'ditolak', $tolak, $tolak === 'ditolak' ? 'OK' : 'GAGAL'];
+
         $a = $angsuran($awal['saldo']);
         $this->cek('1 angsuran melunasi', $loan, ['pay_off_date' => $tgl, 'out_date' => $tgl,
             'transaction_out_reasons_id' => TransactionLoan::SEBAB_LUNAS, 'total_angsuran' => $awal['angsuran'] + $awal['saldo']]);

@@ -373,6 +373,33 @@ class AppHelper
     return $date;
   }
 
+  /**
+   * Boleh menyentuh pinjaman ini? Kantor pinjaman harus ada di daftar kantor
+   * user (Branch::getAllowedBranchIds, null = semua kantor). User tanpa
+   * 'view-all-groups' (mantri) juga dibatasi ke kelompoknya sendiri.
+   *
+   * Sengaja TIDAK memakai kantor aktif di sesi: pengawas yang membuka dua tab
+   * beda kantor tetap boleh menyimpan di tab yang lama - datanya diambil dari
+   * pinjaman, bukan dari sesi.
+   */
+  public static function bolehAksesPinjaman(?\App\Models\TransactionLoan $loan): bool
+  {
+    $user = auth()->user();
+    $grouping = $loan?->loan_officer_grouping;
+    if (!$user || !$grouping) {
+      return false;
+    }
+
+    $kantor = Branch::getAllowedBranchIds($user);
+    if ($kantor !== null && !in_array($grouping->branch_id, $kantor)) {
+      return false;
+    }
+
+    return $user->hasPermissionTo('view-all-groups') || (int) $grouping->kelompok === (int) $user->employee?->area;
+  }
+
+  public const PESAN_BUKAN_WILAYAH = 'Pinjaman ini bukan kantor / kelompok Anda.';
+
   public static function havePermissionByDate($date)
   {
     $date = Carbon::parse($date);
