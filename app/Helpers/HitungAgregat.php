@@ -332,7 +332,7 @@ class HitungAgregat
      * TransactionSaldoAdjustment::ARAH supaya arah tanda tidak pernah
      * didefinisikan dua kali.
      */
-    private static function ekspresiEfekPenyesuaian(string $alias = ''): string
+    public static function ekspresiEfekPenyesuaian(string $alias = ''): string
     {
         $kolomJenis = $alias ? "$alias.jenis" : 'jenis';
         $kolomNominal = $alias ? "$alias.nominal" : 'nominal';

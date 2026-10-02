@@ -31,33 +31,75 @@ use Illuminate\Support\Facades\DB;
 class PenyesuaianSaldo
 {
     /**
-     * Saldo pinjaman menurut sistem sekarang (memakai penyesuaian yang BERLAKU
-     * saja — yang butuh persetujuan tapi belum disetujui tidak dihitung).
+     * Saldo satu pinjaman. Sengaja cuma membungkus saldoBanyak(): satu kode,
+     * jadi saldo per pinjaman dan saldo massal tidak mungkin berbeda.
      *
+     * @param  \DateTimeInterface|string|null  $perTanggal  null = semua yang tercatat
      * @return array{pinjaman:int, angsuran:int, pemutihan:int, efek:int, saldo:int}
      */
-    public static function hitungSaldo(TransactionLoan $loan): array
+    public static function hitungSaldo(TransactionLoan $loan, $perTanggal = null): array
     {
-        $pinjaman = (int) $loan->pinjaman;
+        return self::saldoBanyak([$loan->id], $perTanggal)[$loan->id]
+            ?? ['pinjaman' => 0, 'angsuran' => 0, 'pemutihan' => 0, 'efek' => 0, 'saldo' => 0];
+    }
 
-        $angsuran = (int) DB::table('transaction_loan_instalments')
-            ->where('transaction_loan_id', $loan->id)->sum('nominal');
+    /**
+     * SATU-SATUNYA rumus saldo pinjaman (F8):
+     *
+     *     saldo = pinjaman − Σ angsuran − Σ pemutihan + Σ efek penyesuaian yang berlaku
+     *
+     * Batas waktunya sama persis dengan HitungAgregat::portofolio(): angsuran &
+     * pemutihan bertanggal ≤ $perTanggal, penyesuaian ber-`berlaku_bulan` ≤ bulan
+     * $perTanggal. null = tanpa batas. Penyesuaian yang butuh persetujuan tapi
+     * belum disetujui tidak dihitung. Kesamaan dengan portofolio dibuktikan
+     * `php artisan saldo:cek {branch}`.
+     *
+     * @param  int[]  $loanIds
+     * @param  \DateTimeInterface|string|null  $perTanggal
+     * @return array<int, array{pinjaman:int, angsuran:int, pemutihan:int, efek:int, saldo:int}>
+     */
+    public static function saldoBanyak(array $loanIds, $perTanggal = null): array
+    {
+        if (empty($loanIds)) {
+            return [];
+        }
 
-        $pemutihan = (int) DB::table('transaction_white_offs')
-            ->where('transaction_loan_id', $loan->id)->sum('nominal');
+        $tanggal = $perTanggal ? Carbon::parse($perTanggal)->toDateString() : null;
+        $bulan = $perTanggal ? Carbon::parse($perTanggal)->startOfMonth()->toDateString() : null;
 
-        $efek = (int) TransactionSaldoAdjustment::where('transaction_loan_id', $loan->id)
-            ->berlaku()
-            ->get()
-            ->sum(fn($a) => $a->efek_saldo);
+        $jumlah = fn(string $tabel) => DB::table($tabel)
+            ->select('transaction_loan_id', DB::raw('SUM(nominal) AS n'))
+            ->whereIn('transaction_loan_id', $loanIds)
+            ->when($tanggal, fn($q) => $q->where('transaction_date', '<=', $tanggal))
+            ->groupBy('transaction_loan_id');
 
-        return [
-            'pinjaman' => $pinjaman,
-            'angsuran' => $angsuran,
-            'pemutihan' => $pemutihan,
-            'efek' => $efek,
-            'saldo' => $pinjaman - $angsuran - $pemutihan + $efek,
-        ];
+        $efek = DB::table('transaction_saldo_adjustments')
+            ->select('transaction_loan_id', DB::raw('SUM(' . HitungAgregat::ekspresiEfekPenyesuaian() . ') AS n'))
+            ->whereIn('transaction_loan_id', $loanIds)
+            ->whereRaw(TransactionSaldoAdjustment::ekspresiBerlakuSql())
+            ->when($bulan, fn($q) => $q->where('berlaku_bulan', '<=', $bulan))
+            ->groupBy('transaction_loan_id');
+
+        $rows = DB::table('transaction_loans as l')
+            ->leftJoinSub($jumlah('transaction_loan_instalments'), 'i', 'i.transaction_loan_id', '=', 'l.id')
+            ->leftJoinSub($jumlah('transaction_white_offs'), 'w', 'w.transaction_loan_id', '=', 'l.id')
+            ->leftJoinSub($efek, 'a', 'a.transaction_loan_id', '=', 'l.id')
+            ->whereIn('l.id', $loanIds)
+            ->get(['l.id', 'l.pinjaman', 'i.n AS angsuran', 'w.n AS pemutihan', 'a.n AS efek']);
+
+        $out = [];
+        foreach ($rows as $r) {
+            $s = [
+                'pinjaman' => (int) $r->pinjaman,
+                'angsuran' => (int) $r->angsuran,
+                'pemutihan' => (int) $r->pemutihan,
+                'efek' => (int) $r->efek,
+            ];
+            $s['saldo'] = $s['pinjaman'] - $s['angsuran'] - $s['pemutihan'] + $s['efek'];
+            $out[(int) $r->id] = $s;
+        }
+
+        return $out;
     }
 
     /**
