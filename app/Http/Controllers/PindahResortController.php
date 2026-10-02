@@ -34,7 +34,7 @@ class PindahResortController extends Controller
     DB::transaction(function () use ($kelompok_asal, $kelompok_tujuan, $request) {
 
       $loanIds = TransactionLoan::where('transaction_loan_officer_grouping_id', $kelompok_asal->id)
-        ->whereNull('out_status')
+        ->whereNull('pay_off_date')
         ->where('hari', $request->hari)
         ->pluck('id');
 

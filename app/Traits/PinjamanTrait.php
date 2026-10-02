@@ -998,7 +998,7 @@ trait PinjamanTrait
     )
       ->where('drop_date', "<", $begin_transaction)
       ->where($filterEfektif)
-      ->whereNull('out_status')
+      ->whereNull('pay_off_date')
       ->where('status', 'success')
       // Cari nama: substring biasa (LIKE) - lihat catatan lengkap di
       // getLoanByDate().

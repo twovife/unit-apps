@@ -42,9 +42,17 @@ class TransactionLoan extends Model
     "drop_langsung",
     "out_date",
     "out_status",
+    "pay_off_date",
     "total_angsuran",
     "transaction_out_reasons_id"
   ];
+
+  /** Sebab keluar target (transaction_out_reasons.id). */
+  public const SEBAB_PELUNASAN = 1;  // dilunasi pinjaman pengganti (topup)
+  public const SEBAB_LUNAS = 2;      // lunas tanpa topup
+  public const SEBAB_PEMUTIHAN = 3;  // pemutihan (nasabah meninggal)
+  public const SEBAB_BHT = 4;
+  public const SEBAB_LUNAS_LAMA = 5; // cap data lama saat migrasi pay_off_date
 
 
   protected static function boot()
@@ -77,6 +85,28 @@ class TransactionLoan extends Model
         \App\Helpers\SiklusRekening::tandai($loan->transaction_manage_customer_id, \App\Helpers\SiklusRekening::NASABAH_BARU);
       } else {
         \App\Helpers\SiklusRekening::bersihkan($loan->transaction_manage_customer_id);
+      }
+    });
+
+    // F1: status atau nominal drop berubah -> status lunas dihitung ulang.
+    // Reset ke 'open' mengosongkan pay_off_date/out_date/sebab; edit nominal
+    // menggeser `pinjaman` (generated ×1,3) sehingga lunas bisa berubah.
+    static::updated(function (self $loan) {
+      if ($loan->wasChanged('status') || $loan->wasChanged('nominal_drop')) {
+        $loan->hitungUlangPelunasan();
+      }
+
+      // Step 3: status pengajuan pengganti (topup) berubah -> keluar target
+      // pinjaman lamanya disinkronkan (ACC = keluar, tolak/reset = batal).
+      if ($loan->previous_loan_id && $loan->wasChanged('status')) {
+        \App\Helpers\KeluarTarget::sinkronTopup($loan->previous_loan_id);
+      }
+    });
+
+    // Pengajuan pengganti dihapus -> keluar target pinjaman lama dihitung ulang.
+    static::deleted(function (self $loan) {
+      if ($loan->previous_loan_id) {
+        \App\Helpers\KeluarTarget::sinkronTopup($loan->previous_loan_id);
       }
     });
 
@@ -190,13 +220,9 @@ class TransactionLoan extends Model
           'instalment_notes' => 'Pelunasan otomatis - digantikan pengajuan #' . $transactionLoan->id,
         ]);
 
-        // total_angsuran/out_date/out_status pinjaman lama sudah dihitung
-        // ulang oleh TransactionLoanInstalment::creating() di atas lewat
-        // baris barusan. Tinggal tandai alasan keluarnya secara eksplisit -
-        // dibaca checkpengajuan() & tempat lain yang cek transaction_out_reasons_id.
-        self::whereKey($previousLoan->id)->update([
-          'transaction_out_reasons_id' => 1, // LUNAS
-        ]);
+        // Status lunas + keluar target pinjaman lama sudah diurus: angsuran
+        // pelunasan barusan memicu hitungUlangPelunasan() (pay_off_date, sebab
+        // PELUNASAN), dan KeluarTarget::sinkronTopup() di hook updated.
 
         // Rekening topup ditandai 'pelunasan' — nasabah melunasi lewat topup
         // (masih bersaldo lalu didrop lagi). Hanya sampai sini kalau saldo > 0,
@@ -232,18 +258,88 @@ class TransactionLoan extends Model
       // pinjaman lama secara otomatis (lihat model itu).
       $instalment->delete();
 
-      // transaction_out_reasons_id cuma kita bersihkan kalau nilainya masih
-      // 1 (LUNAS) - itu satu-satunya nilai yang KITA yang set di blok
-      // pembuatan atas, jadi aman dibersihkan tanpa menimpa alasan keluar
-      // lain yang mungkin di-set manual oleh user untuk urusan berbeda.
+      // Keluar target karena topup (sebab 1 PELUNASAN) ikut dibatalkan, beserta
+      // tanggalnya. Sebab lain tidak disentuh.
       self::whereKey($previousLoanId)
-        ->where('transaction_out_reasons_id', 1)
-        ->update(['transaction_out_reasons_id' => null]);
+        ->where('transaction_out_reasons_id', self::SEBAB_PELUNASAN)
+        ->update(['transaction_out_reasons_id' => null, 'out_date' => null]);
     }
 
     // Topup dibatalkan (status success -> open lagi) -> siklus 'pelunasan' yang
     // sempat ditandai ikut dikosongkan. Reset, konsisten dgn pembatalan lain.
     \App\Helpers\SiklusRekening::bersihkan($transactionLoan->transaction_manage_customer_id);
+  }
+
+  /**
+   * F1 — SATU-SATUNYA penulis status lunas pinjaman. Dihitung ulang penuh dari
+   * sumber (PenyesuaianSaldo::hitungSaldo), bukan ditambah-kurangi: aman
+   * dipanggil berkali-kali, dan cache yang meleset ikut terbetulkan.
+   *
+   *   total_angsuran : Σ angsuran saja (pemutihan tidak ikut)
+   *   pay_off_date   : tanggal transaksi terakhir saat saldo <= 0, selain itu NULL
+   *   out_date+sebab : keluar target karena tutup — PELUNASAN (dilunasi topup),
+   *                    PEMUTIHAN, atau LUNAS. Keluar target yang sudah tercatat
+   *                    tidak ditimpa. Batal tutup -> dikosongkan, kecuali sebab
+   *                    yang tidak bergantung pada lunas (PELUNASAN, BHT).
+   *   out_status     : tidak ditulis lagi.
+   *
+   * Pinjaman bukan 'success' (open/acc/tolak/gagal, termasuk hasil reset) tidak
+   * bisa lunas maupun keluar target: pay_off_date, out_date, sebab dikosongkan.
+   *
+   * @return bool  true = lunas
+   */
+  public function hitungUlangPelunasan(): bool
+  {
+    $saldo = \App\Helpers\PenyesuaianSaldo::hitungSaldo($this);
+    $lunas = $this->status === 'success' && $saldo['saldo'] <= 0;
+    $isi = ['total_angsuran' => $saldo['angsuran']];
+
+    if ($lunas) {
+      $isi['pay_off_date'] = $this->tanggalTutup();
+      if (!$this->out_date) {
+        [$isi['transaction_out_reasons_id'], $isi['out_date']] = $this->sebabTutup($isi['pay_off_date']);
+      }
+    } else {
+      $isi['pay_off_date'] = null;
+      $tetapKeluar = $this->status === 'success'
+        && in_array((int) $this->transaction_out_reasons_id, [self::SEBAB_PELUNASAN, self::SEBAB_BHT], true);
+      if (!$tetapKeluar) {
+        $isi['out_date'] = null;
+        $isi['transaction_out_reasons_id'] = null;
+      }
+    }
+
+    $this->forceFill($isi)->saveQuietly();
+
+    return $lunas;
+  }
+
+  /** Tanggal transaksi terakhir yang menggerakkan saldo: angsuran, pemutihan, penyesuaian. */
+  private function tanggalTutup(): ?string
+  {
+    $tanggal = array_filter([
+      $this->loan_instalment()->where('nominal', '>', 0)->max('transaction_date'),
+      TransactionWhiteOff::where('transaction_loan_id', $this->id)->max('transaction_date'),
+      TransactionSaldoAdjustment::where('transaction_loan_id', $this->id)->berlaku()->max('berlaku_bulan'),
+    ]);
+
+    return $tanggal ? max($tanggal) : $this->drop_date;
+  }
+
+  /** [sebab, out_date] untuk pinjaman yang baru tutup tanpa keluar target sebelumnya. */
+  private function sebabTutup(?string $payOffDate): array
+  {
+    $penggantiId = $this->loan_instalment()->whereNotNull('settled_by_loan_id')->value('settled_by_loan_id');
+    if ($penggantiId) {
+      // Aturan topup: keluar target per tanggal PENGAJUAN penggantinya.
+      return [self::SEBAB_PELUNASAN, self::whereKey($penggantiId)->value('request_date') ?? $payOffDate];
+    }
+
+    if (TransactionWhiteOff::where('transaction_loan_id', $this->id)->exists()) {
+      return [self::SEBAB_PEMUTIHAN, $payOffDate];
+    }
+
+    return [self::SEBAB_LUNAS, $payOffDate];
   }
 
   public function loan_instalment()

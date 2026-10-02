@@ -243,7 +243,7 @@ class TransactionLoanController extends Controller
           return $customer->loan_officer_grouping->id; // Group by branch ID
         }
       )->map(function ($group) {
-        $outDate = $group->first()->latestTransaction->out_date;
+        $outDate = $group->first()->latestTransaction->pay_off_date;
         $latestTransaction = $group->first()->latestTransaction;
         return [
           'wilayah' => $group->first()->branch->wilayah,
@@ -258,8 +258,8 @@ class TransactionLoanController extends Controller
           'out_date' => $latestTransaction->out_date,
           'lunas' => $outDate ? 'lunas' : 'belum_lunas',
           'status_show' => true,
-          'status_id' => $outDate ? AppHelper::generateStatusAngsuran($latestTransaction->drop_date, $latestTransaction->out_date) : AppHelper::generateStatusAngsuran($latestTransaction->drop_date, Carbon::now()->format('Y-m-d')),
-          'status' => $outDate ? AppHelper::generateStatusAngsuranString($latestTransaction->drop_date, $latestTransaction->out_date) : AppHelper::generateStatusAngsuranString($latestTransaction->drop_date, Carbon::now()->format('Y-m-d')),
+          'status_id' => $outDate ? AppHelper::generateStatusAngsuran($latestTransaction->drop_date, $outDate) : AppHelper::generateStatusAngsuran($latestTransaction->drop_date, Carbon::now()->format('Y-m-d')),
+          'status' => $outDate ? AppHelper::generateStatusAngsuranString($latestTransaction->drop_date, $outDate) : AppHelper::generateStatusAngsuranString($latestTransaction->drop_date, Carbon::now()->format('Y-m-d')),
           // 'tanggal_pinjaman' => $group->loan->latest('drop_date')->drop_date->format('Y-m-d'),
         ];
       });
@@ -1194,6 +1194,8 @@ class TransactionLoanController extends Controller
       'tanggal_pengajuan' => $loan->request_date,
       'tanggal_acc' => $loan->check_date,
       'tanggal_drop' => $loan->drop_date,
+      'out_date' => $loan->out_date, // keluar target
+      'pay_off_date' => $loan->pay_off_date, // lunas
       'hari' => $loan->hari,
       'kelompok' => $loan->loan_officer_grouping->kelompok,
       'branch' => $loan->branch->unit,
@@ -1384,23 +1386,16 @@ class TransactionLoanController extends Controller
     try {
       DB::beginTransaction();
 
-      $outDate = $transactionLoan->out_date;
-      $reason = $transactionLoan->transaction_out_reasons_id;
-
-      $transactionLoan->out_date = $outDate ? $outDate : $request->transaction_date;
-      $transactionLoan->out_status = 'LUNAS';
-      $transactionLoan->transaction_out_reasons_id = $reason ? $reason : 4;
-      $transactionLoan->total_angsuran = $transactionLoan->loan_instalment()->sum('nominal') + $request->nominal;
-
-
       $transactionLoan->white_off()->create([
         'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
         'transaction_date' => $request->transaction_date,
         'nominal' => $request->nominal,
       ]);
 
-
-      $transactionLoan->save();
+      // F1: tutup + keluar target (sebab PEMUTIHAN) dihitung dari sumber.
+      // Nominal pemutihan TIDAK lagi ditambahkan ke total_angsuran - saldo
+      // sudah mengurangi pemutihan, jadi dulu terhitung dua kali.
+      $transactionLoan->hitungUlangPelunasan();
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
@@ -1533,7 +1528,9 @@ class TransactionLoanController extends Controller
           "user_drop" => null,
           "status" => 'open',
         ]);
-        $transactionLoan->loan_instalment()->delete();
+        // Per baris, bukan hapus massal: hook angsuran harus jalan supaya
+        // total_angsuran & status lunas dihitung ulang dan siklus 'ist' bersih.
+        $transactionLoan->loan_instalment()->get()->each->delete();
       }
       DB::commit();
     } catch (Exception $e) {
