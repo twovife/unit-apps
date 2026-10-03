@@ -107,6 +107,9 @@ Route::middleware('auth')->group(function () {
       ->name('kesiapan_closing');
     Route::get('/pemantau', [\App\Http\Controllers\MigrasiController::class, 'pemantauMigrasi'])
       ->name('pemantau');
+    // Kesiapan migrasi per kantor (superuser, baca-saja): bucket sistem vs sirkulasi lama + Z.
+    Route::get('/kesiapan', [\App\Http\Controllers\MigrasiController::class, 'kesiapanMigrasi'])
+      ->name('kesiapan');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
     Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])

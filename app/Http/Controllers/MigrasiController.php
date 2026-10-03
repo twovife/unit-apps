@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\DaftarMigrasi;
+use App\Helpers\Ember;
+use App\Helpers\HitungAgregat;
 use App\Helpers\PemeriksaAgregat;
 use App\Helpers\PenyesuaianSaldo;
 use App\Helpers\TargetBayangan;
@@ -369,6 +371,121 @@ class MigrasiController extends Controller
         }
 
         return back()->with('message', 'Penyesuaian disetujui.');
+    }
+
+    /**
+     * Kesiapan migrasi satu kantor (kantor aktif) ke pendataan baru — superuser,
+     * BACA-SAJA. Per kelompok x hari tagih membandingkan:
+     *
+     *   sistem = saldo per ember dari daftar nasabah (F8, HitungAgregat::
+     *            portofolio per hari terakhir sebelum $periode) - fungsi yang
+     *            sama dengan rekap bulanan sesudah migrasi
+     *   lama   = transaction_sirculations bertanggal $periode (saldo awal
+     *            yang dinyatakan kantor di sistem lama). Sistem lama hanya
+     *            mengisi amount (total), cm, mb, ml - kolom month1/month2/ccm
+     *            selalu 0 - jadi dibandingkan per KATEGORI (lancar = total -
+     *            cm - mb - ml), bukan per ember.
+     *   Z      = ML lama - ML sistem (ML yang belum terinput)
+     *
+     * Siap = baris lama tepat satu, lancar/CM/MB selisih 0, Z >= 0.
+     * Keputusan atas baris yang belum siap diambil manusia; layar ini hanya
+     * menunjukkan.
+     */
+    public function kesiapanMigrasi(Request $request)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            return redirect()->route('home')->with('message', 'Layar kesiapan migrasi khusus superuser.');
+        }
+
+        $scope = AuthScope::resolve();
+        $periode = Carbon::parse($request->input('periode', '2026-09-01'))->startOfMonth();
+
+        $groupings = DB::table('transaction_loan_officer_groupings')
+            ->where('branch_id', $scope->branch_id)
+            ->get(['id', 'kelompok']);
+        $ids = $groupings->pluck('id')->all();
+        $kelompok = $groupings->pluck('kelompok', 'id');
+
+        $sistem = HitungAgregat::portofolio($ids, $periode->copy()->subDay(), $periode);
+        $lama = DB::table('transaction_sirculations')
+            ->whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereDate('date', $periode)
+            ->get()
+            ->groupBy(fn($r) => $r->transaction_loan_officer_grouping_id . '|' . strtolower(trim($r->day)));
+
+        $nol = array_fill_keys(Ember::SEMUA, 0);
+        $kategori = array_keys(Ember::KATEGORI);
+        $urutHari = array_flip(['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']);
+
+        $baris = collect(array_keys($sistem))->merge($lama->keys())->unique()
+            ->map(function ($kunci) use ($sistem, $lama, $nol, $kategori, $kelompok) {
+                [$g, $hari] = explode('|', $kunci);
+                $s = array_merge($nol, $sistem[$kunci] ?? []);
+                $sistemKategori = array_map(fn($isi) => array_sum(array_intersect_key($s, array_flip($isi))), Ember::KATEGORI);
+                $l = $lama->get($kunci, collect());
+                $alasan = [];
+                $emberLama = $selisih = $z = null;
+
+                if ($l->isEmpty()) {
+                    $alasan[] = 'Sirkulasi lama tidak ada';
+                } elseif ($l->count() > 1) {
+                    $alasan[] = "Sirkulasi lama dobel ({$l->count()} baris)";
+                } else {
+                    $r = $l->first();
+                    $emberLama = [
+                        'lancar' => (int) $r->amount - (int) $r->cm_amount - (int) $r->mb_amount - (int) $r->ml_amount,
+                        'cm' => (int) $r->cm_amount,
+                        'mb' => (int) $r->mb_amount,
+                        'ml' => (int) $r->ml_amount,
+                    ];
+                    foreach ($kategori as $k) {
+                        $selisih[$k] = $sistemKategori[$k] - $emberLama[$k];
+                        if ($k !== 'ml' && $selisih[$k] !== 0) {
+                            $alasan[] = 'Selisih ' . strtoupper($k);
+                        }
+                    }
+                    $z = $emberLama['ml'] - $sistemKategori['ml'];
+                    if ($z < 0) {
+                        $alasan[] = 'Z minus';
+                    }
+                }
+
+                return [
+                    'kunci' => $kunci,
+                    'kelompok' => $kelompok->get((int) $g),
+                    'hari' => $hari,
+                    'sistem' => $s,
+                    'lama' => $emberLama,
+                    'selisih' => $selisih,
+                    'z' => $z,
+                    'alasan' => $alasan,
+                    'siap' => empty($alasan),
+                ];
+            })
+            ->sortBy([['kelompok', 'asc'], fn($a, $b) => ($urutHari[$a['hari']] ?? 9) <=> ($urutHari[$b['hari']] ?? 9)])
+            ->values();
+
+        $jumlah = fn($kolom, $kunci) => array_map(
+            fn($e) => $baris->sum(fn($b) => $b[$kolom][$e] ?? 0),
+            array_combine($kunci, $kunci)
+        );
+
+        return Inertia::render('Migrasi/Kesiapan', [
+            'datas' => $baris,
+            'ringkasan' => [
+                'baris' => $baris->count(),
+                'siap' => $baris->where('siap', true)->count(),
+                'sistem' => $jumlah('sistem', Ember::SEMUA),
+                'lama' => $jumlah('lama', $kategori),
+                'z' => $baris->sum(fn($b) => max($b['z'] ?? 0, 0)),
+                'z_minus' => $baris->filter(fn($b) => ($b['z'] ?? 0) < 0)->count(),
+            ],
+            'server_filter' => [
+                'periode' => $periode->format('Y-m-d'),
+                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
+            ],
+        ]);
     }
 
     /**

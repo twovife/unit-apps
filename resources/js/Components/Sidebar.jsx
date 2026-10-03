@@ -374,6 +374,12 @@ export default function AppSidebar({ ...props }) {
                   link: route('mutasi_nasabah.index'),
                   active: route().current('mutasi_nasabah.index'),
                 },
+                {
+                  id: 6,
+                  title: 'Kesiapan Migrasi',
+                  link: route('migrasi.kesiapan'),
+                  active: route().current('migrasi.kesiapan'),
+                },
               ]}
             />
           </SidebarGroup>
