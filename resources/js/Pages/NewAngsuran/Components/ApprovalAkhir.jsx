@@ -12,38 +12,6 @@ const namaBulan = (d, tahun = false) =>
 
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
-/** Tabel kecil dua/satu kolom angka: [[label, ...angka]]. */
-const TabelEmber = ({ judul, kolom, baris, total }) => (
-  <div className="overflow-hidden border rounded-lg">
-    <Table className="text-sm">
-      <TableHeader className="bg-slate-50">
-        <TableRow>
-          <TableHead className="px-3">{judul}</TableHead>
-          {kolom.map((k) => (
-            <TableHead key={k} className="px-3 text-right">{k}</TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {baris.map(([label, ...angka]) => (
-          <TableRow key={label}>
-            <TableCell className="px-3 font-medium whitespace-nowrap">{label}</TableCell>
-            {angka.map((n, i) => (
-              <TableCell key={i} className="px-3 text-right tabular-nums">{rp(n)}</TableCell>
-            ))}
-          </TableRow>
-        ))}
-        <TableRow className="font-semibold bg-slate-50">
-          <TableCell className="px-3">Total</TableCell>
-          {total.map((n, i) => (
-            <TableCell key={i} className="px-3 text-right tabular-nums">{rp(n)}</TableCell>
-          ))}
-        </TableRow>
-      </TableBody>
-    </Table>
-  </div>
-);
-
 const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
   const {
     sirkulasi,
@@ -121,7 +89,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
 
   return (
     <Sheet open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
-      <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-lg">
+      <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-2xl">
         <Loading show={processing} />
         <SheetHeader className="px-5 py-4 pr-12 border-b">
           <SheetTitle>Approval Akhir Bulan</SheetTitle>
@@ -132,35 +100,54 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
         </SheetHeader>
 
         <form onSubmit={onSubmitForm} className="px-5 py-4 space-y-4">
-          {/* Lancar dipecah per bulan drop: normal = drop bulan ini, n1 = drop bulan lalu. */}
-          <TabelEmber
-            judul={`Bulan ${namaBulan(bulan, true)}`}
-            kolom={['Awal', 'Akhir']}
-            baris={[
-              ['ML', data.ml_amount, datas?.ml?.saldo],
-              ['MB', data.mb_amount, datas?.mb?.saldo],
-              ['CM', data.cm_amount, datas?.cm?.saldo],
-              ['Calon CM', datas?.ccm?.sirkulasi, datas?.ccm?.saldo],
-              [`Drop ${namaBulan(bulan.subtract(1, 'month'))}`, datas?.n1?.sirkulasi, datas?.n1?.saldo],
-              [`Drop ${namaBulan(bulan)}`, datas?.normal?.sirkulasi, datas?.normal?.saldo],
-            ]}
-            total={[data.amount, data.amount_akhir]}
-          />
-
-          {/* Awal bulan depan: ember bergeser satu tingkat dari saldo akhir. */}
-          <TabelEmber
-            judul={`Awal ${namaBulan(bulan.add(1, 'month'), true)}`}
-            kolom={['Saldo']}
-            baris={[
-              ['ML', data.ml_next],
-              ['MB', data.mb_next],
-              ['CM', data.cm_next],
-              ['Calon CM', datas?.n1?.saldo],
-              [`Drop ${namaBulan(bulan)}`, datas?.normal?.saldo],
-              [`Drop ${namaBulan(bulan.add(1, 'month'))}`, 0],
-            ]}
-            total={[data.amount_next]}
-          />
+          {/* Satu baris per ember: awal -> angsuran -> akhir | awal bulan depan (ember bergeser satu tingkat).
+              Lancar dipecah per bulan drop: n1 = drop bulan lalu, normal = drop bulan ini. */}
+          <div className="overflow-x-auto border rounded-lg">
+            <Table className="text-sm">
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="px-3">Ember</TableHead>
+                  <TableHead className="px-3 text-right">Awal {namaBulan(bulan)}</TableHead>
+                  <TableHead className="px-3 text-right">Angsuran</TableHead>
+                  <TableHead className="px-3 text-right">Akhir {namaBulan(bulan)}</TableHead>
+                  <TableHead className="px-3 text-right border-l">Awal {namaBulan(bulan.add(1, 'month'))}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[
+                  ['ML', data.ml_amount, datas?.ml, data.ml_next],
+                  ['MB', data.mb_amount, datas?.mb, data.mb_next],
+                  ['CM', data.cm_amount, datas?.cm, data.cm_next],
+                  ['Calon CM', datas?.ccm?.sirkulasi, datas?.ccm, datas?.n1?.saldo],
+                  [`Drop ${namaBulan(bulan.subtract(1, 'month'))}`, datas?.n1?.sirkulasi, datas?.n1, datas?.normal?.saldo, `Drop ${namaBulan(bulan)}`],
+                  [`Drop ${namaBulan(bulan)}`, datas?.normal?.sirkulasi, datas?.normal, 0, `Drop ${namaBulan(bulan.add(1, 'month'))}`],
+                ].map(([label, awal, ember, depan, isiDepan]) => (
+                  <TableRow key={label}>
+                    <TableCell className="px-3 font-medium whitespace-nowrap">{label}</TableCell>
+                    <TableCell className="px-3 text-right tabular-nums">{rp(awal)}</TableCell>
+                    <TableCell className="px-3 text-right tabular-nums">
+                      {rp(ember?.angsuran)}
+                      {!!ember?.pemutihan && <div className="text-[11px] text-red-600">+ MD {rp(ember.pemutihan)}</div>}
+                    </TableCell>
+                    <TableCell className="px-3 font-medium text-right tabular-nums">{rp(ember?.saldo)}</TableCell>
+                    <TableCell className="px-3 font-semibold text-right border-l tabular-nums">
+                      {rp(depan)}
+                      {isiDepan && <div className="text-[11px] font-normal text-slate-400">jadi {isiDepan}</div>}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="font-semibold bg-slate-50">
+                  <TableCell className="px-3">Total</TableCell>
+                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount)}</TableCell>
+                  <TableCell className="px-3 text-right tabular-nums">
+                    {rp(Object.values(datas ?? {}).reduce((t, e) => t + (Number(e?.angsuran) || 0), 0))}
+                  </TableCell>
+                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount_akhir)}</TableCell>
+                  <TableCell className="px-3 text-right border-l tabular-nums">{rp(data.amount_next)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
 
           <label className="flex items-start gap-2 text-sm text-slate-700">
             <input type="checkbox" required className="mt-0.5" />

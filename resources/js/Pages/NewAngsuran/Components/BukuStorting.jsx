@@ -91,6 +91,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             [item.type]: {
               sirkulasi: sirkulasiAwal,
               angsuran: totalInstalment,
+              pemutihan: totalPemutihan,
               saldo: sirkulasiAwal - (totalInstalment + totalPemutihan),
             },
           }));
