@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
 import dayjs from 'dayjs';
+import { ArrowUp } from 'lucide-react';
 import Loading from '@/Components/Loading';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
@@ -131,6 +132,8 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     </TableCell>
                     <TableCell className="px-3 font-medium text-right tabular-nums">{rp(ember?.saldo)}</TableCell>
                     <TableCell className="px-3 font-semibold text-right border-l tabular-nums">
+                      {/* Panah: saldo naik satu tingkat dari ember di bawahnya. */}
+                      {!!depan && <ArrowUp className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-emerald-600" />}
                       {rp(depan)}
                       {isiDepan && <div className="text-[11px] font-normal text-slate-400">jadi {isiDepan}</div>}
                     </TableCell>
