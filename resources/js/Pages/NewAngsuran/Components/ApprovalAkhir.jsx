@@ -1,20 +1,48 @@
 import React, { useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
+import dayjs from 'dayjs';
 import Loading from '@/Components/Loading';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 
+// Nama bulan Indonesia (dayjs di proyek ini tanpa locale id).
+const namaBulan = (d, tahun = false) =>
+  d.toDate().toLocaleDateString('id-ID', tahun ? { month: 'long', year: 'numeric' } : { month: 'long' });
+
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
-// Baris tabel: [label, kolom awal, kolom akhir, kolom bulan depan (isian)].
-const BARIS = [
-  ['ML', 'ml_amount', 'ml_amount_akhir', 'ml_next'],
-  ['MB', 'mb_amount', 'mb_amount_akhir', 'mb_next'],
-  ['CM', 'cm_amount', 'cm_amount_akhir', 'cm_next'],
-  ['Calon CM', 'calon_cm_amount', 'calon_cm_amount_akhir', null],
-  ['Normal', 'normal', 'normal_akhir', 'normal_next'],
-];
+/** Tabel kecil dua/satu kolom angka: [[label, ...angka]]. */
+const TabelEmber = ({ judul, kolom, baris, total }) => (
+  <div className="overflow-hidden border rounded-lg">
+    <Table className="text-sm">
+      <TableHeader className="bg-slate-50">
+        <TableRow>
+          <TableHead className="px-3">{judul}</TableHead>
+          {kolom.map((k) => (
+            <TableHead key={k} className="px-3 text-right">{k}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {baris.map(([label, ...angka]) => (
+          <TableRow key={label}>
+            <TableCell className="px-3 font-medium whitespace-nowrap">{label}</TableCell>
+            {angka.map((n, i) => (
+              <TableCell key={i} className="px-3 text-right tabular-nums">{rp(n)}</TableCell>
+            ))}
+          </TableRow>
+        ))}
+        <TableRow className="font-semibold bg-slate-50">
+          <TableCell className="px-3">Total</TableCell>
+          {total.map((n, i) => (
+            <TableCell key={i} className="px-3 text-right tabular-nums">{rp(n)}</TableCell>
+          ))}
+        </TableRow>
+      </TableBody>
+    </Table>
+  </div>
+);
 
 const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
   const {
@@ -76,6 +104,8 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
     });
   }, [sirkulasi, show]);
 
+  const bulan = dayjs(month);
+
   const modalIsClosed = () => {
     onClosed();
   };
@@ -91,7 +121,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
 
   return (
     <Sheet open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
-      <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-2xl">
+      <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-lg">
         <Loading show={processing} />
         <SheetHeader className="px-5 py-4 pr-12 border-b">
           <SheetTitle>Approval Akhir Bulan</SheetTitle>
@@ -102,36 +132,35 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
         </SheetHeader>
 
         <form onSubmit={onSubmitForm} className="px-5 py-4 space-y-4">
-          <div className="overflow-x-auto border rounded-lg">
-            <Table className="text-sm">
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead className="px-3">Ember</TableHead>
-                  <TableHead className="px-3 text-right">Awal bulan</TableHead>
-                  <TableHead className="px-3 text-right">Akhir bulan</TableHead>
-                  <TableHead className="px-3 text-right">Awal bulan depan</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {BARIS.map(([label, awal, akhir, depan]) => (
-                  <TableRow key={label}>
-                    <TableCell className="px-3 font-medium">{label}</TableCell>
-                    <TableCell className="px-3 text-right tabular-nums text-slate-600">{rp(data[awal])}</TableCell>
-                    <TableCell className="px-3 text-right tabular-nums">{rp(data[akhir])}</TableCell>
-                    <TableCell className="px-3 font-medium text-right tabular-nums">
-                      {depan ? rp(data[depan]) : <span className="text-xs text-slate-400">masuk CM</span>}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="font-semibold bg-slate-50">
-                  <TableCell className="px-3">Total</TableCell>
-                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount)}</TableCell>
-                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount_akhir)}</TableCell>
-                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount_next)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
+          {/* Lancar dipecah per bulan drop: normal = drop bulan ini, n1 = drop bulan lalu. */}
+          <TabelEmber
+            judul={`Bulan ${namaBulan(bulan, true)}`}
+            kolom={['Awal', 'Akhir']}
+            baris={[
+              ['ML', data.ml_amount, datas?.ml?.saldo],
+              ['MB', data.mb_amount, datas?.mb?.saldo],
+              ['CM', data.cm_amount, datas?.cm?.saldo],
+              ['Calon CM', datas?.ccm?.sirkulasi, datas?.ccm?.saldo],
+              [`Drop ${namaBulan(bulan.subtract(1, 'month'))}`, datas?.n1?.sirkulasi, datas?.n1?.saldo],
+              [`Drop ${namaBulan(bulan)}`, datas?.normal?.sirkulasi, datas?.normal?.saldo],
+            ]}
+            total={[data.amount, data.amount_akhir]}
+          />
+
+          {/* Awal bulan depan: ember bergeser satu tingkat dari saldo akhir. */}
+          <TabelEmber
+            judul={`Awal ${namaBulan(bulan.add(1, 'month'), true)}`}
+            kolom={['Saldo']}
+            baris={[
+              ['ML', data.ml_next],
+              ['MB', data.mb_next],
+              ['CM', data.cm_next],
+              ['Calon CM', datas?.n1?.saldo],
+              [`Drop ${namaBulan(bulan)}`, datas?.normal?.saldo],
+              [`Drop ${namaBulan(bulan.add(1, 'month'))}`, 0],
+            ]}
+            total={[data.amount_next]}
+          />
 
           <label className="flex items-start gap-2 text-sm text-slate-700">
             <input type="checkbox" required className="mt-0.5" />
