@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
 import dayjs from 'dayjs';
-import { ArrowUp } from 'lucide-react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import Loading from '@/Components/Loading';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
@@ -111,7 +111,8 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                   <TableHead className="px-3 text-right">Awal {namaBulan(bulan)}</TableHead>
                   <TableHead className="px-3 text-right">Angsuran</TableHead>
                   <TableHead className="px-3 text-right">Akhir {namaBulan(bulan)}</TableHead>
-                  <TableHead className="px-3 text-right border-l">Awal {namaBulan(bulan.add(1, 'month'))}</TableHead>
+                  <TableHead className="w-8 p-0" />
+                  <TableHead className="px-3 text-right">Awal {namaBulan(bulan.add(1, 'month'))}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -120,9 +121,9 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                   ['MB', data.mb_amount, datas?.mb, data.mb_next],
                   ['CM', data.cm_amount, datas?.cm, data.cm_next],
                   ['Calon CM', datas?.ccm?.sirkulasi, datas?.ccm, datas?.n1?.saldo],
-                  [`Drop ${namaBulan(bulan.subtract(1, 'month'))}`, datas?.n1?.sirkulasi, datas?.n1, datas?.normal?.saldo, `Drop ${namaBulan(bulan)}`],
-                  [`Drop ${namaBulan(bulan)}`, datas?.normal?.sirkulasi, datas?.normal, 0, `Drop ${namaBulan(bulan.add(1, 'month'))}`],
-                ].map(([label, awal, ember, depan, isiDepan]) => (
+                  [`Drop ${namaBulan(bulan.subtract(1, 'month'))}`, datas?.n1?.sirkulasi, datas?.n1, datas?.normal?.saldo],
+                  [`Drop ${namaBulan(bulan)}`, datas?.normal?.sirkulasi, datas?.normal, null],
+                ].map(([label, awal, ember, depan], i) => (
                   <TableRow key={label}>
                     <TableCell className="px-3 font-medium whitespace-nowrap">{label}</TableCell>
                     <TableCell className="px-3 text-right tabular-nums">{rp(awal)}</TableCell>
@@ -131,11 +132,17 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                       {!!ember?.pemutihan && <div className="text-[11px] text-red-600">+ MD {rp(ember.pemutihan)}</div>}
                     </TableCell>
                     <TableCell className="px-3 font-medium text-right tabular-nums">{rp(ember?.saldo)}</TableCell>
-                    <TableCell className="px-3 font-semibold text-right border-l tabular-nums">
-                      {/* Panah: saldo naik satu tingkat dari ember di bawahnya. */}
-                      {!!depan && <ArrowUp className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-emerald-600" />}
-                      {rp(depan)}
-                      {isiDepan && <div className="text-[11px] font-normal text-slate-400">jadi {isiDepan}</div>}
+                    {/* Panah: saldo akhir ember ini pindah ke ember satu tingkat di atasnya
+                        bulan depan (garis antar baris). ML tetap di ML. */}
+                    <TableCell className="relative w-8 p-0">
+                      {i === 0 ? (
+                        <ArrowRight className="absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 text-emerald-600" />
+                      ) : (
+                        <ArrowUpRight className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 left-1/2 top-0 text-emerald-600" />
+                      )}
+                    </TableCell>
+                    <TableCell className="px-3 font-semibold text-right tabular-nums">
+                      {depan === null ? '' : rp(depan)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -146,7 +153,8 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     {rp(Object.values(datas ?? {}).reduce((t, e) => t + (Number(e?.angsuran) || 0), 0))}
                   </TableCell>
                   <TableCell className="px-3 text-right tabular-nums">{rp(data.amount_akhir)}</TableCell>
-                  <TableCell className="px-3 text-right border-l tabular-nums">{rp(data.amount_next)}</TableCell>
+                  <TableCell className="p-0" />
+                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount_next)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
