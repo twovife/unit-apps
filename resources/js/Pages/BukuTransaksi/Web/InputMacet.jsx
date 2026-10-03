@@ -52,7 +52,7 @@ const InputMacet = ({ show, onClosed }) => {
     isActiveMember: false,
     nik: '',
     tanggal_drop: '',
-    no_kk: '',
+    nomor_anggota: '',
     nama: '',
     alamat: '',
     kelompok: currentKelompok || '',
@@ -309,6 +309,21 @@ const InputMacet = ({ show, onClosed }) => {
                               onChange={onInputChange}
                             />
                             <InputError message={errors.nik} />
+                          </div>
+
+                          <div className="w-full mb-3">
+                            <Label>
+                              Nomor Anggota{' '}
+                              <span className="font-normal text-gray-500">(nomor anggota sesuai promes / buku manual)</span>
+                            </Label>
+                            <Input
+                              type="text"
+                              name="nomor_anggota"
+                              value={data.nomor_anggota}
+                              onChange={onInputChange}
+                              required={true}
+                            />
+                            <InputError message={errors.nomor_anggota} />
                           </div>
 
                           {!data.isActiveMember ? (

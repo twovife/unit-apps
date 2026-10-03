@@ -52,7 +52,7 @@ const FastCreateV2 = () => {
     isActiveMember: false,
     nik: '',
     tanggal_drop: '',
-    no_kk: '',
+    nomor_anggota: '',
     nama: '',
     alamat: '',
     kelompok: currentKelompok || '',
@@ -355,18 +355,23 @@ const FastCreateV2 = () => {
                           <InputError message={errors.nik} />
                         </div>
 
+                        <div className="w-full mb-3">
+                          <Label>
+                            Nomor Anggota{' '}
+                            <span className="font-normal text-gray-500">(nomor anggota sesuai promes / buku manual)</span>
+                          </Label>
+                          <Input
+                            type="text"
+                            name="nomor_anggota"
+                            value={data.nomor_anggota}
+                            onChange={onInputChange}
+                            required={true}
+                          />
+                          <InputError message={errors.nomor_anggota} />
+                        </div>
+
                         {!data.isActiveMember ? (
                           <>
-                            <div className="w-full mb-3">
-                              <Label optional>NO KK</Label>
-                              <Input
-                                type="text"
-                                name="no_kk"
-                                value={data.no_kk}
-                                onChange={onInputChange}
-                              />
-                              <InputError message={errors.no_kk} />
-                            </div>
                             <div className="w-full mb-3">
                               <Label>Nama</Label>
                               <Input

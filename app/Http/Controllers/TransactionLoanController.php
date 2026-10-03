@@ -567,7 +567,7 @@ class TransactionLoanController extends Controller
 
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'kelompok' => ['required'],
-      'nomor_anggota' => ['nullable', 'string', 'max:255'],
+      'nomor_anggota' => ['required', 'string', 'max:255'],
 
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],

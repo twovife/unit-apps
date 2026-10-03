@@ -124,6 +124,10 @@ class BatchInputController extends Controller
           'transaction_loan_officer_grouping_id' => $mantriChoice->id,
           'day' => $dayOfWeek,
         ]);
+        // Kolom "NO ANGGOTA" (nomor di promes / buku manual), melekat ke rekening.
+        if (!empty($ns['no'])) {
+          $manage->update(['nomor_anggota' => $ns['no']]);
+        }
 
         if ($isPast) {
           /** * TYPE "S" (LAMPAU)
@@ -311,6 +315,7 @@ class BatchInputController extends Controller
 
       // 3. Cek Format Data Kritikal
       if (empty($ns['nama'])) $errors[] = "NAMA KOSONG";
+      if (empty($ns['no'])) $errors[] = "NO ANGGOTA KOSONG";
       if (empty($ns['drop_date'])) $errors[] = "TANGGAL KOSONG";
 
       $status = empty($errors) ? 'ok' : 'error';
