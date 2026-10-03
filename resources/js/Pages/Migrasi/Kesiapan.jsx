@@ -55,8 +55,9 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
             <h1 className="text-lg font-semibold text-slate-900">Kesiapan Migrasi — {server_filter?.unit}</h1>
             <p className="max-w-3xl mt-1 text-sm text-slate-600">
               Saldo awal {dayjs(server_filter?.periode).format('MMMM YYYY')} per kelompok &amp; hari: angka{' '}
-              <b>sistem</b> (dari daftar nasabah) dibanding <b>sirkulasi lama</b>. Lancar, CM, dan MB harus sama
-              persis; ML boleh lebih besar di sirkulasi lama — selisihnya adalah <b>Z</b> (ML belum terinput). Layar
+              <b>data real</b> (sisa saldo dari daftar nasabah) dibanding <b>bucket</b> (sirkulasi lama yang dicatat
+              kantor). Lancar, CM, dan MB harus sama persis; ML boleh lebih besar di bucket — selisihnya adalah{' '}
+              <b>Z</b> (ML belum terinput). Layar
               ini hanya menunjukkan, tidak mengubah apa pun.
             </p>
           </div>
@@ -82,7 +83,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
           <Kartu
             judul="Z minus"
             utama={ringkasan?.z_minus ?? 0}
-            bawah="ML sistem lebih besar dari sirkulasi lama"
+            bawah="ML data real lebih besar dari bucket"
             nada={ringkasan?.z_minus ? 'ingat' : 'netral'}
           />
           <Kartu
@@ -102,7 +103,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
               <TableRow>
                 <TableHead rowSpan={2} className="sticky left-0 z-10 px-2 bg-slate-50">Kel</TableHead>
                 <TableHead rowSpan={2} className="px-2">Hari</TableHead>
-                <TableHead colSpan={3} className="px-2 text-center border-l">Rincian lancar (sistem)</TableHead>
+                <TableHead colSpan={3} className="px-2 text-center border-l">Rincian lancar (data real)</TableHead>
                 {GRUP.map(([k, judul]) => (
                   <TableHead key={k} colSpan={3} className="px-2 text-center border-l">{judul}</TableHead>
                 ))}
@@ -115,13 +116,13 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                 ))}
                 {GRUP.map(([k, , ketiga]) => (
                   <React.Fragment key={k}>
-                    <TableHead className="px-2 text-right border-l">Sistem</TableHead>
-                    <TableHead className="px-2 text-right">Sirkulasi</TableHead>
+                    <TableHead className="px-2 text-right border-l">Data real</TableHead>
+                    <TableHead className="px-2 text-right">Bucket</TableHead>
                     <TableHead className="px-2 text-right">{ketiga}</TableHead>
                   </React.Fragment>
                 ))}
-                <TableHead className="px-2 text-right border-l">Sistem</TableHead>
-                <TableHead className="px-2 text-right">Sirkulasi</TableHead>
+                <TableHead className="px-2 text-right border-l">Data real</TableHead>
+                <TableHead className="px-2 text-right">Bucket</TableHead>
                 <TableHead className="px-2 text-right">Z</TableHead>
               </TableRow>
             </TableHeader>
