@@ -153,8 +153,27 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 >
                   GAGAL
                 </AppButton>
+                {/* ACC dibatalkan oleh pemberi ACC (acc -> tolak). */}
+                {canApprove && (
+                  <AppButton variant="danger" size="sm" onClick={() => accPinjaman('tolak')}>
+                    Ubah Tolak
+                  </AppButton>
+                )}
               </div>
             </>
+          )}
+
+          {/* Drop dibatalkan (success -> gagal). Server menolak kalau sudah ada
+              angsuran, sudah jadi dasar pengajuan lain, atau hari terkunci. */}
+          {triggeredData?.status === 'success' && canCreate && (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Hanya bisa selama belum ada angsuran dan hari drop belum dikunci.
+              </p>
+              <AppButton variant="danger" size="sm" onClick={() => accPinjaman('gagal')}>
+                Ubah Gagal
+              </AppButton>
+            </div>
           )}
         </div>
       )}

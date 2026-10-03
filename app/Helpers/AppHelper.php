@@ -400,6 +400,18 @@ class AppHelper
 
   public const PESAN_BUKAN_WILAYAH = 'Pinjaman ini bukan kantor / kelompok Anda.';
 
+  /**
+   * Pesan untuk user saat tulisan gagal. Penolakan trigger kunci kasir
+   * (SQLSTATE 45000) membawa kalimat yang memang untuk user, jadi diteruskan;
+   * selain itu pesan umum.
+   */
+  public static function pesanGagal(\Throwable $e, string $umum): string
+  {
+    return $e instanceof \Illuminate\Database\QueryException && $e->getCode() === '45000'
+      ? ($e->errorInfo[2] ?? $umum)
+      : $umum;
+  }
+
   public static function havePermissionByDate($date)
   {
     $date = Carbon::parse($date);

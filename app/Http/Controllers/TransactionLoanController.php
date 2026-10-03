@@ -26,6 +26,18 @@ class TransactionLoanController extends Controller
   use PinjamanTrait;
 
   /** Pesan tolak untuk kedua endpoint sinkronisasi angsuran (lihat synch_angsuran). */
+  /**
+   * Perpindahan status pinjaman yang sah (disepakati 2026-10-03). Selain ini
+   * ditolak. Kembali ke 'open' hanya lewat Reset (updateEverything), tundaan
+   * lewat tundaan_pengajuan. 'tolak' dan 'gagal' final - nasabah mengajukan
+   * ulang sebagai pengajuan baru.
+   */
+  private const TRANSISI_STATUS = [
+    'open' => ['acc', 'tolak'],
+    'acc' => ['tolak', 'success', 'gagal'],
+    'success' => ['gagal'],
+  ];
+
   private const PESAN_TOLAK_SYNCH = 'Sinkronisasi angsuran hanya untuk pemegang akses can-edit.';
 
   public function fastcreate(Request $request)
@@ -845,6 +857,9 @@ class TransactionLoanController extends Controller
     if ($transactionLoan->status !== 'acc') {
       return redirect()->back()->withErrors('Tundaan cuma bisa dilakukan pada pengajuan yang sudah di-ACC.');
     }
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
 
     $val = $request->validate([
       'tanggal_drop' => ['required', 'date', 'after:' . $transactionLoan->drop_date, new HariKerja('Tanggal drop')],
@@ -918,6 +933,25 @@ class TransactionLoanController extends Controller
       'drop' => ['required_if:status,success'],
     ]);
 
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+
+    if (!in_array($request->status, self::TRANSISI_STATUS[$transactionLoan->status] ?? [], true)) {
+      return redirect()->back()->withErrors("Status {$transactionLoan->status} tidak bisa diubah menjadi {$request->status}.");
+    }
+
+    // Drop dibatalkan (success -> gagal): hanya selama belum ada angsuran dan
+    // belum jadi dasar pengajuan lain. Hari terkunci ditolak trigger DB.
+    if ($transactionLoan->status === 'success') {
+      if ($transactionLoan->loan_instalment()->exists()) {
+        return redirect()->back()->withErrors('Pinjaman sudah ada angsuran, tidak bisa digagalkan.');
+      }
+      if (AppHelper::sudahDiajukanPengganti($transactionLoan)) {
+        return redirect()->back()->withErrors('Pinjaman ini sudah jadi dasar pengajuan lain, tidak bisa digagalkan.');
+      }
+    }
+
     try {
       DB::beginTransaction();
 
@@ -962,7 +996,8 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      return redirect()->back()->with('error', 'Terjadi Kesalahan Mohon Ulangi Lagi');
+      // withErrors, bukan with('error'): flash 'error' tidak diteruskan ke layar.
+      return redirect()->back()->withErrors(AppHelper::pesanGagal($exception, 'Terjadi Kesalahan Mohon Ulangi Lagi'));
     }
     return redirect()->back()->with('message', 'Berhasil Menyimpan');
   }
@@ -1527,27 +1562,17 @@ class TransactionLoanController extends Controller
     if (!$permission['status']) {
       return redirect()->back()->withErrors($permission['message']);
     }
-
-    try {
-      DB::beginTransaction();
-      $transactionLoan->delete();
-      DB::commit();
-    } catch (Exception $e) {
-      DB::rollBack();
-      return redirect()->back()->withErrors('data gagal diubah');
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
-    return redirect()->back()->with('message', 'data berhasil dihapus');
-  }
 
-  public function delete_loan(TransactionLoan $transactionLoan)
-  {
     try {
       DB::beginTransaction();
       $transactionLoan->delete();
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      return redirect()->back()->withErrors('data gagal diubah');
+      return redirect()->back()->withErrors(AppHelper::pesanGagal($e, 'data gagal diubah'));
     }
     return redirect()->back()->with('message', 'data berhasil dihapus');
   }
@@ -1565,6 +1590,14 @@ class TransactionLoanController extends Controller
     $validate = $request->validate([
       "updateType" => ['required'],
     ]);
+
+    // Edit pinjaman sudah ditiadakan (2026-10-03); yang tersisa hanya Reset.
+    if ($request->updateType !== 'resetdata') {
+      return redirect()->back()->withErrors('Edit pinjaman sudah ditiadakan. Gunakan Reset.');
+    }
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
 
     $wrongLoansInstalment = $transactionLoan->loan_instalment->where('transaction_date', "<", $transactionLoan->drop_date);
     if ($wrongLoansInstalment->count() > 0) {
@@ -1586,19 +1619,6 @@ class TransactionLoanController extends Controller
 
     try {
       DB::beginTransaction();
-      if ($request->updateType == "detailchange") {
-        $transactionLoan->update([
-          "request_date" => $request->request_date,
-          "drop_date" => $request->drop_date,
-          "request_nominal" =>  $request->request_nominal,
-          "approved_nominal" => $request->approved_nominal,
-          "user_check" => $request->approved_nominal ?  ($transactionLoan->user_check ?? auth()->user()->employee->id) : null,
-          "check_date" => $request->approved_nominal ?  ($transactionLoan->check_date ?? Carbon::now()) : null,
-          "nominal_drop" => $request->nominal_drop,
-          "user_drop" => $request->approved_nominal ? ($transactionLoan->user_drop ?? auth()->user()->employee->id)  : null,
-          "status" => $request->request_date == $request->drop_date ? 'success' : $transactionLoan->status,
-        ]);
-      }
       if ($request->updateType == "resetdata") {
         if (AppHelper::sudahDiajukanPengganti($transactionLoan)) {
           DB::rollBack();
@@ -1619,7 +1639,7 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $e) {
       DB::rollBack();
-      return redirect()->back()->withErrors('data gagal diubah');
+      return redirect()->back()->withErrors(AppHelper::pesanGagal($e, 'data gagal diubah'));
     }
 
     return redirect()->back()->with('message', 'data berhasil diubah');
