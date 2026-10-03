@@ -46,7 +46,8 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   // 'can create' (spasi) tidak ada di tabel permissions; server memakai 'can-create'
   const isCreator = auth?.permissions?.includes('can-create');
   const [customerData, setCustomerData] = useState({});
-  const [pemutihan, setPemutihan] = useState(null);
+  const [pemutihan, setPemutihan] = useState([]);
+  const [koreksi, setKoreksi] = useState([]);
 
   const [instalment, setInstalment] = useState([]);
 
@@ -62,6 +63,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
         setCustomerData(data.pinjaman);
         setInstalment(data.instalment);
         setPemutihan(data.pemutihan);
+        setKoreksi(data.koreksi);
       })
       .catch(function ({ response }) {
         setErorAxios(true);
@@ -79,7 +81,8 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
     onClosed();
     setCustomerData({});
     setInstalment([]);
-    setPemutihan(null);
+    setPemutihan([]);
+    setKoreksi([]);
   };
 
   /**
@@ -201,12 +204,12 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 <CardTitle className="text-sm">Rincian Angsuran</CardTitle>
               </CardHeader>
               <CardContent className="px-2 pb-3 lg:px-5">
-                {pemutihan && (
-                  <div className="flex items-center justify-between px-3 py-2 mb-2 text-xs text-red-800 border border-red-200 rounded-md bg-red-50">
-                    <span>Pemutihan {dayjs(pemutihan.transaction_date).format('DD-MM-YYYY')}</span>
-                    <FormatNumbering value={pemutihan.nominal} className="inline font-semibold" />
+                {pemutihan.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 mb-2 text-xs text-red-800 border border-red-200 rounded-md bg-red-50">
+                    <span>Pemutihan {dayjs(p.transaction_date).format('DD-MM-YYYY')}</span>
+                    <FormatNumbering value={p.nominal} className="inline font-semibold" />
                   </div>
-                )}
+                ))}
 
                 {/* table-fixed + lebar kolom: muat di modal HP tanpa geser
                     horizontal; Mantri mengambil sisa ruang dan dipotong. */}
@@ -231,7 +234,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   </TableHeader>
                   <TableBody>
                     {Object.keys(customerData).length !== 0 ? (
-                      rincianPerBulan(instalment, customerData.pinjaman, pemutihan, customerData.tanggal_drop).map(
+                      rincianPerBulan(instalment, customerData.pinjaman, koreksi, customerData.tanggal_drop).map(
                         (bulan, i, arr) => (
                           <React.Fragment key={bulan.kunci}>
                             {bulan.rows.map((item) => (
@@ -444,10 +447,11 @@ const LoanDetail = ({ customerData }) => {
 /**
  * Rincian angsuran dikelompokkan per bulan (terbaru di atas, sama dengan urutan
  * server); ringkasan bulan di bawah grupnya, antar bulan diberi jarak. Saldo
- * cukup satu per bulan = sisa pokok di akhir bulan itu:
- * pinjaman − angsuran s/d akhir bulan − pemutihan yang tanggalnya s/d akhir bulan.
+ * cukup satu per bulan = sisa di akhir bulan itu, rumus F8 (sama dengan server):
+ * pinjaman − angsuran s/d akhir bulan + efek koreksi s/d akhir bulan
+ * (pemutihan bernilai minus, penyesuaian sesuai arahnya).
  */
-const rincianPerBulan = (instalment, pinjaman, pemutihan, tanggalDrop) => {
+const rincianPerBulan = (instalment, pinjaman, koreksi, tanggalDrop) => {
   const grup = {};
   instalment.forEach((i) => {
     const kunci = String(i.transaction_date).slice(0, 7);
@@ -461,14 +465,14 @@ const rincianPerBulan = (instalment, pinjaman, pemutihan, tanggalDrop) => {
       const total = grup[kunci].reduce((t, i) => t + (Number(i.nominal) || 0), 0);
       kumulatif += total;
       const akhirBulan = dayjs(`${kunci}-01`).endOf('month').format('YYYY-MM-DD');
-      const putih = pemutihan && pemutihan.transaction_date <= akhirBulan ? Number(pemutihan.nominal) || 0 : 0;
+      const efek = koreksi.reduce((t, k) => (String(k.tanggal) <= akhirBulan ? t + (Number(k.efek) || 0) : t), 0);
       return {
         kunci,
         nama: new Date(`${kunci}-01T00:00:00`).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
         rows: grup[kunci],
         kategori: kategoriEmber(tanggalDrop, `${kunci}-01`),
         total,
-        saldo: (Number(pinjaman) || 0) - kumulatif - putih,
+        saldo: (Number(pinjaman) || 0) - kumulatif + efek,
       };
     });
 

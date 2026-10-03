@@ -1193,8 +1193,24 @@ class TransactionLoanController extends Controller
       ]
     );
 
-    $pemutihan = $loan->white_off?->nominal ?? 0;
-    $saldo = ($loan->pinjaman - $pemutihan) - $loan->loan_instalment->sum('nominal');
+    // F8: satu rumus dengan rekap (angsuran, semua pemutihan, penyesuaian).
+    $saldo = \App\Helpers\PenyesuaianSaldo::hitungSaldo($loan)['saldo'];
+
+    // Semua pemutihan (bisa lebih dari satu) dan penyesuaian yang berlaku -
+    // dipakai rincian per bulan supaya sisa tiap bulan ikut rumus yang sama.
+    $pemutihan = \App\Models\TransactionWhiteOff::where('transaction_loan_id', $loan->id)
+      ->orderBy('transaction_date')
+      ->get(['transaction_date', 'nominal']);
+    $koreksi = $pemutihan->map(fn($w) => ['tanggal' => $w->transaction_date, 'efek' => -(int) $w->nominal])
+      ->concat(
+        \App\Models\TransactionSaldoAdjustment::where('transaction_loan_id', $loan->id)
+          ->whereRaw(\App\Models\TransactionSaldoAdjustment::ekspresiBerlakuSql())
+          ->get()
+          // toDateString: cast 'date' di-serialize ke UTC (01-09 jadi 31-08T17:00Z).
+          ->map(fn($a) => ['tanggal' => $a->berlaku_bulan->toDateString(), 'efek' => $a->efek_saldo])
+      )
+      ->values();
+
     $pinjaman = [
       'nomor_anggota' => $loan->manage_customer->nomor_anggota,
       'id' => $loan->id,
@@ -1262,8 +1278,7 @@ class TransactionLoanController extends Controller
 
 
 
-    $loan = $transactionLoan->load('loan_instalment');
-    return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment, 'pemutihan' => $loan->white_off ?? null], 200);
+    return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment, 'pemutihan' => $pemutihan, 'koreksi' => $koreksi], 200);
   }
 
   public function checkpengajuan(TransactionLoan $transactionLoan, Request $request)
@@ -1320,8 +1335,6 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
 
-    $isPaidToday = $transactionLoan->loan_instalment->where('transaction_date', $request->transaction_date);
-
     if ($request->type_transaksi == 'bayar') {
       // Sedang diajukan pelunasan (pengganti open/acc): angsurannya lewat drop pelunasan.
       if (TransactionLoan::where('previous_loan_id', $transactionLoan->id)->whereIn('status', ['open', 'acc'])->exists()) {
@@ -1350,20 +1363,6 @@ class TransactionLoanController extends Controller
         return redirect()->back()->withErrors('Katrol hanya untuk pinjaman CM sampai ML.');
       }
 
-      if ($isPaidToday->isNotEmpty()) {
-        if (!$request->danatitipan) {
-          return redirect()->back()->withErrors('Angsuran Hari Ini Sudah Dibayar');
-        }
-      }
-
-      $totalAngsuran = $transactionLoan->loan_instalment->sum('nominal');
-      $pinjaman = $transactionLoan->pinjaman;
-      if ($pinjaman == $totalAngsuran || $pinjaman < $totalAngsuran) {
-        return redirect()->back()->withErrors('Pinjaman Sudah Lunas');
-      }
-      if ($transactionLoan->pinjaman < ($totalAngsuran + $request->nominal)) {
-        return redirect()->back()->withErrors('Angsuran Tidak Boleh Minus');
-      }
     }
 
 
@@ -1374,6 +1373,25 @@ class TransactionLoanController extends Controller
     try {
       DB::beginTransaction();
       if ($request->type_transaksi == "bayar") {
+        // Kunci baris pinjaman sampai commit: input kedua untuk pinjaman yang
+        // sama (ketuk dua kali, dua HP) menunggu di sini, lalu membaca angsuran
+        // yang baru tersimpan. Cek di bawah harus sesudah kunci ini.
+        TransactionLoan::whereKey($transactionLoan->id)->lockForUpdate()->first();
+
+        $tolak = null;
+        $sisa = \App\Helpers\PenyesuaianSaldo::hitungSaldo($transactionLoan)['saldo'];
+        if (!$request->boolean('danatitipan') && $transactionLoan->loan_instalment()->where('transaction_date', $request->transaction_date)->exists()) {
+          $tolak = 'Angsuran Hari Ini Sudah Dibayar';
+        } elseif ($sisa <= 0) {
+          $tolak = 'Pinjaman Sudah Lunas';
+        } elseif ($request->nominal > $sisa) {
+          $tolak = 'Angsuran melebihi sisa saldo (Rp ' . number_format($sisa, 0, ',', '.') . ').';
+        }
+        if ($tolak) {
+          DB::rollBack();
+          return redirect()->back()->withErrors($tolak);
+        }
+
         $transactionLoan->loan_instalment()->create([
           'nominal' => $request->nominal,
           'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,

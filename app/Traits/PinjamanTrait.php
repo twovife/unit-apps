@@ -684,17 +684,22 @@ trait PinjamanTrait
       ->orderBy('drop_date')
       ->get();
 
+    // F8: saldo per tanggal terpilih, satu rumus dengan rekap (PenyesuaianSaldo).
+    $saldoF8 = \App\Helpers\PenyesuaianSaldo::saldoBanyak(
+      $loan->collapse()->pluck('id')->merge($loanMl->pluck('id'))->all(),
+      $tanggalSeleksi
+    );
 
     $dataMlGenerate = [
       'month' => "ML",
       'type' => "ml",
       'type2' => "ML",
       'date' => Carbon::parse($begin_transaction)->subMonthNoOverflow(1)->format('Y-m-d'),
-      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
+      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8) {
         $pemutihan = $item->white_off ? $item->white_off->nominal : 0;
 
         $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
-        $saldo =  $item->pinjaman - ($pemutihan + $item->total_angsuran);
+        $saldo = $saldoF8[$item->id]['saldo'];
 
         $data = [
           'tanggal_drop' => $item->drop_date,
@@ -733,7 +738,7 @@ trait PinjamanTrait
         ];
 
         if ($dailyView) {
-          $data['angsuran'] = $item->total_angsuran;
+          $data['angsuran'] = $saldoF8[$item->id]['angsuran'];
           $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty() || $item->white_off?->transaction_date == $tanggalSeleksi; //
         }
 
@@ -742,17 +747,17 @@ trait PinjamanTrait
     ];
     // dd($dataMlGenerate);
 
-    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView) {
+    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView, $saldoF8) {
       return [
         'month' => Carbon::parse($key)->format('FY'),
         'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
-        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView) {
+        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8) {
           $pemutihan = $item->white_off ? $item->white_off->nominal : 0;
 
           $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
-          $saldo =  $item->pinjaman - ($pemutihan + $item->total_angsuran);
+          $saldo = $saldoF8[$item->id]['saldo'];
 
           $data = [
             'tanggal_drop' => $item->drop_date,
@@ -791,7 +796,7 @@ trait PinjamanTrait
           ];
 
           if ($dailyView) {
-            $data['angsuran'] = $item->total_angsuran;
+            $data['angsuran'] = $saldoF8[$item->id]['angsuran'];
             $data['is_paid'] = $item->loan_instalment->where('transaction_date', $tanggalSeleksi)->isNotEmpty() || $item->white_off?->transaction_date == $tanggalSeleksi; //
           }
 
