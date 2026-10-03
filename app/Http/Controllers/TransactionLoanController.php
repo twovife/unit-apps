@@ -942,6 +942,12 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors("Status {$transactionLoan->status} tidak bisa diubah menjadi {$request->status}.");
     }
 
+    // ACC dibatalkan (acc -> tolak) hanya oleh karyawan yang meng-ACC.
+    if ($transactionLoan->status === 'acc' && $request->status === 'tolak'
+      && (int) $transactionLoan->user_check !== (int) auth()->user()->employee?->id) {
+      return redirect()->back()->withErrors('Hanya yang meng-ACC yang bisa mengubah jadi tolak.');
+    }
+
     // Drop dibatalkan (success -> gagal): hanya selama belum ada angsuran dan
     // belum jadi dasar pengajuan lain. Hari terkunci ditolak trigger DB.
     if ($transactionLoan->status === 'success') {

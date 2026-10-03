@@ -130,6 +130,7 @@ trait PinjamanTrait
         'diajukan_oleh' => $drop->mantri?->nama_karyawan,
         'diinput_oleh' => $drop->userinput?->nama_karyawan,
         'acc_oleh' => $drop->pemeriksa?->nama_karyawan,
+        'user_check' => $drop->user_check, // id karyawan yang meng-ACC (Ubah Tolak)
         'drop_oleh' => $drop->pencair?->nama_karyawan,
         'diinput_pada' => $drop->created_at,
 

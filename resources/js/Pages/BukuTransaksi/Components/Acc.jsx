@@ -157,8 +157,8 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                     GAGAL
                   </AppButton>
                 )}
-                {/* ACC dibatalkan oleh pemberi ACC (acc -> tolak). */}
-                {status === 'acc' && canApprove && (
+                {/* ACC dibatalkan, hanya oleh karyawan yang meng-ACC (acc -> tolak). */}
+                {status === 'acc' && canApprove && Number(triggeredData?.user_check) === Number(auth?.user?.employee?.id) && (
                   <AppButton variant="danger" size="sm" onClick={() => accPinjaman('tolak')}>
                     Ubah Tolak
                   </AppButton>
