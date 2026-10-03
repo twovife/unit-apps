@@ -111,7 +111,8 @@ const AngsuranTableMobile = ({ datas }) => {
           Ketuk baris untuk bayar / lihat detail · angka dalam ribuan · Angs:{' '}
           <span className="font-semibold text-green-700">sesuai</span>{' '}
           <span className="font-semibold text-orange-600">kurang</span>{' '}
-          <span className="font-semibold text-red-600">0</span>
+          <span className="font-semibold text-red-600">0</span>{' '}
+          <span className="font-bold text-red-600">katrol</span>
         </div>
 
         <div className={`${KOLOM} px-2 py-1 text-gray-500 border-t`}>
@@ -247,7 +248,13 @@ const Angs = ({ r }) => {
   return (
     <span
       className={`text-base font-bold ${
-        s === 'tidak' ? 'text-red-600' : Number(r.angs_today) < wajib(r) ? 'text-orange-600' : 'text-green-700'
+        // Katrol (dana titipan) hari ini: merah tebal. `instalment` dari server
+        // hanya berisi tanggal terpilih.
+        s === 'tidak' || Object.values(r.instalment ?? {}).some((i) => i.is_active)
+          ? 'text-red-600'
+          : Number(r.angs_today) < wajib(r)
+            ? 'text-orange-600'
+            : 'text-green-700'
       }`}
     >
       {rb(r.angs_today)}
