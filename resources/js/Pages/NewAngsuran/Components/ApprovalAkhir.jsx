@@ -1,19 +1,21 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/shadcn/ui/dialog';
 import React, { useEffect } from 'react';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 import { useForm, usePage } from '@inertiajs/react';
-import { Label } from '@/shadcn/ui/label';
 import CurrencyInput from 'react-currency-input-field';
 import { Button } from '@/shadcn/ui/button';
 import Loading from '@/Components/Loading';
-import Checkbox from '@/Components/Checkbox';
-import InputLabel from '@/Components/InputLabel';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
+
+const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
+
+// Baris tabel: [label, kolom awal, kolom akhir, kolom bulan depan (isian)].
+const BARIS = [
+  ['ML', 'ml_amount', 'ml_amount_akhir', 'ml_next'],
+  ['MB', 'mb_amount', 'mb_amount_akhir', 'mb_next'],
+  ['CM', 'cm_amount', 'cm_amount_akhir', 'cm_next'],
+  ['Calon CM', 'calon_cm_amount', 'calon_cm_amount_akhir', null],
+  ['Normal', 'normal', 'normal_akhir', 'normal_next'],
+];
 
 const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
   const {
@@ -93,11 +95,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
     let nominalData = 0;
 
     keySum.forEach((key) => {
-      if (key === name) {
-        nominalData += parseInt(value);
-      } else {
-        nominalData += parseInt(data[key]);
-      }
+      nominalData += parseInt(key === name ? value : data[key]) || 0;
     });
 
     setData((prevData) => ({
@@ -108,306 +106,74 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
   };
 
   return (
-    <Dialog open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
-      <Loading show={processing} />
-      <DialogContent
-        className={`w-[90vw] h-[90vh] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin`}
-      >
-        <DialogHeader className={'max-h-10'}>
-          <DialogTitle>Isi Angsuran</DialogTitle>
-        </DialogHeader>
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Sirkulasi</CardTitle>
-            <Card className="w-full">
-              <CardHeader>
-                <CardTitle>Sirkulasi Awal</CardTitle>
-              </CardHeader>
-              <form onSubmit={onSubmitForm}>
-                <div className="flex w-full">
-                  <CardContent className="flex-1">
-                    <div className="mb-3">
-                      <Label htmlFor="amount">Sirkulasi Awal</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="amount"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.amount}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="ml_amount">Saldo Awal (ML)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="ml_amount"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.ml_amount}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="mb_amount">Saldo Awal (MB)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="mb_amount"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.mb_amount}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="cm_amount">Saldo Awal (CM)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="cm_amount"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.cm_amount}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="calon_cm_amount">
-                        Saldo Awal (Calon CM)
-                      </Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="calon_cm_amount"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.calon_cm_amount}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="normal">Saldo Awal (Normal)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="normal"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.normal}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                  </CardContent>
-                  <CardContent className="flex-1">
-                    <div className="mb-3">
-                      <Label>Sirkulasi Akhir</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        value={data.amount_akhir}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="ml_amount_akhir">Saldo Akhir (ML)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="ml_amount_akhir"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.ml_amount_akhir}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="mb_amount_akhir">Saldo Akhir (MB)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="mb_amount_akhir"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.mb_amount_akhir}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="cm_amount_akhir">Saldo Akhir (CM)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="cm_amount_akhir"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.cm_amount_akhir}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="calon_cm_amount_akhir">
-                        Saldo Akhir (Calon CM)
-                      </Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="calon_cm_amount_akhir"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.calon_cm_amount_akhir}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="normal_akhir">Saldo Akhir (Normal)</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="normal_akhir"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        readOnly
-                        onValueChange={onHandleCurencyChange}
-                        value={data.normal_akhir}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                  </CardContent>
-                  <CardContent className="flex-1">
-                    <div className="mb-3">
-                      <Label htmlFor="amount_next">
-                        Sirkulasi Awal Bulan Depan
-                      </Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="amount_next"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        onValueChange={onHandleCurencyChange}
-                        value={data.amount_next}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="ml_next">Saldo ML Awal Bulan Depan</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="ml_next"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        onValueChange={onHandleCurencyChange}
-                        value={data.ml_next}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="mb_next">Saldo MB Awal Bulan Depan</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="mb_next"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        onValueChange={onHandleCurencyChange}
-                        value={data.mb_next}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="cm_next">Saldo CM Awal Bulan Depan</Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="cm_next"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        onValueChange={onHandleCurencyChange}
-                        value={data.cm_next}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <Label htmlFor="normal_next">
-                        Saldo Normal Awal Bulan Depan
-                      </Label>
-                      <CurrencyInput
-                        className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        name="normal_next"
-                        allowDecimals={false}
-                        prefix="Rp. "
-                        min={0}
-                        required
-                        onValueChange={onHandleCurencyChange}
-                        value={data.normal_next}
-                        placeholder={'Inputkan angka tanpa sparator'}
-                      />
-                    </div>
-                  </CardContent>
-                </div>
+    <Sheet open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
+      <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-2xl">
+        <Loading show={processing} />
+        <SheetHeader className="px-5 py-4 pr-12 border-b">
+          <SheetTitle>Approval Akhir Bulan</SheetTitle>
+          <SheetDescription>
+            Sirkulasi awal &amp; akhir bulan ini, lalu saldo awal bulan depan per ember. Kolom bulan depan sudah
+            terisi dari saldo akhir (ember bergeser satu tingkat); ubah hanya bila perlu.
+          </SheetDescription>
+        </SheetHeader>
 
-                <div className="flex justify-end p-3">
-                  <div className="flex items-center justify-start flex-1 gap-3 mb-1 whitespace-nowrap">
-                    <Checkbox
-                      placeholder="Select Permission"
-                      id="daily_kepala_approval"
-                      required
-                    />
-                    <InputLabel htmlFor="daily_kepala_approval">
-                      Konfirmasi Jika Sudah Benar Semua
-                    </InputLabel>
-                  </div>
-                  <Button type="submit">Submit</Button>
-                </div>
-              </form>
-            </Card>
-          </CardHeader>
-        </Card>
-      </DialogContent>
-    </Dialog>
+        <form onSubmit={onSubmitForm} className="px-5 py-4 space-y-4">
+          <div className="overflow-x-auto border rounded-lg">
+            <Table className="text-sm">
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="px-3">Ember</TableHead>
+                  <TableHead className="px-3 text-right">Awal bulan</TableHead>
+                  <TableHead className="px-3 text-right">Akhir bulan</TableHead>
+                  <TableHead className="px-3 text-right">Awal bulan depan</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {BARIS.map(([label, awal, akhir, depan]) => (
+                  <TableRow key={label}>
+                    <TableCell className="px-3 font-medium">{label}</TableCell>
+                    <TableCell className="px-3 text-right tabular-nums text-slate-600">{rp(data[awal])}</TableCell>
+                    <TableCell className="px-3 text-right tabular-nums">{rp(data[akhir])}</TableCell>
+                    <TableCell className="px-3 py-1.5 text-right">
+                      {depan ? (
+                        <CurrencyInput
+                          className="w-36 h-8 px-2 text-sm text-right border rounded-md tabular-nums border-input"
+                          name={depan}
+                          allowDecimals={false}
+                          allowNegativeValue={false}
+                          groupSeparator="."
+                          decimalSeparator=","
+                          required
+                          onValueChange={onHandleCurencyChange}
+                          value={data[depan]}
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-400">masuk CM</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="font-semibold bg-slate-50">
+                  <TableCell className="px-3">Total</TableCell>
+                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount)}</TableCell>
+                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount_akhir)}</TableCell>
+                  <TableCell className="px-3 text-right tabular-nums">{rp(data.amount_next)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+
+          <label className="flex items-start gap-2 text-sm text-slate-700">
+            <input type="checkbox" required className="mt-0.5" />
+            Saldo awal bulan depan sudah saya cek dan sesuai.
+          </label>
+
+          <Button type="submit" className="w-full" disabled={processing}>
+            Simpan approval akhir
+          </Button>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 };
 
