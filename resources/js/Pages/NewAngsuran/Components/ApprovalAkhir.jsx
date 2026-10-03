@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
-import CurrencyInput from 'react-currency-input-field';
 import { Button } from '@/shadcn/ui/button';
 import Loading from '@/Components/Loading';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
@@ -90,21 +89,6 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
     });
   };
 
-  const onHandleCurencyChange = (value, name) => {
-    const keySum = ['ml_next', 'mb_next', 'cm_next', 'normal_next'];
-    let nominalData = 0;
-
-    keySum.forEach((key) => {
-      nominalData += parseInt(key === name ? value : data[key]) || 0;
-    });
-
-    setData((prevData) => ({
-      ...prevData,
-      [name]: value,
-      amount_next: nominalData,
-    }));
-  };
-
   return (
     <Sheet open={show} onOpenChange={(open) => (open ? '' : modalIsClosed())}>
       <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-2xl">
@@ -112,8 +96,8 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
         <SheetHeader className="px-5 py-4 pr-12 border-b">
           <SheetTitle>Approval Akhir Bulan</SheetTitle>
           <SheetDescription>
-            Sirkulasi awal &amp; akhir bulan ini, lalu saldo awal bulan depan per ember. Kolom bulan depan sudah
-            terisi dari saldo akhir (ember bergeser satu tingkat); ubah hanya bila perlu.
+            Sirkulasi awal &amp; akhir bulan ini, lalu saldo awal bulan depan per ember — diambil dari saldo akhir
+            dengan ember bergeser satu tingkat. Semua angka hasil hitung, tidak bisa diubah.
           </SheetDescription>
         </SheetHeader>
 
@@ -134,22 +118,8 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <TableCell className="px-3 font-medium">{label}</TableCell>
                     <TableCell className="px-3 text-right tabular-nums text-slate-600">{rp(data[awal])}</TableCell>
                     <TableCell className="px-3 text-right tabular-nums">{rp(data[akhir])}</TableCell>
-                    <TableCell className="px-3 py-1.5 text-right">
-                      {depan ? (
-                        <CurrencyInput
-                          className="w-36 h-8 px-2 text-sm text-right border rounded-md tabular-nums border-input"
-                          name={depan}
-                          allowDecimals={false}
-                          allowNegativeValue={false}
-                          groupSeparator="."
-                          decimalSeparator=","
-                          required
-                          onValueChange={onHandleCurencyChange}
-                          value={data[depan]}
-                        />
-                      ) : (
-                        <span className="text-xs text-slate-400">masuk CM</span>
-                      )}
+                    <TableCell className="px-3 font-medium text-right tabular-nums">
+                      {depan ? rp(data[depan]) : <span className="text-xs text-slate-400">masuk CM</span>}
                     </TableCell>
                   </TableRow>
                 ))}
