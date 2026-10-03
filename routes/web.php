@@ -113,6 +113,9 @@ Route::middleware('auth')->group(function () {
     // Nasabah macet belum lunas per kelompok x hari: tempat penyesuaian saldo (superuser).
     Route::get('/nasabah-macet', [\App\Http\Controllers\MigrasiController::class, 'nasabahMacet'])
       ->name('nasabah_macet');
+    // Buat pinjaman MACET LAMA penampung Z satu kelompok x hari (superuser).
+    Route::post('/kesiapan/macet-lama', [\App\Http\Controllers\MigrasiController::class, 'buatMacetLama'])
+      ->name('buat_macet_lama');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
     Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])

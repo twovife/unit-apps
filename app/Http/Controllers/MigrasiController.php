@@ -13,7 +13,9 @@ use App\Helpers\TargetBayangan;
 use App\Helpers\SerahTerima;
 use App\Models\Branch;
 use App\Models\TransactionMonthlyClosing;
+use App\Models\TransactionCustomer;
 use App\Models\TransactionLoan;
+use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionSaldoAdjustment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -38,6 +40,18 @@ class MigrasiController extends Controller
      * Golongan: selisih 0-2 lancar, 3 CM, 4 MB, >=5 ML.
      */
     private const SELISIH_BULAN_ML = 5;
+
+    /**
+     * Nasabah penampung Z (ML yang belum terinput), satu NIK untuk semua
+     * kantor. Satu pinjaman per kelompok x hari menampung Z baris itu.
+     *
+     * BUKAN 0000000000000001: NIK nol-nol itu sudah dipakai staf sebagai NIK
+     * darurat nasabah sungguhan (0..01 = Faridatul, 0..00/02/03 lainnya).
+     * Awalan ML tidak bisa diketik di form (digits:16) dan sudah dilewati
+     * pencarian NIK (nasabah_buku_transaksi), jadi tidak bentrok dan tidak
+     * muncul di pencarian.
+     */
+    public const NIK_MACET_LAMA = 'ML00000000000001';
 
     /**
      * Stock-take ML: bandingkan `ml_amount` (kuota yang dinyatakan kantor)
@@ -508,6 +522,84 @@ class MigrasiController extends Controller
     }
 
     /**
+     * Buat pinjaman MACET LAMA untuk satu kelompok x hari: penampung Z (ML di
+     * bucket yang belum terinput) supaya ember ML data real = bucket. Z
+     * dihitung ulang di server, tidak diambil dari layar.
+     *
+     * Pinjaman success ber-drop lama (hari tagih sama, 2020) -> pasti ember ML
+     * dan di dalam jendela penyesuaian. nominal_drop = Z / 1,3 dibulatkan ke
+     * atas; kelebihan pembulatan dipotong satu penyesuaian saldo_awal supaya
+     * saldonya tepat Z. Satu kelompok x hari hanya boleh satu.
+     *
+     * ponytail: penampung belum dikecualikan dari NOA / daftar macet / cari
+     * NIK / keluar target; tambahkan penanda is_penampung sebelum migrasi.
+     */
+    public function buatMacetLama(Request $request)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            abort(403, 'Khusus superuser.');
+        }
+
+        $val = $request->validate([
+            'kelompok' => ['required'],
+            'hari' => ['required', 'in:senin,selasa,rabu,kamis,jumat,sabtu'],
+            'periode' => ['required', 'date'],
+        ]);
+
+        $scope = AuthScope::resolve();
+        $periode = Carbon::parse($val['periode'])->startOfMonth();
+        $baris = $this->barisKesiapan($scope->branch_id, $periode, $val['kelompok'])->firstWhere('hari', $val['hari']);
+        $z = (int) ($baris['z'] ?? 0);
+
+        if (!$baris || $z <= 0) {
+            return back()->withErrors('Z baris ini tidak positif, tidak ada yang perlu ditampung.');
+        }
+        if ($baris['macet_lama']) {
+            return back()->withErrors('Kelompok & hari ini sudah punya MACET LAMA. Koreksi saldonya lewat Nasabah Macet.');
+        }
+
+        $grouping = TransactionLoanOfficerGrouping::where('branch_id', $scope->branch_id)
+            ->where('kelompok', $val['kelompok'])->firstOrFail();
+        $dropDate = Carbon::parse('2019-12-31')->next(\App\Helpers\AppHelper::getNumbDays($val['hari']));
+        $employee = auth()->user()->employee->id;
+
+        try {
+            DB::transaction(function () use ($grouping, $val, $dropDate, $employee, $z) {
+            $customer = TransactionCustomer::firstOrCreate(
+                ['nik' => self::NIK_MACET_LAMA],
+                ['nama' => 'MACET LAMA', 'alamat' => '-']
+            );
+            if ($customer->nama !== 'MACET LAMA') {
+                throw new \RuntimeException('NIK ' . self::NIK_MACET_LAMA . ' sudah dipakai nasabah lain (' . $customer->nama . ').');
+            }
+            $manage = $customer->manage_customer()->firstOrCreate([
+                'transaction_loan_officer_grouping_id' => $grouping->id,
+                'day' => $dropDate->dayOfWeek,
+            ]);
+            $loan = $manage->loan()->create([
+                'transaction_loan_officer_grouping_id' => $grouping->id,
+                'request_date' => $dropDate->toDateString(),
+                'drop_date' => $dropDate->toDateString(),
+                'hari' => $val['hari'],
+                'status' => 'success',
+                'nominal_drop' => (int) ceil($z / 1.3),
+                'user_input' => $employee,
+                'user_mantri' => $employee,
+                'user_drop' => $employee,
+            ])->fresh();
+
+            if ((int) $loan->pinjaman !== $z) {
+                PenyesuaianSaldo::buat($loan, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, $z, 'Penampung Z (MACET LAMA)', auth()->user());
+            }
+            });
+        } catch (\Throwable $e) {
+            return back()->withErrors(\App\Helpers\AppHelper::pesanGagal($e, $e->getMessage()));
+        }
+
+        return back()->with('message', 'MACET LAMA dibuat: saldo Rp ' . number_format($z, 0, ',', '.') . '.');
+    }
+
+    /**
      * Baris Kesiapan Migrasi per kelompok x hari (lihat kesiapanMigrasi).
      * $kelompokSaja membatasi ke satu kelompok - dipakai layar Nasabah Macet.
      */
@@ -527,12 +619,22 @@ class MigrasiController extends Controller
             ->get()
             ->groupBy(fn($r) => $r->transaction_loan_officer_grouping_id . '|' . strtolower(trim($r->day)));
 
+        // Kelompok x hari yang sudah punya pinjaman MACET LAMA.
+        $adaMacetLama = DB::table('transaction_loans as l')
+            ->join('transaction_manage_customers as m', 'm.id', '=', 'l.transaction_manage_customer_id')
+            ->join('transaction_customers as c', 'c.id', '=', 'm.transaction_customer_id')
+            ->where('c.nik', self::NIK_MACET_LAMA)
+            ->whereIn('l.transaction_loan_officer_grouping_id', $ids)
+            ->get(['l.transaction_loan_officer_grouping_id as g', 'l.hari'])
+            ->map(fn($r) => $r->g . '|' . strtolower($r->hari))
+            ->flip();
+
         $nol = array_fill_keys(Ember::SEMUA, 0);
         $kategori = array_keys(Ember::KATEGORI);
         $urutHari = array_flip(['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']);
 
         return collect(array_keys($sistem))->merge($lama->keys())->unique()
-            ->map(function ($kunci) use ($sistem, $lama, $nol, $kategori, $kelompok) {
+            ->map(function ($kunci) use ($sistem, $lama, $nol, $kategori, $kelompok, $adaMacetLama) {
                 [$g, $hari] = explode('|', $kunci);
                 $s = array_merge($nol, $sistem[$kunci] ?? []);
                 $sistemKategori = array_map(fn($isi) => array_sum(array_intersect_key($s, array_flip($isi))), Ember::KATEGORI);
@@ -574,6 +676,7 @@ class MigrasiController extends Controller
                     'z' => $z,
                     'alasan' => $alasan,
                     'siap' => empty($alasan),
+                    'macet_lama' => $adaMacetLama->has($kunci),
                 ];
             })
             ->sortBy([['kelompok', 'asc'], fn($a, $b) => ($urutHari[$a['hari']] ?? 9) <=> ($urutHari[$b['hari']] ?? 9)])

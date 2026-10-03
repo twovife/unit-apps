@@ -178,6 +178,26 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                       ) : (
                         <span className="text-amber-800">{b.alasan.join(' · ')}</span>
                       )}
+                      {b.macet_lama ? (
+                        <span className="text-[11px] text-violet-700">MACET LAMA ada</span>
+                      ) : (
+                        b.z > 0 && (
+                          <button
+                            type="button"
+                            className="px-2 py-0.5 text-[11px] font-semibold text-white rounded-md bg-violet-600 hover:bg-violet-700"
+                            onClick={() =>
+                              confirm(`Buat MACET LAMA kelompok ${b.kelompok} ${b.hari} dengan saldo Rp ${rp(b.z)}?`) &&
+                              router.post(
+                                route('migrasi.buat_macet_lama'),
+                                { kelompok: b.kelompok, hari: b.hari, periode: server_filter?.periode },
+                                { preserveScroll: true },
+                              )
+                            }
+                          >
+                            Buat MACET LAMA
+                          </button>
+                        )
+                      )}
                       <Link
                         href={route('migrasi.nasabah_macet', { kelompok: b.kelompok, hari: b.hari })}
                         className="px-2 py-0.5 ml-auto text-[11px] font-semibold border rounded-md text-violet-700 border-violet-300 hover:bg-violet-50"
