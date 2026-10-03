@@ -15,9 +15,9 @@ import React, { useRef, useState } from 'react';
  *  - mantri     : boleh hanya jika drop_date ATAU request_date pinjaman ini
  *                 adalah HARI INI (dibandingkan di klien, sumber kebenarannya
  *                 tetap server - ini murni supaya tombol tidak menyesatkan).
- *  - can-approve: boleh selama `recap_approved` masih false (rekap harian
- *                 tanggal drop belum di-ACC kepala). TIDAK ADA pengecualian
- *                 superuser di sini - beda dengan Reset Pinjaman.
+ *  - terkunci   : `recap_approved` (hari drop dikunci kasir / di-ACC kepala)
+ *                 - blokir semua peran, termasuk mantri dan superuser.
+ *  - can-approve: boleh.
  *  - lainnya    : tidak boleh sama sekali.
  */
 const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
@@ -44,15 +44,17 @@ const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
     pesanTerkunci =
       'Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa dihapus.';
     severity = 'destructive';
+  } else if (recapApproved) {
+    // Hari drop sudah dikunci: semua peran, termasuk mantri.
+    bolehHapus = false;
+    pesanTerkunci = 'Hari drop pinjaman ini sudah dikunci, pinjaman tidak bisa dihapus.';
+    severity = 'destructive';
   } else if (isMantri) {
     bolehHapus = bisaHapusMantri;
     pesanTerkunci =
       'Mantri hanya bisa menghapus pinjaman dengan tanggal pengajuan atau tanggal drop hari ini. Hubungi KM / Pimpinan untuk tanggal lain.';
   } else if (canApprove) {
-    bolehHapus = !recapApproved;
-    pesanTerkunci =
-      'Rekap harian tanggal drop ini sudah di-ACC pimpinan, pinjaman tidak bisa dihapus.';
-    severity = 'destructive';
+    bolehHapus = true;
   } else {
     bolehHapus = false;
     pesanTerkunci = 'Hubungi KM / Pimpinan untuk menghapus pinjaman.';

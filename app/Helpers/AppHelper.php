@@ -467,12 +467,32 @@ class AppHelper
       ->exists();
   }
 
+  /**
+   * Hari drop pinjaman sudah dikunci: dikunci kasir / di-ACC kepala di
+   * gembok baru (transaction_daily_closings), atau rekap lama di-ACC kepala.
+   */
+  public static function hariDropTerkunci(\App\Models\TransactionLoan $loan): bool
+  {
+    $hari = fn($q) => $q->where('transaction_loan_officer_grouping_id', $loan->transaction_loan_officer_grouping_id)
+      ->where('date', $loan->drop_date);
+
+    return \App\Models\TransactionDailyClosing::where($hari)
+      ->where(fn($q) => $q->whereNotNull('kasir_lock_at')->orWhereNotNull('kepala_approval_at'))
+      ->exists()
+      || \App\Models\TransactionDailyRecap::where($hari)->whereNotNull('daily_kepala_approval')->exists();
+  }
+
   public static function canDeleteLoan(\App\Models\TransactionLoan $transactionLoan): array
   {
     $user = auth()->user();
 
     if (self::sudahDiajukanPengganti($transactionLoan)) {
       return ["status" => false, 'message' => 'Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa dihapus.'];
+    }
+
+    // Hari drop sudah dikunci: tidak ada yang boleh menghapus, semua peran.
+    if (self::hariDropTerkunci($transactionLoan)) {
+      return ["status" => false, 'message' => 'Hari drop pinjaman ini sudah dikunci, pinjaman tidak bisa dihapus.'];
     }
 
     if ($user->hasRole('mantri')) {
@@ -488,15 +508,6 @@ class AppHelper
     }
 
     if ($user->hasPermissionTo('can-approve')) {
-      $recapTerkunci = \App\Models\TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionLoan->transaction_loan_officer_grouping_id)
-        ->where('date', $transactionLoan->drop_date)
-        ->whereNotNull('daily_kepala_approval')
-        ->exists();
-
-      if ($recapTerkunci) {
-        return ["status" => false, 'message' => 'Rekap harian tanggal drop ini sudah di-ACC pimpinan, pinjaman tidak bisa dihapus.'];
-      }
-
       return ["status" => true];
     }
 

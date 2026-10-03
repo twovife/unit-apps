@@ -22,11 +22,9 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
   // dimiliki kasir, pimpinan, kepala-mantri, pengawas, superuser - dan tidak
   // dimiliki mantri, persis seperti maksud pengecekan lama.
   const { auth } = usePage().props;
-  // acc/tolak = persetujuan: can-approve, tapi stafkontrol dikecualikan (peran
-  // pengawasan; can-approve-nya dipakai untuk approve closing, bukan ACC pengajuan).
-  const canApprove =
-    auth?.permissions?.includes('can-approve') &&
-    !auth?.roles?.includes('stafkontrol');
+  // acc/tolak = persetujuan: can-approve (kasir, staf kontrol, KM ke atas).
+  const canApprove = auth?.permissions?.includes('can-approve');
+  const status = triggeredData?.status;
   // success/gagal = realisasi drop: can-create (mantri/pembuat yang nge-drop).
   const canCreate = auth?.permissions?.includes('can-create');
 
@@ -60,7 +58,8 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
       <Loading show={processing} />
 
       <div className="mb-3">
-        {triggeredData?.status === 'open' && (
+        {/* open: ACC / Tolak. tolak: bisa dibalik jadi ACC. */}
+        {(status === 'open' || status === 'tolak') && (
           <>
             <Label htmlFor="approved_nominal">Nominal ACC</Label>
             <CurrencyInput
@@ -92,22 +91,25 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
               >
                 ACC
               </AppButton>
-              <AppButton
-                variant="danger"
-                size="sm"
-                disabled={!canApprove}
-                onClick={() => accPinjaman('tolak')}
-              >
-                Tolak
-              </AppButton>
+              {status === 'open' && (
+                <AppButton
+                  variant="danger"
+                  size="sm"
+                  disabled={!canApprove}
+                  onClick={() => accPinjaman('tolak')}
+                >
+                  Tolak
+                </AppButton>
+              )}
             </div>
           </>
         )}
       </div>
 
-      {triggeredData?.status !== 'open' && (
+      {status !== 'open' && status !== 'tolak' && (
         <div className="mb-3">
-          {triggeredData?.status === 'acc' && (
+          {/* acc: drop / gagal. gagal: bisa dibalik jadi drop. */}
+          {(status === 'acc' || status === 'gagal') && (
             <>
               <Label htmlFor="drop" className="whitespace-normal">
                 Drop Jadi
@@ -130,7 +132,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 </p>
               )}
               <div className="flex flex-wrap items-center justify-end gap-3 mt-2">
-                {canApprove && (
+                {status === 'acc' && canApprove && (
                   <Tundaan
                     id={id}
                     dropDateLama={triggeredData?.tanggal_drop}
@@ -145,16 +147,18 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 >
                   DROP
                 </AppButton>
-                <AppButton
-                  variant="danger"
-                  size="sm"
-                  disabled={!canCreate}
-                  onClick={() => accPinjaman('gagal')}
-                >
-                  GAGAL
-                </AppButton>
+                {status === 'acc' && (
+                  <AppButton
+                    variant="danger"
+                    size="sm"
+                    disabled={!canCreate}
+                    onClick={() => accPinjaman('gagal')}
+                  >
+                    GAGAL
+                  </AppButton>
+                )}
                 {/* ACC dibatalkan oleh pemberi ACC (acc -> tolak). */}
-                {canApprove && (
+                {status === 'acc' && canApprove && (
                   <AppButton variant="danger" size="sm" onClick={() => accPinjaman('tolak')}>
                     Ubah Tolak
                   </AppButton>
@@ -165,7 +169,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
 
           {/* Drop dibatalkan (success -> gagal). Server menolak kalau sudah ada
               angsuran, sudah jadi dasar pengajuan lain, atau hari terkunci. */}
-          {triggeredData?.status === 'success' && canCreate && (
+          {status === 'success' && canCreate && (
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
                 Hanya bisa selama belum ada angsuran dan hari drop belum dikunci.

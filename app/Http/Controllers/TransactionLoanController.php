@@ -28,14 +28,16 @@ class TransactionLoanController extends Controller
   /** Pesan tolak untuk kedua endpoint sinkronisasi angsuran (lihat synch_angsuran). */
   /**
    * Perpindahan status pinjaman yang sah (disepakati 2026-10-03). Selain ini
-   * ditolak. Kembali ke 'open' hanya lewat Reset (updateEverything), tundaan
-   * lewat tundaan_pengajuan. 'tolak' dan 'gagal' final - nasabah mengajukan
-   * ulang sebagai pengajuan baru.
+   * ditolak. Keputusan bisa dibalik: acc <-> tolak, success <-> gagal.
+   * Kembali ke 'open' hanya lewat Reset (updateEverything), tundaan lewat
+   * tundaan_pengajuan.
    */
   private const TRANSISI_STATUS = [
     'open' => ['acc', 'tolak'],
     'acc' => ['tolak', 'success', 'gagal'],
+    'tolak' => ['acc'],
     'success' => ['gagal'],
+    'gagal' => ['success'],
   ];
 
   private const PESAN_TOLAK_SYNCH = 'Sinkronisasi angsuran hanya untuk pemegang akses can-edit.';
@@ -908,14 +910,13 @@ class TransactionLoanController extends Controller
 
 
     // Gate per-status:
-    //  - acc / tolak  = keputusan persetujuan -> butuh 'can-approve'. stafkontrol
-    //    DIKECUALIKAN (peran pengawasan: boleh approve closing lewat 'can-approve',
-    //    tidak boleh ACC pengajuan). Mantri otomatis tertolak (tak punya can-approve).
+    //  - acc / tolak  = keputusan persetujuan -> butuh 'can-approve' (kasir, staf
+    //    kontrol, KM ke atas). Mantri otomatis tertolak (tak punya can-approve).
     //  - success / gagal = realisasi drop -> butuh 'can-create' (mantri/pembuat).
     $user = auth()->user();
 
     if ($request->status == 'acc' || $request->status == 'tolak') {
-      if (!$user->hasPermissionTo('can-approve') || $user->hasRole('stafkontrol')) {
+      if (!$user->hasPermissionTo('can-approve')) {
         return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses ACC / Tolak');
       }
     }
@@ -949,6 +950,24 @@ class TransactionLoanController extends Controller
       }
       if (AppHelper::sudahDiajukanPengganti($transactionLoan)) {
         return redirect()->back()->withErrors('Pinjaman ini sudah jadi dasar pengajuan lain, tidak bisa digagalkan.');
+      }
+    }
+
+    // Membalik tolak -> acc / gagal -> success: jangan sampai ada dua pengajuan
+    // hidup untuk nasabah / pinjaman lama yang sama (sudah diajukan ulang, atau
+    // sudah ditunda jadi pengajuan baru).
+    if (in_array($transactionLoan->status, ['tolak', 'gagal'], true)) {
+      $kembar = AppHelper::sudahDiajukanPengganti($transactionLoan)
+        || TransactionLoan::where('id', '!=', $transactionLoan->id)
+          ->where(function ($q) use ($transactionLoan) {
+            $q->where(fn($q) => $q->where('transaction_manage_customer_id', $transactionLoan->transaction_manage_customer_id)->whereIn('status', ['open', 'acc']))
+              ->when($transactionLoan->previous_loan_id, fn($q) => $q->orWhere(
+                fn($q) => $q->where('previous_loan_id', $transactionLoan->previous_loan_id)->whereIn('status', ['open', 'acc', 'success'])
+              ));
+          })
+          ->exists();
+      if ($kembar) {
+        return redirect()->back()->withErrors('Sudah ada pengajuan lain yang berjalan untuk nasabah ini, status tidak bisa dibalik.');
       }
     }
 

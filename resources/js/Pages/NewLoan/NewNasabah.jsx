@@ -61,7 +61,6 @@ const NewNasabah = ({
     nik: '',
     request_date: '',
     tanggal_drop: '',
-    no_kk: '',
     nama: '',
     alamat: '',
     kelompok: '',
@@ -438,16 +437,6 @@ const NewNasabah = ({
 
                     {!data.isActiveMember ? (
                       <>
-                        <div className="w-full mb-3">
-                          <Label optional>NO KK</Label>
-                          <Input
-                            type="text"
-                            name="no_kk"
-                            value={data.no_kk}
-                            onChange={onInputChange}
-                          />
-                          <InputError message={errors.no_kk} />
-                        </div>
                         <div className="w-full mb-3">
                           <Label>Nama</Label>
                           <Input

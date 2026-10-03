@@ -78,7 +78,7 @@ trait PinjamanTrait
     // sehingga mengubah pinjaman di belakangnya membuat laporan tidak cocok.
     if ($migrasi) {
       $approvedRecapDates = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
-        ->whereNotNull('kepala_approval_at')
+        ->where(fn($q) => $q->whereNotNull('kasir_lock_at')->orWhereNotNull('kepala_approval_at'))
         ->pluck('date')
         ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
         ->flip();
