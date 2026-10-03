@@ -288,6 +288,33 @@ class TransactionLoan extends Model
    *
    * @return bool  true = lunas
    */
+  /**
+   * Syarat pengajuan pelunasan (topup) dari pinjaman ini pada $tanggal.
+   * null = boleh, selain itu alasan penolakannya. Satu aturan untuk server
+   * (store_pengajuan_lama) dan layar (get_loan_pinjaman).
+   *
+   *  - sudah di-drop (success) dan belum punya pengganti open/acc/success
+   *  - ember pada $tanggal belum MB/ML (bukan status angsuran terakhir, yang
+   *    basi kalau nasabah lama tidak bayar)
+   *  - sisa saldo F8 <= 40% pinjaman
+   */
+  public function alasanTolakPengajuan(string $tanggal): ?string
+  {
+    if ($this->status !== 'success') {
+      return 'Pinjaman ini belum di-drop.';
+    }
+    if (\App\Helpers\AppHelper::sudahDiajukanPengganti($this)) {
+      return 'Sudah ada pengajuan pelunasan yang masih berjalan.';
+    }
+    if (in_array(\App\Helpers\Ember::dari($this->drop_date, $tanggal), [\App\Helpers\Ember::MB, \App\Helpers\Ember::ML], true)) {
+      return 'Pinjaman sudah MB/ML.';
+    }
+    if (\App\Helpers\PenyesuaianSaldo::hitungSaldo($this)['saldo'] > $this->pinjaman * 0.4) {
+      return 'Sisa saldo masih di atas 40% pinjaman.';
+    }
+    return null;
+  }
+
   public function hitungUlangPelunasan(): bool
   {
     $saldo = \App\Helpers\PenyesuaianSaldo::hitungSaldo($this);

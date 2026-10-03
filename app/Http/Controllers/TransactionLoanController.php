@@ -756,6 +756,15 @@ class TransactionLoanController extends Controller
 
     try {
       DB::beginTransaction();
+
+      // Kunci pinjaman lama: dua pengajuan bersamaan tidak bisa sama-sama
+      // lolos cek "belum punya pengganti". Cek syarat harus sesudah kunci.
+      TransactionLoan::whereKey($transactionLoan->id)->lockForUpdate()->first();
+      if ($alasan = $transactionLoan->alasanTolakPengajuan($request->request_date)) {
+        DB::rollBack();
+        return redirect()->back()->withErrors('Belum memenuhi syarat pengajuan pelunasan: ' . $alasan);
+      }
+
       $drop_langsung = $request->request_date == $request->tanggal_drop;
 
       $officerGrouping = TransactionLoanOfficerGrouping::find($transactionLoan->transaction_loan_officer_grouping_id);
@@ -1240,6 +1249,7 @@ class TransactionLoanController extends Controller
       'status_pinjaman' => AppHelper::status_pinjaman($loan->loan_instalment->first()?->status),
       'notes' => $loan->notes ?? null,
       'lunas' => $saldo <= 0,
+      'alasan_tolak_pengajuan' => $loan->alasanTolakPengajuan(now()->toDateString()),
       'mantri' => $loan->mantri?->nama_karyawan,
       // Trio "siapa mengerjakan apa" - sama seperti dipakai StatusPengajuan.jsx
       // di modal Buku Transaksi (lihat PinjamanTrait::getTransactionLoan()).
