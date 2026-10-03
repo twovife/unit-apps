@@ -104,20 +104,33 @@ class AgregasiScope
         return Carbon::parse($tanggal)->startOfDay()->gte($mulai);
     }
 
+    /** Bulan mulai pendataan baru yang direncanakan untuk kantor yang belum migrasi. */
+    public const RENCANA_MULAI = '2026-09-01';
+
+    /**
+     * Bulan acuan penyesuaian saldo: bulan migrasi kantor, atau RENCANA_MULAI
+     * kalau belum migrasi. Penyesuaian adalah fitur sistem baru yang dipakai
+     * SEBELUM dan sesudah migrasi (supaya saldo awal sudah benar saat migrasi),
+     * dan berlaku di bulan ini - jadi ikut saldo awal yang dibandingkan layar
+     * Kesiapan Migrasi.
+     */
+    public static function acuanPenyesuaian(?int $branchId): Carbon
+    {
+        return (self::tanggalMulai($branchId) ?? Carbon::parse(self::RENCANA_MULAI))->copy()->startOfMonth();
+    }
+
     /**
      * Batas atas drop_date yang saldonya masih boleh disesuaikan staf:
-     * akhir bulan ke-6 sebelum bulan migrasi.
+     * akhir bulan ke-6 sebelum bulan acuan.
      *
-     * Contoh, migrasi 1 Oktober 2026 → batasnya 30 April 2026, artinya hanya
-     * pinjaman yang sudah ML di September (bulan terakhir sistem lama) yang
-     * masuk. NULL kalau kantornya belum migrasi.
+     * Contoh, acuan 1 September 2026 → batasnya 31 Maret 2026, artinya hanya
+     * pinjaman yang sudah ML di Agustus (bulan terakhir sistem lama) yang
+     * masuk.
      */
     public static function batasPenyesuaian(?int $branchId): ?Carbon
     {
-        $mulai = self::tanggalMulai($branchId);
-
-        return $mulai
-            ? $mulai->copy()->startOfMonth()->subMonthsNoOverflow(self::BULAN_BATAS_PENYESUAIAN)->endOfMonth()
+        return $branchId
+            ? self::acuanPenyesuaian($branchId)->subMonthsNoOverflow(self::BULAN_BATAS_PENYESUAIAN)->endOfMonth()
             : null;
     }
 

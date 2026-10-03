@@ -1,6 +1,6 @@
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import { Input } from '@/shadcn/ui/input';
 import dayjs from 'dayjs';
@@ -132,7 +132,15 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
               {baris.map((b) => (
                 <TableRow key={b.kunci} className={b.siap ? '' : 'bg-amber-50/50'}>
                   <TableCell className="sticky left-0 px-2 py-1.5 font-medium bg-inherit">{b.kelompok}</TableCell>
-                  <TableCell className="px-2 py-1.5 capitalize">{b.hari}</TableCell>
+                  <TableCell className="px-2 py-1.5 capitalize">
+                    {/* Ke daftar nasabah macet kelompok x hari ini, untuk penyesuaian saldo. */}
+                    <Link
+                      href={route('migrasi.nasabah_macet', { kelompok: b.kelompok, hari: b.hari })}
+                      className="underline decoration-dotted"
+                    >
+                      {b.hari}
+                    </Link>
+                  </TableCell>
                   <Angka n={b.sistem.month2} kelas="text-slate-500" batas />
                   <Angka n={b.sistem.ccm} kelas="text-slate-500" />
                   {GRUP.map(([k]) => (

@@ -110,6 +110,9 @@ Route::middleware('auth')->group(function () {
     // Kesiapan migrasi per kantor (superuser, baca-saja): bucket sistem vs sirkulasi lama + Z.
     Route::get('/kesiapan', [\App\Http\Controllers\MigrasiController::class, 'kesiapanMigrasi'])
       ->name('kesiapan');
+    // Nasabah macet belum lunas per kelompok x hari: tempat penyesuaian saldo (superuser).
+    Route::get('/nasabah-macet', [\App\Http\Controllers\MigrasiController::class, 'nasabahMacet'])
+      ->name('nasabah_macet');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
     Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])

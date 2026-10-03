@@ -202,15 +202,15 @@ class PenyesuaianSaldo
             ));
         }
 
-        $mulai = AgregasiScope::tanggalMulai($branchId);
+        $berlaku = AgregasiScope::acuanPenyesuaian($branchId)->toDateString();
 
-        return DB::transaction(function () use ($loan, $jenis, $efekDiperlukan, $catatan, $user, $mulai) {
+        return DB::transaction(function () use ($loan, $jenis, $efekDiperlukan, $catatan, $user, $berlaku) {
             return TransactionSaldoAdjustment::create([
                 'transaction_loan_id' => $loan->id,
                 'transaction_loan_officer_grouping_id' => $loan->transaction_loan_officer_grouping_id,
                 'jenis' => $jenis,
                 'nominal' => abs($efekDiperlukan),
-                'berlaku_bulan' => ($mulai ?? Carbon::now())->copy()->startOfMonth()->toDateString(),
+                'berlaku_bulan' => $berlaku,
                 'user_input' => $user->employee->id,
                 'catatan' => $catatan ?: null,
             ]);

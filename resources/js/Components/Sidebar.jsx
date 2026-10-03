@@ -290,6 +290,12 @@ export default function AppSidebar({ ...props }) {
                         link: route('migrasi.kesiapan'),
                         active: route().current('migrasi.kesiapan'),
                       },
+                      {
+                        id: 100,
+                        title: 'Nasabah Macet',
+                        link: route('migrasi.nasabah_macet'),
+                        active: route().current('migrasi.nasabah_macet'),
+                      },
                     ]
                   : []),
                 {

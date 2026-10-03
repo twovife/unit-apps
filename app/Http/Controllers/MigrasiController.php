@@ -398,10 +398,124 @@ class MigrasiController extends Controller
         }
 
         $scope = AuthScope::resolve();
-        $periode = Carbon::parse($request->input('periode', '2026-09-01'))->startOfMonth();
+        $periode = Carbon::parse($request->input('periode', AgregasiScope::RENCANA_MULAI))->startOfMonth();
 
-        $groupings = DB::table('transaction_loan_officer_groupings')
+        $baris = $this->barisKesiapan($scope->branch_id, $periode);
+
+        $jumlah = fn($kolom, $kunci) => array_map(
+            fn($e) => $baris->sum(fn($b) => $b[$kolom][$e] ?? 0),
+            array_combine($kunci, $kunci)
+        );
+
+        return Inertia::render('Migrasi/Kesiapan', [
+            'datas' => $baris,
+            'ringkasan' => [
+                'baris' => $baris->count(),
+                'siap' => $baris->where('siap', true)->count(),
+                'sistem' => $jumlah('sistem', Ember::SEMUA),
+                'lama' => $jumlah('lama', $kategori),
+                'z' => $baris->sum(fn($b) => max($b['z'] ?? 0, 0)),
+                'z_minus' => $baris->filter(fn($b) => ($b['z'] ?? 0) < 0)->count(),
+            ],
+            'server_filter' => [
+                'periode' => $periode->format('Y-m-d'),
+                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
+            ],
+        ]);
+    }
+
+    /**
+     * Nasabah macet (ember ML pada bulan acuan) yang belum lunas, satu
+     * kelompok x hari - tempat menyesuaikan saldo sebelum / sesudah migrasi
+     * supaya saldo awal benar. Superuser. Penyimpanan lewat route
+     * penyesuaian_saldo_simpan (PenyesuaianSaldo::buat, aturan yang sama
+     * dengan layar per NIK).
+     *
+     * ponytail: kelompok & hari diambil dari kolom asli pinjaman, bukan
+     * kelompok efektif mutasi; samakan dengan Mutasi::ekspresiEfektifSql kalau
+     * mutasi nasabah mulai dipakai.
+     */
+    public function nasabahMacet(Request $request)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            return redirect()->route('home')->with('message', 'Layar nasabah macet khusus superuser.');
+        }
+
+        $scope = AuthScope::resolve();
+        $periode = AgregasiScope::acuanPenyesuaian($scope->branch_id);
+        $daftarKelompok = DB::table('transaction_loan_officer_groupings')
             ->where('branch_id', $scope->branch_id)
+            ->orderBy('kelompok')->pluck('kelompok')->unique()->values();
+        $kelompok = $request->input('kelompok', $daftarKelompok->first());
+        $hari = strtolower($request->input('hari', 'senin'));
+
+        $groupingIds = DB::table('transaction_loan_officer_groupings')
+            ->where('branch_id', $scope->branch_id)->where('kelompok', $kelompok)->pluck('id');
+
+        // ML pada bulan acuan = drop >= 5 bulan kalender sebelumnya.
+        $batasMl = $periode->copy()->subMonthsNoOverflow(Ember::SELISIH_ML - 1);
+        $batasSesuai = AgregasiScope::batasPenyesuaian($scope->branch_id);
+
+        $loans = TransactionLoan::with('customer')
+            ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+            ->whereRaw('LOWER(hari) = ?', [$hari])
+            ->where('status', 'success')
+            ->where('drop_date', '<', $batasMl->toDateString())
+            ->orderBy('drop_date')
+            ->get();
+        $ids = $loans->pluck('id')->all();
+        $awal = PenyesuaianSaldo::saldoBanyak($ids, $periode->copy()->subDay());
+        $kini = PenyesuaianSaldo::saldoBanyak($ids);
+        $penyesuaian = TransactionSaldoAdjustment::whereIn('transaction_loan_id', $ids)->orderBy('id')->get()
+            ->groupBy('transaction_loan_id');
+
+        $datas = $loans
+            ->filter(fn($l) => ($kini[$l->id]['saldo'] ?? 0) > 0 || ($awal[$l->id]['saldo'] ?? 0) > 0)
+            ->map(fn($l) => [
+                'id' => $l->id,
+                'nama' => $l->customer?->nama,
+                'nik' => $l->customer?->nik,
+                'drop_date' => $l->drop_date,
+                'pinjaman' => (int) $l->pinjaman,
+                'angsuran' => $kini[$l->id]['angsuran'],
+                'pemutihan' => $kini[$l->id]['pemutihan'],
+                'saldo_awal' => $awal[$l->id]['saldo'],
+                'saldo_kini' => $kini[$l->id]['saldo'],
+                'boleh' => $batasSesuai && Carbon::parse($l->drop_date)->lte($batasSesuai),
+                'penyesuaian' => ($penyesuaian[$l->id] ?? collect())->map(fn($a) => [
+                    'jenis' => $a->jenis,
+                    'efek' => $a->efek_saldo,
+                    'menunggu' => $a->butuhPersetujuan() && $a->approved_at === null,
+                ])->values(),
+            ])
+            ->values();
+
+        return Inertia::render('Migrasi/NasabahMacet', [
+            'datas' => $datas,
+            'ringkasan' => $this->barisKesiapan($scope->branch_id, $periode, $kelompok)->firstWhere('hari', $hari),
+            'jenis' => array_keys(TransactionSaldoAdjustment::ARAH),
+            'wajib_persetujuan' => TransactionSaldoAdjustment::WAJIB_PERSETUJUAN,
+            'server_filter' => [
+                'kelompok' => (string) $kelompok,
+                'hari' => $hari,
+                'daftar_kelompok' => $daftarKelompok,
+                'periode' => $periode->toDateString(),
+                'batas_penyesuaian' => $batasSesuai?->toDateString(),
+                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+            ],
+        ]);
+    }
+
+    /**
+     * Baris Kesiapan Migrasi per kelompok x hari (lihat kesiapanMigrasi).
+     * $kelompokSaja membatasi ke satu kelompok - dipakai layar Nasabah Macet.
+     */
+    private function barisKesiapan(int $branchId, Carbon $periode, $kelompokSaja = null): \Illuminate\Support\Collection
+    {
+        $groupings = DB::table('transaction_loan_officer_groupings')
+            ->where('branch_id', $branchId)
+            ->when($kelompokSaja !== null, fn($q) => $q->where('kelompok', $kelompokSaja))
             ->get(['id', 'kelompok']);
         $ids = $groupings->pluck('id')->all();
         $kelompok = $groupings->pluck('kelompok', 'id');
@@ -417,7 +531,7 @@ class MigrasiController extends Controller
         $kategori = array_keys(Ember::KATEGORI);
         $urutHari = array_flip(['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']);
 
-        $baris = collect(array_keys($sistem))->merge($lama->keys())->unique()
+        return collect(array_keys($sistem))->merge($lama->keys())->unique()
             ->map(function ($kunci) use ($sistem, $lama, $nol, $kategori, $kelompok) {
                 [$g, $hari] = explode('|', $kunci);
                 $s = array_merge($nol, $sistem[$kunci] ?? []);
@@ -464,28 +578,6 @@ class MigrasiController extends Controller
             })
             ->sortBy([['kelompok', 'asc'], fn($a, $b) => ($urutHari[$a['hari']] ?? 9) <=> ($urutHari[$b['hari']] ?? 9)])
             ->values();
-
-        $jumlah = fn($kolom, $kunci) => array_map(
-            fn($e) => $baris->sum(fn($b) => $b[$kolom][$e] ?? 0),
-            array_combine($kunci, $kunci)
-        );
-
-        return Inertia::render('Migrasi/Kesiapan', [
-            'datas' => $baris,
-            'ringkasan' => [
-                'baris' => $baris->count(),
-                'siap' => $baris->where('siap', true)->count(),
-                'sistem' => $jumlah('sistem', Ember::SEMUA),
-                'lama' => $jumlah('lama', $kategori),
-                'z' => $baris->sum(fn($b) => max($b['z'] ?? 0, 0)),
-                'z_minus' => $baris->filter(fn($b) => ($b['z'] ?? 0) < 0)->count(),
-            ],
-            'server_filter' => [
-                'periode' => $periode->format('Y-m-d'),
-                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
-                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
-            ],
-        ]);
     }
 
     /**
