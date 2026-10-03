@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
 import dayjs from 'dayjs';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import Loading from '@/Components/Loading';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
@@ -10,6 +9,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 // Nama bulan Indonesia (dayjs di proyek ini tanpa locale id).
 const namaBulan = (d, tahun = false) =>
   d.toDate().toLocaleDateString('id-ID', tahun ? { month: 'long', year: 'numeric' } : { month: 'long' });
+
+// Panah geser ember. Ukuran tetap (tidak ikut melar) supaya kepala panah tidak penyok:
+// miring = dari tengah baris ini ke tengah baris di atasnya, lurus = tetap di baris.
+const Panah = ({ miring }) => (
+  <svg
+    width="56"
+    height={miring ? 44 : 12}
+    viewBox={miring ? '0 0 56 44' : '0 0 56 12'}
+    className={`absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 ${miring ? 'top-0' : 'top-1/2'}`}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {miring ? (
+      <>
+        <line x1="4" y1="40" x2="52" y2="4" />
+        <polyline points="40,4 52,4 50,15" />
+      </>
+    ) : (
+      <>
+        <line x1="4" y1="6" x2="52" y2="6" />
+        <polyline points="45,1 52,6 45,11" />
+      </>
+    )}
+  </svg>
+);
 
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
@@ -111,7 +138,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                   <TableHead className="px-3 text-right">Awal {namaBulan(bulan)}</TableHead>
                   <TableHead className="px-3 text-right">Angsuran</TableHead>
                   <TableHead className="px-3 text-right">Akhir {namaBulan(bulan)}</TableHead>
-                  <TableHead className="w-8 p-0" />
+                  <TableHead className="p-0 w-16" />
                   <TableHead className="px-3 text-right">Awal {namaBulan(bulan.add(1, 'month'))}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -134,12 +161,8 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
                     <TableCell className="px-3 font-medium text-right tabular-nums">{rp(ember?.saldo)}</TableCell>
                     {/* Panah: saldo akhir ember ini pindah ke ember satu tingkat di atasnya
                         bulan depan (garis antar baris). ML tetap di ML. */}
-                    <TableCell className="relative w-8 p-0">
-                      {i === 0 ? (
-                        <ArrowRight className="absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 text-emerald-600" />
-                      ) : (
-                        <ArrowUpRight className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 left-1/2 top-0 text-emerald-600" />
-                      )}
+                    <TableCell className="relative p-0 w-16">
+                      <Panah miring={i > 0} />
                     </TableCell>
                     <TableCell className="px-3 font-semibold text-right tabular-nums">
                       {depan === null ? '' : rp(depan)}
