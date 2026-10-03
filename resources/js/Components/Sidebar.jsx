@@ -281,6 +281,17 @@ export default function AppSidebar({ ...props }) {
               icon={ClipboardCheck}
               title="Persiapan Migrasi"
               items={[
+                // Khusus superuser: monitor kesiapan migrasi per kantor.
+                ...(isSuperUser
+                  ? [
+                      {
+                        id: 0,
+                        title: 'Kesiapan Migrasi',
+                        link: route('migrasi.kesiapan'),
+                        active: route().current('migrasi.kesiapan'),
+                      },
+                    ]
+                  : []),
                 {
                   id: 1,
                   title: 'Stock-take ML',
@@ -373,12 +384,6 @@ export default function AppSidebar({ ...props }) {
                   title: 'Mutasi Nasabah',
                   link: route('mutasi_nasabah.index'),
                   active: route().current('mutasi_nasabah.index'),
-                },
-                {
-                  id: 6,
-                  title: 'Kesiapan Migrasi',
-                  link: route('migrasi.kesiapan'),
-                  active: route().current('migrasi.kesiapan'),
                 },
               ]}
             />
