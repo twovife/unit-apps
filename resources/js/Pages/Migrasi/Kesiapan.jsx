@@ -19,15 +19,23 @@ const Kartu = ({ judul, utama, bawah, nada = 'netral' }) => (
   </div>
 );
 
-/** Satu kategori: angka sistem di atas, sirkulasi lama di bawah, selisih merah kalau ada. */
-const Sel = ({ sistem, lama, selisih, rinci }) => (
-  <TableCell className="text-right align-top tabular-nums whitespace-nowrap">
-    <div className="font-medium">{rp(sistem)}</div>
-    {rinci && <div className="text-[10px] text-slate-400">{rinci}</div>}
-    <div className="text-xs text-slate-500">{rp(lama)}</div>
-    {!!selisih && <div className="text-xs font-semibold text-red-600">{selisih > 0 ? '+' : ''}{rp(selisih)}</div>}
+// Angka per kolom; 0 di kolom selisih ditampilkan '–' supaya yang meleset menonjol.
+const Angka = ({ n, kelas = '', selisih = false, batas = false }) => (
+  <TableCell
+    className={`px-2 py-1.5 text-right tabular-nums whitespace-nowrap ${batas ? 'border-l' : ''} ${
+      selisih && n ? 'font-semibold text-red-600 bg-red-50' : ''
+    } ${kelas}`}
+  >
+    {selisih && !n ? <span className="text-slate-300">–</span> : rp(n)}
   </TableCell>
 );
+
+// Kelompok kolom: [kunci kategori, judul, judul kolom ketiga]
+const GRUP = [
+  ['lancar', 'Lancar', 'Selisih'],
+  ['cm', 'CM', 'Selisih'],
+  ['mb', 'MB', 'Selisih'],
+];
 
 const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
   const [hanyaBelum, setHanyaBelum] = useState(false);
@@ -89,47 +97,56 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
         </label>
 
         <div className="overflow-x-auto bg-white border rounded-lg">
-          <Table className="text-sm">
-            <TableHeader>
+          <Table className="text-xs">
+            <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead>Kel</TableHead>
-                <TableHead>Hari</TableHead>
-                <TableHead className="text-right">Lancar</TableHead>
-                <TableHead className="text-right">CM</TableHead>
-                <TableHead className="text-right">MB</TableHead>
-                <TableHead className="text-right">ML</TableHead>
-                <TableHead className="text-right">Z</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead rowSpan={2} className="sticky left-0 z-10 px-2 bg-slate-50">Kel</TableHead>
+                <TableHead rowSpan={2} className="px-2">Hari</TableHead>
+                <TableHead colSpan={3} className="px-2 text-center border-l">Rincian lancar (sistem)</TableHead>
+                {GRUP.map(([k, judul]) => (
+                  <TableHead key={k} colSpan={3} className="px-2 text-center border-l">{judul}</TableHead>
+                ))}
+                <TableHead colSpan={3} className="px-2 text-center border-l">ML</TableHead>
+                <TableHead rowSpan={2} className="px-2 border-l">Status</TableHead>
               </TableRow>
-              <TableRow className="text-[11px] text-slate-500">
-                <TableCell colSpan={8} className="py-1">
-                  Tiap sel: <b>sistem</b> · sirkulasi lama · <span className="text-red-600">selisih</span>. Lancar
-                  dirinci m1 / m2 / ccm (sistem lama tidak menyimpan rinciannya).
-                </TableCell>
+              <TableRow>
+                {[0, 1, 2].map((mundur) => `Drop ${dayjs(server_filter?.periode).subtract(mundur, 'month').format('MMM')}`).map((j, i) => (
+                  <TableHead key={j} className={`px-2 text-right ${i === 0 ? 'border-l' : ''}`}>{j}</TableHead>
+                ))}
+                {GRUP.map(([k, , ketiga]) => (
+                  <React.Fragment key={k}>
+                    <TableHead className="px-2 text-right border-l">Sistem</TableHead>
+                    <TableHead className="px-2 text-right">Sirkulasi</TableHead>
+                    <TableHead className="px-2 text-right">{ketiga}</TableHead>
+                  </React.Fragment>
+                ))}
+                <TableHead className="px-2 text-right border-l">Sistem</TableHead>
+                <TableHead className="px-2 text-right">Sirkulasi</TableHead>
+                <TableHead className="px-2 text-right">Z</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {baris.map((b) => (
-                <TableRow key={b.kunci} className={b.siap ? '' : 'bg-amber-50/40'}>
-                  <TableCell className="align-top">{b.kelompok}</TableCell>
-                  <TableCell className="capitalize align-top">{b.hari}</TableCell>
-                  <Sel
-                    sistem={lancarSistem(b.sistem)}
-                    lama={b.lama?.lancar}
-                    selisih={b.selisih?.lancar}
-                    rinci={`${rp(b.sistem.month1)} / ${rp(b.sistem.month2)} / ${rp(b.sistem.ccm)}`}
+                <TableRow key={b.kunci} className={b.siap ? '' : 'bg-amber-50/50'}>
+                  <TableCell className="sticky left-0 px-2 py-1.5 font-medium bg-inherit">{b.kelompok}</TableCell>
+                  <TableCell className="px-2 py-1.5 capitalize">{b.hari}</TableCell>
+                  <Angka n={b.sistem.month1} kelas="text-slate-500" batas />
+                  <Angka n={b.sistem.month2} kelas="text-slate-500" />
+                  <Angka n={b.sistem.ccm} kelas="text-slate-500" />
+                  {GRUP.map(([k]) => (
+                    <React.Fragment key={k}>
+                      <Angka n={k === 'lancar' ? lancarSistem(b.sistem) : b.sistem[k]} kelas="font-medium" batas />
+                      <Angka n={b.lama?.[k]} />
+                      <Angka n={b.selisih?.[k]} selisih />
+                    </React.Fragment>
+                  ))}
+                  <Angka n={b.sistem.ml} kelas="font-medium" batas />
+                  <Angka n={b.lama?.ml} />
+                  <Angka
+                    n={b.z}
+                    kelas={`font-semibold ${b.z < 0 ? 'text-red-600 bg-red-50' : b.z > 0 ? 'text-violet-700' : 'text-slate-300'}`}
                   />
-                  <Sel sistem={b.sistem.cm} lama={b.lama?.cm} selisih={b.selisih?.cm} />
-                  <Sel sistem={b.sistem.mb} lama={b.lama?.mb} selisih={b.selisih?.mb} />
-                  <Sel sistem={b.sistem.ml} lama={b.lama?.ml} />
-                  <TableCell
-                    className={`text-right align-top font-semibold tabular-nums ${
-                      b.z < 0 ? 'text-red-600' : b.z > 0 ? 'text-violet-700' : 'text-slate-400'
-                    }`}
-                  >
-                    {rp(b.z)}
-                  </TableCell>
-                  <TableCell className="text-xs align-top">
+                  <TableCell className="px-2 py-1.5 border-l whitespace-nowrap">
                     {b.siap ? (
                       <span className="font-semibold text-emerald-700">Siap</span>
                     ) : (
@@ -138,15 +155,28 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                   </TableCell>
                 </TableRow>
               ))}
-              <TableRow className="font-semibold bg-slate-50">
-                <TableCell colSpan={2}>Total</TableCell>
-                <Sel sistem={ringkasan ? lancarSistem(ringkasan.sistem) : 0} lama={ringkasan?.lama?.lancar} />
-                <Sel sistem={ringkasan?.sistem?.cm} lama={ringkasan?.lama?.cm} />
-                <Sel sistem={ringkasan?.sistem?.mb} lama={ringkasan?.lama?.mb} />
-                <Sel sistem={ringkasan?.sistem?.ml} lama={ringkasan?.lama?.ml} />
-                <TableCell className="text-right tabular-nums">{rp(ringkasan?.z)}</TableCell>
-                <TableCell />
-              </TableRow>
+              {ringkasan && (
+                <TableRow className="font-semibold bg-slate-100">
+                  <TableCell colSpan={2} className="sticky left-0 px-2 py-2 bg-slate-100">Total</TableCell>
+                  <Angka n={ringkasan.sistem.month1} batas />
+                  <Angka n={ringkasan.sistem.month2} />
+                  <Angka n={ringkasan.sistem.ccm} />
+                  {GRUP.map(([k]) => (
+                    <React.Fragment key={k}>
+                      <Angka n={k === 'lancar' ? lancarSistem(ringkasan.sistem) : ringkasan.sistem[k]} batas />
+                      <Angka n={ringkasan.lama[k]} />
+                      <Angka
+                        n={(k === 'lancar' ? lancarSistem(ringkasan.sistem) : ringkasan.sistem[k]) - ringkasan.lama[k]}
+                        selisih
+                      />
+                    </React.Fragment>
+                  ))}
+                  <Angka n={ringkasan.sistem.ml} batas />
+                  <Angka n={ringkasan.lama.ml} />
+                  <Angka n={ringkasan.lama.ml - ringkasan.sistem.ml} />
+                  <TableCell className="border-l" />
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
