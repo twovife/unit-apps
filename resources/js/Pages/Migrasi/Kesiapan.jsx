@@ -41,6 +41,9 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
   const [hanyaBelum, setHanyaBelum] = useState(false);
   const baris = hanyaBelum ? datas.filter((b) => !b.siap) : datas;
   const lancarSistem = (s) => s.month1 + s.month2 + s.ccm;
+  // Data real = posisi hari terakhir bulan sebelumnya; bucket = baris sirkulasi tanggal 1 periode.
+  const akhir = dayjs(server_filter?.periode).subtract(1, 'day').format('D MMM');
+  const awal = dayjs(server_filter?.periode).format('D MMM');
 
   const gantiPeriode = (nilai) =>
     nilai && router.get(route('migrasi.kesiapan'), { periode: `${nilai}-01` }, { preserveScroll: true });
@@ -118,13 +121,13 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                 ))}
                 {GRUP.map(([k, , ketiga]) => (
                   <React.Fragment key={k}>
-                    <TableHead className="px-2 text-right border-l">Data real</TableHead>
-                    <TableHead className="px-2 text-right">Bucket</TableHead>
+                    <TableHead className="px-2 text-right border-l">Real {akhir}</TableHead>
+                    <TableHead className="px-2 text-right">Bucket {awal}</TableHead>
                     <TableHead className="px-2 text-right">{ketiga}</TableHead>
                   </React.Fragment>
                 ))}
-                <TableHead className="px-2 text-right border-l">Data real</TableHead>
-                <TableHead className="px-2 text-right">Bucket</TableHead>
+                <TableHead className="px-2 text-right border-l">Real {akhir}</TableHead>
+                <TableHead className="px-2 text-right">Bucket {awal}</TableHead>
                 <TableHead className="px-2 text-right">Z</TableHead>
               </TableRow>
             </TableHeader>
