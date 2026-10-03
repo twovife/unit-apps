@@ -413,7 +413,7 @@ class MigrasiController extends Controller
                 'baris' => $baris->count(),
                 'siap' => $baris->where('siap', true)->count(),
                 'sistem' => $jumlah('sistem', Ember::SEMUA),
-                'lama' => $jumlah('lama', $kategori),
+                'lama' => $jumlah('lama', array_keys(Ember::KATEGORI)),
                 'z' => $baris->sum(fn($b) => max($b['z'] ?? 0, 0)),
                 'z_minus' => $baris->filter(fn($b) => ($b['z'] ?? 0) < 0)->count(),
             ],
