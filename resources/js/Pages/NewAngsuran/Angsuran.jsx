@@ -159,7 +159,11 @@ const Angsuran = ({
         </div>
       )}
       {type === 'mobile' && server_filter.is_libur ? null : (
-      <Tabs defaultValue="bukuangsuran" className="w-full">
+      <Tabs
+        // ?tab=bukustorting membuka tab Buku Storting langsung (link dari Kesiapan Migrasi).
+        defaultValue={new URLSearchParams(window.location.search).get('tab') === 'bukustorting' ? 'bukustorting' : 'bukuangsuran'}
+        className="w-full"
+      >
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="bukuangsuran">Buku Angsuran</TabsTrigger>

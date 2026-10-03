@@ -5,6 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/shadcn/ui/input';
 import dayjs from 'dayjs';
 
+const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+
 const rp = (n) => (n === null || n === undefined ? '—' : new Intl.NumberFormat('id-ID').format(n));
 
 const Kartu = ({ judul, utama, bawah, nada = 'netral' }) => (
@@ -44,6 +46,12 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
   // Data real = posisi hari terakhir bulan sebelumnya; bucket = baris sirkulasi tanggal 1 periode.
   const akhir = dayjs(server_filter?.periode).subtract(1, 'day').format('D MMM');
   const awal = dayjs(server_filter?.periode).format('D MMM');
+  // Hari tagih terakhir bulan sebelumnya untuk hari ini - tanggal buku storting yang dibuka.
+  const tanggalBuku = (hari) => {
+    let d = dayjs(server_filter?.periode).subtract(1, 'day');
+    while (HARI[d.day()] !== hari) d = d.subtract(1, 'day');
+    return d.format('YYYY-MM-DD');
+  };
 
   const gantiPeriode = (nilai) =>
     nilai && router.get(route('migrasi.kesiapan'), { periode: `${nilai}-01` }, { preserveScroll: true });
@@ -136,9 +144,13 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                 <TableRow key={b.kunci} className={b.siap ? '' : 'bg-amber-50/50'}>
                   <TableCell className="sticky left-0 px-2 py-1.5 font-medium bg-inherit">{b.kelompok}</TableCell>
                   <TableCell className="px-2 py-1.5 capitalize">
-                    {/* Ke daftar nasabah macet kelompok x hari ini, untuk penyesuaian saldo. */}
+                    {/* Ke Buku Storting kelompok x hari ini, posisi hari tagih terakhir bulan sebelumnya. */}
                     <Link
-                      href={route('migrasi.nasabah_macet', { kelompok: b.kelompok, hari: b.hari })}
+                      href={route('pinjaman.index_pinjaman', {
+                        date: tanggalBuku(b.hari),
+                        kelompok: b.kelompok,
+                        tab: 'bukustorting',
+                      })}
                       className="underline decoration-dotted"
                     >
                       {b.hari}
@@ -160,11 +172,19 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                     kelas={`font-semibold ${b.z < 0 ? 'text-red-600 bg-red-50' : b.z > 0 ? 'text-violet-700' : 'text-slate-300'}`}
                   />
                   <TableCell className="px-2 py-1.5 border-l whitespace-nowrap">
-                    {b.siap ? (
-                      <span className="font-semibold text-emerald-700">Siap</span>
-                    ) : (
-                      <span className="text-amber-800">{b.alasan.join(' · ')}</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {b.siap ? (
+                        <span className="font-semibold text-emerald-700">Siap</span>
+                      ) : (
+                        <span className="text-amber-800">{b.alasan.join(' · ')}</span>
+                      )}
+                      <Link
+                        href={route('migrasi.nasabah_macet', { kelompok: b.kelompok, hari: b.hari })}
+                        className="px-2 py-0.5 ml-auto text-[11px] font-semibold border rounded-md text-violet-700 border-violet-300 hover:bg-violet-50"
+                      >
+                        Sesuaikan ML
+                      </Link>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
