@@ -54,7 +54,9 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
           <div>
             <h1 className="text-lg font-semibold text-slate-900">Kesiapan Migrasi — {server_filter?.unit}</h1>
             <p className="max-w-3xl mt-1 text-sm text-slate-600">
-              Saldo awal {dayjs(server_filter?.periode).format('MMMM YYYY')} per kelompok &amp; hari: angka{' '}
+              Saldo awal {dayjs(server_filter?.periode).format('MMMM YYYY')} (= posisi akhir{' '}
+              {dayjs(server_filter?.periode).subtract(1, 'month').format('MMMM')}, sebelum ada drop bulan ini) per
+              kelompok &amp; hari: angka{' '}
               <b>data real</b> (sisa saldo dari daftar nasabah) dibanding <b>bucket</b> (sirkulasi lama yang dicatat
               kantor). Lancar, CM, dan MB harus sama persis; ML boleh lebih besar di bucket — selisihnya adalah{' '}
               <b>Z</b> (ML belum terinput). Layar
@@ -103,7 +105,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
               <TableRow>
                 <TableHead rowSpan={2} className="sticky left-0 z-10 px-2 bg-slate-50">Kel</TableHead>
                 <TableHead rowSpan={2} className="px-2">Hari</TableHead>
-                <TableHead colSpan={3} className="px-2 text-center border-l">Rincian lancar (data real)</TableHead>
+                <TableHead colSpan={2} className="px-2 text-center border-l">Rincian lancar (data real)</TableHead>
                 {GRUP.map(([k, judul]) => (
                   <TableHead key={k} colSpan={3} className="px-2 text-center border-l">{judul}</TableHead>
                 ))}
@@ -111,7 +113,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                 <TableHead rowSpan={2} className="px-2 border-l">Status</TableHead>
               </TableRow>
               <TableRow>
-                {[0, 1, 2].map((mundur) => `Drop ${dayjs(server_filter?.periode).subtract(mundur, 'month').format('MMM')}`).map((j, i) => (
+                {[1, 2].map((mundur) => `Drop ${dayjs(server_filter?.periode).subtract(mundur, 'month').format('MMM')}`).map((j, i) => (
                   <TableHead key={j} className={`px-2 text-right ${i === 0 ? 'border-l' : ''}`}>{j}</TableHead>
                 ))}
                 {GRUP.map(([k, , ketiga]) => (
@@ -131,8 +133,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                 <TableRow key={b.kunci} className={b.siap ? '' : 'bg-amber-50/50'}>
                   <TableCell className="sticky left-0 px-2 py-1.5 font-medium bg-inherit">{b.kelompok}</TableCell>
                   <TableCell className="px-2 py-1.5 capitalize">{b.hari}</TableCell>
-                  <Angka n={b.sistem.month1} kelas="text-slate-500" batas />
-                  <Angka n={b.sistem.month2} kelas="text-slate-500" />
+                  <Angka n={b.sistem.month2} kelas="text-slate-500" batas />
                   <Angka n={b.sistem.ccm} kelas="text-slate-500" />
                   {GRUP.map(([k]) => (
                     <React.Fragment key={k}>
@@ -159,8 +160,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
               {ringkasan && (
                 <TableRow className="font-semibold bg-slate-100">
                   <TableCell colSpan={2} className="sticky left-0 px-2 py-2 bg-slate-100">Total</TableCell>
-                  <Angka n={ringkasan.sistem.month1} batas />
-                  <Angka n={ringkasan.sistem.month2} />
+                  <Angka n={ringkasan.sistem.month2} batas />
                   <Angka n={ringkasan.sistem.ccm} />
                   {GRUP.map(([k]) => (
                     <React.Fragment key={k}>
