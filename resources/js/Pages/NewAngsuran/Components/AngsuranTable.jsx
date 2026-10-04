@@ -18,15 +18,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
   // Rincian angsuran sebelum bulan terpilih (tombol di samping Saldo
-  // Sebelumnya): "lebih lama", lalu 4 bulan terakhir per tanggal tagih + total
-  // bulannya, lalu koreksi (MD/penyesuaian). Pinjaman - semua kolom total =
-  // Saldo Sebelumnya, jadi selisih bisa dilacak sampai ke tanggalnya.
+  // Sebelumnya): tiap klik membuka SATU bulan lagi ke belakang, per tanggal
+  // tagih + total bulannya; sisanya digabung di "≤ bulan", lalu koreksi
+  // (MD/penyesuaian). Pinjaman - kolom total = Saldo Sebelumnya.
   const { server_filter } = usePage().props;
-  const [rinci, setRinci] = useState(false);
+  const [jumlahBulan, setJumlahBulan] = useState(0);
+  const rinci = jumlahBulan > 0;
+  const MAKS_BULAN = 12;
   const namaBulan = (b) => b.toDate().toLocaleDateString("id-ID", { month: "short" });
   const HARI_KE = { minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6 };
-  const bulanRinci = [4, 3, 2, 1].map((mundur) => dayjs(server_filter?.month).subtract(mundur, "month"));
-  const awalRinci = bulanRinci[0].format("YYYY-MM");
+  const bulanRinci = Array.from({ length: jumlahBulan }, (_, i) => jumlahBulan - i).map((mundur) =>
+    dayjs(server_filter?.month).subtract(mundur, "month"),
+  );
+  const awalRinci = bulanRinci[0]?.format("YYYY-MM");
   const tanggalTagih = (b) => {
     const hasil = [];
     for (let d = b.startOf("month"); d.month() === b.month(); d = d.add(1, "day")) {
@@ -35,7 +39,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     return hasil;
   };
   // Kolom: { label, nilai(row), jenis: 'tgl' | 'total' | 'koreksi', d? }
-  const kolomRinci = [
+  const kolomRinci = !rinci ? [] : [
     {
       label: `≤ ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
       jenis: "total",
@@ -137,15 +141,27 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               ))}
             <TableHead className="text-center border-x border-x-black">
               <div className="flex items-center justify-center gap-1">
+                {jumlahBulan < MAKS_BULAN && (
+                  <button
+                    type="button"
+                    className="p-0.5 rounded hover:bg-gray-300"
+                    title="Buka satu bulan lagi ke belakang"
+                    onClick={() => setJumlahBulan((n) => n + 1)}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 Saldo Sebelumnya
-                <button
-                  type="button"
-                  className="p-0.5 rounded hover:bg-gray-300"
-                  title={rinci ? "Tutup rincian per bulan" : "Rincian angsuran per bulan"}
-                  onClick={() => setRinci((v) => !v)}
-                >
-                  {rinci ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-                </button>
+                {rinci && (
+                  <button
+                    type="button"
+                    className="p-0.5 rounded hover:bg-gray-300"
+                    title="Tutup rincian"
+                    onClick={() => setJumlahBulan(0)}
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </TableHead>
             {dateOfWeek.map((day, i) => (
