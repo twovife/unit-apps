@@ -118,7 +118,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
             <TableHead className="w-10 text-center">No</TableHead>
-            <TableHead className="w-24 text-center">Tanggal</TableHead>
+            <TableHead className="text-center w-28">Tanggal</TableHead>
             <TableHead className="w-40 text-center">Nama Nasabah</TableHead>
             <TableHead className="w-36 text-center">NIK</TableHead>
             <TableHead className="w-24 text-center">Note</TableHead>
@@ -189,7 +189,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             data.map((row, i) => (
               <React.Fragment key={i}>
                 <TableRow>
-                  <TableCell colSpan={17 + (dateOfWeek.length ?? 0) + (rinci ? kolomRinci.length : 0)}>
+                  <TableCell colSpan={15 + (dateOfWeek.length ?? 0) + kolomRinci.length}>
                     {row.month}
                   </TableCell>
                 </TableRow>
@@ -203,7 +203,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
-                        <div>{dayjs(subrow.tanggal_drop).format("DD-MM")}</div>
+                        <div className="whitespace-nowrap">{dayjs(subrow.tanggal_drop).format("DD-MM")}</div>
                         <div>
                           <Button
                             size="xs"
