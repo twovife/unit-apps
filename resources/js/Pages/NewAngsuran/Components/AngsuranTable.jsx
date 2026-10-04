@@ -113,33 +113,33 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
 
   return (
     <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
-      <Table className="text-xs rounded-lg">
+      <Table className="text-xs rounded-lg table-fixed w-max">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
-            <TableHead className="text-center">No</TableHead>
-            <TableHead className="text-center">Tanggal</TableHead>
-            <TableHead className="text-center">Nama Nasabah</TableHead>
-            <TableHead className="text-center">NIK</TableHead>
-            <TableHead className="text-center">Note</TableHead>
-            <TableHead className="text-center">Alamat</TableHead>
-            <TableHead className="text-center">Kelompok</TableHead>
-            <TableHead className="text-center">Hari</TableHead>
-            <TableHead className="text-center">Pnj Ke</TableHead>
-            <TableHead className="text-center">X Angs</TableHead>
-            <TableHead className="text-center border-x border-x-black">
+            <TableHead className="w-10 text-center">No</TableHead>
+            <TableHead className="w-24 text-center">Tanggal</TableHead>
+            <TableHead className="w-40 text-center">Nama Nasabah</TableHead>
+            <TableHead className="w-36 text-center">NIK</TableHead>
+            <TableHead className="w-24 text-center">Note</TableHead>
+            <TableHead className="w-48 text-center">Alamat</TableHead>
+            <TableHead className="w-14 text-center">Kelompok</TableHead>
+            <TableHead className="w-14 text-center">Hari</TableHead>
+            <TableHead className="w-12 text-center">Pnj Ke</TableHead>
+            <TableHead className="w-12 text-center">X Angs</TableHead>
+            <TableHead className="w-20 text-center border-x border-x-black">
               Pinjaman
             </TableHead>
             {rinci &&
               kolomRinci.map((k, i) => (
                 <TableHead
                   key={i}
-                  className={`text-center whitespace-nowrap ${k.jenis === "tgl" ? "bg-blue-50 font-normal" : "bg-blue-100 font-semibold"}`}
+                  className={`w-16 text-center whitespace-nowrap ${k.jenis === "tgl" ? "" : "font-semibold"}`}
                   title={k.jenis === "koreksi" ? "Pemutihan & penyesuaian sebelum bulan ini" : undefined}
                 >
                   {k.label}
                 </TableHead>
               ))}
-            <TableHead className="text-center border-x border-x-black">
+            <TableHead className="text-center w-28 border-x border-x-black">
               <div className="flex items-center justify-center gap-1">
                 {jumlahBulan < MAKS_BULAN && (
                   <button
@@ -166,19 +166,19 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             </TableHead>
             {dateOfWeek.map((day, i) => (
               <TableHead
-                className="text-center border-x border-x-black"
+                className="w-16 text-center border-x border-x-black"
                 key={i}
               >
-                {dayjs(day).format("DD-MM-YY")}
+                {dayjs(day).format("DD-MM")}
               </TableHead>
             ))}
-            <TableHead className="text-center border-x border-x-black">
+            <TableHead className="w-20 text-center border-x border-x-black">
               Angsuran
             </TableHead>
-            <TableHead className="text-center border-x border-x-black">
+            <TableHead className="w-16 text-center border-x border-x-black">
               (MD)
             </TableHead>
-            <TableHead className="text-center border-x border-x-black">
+            <TableHead className="w-20 text-center border-x border-x-black">
               Saldo
             </TableHead>
           </TableRow>
@@ -194,11 +194,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                 </TableRow>
                 {row.data.map((subrow, i) => (
                   <TableRow
-                    className={`${
-                      selectedId.includes(subrow.id)
-                        ? "bg-green-200 hover:bg-green-50"
-                        : ""
-                    }}`}
+                    className={selectedId.includes(subrow.id) ? "bg-green-200" : "even:bg-gray-50"}
                     key={i}
                   >
                     <TableCell onClick={() => handleRowClick(subrow.id)}>
@@ -217,7 +213,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{subrow.nama}</TableCell>
+                    <TableCell className="truncate" title={subrow.nama}>{subrow.nama}</TableCell>
                     <TableCell className="text-center">{subrow.nik}</TableCell>
                     <TableCell className="text-center">
                       {subrow.lunas ? (
@@ -252,7 +248,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         ""
                       )}
                     </TableCell>
-                    <TableCell>{subrow.alamat}</TableCell>
+                    <TableCell className="truncate" title={subrow.alamat}>{subrow.alamat}</TableCell>
                     <TableCell className="text-center">
                       {subrow.kelompok}
                     </TableCell>
@@ -264,7 +260,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       {subrow.x_angs}
                     </TableCell>
                     <TableCell
-                      className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black ${
+                      className={`border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -279,7 +275,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         return (
                           <TableCell
                             key={i}
-                            className={`${k.jenis === "tgl" ? "bg-blue-50" : "bg-blue-100 font-semibold"} ${
+                            className={`${k.jenis === "tgl" ? "" : "font-semibold"} ${
                               (k.jenis === "koreksi" && v) || katrol ? "text-red-600 font-semibold" : ""
                             }`}
                           >
@@ -288,7 +284,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         );
                       })}
                     <TableCell
-                      className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
+                      className={`border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -311,7 +307,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       </TableCell>
                     ))}
                     <TableCell
-                      className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black ${
+                      className={`border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -320,7 +316,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering ribuan value={subrow.angsuran} />
                     </TableCell>
                     <TableCell
-                      className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black ${
+                      className={`border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -329,7 +325,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering ribuan value={subrow.pemutihanThisMonth} />
                     </TableCell>
                     <TableCell
-                      className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
+                      className={`border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -344,7 +340,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     ini nanti total
                   </TableCell>
                   <TableCell
-                    className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black`}
+                    className={`border-x border-x-black`}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "pinjaman")}
@@ -352,12 +348,12 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   </TableCell>
                   {rinci &&
                     kolomRinci.map((k, i) => (
-                      <TableCell key={i} className={k.jenis === "tgl" ? "bg-blue-50" : "bg-blue-100"}>
+                      <TableCell key={i}>
                         <FormatNumbering ribuan value={row.data.reduce((t, r) => t + k.nilai(r), 0)} />
                       </TableCell>
                     ))}
                   <TableCell
-                    className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black`}
+                    className={`border-x border-x-black`}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "saldo_sebelumnya")}
@@ -371,21 +367,21 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     </TableCell>
                   ))}
                   <TableCell
-                    className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black `}
+                    className={`border-x border-x-black `}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "angsuran")}
                     />
                   </TableCell>
                   <TableCell
-                    className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black `}
+                    className={`border-x border-x-black `}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "pemutihanThisMonth")}
                     />
                   </TableCell>
                   <TableCell
-                    className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
+                    className={`border-x border-x-black `}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "saldo")}
