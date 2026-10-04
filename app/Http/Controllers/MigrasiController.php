@@ -479,7 +479,7 @@ class MigrasiController extends Controller
             ->orderBy('drop_date')
             ->get();
         $ids = $loans->pluck('id')->all();
-        $awal = PenyesuaianSaldo::saldoBanyak($ids, $periode->copy()->subDay());
+        $awal = PenyesuaianSaldo::saldoBanyak($ids, $periode->copy()->subDay(), $periode);
         $kini = PenyesuaianSaldo::saldoBanyak($ids);
         $penyesuaian = TransactionSaldoAdjustment::whereIn('transaction_loan_id', $ids)->orderBy('id')->get()
             ->groupBy('transaction_loan_id');

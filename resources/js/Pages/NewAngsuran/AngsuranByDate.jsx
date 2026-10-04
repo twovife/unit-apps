@@ -5,6 +5,7 @@ import SearchComponent from '@/Components/shadcn/SearchComponent';
 import FilterBar from '@/Components/FilterBar';
 import { router, usePage } from '@inertiajs/react';
 import AngsuranByDateTable from './Components/AngsuranByDateTable';
+import AngsuranTable from './Components/AngsuranTable';
 import { Button } from '@/shadcn/ui/button';
 import { FilterIcon, SearchIcon } from 'lucide-react';
 import { Label } from '@/shadcn/ui/label';
@@ -30,6 +31,7 @@ import InputMacet from '../BukuTransaksi/Web/InputMacet';
 const AngsuranByDate = ({
   headerName,
   datas,
+  dateOfWeek = [],
   urlLink,
   localState,
   searchMonth,
@@ -226,7 +228,13 @@ const AngsuranByDate = ({
         </>
       )}
       <div className="overflow-auto">
-        <AngsuranByDateTable datas={datas} />
+        {/* Macet memakai buku angsuran yang sama dengan Angsuran Lancar
+            (saldo awal, angsuran per tanggal tagih, angsuran, MD, saldo). */}
+        {server_filter.type_show === 'macet' ? (
+          <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} />
+        ) : (
+          <AngsuranByDateTable datas={datas} />
+        )}
       </div>
     </>
   );

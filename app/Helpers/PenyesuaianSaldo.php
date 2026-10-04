@@ -54,18 +54,24 @@ class PenyesuaianSaldo
      * belum disetujui tidak dihitung. Kesamaan dengan portofolio dibuktikan
      * `php artisan saldo:cek {branch}`.
      *
+     * $bulanPenyesuaian: bulan batas penyesuaian kalau beda dari bulan
+     * $perTanggal. Saldo AWAL bulan B = transaksi s/d hari terakhir bulan
+     * sebelumnya + penyesuaian ber-berlaku_bulan <= B (penyesuaian membetulkan
+     * saldo pembuka bulan berlakunya) - sama dengan portofolio($asOf, $ref).
+     *
      * @param  int[]  $loanIds
      * @param  \DateTimeInterface|string|null  $perTanggal
+     * @param  \DateTimeInterface|string|null  $bulanPenyesuaian
      * @return array<int, array{pinjaman:int, angsuran:int, pemutihan:int, efek:int, saldo:int}>
      */
-    public static function saldoBanyak(array $loanIds, $perTanggal = null): array
+    public static function saldoBanyak(array $loanIds, $perTanggal = null, $bulanPenyesuaian = null): array
     {
         if (empty($loanIds)) {
             return [];
         }
 
         $tanggal = $perTanggal ? Carbon::parse($perTanggal)->toDateString() : null;
-        $bulan = $perTanggal ? Carbon::parse($perTanggal)->startOfMonth()->toDateString() : null;
+        $bulan = ($bulanPenyesuaian ?? $perTanggal) ? Carbon::parse($bulanPenyesuaian ?? $perTanggal)->startOfMonth()->toDateString() : null;
 
         $jumlah = fn(string $tabel) => DB::table($tabel)
             ->select('transaction_loan_id', DB::raw('SUM(nominal) AS n'))
