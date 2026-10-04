@@ -13,11 +13,8 @@ import dayjs from "dayjs";
 import { Button } from "@/shadcn/ui/button";
 import Action from "./Action";
 import { Badge } from "@/shadcn/ui/badge";
-import { usePage } from "@inertiajs/react";
-import SyncAngsuran from "./SyncAngsuran";
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
-  const canEdit = usePage().props.auth.permissions.includes("can-edit");
 
   const [data, setData] = useState([]);
   useEffect(() => {
@@ -49,17 +46,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   };
   const onClosedShowOpen = () => {
     setShow(false);
-    setTriggeredId(null);
-  };
-
-  // state untuk sincron
-  const [showSync, setShowSync] = useState(false);
-  const onShowSyncModal = (id) => {
-    setTriggeredId(id);
-    setShowSync(true);
-  };
-  const onClosedSyncModal = () => {
-    setShowSync(false);
     setTriggeredId(null);
   };
 
@@ -141,18 +127,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
                         <div>{dayjs(subrow.tanggal_drop).format("DD-MM")}</div>
-                        {canEdit && (
-                          <div>
-                            <Button
-                              variant="blue"
-                              size="xs"
-                              onClick={() => onShowSyncModal(subrow.id)}
-                            >
-                              Sync
-                            </Button>
-                          </div>
-                        )}
-
                         <div>
                           <Button
                             size="xs"
@@ -327,11 +301,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
         </TableBody>
       </Table>
 
-      <SyncAngsuran
-        show={showSync}
-        onClosed={onClosedSyncModal}
-        triggeredId={triggeredId}
-      />
       <Action
         datas={data}
         show={show}

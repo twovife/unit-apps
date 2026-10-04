@@ -25,7 +25,6 @@ class TransactionLoanController extends Controller
 
   use PinjamanTrait;
 
-  /** Pesan tolak untuk kedua endpoint sinkronisasi angsuran (lihat synch_angsuran). */
   /**
    * Perpindahan status pinjaman yang sah (disepakati 2026-10-03). Selain ini
    * ditolak. Keputusan bisa dibalik: acc <-> tolak, success <-> gagal.
@@ -39,8 +38,6 @@ class TransactionLoanController extends Controller
     'success' => ['gagal'],
     'gagal' => ['success'],
   ];
-
-  private const PESAN_TOLAK_SYNCH = 'Sinkronisasi angsuran hanya untuk pemegang akses can-edit.';
 
   public function fastcreate(Request $request)
   {
@@ -1055,187 +1052,6 @@ class TransactionLoanController extends Controller
   }
 
 
-  public function get_synch_angsuran(TransactionLoan $transactionLoan, Request $request)
-  {
-    // Dipanggil lewat axios -> balas JSON, bukan redirect.
-    // Tombol Sync di AngsuranTable.jsx:145 memang sudah disembunyikan untuk yang
-    // tanpa 'can-edit', tapi itu kosmetik: endpoint-nya bisa dipanggil langsung.
-    if (!auth()->user()->hasPermissionTo('can-edit')) {
-      return response()->json(['message' => self::PESAN_TOLAK_SYNCH], 403);
-    }
-
-    $loan = $transactionLoan->load(
-      [
-        'loan_instalment' => function ($item) {
-          $item->with('usermantri', 'userinput')
-            ->orderByDesc('transaction_date');
-        },
-        'branch',
-        'customer',
-        'mantri',
-        'white_off',
-        'loan_officer_grouping'
-      ]
-    );
-
-    $instalment = $loan->loan_instalment->map(function ($instalment) {
-      return [
-        'id' => $instalment->id,
-        'nominal' => $instalment->nominal,
-        'transaction_date' => $instalment->transaction_date,
-      ];
-    })->sortBy('transaction_date')->values();
-
-    $startDay = AppHelper::getFirstDayOfMonthID($request->day, $request->month);
-    $dateOfWeeks = [];
-    for ($date = $startDay; $date->lte(Carbon::now()); $date->addDay()) {
-      if (AppHelper::dateName($date) === $request->day) {
-        $dateOfWeeks[] = $date->copy()->format('Y-m-d');
-      }
-    }
-
-    $dateOfWeeks = collect($dateOfWeeks)
-      ->filter(fn($item) => Carbon::parse($item)->isBefore(Carbon::today()) && Carbon::parse($item)->isAfter(Carbon::parse($loan->drop_date)))
-      ->mapWithKeys(fn($item, $index) => [$index => ['date' => Carbon::parse($item)->format('Y-m-d')]]);
-
-
-    $result = $dateOfWeeks->map(function ($week) use ($transactionLoan, $instalment) {
-      $transactionDate = $week['date'];
-      $matchedInstalment = $instalment->firstWhere('transaction_date', $transactionDate);
-      if ($matchedInstalment) {
-        return [
-          'id' => $matchedInstalment['id'],
-          'nominal' => $matchedInstalment['nominal'],
-          'transaction_date' => $matchedInstalment['transaction_date'],
-        ];
-      } else {
-        return [
-          'id' => null,
-          'nominal' => null,
-          'transaction_date' => $transactionDate,
-        ];
-      }
-    })->values();
-
-
-    $angsuranBefore = $instalment->where('transaction_date', '<', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d'))->sum('nominal');
-    $saldoSebelumnya = $loan->pinjaman - $angsuranBefore;
-    $data = [
-      'loan' => ['id' => $loan->id, 'pinjaman' => $loan->pinjaman],
-      'instalments' => $instalment,
-      'angsuran' => $result,
-      'saldoSebelumnya' => $saldoSebelumnya,
-      'month' => $request->month,
-    ];
-
-    return response()->json(['data' => $data], 200);
-    // $dataset
-  }
-
-  /**
-   * ⚠️ Sinkronisasi angsuran — DESTRUKTIF, dibatasi 'can-edit'.
-   *
-   * Method ini MENGHAPUS SELURUH riwayat angsuran pinjaman
-   * (`$loan->loan_instalment()->delete()`) lalu membangunnya ulang dari isian
-   * form, diawali satu angsuran gelondongan bertanggal `drop_date + 1 minggu`
-   * senilai `pinjaman − saldobefore`. Akibatnya:
-   *
-   *   - tanggal asli, penginput asli, dan penanda dana titipan HILANG PERMANEN
-   *   - storting bulan lampau bergeser surut (angsuran gelondongan bertanggal
-   *     jauh ke belakang, sering berbulan/bertahun lalu)
-   *
-   * Dibiarkan apa adanya atas keputusan user (2026-08-12): dipakai sebagai alat
-   * pembersih data selama Agustus, lalu MENUNYA DIHILANGKAN TOTAL setelah
-   * migrasi. Distorsi storting masa lalu tidak terbawa ke sistem baru karena
-   * agregat baru tidak pernah menghitung tanggal sebelum `mulai_pendataan_baru`
-   * (.agents/agregasi_rekap.md §13.1).
-   *
-   * Yang ditambahkan di sini hanya pembatas akses — sebelumnya method ini
-   * TIDAK punya pengecekan izin sama sekali, padahal efeknya lebih merusak
-   * daripada penyesuaian saldo yang justru dijaga ketat.
-   */
-  public function synch_angsuran(TransactionLoan $transactionLoan, Request $request)
-  {
-    // Dipanggil lewat Inertia useForm -> balas redirect back dengan errors.
-    if (!auth()->user()->hasPermissionTo('can-edit')) {
-      return redirect()->back()->withErrors(self::PESAN_TOLAK_SYNCH);
-    }
-
-    $startOfMonth = Carbon::parse($request->month)->startOfMonth()->format('Y-m-d');
-    $loan = $transactionLoan->load(
-      [
-        'loan_instalment' => function ($item) {
-          $item->with('usermantri', 'userinput')
-            ->orderByDesc('transaction_date');
-        },
-      ]
-    );
-
-    $Loaninstalment = $loan->loan_instalment->map(function ($instalment) {
-      return [
-        'id' => $instalment->id,
-        'nominal' => $instalment->nominal,
-        'transaction_date' => $instalment->transaction_date,
-      ];
-    });
-
-    if ($loan->loan_instalment()->whereNotNull('settled_by_loan_id')->exists()) {
-      return redirect()->back()->withErrors('Pinjaman ini dilunasi drop pengganti. Reset / hapus drop itu dulu.');
-    }
-
-    if ($request->saldobefore - collect($request->instalment)->sum('nominal') < 0) {
-      return redirect()->back()->withErrors('Tidak Boleh Minus');
-    }
-    // ambil angsuran terakhir yang didatabase
-    $angsuranBefore = $Loaninstalment->where('transaction_date', '<', $startOfMonth)->sum('nominal');
-    $saldoSebelumnya = $loan->pinjaman - $angsuranBefore;
-
-    $saldoBefore = $saldoSebelumnya - (int)$request->saldobefore;
-
-    $loan->loan_instalment()->delete();
-
-    $tanggalAngsuranPertama = Carbon::parse($transactionLoan->drop_date)->addWeek()->format('Y-m-d');
-    $transactionLoan->loan_instalment()->create([
-      'transaction_date' => $tanggalAngsuranPertama,
-      'nominal' => $transactionLoan->pinjaman - (int)$request->saldobefore,
-      'danatitipan' => 0,
-      'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
-      'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $tanggalAngsuranPertama),
-      'user_input' => auth()->user()->employee->id,
-      'user_mantri' => $transactionLoan->user_mantri,
-    ]);
-
-
-
-    $instalments = collect($request->instalment)->map(function ($item) {
-      return [
-        'id' => $item['id'] ?? null,
-        'transaction_date' => $item['transaction_date'],
-        'nominal' => $item['nominal'],
-      ];
-    })->values();
-
-    $pinjaman = (int)$request->saldobefore;
-
-    $instalments->each(function ($item) use ($transactionLoan, &$pinjaman) {
-      if ($pinjaman <= 0) return false;
-
-      $transactionLoan->loan_instalment()->create([
-        'transaction_date' => $item['transaction_date'],
-        'nominal' => $item['nominal'],
-        'danatitipan' => 0,
-        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
-        'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date,  $item['transaction_date']),
-        'user_input' => auth()->user()->employee->id,
-        'user_mantri' => $transactionLoan->user_mantri,
-      ]);
-
-      $pinjaman -=   $item['nominal'];
-    });
-
-
-    return redirect()->back()->with('message', 'berhasil di sinkronkan');
-  }
   // INI CONTROLLER API AXIOS ( UNTUK MENCARI KEBENARAH YANG HAKIKI , EH SALAH UNTUK MEMUNCULKAN DATA ANGSURAN )
 
   public function get_loan_pinjaman(TransactionLoan $transactionLoan)
