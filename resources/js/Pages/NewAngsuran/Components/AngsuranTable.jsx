@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shadcn/ui/table";
 import FormatNumbering from "@/Components/shadcn/FormatNumbering";
 import dayjs from "dayjs";
@@ -186,37 +186,6 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const lebarMin =
     KOLOM_TETAP.reduce((t, [, kelas]) => t + px(kelas), 0) + kolomBlok.reduce((t, k) => t + LEBAR_BLOK[k.jenis], 0) + 80;
 
-  // Satu-satunya wadah gulir (atas-bawah & samping) setinggi sisa layar, jadi
-  // halaman tidak ikut bergulir (tidak ada dua scrollbar) dan header + kolom
-  // kiri bisa dibekukan terhadap wadah ini.
-  const wadah = useRef(null);
-  const [tinggi, setTinggi] = useState(null);
-  useLayoutEffect(() => {
-    // Tinggi = sisa layar di bawah kotak. Diukur dua langkah: perkiraan dari
-    // posisi kotak, lalu dikoreksi sebesar halaman yang MASIH meluber (margin
-    // / padding di bawah tabel yang tidak kelihatan dari posisi saja).
-    const ukur = () => {
-      const el = wadah.current;
-      if (!el) return;
-      const atas = el.getBoundingClientRect().top + window.scrollY;
-      let h = Math.max(320, window.innerHeight - atas - 24);
-      el.style.height = `${h}px`;
-      const luber = document.documentElement.scrollHeight - window.innerHeight;
-      if (luber > 0) h = Math.max(320, h - luber);
-      el.style.height = `${h}px`;
-      setTinggi(h);
-    };
-    ukur();
-    // Isi di atas tabel (filter, banner) bisa berubah tinggi sesudah dimuat.
-    const pantau = new ResizeObserver(() => requestAnimationFrame(ukur));
-    pantau.observe(document.body);
-    window.addEventListener("resize", ukur);
-    return () => {
-      pantau.disconnect();
-      window.removeEventListener("resize", ukur);
-    };
-  }, []);
-
   const [triggeredId, setTriggeredId] = useState(null);
   const [show, setShow] = useState(false);
   const [selectedId, setSelectedId] = useState([]);
@@ -226,10 +195,14 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const th = "px-2 py-2 text-[11px] font-semibold text-slate-600 whitespace-nowrap";
 
   return (
-    <div ref={wadah} className="relative overflow-auto border rounded-lg scrollbar-thin" style={{ height: tinggi ?? "70vh" }}>
+    // Gulir atas-bawah ikut HALAMAN (seperti daftar angsuran HP) - tidak ada
+    // gulir kedua. Kotak ini hanya menggulir ke samping; kolom kiri beku
+    // terhadapnya. Header tidak bisa beku sekaligus: wadah overflow-x selalu
+    // jadi wadah gulir sendiri, jadi sticky top tidak menempel ke halaman.
+    <div className="relative overflow-x-auto border rounded-lg scrollbar-thin">
       {/* table-fixed + w-full: muat = penuh layar; bulan lalu dibuka = melebar & bisa digeser. */}
       <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
-        <TableHeader className="sticky top-0 z-10 bg-slate-100">
+        <TableHeader className="bg-slate-100">
           <TableRow className="border-b-0 hover:bg-transparent">
             {KOLOM_TETAP.map(([label, kelas]) => (
               <TableHead
