@@ -18,9 +18,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
   // Rincian angsuran sebelum bulan terpilih (tombol di samping Saldo
-  // Sebelumnya): tiap klik membuka SATU bulan lagi ke belakang, per tanggal
-  // tagih + total bulannya; sisanya digabung di "≤ bulan", lalu koreksi
-  // (MD/penyesuaian). Pinjaman - kolom total = Saldo Sebelumnya.
+  // Sebelumnya): tiap klik membuka SATU bulan lagi ke belakang - per tanggal
+  // tagih, Angs bulan (kuning), Sisa bulan (biru); yang lebih lama digabung di
+  // "Angs <= bulan", lalu MD. Kolom utama berganti judul jadi "Sisa <bulan lalu>".
   const { server_filter } = usePage().props;
   const [jumlahBulan, setJumlahBulan] = useState(0);
   const rinci = jumlahBulan > 0;
@@ -38,24 +38,40 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     }
     return hasil;
   };
-  // Kolom: { label, nilai(row), jenis: 'tgl' | 'total' | 'koreksi', d? }
+  // Kolom: { label, nilai(row), jenis: 'tgl' | 'angs' | 'sisa' | 'koreksi', d? }
+  // Warna ikut kolom ringkasan: angs kuning (= Angsuran), sisa biru (= Saldo).
   // Rincian hanya untuk lancar s/d MB: datanya harus real sejak drop, tidak
   // ada penyesuaian (penyesuaian cuma untuk ML lama). Grup ML dikosongkan.
   const dirinci = (row) => row.type !== "ml";
+  const WARNA_RINCI = { angs: "bg-yellow-200", sisa: "bg-blue-300", koreksi: "bg-gray-50", tgl: "" };
+  const bulanLalu = dayjs(server_filter?.month).subtract(1, "month").toDate().toLocaleDateString("id-ID", { month: "long" });
+  // Sisa di akhir bulan `kunci` (YYYY-MM): pinjaman - angsuran s/d bulan itu.
+  const sisaSampai = (r, kunci) =>
+    (Number(r.pinjaman) || 0) -
+    Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k <= kunci ? t + v : t), 0);
   const kolomRinci = !rinci ? [] : [
     {
-      label: `≤ ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
-      jenis: "total",
+      label: `Angs ≤ ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
+      jenis: "angs",
       nilai: (r) => Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k < awalRinci ? t + v : t), 0),
     },
-    ...bulanRinci.flatMap((b) => [
+    {
+      label: `Sisa ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
+      jenis: "sisa",
+      nilai: (r) => sisaSampai(r, bulanRinci[0].subtract(1, "month").format("YYYY-MM")),
+    },
+    ...bulanRinci.flatMap((b, i) => [
       ...tanggalTagih(b).map((d) => ({
         label: dayjs(d).format("DD-MM"),
         jenis: "tgl",
         d,
         nilai: (r) => r.instalment?.[d]?.total_nominal ?? 0,
       })),
-      { label: `Σ ${namaBulan(b)}`, jenis: "total", nilai: (r) => r.per_bulan?.[b.format("YYYY-MM")] ?? 0 },
+      { label: `Angs ${namaBulan(b)}`, jenis: "angs", nilai: (r) => r.per_bulan?.[b.format("YYYY-MM")] ?? 0 },
+      // Sisa bulan terakhir = kolom utama di kanan (Sisa <bulan lalu>), jadi tidak diulang.
+      ...(i < bulanRinci.length - 1
+        ? [{ label: `Sisa ${namaBulan(b)}`, jenis: "sisa", nilai: (r) => sisaSampai(r, b.format("YYYY-MM")) }]
+        : []),
     ]),
     {
       label: "MD",
@@ -137,7 +153,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               kolomRinci.map((k, i) => (
                 <TableHead
                   key={i}
-                  className={`w-16 text-center whitespace-nowrap border-x border-x-black ${k.jenis === "tgl" ? "" : "font-semibold"}`}
+                  className={`w-16 text-center whitespace-nowrap border-x border-x-black ${WARNA_RINCI[k.jenis]} ${k.jenis === "tgl" ? "" : "font-semibold"}`}
                   title={k.jenis === "koreksi" ? "Pemutihan sebelum bulan ini" : undefined}
                 >
                   {k.label}
@@ -155,7 +171,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 )}
-                Saldo Sebelumnya
+                {rinci ? `Sisa ${bulanLalu}` : "Saldo Sebelumnya"}
                 {rinci && (
                   <button
                     type="button"
@@ -280,7 +296,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         return (
                           <TableCell
                             key={i}
-                            className={`border-x border-x-black ${k.jenis === "tgl" ? "" : "font-semibold"} ${
+                            className={`border-x border-x-black ${WARNA_RINCI[k.jenis]} ${k.jenis === "tgl" ? "" : "font-semibold"} ${
                               (k.jenis === "koreksi" && v) || katrol ? "text-red-600 font-semibold" : ""
                             }`}
                           >
@@ -353,7 +369,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   </TableCell>
                   {rinci &&
                     kolomRinci.map((k, i) => (
-                      <TableCell key={i} className={`border-x border-x-black ${dirinci(row) ? "" : "bg-gray-100"}`}>
+                      <TableCell key={i} className={`border-x border-x-black ${dirinci(row) ? WARNA_RINCI[k.jenis] : "bg-gray-100"}`}>
                         {dirinci(row) && <FormatNumbering ribuan value={row.data.reduce((t, r) => t + k.nilai(r), 0)} />}
                       </TableCell>
                     ))}
