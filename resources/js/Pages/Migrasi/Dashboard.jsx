@@ -11,6 +11,7 @@ const tgl = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('id-ID', { day: 
 
 /** Status satu kantor: sudah migrasi > (belum dihitung) > tidak ada data > siap / belum siap. */
 const statusKantor = (k, angka) => {
+  if (k.tutup) return 'tutup';
   if (k.mulai) return 'migrasi';
   if (!angka) return null;
   if (angka.gagal) return 'gagal';
@@ -24,6 +25,7 @@ const LENCANA = {
   belum: ['Belum siap', 'bg-amber-50 text-amber-800 ring-amber-600/30'],
   kosong: ['Tidak ada data', 'bg-slate-100 text-slate-600 ring-slate-500/20'],
   gagal: ['Gagal dihitung', 'bg-red-50 text-red-700 ring-red-600/20'],
+  tutup: ['Tutup', 'bg-slate-100 text-slate-500 ring-slate-400/20'],
 };
 
 const Lencana = ({ status }) => {
@@ -39,7 +41,7 @@ const Dashboard = ({ wilayah = [], periode }) => {
 
   // Hitung semua kantor satu wilayah, 4 permintaan sekaligus; angka muncul satu per satu.
   const muat = async (w, segar = false) => {
-    const antre = [...(wilayah.find((g) => g.wilayah === w)?.kantor ?? [])];
+    const antre = (wilayah.find((g) => g.wilayah === w)?.kantor ?? []).filter((k) => !k.tutup);
     setMemuat((m) => ({ ...m, [w]: true }));
     const pekerja = async () => {
       for (let k = antre.shift(); k; k = antre.shift()) {
@@ -59,7 +61,7 @@ const Dashboard = ({ wilayah = [], periode }) => {
     nilai.forEach((v) => {
       const w = Number(v);
       const grup = wilayah.find((g) => g.wilayah === w);
-      if (!memuat[w] && grup?.kantor.some((k) => !angka[k.id])) muat(w);
+      if (!memuat[w] && grup?.kantor.some((k) => !k.tutup && !angka[k.id])) muat(w);
     });
 
   const bukaKantor = (id) =>
@@ -92,7 +94,10 @@ const Dashboard = ({ wilayah = [], periode }) => {
                       Wilayah {w}
                       {w === 0 && <span className="ml-1 text-xs font-normal text-slate-500">(Pusat, bukan kantor operasional)</span>}
                     </span>
-                    <span className="text-xs text-slate-500">{kantor.length} kantor</span>
+                    <span className="text-xs text-slate-500">
+                      {kantor.filter((k) => !k.tutup).length} kantor
+                      {kantor.some((k) => k.tutup) && ` (+${kantor.filter((k) => k.tutup).length} tutup)`}
+                    </span>
                     <span className="text-xs text-sky-700">{hitung('migrasi')} sudah migrasi</span>
                     {sudahDihitung ? (
                       <>
@@ -127,22 +132,26 @@ const Dashboard = ({ wilayah = [], periode }) => {
                       <TableBody>
                         {kantor.map((k, i) => {
                           const a = angka[k.id]?.gagal ? null : angka[k.id];
+                          const kosong = k.tutup ? '–' : '…';
                           return (
                             <TableRow key={k.id}>
-                              <TableCell className="px-3 font-medium">{k.unit}</TableCell>
+                              <TableCell className={`px-3 font-medium ${k.tutup ? 'text-slate-400' : ''}`}>
+                                {k.unit}
+                                {k.tutup && <span className="ml-1 text-xs font-normal">(tutup)</span>}
+                              </TableCell>
                               <TableCell className="px-3">
                                 <Lencana status={status[i]} />
                                 {k.mulai && <div className="text-[11px] text-slate-500">mulai {tgl(k.mulai)}</div>}
                               </TableCell>
-                              <TableCell className="px-3 text-right tabular-nums">{a ? `${a.siap} / ${a.baris}` : '…'}</TableCell>
-                              <TableCell className="px-3 text-right tabular-nums">{a ? rp(a.z) : '…'}</TableCell>
+                              <TableCell className="px-3 text-right tabular-nums">{a ? `${a.siap} / ${a.baris}` : kosong}</TableCell>
+                              <TableCell className="px-3 text-right tabular-nums">{a ? rp(a.z) : kosong}</TableCell>
                               <TableCell className={`px-3 text-right tabular-nums ${a?.z_minus ? 'font-semibold text-red-600' : ''}`}>
-                                {a ? a.z_minus : '…'}
+                                {a ? a.z_minus : kosong}
                               </TableCell>
                               <TableCell className={`px-3 text-right tabular-nums ${a?.tanpa_bucket ? 'font-semibold text-amber-700' : ''}`}>
-                                {a ? a.tanpa_bucket : '…'}
+                                {a ? a.tanpa_bucket : kosong}
                               </TableCell>
-                              <TableCell className="px-3 text-right tabular-nums">{a ? a.macet_lama : '…'}</TableCell>
+                              <TableCell className="px-3 text-right tabular-nums">{a ? a.macet_lama : kosong}</TableCell>
                               <TableCell className="px-3 text-right">
                                 <Button size="sm" variant="ghost" className="h-7" onClick={() => bukaKantor(k.id)}>
                                   Buka

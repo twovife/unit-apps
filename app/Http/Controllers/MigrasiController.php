@@ -533,10 +533,9 @@ class MigrasiController extends Controller
             return redirect()->route('home')->with('message', 'Dashboard migrasi khusus superuser.');
         }
 
-        // Kantor tutup (isactive = 0) tidak ikut: tanpa pinjaman, tanpa bucket,
-        // banyak yang namanya sudah dipakai kantor penggantinya.
-        $branches = Branch::where('isactive', 1)->orderBy('wilayah')->orderBy('unit')
-            ->get(['id', 'unit', 'wilayah', 'mulai_pendataan_baru']);
+        // Kantor tutup (isactive = 0) tetap tampil, ditandai "(tutup)" di layar.
+        $branches = Branch::orderBy('wilayah')->orderBy('unit')
+            ->get(['id', 'unit', 'wilayah', 'isactive', 'mulai_pendataan_baru']);
 
         return Inertia::render('Migrasi/Dashboard', [
             'wilayah' => $branches->groupBy('wilayah')->map(fn($kantor, $w) => [
@@ -544,6 +543,7 @@ class MigrasiController extends Controller
                 'kantor' => $kantor->map(fn($b) => [
                     'id' => $b->id,
                     'unit' => $b->unit,
+                    'tutup' => !$b->isactive,
                     'mulai' => $b->mulai_pendataan_baru,
                 ])->values(),
             ])->values(),
