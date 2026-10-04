@@ -134,7 +134,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               kolomRinci.map((k, i) => (
                 <TableHead
                   key={i}
-                  className={`w-16 text-center whitespace-nowrap ${k.jenis === "tgl" ? "" : "font-semibold"}`}
+                  className={`w-16 text-center whitespace-nowrap border-x border-x-black ${k.jenis === "tgl" ? "" : "font-semibold"}`}
                   title={k.jenis === "koreksi" ? "Pemutihan & penyesuaian sebelum bulan ini" : undefined}
                 >
                   {k.label}
@@ -276,7 +276,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         return (
                           <TableCell
                             key={i}
-                            className={`${k.jenis === "tgl" ? "" : "font-semibold"} ${
+                            className={`border-x border-x-black ${k.jenis === "tgl" ? "" : "font-semibold"} ${
                               (k.jenis === "koreksi" && v) || katrol ? "text-red-600 font-semibold" : ""
                             }`}
                           >
@@ -349,7 +349,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   </TableCell>
                   {rinci &&
                     kolomRinci.map((k, i) => (
-                      <TableCell key={i}>
+                      <TableCell key={i} className="border-x border-x-black">
                         <FormatNumbering ribuan value={row.data.reduce((t, r) => t + k.nilai(r), 0)} />
                       </TableCell>
                     ))}
