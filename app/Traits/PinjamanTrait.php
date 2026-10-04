@@ -1041,8 +1041,9 @@ trait PinjamanTrait
     $ids = $loan->pluck('id')->all();
     $f8Awal = \App\Helpers\PenyesuaianSaldo::saldoBanyak($ids, $transaction_start_date->copy()->subDay(), $transaction_start_date);
     $f8Akhir = \App\Helpers\PenyesuaianSaldo::saldoBanyak($ids, $transaction_date);
+    // Satu daftar ML, tidak disekat per bulan drop.
     $loan = $loan->filter(fn($l) => $f8Awal[$l->id]['saldo'] > 0)
-      ->groupBy(fn($item) => Carbon::parse($item->drop_date)->format('Y-m'));
+      ->groupBy(fn() => 'ML');
 
     $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
     $lastDayOfThisWeek = Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d');
@@ -1054,10 +1055,10 @@ trait PinjamanTrait
 
     $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $f8Awal, $f8Akhir) {
       return [
-        'month' => Carbon::parse($key)->format('FY'),
-        'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
-        'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
-        'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
+        'month' => 'ML',
+        'type' => 'ml',
+        'type2' => 'ML',
+        'date' => null,
         'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $f8Awal, $f8Akhir) {
           $awal = $f8Awal[$item->id];
           $akhir = $f8Akhir[$item->id];
