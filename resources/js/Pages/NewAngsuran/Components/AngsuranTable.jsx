@@ -260,7 +260,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       {subrow.x_angs}
                     </TableCell>
                     <TableCell
-                      className={`border-x border-x-black ${
+                      className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -284,7 +284,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         );
                       })}
                     <TableCell
-                      className={`border-x border-x-black ${
+                      className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -307,7 +307,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       </TableCell>
                     ))}
                     <TableCell
-                      className={`border-x border-x-black ${
+                      className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -316,7 +316,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering ribuan value={subrow.angsuran} />
                     </TableCell>
                     <TableCell
-                      className={`border-x border-x-black ${
+                      className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -325,7 +325,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering ribuan value={subrow.pemutihanThisMonth} />
                     </TableCell>
                     <TableCell
-                      className={`border-x border-x-black ${
+                      className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
                           ? "bg-green-200 hover:bg-green-50"
                           : ""
@@ -340,7 +340,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     ini nanti total
                   </TableCell>
                   <TableCell
-                    className={`border-x border-x-black`}
+                    className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black`}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "pinjaman")}
@@ -353,7 +353,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       </TableCell>
                     ))}
                   <TableCell
-                    className={`border-x border-x-black`}
+                    className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black`}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "saldo_sebelumnya")}
@@ -367,21 +367,21 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     </TableCell>
                   ))}
                   <TableCell
-                    className={`border-x border-x-black `}
+                    className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black `}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "angsuran")}
                     />
                   </TableCell>
                   <TableCell
-                    className={`border-x border-x-black `}
+                    className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black `}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "pemutihanThisMonth")}
                     />
                   </TableCell>
                   <TableCell
-                    className={`border-x border-x-black `}
+                    className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
                   >
                     <FormatNumbering ribuan
                       value={calculateTotals(row.data, "saldo")}
