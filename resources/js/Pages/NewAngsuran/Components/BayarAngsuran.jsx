@@ -8,6 +8,8 @@ import { Link, useForm, usePage } from '@inertiajs/react';
 import Loading from '@/Components/Loading';
 import { getLastDateForHari } from '@/lib/utils';
 import useHariLibur from '@/Hooks/useHariLibur';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
+import dayjs from 'dayjs';
 
 const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTertunda = false }) => {
   const [alertPelunasan, setAlertPelunasan] = useState(false);
@@ -31,8 +33,25 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
     server_filter: {
       tanggal: tanggalTerpilih,
       is_locked: terkunci,
+      month: bulanBuku,
     },
   } = usePage().props;
+
+  // Buku harian (HP) membawa tanggal di filter -> tanggal bayar terkunci ke
+  // situ. Buku BULANAN (desktop /pinjaman) tidak punya tanggal: user memilih
+  // tanggal tagih di bulan buku itu, paling jauh hari ini.
+  const bulanan = !tanggalTerpilih && !!bulanBuku;
+  const HARI_KE = { minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6 };
+  const awalBulan = bulanan ? dayjs(bulanBuku).startOf('month') : null;
+  const batasAkhir = bulanan
+    ? (dayjs(bulanBuku).endOf('month').isBefore(dayjs(), 'day') ? dayjs(bulanBuku).endOf('month') : dayjs())
+    : null;
+  // Tanggal tagih terakhir (hari tagih pinjaman) di bulan buku, <= hari ini.
+  const tagihTerakhirBulan = (hari) => {
+    let d = batasAkhir;
+    while (d && !d.isBefore(awalBulan, 'day') && d.day() !== HARI_KE[String(hari).toLowerCase()]) d = d.subtract(1, 'day');
+    return d && !d.isBefore(awalBulan, 'day') ? d.format('YYYY-MM-DD') : '';
+  };
 
   const { mundurKeHariKerja, siap: kalenderSiap } = useHariLibur();
 
@@ -75,10 +94,13 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
     // tahu kalender: mundur ke hari tagih terakhir yang benar-benar bekerja.
     setData((prev) => ({
       ...prev,
-      transaction_date:
-        tanggalTerpilih ?? mundurKeHariKerja(getLastDateForHari(triggeredPinjaman?.hari)),
+      transaction_date: tanggalTerpilih
+        ? tanggalTerpilih
+        : bulanan
+          ? mundurKeHariKerja(tagihTerakhirBulan(triggeredPinjaman?.hari))
+          : mundurKeHariKerja(getLastDateForHari(triggeredPinjaman?.hari)),
     }));
-  }, [triggeredPinjaman?.hari, kalenderSiap, tanggalTerpilih]);
+  }, [triggeredPinjaman?.hari, kalenderSiap, tanggalTerpilih, bulanBuku]);
 
   // Angka cepat dari pinjaman INI (angka saja, tanpa label), urut:
   //   bayaran terakhir (bukan 0) sebelum tanggal ini -> paling sering dibayar
@@ -137,6 +159,23 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
       <form onSubmit={onSubmitForm} className="space-y-3">
         <div>
           <Label htmlFor="tanggal_bayar">Tanggal bayar</Label>
+          {bulanan ? (
+            <>
+              <TanggalKerja
+                className="mt-1"
+                name="transaction_date"
+                value={data.transaction_date}
+                onChange={(e) => setData('transaction_date', e.target.value)}
+                hariTagih={triggeredPinjaman?.hari}
+                min={awalBulan.format('YYYY-MM-DD')}
+                max={batasAkhir.format('YYYY-MM-DD')}
+              />
+              <small className="block mt-1 text-[11px] text-muted-foreground">
+                Pilih tanggal tagih di bulan buku ini (paling jauh hari ini).
+              </small>
+            </>
+          ) : (
+          <>
           {/* Tampil sebagai input supaya sejajar dengan isian lain, tapi tidak
               bisa diubah/diklik: tanggal mengikuti filter halaman. */}
           <input
@@ -159,6 +198,8 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
           <small className="block mt-1 text-[11px] text-muted-foreground">
             Ikut tanggal di filter atas, tidak bisa diubah di sini.
           </small>
+          </>
+          )}
         </div>
 
         <div className="space-y-3" onClickCapture={cegat} onFocusCapture={cegat}>
