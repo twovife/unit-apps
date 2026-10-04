@@ -177,22 +177,22 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                   <TableCell
                     className={`${row.type == 'normal' ? 'bg-green-200' : ''} `}
                   >
-                    <FormatNumbering value={row.sirkulasi} />
+                    <FormatNumbering ribuan value={row.sirkulasi} />
                   </TableCell>
 
                   {dateOfWeek.map((day, i) => (
                     <TableCell className={`text-center`} key={i}>
-                      <FormatNumbering value={row.instalment[day]} />
+                      <FormatNumbering ribuan value={row.instalment[day]} />
                     </TableCell>
                   ))}
                   <TableCell>
-                    <FormatNumbering value={row.totalInstalment} />
+                    <FormatNumbering ribuan value={row.totalInstalment} />
                   </TableCell>
                   <TableCell>
-                    <FormatNumbering value={row.totalPemutihan} />
+                    <FormatNumbering ribuan value={row.totalPemutihan} />
                   </TableCell>
                   <TableCell>
-                    <FormatNumbering value={row.sirkulasiAfter} />
+                    <FormatNumbering ribuan value={row.sirkulasiAfter} />
                   </TableCell>
                 </TableRow>
               </React.Fragment>
@@ -209,7 +209,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               Total
             </TableCell>
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'sirkulasi', true)}
               />
             </TableCell>
@@ -220,26 +220,26 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           </TableRow>
           <TableRow>
             <TableCell className="text-center">
-              <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
+              <FormatNumbering ribuan value={calculateTotals(data, 'sirkulasi')} />
             </TableCell>
             {dateOfWeek.map((day, i) => (
               <TableCell className="text-center" key={i}>
-                <FormatNumbering value={calculateInstalment(data, day)} />
+                <FormatNumbering ribuan value={calculateInstalment(data, day)} />
               </TableCell>
             ))}
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'totalInstalment')}
               />
             </TableCell>
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'totalPemutihan')}
               />
             </TableCell>
 
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'sirkulasiAfter')}
               />
             </TableCell>

@@ -53,7 +53,7 @@ const Angsuran = ({
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Angsuran Lancar</h1>
           {type === 'desktop' && (
-            <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih.</p>
+            <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih. Angka dalam ribuan.</p>
           )}
         </div>
         {canFilterUnit && (

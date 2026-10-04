@@ -216,7 +216,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           : ""
                       }`}
                     >
-                      <FormatNumbering value={subrow.pinjaman} />
+                      <FormatNumbering ribuan value={subrow.pinjaman} />
                     </TableCell>
                     <TableCell
                       className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
@@ -225,7 +225,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           : ""
                       }`}
                     >
-                      <FormatNumbering value={subrow.saldo_sebelumnya} />
+                      <FormatNumbering ribuan value={subrow.saldo_sebelumnya} />
                     </TableCell>
                     {dateOfWeek.map((day, i) => (
                       <TableCell
@@ -236,7 +236,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                         }`}
                         key={i}
                       >
-                        <FormatNumbering
+                        <FormatNumbering ribuan
                           value={subrow.instalment[day]?.total_nominal}
                         />
                       </TableCell>
@@ -248,7 +248,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           : ""
                       }`}
                     >
-                      <FormatNumbering value={subrow.angsuran} />
+                      <FormatNumbering ribuan value={subrow.angsuran} />
                     </TableCell>
                     <TableCell
                       className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black ${
@@ -257,7 +257,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           : ""
                       }`}
                     >
-                      <FormatNumbering value={subrow.pemutihanThisMonth} />
+                      <FormatNumbering ribuan value={subrow.pemutihanThisMonth} />
                     </TableCell>
                     <TableCell
                       className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
@@ -266,7 +266,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           : ""
                       }`}
                     >
-                      <FormatNumbering value={subrow.saldo} />
+                      <FormatNumbering ribuan value={subrow.saldo} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -277,20 +277,20 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   <TableCell
                     className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black`}
                   >
-                    <FormatNumbering
+                    <FormatNumbering ribuan
                       value={calculateTotals(row.data, "pinjaman")}
                     />
                   </TableCell>
                   <TableCell
                     className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black`}
                   >
-                    <FormatNumbering
+                    <FormatNumbering ribuan
                       value={calculateTotals(row.data, "saldo_sebelumnya")}
                     />
                   </TableCell>
                   {dateOfWeek.map((day, i) => (
                     <TableCell className="border-x border-x-black" key={i}>
-                      <FormatNumbering
+                      <FormatNumbering ribuan
                         value={calculateInstalment(row.data, day)}
                       />
                     </TableCell>
@@ -298,21 +298,21 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   <TableCell
                     className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black `}
                   >
-                    <FormatNumbering
+                    <FormatNumbering ribuan
                       value={calculateTotals(row.data, "angsuran")}
                     />
                   </TableCell>
                   <TableCell
                     className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black `}
                   >
-                    <FormatNumbering
+                    <FormatNumbering ribuan
                       value={calculateTotals(row.data, "pemutihanThisMonth")}
                     />
                   </TableCell>
                   <TableCell
                     className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
                   >
-                    <FormatNumbering
+                    <FormatNumbering ribuan
                       value={calculateTotals(row.data, "saldo")}
                     />
                   </TableCell>

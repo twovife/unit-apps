@@ -101,7 +101,12 @@ const AngsuranByDate = ({
       <InputMacet show={showInputMacet} onClosed={onCloseMacet} />
       {/* Satu tata letak HP & desktop: filter chip instan, tanpa tombol submit. */}
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h1 className="text-xl font-semibold tracking-tight">{headerName}</h1>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">{headerName}</h1>
+          {server_filter.type_show === 'macet' && (
+            <p className="text-xs text-muted-foreground">Nasabah ML per bulan, termasuk yang lunas di bulan itu. Angka dalam ribuan.</p>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {canFilterUnit && (
             <Popover>

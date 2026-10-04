@@ -6,11 +6,14 @@ const FormatNumbering = ({
   prefix,
   suffix,
   className = 'text-end',
+  // Tampilkan dalam ribuan (65000 -> 65), buang "000" di tabel padat.
+  ribuan = false,
 }) => {
   return (
     <div className={`${className}`}>
       <NumericFormat
-        value={value}
+        value={ribuan ? (Number(value) || 0) / 1000 : value}
+        decimalScale={ribuan ? 1 : undefined}
         displayType={'text'}
         thousandSeparator={','}
         prefix={prefix ?? ''}
