@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shadcn/ui/table";
 import FormatNumbering from "@/Components/shadcn/FormatNumbering";
 import dayjs from "dayjs";
@@ -183,8 +183,26 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   // ini dan bisa digeser ke samping - kolom tidak pernah dipepetkan.
   const px = (kelas) => Number(/w-(\d+)/.exec(kelas)?.[1] ?? 0) * 4;
   const LEBAR_BLOK = { sisa: 80, tgl: 56, angs: 80, md: 56 };
-  const lebarMin =
-    KOLOM_TETAP.reduce((t, [, kelas]) => t + px(kelas), 0) + kolomBlok.reduce((t, k) => t + LEBAR_BLOK[k.jenis], 0) + 80;
+  // Lebar tiap kolom (px) - dipakai <colgroup> di DUA tabel (header & isi)
+  // supaya kolomnya selalu sejajar.
+  const lebarKolom = [...KOLOM_TETAP.map(([, kelas]) => px(kelas)), ...kolomBlok.map((k) => LEBAR_BLOK[k.jenis]), 80];
+  const lebarMin = lebarKolom.reduce((t, w) => t + w, 0);
+  const colgroup = (
+    <colgroup>
+      {lebarKolom.map((w, i) => (
+        <col key={i} style={{ width: w }} />
+      ))}
+    </colgroup>
+  );
+
+  // Header dibekukan ke HALAMAN (sticky di bawah navbar) dalam tabel sendiri,
+  // karena kotak isi yang bisa digeser ke samping tidak bisa jadi tempat
+  // sticky top. Posisi gesernya disamakan dengan kotak isi.
+  const kepala = useRef(null);
+  const badan = useRef(null);
+  const samakanGeser = () => {
+    if (kepala.current && badan.current) kepala.current.scrollLeft = badan.current.scrollLeft;
+  };
 
   const [triggeredId, setTriggeredId] = useState(null);
   const [show, setShow] = useState(false);
@@ -196,12 +214,13 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
 
   return (
     // Gulir atas-bawah ikut HALAMAN (seperti daftar angsuran HP) - tidak ada
-    // gulir kedua. Kotak ini hanya menggulir ke samping; kolom kiri beku
-    // terhadapnya. Header tidak bisa beku sekaligus: wadah overflow-x selalu
-    // jadi wadah gulir sendiri, jadi sticky top tidak menempel ke halaman.
-    <div className="relative overflow-x-auto border rounded-lg scrollbar-thin">
-      {/* table-fixed + w-full: muat = penuh layar; bulan lalu dibuka = melebar & bisa digeser. */}
-      <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
+    // gulir kedua. Header = tabel terpisah yang sticky di bawah navbar; isi =
+    // kotak yang hanya menggulir ke samping, gesernya disalin ke header.
+    // Kolom kiri beku di keduanya.
+    <div className="relative border rounded-lg">
+      <div ref={kepala} className="sticky z-20 overflow-hidden rounded-t-lg top-14 bg-slate-100">
+        <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
+          {colgroup}
         <TableHeader className="bg-slate-100">
           <TableRow className="border-b-0 hover:bg-transparent">
             {KOLOM_TETAP.map(([label, kelas]) => (
@@ -255,6 +274,12 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             ))}
           </TableRow>
         </TableHeader>
+        </Table>
+      </div>
+
+      <div ref={badan} onScroll={samakanGeser} className="overflow-x-auto scrollbar-thin">
+        <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
+          {colgroup}
 
         <TableBody>
           {data?.map((grup, g) => {
@@ -360,7 +385,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             );
           })}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
 
       <Action
         datas={data}
