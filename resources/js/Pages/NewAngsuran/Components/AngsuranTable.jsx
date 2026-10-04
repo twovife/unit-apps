@@ -95,7 +95,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const kolomBlok = blok.flatMap((b) => b.kolom.map((k, i) => ({ ...k, awal: i === 0, lalu: b.lalu })));
   const KOLOM_TETAP = [
     ["No", "w-10"],
-    ["Drop", "w-24"],
+    ["Tgl", "w-24"],
     ["Nama", "w-40"],
     ["NIK", "w-32"],
     ["Note", "w-20"],
@@ -104,6 +104,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     ["Hari", "w-14"],
     ["Pnj", "w-10"],
     ["X", "w-10"],
+    ["Drop", "w-20 text-right"],
     ["Pinjaman", "w-20 text-right"],
   ];
   const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1;
@@ -225,6 +226,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <TableCell className="px-2 py-1.5 capitalize">{r.hari}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">{r.pinjaman_ke}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">{r.x_angs}</TableCell>
+                      <Angka v={r.drop} />
                       <Angka v={r.pinjaman} kelas="font-medium" />
                       {kolomBlok.map((k, j) => {
                         const v = isi(k, r);
@@ -249,6 +251,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   <TableCell colSpan={10} className="px-2 py-2 text-slate-700">
                     Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
+                  <Angka v={grup.data.reduce((t, r) => t + Number(r.drop || 0), 0)} />
                   <Angka v={grup.data.reduce((t, r) => t + Number(r.pinjaman || 0), 0)} />
                   {kolomBlok.map((k, j) =>
                     k.lalu && !rinci ? (
