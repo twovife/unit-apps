@@ -435,6 +435,7 @@ class MigrasiController extends Controller
                 'periode' => $periode->format('Y-m-d'),
                 'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
                 'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
+                'mulai' => AgregasiScope::tanggalMulai($scope->branch_id)?->toDateString(),
             ],
         ]);
     }
@@ -580,6 +581,38 @@ class MigrasiController extends Controller
                 'macet_lama' => $baris->where('macet_lama', true)->count(),
             ];
         }));
+    }
+
+    /**
+     * Migrasikan kantor aktif ke pendataan baru (superuser). Kesiapan dicek
+     * ULANG di server - tombol di layar hanya muncul kalau semua baris siap,
+     * tapi layar bisa basi / dilewati.
+     */
+    public function jalankanMigrasi(Request $request)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            abort(403, 'Khusus superuser.');
+        }
+
+        $scope = AuthScope::resolve();
+        $periode = Carbon::parse($request->input('periode', AgregasiScope::RENCANA_MULAI))->startOfMonth();
+
+        if (AgregasiScope::sudahMigrasi($scope->branch_id)) {
+            return back()->withErrors('Kantor ini sudah migrasi.');
+        }
+
+        $baris = $this->barisKesiapan($scope->branch_id, $periode);
+        if ($baris->isEmpty() || $baris->contains('siap', false)) {
+            return back()->withErrors('Belum semua kelompok x hari siap ('
+                . $baris->where('siap', true)->count() . '/' . $baris->count() . ').');
+        }
+
+        if (!DaftarMigrasi::daftarkan($scope->branch_id, $periode)) {
+            return back()->withErrors('Kantor tidak bisa didaftarkan.');
+        }
+        \Illuminate\Support\Facades\Cache::forget("kesiapan_migrasi:{$scope->branch_id}:{$periode->toDateString()}");
+
+        return back()->with('message', 'Kantor dimigrasikan ke pendataan baru mulai ' . $periode->translatedFormat('j F Y') . '.');
     }
 
     /**

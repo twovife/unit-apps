@@ -121,6 +121,9 @@ Route::middleware('auth')->group(function () {
     // Buat pinjaman MACET LAMA penampung Z satu kelompok x hari (superuser).
     Route::post('/kesiapan/macet-lama', [\App\Http\Controllers\MigrasiController::class, 'buatMacetLama'])
       ->name('buat_macet_lama');
+    // Migrasikan kantor aktif ke pendataan baru (superuser, semua baris harus siap).
+    Route::post('/kesiapan/migrasi', [\App\Http\Controllers\MigrasiController::class, 'jalankanMigrasi'])
+      ->name('jalankan_migrasi');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
     Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])

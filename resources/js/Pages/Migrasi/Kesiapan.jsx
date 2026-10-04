@@ -105,6 +105,36 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
           />
         </div>
 
+        {/* Tombol migrasi: hanya kalau belum migrasi dan SEMUA kelompok x hari siap.
+            Server mengecek ulang sebelum menulis. */}
+        {server_filter?.sudah_migrasi ? (
+          <div className="p-3 text-sm border rounded-lg border-sky-200 bg-sky-50 text-sky-900">
+            <b>{server_filter?.unit}</b> sudah migrasi ke pendataan baru mulai{' '}
+            <b>{dayjs(server_filter?.mulai).format('DD MMMM YYYY')}</b>.
+          </div>
+        ) : (
+          ringkasan?.baris > 0 &&
+          ringkasan?.siap === ringkasan?.baris && (
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded-lg border-emerald-300 bg-emerald-50">
+              <div className="text-sm text-emerald-900">
+                Semua <b>{ringkasan.baris}</b> kelompok × hari siap. Kantor ini bisa dimigrasikan ke pendataan baru
+                mulai <b>{dayjs(server_filter?.periode).format('DD MMMM YYYY')}</b>.
+              </div>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm font-semibold text-white rounded-md bg-emerald-600 hover:bg-emerald-700"
+                onClick={() =>
+                  confirm(
+                    `Migrasikan ${server_filter?.unit} ke pendataan baru mulai ${dayjs(server_filter?.periode).format('DD MMMM YYYY')}?`,
+                  ) && router.post(route('migrasi.jalankan_migrasi'), { periode: server_filter?.periode }, { preserveScroll: true })
+                }
+              >
+                Migrasikan kantor ini
+              </button>
+            </div>
+          )
+        )}
+
         <label className="inline-flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={hanyaBelum} onChange={(e) => setHanyaBelum(e.target.checked)} />
           Tampilkan yang belum siap saja

@@ -52,31 +52,17 @@ class DaftarMigrasi
     }
 
     /**
-     * Dipanggil setelah sebuah kantor menutup buku dan melahirkan baris
-     * sirkulasi untuk `$periodeBaru`.
+     * Daftarkan satu kantor ke alur agregasi baru mulai $periode (tanggal 1):
+     * isi mulai_pendataan_baru lalu bangkitkan baris harian sebulan.
      *
-     * Aman dipanggil berkali-kali: tutup buku satu kantor memanggilnya sampai
-     * 60 kali (10 kelompok x 6 hari), tapi pekerjaan beratnya hanya jalan
-     * sekali — sesudah itu `mulai_pendataan_baru` sudah terisi dan langsung
-     * keluar.
+     * Dipicu MANUAL dari layar Kesiapan Migrasi (superuser) sesudah bucket
+     * dicek - pendaftaran otomatis saat tutup buku dicabut 2026-10-04.
      *
-     * @return bool true kalau kantor ini BARU SAJA didaftarkan
+     * @return bool false kalau kantor tidak ada atau sudah terdaftar
      */
-    public static function cobaDaftarkan(int $branchId, $periodeBaru): bool
+    public static function daftarkan(int $branchId, $periodeMulai): bool
     {
-        $bulanMigrasi = self::bulanMigrasi();
-
-        if (!$bulanMigrasi) {
-            return false;
-        }
-
-        $periode = Carbon::parse($periodeBaru)->startOfMonth();
-
-        // Tutup buku untuk bulan SEBELUM bulan migrasi berjalan seperti biasa.
-        if ($periode->lt($bulanMigrasi)) {
-            return false;
-        }
-
+        $periode = Carbon::parse($periodeMulai)->startOfMonth();
         $branch = Branch::find($branchId);
 
         if (!$branch || $branch->mulai_pendataan_baru) {
@@ -92,10 +78,11 @@ class DaftarMigrasi
 
         AgregasiScope::lupakanCache();
 
-        Log::info('Kantor terdaftar ke alur agregasi baru', [
+        Log::info('Kantor didaftarkan ke alur agregasi baru (manual)', [
             'branch_id' => $branch->id,
             'unit' => $branch->unit,
             'mulai' => $periode->toDateString(),
+            'oleh' => auth()->id(),
         ]);
 
         return true;
