@@ -5,11 +5,16 @@ import SweetAlert from '@/Components/SweetAlert';
 import Loading from '@/Components/Loading';
 import { SidebarProvider, SidebarInset } from '@/shadcn/ui/sidebar';
 
+// Tiap halaman Inertia memasang layout ini ulang, jadi SidebarProvider mulai
+// dari awal. Posisi terakhir (dicatat shadcn di cookie sidebar:state) dibaca
+// lagi supaya sidebar yang dilipat tetap terlipat sesudah pindah halaman.
+const sidebarTerbuka = () => !/(?:^|;\s*)sidebar:state=false/.test(document.cookie);
+
 export default function Authenticated({ header, children, loading = false }) {
   const { errors, flash, auth } = usePage().props;
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={sidebarTerbuka()}>
       {Object.keys(errors).length > 0 && (
         <SweetAlert type="error" message={errors[0]} keys={flash} />
       )}
