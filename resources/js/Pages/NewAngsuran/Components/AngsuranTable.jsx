@@ -39,6 +39,9 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     return hasil;
   };
   // Kolom: { label, nilai(row), jenis: 'tgl' | 'total' | 'koreksi', d? }
+  // Rincian hanya untuk lancar s/d MB: datanya harus real sejak drop, tidak
+  // ada penyesuaian (penyesuaian cuma untuk ML lama). Grup ML dikosongkan.
+  const dirinci = (row) => row.type !== "ml";
   const kolomRinci = !rinci ? [] : [
     {
       label: `≤ ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
@@ -55,7 +58,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
       { label: `Σ ${namaBulan(b)}`, jenis: "total", nilai: (r) => r.per_bulan?.[b.format("YYYY-MM")] ?? 0 },
     ]),
     {
-      label: "MD/Peny",
+      label: "MD",
       jenis: "koreksi",
       nilai: (r) =>
         (Number(r.pinjaman) || 0) -
@@ -135,14 +138,14 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                 <TableHead
                   key={i}
                   className={`w-16 text-center whitespace-nowrap border-x border-x-black ${k.jenis === "tgl" ? "" : "font-semibold"}`}
-                  title={k.jenis === "koreksi" ? "Pemutihan & penyesuaian sebelum bulan ini" : undefined}
+                  title={k.jenis === "koreksi" ? "Pemutihan sebelum bulan ini" : undefined}
                 >
                   {k.label}
                 </TableHead>
               ))}
             <TableHead className="text-center w-28 border-x border-x-black">
               <div className="flex items-center justify-center gap-1">
-                {jumlahBulan < MAKS_BULAN && (
+                {jumlahBulan < MAKS_BULAN && data?.some(dirinci) && (
                   <button
                     type="button"
                     className="p-0.5 rounded hover:bg-gray-300"
@@ -271,6 +274,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     </TableCell>
                     {rinci &&
                       kolomRinci.map((k, i) => {
+                        if (!dirinci(row)) return <TableCell key={i} className="border-x border-x-black bg-gray-100" />;
                         const v = k.nilai(subrow);
                         const katrol = k.jenis === "tgl" && subrow.instalment?.[k.d]?.is_active;
                         return (
@@ -349,8 +353,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   </TableCell>
                   {rinci &&
                     kolomRinci.map((k, i) => (
-                      <TableCell key={i} className="border-x border-x-black">
-                        <FormatNumbering ribuan value={row.data.reduce((t, r) => t + k.nilai(r), 0)} />
+                      <TableCell key={i} className={`border-x border-x-black ${dirinci(row) ? "" : "bg-gray-100"}`}>
+                        {dirinci(row) && <FormatNumbering ribuan value={row.data.reduce((t, r) => t + k.nilai(r), 0)} />}
                       </TableCell>
                     ))}
                   <TableCell
