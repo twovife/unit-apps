@@ -285,6 +285,12 @@ export default function AppSidebar({ ...props }) {
                 ...(isSuperUser
                   ? [
                       {
+                        id: 99,
+                        title: 'Dashboard Migrasi',
+                        link: route('migrasi.dashboard'),
+                        active: route().current('migrasi.dashboard'),
+                      },
+                      {
                         id: 0,
                         title: 'Kesiapan Migrasi',
                         link: route('migrasi.kesiapan'),

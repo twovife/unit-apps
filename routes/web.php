@@ -110,6 +110,11 @@ Route::middleware('auth')->group(function () {
     // Kesiapan migrasi per kantor (superuser, baca-saja): bucket sistem vs sirkulasi lama + Z.
     Route::get('/kesiapan', [\App\Http\Controllers\MigrasiController::class, 'kesiapanMigrasi'])
       ->name('kesiapan');
+    // Dashboard migrasi per wilayah (superuser); angka kesiapan dimuat per wilayah.
+    Route::get('/dashboard', [\App\Http\Controllers\MigrasiController::class, 'dashboardMigrasi'])
+      ->name('dashboard');
+    Route::get('/dashboard/kantor/{branchId}', [\App\Http\Controllers\MigrasiController::class, 'dashboardKantor'])
+      ->name('dashboard_kantor');
     // Nasabah macet belum lunas per kelompok x hari: tempat penyesuaian saldo (superuser).
     Route::get('/nasabah-macet', [\App\Http\Controllers\MigrasiController::class, 'nasabahMacet'])
       ->name('nasabah_macet');

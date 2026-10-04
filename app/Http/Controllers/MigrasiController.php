@@ -522,6 +522,64 @@ class MigrasiController extends Controller
     }
 
     /**
+     * Dashboard migrasi per wilayah (superuser). Halaman memuat daftar kantor
+     * + status migrasi saja (murah); angka kesiapan tiap kantor dihitung saat
+     * akordion wilayah dibuka (dashboardKantor), karena satu kantor butuh
+     * 1-6 detik.
+     */
+    public function dashboardMigrasi(Request $request)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            return redirect()->route('home')->with('message', 'Dashboard migrasi khusus superuser.');
+        }
+
+        $branches = Branch::orderBy('wilayah')->orderBy('unit')->get(['id', 'unit', 'wilayah', 'mulai_pendataan_baru']);
+
+        return Inertia::render('Migrasi/Dashboard', [
+            'wilayah' => $branches->groupBy('wilayah')->map(fn($kantor, $w) => [
+                'wilayah' => (int) $w,
+                'kantor' => $kantor->map(fn($b) => [
+                    'id' => $b->id,
+                    'unit' => $b->unit,
+                    'mulai' => $b->mulai_pendataan_baru,
+                ])->values(),
+            ])->values(),
+            'periode' => AgregasiScope::RENCANA_MULAI,
+        ]);
+    }
+
+    /**
+     * Ringkasan kesiapan satu kantor (axios, JSON) untuk dashboard - dipanggil
+     * per kantor, beberapa sekaligus, supaya wilayah besar tidak kena batas
+     * waktu request. Cache 30 menit; ?segar=1 menghitung ulang.
+     */
+    public function dashboardKantor(Request $request, int $branchId)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            abort(403);
+        }
+
+        $periode = Carbon::parse(AgregasiScope::RENCANA_MULAI);
+        $kunci = "kesiapan_migrasi:{$branchId}:{$periode->toDateString()}";
+        if ($request->boolean('segar')) {
+            \Illuminate\Support\Facades\Cache::forget($kunci);
+        }
+
+        return response()->json(\Illuminate\Support\Facades\Cache::remember($kunci, now()->addMinutes(30), function () use ($branchId, $periode) {
+            $baris = $this->barisKesiapan($branchId, $periode);
+
+            return [
+                'baris' => $baris->count(),
+                'siap' => $baris->where('siap', true)->count(),
+                'z' => $baris->sum(fn($b) => max($b['z'] ?? 0, 0)),
+                'z_minus' => $baris->filter(fn($b) => ($b['z'] ?? 0) < 0)->count(),
+                'tanpa_bucket' => $baris->filter(fn($b) => $b['lama'] === null)->count(),
+                'macet_lama' => $baris->where('macet_lama', true)->count(),
+            ];
+        }));
+    }
+
+    /**
      * Buat pinjaman MACET LAMA untuk satu kelompok x hari: penampung Z (ML di
      * bucket yang belum terinput) supaya ember ML data real = bucket. Z
      * dihitung ulang di server, tidak diambil dari layar.
