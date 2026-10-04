@@ -386,13 +386,23 @@ trait PinjamanTrait
     $idsF8 = $loan->collapse()->pluck('id')->merge($loanMl->pluck('id'))->all();
     $saldoF8 = \App\Helpers\PenyesuaianSaldo::saldoBanyak($idsF8, $transaction_date);
     $saldoAwalF8 = \App\Helpers\PenyesuaianSaldo::saldoBanyak($idsF8, $transaction_start_date->copy()->subDay(), $transaction_start_date);
+    // Pemutihan sebelum bulan terpilih per pinjaman per bulan (Y-m => total),
+    // untuk blok bulan di buku angsuran.
+    $mdPerBulan = DB::table('transaction_white_offs')
+      ->whereIn('transaction_loan_id', $idsF8)
+      ->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))
+      ->selectRaw("transaction_loan_id, DATE_FORMAT(transaction_date, '%Y-%m') AS b, SUM(nominal) AS n")
+      ->groupBy('transaction_loan_id', 'b')
+      ->get()
+      ->groupBy('transaction_loan_id')
+      ->map(fn($g) => $g->mapWithKeys(fn($r) => [$r->b => (int) $r->n]));
 
     $dataMlGenerate = [
       'month' => "ML",
       'type' => "ml",
       'type2' => "ML",
       'date' => Carbon::parse($begin_transaction)->subMonthNoOverflow(1)->format('Y-m-d'),
-      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8) {
+      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan) {
         $pemutihan = $item->white_off?->transaction_date == $tanggalSeleksi ? $item->white_off->nominal : 0;
 
         $pemutihan_before_month = $item->white_off ? ($item->white_off->transaction_date < $transaction_start_date->format('Y-m-d') ? $item->white_off->nominal : 0) : 0;
@@ -438,6 +448,7 @@ trait PinjamanTrait
             ->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))
             ->groupBy(fn($i) => Carbon::parse($i->transaction_date)->format('Y-m'))
             ->map(fn($g) => (int) $g->sum('nominal')),
+          'md_per_bulan' => $mdPerBulan->get($item->id, collect()),
           'saldo' => $saldo,
           'notes' => $item->notes
         ];
@@ -454,13 +465,13 @@ trait PinjamanTrait
     ];
     // dd($dataMlGenerate);
 
-    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8) {
+    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan) {
       return [
         'month' => Carbon::parse($key)->format('FY'),
         'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
-        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8) {
+        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan) {
           $pemutihan = $item->white_off?->transaction_date == $tanggalSeleksi ? $item->white_off->nominal : 0;
 
           $pemutihan_before_month = $item->white_off ? ($item->white_off->transaction_date < $transaction_start_date->format('Y-m-d') ? $item->white_off->nominal : 0) : 0;
@@ -505,6 +516,7 @@ trait PinjamanTrait
               ->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))
               ->groupBy(fn($i) => Carbon::parse($i->transaction_date)->format('Y-m'))
               ->map(fn($g) => (int) $g->sum('nominal')),
+            'md_per_bulan' => $mdPerBulan->get($item->id, collect()),
             'saldo' => $saldo,
             'notes' => $item->notes
           ];

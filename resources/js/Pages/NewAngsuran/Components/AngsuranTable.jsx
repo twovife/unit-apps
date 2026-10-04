@@ -1,456 +1,284 @@
 import React, { useEffect, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shadcn/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shadcn/ui/table";
 import FormatNumbering from "@/Components/shadcn/FormatNumbering";
 import dayjs from "dayjs";
 import { Button } from "@/shadcn/ui/button";
 import Action from "./Action";
-import { Badge } from "@/shadcn/ui/badge";
 import { usePage } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+/**
+ * Buku angsuran bulanan (desktop Angsuran Lancar & Pinjaman Macet).
+ *
+ * Kolom dibagi BLOK per bulan: [Sisa awal | tanggal tagih... | Angs | MD].
+ * Blok bulan terpilih selalu tampil; tombol < di judul blok membuka satu
+ * bulan lagi ke belakang (lancar s/d MB saja - ML tidak dirinci karena bisa
+ * punya penyesuaian). Saldo akhir berdiri sendiri di paling kanan.
+ * Sisa awal blok = pinjaman - angsuran - MD sebelum bulan itu.
+ */
+const HARI_KE = { minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6 };
+const MAKS_BULAN = 12;
+const namaPanjang = (b) => b.toDate().toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+
+// Warna lembut per jenis kolom; awal blok diberi garis tebal.
+const WARNA = { sisa: "bg-sky-50", tgl: "", angs: "bg-amber-50", md: "bg-slate-50", saldo: "bg-emerald-50" };
+
+const Angka = ({ v, kelas = "" }) => (
+  <TableCell className={`px-2 py-1.5 text-right tabular-nums ${kelas}`}>
+    {v ? <FormatNumbering ribuan value={v} /> : <span className="text-slate-300">–</span>}
+  </TableCell>
+);
+
 const AngsuranTable = ({ dateOfWeek, datas }) => {
-  // Rincian angsuran sebelum bulan terpilih (tombol di samping Saldo
-  // Sebelumnya): tiap klik membuka SATU bulan lagi ke belakang - per tanggal
-  // tagih, Angs bulan (kuning), Sisa bulan (biru); yang lebih lama digabung di
-  // "Angs <= bulan", lalu MD. Kolom utama berganti judul jadi "Sisa <bulan lalu>".
   const { server_filter } = usePage().props;
+  const [data, setData] = useState([]);
+  useEffect(() => setData(datas), [datas]);
+
   const [jumlahBulan, setJumlahBulan] = useState(0);
-  const rinci = jumlahBulan > 0;
-  const MAKS_BULAN = 12;
-  const namaBulan = (b) => b.toDate().toLocaleDateString("id-ID", { month: "short" });
-  const namaPanjang = (b) => b.toDate().toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-  const HARI_KE = { minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6 };
-  const bulanRinci = Array.from({ length: jumlahBulan }, (_, i) => jumlahBulan - i).map((mundur) =>
-    dayjs(server_filter?.month).subtract(mundur, "month"),
-  );
-  const awalRinci = bulanRinci[0]?.format("YYYY-MM");
+  const bulanIni = dayjs(server_filter?.month);
+  const hariKe = HARI_KE[String(server_filter?.hari).toLowerCase()];
+  const dirinci = (grup) => grup.type !== "ml";
+  const adaYangDirinci = data?.some(dirinci);
+
   const tanggalTagih = (b) => {
     const hasil = [];
     for (let d = b.startOf("month"); d.month() === b.month(); d = d.add(1, "day")) {
-      if (d.day() === HARI_KE[String(server_filter?.hari).toLowerCase()]) hasil.push(d.format("YYYY-MM-DD"));
+      if (d.day() === hariKe) hasil.push(d.format("YYYY-MM-DD"));
     }
     return hasil;
   };
-  // Kolom: { label, nilai(row), jenis: 'tgl' | 'angs' | 'sisa' | 'koreksi', d? }
-  // Warna ikut kolom ringkasan: angs kuning (= Angsuran), sisa biru (= Saldo).
-  // Rincian hanya untuk lancar s/d MB: datanya harus real sejak drop, tidak
-  // ada penyesuaian (penyesuaian cuma untuk ML lama). Grup ML dikosongkan.
-  const dirinci = (row) => row.type !== "ml";
-  const WARNA_RINCI = { angs: "bg-yellow-200", sisa: "bg-blue-300", koreksi: "bg-gray-50", tgl: "" };
-  const bulanLalu = dayjs(server_filter?.month).subtract(1, "month").toDate().toLocaleDateString("id-ID", { month: "long" });
-  // Sisa di akhir bulan `kunci` (YYYY-MM): pinjaman - angsuran s/d bulan itu.
-  const sisaSampai = (r, kunci) =>
-    (Number(r.pinjaman) || 0) -
-    Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k <= kunci ? t + v : t), 0);
-  const kolomRinci = !rinci ? [] : [
-    {
-      label: "Angs",
-      grup: `s/d ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
-      jenis: "angs",
-      nilai: (r) => Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k < awalRinci ? t + v : t), 0),
+
+  const jumlahSebelum = (peta, kunci) =>
+    Object.entries(peta ?? {}).reduce((t, [k, v]) => (k < kunci ? t + Number(v) : t), 0);
+
+  // Blok bulan lalu (paling lama di kiri), lalu blok bulan terpilih.
+  const blokLalu = Array.from({ length: jumlahBulan }, (_, i) => bulanIni.subtract(jumlahBulan - i, "month")).map(
+    (b) => {
+      const kunci = b.format("YYYY-MM");
+      return {
+        nama: namaPanjang(b),
+        lalu: true,
+        kolom: [
+          {
+            jenis: "sisa",
+            label: "Sisa awal",
+            nilai: (r) => r.pinjaman - jumlahSebelum(r.per_bulan, kunci) - jumlahSebelum(r.md_per_bulan, kunci),
+          },
+          ...tanggalTagih(b).map((d) => ({
+            jenis: "tgl",
+            label: dayjs(d).format("DD-MM"),
+            d,
+            nilai: (r) => r.instalment?.[d]?.total_nominal ?? 0,
+          })),
+          { jenis: "angs", label: "Angs", nilai: (r) => Number(r.per_bulan?.[kunci] ?? 0) },
+          { jenis: "md", label: "MD", nilai: (r) => Number(r.md_per_bulan?.[kunci] ?? 0) },
+        ],
+      };
     },
-    {
-      label: "Sisa",
-      grup: `s/d ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
-      jenis: "sisa",
-      nilai: (r) => sisaSampai(r, bulanRinci[0].subtract(1, "month").format("YYYY-MM")),
-    },
-    ...bulanRinci.flatMap((b, i) => [
-      ...tanggalTagih(b).map((d) => ({
-        label: dayjs(d).format("DD-MM"),
-        grup: namaPanjang(b),
+  );
+  const blokIni = {
+    nama: namaPanjang(bulanIni),
+    lalu: false,
+    kolom: [
+      { jenis: "sisa", label: "Sisa awal", nilai: (r) => r.saldo_sebelumnya },
+      ...dateOfWeek.map((d) => ({
         jenis: "tgl",
+        label: dayjs(d).format("DD-MM"),
         d,
         nilai: (r) => r.instalment?.[d]?.total_nominal ?? 0,
       })),
-      { label: "Angs", grup: namaPanjang(b), jenis: "angs", nilai: (r) => r.per_bulan?.[b.format("YYYY-MM")] ?? 0 },
-      // Sisa bulan terakhir = kolom utama di kanan (Sisa <bulan lalu>), jadi tidak diulang.
-      ...(i < bulanRinci.length - 1
-        ? [{ label: "Sisa", grup: namaPanjang(b), jenis: "sisa", nilai: (r) => sisaSampai(r, b.format("YYYY-MM")) }]
-        : []),
-    ]),
-    {
-      label: "MD",
-      grup: "",
-      jenis: "koreksi",
-      nilai: (r) =>
-        (Number(r.pinjaman) || 0) -
-        Object.values(r.per_bulan ?? {}).reduce((t, v) => t + v, 0) -
-        (Number(r.saldo_sebelumnya) || 0),
-    },
+      { jenis: "angs", label: "Angs", nilai: (r) => r.angsuran },
+      { jenis: "md", label: "MD", nilai: (r) => r.pemutihanThisMonth },
+    ],
+  };
+  const blok = [...blokLalu, blokIni];
+  const kolomBlok = blok.flatMap((b) => b.kolom.map((k, i) => ({ ...k, awal: i === 0, lalu: b.lalu })));
+  const KOLOM_TETAP = [
+    ["No", "w-10"],
+    ["Drop", "w-24"],
+    ["Nama", "w-40"],
+    ["NIK", "w-32"],
+    ["Note", "w-20"],
+    ["Alamat", "w-44"],
+    ["Kel", "w-10"],
+    ["Hari", "w-14"],
+    ["Pnj", "w-10"],
+    ["X", "w-10"],
+    ["Pinjaman", "w-20 text-right"],
   ];
-
-  const [data, setData] = useState([]);
-  useEffect(() => {
-    setData(datas);
-  }, [datas]);
-
-  const calculateInstalment = (data, keyToSum) => {
-    const result = data.reduce(
-      (acc, item) =>
-        acc + parseInt(item.instalment[keyToSum]?.total_nominal ?? 0),
-      0,
-    );
-    return result;
-  };
-
-  const calculateTotals = (data, keyToSum) => {
-    const result = data.reduce(
-      (acc, item) => acc + parseInt(item[keyToSum] ?? 0),
-      0,
-    );
-    return result;
-  };
+  const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1;
 
   const [triggeredId, setTriggeredId] = useState(null);
   const [show, setShow] = useState(false);
-  const onCreateShowOpen = (id) => {
-    setTriggeredId(id);
-    setShow(true);
-  };
-  const onClosedShowOpen = () => {
-    setShow(false);
-    setTriggeredId(null);
-  };
-
   const [selectedId, setSelectedId] = useState([]);
+  const pilih = (id) => setSelectedId((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
-  const handleRowClick = (id) => {
-    setSelectedId((prevSelectedRows) => {
-      if (prevSelectedRows.includes(id)) {
-        // Jika ID sudah ada, hapus dari array (toggle)
-        return prevSelectedRows.filter((rowId) => rowId !== id);
-      } else {
-        // Jika ID belum ada, tambahkan ke array
-        return [...prevSelectedRows, id];
-      }
-    });
-  };
+  const garis = (k) => (k.awal ? "border-l-2 border-l-slate-300" : "border-l border-l-slate-100");
+  const th = "px-2 py-2 text-[11px] font-semibold text-slate-600 whitespace-nowrap";
 
   return (
-    <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
-      {/* table-fixed + w-full: kalau kolomnya muat, tabel melebar penuh layar; kalau rincian bulan dibuka dan jumlah lebar kolom melebihi layar, tabel ikut melebar dan bisa digeser. */}
-      <Table className="w-full text-xs rounded-lg table-fixed">
-        <TableHeader className="sticky top-0 left-0 z-10">
-          {rinci && (
-            // Baris grup: nama bulan di atas kolom-kolomnya (rincian & bulan berjalan).
-            <TableRow className="bg-gray-200">
-              <TableHead colSpan={11} />
-              {kolomRinci
-                .reduce((acc, k) => {
-                  const akhir = acc[acc.length - 1];
-                  if (akhir && akhir.grup === k.grup) akhir.span += 1;
-                  else acc.push({ grup: k.grup, span: 1 });
-                  return acc;
-                }, [])
-                .map((g, i) => (
-                  <TableHead key={i} colSpan={g.span} className="text-center border-x border-x-black font-semibold">
-                    {g.grup}
-                  </TableHead>
-                ))}
-              <TableHead />
-              <TableHead colSpan={dateOfWeek.length} className="text-center border-x border-x-black font-semibold">
-                {namaPanjang(dayjs(server_filter?.month))}
-              </TableHead>
-              <TableHead colSpan={3} />
-            </TableRow>
-          )}
-          <TableRow className="bg-gray-200">
-            <TableHead className="w-10 text-center">No</TableHead>
-            <TableHead className="text-center w-28">Tanggal</TableHead>
-            <TableHead className="w-40 text-center">Nama Nasabah</TableHead>
-            <TableHead className="w-36 text-center">NIK</TableHead>
-            <TableHead className="w-24 text-center">Note</TableHead>
-            <TableHead className="w-48 text-center">Alamat</TableHead>
-            <TableHead className="w-14 text-center">Kelompok</TableHead>
-            <TableHead className="w-14 text-center">Hari</TableHead>
-            <TableHead className="w-12 text-center">Pnj Ke</TableHead>
-            <TableHead className="w-12 text-center">X Angs</TableHead>
-            <TableHead className="w-20 text-center border-x border-x-black">
-              Pinjaman
-            </TableHead>
-            {rinci &&
-              kolomRinci.map((k, i) => (
-                <TableHead
-                  key={i}
-                  className={`w-16 text-center whitespace-nowrap border-x border-x-black ${k.jenis === "tgl" ? "" : "font-semibold"}`}
-                  title={k.jenis === "koreksi" ? "Pemutihan sebelum bulan ini" : undefined}
-                >
-                  {k.label}
-                </TableHead>
-              ))}
-            <TableHead className="text-center w-28 border-x border-x-black">
-              <div className="flex items-center justify-center gap-1">
-                {jumlahBulan < MAKS_BULAN && data?.some(dirinci) && (
-                  <button
-                    type="button"
-                    className="p-0.5 rounded hover:bg-gray-300"
-                    title="Buka satu bulan lagi ke belakang"
-                    onClick={() => setJumlahBulan((n) => n + 1)}
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {rinci ? `Sisa ${bulanLalu}` : "Saldo Sebelumnya"}
-                {rinci && (
-                  <button
-                    type="button"
-                    className="p-0.5 rounded hover:bg-gray-300"
-                    title="Tutup rincian"
-                    onClick={() => setJumlahBulan(0)}
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </TableHead>
-            {dateOfWeek.map((day, i) => (
-              <TableHead
-                className="w-16 text-center border-x border-x-black"
-                key={i}
-              >
-                {dayjs(day).format("DD-MM")}
+    <div className="relative overflow-auto border rounded-lg h-[60vh] lg:h-[85vh] scrollbar-thin">
+      {/* table-fixed + w-full: muat = penuh layar; bulan lalu dibuka = melebar & bisa digeser. */}
+      <Table className="w-full text-xs table-fixed">
+        <TableHeader className="sticky top-0 z-10 bg-slate-100">
+          <TableRow className="border-b-0 hover:bg-transparent">
+            {KOLOM_TETAP.map(([label, kelas]) => (
+              <TableHead key={label} rowSpan={2} className={`${th} ${kelas} align-bottom`}>
+                {label}
               </TableHead>
             ))}
-            <TableHead className="w-20 text-center border-x border-x-black">
-              Angsuran
-            </TableHead>
-            <TableHead className="w-16 text-center border-x border-x-black">
-              (MD)
-            </TableHead>
-            <TableHead className="w-20 text-center border-x border-x-black">
+            {blok.map((b, i) => (
+              <TableHead key={b.nama} colSpan={b.kolom.length} className={`${th} text-center border-l-2 border-l-slate-300`}>
+                <div className="flex items-center justify-center gap-1">
+                  {i === 0 && adaYangDirinci && jumlahBulan < MAKS_BULAN && (
+                    <button
+                      type="button"
+                      title="Buka satu bulan lagi ke belakang"
+                      className="p-0.5 rounded hover:bg-slate-200"
+                      onClick={() => setJumlahBulan((n) => n + 1)}
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {b.nama}
+                  {i === 0 && jumlahBulan > 0 && (
+                    <button
+                      type="button"
+                      title="Tutup bulan-bulan lalu"
+                      className="p-0.5 rounded hover:bg-slate-200"
+                      onClick={() => setJumlahBulan(0)}
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </TableHead>
+            ))}
+            <TableHead rowSpan={2} className={`${th} w-20 text-right align-bottom border-l-2 border-l-slate-300`}>
               Saldo
             </TableHead>
           </TableRow>
+          <TableRow className="hover:bg-transparent">
+            {kolomBlok.map((k, i) => (
+              <TableHead
+                key={i}
+                className={`${th} text-right ${k.jenis === "tgl" ? "w-14 font-normal" : k.jenis === "md" ? "w-14" : "w-20"} ${garis(k)}`}
+              >
+                {k.label}
+              </TableHead>
+            ))}
+          </TableRow>
         </TableHeader>
+
         <TableBody>
-          {data ? (
-            data.map((row, i) => (
-              <React.Fragment key={i}>
-                <TableRow>
-                  <TableCell colSpan={15 + (dateOfWeek.length ?? 0) + kolomRinci.length}>
-                    {row.month}
+          {data?.map((grup, g) => {
+            const rinci = dirinci(grup);
+            // Blok bulan lalu untuk grup ML dikosongkan (null).
+            const isi = (k, r) => (k.lalu && !rinci ? null : k.nilai(r));
+            return (
+              <React.Fragment key={g}>
+                <TableRow className="bg-slate-200/70 hover:bg-slate-200/70">
+                  <TableCell colSpan={totalKolom} className="px-2 py-1.5 text-xs font-semibold text-slate-700">
+                    {grup.month}
                   </TableCell>
                 </TableRow>
-                {row.data.map((subrow, i) => (
-                  <TableRow
-                    className={selectedId.includes(subrow.id) ? "bg-green-200" : "even:bg-gray-50"}
-                    key={i}
-                  >
-                    <TableCell onClick={() => handleRowClick(subrow.id)}>
-                      {i + 1}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="whitespace-nowrap">{dayjs(subrow.tanggal_drop).format("DD-MM")}</div>
-                        <div>
+
+                {grup.data.map((r, i) => {
+                  const dipilih = selectedId.includes(r.id);
+                  return (
+                    <TableRow key={r.id} className={dipilih ? "bg-green-100 hover:bg-green-100" : "even:bg-slate-50/60"}>
+                      <TableCell className="px-2 py-1.5 cursor-pointer text-slate-500" onClick={() => pilih(r.id)}>
+                        {i + 1}
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="whitespace-nowrap">{dayjs(r.tanggal_drop).format("DD-MM")}</span>
                           <Button
                             size="xs"
-                            onClick={() => onCreateShowOpen(subrow.id)}
+                            onClick={() => {
+                              setTriggeredId(r.id);
+                              setShow(true);
+                            }}
                           >
                             Pay
                           </Button>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="truncate" title={subrow.nama}>{subrow.nama}</TableCell>
-                    <TableCell className="text-center">{subrow.nik}</TableCell>
-                    <TableCell className="text-center">
-                      {subrow.lunas ? (
-                        <span className="px-2 py-1 mr-1 text-xs text-white bg-green-400 border rounded">
-                          Lunas
-                        </span>
-                      ) : (
-                        ""
-                      )}
-                      {/* {subrow.status_pinjaman == 'normal' ? (
-                        <span className="px-2 py-1 mr-1 text-xs border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : subrow.status_pinjaman == 'cm' ? (
-                        <span className="px-2 py-1 mr-1 text-xs text-white bg-yellow-400 border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : subrow.status_pinjaman == 'mb' ? (
-                        <span className="px-2 py-1 mr-1 text-xs text-white bg-red-400 border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : subrow.status_pinjaman == 'ml' ? (
-                        <span className="px-2 py-1 mr-1 text-xs text-white bg-black border rounded">
-                          {subrow.status_pinjaman}
-                        </span>
-                      ) : (
-                        <div>{subrow.status_pinjaman}</div>
-                      )} */}
-                      {subrow.notes !== null ? (
-                        <Badge>{subrow.notes}</Badge>
-                      ) : (
-                        ""
-                      )}
-                    </TableCell>
-                    <TableCell className="truncate" title={subrow.alamat}>{subrow.alamat}</TableCell>
-                    <TableCell className="text-center">
-                      {subrow.kelompok}
-                    </TableCell>
-                    <TableCell className="text-center">{subrow.hari}</TableCell>
-                    <TableCell className="text-center">
-                      {subrow.pinjaman_ke}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {subrow.x_angs}
-                    </TableCell>
-                    <TableCell
-                      className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black ${
-                        selectedId.includes(subrow.id)
-                          ? "bg-green-200 hover:bg-green-50"
-                          : ""
-                      }`}
-                    >
-                      <FormatNumbering ribuan value={subrow.pinjaman} />
-                    </TableCell>
-                    {rinci &&
-                      kolomRinci.map((k, i) => {
-                        if (!dirinci(row)) return <TableCell key={i} className="border-x border-x-black bg-gray-100" />;
-                        const v = k.nilai(subrow);
-                        const katrol = k.jenis === "tgl" && subrow.instalment?.[k.d]?.is_active;
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 font-medium truncate" title={r.nama}>
+                        {r.nama}
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 truncate text-slate-500">{r.nik}</TableCell>
+                      <TableCell className="px-2 py-1.5">
+                        {r.lunas && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-emerald-500 rounded">Lunas</span>
+                        )}
+                        {r.notes && (
+                          <span className="block mt-0.5 text-[10px] truncate text-slate-500" title={r.notes}>
+                            {r.notes}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 truncate text-slate-500" title={r.alamat}>
+                        {r.alamat}
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 text-center">{r.kelompok}</TableCell>
+                      <TableCell className="px-2 py-1.5 capitalize">{r.hari}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-center">{r.pinjaman_ke}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-center">{r.x_angs}</TableCell>
+                      <Angka v={r.pinjaman} kelas="font-medium" />
+                      {kolomBlok.map((k, j) => {
+                        const v = isi(k, r);
+                        if (v === null) return <TableCell key={j} className={`bg-slate-100/70 ${garis(k)}`} />;
+                        const katrol = k.jenis === "tgl" && r.instalment?.[k.d]?.is_active;
                         return (
-                          <TableCell
-                            key={i}
-                            className={`border-x border-x-black ${WARNA_RINCI[k.jenis]} ${k.jenis === "tgl" ? "" : "font-semibold"} ${
-                              (k.jenis === "koreksi" && v) || katrol ? "text-red-600 font-semibold" : ""
+                          <Angka
+                            key={j}
+                            v={v}
+                            kelas={`${WARNA[k.jenis]} ${garis(k)} ${k.jenis === "tgl" ? "" : "font-medium"} ${
+                              katrol || (k.jenis === "md" && v) ? "text-red-600 font-semibold" : ""
                             }`}
-                          >
-                            {v ? <FormatNumbering ribuan value={v} /> : <div className="text-center text-gray-300">–</div>}
-                          </TableCell>
+                          />
                         );
                       })}
-                    <TableCell
-                      className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
-                        selectedId.includes(subrow.id)
-                          ? "bg-green-200 hover:bg-green-50"
-                          : ""
-                      }`}
-                    >
-                      <FormatNumbering ribuan value={subrow.saldo_sebelumnya} />
-                    </TableCell>
-                    {dateOfWeek.map((day, i) => (
-                      <TableCell
-                        className={`border-x border-x-black ${
-                          subrow.instalment[day]?.is_active
-                            ? "text-red-500 font-semibold"
-                            : ""
-                        }`}
-                        key={i}
-                      >
-                        <FormatNumbering ribuan
-                          value={subrow.instalment[day]?.total_nominal}
-                        />
-                      </TableCell>
-                    ))}
-                    <TableCell
-                      className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black ${
-                        selectedId.includes(subrow.id)
-                          ? "bg-green-200 hover:bg-green-50"
-                          : ""
-                      }`}
-                    >
-                      <FormatNumbering ribuan value={subrow.angsuran} />
-                    </TableCell>
-                    <TableCell
-                      className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black ${
-                        selectedId.includes(subrow.id)
-                          ? "bg-green-200 hover:bg-green-50"
-                          : ""
-                      }`}
-                    >
-                      <FormatNumbering ribuan value={subrow.pemutihanThisMonth} />
-                    </TableCell>
-                    <TableCell
-                      className={`bg-green-300 hover:bg-green-100 border-x border-x-black ${
-                        selectedId.includes(subrow.id)
-                          ? "bg-green-200 hover:bg-green-50"
-                          : ""
-                      }`}
-                    >
-                      <FormatNumbering ribuan value={subrow.saldo} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="bg-gray-100">
-                  <TableCell className="py-3" colSpan={10}>
-                    ini nanti total
+                      <Angka v={r.saldo} kelas={`${WARNA.saldo} font-semibold border-l-2 border-l-slate-300`} />
+                    </TableRow>
+                  );
+                })}
+
+                <TableRow className="font-semibold border-b-2 border-b-slate-300 bg-slate-100 hover:bg-slate-100">
+                  <TableCell colSpan={10} className="px-2 py-2 text-slate-700">
+                    Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
-                  <TableCell
-                    className={`bg-slate-200 hover:bg-slate-100 border-x border-x-black`}
-                  >
-                    <FormatNumbering ribuan
-                      value={calculateTotals(row.data, "pinjaman")}
-                    />
-                  </TableCell>
-                  {rinci &&
-                    kolomRinci.map((k, i) => (
-                      <TableCell key={i} className={`border-x border-x-black ${dirinci(row) ? WARNA_RINCI[k.jenis] : "bg-gray-100"}`}>
-                        {dirinci(row) && <FormatNumbering ribuan value={row.data.reduce((t, r) => t + k.nilai(r), 0)} />}
-                      </TableCell>
-                    ))}
-                  <TableCell
-                    className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black`}
-                  >
-                    <FormatNumbering ribuan
-                      value={calculateTotals(row.data, "saldo_sebelumnya")}
-                    />
-                  </TableCell>
-                  {dateOfWeek.map((day, i) => (
-                    <TableCell className="border-x border-x-black" key={i}>
-                      <FormatNumbering ribuan
-                        value={calculateInstalment(row.data, day)}
+                  <Angka v={grup.data.reduce((t, r) => t + Number(r.pinjaman || 0), 0)} />
+                  {kolomBlok.map((k, j) =>
+                    k.lalu && !rinci ? (
+                      <TableCell key={j} className={garis(k)} />
+                    ) : (
+                      <Angka
+                        key={j}
+                        v={grup.data.reduce((t, r) => t + Number(k.nilai(r) || 0), 0)}
+                        kelas={`${WARNA[k.jenis]} ${garis(k)}`}
                       />
-                    </TableCell>
-                  ))}
-                  <TableCell
-                    className={`bg-yellow-200 hover:bg-yellow-100 border-x border-x-black `}
-                  >
-                    <FormatNumbering ribuan
-                      value={calculateTotals(row.data, "angsuran")}
-                    />
-                  </TableCell>
-                  <TableCell
-                    className={`bg-gray-50 hover:bg-gray-100 border-x border-x-black `}
-                  >
-                    <FormatNumbering ribuan
-                      value={calculateTotals(row.data, "pemutihanThisMonth")}
-                    />
-                  </TableCell>
-                  <TableCell
-                    className={`bg-green-300 hover:bg-green-100 border-x border-x-black `}
-                  >
-                    <FormatNumbering ribuan
-                      value={calculateTotals(row.data, "saldo")}
-                    />
-                  </TableCell>
+                    ),
+                  )}
+                  <Angka
+                    v={grup.data.reduce((t, r) => t + Number(r.saldo || 0), 0)}
+                    kelas={`${WARNA.saldo} border-l-2 border-l-slate-300`}
+                  />
                 </TableRow>
               </React.Fragment>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell>a</TableCell>
-            </TableRow>
-          )}
+            );
+          })}
         </TableBody>
       </Table>
 
       <Action
         datas={data}
         show={show}
-        onClosed={onClosedShowOpen}
+        onClosed={() => {
+          setShow(false);
+          setTriggeredId(null);
+        }}
         triggeredId={triggeredId}
       />
     </div>
