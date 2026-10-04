@@ -97,7 +97,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     ["No", "w-10"],
     ["Tgl", "w-24"],
     ["Nama", "w-40"],
-    ["NIK", "w-32"],
+    ["NIK", "w-36"],
     ["Note", "w-20"],
     ["Alamat", "w-44"],
     ["Kel", "w-10"],
@@ -208,7 +208,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <TableCell className="px-2 py-1.5 font-medium truncate" title={r.nama}>
                         {r.nama}
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 truncate text-slate-500">{r.nik}</TableCell>
+                      <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums text-slate-500">{r.nik}</TableCell>
                       <TableCell className="px-2 py-1.5">
                         {r.lunas && (
                           <span className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-emerald-500 rounded">Lunas</span>
