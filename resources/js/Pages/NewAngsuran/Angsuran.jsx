@@ -14,12 +14,10 @@ import { Input } from '@/shadcn/ui/input';
 import BukuStortingMobile from './Components/BukuStortingMobile';
 
 /**
- * `type === 'mobile'` (dipakai `mobile_apps.angsuran`) filternya sudah
- * disamakan dengan menu Drop: `FilterBar` (chip instan) untuk hari/bulan/
- * kelompok, `SearchComponent` disisakan cuma untuk filter Unit/Wilayah lewat
- * popover kecil terpisah - persis pola yang dipakai `BukuTransaksi/Web/
- * TransaksiMantri.jsx`. `type === 'desktop'` (dipakai `pinjaman.index_pinjaman`)
- * SENGAJA tidak diubah - masih dropdown `SearchComponent` lama.
+ * Filter HP & desktop sama-sama `FilterBar` (chip instan, tanpa tombol
+ * submit) seperti menu Drop; `SearchComponent` disisakan cuma untuk filter
+ * Unit/Wilayah lewat popover kecil. HP (`mobile_apps.angsuran`) memilih
+ * tanggal, desktop (`pinjaman.index_pinjaman`) memilih hari tagih + bulan.
  */
 const Angsuran = ({
   datas,
@@ -48,114 +46,64 @@ const Angsuran = ({
 
   return (
     <>
-      {type === 'mobile' ? (
-        <>
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h1 className="text-xl font-semibold tracking-tight">
-              Angsuran Lancar
-            </h1>
-            {canFilterUnit && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline">
-                    <FilterIcon className="h-4" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                      Unit
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  <SearchComponent
-                    key={searchComponentKey}
-                    urlLink={urlLink}
-                    localState={localState}
-                    searchBranch={server_filter.userAuthorized.canShowBranch}
-                    searchGroupingBranch={
-                      server_filter.userAuthorized.canShowGroupingBranch
-                    }
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
-
-          <div className="mb-3">
-            <FilterBar
-              urlLink={urlLink}
-              storageKey={localState}
-              showHari={false}
-              showMonth={false}
-              showTanggal={true}
-              showKelompok={server_filter.userAuthorized.canShowKelompok}
-              extraParams={unitExtraParams}
-            />
-          </div>
-
-          {server_filter.is_libur && (
-            <div className="p-3 mb-3 text-sm border rounded-lg border-amber-300 bg-amber-50/60 text-amber-900">
-              <b>
-                {server_filter.tanggal} — hari libur
-                {server_filter.libur_alasan
-                  ? ` (${server_filter.libur_alasan})`
-                  : ''}
-              </b>
-              . Tidak ada tarikan pada hari libur, jadi tidak ada yang perlu
-              diisi. Pilih tanggal hari kerja untuk melihat atau mengisi
-              angsuran.
-            </div>
+      {/* Satu tata letak untuk HP & desktop: filter chip instan (FilterBar),
+          tanpa tombol submit. HP = buku harian (pilih tanggal), desktop =
+          buku bulanan (pilih hari tagih + bulan). */}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Angsuran Lancar</h1>
+          {type === 'desktop' && (
+            <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih.</p>
           )}
+        </div>
+        {canFilterUnit && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <FilterIcon className="h-4" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Unit</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <SearchComponent
+                key={searchComponentKey}
+                urlLink={urlLink}
+                localState={localState}
+                searchBranch={server_filter.userAuthorized.canShowBranch}
+                searchGroupingBranch={server_filter.userAuthorized.canShowGroupingBranch}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
 
-          {server_filter.is_locked && (
-            <div className="p-3 mb-3 text-sm border rounded-lg border-slate-300 bg-slate-50 text-slate-700">
-              <b>Tanggal {server_filter.tanggal} sudah dikunci kasir.</b> Data
-              bisa dilihat tapi tidak bisa diubah. Membuka kunci lewat jalur
-              resmi kasir.
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center">
-          <div className="flex justify-between flex-none shrink-0 whitespace-nowrap">
-            <h1 className="text-xl font-semibold tracking-tight ">
-              Angsuran Lancar
-            </h1>
-            <div className="flex justify-end gap-3 lg:hidden">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline">
-                    <FilterIcon className="h-4" />
-                    Filter
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  <SearchComponent
-                    urlLink={urlLink}
-                    localState={localState}
-                    searchMonth={true}
-                    searchHari={true}
-                    searchKelompok={server_filter.userAuthorized.canShowKelompok}
-                    searchBranch={server_filter.userAuthorized.canShowBranch}
-                    searchGroupingBranch={
-                      server_filter.userAuthorized.canShowGroupingBranch
-                    }
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-          <div className="items-center justify-end flex-auto hidden w-full lg:flex">
-            <SearchComponent
-              urlLink={urlLink}
-              localState={localState}
-              searchMonth={true}
-              searchHari={true}
-              searchKelompok={server_filter.userAuthorized.canShowKelompok}
-              searchBranch={server_filter.userAuthorized.canShowBranch}
-              searchGroupingBranch={
-                server_filter.userAuthorized.canShowGroupingBranch
-              }
-            ></SearchComponent>
-          </div>
+      <div className="mb-3">
+        <FilterBar
+          urlLink={urlLink}
+          storageKey={localState}
+          showHari={type === 'desktop'}
+          showMonth={type === 'desktop'}
+          showTanggal={type === 'mobile'}
+          showKelompok={server_filter.userAuthorized.canShowKelompok}
+          extraParams={unitExtraParams}
+        />
+      </div>
+
+      {server_filter.is_libur && (
+        <div className="p-3 mb-3 text-sm border rounded-lg border-amber-300 bg-amber-50/60 text-amber-900">
+          <b>
+            {server_filter.tanggal} — hari libur
+            {server_filter.libur_alasan ? ` (${server_filter.libur_alasan})` : ''}
+          </b>
+          . Tidak ada tarikan pada hari libur, jadi tidak ada yang perlu diisi. Pilih tanggal hari kerja untuk melihat
+          atau mengisi angsuran.
+        </div>
+      )}
+
+      {server_filter.is_locked && (
+        <div className="p-3 mb-3 text-sm border rounded-lg border-slate-300 bg-slate-50 text-slate-700">
+          <b>Tanggal {server_filter.tanggal} sudah dikunci kasir.</b> Data bisa dilihat tapi tidak bisa diubah. Membuka
+          kunci lewat jalur resmi kasir.
         </div>
       )}
       {type === 'mobile' && server_filter.is_libur ? null : (

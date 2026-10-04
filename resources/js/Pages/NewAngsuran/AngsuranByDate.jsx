@@ -8,7 +8,6 @@ import AngsuranByDateTable from './Components/AngsuranByDateTable';
 import AngsuranTable from './Components/AngsuranTable';
 import { Button } from '@/shadcn/ui/button';
 import { FilterIcon, SearchIcon } from 'lucide-react';
-import { Label } from '@/shadcn/ui/label';
 import { Input } from '@/shadcn/ui/input';
 import InputMacet from '../BukuTransaksi/Web/InputMacet';
 
@@ -100,133 +99,57 @@ const AngsuranByDate = ({
   return (
     <>
       <InputMacet show={showInputMacet} onClosed={onCloseMacet} />
-      {type === 'mobile' ? (
-        <>
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h1 className="text-xl font-semibold tracking-tight">
-              {headerName}
-            </h1>
-            <div className="flex items-center gap-2">
-              {canFilterUnit && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline">
-                      <FilterIcon className="h-4" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                        Unit
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent>
-                    <SearchComponent
-                      key={searchComponentKey}
-                      urlLink={urlLink}
-                      localState={localState}
-                      searchBranch={server_filter.userAuthorized.canShowBranch}
-                      searchGroupingBranch={
-                        server_filter.userAuthorized.canShowGroupingBranch
-                      }
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-              <Button onClick={onShowMacet} variant="outline">
-                Input Macet
-              </Button>
-            </div>
-          </div>
-
-          <div className="relative mb-3">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Cari nama nasabah..."
-              className="pl-9"
-              value={namaCari}
-              onChange={(e) => setNamaCari(e.target.value)}
-            />
-          </div>
-
-          <div className="mb-3">
-            <FilterBar
-              urlLink={urlLink}
-              storageKey={localState}
-              showHari={searchHari}
-              showMonth={searchMonth}
-              showKelompok={server_filter.userAuthorized.canShowKelompok}
-              extraParams={unitExtraParams}
-            />
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="relative mb-3 max-w-sm">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Cari nama nasabah..."
-              className="pl-9"
-              value={namaCari}
-              onChange={(e) => setNamaCari(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:justify-between lg:items-center">
-            <div className="flex justify-between flex-none shrink-0 whitespace-nowrap">
-              <h1 className="text-xl font-semibold tracking-tight ">
-                {headerName}
-              </h1>
-              <div className="flex justify-end gap-3 lg:hidden">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline">
-                      <FilterIcon className="h-4" />
-                      Filter
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent>
-                    <SearchComponent
-                      urlLink={urlLink}
-                      localState={localState}
-                      searchMonth={searchMonth}
-                      searchHari={searchHari}
-                      searchKelompok={
-                        server_filter.userAuthorized.canShowKelompok
-                      }
-                      searchBranch={server_filter.userAuthorized.canShowBranch}
-                      searchGroupingBranch={
-                        server_filter.userAuthorized.canShowGroupingBranch
-                      }
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Button onClick={onShowMacet} color="outline">
-                  Input Macet
+      {/* Satu tata letak HP & desktop: filter chip instan, tanpa tombol submit. */}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h1 className="text-xl font-semibold tracking-tight">{headerName}</h1>
+        <div className="flex items-center gap-2">
+          {canFilterUnit && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <FilterIcon className="h-4" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Unit</span>
                 </Button>
-              </div>
-            </div>
+              </PopoverTrigger>
+              <PopoverContent>
+                <SearchComponent
+                  key={searchComponentKey}
+                  urlLink={urlLink}
+                  localState={localState}
+                  searchBranch={server_filter.userAuthorized.canShowBranch}
+                  searchGroupingBranch={server_filter.userAuthorized.canShowGroupingBranch}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+          <Button onClick={onShowMacet} variant="outline">
+            Input Macet
+          </Button>
+        </div>
+      </div>
 
-            <div className="items-center justify-end flex-auto hidden w-full lg:flex">
-              <SearchComponent
-                urlLink={urlLink}
-                localState={localState}
-                searchMonth={searchMonth}
-                searchHari={searchHari}
-                searchKelompok={server_filter.userAuthorized.canShowKelompok}
-                searchBranch={server_filter.userAuthorized.canShowBranch}
-                searchGroupingBranch={
-                  server_filter.userAuthorized.canShowGroupingBranch
-                }
-              ></SearchComponent>
-              <div className="ml-3">
-                <Label>&nbsp;</Label>
-                <Button onClick={onShowMacet} color="outline">
-                  Input Macet
-                </Button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:items-start">
+        <div className="flex-1 min-w-0">
+          <FilterBar
+            urlLink={urlLink}
+            storageKey={localState}
+            showHari={searchHari}
+            showMonth={searchMonth}
+            showKelompok={server_filter.userAuthorized.canShowKelompok}
+            extraParams={unitExtraParams}
+          />
+        </div>
+        <div className="relative lg:w-72">
+          <SearchIcon className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Cari nama nasabah..."
+            className="pl-9"
+            value={namaCari}
+            onChange={(e) => setNamaCari(e.target.value)}
+          />
+        </div>
+      </div>
       <div className="overflow-auto">
         {/* Macet memakai buku angsuran yang sama dengan Angsuran Lancar
             (saldo awal, angsuran per tanggal tagih, angsuran, MD, saldo). */}
