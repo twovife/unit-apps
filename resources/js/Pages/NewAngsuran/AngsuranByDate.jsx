@@ -155,15 +155,16 @@ const AngsuranByDate = ({
           />
         </div>
       </div>
-      <div className="overflow-auto">
-        {/* Macet memakai buku angsuran yang sama dengan Angsuran Lancar
-            (saldo awal, angsuran per tanggal tagih, angsuran, MD, saldo). */}
-        {server_filter.type_show === 'macet' ? (
-          <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} />
-        ) : (
+      {/* Macet memakai buku angsuran yang sama dengan Angsuran Lancar
+          (saldo awal, angsuran per tanggal tagih, angsuran, MD, saldo); tabel
+          itu punya wadah gulir sendiri. */}
+      {server_filter.type_show === 'macet' ? (
+        <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} />
+      ) : (
+        <div className="overflow-auto">
           <AngsuranByDateTable datas={datas} />
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 };

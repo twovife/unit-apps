@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shadcn/ui/table";
 import FormatNumbering from "@/Components/shadcn/FormatNumbering";
 import dayjs from "dayjs";
@@ -186,6 +186,22 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const lebarMin =
     KOLOM_TETAP.reduce((t, [, kelas]) => t + px(kelas), 0) + kolomBlok.reduce((t, k) => t + LEBAR_BLOK[k.jenis], 0) + 80;
 
+  // Satu-satunya wadah gulir (atas-bawah & samping) setinggi sisa layar, jadi
+  // halaman tidak ikut bergulir (tidak ada dua scrollbar) dan header + kolom
+  // kiri bisa dibekukan terhadap wadah ini.
+  const wadah = useRef(null);
+  const [tinggi, setTinggi] = useState(null);
+  useLayoutEffect(() => {
+    const ukur = () => {
+      // Jarak dari atas DOKUMEN (bukan layar), supaya hasilnya sama walau halaman sudah tergulir.
+      const atas = (wadah.current?.getBoundingClientRect().top ?? 0) + window.scrollY;
+      setTinggi(Math.max(320, window.innerHeight - atas - 24));
+    };
+    ukur();
+    window.addEventListener("resize", ukur);
+    return () => window.removeEventListener("resize", ukur);
+  }, []);
+
   const [triggeredId, setTriggeredId] = useState(null);
   const [show, setShow] = useState(false);
   const [selectedId, setSelectedId] = useState([]);
@@ -195,7 +211,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const th = "px-2 py-2 text-[11px] font-semibold text-slate-600 whitespace-nowrap";
 
   return (
-    <div className="relative overflow-auto border rounded-lg h-[60vh] lg:h-[85vh] scrollbar-thin">
+    <div ref={wadah} className="relative overflow-auto border rounded-lg scrollbar-thin" style={{ height: tinggi ?? "70vh" }}>
       {/* table-fixed + w-full: muat = penuh layar; bulan lalu dibuka = melebar & bisa digeser. */}
       <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
         <TableHeader className="sticky top-0 z-10 bg-slate-100">

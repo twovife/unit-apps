@@ -24,7 +24,9 @@ export default function Authenticated({ header, children, loading = false }) {
       <Loading show={loading} />
 
       <Sidebar />
-      <SidebarInset>
+      {/* min-w-0: tanpa ini isi yang lebar (tabel) melebarkan seluruh halaman,
+          jadi gulir samping terjadi di halaman, bukan di dalam tabelnya. */}
+      <SidebarInset className="min-w-0">
         <Navbar auth={auth} header={header} />
         <main className="flex-1 px-4 py-6 md:px-6 bg-white min-h-[calc(100vh-3.5rem)]">
           {children}
