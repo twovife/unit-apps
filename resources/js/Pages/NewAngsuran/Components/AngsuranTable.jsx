@@ -21,13 +21,25 @@ const MAKS_BULAN = 12;
 const namaPanjang = (b) => b.toDate().toLocaleDateString("id-ID", { month: "long", year: "numeric" });
 
 // Warna lembut per jenis kolom; awal blok diberi garis tebal.
-const WARNA = { sisa: "bg-sky-50", tgl: "", angs: "bg-amber-50", md: "bg-slate-50", saldo: "bg-emerald-50" };
+const WARNA = { sisa: "bg-sky-200", tgl: "", angs: "bg-amber-200", md: "bg-slate-100", saldo: "bg-emerald-200" };
 
 const Angka = ({ v, kelas = "" }) => (
   <TableCell className={`px-2 py-1.5 text-right tabular-nums ${kelas}`}>
     {v ? <FormatNumbering ribuan value={v} /> : <span className="text-slate-300">–</span>}
   </TableCell>
 );
+
+/**
+ * Urutan baris dalam grup: tanggal drop; lalu yang punya nomor anggota di
+ * atas; di tanggal yang sama nasabah lama (pinjaman ke-2 dst / pelunasan)
+ * di atas nasabah baru; lalu nomor anggota kecil ke besar; lalu nama.
+ */
+const urutBaris = (a, b) =>
+  String(a.tanggal_drop).localeCompare(String(b.tanggal_drop)) ||
+  Number(!a.nomor_anggota) - Number(!b.nomor_anggota) ||
+  Number(a.pinjaman_ke <= 1) - Number(b.pinjaman_ke <= 1) ||
+  String(a.nomor_anggota ?? "").localeCompare(String(b.nomor_anggota ?? ""), undefined, { numeric: true }) ||
+  String(a.nama ?? "").localeCompare(String(b.nama ?? ""));
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
   const { server_filter } = usePage().props;
@@ -96,6 +108,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const KOLOM_TETAP = [
     ["No", "w-10"],
     ["Tgl", "w-24"],
+    ["No Ang", "w-16"],
     ["Nama", "w-40"],
     ["NIK", "w-36"],
     ["Note", "w-20"],
@@ -191,7 +204,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   </TableCell>
                 </TableRow>
 
-                {grup.data.map((r, i) => {
+                {[...grup.data].sort(urutBaris).map((r, i) => {
                   const dipilih = selectedId.includes(r.id);
                   return (
                     <TableRow key={r.id} className={dipilih ? "bg-green-100 hover:bg-green-100" : "even:bg-slate-50/60"}>
@@ -212,6 +225,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           </Button>
                         </div>
                       </TableCell>
+                      <TableCell className="px-2 py-1.5 text-center tabular-nums">{r.nomor_anggota || "–"}</TableCell>
                       <TableCell className="px-2 py-1.5 font-medium truncate" title={r.nama}>
                         {r.nama}
                       </TableCell>
@@ -255,7 +269,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                 })}
 
                 <TableRow className="font-semibold border-b-2 border-b-slate-300 bg-slate-100 hover:bg-slate-100">
-                  <TableCell colSpan={10} className="px-2 py-2 text-slate-700">
+                  <TableCell colSpan={11} className="px-2 py-2 text-slate-700">
                     Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
                   <Angka v={grup.data.reduce((t, r) => t + Number(r.drop || 0), 0)} />
