@@ -83,7 +83,20 @@ const SelNomorAnggota = ({ r, boleh, className = "" }) => {
           }}
         />
       ) : (
-        <span className={simpan ? "text-slate-400" : ""}>{nilai || "–"}</span>
+        // Sama dengan daftar HP: keluar target = nomor dilingkari merah,
+        // masih target = "TG" kecil di bawahnya.
+        <div className="flex flex-col items-center leading-none">
+          <span
+            className={`${simpan ? "text-slate-400" : ""} ${
+              r.keluar_target
+                ? "inline-flex items-center justify-center min-w-6 h-6 px-1 rounded-full border-2 border-red-600 text-red-600 font-semibold"
+                : ""
+            }`}
+          >
+            {nilai || "–"}
+          </span>
+          {!r.keluar_target && <span className="mt-0.5 text-[9px] font-bold text-blue-700">TG</span>}
+        </div>
       )}
     </TableCell>
   );

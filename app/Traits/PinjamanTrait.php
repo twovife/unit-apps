@@ -419,6 +419,8 @@ trait PinjamanTrait
 
           // ini status lunas
           'lunas' => $saldo <= 0,
+          // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
+          'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
           'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
           'drop' => $item->nominal_drop,
           'pinjaman' => $item->pinjaman,
@@ -487,6 +489,8 @@ trait PinjamanTrait
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
             // ini adalah status lunas
             'lunas' => $saldo <= 0,
+            // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
+            'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
             'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
@@ -1094,6 +1098,8 @@ trait PinjamanTrait
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
             'lunas' => $akhir['saldo'] <= 0,
+            // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
+            'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
             'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
