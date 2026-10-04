@@ -192,14 +192,29 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const wadah = useRef(null);
   const [tinggi, setTinggi] = useState(null);
   useLayoutEffect(() => {
+    // Tinggi = sisa layar di bawah kotak. Diukur dua langkah: perkiraan dari
+    // posisi kotak, lalu dikoreksi sebesar halaman yang MASIH meluber (margin
+    // / padding di bawah tabel yang tidak kelihatan dari posisi saja).
     const ukur = () => {
-      // Jarak dari atas DOKUMEN (bukan layar), supaya hasilnya sama walau halaman sudah tergulir.
-      const atas = (wadah.current?.getBoundingClientRect().top ?? 0) + window.scrollY;
-      setTinggi(Math.max(320, window.innerHeight - atas - 24));
+      const el = wadah.current;
+      if (!el) return;
+      const atas = el.getBoundingClientRect().top + window.scrollY;
+      let h = Math.max(320, window.innerHeight - atas - 24);
+      el.style.height = `${h}px`;
+      const luber = document.documentElement.scrollHeight - window.innerHeight;
+      if (luber > 0) h = Math.max(320, h - luber);
+      el.style.height = `${h}px`;
+      setTinggi(h);
     };
     ukur();
+    // Isi di atas tabel (filter, banner) bisa berubah tinggi sesudah dimuat.
+    const pantau = new ResizeObserver(() => requestAnimationFrame(ukur));
+    pantau.observe(document.body);
     window.addEventListener("resize", ukur);
-    return () => window.removeEventListener("resize", ukur);
+    return () => {
+      pantau.disconnect();
+      window.removeEventListener("resize", ukur);
+    };
   }, []);
 
   const [triggeredId, setTriggeredId] = useState(null);
