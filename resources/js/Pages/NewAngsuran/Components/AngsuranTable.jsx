@@ -26,6 +26,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   const rinci = jumlahBulan > 0;
   const MAKS_BULAN = 12;
   const namaBulan = (b) => b.toDate().toLocaleDateString("id-ID", { month: "short" });
+  const namaPanjang = (b) => b.toDate().toLocaleDateString("id-ID", { month: "long", year: "numeric" });
   const HARI_KE = { minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6 };
   const bulanRinci = Array.from({ length: jumlahBulan }, (_, i) => jumlahBulan - i).map((mundur) =>
     dayjs(server_filter?.month).subtract(mundur, "month"),
@@ -51,30 +52,34 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k <= kunci ? t + v : t), 0);
   const kolomRinci = !rinci ? [] : [
     {
-      label: `Angs ≤ ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
+      label: "Angs",
+      grup: `s/d ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
       jenis: "angs",
       nilai: (r) => Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k < awalRinci ? t + v : t), 0),
     },
     {
-      label: `Sisa ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
+      label: "Sisa",
+      grup: `s/d ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
       jenis: "sisa",
       nilai: (r) => sisaSampai(r, bulanRinci[0].subtract(1, "month").format("YYYY-MM")),
     },
     ...bulanRinci.flatMap((b, i) => [
       ...tanggalTagih(b).map((d) => ({
         label: dayjs(d).format("DD-MM"),
+        grup: namaPanjang(b),
         jenis: "tgl",
         d,
         nilai: (r) => r.instalment?.[d]?.total_nominal ?? 0,
       })),
-      { label: `Angs ${namaBulan(b)}`, jenis: "angs", nilai: (r) => r.per_bulan?.[b.format("YYYY-MM")] ?? 0 },
+      { label: "Angs", grup: namaPanjang(b), jenis: "angs", nilai: (r) => r.per_bulan?.[b.format("YYYY-MM")] ?? 0 },
       // Sisa bulan terakhir = kolom utama di kanan (Sisa <bulan lalu>), jadi tidak diulang.
       ...(i < bulanRinci.length - 1
-        ? [{ label: `Sisa ${namaBulan(b)}`, jenis: "sisa", nilai: (r) => sisaSampai(r, b.format("YYYY-MM")) }]
+        ? [{ label: "Sisa", grup: namaPanjang(b), jenis: "sisa", nilai: (r) => sisaSampai(r, b.format("YYYY-MM")) }]
         : []),
     ]),
     {
       label: "MD",
+      grup: "",
       jenis: "koreksi",
       nilai: (r) =>
         (Number(r.pinjaman) || 0) -
@@ -135,6 +140,29 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
       {/* table-fixed + w-full: kalau kolomnya muat, tabel melebar penuh layar; kalau rincian bulan dibuka dan jumlah lebar kolom melebihi layar, tabel ikut melebar dan bisa digeser. */}
       <Table className="w-full text-xs rounded-lg table-fixed">
         <TableHeader className="sticky top-0 left-0 z-10">
+          {rinci && (
+            // Baris grup: nama bulan di atas kolom-kolomnya (rincian & bulan berjalan).
+            <TableRow className="bg-gray-200">
+              <TableHead colSpan={11} />
+              {kolomRinci
+                .reduce((acc, k) => {
+                  const akhir = acc[acc.length - 1];
+                  if (akhir && akhir.grup === k.grup) akhir.span += 1;
+                  else acc.push({ grup: k.grup, span: 1 });
+                  return acc;
+                }, [])
+                .map((g, i) => (
+                  <TableHead key={i} colSpan={g.span} className="text-center border-x border-x-black font-semibold">
+                    {g.grup}
+                  </TableHead>
+                ))}
+              <TableHead />
+              <TableHead colSpan={dateOfWeek.length} className="text-center border-x border-x-black font-semibold">
+                {namaPanjang(dayjs(server_filter?.month))}
+              </TableHead>
+              <TableHead colSpan={3} />
+            </TableRow>
+          )}
           <TableRow className="bg-gray-200">
             <TableHead className="w-10 text-center">No</TableHead>
             <TableHead className="text-center w-28">Tanggal</TableHead>
@@ -153,7 +181,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               kolomRinci.map((k, i) => (
                 <TableHead
                   key={i}
-                  className={`w-16 text-center whitespace-nowrap border-x border-x-black ${WARNA_RINCI[k.jenis]} ${k.jenis === "tgl" ? "" : "font-semibold"}`}
+                  className={`w-16 text-center whitespace-nowrap border-x border-x-black ${k.jenis === "tgl" ? "" : "font-semibold"}`}
                   title={k.jenis === "koreksi" ? "Pemutihan sebelum bulan ini" : undefined}
                 >
                   {k.label}
