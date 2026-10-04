@@ -1314,6 +1314,31 @@ class TransactionLoanController extends Controller
   }
 
 
+  /**
+   * Nomor anggota (promes / buku manual) diisi langsung dari sel buku
+   * angsuran. Melekat ke rekening (manage_customer), sama seperti saat
+   * pengajuan.
+   */
+  public function simpan_nomor_anggota(TransactionLoan $transactionLoan, Request $request)
+  {
+    if (!auth()->user()->hasPermissionTo('can-create')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Mengubah Nomor Anggota');
+    }
+    if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+
+    $val = $request->validate([
+      'nomor_anggota' => ['nullable', 'string', 'max:255'],
+    ]);
+
+    TransactionManageCustomer::whereKey($transactionLoan->transaction_manage_customer_id)
+      ->update(['nomor_anggota' => trim((string) ($val['nomor_anggota'] ?? '')) ?: null]);
+
+    // Tanpa flash message: disimpan sel per sel, popup tiap simpan mengganggu.
+    return redirect()->back();
+  }
+
   public function  white_off_loan(TransactionLoan $transactionLoan, Request $request)
   {
     if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {

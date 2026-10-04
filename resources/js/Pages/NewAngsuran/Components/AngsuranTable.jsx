@@ -4,7 +4,7 @@ import FormatNumbering from "@/Components/shadcn/FormatNumbering";
 import dayjs from "dayjs";
 import { Button } from "@/shadcn/ui/button";
 import Action from "./Action";
-import { usePage } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
@@ -41,8 +41,56 @@ const urutBaris = (a, b) =>
   String(a.nomor_anggota ?? "").localeCompare(String(b.nomor_anggota ?? ""), undefined, { numeric: true }) ||
   String(a.nama ?? "").localeCompare(String(b.nama ?? ""));
 
+/**
+ * Sel nomor anggota yang bisa diisi langsung: klik -> ketik -> Enter / klik
+ * di luar menyimpan, Esc batal. Hanya untuk pemegang can-create.
+ */
+const SelNomorAnggota = ({ r, boleh }) => {
+  const [ubah, setUbah] = useState(false);
+  const [nilai, setNilai] = useState(r.nomor_anggota ?? "");
+  const [simpan, setSimpan] = useState(false);
+  useEffect(() => setNilai(r.nomor_anggota ?? ""), [r.nomor_anggota]);
+
+  const kirim = () => {
+    setUbah(false);
+    if (String(nilai).trim() === String(r.nomor_anggota ?? "")) return;
+    router.post(
+      route("pinjaman.simpan_nomor_anggota", r.id),
+      { nomor_anggota: nilai },
+      { preserveScroll: true, preserveState: true, onStart: () => setSimpan(true), onFinish: () => setSimpan(false) },
+    );
+  };
+
+  return (
+    <TableCell
+      className={`px-1 py-1 text-center tabular-nums ${boleh && !ubah ? "cursor-text hover:bg-sky-50" : ""}`}
+      onClick={() => boleh && !ubah && setUbah(true)}
+    >
+      {ubah ? (
+        <input
+          autoFocus
+          className="w-full h-6 px-1 text-xs text-center border rounded border-sky-400 outline-none"
+          value={nilai}
+          onChange={(e) => setNilai(e.target.value)}
+          onBlur={kirim}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur(); // blur -> kirim, sekali saja
+            if (e.key === "Escape") {
+              setNilai(r.nomor_anggota ?? "");
+              setUbah(false);
+            }
+          }}
+        />
+      ) : (
+        <span className={simpan ? "text-slate-400" : ""}>{nilai || "–"}</span>
+      )}
+    </TableCell>
+  );
+};
+
 const AngsuranTable = ({ dateOfWeek, datas }) => {
-  const { server_filter } = usePage().props;
+  const { server_filter, auth } = usePage().props;
+  const bolehUbah = auth?.permissions?.includes("can-create");
   const [data, setData] = useState([]);
   useEffect(() => setData(datas), [datas]);
 
@@ -225,7 +273,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 text-center tabular-nums">{r.nomor_anggota || "–"}</TableCell>
+                      <SelNomorAnggota r={r} boleh={bolehUbah} />
                       <TableCell className="px-2 py-1.5 font-medium truncate" title={r.nama}>
                         {r.nama}
                       </TableCell>

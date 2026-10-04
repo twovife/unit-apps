@@ -82,6 +82,8 @@ Route::middleware('auth')->group(function () {
       Route::post('/actionloan/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');
       Route::post('/store-pengajuan-lama/{transactionLoan}', "store_pengajuan_lama")->name('store_pengajuan_lama');
       Route::post('/white-off-loan/{transactionLoan}', "white_off_loan")->name('white_off_loan'); //router pemutihan
+      // Isi / ubah nomor anggota langsung dari buku angsuran (sel tabel).
+      Route::post('/nomor-anggota/{transactionLoan}', "simpan_nomor_anggota")->name('simpan_nomor_anggota');
       Route::delete('/actionloan/{transactionLoanInstalment}', "destroy_angsuran")->name('destroy_angsuran');
       Route::delete('/deleteloan/{transactionLoan}', "destroy_loan")->name('destroy_loan');
     });
