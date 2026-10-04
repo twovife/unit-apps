@@ -6,6 +6,7 @@ import { Button } from "@/shadcn/ui/button";
 import Action from "./Action";
 import { router, usePage } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * Buku angsuran bulanan (desktop Angsuran Lancar & Pinjaman Macet).
@@ -99,6 +100,11 @@ const BEKU = {
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
   const { server_filter, auth } = usePage().props;
+  // HP tegak: 4 kolom beku (360px) menghabiskan layar, tidak ada sisa untuk
+  // digeser. Di HP cuma Nama yang beku (dan lebih sempit); No/Tgl/No Ang ikut
+  // tergeser, Nama menempel di kiri begitu terlewati.
+  const isMobile = useIsMobile();
+  const beku = isMobile ? { Nama: "sticky left-0 shadow-[inset_-1px_0_0_#cbd5e1]" } : BEKU;
   const bolehUbah = auth?.permissions?.includes("can-create");
   const [data, setData] = useState([]);
   useEffect(() => setData(datas), [datas]);
@@ -166,7 +172,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     ["No", "w-10"],
     ["Tgl", "w-24"],
     ["No Ang", "w-16"],
-    ["Nama", "w-40"],
+    ["Nama", isMobile ? "w-28" : "w-40"],
     ["NIK", "w-36"],
     ["Note", "w-20"],
     ["Alamat", "w-44"],
@@ -227,7 +233,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               <TableHead
                 key={label}
                 rowSpan={2}
-                className={`${th} ${kelas} align-bottom ${BEKU[label] ? `${BEKU[label]} z-20 bg-slate-100` : ""}`}
+                className={`${th} ${kelas} align-bottom ${beku[label] ? `${beku[label]} z-20 bg-slate-100` : ""}`}
               >
                 {label}
               </TableHead>
@@ -298,10 +304,10 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                   const dipilih = selectedId.includes(r.id);
                   return (
                     <TableRow key={r.id} className={dipilih ? "bg-green-100 hover:bg-green-100" : "bg-white even:bg-slate-50 hover:bg-sky-50"}>
-                      <TableCell className={`px-2 py-1.5 cursor-pointer text-slate-500 ${BEKU.No} bg-inherit z-[1]`} onClick={() => pilih(r.id)}>
+                      <TableCell className={`px-2 py-1.5 cursor-pointer text-slate-500 ${beku.No ?? ""} bg-inherit z-[1]`} onClick={() => pilih(r.id)}>
                         {i + 1}
                       </TableCell>
-                      <TableCell className={`px-2 py-1.5 ${BEKU.Tgl} bg-inherit z-[1]`}>
+                      <TableCell className={`px-2 py-1.5 ${beku.Tgl ?? ""} bg-inherit z-[1]`}>
                         <div className="flex items-center justify-between gap-1">
                           <span className="whitespace-nowrap">{dayjs(r.tanggal_drop).format("DD-MM")}</span>
                           <Button
@@ -315,8 +321,17 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           </Button>
                         </div>
                       </TableCell>
-                      <SelNomorAnggota r={r} boleh={bolehUbah} className={`${BEKU["No Ang"]} bg-inherit z-[1]`} />
-                      <TableCell className={`px-2 py-1.5 font-medium truncate ${BEKU.Nama} bg-inherit z-[1]`} title={r.nama}>
+                      <SelNomorAnggota r={r} boleh={bolehUbah} className={`${beku["No Ang"] ?? ""} bg-inherit z-[1]`} />
+                      <TableCell
+                        className={`px-2 py-1.5 font-medium truncate ${beku.Nama} bg-inherit z-[1] ${isMobile ? "cursor-pointer text-sky-700" : ""}`}
+                        title={r.nama}
+                        // Di HP tombol Pay ikut tergeser keluar layar: ketuk nama untuk bayar.
+                        onClick={() => {
+                          if (!isMobile) return;
+                          setTriggeredId(r.id);
+                          setShow(true);
+                        }}
+                      >
                         {r.nama}
                       </TableCell>
                       <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums text-slate-500">{r.nik}</TableCell>
@@ -359,7 +374,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                 })}
 
                 <TableRow className="font-semibold border-b-2 border-b-slate-300 bg-slate-100 hover:bg-slate-100">
-                  <TableCell colSpan={4} className={`px-2 py-2 text-slate-700 truncate sticky left-0 z-[1] bg-slate-100 shadow-[inset_-1px_0_0_#cbd5e1]`}>
+                  <TableCell colSpan={4} className={`px-2 py-2 text-slate-700 truncate bg-slate-100 ${isMobile ? "" : "sticky left-0 z-[1] shadow-[inset_-1px_0_0_#cbd5e1]"}`}>
                     Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
                   <TableCell colSpan={7} />
