@@ -17,23 +17,48 @@ import { usePage } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
-  // Rincian angsuran per bulan sebelum bulan terpilih (tombol di samping Saldo
-  // Sebelumnya): 4 bulan terakhir + "lebih lama" + koreksi (MD/penyesuaian),
-  // supaya Pinjaman - semua kolom = Saldo Sebelumnya bisa dicek per baris.
+  // Rincian angsuran sebelum bulan terpilih (tombol di samping Saldo
+  // Sebelumnya): "lebih lama", lalu 4 bulan terakhir per tanggal tagih + total
+  // bulannya, lalu koreksi (MD/penyesuaian). Pinjaman - semua kolom total =
+  // Saldo Sebelumnya, jadi selisih bisa dilacak sampai ke tanggalnya.
   const { server_filter } = usePage().props;
   const [rinci, setRinci] = useState(false);
-  const bulanRinci = [4, 3, 2, 1].map((mundur) => dayjs(server_filter?.month).subtract(mundur, "month"));
-  const kunciRinci = bulanRinci.map((b) => b.format("YYYY-MM"));
-  const lebihLama = (r) =>
-    Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k < kunciRinci[0] ? t + v : t), 0);
-  const koreksi = (r) =>
-    (Number(r.pinjaman) || 0) -
-    Object.values(r.per_bulan ?? {}).reduce((t, v) => t + v, 0) -
-    (Number(r.saldo_sebelumnya) || 0);
-  const kolomRinci = (r) => [lebihLama(r), ...kunciRinci.map((k) => r.per_bulan?.[k] ?? 0), koreksi(r)];
-  const jumlahRinci = (rows) =>
-    rows.reduce((acc, r) => kolomRinci(r).map((v, i) => (acc[i] ?? 0) + v), []);
   const namaBulan = (b) => b.toDate().toLocaleDateString("id-ID", { month: "short" });
+  const HARI_KE = { minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6 };
+  const bulanRinci = [4, 3, 2, 1].map((mundur) => dayjs(server_filter?.month).subtract(mundur, "month"));
+  const awalRinci = bulanRinci[0].format("YYYY-MM");
+  const tanggalTagih = (b) => {
+    const hasil = [];
+    for (let d = b.startOf("month"); d.month() === b.month(); d = d.add(1, "day")) {
+      if (d.day() === HARI_KE[String(server_filter?.hari).toLowerCase()]) hasil.push(d.format("YYYY-MM-DD"));
+    }
+    return hasil;
+  };
+  // Kolom: { label, nilai(row), jenis: 'tgl' | 'total' | 'koreksi', d? }
+  const kolomRinci = [
+    {
+      label: `≤ ${namaBulan(bulanRinci[0].subtract(1, "month"))}`,
+      jenis: "total",
+      nilai: (r) => Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k < awalRinci ? t + v : t), 0),
+    },
+    ...bulanRinci.flatMap((b) => [
+      ...tanggalTagih(b).map((d) => ({
+        label: dayjs(d).format("DD-MM"),
+        jenis: "tgl",
+        d,
+        nilai: (r) => r.instalment?.[d]?.total_nominal ?? 0,
+      })),
+      { label: `Σ ${namaBulan(b)}`, jenis: "total", nilai: (r) => r.per_bulan?.[b.format("YYYY-MM")] ?? 0 },
+    ]),
+    {
+      label: "MD/Peny",
+      jenis: "koreksi",
+      nilai: (r) =>
+        (Number(r.pinjaman) || 0) -
+        Object.values(r.per_bulan ?? {}).reduce((t, v) => t + v, 0) -
+        (Number(r.saldo_sebelumnya) || 0),
+    },
+  ];
 
   const [data, setData] = useState([]);
   useEffect(() => {
@@ -100,19 +125,16 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             <TableHead className="text-center border-x border-x-black">
               Pinjaman
             </TableHead>
-            {rinci && (
-              <>
-                <TableHead className="text-center bg-blue-50">≤ {namaBulan(bulanRinci[0].subtract(1, "month"))}</TableHead>
-                {bulanRinci.map((b) => (
-                  <TableHead key={b.format("YYYY-MM")} className="text-center bg-blue-50">
-                    {namaBulan(b)}
-                  </TableHead>
-                ))}
-                <TableHead className="text-center bg-blue-50" title="Pemutihan & penyesuaian sebelum bulan ini">
-                  MD/Peny
+            {rinci &&
+              kolomRinci.map((k, i) => (
+                <TableHead
+                  key={i}
+                  className={`text-center whitespace-nowrap ${k.jenis === "tgl" ? "bg-blue-50 font-normal" : "bg-blue-100 font-semibold"}`}
+                  title={k.jenis === "koreksi" ? "Pemutihan & penyesuaian sebelum bulan ini" : undefined}
+                >
+                  {k.label}
                 </TableHead>
-              </>
-            )}
+              ))}
             <TableHead className="text-center border-x border-x-black">
               <div className="flex items-center justify-center gap-1">
                 Saldo Sebelumnya
@@ -150,7 +172,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             data.map((row, i) => (
               <React.Fragment key={i}>
                 <TableRow>
-                  <TableCell colSpan={17 + (dateOfWeek.length ?? 0) + (rinci ? 6 : 0)}>
+                  <TableCell colSpan={17 + (dateOfWeek.length ?? 0) + (rinci ? kolomRinci.length : 0)}>
                     {row.month}
                   </TableCell>
                 </TableRow>
@@ -235,11 +257,20 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       <FormatNumbering ribuan value={subrow.pinjaman} />
                     </TableCell>
                     {rinci &&
-                      kolomRinci(subrow).map((v, k) => (
-                        <TableCell key={k} className={`bg-blue-50 ${k === 5 && v ? "text-red-600 font-semibold" : ""}`}>
-                          {v ? <FormatNumbering ribuan value={v} /> : <div className="text-center text-gray-300">–</div>}
-                        </TableCell>
-                      ))}
+                      kolomRinci.map((k, i) => {
+                        const v = k.nilai(subrow);
+                        const katrol = k.jenis === "tgl" && subrow.instalment?.[k.d]?.is_active;
+                        return (
+                          <TableCell
+                            key={i}
+                            className={`${k.jenis === "tgl" ? "bg-blue-50" : "bg-blue-100 font-semibold"} ${
+                              (k.jenis === "koreksi" && v) || katrol ? "text-red-600 font-semibold" : ""
+                            }`}
+                          >
+                            {v ? <FormatNumbering ribuan value={v} /> : <div className="text-center text-gray-300">–</div>}
+                          </TableCell>
+                        );
+                      })}
                     <TableCell
                       className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
@@ -304,9 +335,9 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     />
                   </TableCell>
                   {rinci &&
-                    jumlahRinci(row.data).map((v, k) => (
-                      <TableCell key={k} className="bg-blue-50">
-                        <FormatNumbering ribuan value={v} />
+                    kolomRinci.map((k, i) => (
+                      <TableCell key={i} className={k.jenis === "tgl" ? "bg-blue-50" : "bg-blue-100"}>
+                        <FormatNumbering ribuan value={row.data.reduce((t, r) => t + k.nilai(r), 0)} />
                       </TableCell>
                     ))}
                   <TableCell
