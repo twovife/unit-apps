@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/shadcn/ui/button';
 import CurrencyInput from 'react-currency-input-field';
 import dayjs from 'dayjs';
+import { ArrowLeft } from 'lucide-react';
 
 const rp = (n) => (n === null || n === undefined ? '—' : new Intl.NumberFormat('id-ID').format(n));
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
@@ -84,6 +85,12 @@ const NasabahMacet = ({ datas = [], ringkasan, jenis = [], wajib_persetujuan = [
       <div className="p-4 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
+            <Link
+              href={route('migrasi.kesiapan')}
+              className="inline-flex items-center gap-1 mb-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Kembali ke Kesiapan Migrasi
+            </Link>
             <h1 className="text-lg font-semibold text-slate-900">Nasabah Macet — {f.unit}</h1>
             <p className="max-w-3xl mt-1 text-sm text-slate-600">
               Pinjaman ember ML ({dayjs(f.periode).format('MMMM YYYY')}) yang belum lunas. Ketik <b>sisa saldo
