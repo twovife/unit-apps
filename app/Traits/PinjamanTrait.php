@@ -432,6 +432,12 @@ trait PinjamanTrait
           'pemutihanThisMonth' => $pemutihan_this_month,
           'x_angs' => $item->loan_instalment->count(),
           'saldo_sebelumnya' => $saldoAwalF8[$item->id]['saldo'],
+          // Angsuran per bulan SEBELUM bulan terpilih (Y-m => total) - dibuka di
+          // tabel lewat tombol rinci di samping Saldo Sebelumnya, untuk melacak selisih.
+          'per_bulan' => $item->loan_instalment
+            ->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))
+            ->groupBy(fn($i) => Carbon::parse($i->transaction_date)->format('Y-m'))
+            ->map(fn($g) => (int) $g->sum('nominal')),
           'saldo' => $saldo,
           'notes' => $item->notes
         ];
@@ -493,6 +499,12 @@ trait PinjamanTrait
             'pemutihanThisMonth' => $pemutihan_this_month,
             'x_angs' => $item->loan_instalment->count(),
             'saldo_sebelumnya' => $saldoAwalF8[$item->id]['saldo'],
+            // Angsuran per bulan SEBELUM bulan terpilih (Y-m => total) - dibuka di
+            // tabel lewat tombol rinci di samping Saldo Sebelumnya, untuk melacak selisih.
+            'per_bulan' => $item->loan_instalment
+              ->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))
+              ->groupBy(fn($i) => Carbon::parse($i->transaction_date)->format('Y-m'))
+              ->map(fn($g) => (int) $g->sum('nominal')),
             'saldo' => $saldo,
             'notes' => $item->notes
           ];
@@ -1092,6 +1104,12 @@ trait PinjamanTrait
             'x_angs' => $item->loan_instalment->count(),
             // Kolom buku angsuran (sama dengan Angsuran Lancar), semua F8:
             'saldo_sebelumnya' => $awal['saldo'],
+            // Angsuran per bulan SEBELUM bulan terpilih (Y-m => total) - dibuka di
+            // tabel lewat tombol rinci di samping Saldo Sebelumnya, untuk melacak selisih.
+            'per_bulan' => $item->loan_instalment
+              ->where('transaction_date', '<', $transaction_start_date->format('Y-m-d'))
+              ->groupBy(fn($i) => Carbon::parse($i->transaction_date)->format('Y-m'))
+              ->map(fn($g) => (int) $g->sum('nominal')),
             'angsuran' => $akhir['angsuran'] - $awal['angsuran'],
             'pemutihanThisMonth' => $akhir['pemutihan'] - $awal['pemutihan'],
             'saldo' => $akhir['saldo'],

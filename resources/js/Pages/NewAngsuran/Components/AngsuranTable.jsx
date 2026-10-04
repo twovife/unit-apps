@@ -13,8 +13,27 @@ import dayjs from "dayjs";
 import { Button } from "@/shadcn/ui/button";
 import Action from "./Action";
 import { Badge } from "@/shadcn/ui/badge";
+import { usePage } from "@inertiajs/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
+  // Rincian angsuran per bulan sebelum bulan terpilih (tombol di samping Saldo
+  // Sebelumnya): 4 bulan terakhir + "lebih lama" + koreksi (MD/penyesuaian),
+  // supaya Pinjaman - semua kolom = Saldo Sebelumnya bisa dicek per baris.
+  const { server_filter } = usePage().props;
+  const [rinci, setRinci] = useState(false);
+  const bulanRinci = [4, 3, 2, 1].map((mundur) => dayjs(server_filter?.month).subtract(mundur, "month"));
+  const kunciRinci = bulanRinci.map((b) => b.format("YYYY-MM"));
+  const lebihLama = (r) =>
+    Object.entries(r.per_bulan ?? {}).reduce((t, [k, v]) => (k < kunciRinci[0] ? t + v : t), 0);
+  const koreksi = (r) =>
+    (Number(r.pinjaman) || 0) -
+    Object.values(r.per_bulan ?? {}).reduce((t, v) => t + v, 0) -
+    (Number(r.saldo_sebelumnya) || 0);
+  const kolomRinci = (r) => [lebihLama(r), ...kunciRinci.map((k) => r.per_bulan?.[k] ?? 0), koreksi(r)];
+  const jumlahRinci = (rows) =>
+    rows.reduce((acc, r) => kolomRinci(r).map((v, i) => (acc[i] ?? 0) + v), []);
+  const namaBulan = (b) => b.toDate().toLocaleDateString("id-ID", { month: "short" });
 
   const [data, setData] = useState([]);
   useEffect(() => {
@@ -81,8 +100,31 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             <TableHead className="text-center border-x border-x-black">
               Pinjaman
             </TableHead>
+            {rinci && (
+              <>
+                <TableHead className="text-center bg-blue-50">≤ {namaBulan(bulanRinci[0].subtract(1, "month"))}</TableHead>
+                {bulanRinci.map((b) => (
+                  <TableHead key={b.format("YYYY-MM")} className="text-center bg-blue-50">
+                    {namaBulan(b)}
+                  </TableHead>
+                ))}
+                <TableHead className="text-center bg-blue-50" title="Pemutihan & penyesuaian sebelum bulan ini">
+                  MD/Peny
+                </TableHead>
+              </>
+            )}
             <TableHead className="text-center border-x border-x-black">
-              Saldo Sebelumnya
+              <div className="flex items-center justify-center gap-1">
+                Saldo Sebelumnya
+                <button
+                  type="button"
+                  className="p-0.5 rounded hover:bg-gray-300"
+                  title={rinci ? "Tutup rincian per bulan" : "Rincian angsuran per bulan"}
+                  onClick={() => setRinci((v) => !v)}
+                >
+                  {rinci ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </TableHead>
             {dateOfWeek.map((day, i) => (
               <TableHead
@@ -108,7 +150,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             data.map((row, i) => (
               <React.Fragment key={i}>
                 <TableRow>
-                  <TableCell colSpan={17 + (dateOfWeek.length ?? 0)}>
+                  <TableCell colSpan={17 + (dateOfWeek.length ?? 0) + (rinci ? 6 : 0)}>
                     {row.month}
                   </TableCell>
                 </TableRow>
@@ -192,6 +234,12 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                     >
                       <FormatNumbering ribuan value={subrow.pinjaman} />
                     </TableCell>
+                    {rinci &&
+                      kolomRinci(subrow).map((v, k) => (
+                        <TableCell key={k} className={`bg-blue-50 ${k === 5 && v ? "text-red-600 font-semibold" : ""}`}>
+                          {v ? <FormatNumbering ribuan value={v} /> : <div className="text-center text-gray-300">–</div>}
+                        </TableCell>
+                      ))}
                     <TableCell
                       className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black ${
                         selectedId.includes(subrow.id)
@@ -255,6 +303,12 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                       value={calculateTotals(row.data, "pinjaman")}
                     />
                   </TableCell>
+                  {rinci &&
+                    jumlahRinci(row.data).map((v, k) => (
+                      <TableCell key={k} className="bg-blue-50">
+                        <FormatNumbering ribuan value={v} />
+                      </TableCell>
+                    ))}
                   <TableCell
                     className={`bg-blue-300 hover:bg-blue-100 border-x border-x-black`}
                   >
