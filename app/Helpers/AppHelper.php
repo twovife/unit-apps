@@ -106,6 +106,18 @@ class AppHelper
     return strtolower(Carbon::parse($date)->locale('id')->dayName);
   }
 
+  /**
+   * Hari tagih buku yang dibuka: pilihan user, atau hari ini. Minggu tidak
+   * punya buku tagih, jadi diarahkan ke Sabtu (buku terakhir) - tanpa ini
+   * layar dibuka hari Minggu tampil kosong.
+   */
+  public static function hariTagih(?string $hari = null): string
+  {
+    $hari = strtolower($hari ?: self::dateName(Carbon::now()));
+
+    return $hari === 'minggu' ? 'sabtu' : $hari;
+  }
+
 
   // 1
   public static function callUnknownNik($request, $batch = false)

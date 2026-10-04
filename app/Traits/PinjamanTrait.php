@@ -31,7 +31,7 @@ trait PinjamanTrait
     $startOfMonth = Carbon::parse($transaction_date)->copy()->startOfMonth();
     $endOfMonth = Carbon::parse($transaction_date)->copy()->endOfMonth();
 
-    $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
+    $hari = AppHelper::hariTagih($request->hari);
 
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
 
@@ -280,7 +280,7 @@ trait PinjamanTrait
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
-    $hari = $request->hari ?? AppHelper::dateName($now->format('Y-m-d'));
+    $hari = AppHelper::hariTagih($request->hari);
 
     $tanggalSeleksi  = AppHelper::getStortingShowDate($hari);
 
@@ -580,7 +580,7 @@ trait PinjamanTrait
     $transaction_start_date = $transaction_date->copy()->startOfMonth();
     $begin_transaction = $transaction_date->copy()->startOfMonth()->subMonthNoOverflow(4);
 
-    $hari = $request->hari ?? AppHelper::dateName($now->format('Y-m-d'));
+    $hari = AppHelper::hariTagih($request->hari);
 
     // Tanggal terpilih dipakai LANGSUNG — tidak lagi diturunkan dari nama hari.
     $tanggalSeleksi = $date;
@@ -859,7 +859,7 @@ trait PinjamanTrait
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
 
-    $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
+    $hari = AppHelper::hariTagih($request->hari);
     // dd($hari);
 
 
@@ -994,7 +994,7 @@ trait PinjamanTrait
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
 
-    $hari = $request->hari ?? AppHelper::dateName(Carbon::now()->format('Y-m-d'));
+    $hari = AppHelper::hariTagih($request->hari);
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
     $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()?->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
