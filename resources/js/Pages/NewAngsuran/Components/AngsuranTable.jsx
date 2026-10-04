@@ -45,7 +45,7 @@ const urutBaris = (a, b) =>
  * Sel nomor anggota yang bisa diisi langsung: klik -> ketik -> Enter / klik
  * di luar menyimpan, Esc batal. Hanya untuk pemegang can-create.
  */
-const SelNomorAnggota = ({ r, boleh }) => {
+const SelNomorAnggota = ({ r, boleh, className = "" }) => {
   const [ubah, setUbah] = useState(false);
   const [nilai, setNilai] = useState(r.nomor_anggota ?? "");
   const [simpan, setSimpan] = useState(false);
@@ -63,7 +63,7 @@ const SelNomorAnggota = ({ r, boleh }) => {
 
   return (
     <TableCell
-      className={`px-1 py-1 text-center tabular-nums ${boleh && !ubah ? "cursor-text hover:bg-sky-50" : ""}`}
+      className={`px-1 py-1 text-center tabular-nums ${className} ${boleh && !ubah ? "cursor-text hover:bg-sky-50" : ""}`}
       onClick={() => boleh && !ubah && setUbah(true)}
     >
       {ubah ? (
@@ -86,6 +86,15 @@ const SelNomorAnggota = ({ r, boleh }) => {
       )}
     </TableCell>
   );
+};
+
+// Kolom yang dibekukan saat tabel digeser ke samping, dengan posisi kirinya
+// (jumlah lebar kolom sebelumnya). Nama diberi bayangan sebagai batas.
+const BEKU = {
+  No: "sticky left-0",
+  Tgl: "sticky left-10",
+  "No Ang": "sticky left-[136px]",
+  Nama: "sticky left-[200px] shadow-[inset_-1px_0_0_#cbd5e1]",
 };
 
 const AngsuranTable = ({ dateOfWeek, datas }) => {
@@ -192,7 +201,11 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
         <TableHeader className="sticky top-0 z-10 bg-slate-100">
           <TableRow className="border-b-0 hover:bg-transparent">
             {KOLOM_TETAP.map(([label, kelas]) => (
-              <TableHead key={label} rowSpan={2} className={`${th} ${kelas} align-bottom`}>
+              <TableHead
+                key={label}
+                rowSpan={2}
+                className={`${th} ${kelas} align-bottom ${BEKU[label] ? `${BEKU[label]} z-20 bg-slate-100` : ""}`}
+              >
                 {label}
               </TableHead>
             ))}
@@ -248,18 +261,18 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
               <React.Fragment key={g}>
                 <TableRow className="bg-slate-200/70 hover:bg-slate-200/70">
                   <TableCell colSpan={totalKolom} className="px-2 py-1.5 text-xs font-semibold text-slate-700">
-                    {grup.month}
+                    <span className="sticky left-2">{grup.month}</span>
                   </TableCell>
                 </TableRow>
 
                 {[...grup.data].sort(urutBaris).map((r, i) => {
                   const dipilih = selectedId.includes(r.id);
                   return (
-                    <TableRow key={r.id} className={dipilih ? "bg-green-100 hover:bg-green-100" : "even:bg-slate-50/60"}>
-                      <TableCell className="px-2 py-1.5 cursor-pointer text-slate-500" onClick={() => pilih(r.id)}>
+                    <TableRow key={r.id} className={dipilih ? "bg-green-100 hover:bg-green-100" : "bg-white even:bg-slate-50 hover:bg-sky-50"}>
+                      <TableCell className={`px-2 py-1.5 cursor-pointer text-slate-500 ${BEKU.No} bg-inherit z-[1]`} onClick={() => pilih(r.id)}>
                         {i + 1}
                       </TableCell>
-                      <TableCell className="px-2 py-1.5">
+                      <TableCell className={`px-2 py-1.5 ${BEKU.Tgl} bg-inherit z-[1]`}>
                         <div className="flex items-center justify-between gap-1">
                           <span className="whitespace-nowrap">{dayjs(r.tanggal_drop).format("DD-MM")}</span>
                           <Button
@@ -273,8 +286,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           </Button>
                         </div>
                       </TableCell>
-                      <SelNomorAnggota r={r} boleh={bolehUbah} />
-                      <TableCell className="px-2 py-1.5 font-medium truncate" title={r.nama}>
+                      <SelNomorAnggota r={r} boleh={bolehUbah} className={`${BEKU["No Ang"]} bg-inherit z-[1]`} />
+                      <TableCell className={`px-2 py-1.5 font-medium truncate ${BEKU.Nama} bg-inherit z-[1]`} title={r.nama}>
                         {r.nama}
                       </TableCell>
                       <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums text-slate-500">{r.nik}</TableCell>
@@ -317,9 +330,10 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                 })}
 
                 <TableRow className="font-semibold border-b-2 border-b-slate-300 bg-slate-100 hover:bg-slate-100">
-                  <TableCell colSpan={11} className="px-2 py-2 text-slate-700">
+                  <TableCell colSpan={4} className={`px-2 py-2 text-slate-700 truncate sticky left-0 z-[1] bg-slate-100 shadow-[inset_-1px_0_0_#cbd5e1]`}>
                     Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
+                  <TableCell colSpan={7} />
                   <Angka v={grup.data.reduce((t, r) => t + Number(r.drop || 0), 0)} />
                   <Angka v={grup.data.reduce((t, r) => t + Number(r.pinjaman || 0), 0)} />
                   {kolomBlok.map((k, j) =>
