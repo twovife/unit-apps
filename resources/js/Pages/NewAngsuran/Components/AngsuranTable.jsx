@@ -113,7 +113,8 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
 
   return (
     <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
-      <Table className="text-xs rounded-lg table-fixed w-max">
+      {/* table-fixed + w-full: kalau kolomnya muat, tabel melebar penuh layar; kalau rincian bulan dibuka dan jumlah lebar kolom melebihi layar, tabel ikut melebar dan bisa digeser. */}
+      <Table className="w-full text-xs rounded-lg table-fixed">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
             <TableHead className="w-10 text-center">No</TableHead>
