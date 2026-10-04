@@ -108,6 +108,13 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     ["Pinjaman", "w-20 text-right"],
   ];
   const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1;
+  // Lebar minimum = jumlah lebar kolom (kelas w-N = N x 4px). Kalau layar
+  // lebih lebar, tabel mengisi penuh; kalau tidak muat, tabel tetap selebar
+  // ini dan bisa digeser ke samping - kolom tidak pernah dipepetkan.
+  const px = (kelas) => Number(/w-(\d+)/.exec(kelas)?.[1] ?? 0) * 4;
+  const LEBAR_BLOK = { sisa: 80, tgl: 56, angs: 80, md: 56 };
+  const lebarMin =
+    KOLOM_TETAP.reduce((t, [, kelas]) => t + px(kelas), 0) + kolomBlok.reduce((t, k) => t + LEBAR_BLOK[k.jenis], 0) + 80;
 
   const [triggeredId, setTriggeredId] = useState(null);
   const [show, setShow] = useState(false);
@@ -120,7 +127,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
   return (
     <div className="relative overflow-auto border rounded-lg h-[60vh] lg:h-[85vh] scrollbar-thin">
       {/* table-fixed + w-full: muat = penuh layar; bulan lalu dibuka = melebar & bisa digeser. */}
-      <Table className="w-full text-xs table-fixed">
+      <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
         <TableHeader className="sticky top-0 z-10 bg-slate-100">
           <TableRow className="border-b-0 hover:bg-transparent">
             {KOLOM_TETAP.map(([label, kelas]) => (
