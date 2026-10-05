@@ -57,6 +57,11 @@ const SidebarSubMenuSection = ({ icon: Icon, title, items }) => {
             <SidebarMenuSubButton asChild isActive={subItem.active}>
               <Link href={subItem.link} className="font-medium text-xs py-1.5">
                 {subItem.title}
+                {subItem.fix && (
+                  <span className="ml-auto rounded px-1 py-px text-[10px] font-semibold leading-none bg-emerald-100 text-emerald-700">
+                    FIX
+                  </span>
+                )}
               </Link>
             </SidebarMenuSubButton>
           </SidebarMenuSubItem>
@@ -289,18 +294,21 @@ export default function AppSidebar({ ...props }) {
                         title: 'Dashboard Migrasi',
                         link: route('migrasi.dashboard'),
                         active: route().current('migrasi.dashboard'),
+                        fix: true,
                       },
                       {
                         id: 0,
                         title: 'Kesiapan Migrasi',
                         link: route('migrasi.kesiapan'),
                         active: route().current('migrasi.kesiapan'),
+                        fix: true,
                       },
                       {
                         id: 100,
                         title: 'Nasabah Macet',
                         link: route('migrasi.nasabah_macet'),
                         active: route().current('migrasi.nasabah_macet'),
+                        fix: true,
                       },
                     ]
                   : []),
