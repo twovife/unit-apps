@@ -167,6 +167,45 @@ class Gembok
             && $user->hasPermissionTo('can-edit');
     }
 
+    /**
+     * Kunci borongan saat migrasi: semua baris harian kelompok-kelompok ini
+     * s/d $sampai yang belum terkunci diberi cek kepala + kunci kasir atas nama
+     * $employeeId, masing-masing dengan jejak.
+     *
+     * Syarat bolehKunci() SENGAJA dilewati: hari-hari ini sudah ditutup di alur
+     * lama dan dicocokkan dengan buku sebelum migrasi; angkanya baru saja
+     * dihitung ulang dari sumber oleh DaftarMigrasi.
+     *
+     * @return int jumlah baris yang dikunci
+     */
+    public static function kunciMigrasi(array $groupingIds, $dari, $sampai, int $employeeId): int
+    {
+        $baris = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+            ->whereBetween('date', [
+                \Carbon\Carbon::parse($dari)->toDateString(),
+                \Carbon\Carbon::parse($sampai)->toDateString(),
+            ])
+            ->whereNull('kasir_lock_at')
+            ->get();
+
+        $alasan = 'Kunci otomatis saat migrasi s/d ' . \Carbon\Carbon::parse($sampai)->toDateString();
+
+        foreach ($baris as $b) {
+            $tunai = (int) $b->tunai;
+
+            $b->update([
+                'kepala_approval_at' => $b->kepala_approval_at ?? now(),
+                'kepala_approval_user' => $b->kepala_approval_user ?? $employeeId,
+                'kasir_lock_at' => now(),
+                'kasir_lock_user' => $employeeId,
+            ]);
+
+            self::catat($b, TransactionLockHistory::AKSI_KUNCI, $employeeId, $tunai, $tunai, $alasan);
+        }
+
+        return $baris->count();
+    }
+
     private static function catat(
         TransactionDailyClosing $baris,
         string $aksi,

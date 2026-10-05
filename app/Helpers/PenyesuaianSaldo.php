@@ -183,6 +183,12 @@ class PenyesuaianSaldo
             ->where('id', $loan->transaction_loan_officer_grouping_id)
             ->value('branch_id');
 
+        // Sesudah migrasi saldo awal sudah dicocokkan dengan buku dan dikunci;
+        // penyesuaian baru akan menggeser bulan yang sudah ditutup.
+        if (AgregasiScope::sudahMigrasi($branchId)) {
+            throw new \RuntimeException('Kantor ini sudah migrasi — penyesuaian saldo tidak lagi diterima.');
+        }
+
         if (!AgregasiScope::bolehDisesuaikan($branchId, $loan->drop_date)) {
             throw new \RuntimeException(
                 'Pinjaman ini di luar jendela penyesuaian (harus ML lama, drop sebelum '
@@ -239,6 +245,14 @@ class PenyesuaianSaldo
 
         if ($adj->approved_at !== null) {
             throw new \RuntimeException('Sudah disetujui.');
+        }
+
+        $branchId = DB::table('transaction_loan_officer_groupings')
+            ->where('id', $adj->transaction_loan_officer_grouping_id)
+            ->value('branch_id');
+
+        if (AgregasiScope::sudahMigrasi($branchId)) {
+            throw new \RuntimeException('Kantor ini sudah migrasi — penyesuaian tidak bisa disetujui lagi.');
         }
 
         if ((int) $adj->user_input === (int) $user->employee->id) {

@@ -52,15 +52,22 @@ class DaftarMigrasi
     }
 
     /**
-     * Daftarkan satu kantor ke alur agregasi baru mulai $periode (tanggal 1):
-     * isi mulai_pendataan_baru lalu bangkitkan baris harian sebulan.
+     * Daftarkan satu kantor ke alur agregasi baru mulai $periode (tanggal 1).
      *
      * Dipicu MANUAL dari layar Kesiapan Migrasi (superuser) sesudah bucket
      * dicek - pendaftaran otomatis saat tutup buku dicabut 2026-10-04.
      *
+     * Satu transaksi:
+     * 1. isi mulai_pendataan_baru;
+     * 2. bangkitkan & hitung baris harian SETIAP bulan dari $periode s/d bulan
+     *    berjalan (migrasi bisa dilakukan sebulan sesudahnya);
+     * 3. kunci otomatis s/d $kunciSampai (opsional) - hari sesudahnya dikunci
+     *    manual per tanggal lewat Closing Harian;
+     * 4. susun baris bulanan tiap bulan itu (saldo awal rekap).
+     *
      * @return bool false kalau kantor tidak ada atau sudah terdaftar
      */
-    public static function daftarkan(int $branchId, $periodeMulai): bool
+    public static function daftarkan(int $branchId, $periodeMulai, $kunciSampai = null, ?int $employeeId = null): bool
     {
         $periode = Carbon::parse($periodeMulai)->startOfMonth();
         $branch = Branch::find($branchId);
@@ -69,11 +76,35 @@ class DaftarMigrasi
             return false;
         }
 
-        DB::transaction(function () use ($branch, $periode) {
+        if ($kunciSampai && !$employeeId) {
+            throw new \RuntimeException('Kunci otomatis butuh akun yang terhubung ke data karyawan.');
+        }
+
+        $bulan = [];
+        for ($b = $periode->copy(); $b->lte(Carbon::now()->startOfMonth()) || empty($bulan); $b->addMonthNoOverflow()) {
+            $bulan[] = $b->copy();
+        }
+
+        $kunci = 0;
+
+        DB::transaction(function () use ($branch, $periode, $bulan, $kunciSampai, $employeeId, &$kunci) {
             DB::table('branches')->where('id', $branch->id)
                 ->update(['mulai_pendataan_baru' => $periode->toDateString()]);
+            AgregasiScope::lupakanCache();
 
-            self::siapkanBaris($branch->id, $periode);
+            foreach ($bulan as $b) {
+                self::siapkanBaris($branch->id, $b);
+            }
+
+            $ids = TransactionLoanOfficerGrouping::where('branch_id', $branch->id)->pluck('id')->all();
+
+            if ($kunciSampai) {
+                $kunci = Gembok::kunciMigrasi($ids, $periode, $kunciSampai, $employeeId);
+            }
+
+            foreach ($bulan as $b) {
+                TutupBulanan::susun($ids, $b);
+            }
         });
 
         AgregasiScope::lupakanCache();
@@ -82,6 +113,8 @@ class DaftarMigrasi
             'branch_id' => $branch->id,
             'unit' => $branch->unit,
             'mulai' => $periode->toDateString(),
+            'kunci_sampai' => $kunciSampai ? Carbon::parse($kunciSampai)->toDateString() : null,
+            'baris_dikunci' => $kunci,
             'oleh' => auth()->id(),
         ]);
 

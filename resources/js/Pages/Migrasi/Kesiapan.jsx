@@ -4,6 +4,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import { Input } from '@/shadcn/ui/input';
 import dayjs from 'dayjs';
+import ModalMigrasi from './Components/ModalMigrasi';
 
 const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
@@ -41,6 +42,7 @@ const GRUP = [
 
 const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
   const [hanyaBelum, setHanyaBelum] = useState(false);
+  const [modal, setModal] = useState(false);
   const baris = hanyaBelum ? datas.filter((b) => !b.siap) : datas;
   const lancarSistem = (s) => s.month1 + s.month2 + s.ccm;
   // Data real = posisi hari terakhir bulan sebelumnya; bucket = baris sirkulasi tanggal 1 periode.
@@ -106,7 +108,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
         </div>
 
         {/* Tombol migrasi: hanya kalau belum migrasi dan SEMUA kelompok x hari siap.
-            Server mengecek ulang sebelum menulis. */}
+            Modal memeriksa anomali & tanggal kunci; server mengecek ulang semuanya. */}
         {server_filter?.sudah_migrasi ? (
           <div className="p-3 text-sm border rounded-lg border-sky-200 bg-sky-50 text-sky-900">
             <b>{server_filter?.unit}</b> sudah migrasi ke pendataan baru mulai{' '}
@@ -123,14 +125,11 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
               <button
                 type="button"
                 className="px-4 py-2 text-sm font-semibold text-white rounded-md bg-emerald-600 hover:bg-emerald-700"
-                onClick={() =>
-                  confirm(
-                    `Migrasikan ${server_filter?.unit} ke pendataan baru mulai ${dayjs(server_filter?.periode).format('DD MMMM YYYY')}?`,
-                  ) && router.post(route('migrasi.jalankan_migrasi'), { periode: server_filter?.periode }, { preserveScroll: true })
-                }
+                onClick={() => setModal(true)}
               >
                 Migrasikan kantor ini
               </button>
+              <ModalMigrasi open={modal} onOpenChange={setModal} unit={server_filter?.unit} periode={server_filter?.periode} />
             </div>
           )
         )}

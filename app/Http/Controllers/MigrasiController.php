@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\DaftarMigrasi;
+use App\Helpers\PemeriksaanMigrasi;
 use App\Helpers\Ember;
 use App\Helpers\HitungAgregat;
 use App\Helpers\PemeriksaAgregat;
@@ -601,18 +602,70 @@ class MigrasiController extends Controller
             return back()->withErrors('Kantor ini sudah migrasi.');
         }
 
+        $val = $request->validate([
+            'kunci_sampai' => ['nullable', 'date', 'after_or_equal:' . $periode->toDateString(), 'before:today'],
+        ]);
+
         $baris = $this->barisKesiapan($scope->branch_id, $periode);
         if ($baris->isEmpty() || $baris->contains('siap', false)) {
             return back()->withErrors('Belum semua kelompok x hari siap ('
                 . $baris->where('siap', true)->count() . '/' . $baris->count() . ').');
         }
 
-        if (!DaftarMigrasi::daftarkan($scope->branch_id, $periode)) {
+        $menahan = PemeriksaanMigrasi::jumlahMenahan(PemeriksaanMigrasi::anomali($scope->branch_id, $periode));
+        if ($menahan > 0) {
+            return back()->withErrors("Masih ada {$menahan} anomali yang menahan migrasi.");
+        }
+
+        try {
+            $berhasil = DaftarMigrasi::daftarkan(
+                $scope->branch_id,
+                $periode,
+                $val['kunci_sampai'] ?? null,
+                auth()->user()->employee?->id
+            );
+        } catch (\Throwable $e) {
+            return back()->withErrors('Migrasi gagal: ' . $e->getMessage());
+        }
+
+        if (!$berhasil) {
             return back()->withErrors('Kantor tidak bisa didaftarkan.');
         }
         \Illuminate\Support\Facades\Cache::forget("kesiapan_migrasi:{$scope->branch_id}:{$periode->toDateString()}");
 
-        return back()->with('message', 'Kantor dimigrasikan ke pendataan baru mulai ' . $periode->translatedFormat('j F Y') . '.');
+        return back()->with('message', 'Kantor dimigrasikan ke pendataan baru mulai ' . $periode->translatedFormat('j F Y')
+            . (!empty($val['kunci_sampai']) ? ', terkunci s/d ' . Carbon::parse($val['kunci_sampai'])->translatedFormat('j F Y') : '') . '.');
+    }
+
+    /**
+     * Isi modal Migrasikan (JSON, superuser): anomali, usulan tanggal kunci,
+     * dan - kalau ?sampai diisi - pratinjau angka harian yang akan dikunci.
+     */
+    public function periksaMigrasi(Request $request)
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            abort(403, 'Khusus superuser.');
+        }
+
+        $scope = AuthScope::resolve();
+        $periode = Carbon::parse($request->input('periode', AgregasiScope::RENCANA_MULAI))->startOfMonth();
+
+        if ($request->filled('sampai')) {
+            $sampai = Carbon::parse($request->input('sampai'));
+            if ($sampai->lt($periode) || $sampai->gte(Carbon::today())) {
+                abort(422, 'Tanggal kunci harus antara awal bulan migrasi dan kemarin.');
+            }
+
+            return response()->json([
+                'pratinjau' => PemeriksaanMigrasi::pratinjau($scope->branch_id, $periode, $sampai),
+            ]);
+        }
+
+        return response()->json([
+            'anomali' => PemeriksaanMigrasi::anomali($scope->branch_id, $periode),
+            'usulan_kunci' => PemeriksaanMigrasi::usulanKunci($scope->branch_id, $periode),
+            'kemarin' => Carbon::yesterday()->toDateString(),
+        ]);
     }
 
     /**

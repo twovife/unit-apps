@@ -124,6 +124,9 @@ Route::middleware('auth')->group(function () {
     // Migrasikan kantor aktif ke pendataan baru (superuser, semua baris harus siap).
     Route::post('/kesiapan/migrasi', [\App\Http\Controllers\MigrasiController::class, 'jalankanMigrasi'])
       ->name('jalankan_migrasi');
+    // Isi modal Migrasikan: anomali, usulan tanggal kunci, pratinjau (JSON).
+    Route::get('/kesiapan/periksa', [\App\Http\Controllers\MigrasiController::class, 'periksaMigrasi'])
+      ->name('periksa_migrasi');
     Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
       ->name('pemeriksaan');
     Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])
