@@ -68,8 +68,14 @@ class ClosingBulananController extends Controller
 
         $user = auth()->user();
 
+        // Tanda "diperbarui sesudah diteken": jejak 'perbarui' terakhir per baris.
+        $perbarui = \App\Models\TransactionLockHistory::whereIn('transaction_monthly_closing_id', $baris->pluck('id'))
+            ->where('aksi', \App\Models\TransactionLockHistory::AKSI_PERBARUI)
+            ->orderBy('id')->get(['transaction_monthly_closing_id', 'alasan', 'created_at'])
+            ->keyBy('transaction_monthly_closing_id');
+
         return Inertia::render('Closing/Bulanan', [
-            'datas' => $baris->map(function (TransactionMonthlyClosing $b) {
+            'datas' => $baris->map(function (TransactionMonthlyClosing $b) use ($perbarui) {
                 return [
                     'id' => $b->id,
                     'kelompok' => $b->loan_officer_grouping->kelompok ?? null,
@@ -91,6 +97,8 @@ class ClosingBulananController extends Controller
                     'terkunci' => $b->terkunci(),
                     'sudah_serah_terima' => $b->sudahDiserahTerimakan(),
                     'halangan' => GembokBulanan::bolehKunci($b)['alasan'],
+                    'diperbarui_at' => $perbarui->get($b->id)?->created_at?->toDateTimeString(),
+                    'diperbarui_alasan' => $perbarui->get($b->id)?->alasan,
                 ];
             }),
             'server_filter' => [

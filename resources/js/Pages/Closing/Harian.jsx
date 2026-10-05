@@ -141,6 +141,14 @@ const BarisKelompok = ({ d, bolehBuka, onBuka }) => {
             {d.halangan.join(" ")}
           </div>
         )}
+        {d.dibuka_at && (
+          <div
+            title={d.dibuka_alasan ?? ''}
+            className="mt-1 inline-flex rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800"
+          >
+            dibuka ulang {new Date(d.dibuka_at.replace(' ', 'T')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
+        )}
       </TableCell>
     </TableRow>
   );

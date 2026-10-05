@@ -19,6 +19,8 @@ class TransactionLockHistory extends Model
 
     public const AKSI_KUNCI = 'kunci';
     public const AKSI_BUKA = 'buka';
+    /** Baris bulanan yang sudah diteken ditulis ulang karena koreksi hari lampau. */
+    public const AKSI_PERBARUI = 'perbarui';
 
     protected $fillable = [
         'transaction_daily_closing_id',

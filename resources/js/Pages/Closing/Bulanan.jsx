@@ -96,6 +96,14 @@ const Baris = ({ d, bolehBuka }) => {
         ) : (
           <span className="text-xs text-slate-400">belum diperiksa</span>
         )}
+        {d.diperbarui_at && (
+          <div
+            title={d.diperbarui_alasan ?? ''}
+            className="mt-1 inline-flex rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800"
+          >
+            diperbarui {new Date(d.diperbarui_at.replace(' ', 'T')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
+        )}
       </TableCell>
       <TableCell className="text-right">
         {d.terkunci ? (

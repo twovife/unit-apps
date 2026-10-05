@@ -63,8 +63,14 @@ class ClosingHarianController extends Controller
         // ditetapkan" jadi kabur. Yang menyimpan hanya aksi kunci.
         $hidup = HitungAgregat::harianBanyak($groupings->pluck('id')->all(), $tanggal, $tanggal);
 
+        // Tanda "dibuka ulang": buka-kunci terakhir per baris hari ini.
+        $dibuka = \App\Models\TransactionLockHistory::whereIn('transaction_daily_closing_id', $baris->pluck('id'))
+            ->where('aksi', \App\Models\TransactionLockHistory::AKSI_BUKA)
+            ->orderBy('id')->get(['transaction_daily_closing_id', 'alasan', 'created_at'])
+            ->keyBy('transaction_daily_closing_id');
+
         return Inertia::render('Closing/Harian', [
-            'datas' => $groupings->map(function ($g) use ($baris, $hidup, $tanggal) {
+            'datas' => $groupings->map(function ($g) use ($baris, $hidup, $tanggal, $dibuka) {
                 $b = $baris->get($g->id);
                 $angka = $b && $b->terkunci()
                     ? null   // terkunci: pakai angka tersimpan apa adanya
@@ -97,6 +103,8 @@ class ClosingHarianController extends Controller
                     'kasir_nama' => $b?->kasir?->nama_karyawan,
                     'terkunci' => (bool) $b?->kasir_lock_at,
                     'halangan' => $b ? Gembok::bolehKunci($b)['alasan'] : ['Baris hari ini belum dibangkitkan.'],
+                    'dibuka_at' => $b ? $dibuka->get($b->id)?->created_at?->toDateTimeString() : null,
+                    'dibuka_alasan' => $b ? $dibuka->get($b->id)?->alasan : null,
                 ];
             })->values(),
             'server_filter' => [
@@ -282,9 +290,22 @@ class ClosingHarianController extends Controller
         //
         // Hari yang SUDAH terkunci tidak disentuh: itu angka yang sudah
         // ditandatangani, dan sumbernya pun dibekukan trigger.
-        $this->segarkanHariBelumTerkunci($groupingId, $periode);
+        //
+        // Menjalar ke depan sampai bulan berjalan: koreksi hari lampau (buka →
+        // betulkan → kunci) menggeser saldo akhir bulan itu, jadi saldo awal
+        // setiap bulan sesudahnya ikut berubah - termasuk yang sudah diteken,
+        // yang ditulis ulang dengan jejak 'perbarui' (keputusan mas 2026-10-06).
+        $perbarui = [
+            'employee_id' => auth()->user()->employee->id,
+            'sumber' => sprintf('koreksi %s kelompok %s',
+                $closing->date->locale('id')->isoFormat('D MMM Y'),
+                $closing->loan_officer_grouping?->kelompok),
+        ];
 
-        TutupBulanan::susun([$groupingId], $periode);
+        for ($bulan = $periode->copy(); $bulan->lte(Carbon::now()->startOfMonth()); $bulan->addMonthNoOverflow()) {
+            $this->segarkanHariBelumTerkunci($groupingId, $bulan);
+            TutupBulanan::susun([$groupingId], $bulan, true, $perbarui);
+        }
     }
 
     /**

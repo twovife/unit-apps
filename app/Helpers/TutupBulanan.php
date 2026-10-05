@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\TransactionDailyClosing;
+use App\Models\TransactionLockHistory;
 use App\Models\TransactionMonthlyClosing;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -32,9 +33,15 @@ class TutupBulanan
     /**
      * Susun/perbarui baris bulanan satu periode untuk sekumpulan kelompok.
      *
+     * $perbarui (['employee_id' => int, 'sumber' => string]) dipakai saat hari
+     * lampau dikoreksi lewat buka-kunci: baris bulanan yang SUDAH diteken ikut
+     * ditulis ulang kalau angkanya berubah (keputusan mas 2026-10-06, sama
+     * dengan proses kantor), tanda tangannya tetap, dan jejak 'perbarui'
+     * dicatat sebagai tandanya. Tanpa $perbarui, baris terkunci dilewati.
+     *
      * @return array{dibuat:int,diperbarui:int,dilewati:int}
      */
-    public static function susun(array $groupingIds, $periode, bool $tulis = true): array
+    public static function susun(array $groupingIds, $periode, bool $tulis = true, ?array $perbarui = null): array
     {
         $periode = Carbon::parse($periode)->startOfMonth();
         $akhirBulan = $periode->copy()->endOfMonth();
@@ -59,7 +66,7 @@ class TutupBulanan
 
         $hasil = ['dibuat' => 0, 'diperbarui' => 0, 'dilewati' => 0];
 
-        $kerja = function () use ($kunci, $arus, $awal, $akhir, $saldoMasuk, $kelengkapan, $periode, $tulis, &$hasil) {
+        $kerja = function () use ($kunci, $arus, $awal, $akhir, $saldoMasuk, $kelengkapan, $periode, $tulis, $perbarui, &$hasil) {
             foreach ($kunci as $k) {
                 [$g, $hari] = explode('|', $k);
 
@@ -67,14 +74,6 @@ class TutupBulanan
                     ->where('hari', $hari)
                     ->whereDate('periode', $periode->toDateString())
                     ->first();
-
-                // Baris bulanan yang sudah DIKUNCI tidak disentuh. Membukanya
-                // urusan alur unlock, bukan hitung ulang otomatis - kalau
-                // ditembus di sini, kunci kehilangan artinya.
-                if ($baris && $baris->kasir_lock_at !== null) {
-                    $hasil['dilewati']++;
-                    continue;
-                }
 
                 $isi = self::rakit(
                     $arus[$k] ?? [],
@@ -84,6 +83,19 @@ class TutupBulanan
                     $kelengkapan[$k] ?? ['hari_kerja' => 0, 'hari_terkunci' => 0],
                     $baris
                 );
+
+                // Baris bulanan yang sudah DIKUNCI tidak disentuh hitung ulang
+                // biasa. Hanya koreksi lewat buka-kunci hari ($perbarui) yang
+                // boleh menulis ulang, dan selalu meninggalkan jejak.
+                if ($baris && $baris->kasir_lock_at !== null) {
+                    if ($perbarui && $tulis && self::berubah($baris, $isi)) {
+                        self::tulisUlangTerkunci($baris, $isi, $perbarui);
+                        $hasil['diperbarui']++;
+                    } else {
+                        $hasil['dilewati']++;
+                    }
+                    continue;
+                }
 
                 if (!$tulis) {
                     $baris ? $hasil['diperbarui']++ : $hasil['dibuat']++;
@@ -107,6 +119,52 @@ class TutupBulanan
         $tulis ? DB::transaction($kerja) : $kerja();
 
         return $hasil;
+    }
+
+    private static function berubah(TransactionMonthlyClosing $baris, array $isi): bool
+    {
+        // Hitungan hari (kelengkapan) tidak dihitung sebagai perubahan: buka
+        // lalu kunci ulang satu hari akan kembali ke angka yang sama, dan itu
+        // bukan alasan menulis ulang baris yang sudah diteken.
+        foreach (array_diff_key($isi, ['hari_kerja' => 0, 'hari_terkunci' => 0]) as $kolom => $nilai) {
+            if ((int) $baris->$kolom !== (int) $nilai) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Tulis ulang baris bulanan yang sudah diteken. Trigger tmc_kunci menolak
+     * perubahan selama kunci terpasang, jadi kunci dilepas, angka ditulis,
+     * lalu kunci ASLI (waktu & penandatangan) dipasang lagi - semuanya di
+     * dalam transaksi pemanggil. Jejak 'perbarui' menyimpan sebelum/sesudah.
+     */
+    private static function tulisUlangTerkunci(TransactionMonthlyClosing $baris, array $isi, array $perbarui): void
+    {
+        $akhirLama = (int) $baris->akhir_total;
+        $kunci = ['kasir_lock_at' => $baris->kasir_lock_at, 'kasir_lock_user' => $baris->kasir_lock_user];
+
+        DB::table('transaction_monthly_closings')->where('id', $baris->id)->update(['kasir_lock_at' => null]);
+        $baris->forceFill(['kasir_lock_at' => null])->syncOriginal();
+        $baris->update($isi);
+        DB::table('transaction_monthly_closings')->where('id', $baris->id)->update($kunci);
+        $baris->refresh();
+
+        TransactionLockHistory::create([
+            'transaction_monthly_closing_id' => $baris->id,
+            'transaction_loan_officer_grouping_id' => $baris->transaction_loan_officer_grouping_id,
+            'tanggal' => Carbon::parse($baris->periode)->toDateString(),
+            'aksi' => TransactionLockHistory::AKSI_PERBARUI,
+            'user_id' => $perbarui['employee_id'],
+            'alasan' => sprintf(
+                'Diperbarui sesudah diteken karena %s. Saldo akhir %s -> %s.',
+                $perbarui['sumber'],
+                number_format($akhirLama, 0, ',', '.'),
+                number_format((int) $baris->akhir_total, 0, ',', '.')
+            ),
+        ]);
     }
 
     private static function rakit(
