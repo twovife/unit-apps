@@ -9,6 +9,16 @@ import { Input } from '@/shadcn/ui/input';
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
 
+/** Halaman tempat membetulkan satu baris anomali (tab baru, modal tetap terbuka). */
+const tautan = (r) => {
+  const buku = { kelompok: r.kelompok, hari: r.hari ?? undefined, month: r.tanggal ? dayjs(r.tanggal).format('YYYY-MM') : undefined };
+  return {
+    storting: () => route('pinjaman.index_pinjaman', buku),
+    transaksi: () => route('transaction.index_buku_transaksi', buku),
+    penyesuaian: () => route('migrasi.penyesuaian_saldo'),
+  }[r.buku]?.();
+};
+
 /** Satu jenis anomali: judul + jumlah, contoh baris bisa dibuka. */
 const Anomali = ({ a }) => {
   const nada = !a.jumlah ? 'text-emerald-700' : a.menahan ? 'text-red-700' : 'text-amber-700';
@@ -38,7 +48,15 @@ const Anomali = ({ a }) => {
             <tbody>
               {a.contoh.map((r, i) => (
                 <tr key={i} className="border-t border-slate-100">
-                  <td className="py-1 pr-2 tabular-nums">{r.id ?? '–'}</td>
+                  <td className="py-1 pr-2 tabular-nums">
+                    {tautan(r) ? (
+                      <a href={tautan(r)} target="_blank" rel="noreferrer" className="text-blue-600 underline decoration-dotted">
+                        {r.id ?? 'buka'}
+                      </a>
+                    ) : (
+                      r.id ?? '–'
+                    )}
+                  </td>
                   <td className="py-1 pr-2">{r.nama ?? '–'}</td>
                   <td className="py-1 pr-2">{r.kelompok}</td>
                   <td className="py-1 pr-2 capitalize">{r.hari ?? '–'}</td>

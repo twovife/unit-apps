@@ -45,7 +45,9 @@ class PemeriksaanMigrasi
         $kolomPinjaman = ['l.id', 'c.nama', 'g.kelompok', 'l.hari', 'l.drop_date as tanggal', 'l.pinjaman as nominal'];
 
         $hasil = [];
-        $tambah = function (string $kode, string $judul, bool $menahan, $baris, ?callable $ket = null) use (&$hasil) {
+        // $buku: halaman tempat membetulkan baris - 'storting' (buku angsuran),
+        // 'transaksi' (buku drop), 'penyesuaian', atau null; string atau fn($r).
+        $tambah = function (string $kode, string $judul, bool $menahan, $baris, ?callable $ket = null, $buku = null) use (&$hasil) {
             $baris = collect($baris)->values();
             $hasil[] = [
                 'kode' => $kode,
@@ -60,6 +62,7 @@ class PemeriksaanMigrasi
                     'tanggal' => $r->tanggal ? Carbon::parse($r->tanggal)->toDateString() : null,
                     'nominal' => (int) $r->nominal,
                     'ket' => $ket ? $ket($r) : null,
+                    'buku' => is_callable($buku) ? $buku($r) : $buku,
                 ])->all(),
             ];
         };
@@ -70,7 +73,7 @@ class PemeriksaanMigrasi
                 ->where('i.transaction_date', '>', $hariIni)->get([...$kolomAngsuran, DB::raw("'angsuran' as ket")]))
             ->merge($pinjaman()->whereIn('l.transaction_loan_officer_grouping_id', $ids)
                 ->where('l.drop_date', '>', $hariIni)->get([...$kolomPinjaman, DB::raw("'drop' as ket")])),
-            fn($r) => $r->ket);
+            fn($r) => $r->ket, fn($r) => $r->ket === 'drop' ? 'transaksi' : 'storting');
 
         // 2. Angsuran sebelum tanggal drop.
         $tambah('sebelum_drop', 'Angsuran bertanggal sebelum tanggal drop', true,
@@ -78,7 +81,7 @@ class PemeriksaanMigrasi
                 ->where('l.drop_date', '>=', $mulai)
                 ->whereColumn('i.transaction_date', '<', 'l.drop_date')
                 ->get([...$kolomAngsuran, 'l.drop_date']),
-            fn($r) => 'drop ' . Carbon::parse($r->drop_date)->toDateString());
+            fn($r) => 'drop ' . Carbon::parse($r->drop_date)->toDateString(), 'storting');
 
         // 3. Saldo minus pada pinjaman yang masih ditagih sejak bulan mulai.
         $tambah('saldo_minus', 'Saldo minus (angsuran + pemutihan melebihi pinjaman)', true,
@@ -92,7 +95,7 @@ class PemeriksaanMigrasi
                 ->get([...$kolomPinjaman, DB::raw('l.pinjaman
                     - (SELECT IFNULL(SUM(nominal),0) FROM transaction_loan_instalments WHERE transaction_loan_id = l.id)
                     - (SELECT IFNULL(SUM(nominal),0) FROM transaction_white_offs WHERE transaction_loan_id = l.id) AS saldo')]),
-            fn($r) => 'saldo ' . number_format($r->saldo, 0, ',', '.'));
+            fn($r) => 'saldo ' . number_format($r->saldo, 0, ',', '.'), 'storting');
 
         // 4. Pinjaman berjalan tanpa hari tagih: tidak ikut portofolio.
         $tambah('tanpa_hari', 'Pinjaman berjalan tanpa hari tagih', true,
@@ -101,7 +104,7 @@ class PemeriksaanMigrasi
                 ->whereRaw('l.pinjaman
                     - (SELECT IFNULL(SUM(nominal),0) FROM transaction_loan_instalments WHERE transaction_loan_id = l.id)
                     - (SELECT IFNULL(SUM(nominal),0) FROM transaction_white_offs WHERE transaction_loan_id = l.id) > 0')
-                ->get($kolomPinjaman));
+                ->get($kolomPinjaman), null, 'transaksi');
 
         // 5. Angsuran pada pinjaman yang tidak success.
         $tambah('bukan_success', 'Angsuran pada pinjaman yang tidak berstatus success', true,
@@ -109,7 +112,7 @@ class PemeriksaanMigrasi
                 ->where('i.transaction_date', '>=', $mulai)
                 ->where('l.status', '<>', 'success')
                 ->get([...$kolomAngsuran, 'l.status']),
-            fn($r) => 'status ' . $r->status);
+            fn($r) => 'status ' . $r->status, 'transaksi');
 
         // 6. Kelompok angsuran berbeda dengan kelompok pinjaman (dua arah).
         $beda = fn($sisi) => $angsuran()
@@ -120,7 +123,7 @@ class PemeriksaanMigrasi
             ->get([...$kolomAngsuran, 'i.id as angsuran_id', 'gi.kelompok as kelompok_angsuran', 'gi.branch_id as kantor_angsuran']);
         $tambah('kelompok_beda', 'Kelompok angsuran berbeda dengan kelompok pinjaman', true,
             $beda('i.transaction_loan_officer_grouping_id')->merge($beda('l.transaction_loan_officer_grouping_id'))->unique('angsuran_id'),
-            fn($r) => 'tercatat di kelompok ' . $r->kelompok_angsuran . ((int) $r->kantor_angsuran !== $branchId ? ' (kantor lain)' : ''));
+            fn($r) => 'tercatat di kelompok ' . $r->kelompok_angsuran . ((int) $r->kantor_angsuran !== $branchId ? ' (kantor lain)' : ''), 'storting');
 
         // 7. Transaksi di hari libur: tidak punya baris harian.
         $tambah('hari_libur', 'Angsuran / drop di hari Minggu atau hari libur', true, collect()
@@ -129,16 +132,18 @@ class PemeriksaanMigrasi
             ->merge($pinjaman()->whereIn('l.transaction_loan_officer_grouping_id', $ids)
                 ->where('l.status', 'success')
                 ->whereIn('l.drop_date', $libur)->get([...$kolomPinjaman, DB::raw("'drop' as ket")])),
-            fn($r) => $r->ket);
+            fn($r) => $r->ket, fn($r) => $r->ket === 'drop' ? 'transaksi' : 'storting');
 
         // 9. Pengajuan yang tanggal dropnya sudah lewat tapi belum diputuskan.
-        $tambah('menggantung', 'Pengajuan menggantung (open/acc, tanggal drop sudah lewat)', true,
+        //    Peringatan (keputusan mas 2026-10-05); di hari yang dikunci
+        //    trigger tl_kunci_before_update membekukan statusnya.
+        $tambah('menggantung', 'Pengajuan menggantung (open/acc, drop sudah lewat) — status beku begitu harinya dikunci', false,
             $pinjaman()->whereIn('l.transaction_loan_officer_grouping_id', $ids)
                 ->whereIn('l.status', ['open', 'acc'])
                 ->where('l.drop_date', '>=', $mulai)->where('l.drop_date', '<', $hariIni)
                 ->orderBy('l.drop_date')
                 ->get([...$kolomPinjaman, 'l.status']),
-            fn($r) => 'status ' . $r->status);
+            fn($r) => 'status ' . $r->status, 'transaksi');
 
         // 11. Rekap harian lama dobel: kasbon/transport disalin dari salah satunya.
         $tambah('rekap_dobel', 'Rekap harian lama dobel (kelompok × tanggal sama)', true,
@@ -152,15 +157,17 @@ class PemeriksaanMigrasi
                     'r.date as tanggal', DB::raw('SUM(r.kasbon + r.transport) as nominal'), DB::raw('COUNT(*) as n')]),
             fn($r) => $r->n . ' baris');
 
-        // 12. Rekap harian lama di hari libur: tidak punya baris harian baru.
-        $tambah('rekap_libur', 'Rekap harian lama di hari Minggu atau hari libur', true,
-            DB::table('transaction_daily_recaps as r')
-                ->join('transaction_loan_officer_groupings as g', 'g.id', '=', 'r.transaction_loan_officer_grouping_id')
-                ->whereIn('r.transaction_loan_officer_grouping_id', $ids)
-                ->whereIn('r.date', $libur)
-                ->get([DB::raw('NULL as id'), DB::raw('NULL as nama'), 'g.kelompok', DB::raw('NULL as hari'),
-                    'r.date as tanggal', DB::raw('IFNULL(r.kasbon,0) + IFNULL(r.transport,0) as nominal'), 'r.kasbon', 'r.transport']),
-            fn($r) => 'kasbon ' . (int) $r->kasbon . ', transport ' . (int) $r->transport);
+        // 12. Rekap harian lama di hari libur: tidak punya baris harian baru,
+        //     jadi kasbon/transportnya tidak ikut tersalin. Menahan hanya kalau
+        //     ada nilainya; rekap libur yang isinya nol cukup ditampilkan.
+        $rekapLibur = DB::table('transaction_daily_recaps as r')
+            ->join('transaction_loan_officer_groupings as g', 'g.id', '=', 'r.transaction_loan_officer_grouping_id')
+            ->whereIn('r.transaction_loan_officer_grouping_id', $ids)
+            ->whereIn('r.date', $libur)
+            ->get([DB::raw('NULL as id'), DB::raw('NULL as nama'), 'g.kelompok', DB::raw('NULL as hari'),
+                'r.date as tanggal', DB::raw('IFNULL(r.kasbon,0) + IFNULL(r.transport,0) as nominal'), 'r.kasbon', 'r.transport']);
+        $tambah('rekap_libur', 'Rekap harian lama di hari Minggu atau hari libur', $rekapLibur->contains(fn($r) => $r->nominal != 0),
+            $rekapLibur, fn($r) => 'kasbon ' . (int) $r->kasbon . ', transport ' . (int) $r->transport);
 
         // --- Peringatan ---
 
@@ -172,7 +179,7 @@ class PemeriksaanMigrasi
                 ->havingRaw('COUNT(*) > 1')
                 ->get(['l.id', 'c.nama', 'g.kelompok', 'l.hari', DB::raw('MAX(w.transaction_date) as tanggal'),
                     DB::raw('SUM(w.nominal) as nominal'), DB::raw('COUNT(*) as n')]),
-            fn($r) => $r->n . ' pemutihan');
+            fn($r) => $r->n . ' pemutihan', 'storting');
 
         // 10. Penyesuaian yang menunggu persetujuan: belum dihitung di saldo.
         $tambah('penyesuaian_menunggu', 'Penyesuaian saldo menunggu persetujuan', false,
@@ -181,14 +188,14 @@ class PemeriksaanMigrasi
                 ->whereIn('a.jenis', TransactionSaldoAdjustment::WAJIB_PERSETUJUAN)
                 ->whereNull('a.approved_at')
                 ->get(['l.id', 'c.nama', 'g.kelompok', 'l.hari', 'a.berlaku_bulan as tanggal', 'a.nominal', 'a.jenis']),
-            fn($r) => $r->jenis);
+            fn($r) => $r->jenis, 'penyesuaian');
 
         // 13. Angsuran bernominal nol.
         $tambah('angsuran_nol', 'Angsuran bernominal 0', false,
             $angsuran()->whereIn('i.transaction_loan_officer_grouping_id', $ids)
                 ->where('i.transaction_date', '>=', $mulai)->where('i.nominal', 0)
                 ->orderBy('i.transaction_date')
-                ->get($kolomAngsuran));
+                ->get($kolomAngsuran), null, 'storting');
 
         // 14. Angsuran kembar: pinjaman & tanggal sama.
         $tambah('angsuran_kembar', 'Angsuran kembar (pinjaman & tanggal sama)', false,
@@ -198,7 +205,7 @@ class PemeriksaanMigrasi
                 ->havingRaw('COUNT(*) > 1')
                 ->get(['l.id', 'c.nama', 'g.kelompok', 'l.hari', 'i.transaction_date as tanggal',
                     DB::raw('SUM(i.nominal) as nominal'), DB::raw('COUNT(*) as n')]),
-            fn($r) => $r->n . ' baris');
+            fn($r) => $r->n . ' baris', 'storting');
 
         return $hasil;
     }
