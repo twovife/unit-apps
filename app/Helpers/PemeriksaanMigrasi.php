@@ -72,6 +72,8 @@ class PemeriksaanMigrasi
             ->merge($angsuran()->whereIn('l.transaction_loan_officer_grouping_id', $ids)
                 ->where('i.transaction_date', '>', $hariIni)->get([...$kolomAngsuran, DB::raw("'angsuran' as ket")]))
             ->merge($pinjaman()->whereIn('l.transaction_loan_officer_grouping_id', $ids)
+                // Pengajuan open/acc ke depan itu wajar; hanya drop yang sudah success.
+                ->where('l.status', 'success')
                 ->where('l.drop_date', '>', $hariIni)->get([...$kolomPinjaman, DB::raw("'drop' as ket")])),
             fn($r) => $r->ket, fn($r) => $r->ket === 'drop' ? 'transaksi' : 'storting');
 
