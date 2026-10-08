@@ -37,8 +37,6 @@ use Illuminate\Support\Facades\DB;
  */
 class GembokBulanan
 {
-    /** Sama dengan Gembok harian: role saja tak cukup, `pusat` ada 30 orang. */
-    public const ROLE_PEMBUKA = ['stafkontrol', 'pusat', 'superuser'];
 
     /**
      * @return array{boleh:bool, alasan:array<int,string>}
@@ -119,8 +117,8 @@ class GembokBulanan
     }
 
     /**
-     * Buka kunci bulanan. Butuh role berwenang DAN permission `can-edit` —
-     * sama dengan buka kunci harian.
+     * Buka kunci bulanan. Aturannya sama dengan buka kunci harian
+     * (Gembok::bolehBuka): superuser atau permission `can-edit`.
      *
      * @throws \RuntimeException
      */
@@ -136,7 +134,7 @@ class GembokBulanan
 
         if (!self::bolehBuka($user)) {
             throw new \RuntimeException(
-                'Butuh role stafkontrol/pusat/superuser DAN permission can-edit.'
+                'Buka kunci hanya untuk superuser atau user ber-izin can-edit.'
             );
         }
 
@@ -156,12 +154,7 @@ class GembokBulanan
 
     public static function bolehBuka($user): bool
     {
-        if (!$user || !$user->employee) {
-            return false;
-        }
-
-        return $user->hasAnyRole(self::ROLE_PEMBUKA)
-            && $user->hasPermissionTo('can-edit');
+        return Gembok::bolehBuka($user);
     }
 
     /**

@@ -211,7 +211,11 @@ Route::middleware('auth')->group(function () {
       Route::post('/', 'simpan')->name('simpan');
     });
 
-  Route::controller(AdminController::class)->prefix('admin-panel')->name('adminpanel.')->group(function () {
+  // Panel admin: superuser saja. Tanpa gerbang ini user login mana pun bisa
+  // memberi dirinya role (user-assign) atau izin buka kunci can-edit
+  // (giveMaintenerWorker).
+  Route::controller(AdminController::class)->prefix('admin-panel')->name('adminpanel.')
+    ->middleware('role:superuser')->group(function () {
     Route::get('/', "index")->name('index');
 
     Route::get('/monitoring-staffs', "monitoring_staff")->name('monitoring_staff');
@@ -220,8 +224,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/role-assign', "role_assign")->name('role_assign');
     Route::post('/user-assign', "user_assign")->name('user_assign');
     Route::post('/giveMaintenerWorker', "giveMaintenerWorker")->name('giveMaintenerWorker');
-    Route::post('/sirkulasiAwal', "sirkulasiAwal")->name('sirkulasiAwal');
   });
+  // Tutup buku dari Approval Akhir (kasir/kepala) - di luar gerbang superuser.
+  Route::post('/admin-panel/sirkulasiAwal', [AdminController::class, 'sirkulasiAwal'])->name('adminpanel.sirkulasiAwal');
 
   Route::prefix('profile')->name('profile.')->group(function () {
     Route::get('/', [ProfileController::class, 'edit'])->name('edit');

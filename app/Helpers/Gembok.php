@@ -19,8 +19,6 @@ use Illuminate\Support\Facades\DB;
  */
 class Gembok
 {
-    /** Role yang boleh membuka kunci — masih harus ditambah permission can-edit. */
-    public const ROLE_PEMBUKA = ['stafkontrol', 'pusat', 'superuser'];
 
     /**
      * Syarat mengunci satu baris harian.
@@ -117,9 +115,9 @@ class Gembok
     }
 
     /**
-     * Buka kunci. Butuh role berwenang DAN permission `can-edit` yang
-     * dipasang-cabut superuser — role saja tidak cukup, karena `pusat` sendiri
-     * ada 30 orang.
+     * Buka kunci. Hanya superuser, atau user yang diberi permission
+     * `can-edit` oleh superuser (keputusan mas 2026-10-08: role pusat /
+     * stafkontrol tidak lagi menentukan).
      *
      * @throws \RuntimeException
      */
@@ -135,7 +133,7 @@ class Gembok
 
         if (!self::bolehBuka($user)) {
             throw new \RuntimeException(
-                'Butuh role stafkontrol/pusat/superuser DAN permission can-edit.'
+                'Buka kunci hanya untuk superuser atau user ber-izin can-edit.'
             );
         }
 
@@ -163,8 +161,7 @@ class Gembok
             return false;
         }
 
-        return $user->hasAnyRole(self::ROLE_PEMBUKA)
-            && $user->hasPermissionTo('can-edit');
+        return $user->hasRole('superuser') || $user->hasPermissionTo('can-edit');
     }
 
     /**
