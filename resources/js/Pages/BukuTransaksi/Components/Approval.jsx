@@ -286,7 +286,7 @@ const Approval = ({
       <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-lg">
         <Loading show={loading || processing} />
         <SheetHeader className="px-5 py-4 pr-12 border-b">
-          <SheetTitle>Cek Kepala</SheetTitle>
+          <SheetTitle>ACC KM</SheetTitle>
           <SheetDescription>
             {triggeredData?.tanggal ? dayjs(triggeredData.tanggal).format('dddd, DD MMMM YYYY') : ''} — cek transaksi
             hari ini &amp; isi rencana minggu depan.
@@ -400,7 +400,7 @@ const Approval = ({
               </label>
 
               <Button type="submit" className="w-full" disabled={processing}>
-                Simpan cek kepala
+                Simpan ACC KM
               </Button>
             </form>
           )}
