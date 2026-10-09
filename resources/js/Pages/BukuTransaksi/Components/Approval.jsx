@@ -65,7 +65,6 @@ const Approval = ({
   });
   const [editTarget, setEditTarget] = useState(false);
   const [triggeredData, setTriggeredData] = useState([]);
-  const [tanggalRencanaMingguDepan, setTanggalRencanaMingguDepan] = useState();
 
   const [transaksiOpenHariIni, setTransaksiOpenHariIni] = useState([]);
   const [transaksiOpenMingguDepan, setTransaksiOpenMingguDepan] = useState([]);
@@ -217,7 +216,6 @@ const Approval = ({
         target_minggu_depan: 0,
       });
 
-      setTanggalRencanaMingguDepan(uniqueDropDatesString);
     }
   }, [datas, show, triggeredDate]);
 
@@ -393,18 +391,18 @@ const Approval = ({
                 <h3 className="text-sm font-semibold text-slate-900">Minggu depan</h3>
                 <label className="block text-sm">
                   Tanggal rencana drop
+                  {/* Dari Kalender Kerja (server: TargetMingguan::tanggalDepan),
+                      bukan dari pengajuan dan tidak diketik. */}
                   <Input
-                    className="mt-1"
+                    className="mt-1 bg-slate-50"
                     name="tanggal_rencana_minggu_depan"
                     type="date"
-                    readOnly={!!tanggalRencanaMingguDepan}
-                    min={dayjs(data.date).add(1, 'week').format('YYYY-MM-DD')}
+                    readOnly
                     required
-                    onChange={onInputChange}
                     value={data.tanggal_rencana_minggu_depan ?? ''}
                   />
-                  {data.tanggal_rencana_minggu_depan == null && (
-                    <small className="text-red-600">Tidak ada pengajuan untuk minggu depan — isi tanggalnya manual.</small>
+                  {!data.tanggal_rencana_minggu_depan && (
+                    <small className="text-red-600">Tidak ada hari kerja dalam 8 minggu ke depan — periksa Kalender Kerja.</small>
                   )}
                 </label>
                 <label className="block text-sm">
