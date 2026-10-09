@@ -54,24 +54,24 @@ const Angka = ({ n, bertanda = false }) => {
 /**
  * Kotak isian kasir di Rekap 1 (kasbon, transport, SU Lapangan, setor
  * transfer): memenuhi sel, untuk kantor alur baru & hari belum dikunci.
- * Nominal penuh (rupiah), bawaan 0. Enter / pindah kotak menyimpan; hanya
- * dikirim kalau nilainya berubah. Kosong = 0.
+ * Diketik dalam RIBUAN (200 = 200.000, 37,5 = 37.500); "000" tampil sebagai
+ * akhiran. Bawaan & kosong = 0. Enter / pindah kotak menyimpan, hanya kalau
+ * kasir benar-benar mengetik.
  */
 const IsianSel = ({ r, k, kolom }) => {
-  const awal = r[k] ?? 0;
+  const keRibu = (v) => (v ? Number(v) / 1000 : 0);
+  const awal = keRibu(r[k]);
   const [nilai, setNilai] = useState(awal);
-  // Hanya dikirim kalau kasir benar-benar mengetik - sekadar lewat (Tab)
-  // tidak mencatat 0 untuk setoran yang belum diisi.
   const [diketik, setDiketik] = useState(false);
   useEffect(() => {
-    setNilai(r[k] ?? 0);
+    setNilai(keRibu(r[k]));
     setDiketik(false);
   }, [r[k]]);
   const simpan = () => {
     if (!diketik) return;
     setDiketik(false);
-    const baru = nilai === '' ? 0 : Number(nilai);
-    if (baru === Number(r[k] ?? 0) && r[k] !== null && r[k] !== undefined) return;
+    const baru = Math.round((nilai === '' ? 0 : Number(nilai)) * 1000);
+    if (baru === Number(r[k] ?? 0)) return;
     router.post(
       route('kasir.rekap.simpan_su_lapangan'),
       { id: r.id, date: r.tanggal, kolom, nilai: baru },
@@ -79,27 +79,31 @@ const IsianSel = ({ r, k, kolom }) => {
     );
   };
   return (
-    <input
-      type="number"
-      min={0}
-      inputMode="numeric"
-      placeholder="0"
-      onFocus={(e) => e.currentTarget.select()}
-      className="block w-full h-full min-w-[6rem] px-3 py-1.5 text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500"
-      value={nilai}
-      onChange={(e) => {
-        setNilai(e.target.value);
-        setDiketik(true);
-      }}
-      onBlur={simpan}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur();
-        if (e.key === 'Escape') {
-          setNilai(awal);
-          setDiketik(false);
-        }
-      }}
-    />
+    <div className="relative h-full">
+      <input
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        placeholder="0"
+        onFocus={(e) => e.currentTarget.select()}
+        className="block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500"
+        value={nilai}
+        onChange={(e) => {
+          setNilai(e.target.value);
+          setDiketik(true);
+        }}
+        onBlur={simpan}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+          if (e.key === 'Escape') {
+            setNilai(awal);
+            setDiketik(false);
+          }
+        }}
+      />
+      <span className="absolute text-xs -translate-y-1/2 pointer-events-none right-2 top-1/2 text-slate-400">.000</span>
+    </div>
   );
 };
 

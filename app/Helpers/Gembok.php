@@ -41,12 +41,8 @@ class Gembok
             $alasan[] = 'Kepala belum menyetujui rekap hari ini.';
         }
 
-        // NULL = kasir belum mencatat serah terima uang. 0 sah — artinya mantri
-        // memang tidak menyetor. Tanpa membedakan keduanya, hari yang terlewat
-        // tidak bisa dibedakan dari hari yang sepi.
-        if (!$baris->setoranSudahDicatat()) {
-            $alasan[] = 'Setoran tunai / transfer belum dicatat kasir.';
-        }
+        // Setoran kosong dianggap 0 (keputusan mas 2026-10-09) - bukan lagi
+        // syarat kunci.
 
         if ($sebelumnya = self::barisSebelumnyaBelumTerkunci($baris)) {
             $alasan[] = sprintf(

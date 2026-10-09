@@ -267,8 +267,9 @@ trait RekapTrait
         // Sisa Uang = titipan 9% + tunai (debit - kredit).
         'sisa_uang' => $titipan9 + ($debit - $kredit),
         // -/+ = (setoran tunai + transfer) - (tunai + titipan 9%), sama dengan
-        // kolom generated daily_closings.selisih. Null selama belum dicatat.
-        'selisih_uang' => (isset($thisDailyRecap?->setoran_tunai) || isset($thisDailyRecap?->setoran_transfer))
+        // kolom generated daily_closings.selisih. Setoran kosong = 0. Kantor
+        // lama (tanpa setoran) -> null.
+        'selisih_uang' => property_exists($thisDailyRecap ?? new \stdClass, 'setoran_tunai')
           ? (int) $thisDailyRecap->setoran_tunai + (int) $thisDailyRecap->setoran_transfer - (($debit - $kredit) + $titipan9)
           : null,
         'total_storting' => $totalStorting,

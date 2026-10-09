@@ -99,17 +99,6 @@ class TransactionDailyClosing extends Model
         return $this->kepala_approval_at !== null;
     }
 
-    /**
-     * Setoran mantri sudah dicatat kasir?
-     *
-     * `0` sah — artinya mantri memang tidak menyetor. Yang belum dicatat itu
-     * `null`. Tanpa membedakan keduanya, hari yang terlewat tidak bisa
-     * dibedakan dari hari yang sepi.
-     */
-    public function setoranSudahDicatat(): bool
-    {
-        return $this->setoran_tunai !== null || $this->setoran_transfer !== null;
-    }
 
     public function scopeTerkunci($query)
     {
