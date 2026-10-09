@@ -3,8 +3,8 @@ import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Grup kolom mengikuti
-// buku kasir: TUNAI 1 (kasbon s/d tunai), titipan 9%, STORTING per cara
-// bayar, lalu SU Lapangan.
+// buku kasir: TUNAI 1 (kasbon s/d tunai), titipan 9%, SU Lapangan, Sisa Uang,
+// lalu -/+.
 const GRUP = [
   {
     judul: 'TUNAI 1',
@@ -20,14 +20,8 @@ const GRUP = [
     ],
   },
   { judul: '', kolom: [['titipan9', 'Titipan 9%']] },
-  {
-    judul: 'STORTING',
-    kolom: [
-      ['storting_cash', 'Cash'],
-      ['storting_transfer', 'Transfer'],
-      ['storting_katrol', 'Katrol'],
-    ],
-  },
+  // Grup STORTING (cash / transfer / katrol) disembunyikan dulu (mas
+  // 2026-10-09); datanya masih dikirim server: storting_cash/_transfer/_katrol.
   // Uang yang dibawa pulang mantri (setoran_mantri).
   { judul: '', kolom: [['su_lapangan', 'SU Lapangan', 'font-semibold']] },
   // Titipan 9% + Tunai.
