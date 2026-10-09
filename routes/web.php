@@ -52,6 +52,8 @@ Route::middleware('auth')->group(function () {
       // JSON daftar drop satu bulan (buku aktif) - dipakai muat-bulan-sebelumnya
       // (infinite back) di layar Buku Transaksi tanpa reload penuh.
       Route::get('/drop-bulan', "drop_bulan")->name('drop_bulan');
+      // JSON buku angsuran harian untuk drawer storting di ACC KM.
+      Route::get('/angsuran-hari', "angsuran_hari")->name('angsuran_hari');
       // Superuser: paksa materialisasi target auto untuk 1 buku (kelompok+hari
       // di cabang aktif) tanpa nunggu cron. Otorisasi superuser dicek controller.
       Route::post('/generate-target-auto', "generate_target_auto")->name('generate_target_auto');

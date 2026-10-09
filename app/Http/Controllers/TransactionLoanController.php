@@ -75,6 +75,16 @@ class TransactionLoanController extends Controller
   // menyambung bulan sebelumnya saat scroll / "Muat bulan sebelumnya" - tanpa
   // reload penuh, dan kedua tab (Buku Transaksi + Rencana Drop) ikut memanjang.
   // Membungkus getTransactionLoan (withPlan=true) supaya satu sumber logika.
+  // JSON buku angsuran harian (sama dengan mobile_apps.angsuran) untuk satu
+  // tanggal + kelompok - dipakai drawer storting di ACC KM supaya angsuran
+  // bisa dibetulkan tanpa pindah halaman.
+  public function angsuran_hari(Request $request)
+  {
+    $request->validate(['date' => ['required', 'date']]);
+
+    return response()->json($this->getLoanMantri($request, true));
+  }
+
   public function drop_bulan(Request $request)
   {
     $data = $this->getTransactionLoan($request, true);

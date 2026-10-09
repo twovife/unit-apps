@@ -12,6 +12,7 @@ import BukuTransaksi from '@/Pages/BukuTransaksi/BukuTransaksi';
 import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
 import Create from './Create';
 import Rencana from '@/Pages/BukuTransaksi/Rencana';
+import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -35,9 +36,35 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   const { server_filter, auth } = usePage().props;
 
   const [onCreateShow, setOnCreateShow] = useState(false);
-  // Rencana Drop (cek KM + kunci kasir) dibuka sebagai drawer di atas buku,
-  // bukan tab - buku transaksi tetap terlihat di belakangnya.
-  const [rencanaShow, setRencanaShow] = useState(false);
+  // Drawer ACC KM & drawer angsuran (dari kolom Storting). Status bukanya
+  // disimpan di sessionStorage: simpan angsuran lewat Inertia memuat ulang
+  // halaman ini, dan tanpa itu drawer tertutup tiap kali bayar/hapus.
+  const KUNCI_DRAWER = 'bukutransaksi.drawer';
+  const bacaDrawer = () => {
+    try {
+      return JSON.parse(sessionStorage.getItem(KUNCI_DRAWER)) ?? {};
+    } catch {
+      return {};
+    }
+  };
+  const [rencanaShow, setRencanaShowState] = useState(() => !!bacaDrawer().rencana);
+  const [angsuranTarget, setAngsuranTargetState] = useState(() => bacaDrawer().angsuran ?? null);
+  const simpanDrawer = (ubah) => {
+    try {
+      sessionStorage.setItem(KUNCI_DRAWER, JSON.stringify({ ...bacaDrawer(), ...ubah }));
+    } catch {
+      /* tanpa storage: drawer tetap jalan, cuma tidak bertahan */
+    }
+  };
+  const setRencanaShow = (v) => {
+    setRencanaShowState(v);
+    simpanDrawer({ rencana: v, ...(v ? {} : { angsuran: null }) });
+    if (!v) setAngsuranTargetState(null);
+  };
+  const setAngsuranTarget = (t) => {
+    setAngsuranTargetState(t);
+    simpanDrawer({ angsuran: t });
+  };
   const handleOnCreateShowOpen = () => setOnCreateShow(true);
   const handleOnCreateShowClosed = () => setOnCreateShow(false);
 
@@ -265,10 +292,16 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
             </SheetDescription>
           </SheetHeader>
           <div className="p-3 overflow-x-auto">
-            <Rencana datas={rencanaGroups} dataTransaksi={groups} />
+            <Rencana
+              datas={rencanaGroups}
+              dataTransaksi={groups}
+              onStorting={(item) => setAngsuranTarget({ tanggal: item.tanggal, kelompok: item.kelompok })}
+            />
           </div>
         </SheetContent>
       </Sheet>
+
+      <DrawerAngsuran target={angsuranTarget} onClosed={() => setAngsuranTarget(null)} />
     </Authenticated>
   );
 };

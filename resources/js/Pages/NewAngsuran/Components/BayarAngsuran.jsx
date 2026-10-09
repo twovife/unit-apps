@@ -4,7 +4,8 @@ import { Label } from '@/shadcn/ui/label';
 import CurrencyInput from 'react-currency-input-field';
 import { Button } from '@/shadcn/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
+import { useFilterAngsuran } from '../FilterAngsuran';
 import Loading from '@/Components/Loading';
 import { getLastDateForHari } from '@/lib/utils';
 import useHariLibur from '@/Hooks/useHariLibur';
@@ -30,12 +31,10 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
   }, [triggeredPinjaman]);
 
   const {
-    server_filter: {
-      tanggal: tanggalTerpilih,
-      is_locked: terkunci,
-      month: bulanBuku,
-    },
-  } = usePage().props;
+    tanggal: tanggalTerpilih,
+    is_locked: terkunci,
+    month: bulanBuku,
+  } = useFilterAngsuran();
 
   // Buku harian (HP) membawa tanggal di filter -> tanggal bayar terkunci ke
   // situ. Buku BULANAN (desktop /pinjaman) tidak punya tanggal: user memilih

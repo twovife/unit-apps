@@ -24,6 +24,7 @@ import BayarAngsuran from './BayarAngsuran';
 import JenisNasabah from './JenisNasabah';
 import DeleteAngsuran from './DeleteAngsuran';
 import { usePage } from '@inertiajs/react';
+import { useFilterAngsuran } from '../FilterAngsuran';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
 import { Toaster } from '@/shadcn/ui/sonner';
@@ -35,10 +36,8 @@ import Loading from '@/Components/Loading';
 import '../../../../css/loader.css';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
-  const {
-    auth,
-    server_filter: { closed_transaction, tanggal: tanggalTerpilih },
-  } = usePage().props;
+  const { auth } = usePage().props;
+  const { closed_transaction, tanggal: tanggalTerpilih } = useFilterAngsuran();
   const hasPermission = auth?.permissions?.includes('can-edit');
 
   const [loading, setLoading] = useState(false);

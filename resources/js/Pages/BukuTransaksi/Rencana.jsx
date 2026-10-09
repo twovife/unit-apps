@@ -14,7 +14,7 @@ import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
 import { usePage } from '@inertiajs/react';
 
-const Rencana = ({ datas, dataTransaksi }) => {
+const Rencana = ({ datas, dataTransaksi, onStorting }) => {
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
   // Kolom ACC KM membuka dialog approval kepala (ceklist_kepala) -> can-approve
@@ -133,16 +133,9 @@ const Rencana = ({ datas, dataTransaksi }) => {
               <TableCell>
                 <FormatNumbering ribuan value={item.keluar} />
               </TableCell>
-              <TableCell className="text-blue-600 hover:bg-blue-100">
-                <a
-                  target="_blank"
-                  href={route('pinjaman.index_pinjaman', {
-                    date: item.tanggal,
-                    kelompok: item.kelompok,
-                  })}
-                >
-                  <FormatNumbering ribuan value={item.storting} />
-                </a>
+              <TableCell className="text-blue-600 cursor-pointer hover:bg-blue-100" onClick={() => onStorting?.(item)}>
+                {/* Buka buku angsuran hari itu di drawer (edit cepat). */}
+                <FormatNumbering ribuan value={item.storting} />
               </TableCell>
               <TableCell>
                 <FormatNumbering ribuan value={item.drop} />
