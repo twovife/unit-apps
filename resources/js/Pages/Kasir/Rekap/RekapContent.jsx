@@ -105,12 +105,7 @@ const RekapContent = ({
         {/* Rekap 1: tempat kasir mengecek & mengunci. Tab Tunai Mantri
             dibuang (2026-10-09); Titipan 9% pindah ke kolom terakhir. */}
         {show == 'rekapkasir' && (
-          <TableRekapKasir
-            setOnShowModal={setOnShowModal}
-            setTriggeredData={setTriggeredData}
-            setTriggeredType={setTriggeredType}
-            datas={datas}
-          />
+          <TableRekapKasir datas={datas} />
         )}
       </div>
     </>
