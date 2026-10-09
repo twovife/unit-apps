@@ -127,7 +127,7 @@ const Rencana = ({ datas, dataTransaksi }) => {
                         onClick={() => handleOnApproveShowOpen(item.tanggal)}
                         size="xs"
                       >
-                        ACC KM
+                        ACC
                       </BargeStatus>
                       {/* Cek #2 kasir - alur baru saja */}
                       {server_filter?.migrasi && item.is_kasir && (
