@@ -173,12 +173,6 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
               </PopoverContent>
             </Popover>
           )}
-          <Button type="button" variant="outline" onClick={() => setRencanaShow(true)}>
-            <ClipboardList className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Rencana Drop &amp; Cek KM
-            </span>
-          </Button>
           {auth?.can_create && (
             <Button type="button" onClick={handleOnCreateShowOpen}>
               <PlusCircle className="h-3.5 w-3.5" />
@@ -205,6 +199,14 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       </div>
 
       <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} />
+
+      {/* Rencana Drop & Cek KM - tepat di atas tabel, berlabel juga di HP. */}
+      <div className="flex justify-end mb-2">
+        <Button type="button" variant="outline" size="sm" onClick={() => setRencanaShow(true)}>
+          <ClipboardList className="h-3.5 w-3.5" />
+          <span className="whitespace-nowrap">Rencana Drop &amp; Cek KM</span>
+        </Button>
+      </div>
 
       <div className="w-full">
 
