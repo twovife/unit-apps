@@ -179,6 +179,14 @@ const TableRekapKasir = ({
 
       <Table className="w-full mb-3 table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
+          {/* Grup kolom: Kasbon s/d Tunai = TUNAI 1 (8 kolom). */}
+          <TableRow>
+            <TableHead />
+            <TableHead colSpan={8} className="font-bold text-center border-b border-x text-slate-900">
+              TUNAI 1
+            </TableHead>
+            <TableHead />
+          </TableRow>
           {table.getHeaderGroups().map((headerGroup, key) => (
             <TableRow key={key}>
               {headerGroup.headers.map((header, key) => (
