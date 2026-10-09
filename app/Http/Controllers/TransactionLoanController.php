@@ -164,6 +164,22 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
 
+    // Diperiksa di server, bukan cuma di drawer: drawer bisa memakai data
+    // yang sudah basi (mantri menginput sesudah drawer dibuka).
+    $gantung = TransactionLoan::where('transaction_loan_officer_grouping_id', $groupingId)
+      ->where(fn($q) => $q
+        ->where(fn($q) => $q->whereDate('drop_date', $date)->whereIn('status', ['open', 'acc']))
+        ->orWhere(fn($q) => $q->whereDate('request_date', $date)->where('status', 'open')))
+      ->get(['drop_date', 'request_date', 'status']);
+    if ($gantung->isNotEmpty()) {
+      $drop = $gantung->filter(fn($l) => Carbon::parse($l->drop_date)->toDateString() === $date && in_array($l->status, ['open', 'acc']))->count();
+      $pengajuan = $gantung->count() - $drop;
+      return redirect()->back()->withErrors(trim(
+        ($drop ? "{$drop} drop hari ini belum diselesaikan mantri (klik SUKSES / GAGAL). " : '')
+        . ($pengajuan ? "{$pengajuan} pengajuan hari ini belum diselesaikan KM (klik ACC / TOLAK)." : '')
+      ));
+    }
+
     try {
       DB::beginTransaction();
 

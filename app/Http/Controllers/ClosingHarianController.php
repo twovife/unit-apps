@@ -7,8 +7,10 @@ use App\Helpers\Gembok;
 use App\Helpers\HitungAgregat;
 use App\Helpers\TutupBulanan;
 use App\Models\TransactionDailyClosing;
+use App\Models\TransactionLoan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Kunci & buka kunci harian alur agregasi baru. Layarnya sudah tidak ada
@@ -31,21 +33,65 @@ class ClosingHarianController extends Controller
         }
         $this->pastikanBerwenang();
 
-        // Hitung ulang sekali lagi tepat sebelum dibekukan: transaksi bisa
-        // masuk antara persetujuan kepala dan penguncian kasir, dan yang
-        // dibekukan harus angka sebenarnya - bukan angka saat kepala melihat.
-        $this->hitungUlangTurunan($closing);
-        $closing->refresh();
+        $kasir = auth()->user()->employee->id;
+        $diselesaikan = ['tolak' => 0, 'gagal' => 0];
 
         try {
-            Gembok::kunci($closing, auth()->user()->employee->id);
+            DB::transaction(function () use ($closing, $kasir, &$diselesaikan) {
+                // Yang masih menggantung di hari ini diputus sebelum dikunci
+                // (keputusan mas 2026-10-09): sesudah kunci statusnya tidak
+                // bisa diubah lagi, jadi jangan sampai ada yang beku di open/acc.
+                $diselesaikan = self::selesaikanGantung($closing, $kasir);
+
+                // Hitung ulang sekali lagi tepat sebelum dibekukan: transaksi
+                // bisa masuk antara Ceklist Kepala dan kunci kasir, dan yang
+                // dibekukan harus angka sebenarnya.
+                $this->hitungUlangTurunan($closing);
+                $closing->refresh();
+
+                Gembok::kunci($closing, $kasir);
+            });
         } catch (\Throwable $e) {
-            return back()->withErrors($e->getMessage());
+            return back()->withErrors(AppHelper::pesanGagal($e, $e->getMessage()));
         }
 
         $this->susunBulanan($closing);
 
-        return back()->with('message', 'Terkunci.');
+        $catatan = array_filter([
+            $diselesaikan['tolak'] ? $diselesaikan['tolak'] . ' pengajuan open ditolak' : null,
+            $diselesaikan['gagal'] ? $diselesaikan['gagal'] . ' drop acc digagalkan' : null,
+        ]);
+
+        return back()->with('message', 'Terkunci.' . ($catatan ? ' Otomatis: ' . implode(', ', $catatan) . '.' : ''));
+    }
+
+    /**
+     * Putus semua yang masih menggantung di hari kunci, untuk kelompok ini:
+     *   - drop bertanggal hari itu: open -> tolak, acc -> gagal;
+     *   - pengajuan yang DIAJUKAN hari itu dan masih open -> tolak.
+     * Dicatat atas nama kasir yang mengunci (user_check / check_date).
+     *
+     * @return array{tolak:int,gagal:int}
+     */
+    private static function selesaikanGantung(TransactionDailyClosing $closing, int $kasir): array
+    {
+        $tanggal = $closing->date->toDateString();
+        $hasil = ['tolak' => 0, 'gagal' => 0];
+
+        $gantung = TransactionLoan::where('transaction_loan_officer_grouping_id', $closing->transaction_loan_officer_grouping_id)
+            ->where(fn($q) => $q
+                ->where(fn($q) => $q->whereDate('drop_date', $tanggal)->whereIn('status', ['open', 'acc']))
+                ->orWhere(fn($q) => $q->whereDate('request_date', $tanggal)->where('status', 'open')))
+            ->get();
+
+        foreach ($gantung as $loan) {
+            $baru = $loan->status === 'acc' ? 'gagal' : 'tolak';
+            // Per model, bukan update massal: hook TransactionLoan ikut jalan.
+            $loan->update(['status' => $baru, 'user_check' => $kasir, 'check_date' => now()->toDateString()]);
+            $hasil[$baru]++;
+        }
+
+        return $hasil;
     }
 
     public function buka(Request $request, TransactionDailyClosing $closing)
