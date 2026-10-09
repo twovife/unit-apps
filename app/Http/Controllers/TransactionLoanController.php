@@ -882,12 +882,15 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
 
-    $val = $request->validate([
-      'tanggal_drop' => ['required', 'date', 'after:' . $transactionLoan->drop_date, new HariKerja('Tanggal drop')],
-    ]);
-
-    if (AppHelper::dateName($request->tanggal_drop) !== $transactionLoan->hari) {
-      return redirect()->back()->withErrors('Hari Tidak Sama');
+    // Tundaan = create ulang drop di hari tagih kerja BERIKUTNYA (keputusan mas
+    // 2026-10-09): tanggalnya ditentukan server, bukan dipilih - sama dengan
+    // aturan tanggal drop pengajuan baru, tidak bisa menclong lebih jauh.
+    $tanggalBaru = WorkDay::hariSamaBerikutnya(Carbon::parse($transactionLoan->drop_date)->startOfDay());
+    if (!$tanggalBaru) {
+      return redirect()->back()->withErrors('Tidak ada hari tagih kerja dalam 8 minggu ke depan. Periksa Kalender Kerja.');
+    }
+    if (AppHelper::tanggalTerkunci($transactionLoan->transaction_loan_officer_grouping_id, $tanggalBaru)) {
+      return redirect()->back()->withErrors('Tanggal drop baru ' . $tanggalBaru->locale('id')->isoFormat('D MMMM Y') . ' sudah dikunci.');
     }
 
     try {
@@ -904,7 +907,7 @@ class TransactionLoanController extends Controller
         'previous_loan_id' => $transactionLoan->previous_loan_id,
         'postponed_loan_id' => $transactionLoan->id,
         'request_date' => $transactionLoan->request_date,
-        'drop_date' => $request->tanggal_drop,
+        'drop_date' => $tanggalBaru->toDateString(),
         'hari' => $transactionLoan->hari,
         'request_nominal' => $transactionLoan->request_nominal,
         'user_mantri' => $transactionLoan->user_mantri,
@@ -917,10 +920,10 @@ class TransactionLoanController extends Controller
       DB::commit();
     } catch (Exception $exception) {
       DB::rollBack();
-      return redirect()->back()->withErrors($exception->getMessage());
+      return redirect()->back()->withErrors(AppHelper::pesanGagal($exception, 'Tundaan gagal disimpan. Ulangi / hubungi IT.'));
     }
 
-    return redirect()->back()->with('message', 'Pengajuan berhasil ditunda ke tanggal drop baru');
+    return redirect()->back()->with('message', 'Pengajuan ditunda ke ' . $tanggalBaru->locale('id')->isoFormat('D MMMM Y') . '.');
   }
 
   // UBAH STATUS PINJAMAN

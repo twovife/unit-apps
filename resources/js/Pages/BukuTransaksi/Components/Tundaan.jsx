@@ -4,7 +4,6 @@ import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { useForm } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import TanggalKerja from '@/Components/shadcn/TanggalKerja';
 import useHariLibur from '@/Hooks/useHariLibur';
 import React, { useEffect, useState } from 'react';
 
@@ -18,8 +17,6 @@ import React, { useEffect, useState } from 'react';
 const Tundaan = ({ id, dropDateLama, onClosed }) => {
   const [open, setOpen] = useState(false);
   const { majuKeHariKerja, siap: kalenderSiap } = useHariLibur(dropDateLama);
-
-  const minTanggalBaru = dayjs(dropDateLama).add(1, 'day').format('YYYY-MM-DD');
 
   // Tundaan menggeser drop MAJU seminggu — dan kalau minggu depan libur,
   // lompatannya ke minggu berikutnya lagi. Server juga menuntut harinya sama
@@ -70,15 +67,11 @@ const Tundaan = ({ id, dropDateLama, onClosed }) => {
   return (
     <div className="w-full p-3 mt-2 border rounded-md bg-muted/40">
       <Loading show={processing} />
-      <Label htmlFor="tanggal_drop_tundaan">Tanggal Drop Baru</Label>
-      <TanggalKerja
-        name="tanggal_drop"
-        min={minTanggalBaru}
-        hariTagih={dayjs(dropDateLama).day()}
-        required
-        value={data.tanggal_drop}
-        onChange={(e) => setData('tanggal_drop', e.target.value)}
-      />
+      <Label>Tanggal Drop Baru</Label>
+      {/* Tidak dipilih: server selalu menunda ke hari tagih kerja berikutnya. */}
+      <div className="mt-1 text-sm font-semibold">
+        {dayjs(data.tanggal_drop).format('dddd, DD MMMM YYYY')}
+      </div>
       {pesanError && (
         <p className="mt-1 text-xs font-medium text-destructive">
           {pesanError}
