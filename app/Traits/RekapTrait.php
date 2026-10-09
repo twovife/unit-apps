@@ -172,7 +172,7 @@ trait RekapTrait
 
     // dd($transactionSirculation);
 
-    $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal')
+    $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal', 'is_transfer', 'danatitipan')
       ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
       ->whereBetween('transaction_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
       ->get()->groupBy('transaction_loan_officer_grouping_id');
@@ -214,6 +214,12 @@ trait RekapTrait
       $sirkulasiMl = $thisSirculation->sum('ml_amount') ?? 0;
 
       $storting = $thisInstalment->where('transaction_date', $transaction_date)->sum('nominal') ?? 0;
+      // Storting hari ini per cara bayar: transfer (is_transfer), katrol
+      // (danatitipan), sisanya cash.
+      $stortingHariIni = $thisInstalment->where('transaction_date', $transaction_date);
+      $stortingTransfer = (int) $stortingHariIni->where('is_transfer', true)->sum('nominal');
+      $stortingKatrol = (int) $stortingHariIni->where('is_transfer', false)->where('danatitipan', true)->sum('nominal');
+      $stortingCash = (int) $storting - $stortingTransfer - $stortingKatrol;
       $do11 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.11) ?? 0;
       $titipan9 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.09) ?? 0;
       $kasbon = $thisDailyRecap?->kasbon ?? 0;
@@ -249,6 +255,9 @@ trait RekapTrait
 
 
         'storting' => $storting,
+        'storting_cash' => $stortingCash,
+        'storting_transfer' => $stortingTransfer,
+        'storting_katrol' => $stortingKatrol,
         'total_storting' => $totalStorting,
         'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),
 

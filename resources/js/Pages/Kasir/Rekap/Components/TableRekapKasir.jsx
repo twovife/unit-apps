@@ -142,6 +142,24 @@ const TableRekapKasir = ({
         cell: ({ getValue }) => <FormatNumbering ribuan value={getValue()} />,
         footer: (info) => <FormatNumbering ribuan value={totals.titipan9} />,
       },
+      {
+        header: 'Cash',
+        accessorKey: 'storting_cash',
+        cell: ({ getValue }) => <FormatNumbering ribuan value={getValue()} />,
+        footer: (info) => <FormatNumbering ribuan value={totals.storting_cash} />,
+      },
+      {
+        header: 'Transfer',
+        accessorKey: 'storting_transfer',
+        cell: ({ getValue }) => <FormatNumbering ribuan value={getValue()} />,
+        footer: (info) => <FormatNumbering ribuan value={totals.storting_transfer} />,
+      },
+      {
+        header: 'Katrol',
+        accessorKey: 'storting_katrol',
+        cell: ({ getValue }) => <FormatNumbering ribuan value={getValue()} />,
+        footer: (info) => <FormatNumbering ribuan value={totals.storting_katrol} />,
+      },
     ],
     [totals]
   );
@@ -186,6 +204,9 @@ const TableRekapKasir = ({
               TUNAI 1
             </TableHead>
             <TableHead />
+            <TableHead colSpan={3} className="font-bold text-center border-b border-x text-slate-900">
+              STORTING
+            </TableHead>
           </TableRow>
           {table.getHeaderGroups().map((headerGroup, key) => (
             <TableRow key={key}>
