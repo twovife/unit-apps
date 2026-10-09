@@ -10,6 +10,8 @@ import CurrencyInput from 'react-currency-input-field';
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const KELAS_INPUT =
   'flex w-full h-9 px-3 py-1 mt-1 text-sm text-right border rounded-md shadow-xs tabular-nums border-input focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring';
+// Isian yang tidak bisa diubah: latar lebih gelap & tebal supaya jelas beda.
+const KELAS_BEKU = 'bg-slate-200 font-bold text-slate-900 disabled:opacity-100 disabled:cursor-default';
 
 /** Angka kecil berlabel untuk ringkasan. */
 const Angka = ({ label, nilai, uang = true, kelas = '' }) => (
@@ -360,7 +362,7 @@ const Approval = ({
                         </small>
                       </>
                     ) : (
-                      <CurrencyInput className={`${KELAS_INPUT} bg-slate-50`} name="target" disabled prefix="Rp "
+                      <CurrencyInput className={`${KELAS_INPUT} ${KELAS_BEKU}`} name="target" disabled prefix="Rp "
                         value={data.target ?? 0} />
                     )}
                   </div>
@@ -394,7 +396,7 @@ const Approval = ({
                   {/* Dari Kalender Kerja (server: TargetMingguan::tanggalDepan),
                       bukan dari pengajuan dan tidak diketik. */}
                   <Input
-                    className="mt-1 bg-slate-50"
+                    className={`mt-1 ${KELAS_BEKU}`}
                     name="tanggal_rencana_minggu_depan"
                     type="date"
                     readOnly
@@ -408,7 +410,7 @@ const Approval = ({
                 <label className="block text-sm">
                   Rencana drop
                   {/* Hanya dari pengajuan yang di-ACC - tidak diketik. */}
-                  <CurrencyInput className={`${KELAS_INPUT} bg-slate-50`} name="rencana_minggu_depan" disabled
+                  <CurrencyInput className={`${KELAS_INPUT} ${KELAS_BEKU}`} name="rencana_minggu_depan" disabled
                     prefix="Rp " value={data.rencana_minggu_depan ?? 0} />
                   {!Number(data.rencana_minggu_depan) && (
                     <small className="text-amber-700">Tidak ada pengajuan yang terinput.</small>
