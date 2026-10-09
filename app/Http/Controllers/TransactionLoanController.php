@@ -1484,7 +1484,11 @@ class TransactionLoanController extends Controller
   public function updateEverything(TransactionLoan $transactionLoan, Request $request)
   {
 
-    $permission =  AppHelper::havePermissionByDate($transactionLoan->drop_date);
+    // Superuser selalu boleh Reset (tanpa batas tanggal role). Hari yang sudah
+    // dikunci kasir tetap ditolak trigger DB - termasuk untuk superuser.
+    $permission = auth()->user()->hasRole('superuser')
+      ? ['status' => true]
+      : AppHelper::havePermissionByDate($transactionLoan->drop_date);
     if (!$permission['status']) {
       return redirect()->back()->withErrors($permission['message']);
     }
