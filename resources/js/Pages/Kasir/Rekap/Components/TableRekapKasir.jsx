@@ -55,7 +55,7 @@ const Angka = ({ n, bertanda = false }) => {
  * Kotak isian kasir di Rekap 1 (kasbon, transport, SU Lapangan, setor
  * transfer): memenuhi sel, untuk kantor alur baru & hari belum dikunci.
  * Diketik dalam RIBUAN (200 = 200.000, 37,5 = 37.500); "000" tampil sebagai
- * akhiran. Bawaan & kosong = 0. Enter / pindah kotak menyimpan, hanya kalau
+ * akhiran saat kotak sedang diisi. Bawaan & kosong = 0. Enter / pindah kotak menyimpan, hanya kalau
  * kasir benar-benar mengetik.
  */
 const IsianSel = ({ r, k, kolom }) => {
@@ -87,7 +87,7 @@ const IsianSel = ({ r, k, kolom }) => {
         inputMode="decimal"
         placeholder="0"
         onFocus={(e) => e.currentTarget.select()}
-        className="block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500"
+        className="peer block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-2 focus:pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500"
         value={nilai}
         onChange={(e) => {
           setNilai(e.target.value);
@@ -102,7 +102,8 @@ const IsianSel = ({ r, k, kolom }) => {
           }
         }}
       />
-      <span className="absolute text-xs -translate-y-1/2 pointer-events-none right-2 top-1/2 text-slate-400">.000</span>
+      {/* Akhiran .000 hanya saat mengetik. */}
+      <span className="absolute hidden text-xs -translate-y-1/2 pointer-events-none right-2 top-1/2 text-slate-400 peer-focus:block">.000</span>
     </div>
   );
 };
