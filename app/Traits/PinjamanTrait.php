@@ -276,8 +276,6 @@ trait PinjamanTrait
         'hari' => $hari,
         'closed_transaction' => $ClosedTransaction,
         'migrasi' => $migrasi, // true = kantor pakai alur baru (daily_closings)
-        // Tombol Buka kunci di ACC KM: superuser / permission can-edit.
-        'boleh_buka' => \App\Helpers\Gembok::bolehBuka($scope->user),
       ]
     ];
   }

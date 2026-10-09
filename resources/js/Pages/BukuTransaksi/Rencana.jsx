@@ -12,7 +12,7 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
-import { router, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 
 const Rencana = ({ datas, dataTransaksi }) => {
   const [data, setData] = useState([]);
@@ -40,13 +40,6 @@ const Rencana = ({ datas, dataTransaksi }) => {
   const handleOnApproveShowClosed = (e) => {
     setOnApproveShow(false);
     setActionData();
-  };
-
-  // Buka kunci satu hari (koreksi): superuser / can-edit, alasan wajib.
-  const bukaKunci = (row) => {
-    const alasan = window.prompt(`Alasan membuka kunci ${dayjs(row.tanggal).format('DD MMM YYYY')}:`);
-    if (alasan === null) return;
-    router.post(route('closing.buka', row.closing_id), { alasan }, { preserveScroll: true });
   };
 
   return (
@@ -88,23 +81,8 @@ const Rencana = ({ datas, dataTransaksi }) => {
                           onClick={() => handleOnApproveShowOpen(item.tanggal)}
                           size="xs"
                         >
-                          ACC
+                          {server_filter?.migrasi && item.is_kasir ? '🔒 ACC' : 'ACC'}
                         </BargeStatus>
-                      )}
-                      {/* Status kunci kasir (dikunci dari Kasir -> Rekap) */}
-                      {server_filter?.migrasi && item.is_kasir && (
-                        <span className="text-[10px] font-semibold text-green-700">
-                          🔒 Terkunci
-                          {server_filter?.boleh_buka && (
-                            <button
-                              type="button"
-                              onClick={() => bukaKunci(item)}
-                              className="ml-1 font-semibold text-red-600 underline"
-                            >
-                              Buka
-                            </button>
-                          )}
-                        </span>
                       )}
                       {item.dibuka_at && (
                         <span
