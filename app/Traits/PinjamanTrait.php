@@ -199,7 +199,15 @@ trait PinjamanTrait
 
       $instalment = TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('transaction_date', $datesMatchDay)->get()->groupBy('transaction_date');
 
-      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId) {
+      // Tanda "dibuka ulang": buka-kunci terakhir per baris (alur baru).
+      $dibuka = $migrasi
+        ? \App\Models\TransactionLockHistory::whereIn('transaction_daily_closing_id', $daily_recap->flatten()->pluck('closing_id')->filter())
+          ->where('aksi', \App\Models\TransactionLockHistory::AKSI_BUKA)
+          ->orderBy('id')->get(['transaction_daily_closing_id', 'alasan', 'created_at'])
+          ->keyBy('transaction_daily_closing_id')
+        : collect();
+
+      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $dibuka) {
         $thisDailyRecap = $daily_recap->get($tanggal, collect())->first(); //stored as database
         $thisData = $pengajuan->get($tanggal, collect()); //summary of drop
         // Drop = pinjaman yang benar-benar cair (success) - sama dengan angka
@@ -212,6 +220,8 @@ trait PinjamanTrait
           'is_generated' => $thisDailyRecap ? true : false,
           'grouping_id' => $groupingId->id,
           'closing_id' => $thisDailyRecap?->closing_id,     // alur baru: id baris daily_closings (tombol kunci)
+          'dibuka_at' => $dibuka->get($thisDailyRecap?->closing_id)?->created_at?->toDateTimeString(),
+          'dibuka_alasan' => $dibuka->get($thisDailyRecap?->closing_id)?->alasan,
           'setoran_mantri' => $thisDailyRecap?->setoran_mantri,
           'kelompok' => $groupingId->kelompok,
           'tanggal' => $tanggal,
@@ -266,6 +276,8 @@ trait PinjamanTrait
         'hari' => $hari,
         'closed_transaction' => $ClosedTransaction,
         'migrasi' => $migrasi, // true = kantor pakai alur baru (daily_closings)
+        // Tombol Buka kunci di ACC KM: superuser / permission can-edit.
+        'boleh_buka' => \App\Helpers\Gembok::bolehBuka($scope->user),
       ]
     ];
   }

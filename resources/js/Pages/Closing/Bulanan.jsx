@@ -255,7 +255,7 @@ const Bulanan = ({ datas = [], server_filter }) => {
 
         <p className="max-w-3xl text-xs text-slate-500">
           <b>Hari terkunci</b> hijau berarti setiap hari kerja bulan itu sudah
-          dikunci di Closing Harian. Selama masih kuning (mis. 23/24), tombol
+          dikunci lewat Buku Transaksi → ACC KM. Selama masih kuning (mis. 23/24), tombol
           Kunci mati — arahkan kursor ke tombolnya untuk melihat apa yang
           menahan. Membuka kunci bulan yang sudah diteken hanya bisa lewat
           stafkontrol/pusat/superuser yang berizin <code>can-edit</code>, dan

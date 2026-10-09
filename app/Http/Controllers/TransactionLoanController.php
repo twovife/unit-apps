@@ -127,7 +127,7 @@ class TransactionLoanController extends Controller
   {
     $user = auth()->user();
     if (!$user->hasPermissionTo('can-approve') || $user->hasRole('stafkontrol')) {
-      return redirect()->back()->withErrors('Anda tidak punya akses cek kepala.');
+      return redirect()->back()->withErrors('Anda tidak punya akses Ceklist Kepala.');
     }
 
     $request->validate([
@@ -178,6 +178,11 @@ class TransactionLoanController extends Controller
           'transaction_loan_officer_grouping_id' => $groupingId,
           'date' => $tanggalDepan,
         ]);
+        // Baris minggu depan yang sudah terkunci tidak ditimpa.
+        if ($depan->kasir_lock_at) {
+          DB::rollBack();
+          return redirect()->back()->withErrors('Target minggu depan (' . Carbon::parse($tanggalDepan)->locale('id')->isoFormat('D MMMM Y') . ') sudah dikunci; Ceklist Kepala tidak disimpan.');
+        }
         $depan->update([
           'target' => \App\Helpers\TargetMingguan::hitung((int) $closing->target, $drop, (int) $request->keluar),
           'target_on' => $date,
@@ -191,7 +196,7 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Gagal menyimpan cek kepala. Ulangi / hubungi IT.');
     }
 
-    return redirect()->back()->with('message', 'Cek kepala tersimpan; target minggu depan diperbarui.');
+    return redirect()->back()->with('message', 'Ceklist Kepala tersimpan; target minggu depan diperbarui.');
   }
 
   // Cek #2 kasir dari tab Rencana Drop (alur baru): catat setoran mantri lalu
@@ -201,8 +206,11 @@ class TransactionLoanController extends Controller
   // sebelumnya terkunci) dicek di dalam kunci()/Gembok.
   public function kasir_kunci(Request $request, \App\Models\TransactionDailyClosing $closing)
   {
-    $request->validate([
+    $val = $request->validate([
       'setoran_mantri' => ['required', 'integer', 'min:0'],
+      // Opsional (keputusan mas 2026-10-09): kosong = tidak diubah.
+      'kasbon' => ['nullable', 'integer', 'min:0'],
+      'transport' => ['nullable', 'integer', 'min:0'],
     ]);
 
     if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
@@ -213,7 +221,11 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Baris ini sudah dikunci.');
     }
 
-    $closing->update(['setoran_mantri' => (int) $request->setoran_mantri]);
+    $closing->update(array_filter([
+      'setoran_mantri' => (int) $val['setoran_mantri'],
+      'kasbon' => isset($val['kasbon']) ? (int) $val['kasbon'] : null,
+      'transport' => isset($val['transport']) ? (int) $val['transport'] : null,
+    ], fn($v) => $v !== null));
 
     return app(\App\Http\Controllers\ClosingHarianController::class)->kunci($closing);
   }

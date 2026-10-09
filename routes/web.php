@@ -150,13 +150,11 @@ Route::middleware('auth')->group(function () {
       ->name('serah_terima_sahkan');
   });
 
-  // Layar kerja harian alur agregasi baru. Otorisasi dicek di controller.
+  // Buka kunci harian alur baru. Otorisasi dicek di controller.
   Route::controller(\App\Http\Controllers\ClosingHarianController::class)
     ->prefix('closing')->name('closing.')->group(function () {
-      Route::get('/harian', 'index')->name('harian');
-      Route::put('/harian/{closing}', 'simpanManual')->name('simpan_manual');
-      Route::post('/harian/{closing}/approve-kepala', 'approveKepala')->name('approve_kepala');
-      Route::post('/harian/{closing}/kunci', 'kunci')->name('kunci');
+      // Layar Closing Harian dicabut 2026-10-09; kunci lewat
+      // transaction.kasir_kunci, buka kunci dari drawer ACC KM.
       Route::post('/harian/{closing}/buka', 'buka')->name('buka');
     });
   // Layar tutup buku BULANAN alur baru. Otorisasi dicek di controller.

@@ -62,7 +62,7 @@ class DaftarMigrasi
      * 2. bangkitkan & hitung baris harian SETIAP bulan dari $periode s/d bulan
      *    berjalan (migrasi bisa dilakukan sebulan sesudahnya);
      * 3. kunci otomatis s/d $kunciSampai (opsional) - hari sesudahnya dikunci
-     *    manual per tanggal lewat Closing Harian;
+     *    manual per tanggal lewat Buku Transaksi -> ACC KM;
      * 4. susun baris bulanan tiap bulan itu (saldo awal rekap).
      *
      * @return bool false kalau kantor tidak ada atau sudah terdaftar

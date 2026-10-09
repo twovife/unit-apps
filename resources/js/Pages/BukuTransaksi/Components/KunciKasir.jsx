@@ -16,13 +16,24 @@ import CurrencyInput from 'react-currency-input-field';
 // Post ke transaction.kasir_kunci -> update setoran -> delegasi ke
 // ClosingHarianController@kunci (hitung ulang + Gembok + susun bulanan).
 export default function KunciKasir({ show = false, onClosed, row }) {
-  const { data, setData, post, processing, reset } = useForm({
+  const { data, setData, post, processing, reset, errors } = useForm({
     setoran_mantri: '',
+    kasbon: '',
+    transport: '',
   });
 
   useEffect(() => {
-    if (show && row) setData('setoran_mantri', row.setoran_mantri ?? '');
+    if (show && row)
+      setData({
+        setoran_mantri: row.setoran_mantri ?? '',
+        // Opsional: kosong = tidak diubah.
+        kasbon: row.kasbon || '',
+        transport: row.transport || '',
+      });
   }, [show, row]);
+
+  const kelasInput =
+    'flex w-full px-3 py-1 mt-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring';
 
   const submit = (e) => {
     e.preventDefault();
@@ -67,6 +78,29 @@ export default function KunciKasir({ show = false, onClosed, row }) {
               placeholder="0 = mantri tidak menyetor"
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            {['kasbon', 'transport'].map((k) => (
+              <div key={k}>
+                <Label htmlFor={k} className="capitalize">
+                  {k} <span className="font-normal text-muted-foreground">(opsional)</span>
+                </Label>
+                <CurrencyInput
+                  className={kelasInput}
+                  id={k}
+                  name={k}
+                  allowDecimals={false}
+                  prefix="Rp. "
+                  min={0}
+                  value={data[k]}
+                  onValueChange={(v) => setData(k, v ?? '')}
+                  placeholder="boleh kosong"
+                />
+              </div>
+            ))}
+          </div>
+          {Object.values(errors)[0] && (
+            <p className="text-xs font-medium text-destructive">{Object.values(errors)[0]}</p>
+          )}
           <div className="text-right">
             <Button type="submit" disabled={processing}>
               Simpan &amp; Kunci

@@ -38,9 +38,9 @@ class TransactionDailyRecapController extends Controller
   {
     // GERBANG alur baru: kantor migrasi TIDAK menulis daily_recaps lagi (juga
     // menghindari hook target rekursif TransactionDailyRecap::updating). Simpan
-    // kasbon/transport & kunci kasir lewat Closing Harian (ClosingHarianController).
+    // kasbon/transport & kunci kasir lewat Buku Transaksi -> ACC KM (kasir_kunci).
     if ($this->sudahMigrasi($request->id, $request->date)) {
-      return redirect()->back()->withError('Kantor ini sudah migrasi — simpan lewat menu Closing Harian, bukan rekap lama.');
+      return redirect()->back()->withError('Kantor ini sudah migrasi — simpan lewat Buku Transaksi → ACC KM, bukan rekap lama.');
     }
 
     try {
@@ -74,10 +74,10 @@ class TransactionDailyRecapController extends Controller
 
   public function ceklist_kepala(Request $request)
   {
-    // GERBANG alur baru: kantor migrasi menyetujui hari lewat Closing Harian
-    // (ClosingHarianController@approveKepala), bukan menulis daily_recaps di sini.
+    // GERBANG alur baru: kantor migrasi Ceklist Kepala lewat ACC KM (ceklist_kepala_baru)
+    // (TransactionLoanController@ceklist_kepala_baru), bukan menulis daily_recaps di sini.
     if ($this->sudahMigrasi($request->id, $request->date)) {
-      return redirect()->back()->withError('Kantor ini sudah migrasi — setujui lewat menu Closing Harian, bukan rekap lama.');
+      return redirect()->back()->withError('Kantor ini sudah migrasi — Ceklist Kepala lewat Buku Transaksi → ACC KM, bukan rekap lama.');
     }
 
     $validate = $request->validate([

@@ -13,7 +13,7 @@ import dayjs from 'dayjs';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
 import KunciKasir from './Components/KunciKasir';
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 const Rencana = ({ datas, dataTransaksi }) => {
   const [data, setData] = useState([]);
@@ -53,6 +53,13 @@ const Rencana = ({ datas, dataTransaksi }) => {
   const closeKunci = () => {
     setOnKunciShow(false);
     setKunciRow(null);
+  };
+
+  // Buka kunci satu hari (koreksi): superuser / can-edit, alasan wajib.
+  const bukaKunci = (row) => {
+    const alasan = window.prompt(`Alasan membuka kunci ${dayjs(row.tanggal).format('DD MMM YYYY')}:`);
+    if (alasan === null) return;
+    router.post(route('closing.buka', row.closing_id), { alasan }, { preserveScroll: true });
   };
 
   return (
@@ -99,6 +106,23 @@ const Rencana = ({ datas, dataTransaksi }) => {
                       {server_filter?.migrasi && item.is_kasir && (
                         <span className="text-[10px] font-semibold text-green-700">
                           🔒 Terkunci
+                          {server_filter?.boleh_buka && (
+                            <button
+                              type="button"
+                              onClick={() => bukaKunci(item)}
+                              className="ml-1 font-semibold text-red-600 underline"
+                            >
+                              Buka
+                            </button>
+                          )}
+                        </span>
+                      )}
+                      {item.dibuka_at && (
+                        <span
+                          title={item.dibuka_alasan ?? ''}
+                          className="rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800"
+                        >
+                          dibuka ulang {dayjs(item.dibuka_at).format('DD MMM YYYY')}
                         </span>
                       )}
                       {server_filter?.migrasi &&

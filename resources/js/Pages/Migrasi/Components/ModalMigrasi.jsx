@@ -181,7 +181,7 @@ const ModalMigrasi = ({ open, onOpenChange, unit, periode }) => {
           <DialogTitle>Migrasikan {unit}</DialogTitle>
           <DialogDescription>
             Pendataan baru mulai {tgl(periode)}. Semua hari sejak tanggal itu masuk ke closing harian baru; hari s/d tanggal
-            kunci dikunci otomatis, sisanya dikunci manual per tanggal lewat Closing Harian.
+            kunci dikunci otomatis, sisanya dikunci manual per tanggal lewat Buku Transaksi → ACC KM.
           </DialogDescription>
         </DialogHeader>
 
