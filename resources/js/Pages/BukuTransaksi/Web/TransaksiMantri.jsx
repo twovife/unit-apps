@@ -200,11 +200,11 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
       <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} />
 
-      {/* Rencana Drop & Cek KM - tepat di atas tabel, berlabel juga di HP. */}
+      {/* Rencana Drop & Acc KM - tepat di atas tabel, berlabel juga di HP. */}
       <div className="flex justify-end mb-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setRencanaShow(true)}>
           <ClipboardList className="h-3.5 w-3.5" />
-          <span className="whitespace-nowrap">Rencana Drop &amp; Cek KM</span>
+          <span className="whitespace-nowrap">Rencana Drop &amp; Acc KM</span>
         </Button>
       </div>
 
