@@ -1,4 +1,5 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
+import FilterBar from '@/Components/FilterBar';
 import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Head, usePage } from '@inertiajs/react';
@@ -57,6 +58,30 @@ const RekapContent = ({
           <h1 className="text-xl font-semibold tracking-tight ">{title}</h1>
           {show == 'rekapkasir' && <p className="text-xs text-muted-foreground">Angka dalam ribuan.</p>}
         </div>
+        {show == 'rekapkasir' ? (
+          // Rekap 1: tanggal lewat FilterBar (chip instan, sama dengan menu
+          // lain); Unit/Wilayah tetap lewat popover kecil.
+          (server_filter.userAuthorized.canShowBranch || server_filter.userAuthorized.canShowGroupingBranch) && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <FilterIcon className="h-4" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Unit</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <SearchComponent
+                  key={server_filter.tanggal}
+                  urlLink={urlLink}
+                  localState={localState}
+                  searchBranch={server_filter.userAuthorized.canShowBranch}
+                  searchGroupingBranch={server_filter.userAuthorized.canShowGroupingBranch}
+                />
+              </PopoverContent>
+            </Popover>
+          )
+        ) : (
+          <>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
             urlLink={urlLink}
@@ -91,7 +116,24 @@ const RekapContent = ({
             </PopoverContent>
           </Popover>
         </div>
+          </>
+        )}
       </div>
+      {show == 'rekapkasir' && (
+        <div className="mb-3">
+          <FilterBar
+            urlLink={urlLink}
+            storageKey={localState}
+            showHari={false}
+            showMonth={false}
+            showTanggal={true}
+            extraParams={{
+              ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
+              ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
+            }}
+          />
+        </div>
+      )}
       <div>
         {show == 'rekap2' && (
           // <div>rekap 2 show</div>

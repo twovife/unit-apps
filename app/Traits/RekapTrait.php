@@ -293,6 +293,7 @@ trait RekapTrait
       'datas' => $data,
       'server_filter' => [
         'date' => $transaction_date->format('Y-m-d'),
+        'tanggal' => $transaction_date->format('Y-m-d'), // dibaca FilterBar (mode tanggal)
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
