@@ -40,6 +40,10 @@ const NewNasabah = ({
   batasiPengajuan = false,
   // Popup bukutransaksi / fastcreate: bebaskan tanggal sepenuhnya (sementara).
   bebasTanggal = false,
+  // Pengajuan biasa (popup Buku Transaksi & mobile): tanggal drop tidak dipilih
+  // bebas - hanya hari tagih kerja berikutnya, atau drop langsung. Server
+  // (store_buku_transaksi) menegakkan aturan yang sama.
+  aturanDrop = false,
 }) => {
   // getLink after generate
   const { printUrl } = usePage().props;
@@ -369,6 +373,28 @@ const NewNasabah = ({
                       </div>
                       <div className="w-full mb-3">
                         <Label>Tanggal Drop</Label>
+                        {aturanDrop ? (
+                          <select
+                            name="tanggal_drop"
+                            required
+                            disabled={!data.request_date}
+                            value={data.tanggal_drop}
+                            onChange={onInputChange}
+                            className="w-full h-9 px-3 text-sm border rounded-md border-input bg-background"
+                          >
+                            {data.request_date && (
+                              <>
+                                <option value={majuKeHariKerja(dayjs(data.request_date).add(1, 'week').format('YYYY-MM-DD'))}>
+                                  {dayjs(majuKeHariKerja(dayjs(data.request_date).add(1, 'week').format('YYYY-MM-DD'))).format('DD MMM YYYY')}{' '}
+                                  (minggu depan)
+                                </option>
+                                <option value={data.request_date}>
+                                  {dayjs(data.request_date).format('DD MMM YYYY')} (drop langsung)
+                                </option>
+                              </>
+                            )}
+                          </select>
+                        ) : (
                         <TanggalKerja
                           name="tanggal_drop"
                           min={mixDate}
@@ -386,6 +412,7 @@ const NewNasabah = ({
                           value={data.tanggal_drop}
                           onChange={onInputChange}
                         />
+                        )}
                         {data.request_date &&
                           data.tanggal_drop &&
                           data.tanggal_drop !==

@@ -494,8 +494,14 @@ class AppHelper
    */
   public static function hariDropTerkunci(\App\Models\TransactionLoan $loan): bool
   {
-    $hari = fn($q) => $q->where('transaction_loan_officer_grouping_id', $loan->transaction_loan_officer_grouping_id)
-      ->where('date', $loan->drop_date);
+    return self::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, $loan->drop_date);
+  }
+
+  /** Tanggal ini di kelompok ini sudah dikunci (aturan sama dengan hariDropTerkunci). */
+  public static function tanggalTerkunci($groupingId, $tanggal): bool
+  {
+    $hari = fn($q) => $q->where('transaction_loan_officer_grouping_id', $groupingId)
+      ->whereDate('date', Carbon::parse($tanggal)->toDateString());
 
     return \App\Models\TransactionDailyClosing::where($hari)
       ->where(fn($q) => $q->whereNotNull('kasir_lock_at')->orWhereNotNull('kepala_approval_at'))

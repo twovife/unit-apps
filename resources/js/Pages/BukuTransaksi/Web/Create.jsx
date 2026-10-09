@@ -34,7 +34,7 @@ const Create = ({ show = false, onClosed }) => {
           <NewNasabah
             onClosed={onClosed}
             submitUrl={route('transaction.store_buku_transaksi')}
-            bebasTanggal={true}
+            aturanDrop={true}
           />
         </div>
       </DialogContent>

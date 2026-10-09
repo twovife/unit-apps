@@ -436,21 +436,26 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
 
-    // `bebas` (dari popup Buku Transaksi / fastcreate) melewati cek tanggal ketat
-    // untuk sementara. Mobile create TIDAK mengirim flag ini -> tetap dijaga.
-    $bebas = $request->boolean('bebas');
-
-    if (!$bebas && AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
-      return redirect()->back()->withErrors('Hari Tidak Sama');
+    // Aturan tanggal pengajuan (keputusan mas 2026-10-09). Satu-satunya pintu
+    // pengajuan biasa (popup Buku Transaksi & mobile); fastcreate / input macet
+    // lewat store_buku_transaksi_batch dan tidak terkena aturan ini.
+    //   - drop = hari tagih kerja berikutnya sesudah pengajuan (H+7; kalau
+    //     libur, minggu sesudahnya) - tidak boleh lebih jauh ke depan;
+    //   - atau drop langsung (drop = tanggal pengajuan);
+    //   - tanggal drop yang sudah dikunci ditolak (dicek sesudah kelompok
+    //     diketahui, di bawah).
+    try {
+      $tglPengajuan = Carbon::parse($request->request_date)->startOfDay();
+      $tglDrop = Carbon::parse($request->tanggal_drop)->startOfDay();
+    } catch (\Throwable $e) {
+      return redirect()->back()->withErrors('Tanggal pengajuan / drop tidak terbaca.');
     }
-
-    if (!$bebas && AppHelper::dateName($request->tanggal_drop) === 'minggu') {
-      return redirect()->back()->withErrors('Tidak bisa input transaksi untuk hari Minggu');
-    }
-
-    // Drop tidak boleh sebelum pengajuan (drop langsung = sama hari, boleh).
-    if (!$bebas && Carbon::parse($request->tanggal_drop)->lt(Carbon::parse($request->request_date))) {
-      return redirect()->back()->withErrors('Tanggal drop tidak boleh sebelum tanggal pengajuan.');
+    $dropSeharusnya = WorkDay::hariSamaBerikutnya($tglPengajuan);
+    if (!$tglDrop->equalTo($tglPengajuan) && !($dropSeharusnya && $tglDrop->equalTo($dropSeharusnya))) {
+      return redirect()->back()->withErrors(sprintf(
+        'Tanggal drop harus %s (hari tagih kerja berikutnya sesudah pengajuan), atau sama dengan tanggal pengajuan untuk drop langsung.',
+        $dropSeharusnya ? $dropSeharusnya->locale('id')->isoFormat('D MMMM Y') : '-'
+      ));
     }
 
     $newNik = AppHelper::callUnknownNik($request);
@@ -464,12 +469,13 @@ class TransactionLoanController extends Controller
       'nomor_anggota' => ['required', 'string', 'max:255'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
-      // Hari libur ditolak SELALU, juga untuk `bebas` (keputusan mas
+      // Hari libur ditolak SELALU (keputusan mas
       // 2026-10-09: tidak ada transaksi sama sekali di hari libur).
-      'request_date' => ['required', 'date', new HariKerja('Tanggal pengajuan')],
+      'request_date' => ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal pengajuan')],
       'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
       '*.min' => 'minimal diisi 100rb',
+      'request_date.before_or_equal' => 'Tanggal pengajuan tidak boleh di masa depan.',
       'nomor_anggota.required' => 'Nomor anggota wajib diisi (lihat promes / buku manual).',
     ]);
 
@@ -493,6 +499,10 @@ class TransactionLoanController extends Controller
       if (!$officerGrouping) {
         DB::rollBack();
         return redirect()->back()->withErrors('Kelompok ' . $request->kelompok . ' tidak ada di cabang ini. Tidak bisa input pengajuan.');
+      }
+      if (AppHelper::tanggalTerkunci($officerGrouping->id, $tglDrop)) {
+        DB::rollBack();
+        return redirect()->back()->withErrors('Tanggal drop ' . $tglDrop->locale('id')->isoFormat('D MMMM Y') . ' sudah dikunci. Tidak bisa input pengajuan di tanggal itu.');
       }
       $manage =  $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $officerGrouping->id, 'day' => Carbon::parse($request->tanggal_drop)->dayOfWeek]);
       // Nomor anggota melekat ke rekening (kelompok+hari), sama seperti store_pengajuan_lama.
