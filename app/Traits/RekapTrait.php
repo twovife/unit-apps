@@ -150,6 +150,7 @@ trait RekapTrait
           'tunai' => (int) $r->tunai,
           'setoran_tunai' => $r->setoran_tunai, // SU Lapangan; null = belum dicatat
           'setoran_transfer' => $r->setoran_transfer,
+          'setoran_katrol' => $r->setoran_katrol,
           'daily_kepala_approval' => $r->kepala_approval_at !== null,
           'daily_kasir_approval' => $r->kasir_lock_at !== null,
         ]);
@@ -264,13 +265,14 @@ trait RekapTrait
         // baru). Kantor lama tidak mencatatnya -> null.
         'su_lapangan' => $thisDailyRecap?->setoran_tunai ?? null,
         'setoran_transfer' => $thisDailyRecap?->setoran_transfer ?? null,
+        'setoran_katrol' => $thisDailyRecap?->setoran_katrol ?? null,
         // Sisa Uang = titipan 9% + tunai (debit - kredit).
         'sisa_uang' => $titipan9 + ($debit - $kredit),
-        // -/+ = (setoran tunai + transfer) - (tunai + titipan 9%), sama dengan
+        // -/+ = (setoran tunai + transfer + katrol) - (tunai + titipan 9%), sama dengan
         // kolom generated daily_closings.selisih. Setoran kosong = 0. Kantor
         // lama (tanpa setoran) -> null.
         'selisih_uang' => property_exists($thisDailyRecap ?? new \stdClass, 'setoran_tunai')
-          ? (int) $thisDailyRecap->setoran_tunai + (int) $thisDailyRecap->setoran_transfer - (($debit - $kredit) + $titipan9)
+          ? (int) $thisDailyRecap->setoran_tunai + (int) $thisDailyRecap->setoran_transfer + (int) $thisDailyRecap->setoran_katrol - (($debit - $kredit) + $titipan9)
           : null,
         'total_storting' => $totalStorting,
         'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),

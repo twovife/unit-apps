@@ -138,7 +138,7 @@ class TransactionDailyRecapController extends Controller
     $val = $request->validate([
       'id' => ['required', 'integer'],
       'date' => ['required', 'date', 'before_or_equal:today'],
-      'kolom' => ['required', 'in:kasbon,transport,setoran_tunai,setoran_transfer'],
+      'kolom' => ['required', 'in:kasbon,transport,setoran_tunai,setoran_transfer,setoran_katrol'],
       'nilai' => ['nullable', 'integer', 'min:0'],
     ]);
 
@@ -161,7 +161,7 @@ class TransactionDailyRecapController extends Controller
     // Bawaan 0 untuk semua isian (keputusan mas 2026-10-09): kosong = 0.
     $closing->update([$val['kolom'] => (int) ($val['nilai'] ?? 0)]);
 
-    $nama = ['kasbon' => 'Kasbon', 'transport' => 'Transport', 'setoran_tunai' => 'SU Lapangan', 'setoran_transfer' => 'Setor transfer'];
+    $nama = ['kasbon' => 'Kasbon', 'transport' => 'Transport', 'setoran_tunai' => 'SU Lapangan', 'setoran_transfer' => 'Setor transfer', 'setoran_katrol' => 'Katrolan'];
 
     return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
   }

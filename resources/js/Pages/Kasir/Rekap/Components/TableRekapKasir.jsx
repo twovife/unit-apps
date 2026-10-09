@@ -26,6 +26,8 @@ const GRUP = [
   { judul: '', kolom: [['su_lapangan', 'SU Lapangan', 'font-semibold']] },
   // Setoran lewat transfer (setoran_transfer).
   { judul: '', kolom: [['setoran_transfer', 'Setor Transfer']] },
+  // Katrolan diketik kasir (setoran_katrol), ikut -/+.
+  { judul: '', kolom: [['setoran_katrol', 'Katrolan']] },
   // Titipan 9% + Tunai.
   { judul: '', kolom: [['sisa_uang', 'Sisa Uang', 'font-semibold']] },
   // SU Lapangan - Sisa Uang: merah = kurang, hijau = lebih.
@@ -39,6 +41,7 @@ const KOLOM_ISI = {
   transport: 'transport',
   su_lapangan: 'setoran_tunai',
   setoran_transfer: 'setoran_transfer',
+  setoran_katrol: 'setoran_katrol',
 };
 
 const ribu = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
