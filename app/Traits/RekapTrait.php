@@ -294,7 +294,9 @@ trait RekapTrait
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
-        'branch_id' => $branch_id
+        'branch_id' => $branch_id,
+        // Kantor alur baru: SU Lapangan bisa diisi kasir di Rekap 1.
+        'migrasi' => \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $transaction_date),
       ]
     ];
   }

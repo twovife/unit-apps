@@ -169,6 +169,8 @@ Route::middleware('auth')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {
         Route::post('/', "rekap_post")->name('rekap_post');
+        // SU Lapangan (setoran_mantri) dari sel Rekap 1, kantor alur baru.
+        Route::post('/su-lapangan', "simpan_su_lapangan")->name('simpan_su_lapangan');
         Route::post('/ceklist-kepala', "ceklist_kepala")->name('ceklist_kepala');
         Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
         Route::get('/rencana', "rencana_drop")->name('rencana_drop');

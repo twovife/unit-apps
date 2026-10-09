@@ -123,6 +123,44 @@ class TransactionDailyRecapController extends Controller
     return app(ClosingHarianController::class)->kunci($closing->fresh());
   }
 
+  /**
+   * SU Lapangan (uang yang dibawa pulang mantri) -> daily_closings.setoran_mantri.
+   * Diisi kasir langsung di sel Rekap 1, kantor alur baru, hari yang belum
+   * dikunci. Kosong = belum dicatat (null), beda dengan 0.
+   */
+  public function simpan_su_lapangan(Request $request)
+  {
+    if (!auth()->user()->hasPermissionTo('can-approve')) {
+      return redirect()->back()->withErrors('SU Lapangan diisi kasir / KM / pimpinan.');
+    }
+
+    $val = $request->validate([
+      'id' => ['required', 'integer'],
+      'date' => ['required', 'date', 'before_or_equal:today'],
+      'su_lapangan' => ['nullable', 'integer', 'min:0'],
+    ]);
+
+    $grouping = TransactionLoanOfficerGrouping::find($val['id']);
+    if (!AppHelper::bolehAksesKelompok($grouping)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+    if (!$this->sudahMigrasi($grouping->id, $val['date'])) {
+      return redirect()->back()->withErrors('SU Lapangan hanya untuk kantor yang sudah migrasi.');
+    }
+
+    $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
+      'transaction_loan_officer_grouping_id' => $grouping->id,
+      'date' => Carbon::parse($val['date'])->toDateString(),
+    ]);
+    if ($closing->kasir_lock_at) {
+      return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
+    }
+
+    $closing->update(['setoran_mantri' => $val['su_lapangan'] ?? null]);
+
+    return redirect()->back()->with('message', 'SU Lapangan tersimpan.');
+  }
+
   public function ceklist_kepala(Request $request)
   {
     // GERBANG alur baru: kantor migrasi Ceklist Kepala lewat ACC KM (ceklist_kepala_baru)
