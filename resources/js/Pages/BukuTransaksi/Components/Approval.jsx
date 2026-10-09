@@ -319,11 +319,11 @@ const Approval = ({
           )}
 
           {transaksiOpenHariIni.length > 0 && (
-            <DaftarTertunda judul="Proses dulu drop hari ini yang masih open / acc" isi={transaksiOpenHariIni} />
+            <DaftarTertunda judul="Transaksi hari ini belum diselesaikan mantri — klik SUKSES / GAGAL" isi={transaksiOpenHariIni} />
           )}
           {transaksiOpenMingguDepan.length > 0 && (
             <DaftarTertunda
-              judul="Proses dulu pengajuan hari ini yang masih open"
+              judul="Pengajuan hari ini belum diselesaikan KM — klik ACC / TOLAK"
               isi={transaksiOpenMingguDepan}
               tampilTanggal
             />
