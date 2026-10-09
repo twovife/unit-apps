@@ -134,8 +134,13 @@ class TransactionLoanController extends Controller
       'id' => ['required'],            // grouping id
       'date' => ['required', 'date', 'before_or_equal:today'],
       'keluar' => ['required', 'integer', 'min:0'],
+      // Koreksi target hari ini (opsional): memutus rantai di tanggal ini.
+      'target_koreksi' => ['nullable', 'integer', 'min:0'],
+      'alasan_koreksi' => ['nullable', 'required_with:target_koreksi', 'string', 'min:5', 'max:500'],
     ], [
       'date.before_or_equal' => 'Belum harinya — Ceklist Kepala baru bisa pada hari itu atau sesudahnya.',
+      'alasan_koreksi.required_with' => 'Alasan koreksi target wajib diisi.',
+      'alasan_koreksi.min' => 'Alasan koreksi target terlalu pendek.',
     ]);
 
     $groupingId = (int) $request->id;
@@ -162,6 +167,22 @@ class TransactionLoanController extends Controller
         return redirect()->back()->withErrors('Baris ini sudah dikunci kasir.');
       }
 
+      // Koreksi target hari D: angka tulis tangan menggantikan hasil rantai,
+      // ditandai 'koreksi' supaya ACC minggu lalu / cron tidak menimpanya.
+      if ($request->filled('target_koreksi') && (int) $request->target_koreksi !== (int) $closing->target) {
+        $lama = (int) $closing->target;
+        $closing->update(['target' => (int) $request->target_koreksi, 'target_source' => 'koreksi']);
+        \App\Models\TransactionLockHistory::create([
+          'transaction_daily_closing_id' => $closing->id,
+          'transaction_loan_officer_grouping_id' => $groupingId,
+          'tanggal' => $date,
+          'aksi' => \App\Models\TransactionLockHistory::AKSI_TARGET,
+          'user_id' => $user->employee->id,
+          'alasan' => sprintf('Target %s -> %s. %s', number_format($lama, 0, ',', '.'),
+            number_format((int) $request->target_koreksi, 0, ',', '.'), $request->alasan_koreksi),
+        ]);
+      }
+
       // drop hari D satu sumber (bukan kolom tersimpan yang bisa basi).
       $drop = (int) (\App\Helpers\HitungAgregat::harian($groupingId, $date)['drop'] ?? 0);
 
@@ -185,11 +206,16 @@ class TransactionLoanController extends Controller
           DB::rollBack();
           return redirect()->back()->withErrors('Target minggu depan (' . Carbon::parse($tanggalDepan)->locale('id')->isoFormat('D MMMM Y') . ') sudah dikunci; Ceklist Kepala tidak disimpan.');
         }
-        $depan->update([
-          'target' => \App\Helpers\TargetMingguan::hitung((int) $closing->target, $drop, (int) $request->keluar),
-          'target_on' => $date,
-          'target_source' => 'manual',
-        ]);
+        // Target minggu depan yang sudah dikoreksi / di-recount adalah awal
+        // rantai baru - tidak ditimpa (ACC tetap tersimpan).
+        $depanDikoreksi = in_array($depan->target_source, \App\Helpers\TargetMingguan::SUMBER_PUTUS, true);
+        if (!$depanDikoreksi) {
+          $depan->update([
+            'target' => \App\Helpers\TargetMingguan::hitung((int) $closing->target, $drop, (int) $request->keluar),
+            'target_on' => $date,
+            'target_source' => 'manual',
+          ]);
+        }
       }
 
       DB::commit();
@@ -198,7 +224,9 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Gagal menyimpan cek kepala. Ulangi / hubungi IT.');
     }
 
-    return redirect()->back()->with('message', 'Ceklist Kepala tersimpan; target minggu depan diperbarui.');
+    return redirect()->back()->with('message', !empty($depanDikoreksi)
+      ? 'Ceklist Kepala tersimpan; target minggu depan sudah dikoreksi, tidak diubah.'
+      : 'Ceklist Kepala tersimpan; target minggu depan diperbarui.');
   }
 
 

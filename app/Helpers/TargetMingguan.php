@@ -21,6 +21,9 @@ use Carbon\Carbon;
 // (dipakai tombol manual superuser untuk kelompok+hari+kantor tertentu).
 class TargetMingguan
 {
+    /** Sumber target yang memulai rantai baru: tidak ditimpa ACC minggu lalu / cron. */
+    public const SUMBER_PUTUS = ['koreksi', 'recount'];
+
     /**
      * Hari tagih tempat target hasil D jatuh: hari yang sama minggu berikutnya
      * yang hari kerja (libur dilompati). Kalau D+7 libur, tidak ada tagihan di
@@ -72,7 +75,8 @@ class TargetMingguan
 
             // Sudah lahir dari D (carried migrasi / run sebelumnya) atau sudah
             // diverifikasi manusia -> hormati, jangan sentuh.
-            if ($targetOnDepan === $tanggalD || $barisDepan->target_source === 'manual') {
+            if ($targetOnDepan === $tanggalD || $barisDepan->target_source === 'manual'
+                || in_array($barisDepan->target_source, self::SUMBER_PUTUS, true)) {
                 continue;
             }
 

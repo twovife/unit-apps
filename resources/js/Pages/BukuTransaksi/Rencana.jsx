@@ -132,6 +132,14 @@ const Rencana = ({ datas, dataTransaksi }) => {
                     auto
                   </span>
                 )}
+                {item.target_source === 'koreksi' && (
+                  <span
+                    className="ml-1 inline-block rounded px-1 text-[10px] font-semibold bg-violet-100 text-violet-700"
+                    title="Target dikoreksi tangan saat ACC — rantai dimulai ulang dari sini"
+                  >
+                    koreksi
+                  </span>
+                )}
                 {item.target_source === 'manual' && (
                   <span
                     className="ml-1 text-green-600"

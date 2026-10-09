@@ -21,6 +21,8 @@ class TransactionLockHistory extends Model
     public const AKSI_BUKA = 'buka';
     /** Baris bulanan yang sudah diteken ditulis ulang karena koreksi hari lampau. */
     public const AKSI_PERBARUI = 'perbarui';
+    /** Target hari itu dikoreksi tangan saat Ceklist Kepala (rantai putus). */
+    public const AKSI_TARGET = 'target';
 
     protected $fillable = [
         'transaction_daily_closing_id',

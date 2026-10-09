@@ -58,7 +58,12 @@ const Approval = ({
     tanggal_rencana_minggu_depan: '',
     rencana_minggu_depan: '',
     target_minggu_depan: '',
+    // Koreksi target (alur baru): diisi hanya kalau KM menekan Edit dan
+    // angkanya berubah - server memutus rantai di tanggal ini.
+    target_koreksi: '',
+    alasan_koreksi: '',
   });
+  const [editTarget, setEditTarget] = useState(false);
   const [triggeredData, setTriggeredData] = useState([]);
   const [tanggalRencanaMingguDepan, setTanggalRencanaMingguDepan] = useState();
 
@@ -239,6 +244,7 @@ const Approval = ({
   const closedModal = () => {
     onClosed();
     reset();
+    setEditTarget(false);
     setErorRequest(false);
   };
 
@@ -255,12 +261,14 @@ const Approval = ({
     post(url, {
       onSuccess: () => {
         reset();
+        setEditTarget(false);
         onClosed();
       },
     });
   };
 
-  const targetMingguDepan = (parseInt(data.target) || 0) + ((parseInt(data.masuk) || 0) - (parseInt(data.keluar) || 0));
+  const targetDasar = editTarget ? data.target_koreksi : data.target;
+  const targetMingguDepan = (parseInt(targetDasar) || 0) + ((parseInt(data.masuk) || 0) - (parseInt(data.keluar) || 0));
   const adaTertunda = transaksiOpenHariIni.length > 0 || transaksiOpenMingguDepan.length > 0;
 
   return (
@@ -325,12 +333,47 @@ const Approval = ({
             <form onSubmit={onSubmitForm} className="space-y-5">
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-900">Hari ini</h3>
-                {!triggeredData?.target && (
-                  <label className="block text-sm">
-                    Target
-                    <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} prefix="Rp " required
-                      onValueChange={onHandleCurencyChange} value={data.target} />
-                  </label>
+                {migrasi ? (
+                  <div className="text-sm">
+                    <div className="flex items-center justify-between">
+                      <span>Target</span>
+                      {!editTarget && (
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-blue-600 underline"
+                          onClick={() => {
+                            setEditTarget(true);
+                            setData('target_koreksi', data.target);
+                          }}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                    {editTarget ? (
+                      <>
+                        <CurrencyInput className={KELAS_INPUT} name="target_koreksi" allowDecimals={false}
+                          allowNegativeValue={false} prefix="Rp " required onValueChange={onHandleCurencyChange}
+                          value={data.target_koreksi} />
+                        <Input className="mt-2" name="alasan_koreksi" required placeholder="Alasan koreksi target"
+                          onChange={onInputChange} value={data.alasan_koreksi} />
+                        <small className="text-amber-700">
+                          Target dikoreksi memutus rantai: target tanggal ini tidak lagi ditimpa hasil ACC minggu lalu.
+                        </small>
+                      </>
+                    ) : (
+                      <CurrencyInput className={`${KELAS_INPUT} bg-slate-50`} name="target" disabled prefix="Rp "
+                        value={data.target ?? 0} />
+                    )}
+                  </div>
+                ) : (
+                  !triggeredData?.target && (
+                    <label className="block text-sm">
+                      Target
+                      <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} prefix="Rp " required
+                        onValueChange={onHandleCurencyChange} value={data.target} />
+                    </label>
+                  )
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block text-sm">
@@ -366,9 +409,12 @@ const Approval = ({
                 </label>
                 <label className="block text-sm">
                   Rencana drop
-                  <CurrencyInput className={KELAS_INPUT} name="rencana_minggu_depan" allowDecimals={false}
-                    allowNegativeValue={false} prefix="Rp " required onValueChange={onHandleCurencyChange}
-                    value={data.rencana_minggu_depan} />
+                  {/* Hanya dari pengajuan yang di-ACC - tidak diketik. */}
+                  <CurrencyInput className={`${KELAS_INPUT} bg-slate-50`} name="rencana_minggu_depan" disabled
+                    prefix="Rp " value={data.rencana_minggu_depan ?? 0} />
+                  {!Number(data.rencana_minggu_depan) && (
+                    <small className="text-amber-700">Tidak ada pengajuan yang terinput.</small>
+                  )}
                 </label>
                 <div className="flex items-center justify-between px-3 py-2 rounded-md bg-slate-50">
                   <span className="text-sm text-slate-600">Target minggu depan (target + masuk − keluar)</span>
