@@ -84,10 +84,6 @@ const Approval = ({
       (item) => item.tanggal === triggeredDate
     );
 
-    const getIsGenerateRencanaDropMingguDepan = datas?.filter(
-      (item) => item.tanggal > triggeredDate && item.is_generated === true
-    )[0];
-
     const triggeredData = Object.assign({}, getSelecterDateRencanaDropData[0]);
     setTriggeredData(triggeredData);
 
@@ -180,20 +176,12 @@ const Approval = ({
       let uniqueDropDatesString = null;
       let rencana = 0;
 
+      // Minggu depan = hari tagih kerja berikutnya dari server (H+7, libur
+      // dilompati) - sama dengan tempat server menaruh targetnya.
+      uniqueDropDatesString = triggeredData.tanggal_depan ?? null;
+
       if (filteredData.length > 0) {
-        const dropDepan = filteredData.filter((item) => {
-          return item.tanggal_drop !== item.request_date;
-        });
-
-        // Cari nilai unik dari tanggal_drop
-        const uniqueDropDates = [
-          ...new Set(dropDepan?.map((item) => item.tanggal_drop)),
-        ];
-
-        // Ambil elemen pertama dari nilai unik tanggal_drop
-        uniqueDropDatesString = uniqueDropDates[0];
-
-        // Filter data berdasarkan tanggal_drop yang sama dengan elemen pertama dari nilai unik
+        // Rencana = ACC pengajuan hari ini yang dropnya minggu depan.
         const filteredData2 = filteredData.filter((item) => {
           return item.tanggal_drop === uniqueDropDatesString;
         });
@@ -219,18 +207,12 @@ const Approval = ({
         drop: triggeredData.drop,
         rencana: triggeredData.rencana,
 
-        tanggal_rencana_minggu_depan: getIsGenerateRencanaDropMingguDepan
-          ? getIsGenerateRencanaDropMingguDepan.tanggal
-          : uniqueDropDatesString ?? null,
+        tanggal_rencana_minggu_depan: uniqueDropDatesString,
         rencana_minggu_depan: rencana ?? 0,
         target_minggu_depan: 0,
       });
 
-      setTanggalRencanaMingguDepan(
-        getIsGenerateRencanaDropMingguDepan
-          ? getIsGenerateRencanaDropMingguDepan.tanggal
-          : uniqueDropDatesString ?? null
-      );
+      setTanggalRencanaMingguDepan(uniqueDropDatesString);
     }
   }, [datas, show, triggeredDate]);
 

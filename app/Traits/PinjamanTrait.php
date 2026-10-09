@@ -215,6 +215,11 @@ trait PinjamanTrait
           'setoran_mantri' => $thisDailyRecap?->setoran_mantri,
           'kelompok' => $groupingId->kelompok,
           'tanggal' => $tanggal,
+          // Hari tagih berikutnya (H+7, libur dilompati) - tempat target &
+          // rencana minggu depan hasil ACC KM tanggal ini. Satu sumber dengan
+          // server (TargetMingguan::tanggalDepan), bukan baris "berikutnya" di
+          // daftar yang urutannya bisa berubah.
+          'tanggal_depan' => \App\Helpers\TargetMingguan::tanggalDepan($tanggal),
           'kasbon' =>  $thisDailyRecap?->kasbon,
           'transport' => $thisDailyRecap?->transport,
           'masuk' => $thisDailyRecap?->masuk,
