@@ -69,12 +69,21 @@ const TableRekapKasir = ({
                 ? getValue()
                 : dayjs(cell.row.original.tanggal).format('DD-MM')}
             </div>
-            {auth.permissions.includes('can-edit') && (
-              <BargeStatus
-                onClick={() => onClickStatusHandler(cell.row.original, 1)}
-              >
-                Input
-              </BargeStatus>
+            {/* Kasir (can-approve): input kasbon/transport, lalu cek & kunci. */}
+            {auth.permissions.includes('can-approve') && (
+              <>
+                <BargeStatus
+                  onClick={() => onClickStatusHandler(cell.row.original, 1)}
+                >
+                  Input
+                </BargeStatus>
+                <BargeStatus
+                  onClick={() => onClickStatusHandler(cell.row.original, 2)}
+                  value={cell.row.original.status_approve_kasir}
+                >
+                  {cell.row.original.status_approve_kasir ? '🔒 Terkunci' : 'Kunci'}
+                </BargeStatus>
+              </>
             )}
           </div>
         ),
@@ -126,6 +135,12 @@ const TableRekapKasir = ({
         accessorKey: 'tunai',
         cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
         footer: (info) => <FormatNumbering value={totals.tunai} />,
+      },
+      {
+        header: 'Titipan 9%',
+        accessorKey: 'titipan9',
+        cell: ({ getValue }) => <FormatNumbering value={getValue()} />,
+        footer: (info) => <FormatNumbering value={totals.titipan9} />,
       },
     ],
     [totals]

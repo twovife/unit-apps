@@ -112,7 +112,7 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
         ) : (
           <DialogHeader>
             <DialogTitle>
-              {type == 1 ? 'Input Kasbon & Transport' : 'Cek Tunai Mantri'}
+              {type == 1 ? 'Input Kasbon & Transport' : 'Cek & Kunci Kasir'}
             </DialogTitle>
 
             <DialogDescription>

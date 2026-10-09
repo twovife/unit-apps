@@ -5,9 +5,7 @@ import { Head, usePage } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import TableRekap from './Components/TableRekap';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import TableRekapKasir from './Components/TableRekapKasir';
-import TunaiMantri from './Components/TunaiMantri';
 import Action from './Components/Action';
 
 const RekapContent = ({
@@ -103,29 +101,15 @@ const RekapContent = ({
             saldoAwalBulan={saldoAwalBulan}
           />
         )}
+        {/* Rekap 1: tempat kasir mengecek & mengunci. Tab Tunai Mantri
+            dibuang (2026-10-09); Titipan 9% pindah ke kolom terakhir. */}
         {show == 'rekapkasir' && (
-          <Tabs defaultValue="rekapkasir" className="w-full">
-            <TabsList>
-              <TabsTrigger value="rekapkasir">Rekap 1</TabsTrigger>
-              <TabsTrigger value="tunaimantri">Tunai Mantri</TabsTrigger>
-            </TabsList>
-            <TabsContent value="rekapkasir">
-              <TableRekapKasir
-                setOnShowModal={setOnShowModal}
-                setTriggeredData={setTriggeredData}
-                setTriggeredType={setTriggeredType}
-                datas={datas}
-              />
-            </TabsContent>
-            <TabsContent value="tunaimantri">
-              <TunaiMantri
-                setOnShowModal={setOnShowModal}
-                setTriggeredData={setTriggeredData}
-                setTriggeredType={setTriggeredType}
-                datas={datas}
-              />
-            </TabsContent>
-          </Tabs>
+          <TableRekapKasir
+            setOnShowModal={setOnShowModal}
+            setTriggeredData={setTriggeredData}
+            setTriggeredType={setTriggeredType}
+            datas={datas}
+          />
         )}
       </div>
     </>

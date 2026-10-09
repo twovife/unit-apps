@@ -4,7 +4,7 @@ import { Head } from '@inertiajs/react';
 import React from 'react';
 
 const RekapSatu = ({ datas, auth, ...props }) => {
-  const title = 'REKAP 1 & Tunai Mantri';
+  const title = 'REKAP 1';
 
   return (
     <Authenticated header={<Head>{title}</Head>}>
