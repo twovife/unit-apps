@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 trait PinjamanTrait
 {
-  public function getTransactionLoan(Request $request, bool $withPlan = false, bool $sortDesc = false)
+  public function getTransactionLoan(Request $request, bool $withPlan = false)
   {
 
     $scope = \App\Helpers\AuthScope::resolve();
@@ -242,12 +242,14 @@ trait PinjamanTrait
           'is_closed' => $thisDailyRecap?->daily_kepala_approval ? true : false,
           'button_color' => $thisDailyRecap?->daily_kepala_approval ? ($thisDailyRecap?->daily_kasir_approval ? 'success' : 'baru') : 'open',
         ];
-      })->sortBy('tanggal')->values();
+      })->sortByDesc('tanggal')->values();
     }
 
 
+    // Terbaru di atas (keputusan mas 2026-10-09): bulan lama yang dimuat
+    // belakangan menyambung di bawah, jadi seluruh daftar urut mundur.
     return [
-      'datas' => $sortDesc ? $pengajuan->sortKeysDesc()->values() : $pengajuan->values(),
+      'datas' => $pengajuan->sortKeysDesc()->values(),
       'buku_rencana' => $buku_rencana_drop ?? [],
       'server_filter' => [
         'month' => $transaction_date,
