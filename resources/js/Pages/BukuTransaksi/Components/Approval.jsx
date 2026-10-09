@@ -273,7 +273,7 @@ const Approval = ({
 
   return (
     <Sheet open={show} onOpenChange={(open) => (open ? '' : closedModal())}>
-      <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-lg">
+      <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-lg lg:max-w-none">
         <Loading show={loading || processing} />
         <SheetHeader className="px-5 py-4 pr-12 border-b">
           <SheetTitle>ACC KM</SheetTitle>

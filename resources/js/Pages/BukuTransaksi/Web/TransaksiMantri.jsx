@@ -256,7 +256,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       </div>
 
       <Sheet open={rencanaShow} onOpenChange={setRencanaShow}>
-        <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-5xl">
+        <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-5xl lg:max-w-none">
           <SheetHeader className="px-5 py-4 pr-12 border-b">
             <SheetTitle>ACC KM</SheetTitle>
             <SheetDescription>
