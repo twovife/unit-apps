@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
 
@@ -52,16 +52,17 @@ const Angka = ({ n, bertanda = false }) => {
 };
 
 /**
- * Sel isian kasir di Rekap 1 (kasbon, transport, SU Lapangan, setor transfer),
- * kantor alur baru, hari belum dikunci. Klik -> ketik nominal penuh (rupiah)
- * -> Enter / klik di luar menyimpan, Esc batal. Setoran kosong = belum
- * dicatat; kasbon / transport kosong = 0.
+ * Kotak isian kasir di Rekap 1 (kasbon, transport, SU Lapangan, setor
+ * transfer), selalu tampil di tabel untuk kantor alur baru & hari belum
+ * dikunci. Nominal penuh (rupiah). Enter / pindah kotak menyimpan; hanya
+ * dikirim kalau nilainya berubah. Setoran kosong = belum dicatat; kasbon /
+ * transport kosong = 0.
  */
-const SelSetoran = ({ r, k, kolom }) => {
-  const [ubah, setUbah] = useState(false);
-  const [nilai, setNilai] = useState('');
+const IsianSel = ({ r, k, kolom }) => {
+  const awal = r[k] ?? '';
+  const [nilai, setNilai] = useState(awal);
+  useEffect(() => setNilai(r[k] ?? ''), [r[k]]);
   const simpan = () => {
-    setUbah(false);
     const baru = nilai === '' ? null : Number(nilai);
     if (baru === (r[k] ?? null)) return;
     router.post(
@@ -70,35 +71,21 @@ const SelSetoran = ({ r, k, kolom }) => {
       { preserveScroll: true, preserveState: true },
     );
   };
-  if (ubah) {
-    return (
-      <input
-        autoFocus
-        type="number"
-        min={0}
-        className="w-28 h-7 px-1.5 text-right text-sm border rounded border-sky-400"
-        value={nilai}
-        onChange={(e) => setNilai(e.target.value)}
-        onBlur={simpan}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') simpan();
-          if (e.key === 'Escape') setUbah(false);
-        }}
-      />
-    );
-  }
   return (
-    <button
-      type="button"
-      title="Klik untuk mengisi (rupiah penuh)"
-      className="px-1 rounded hover:bg-sky-100 underline decoration-dotted decoration-sky-400"
-      onClick={() => {
-        setNilai(r[k] ?? '');
-        setUbah(true);
+    <input
+      type="number"
+      min={0}
+      inputMode="numeric"
+      placeholder={kolom.startsWith('setoran') ? 'belum' : '0'}
+      className="w-28 h-7 px-1.5 text-right text-sm border rounded border-slate-300 bg-white focus:border-sky-500 focus:outline-none tabular-nums"
+      value={nilai}
+      onChange={(e) => setNilai(e.target.value)}
+      onBlur={simpan}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') setNilai(awal);
       }}
-    >
-      {r[k] === null || r[k] === undefined ? <span className="text-sky-600">isi</span> : <Angka n={r[k]} />}
-    </button>
+    />
   );
 };
 
@@ -114,7 +101,17 @@ const TableRekapKasir = ({ datas = [] }) => {
   const awalGrup = new Set(GRUP.map((g) => g.kolom[0][0]));
   const garis = (k) => (awalGrup.has(k) ? 'border-l-2 border-slate-300' : '');
 
+  const terkunci = server_filter?.migrasi ? datas.filter((r) => r.type == 'daily' && r.status_approve_kasir).length : 0;
+
   return (
+    <>
+    {terkunci > 0 && (
+      <div className="p-2 mb-2 text-sm border rounded-md border-slate-300 bg-slate-50 text-slate-700">
+        {terkunci === datas.length
+          ? 'Tanggal ini sudah dikunci kasir — isian tidak bisa diubah.'
+          : `${terkunci} kelompok sudah dikunci kasir — isiannya tidak bisa diubah.`}
+      </div>
+    )}
     <div className="overflow-x-auto bg-white border rounded-lg">
       <table className="w-full text-sm tabular-nums">
         <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
@@ -161,7 +158,7 @@ const TableRekapKasir = ({ datas = [] }) => {
               {KOLOM.map(([k, , kelas, bertanda]) => (
                 <td key={k} className={`px-3 py-1.5 text-right ${garis(k)} ${kelas ?? ''}`}>
                   {KOLOM_ISI[k] && bisaIsiSu(r) ? (
-                    <SelSetoran r={r} k={k} kolom={KOLOM_ISI[k]} />
+                    <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} />
                   ) : (
                     <Angka n={r[k]} bertanda={bertanda} />
                   )}
@@ -184,6 +181,7 @@ const TableRekapKasir = ({ datas = [] }) => {
         )}
       </table>
     </div>
+    </>
   );
 };
 
