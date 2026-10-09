@@ -138,7 +138,7 @@ class TransactionDailyRecapController extends Controller
     $val = $request->validate([
       'id' => ['required', 'integer'],
       'date' => ['required', 'date', 'before_or_equal:today'],
-      'kolom' => ['required', 'in:setoran_tunai,setoran_transfer'],
+      'kolom' => ['required', 'in:kasbon,transport,setoran_tunai,setoran_transfer'],
       'nilai' => ['nullable', 'integer', 'min:0'],
     ]);
 
@@ -158,9 +158,17 @@ class TransactionDailyRecapController extends Controller
       return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
     }
 
-    $closing->update([$val['kolom'] => $val['nilai'] ?? null]);
+    // Kasbon & transport tidak boleh null (ikut rumus tunai) -> kosong = 0.
+    // Setoran: kosong = belum dicatat (null).
+    $nilai = $val['nilai'] ?? null;
+    if (in_array($val['kolom'], ['kasbon', 'transport'], true)) {
+      $nilai = (int) $nilai;
+    }
+    $closing->update([$val['kolom'] => $nilai]);
 
-    return redirect()->back()->with('message', ($val['kolom'] === 'setoran_tunai' ? 'SU Lapangan' : 'Setoran transfer') . ' tersimpan.');
+    $nama = ['kasbon' => 'Kasbon', 'transport' => 'Transport', 'setoran_tunai' => 'SU Lapangan', 'setoran_transfer' => 'Setor transfer'];
+
+    return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
   }
 
   public function ceklist_kepala(Request $request)

@@ -25,7 +25,7 @@ const GRUP = [
   // Uang yang dibawa pulang mantri (setoran_tunai).
   { judul: '', kolom: [['su_lapangan', 'SU Lapangan', 'font-semibold']] },
   // Setoran lewat transfer (setoran_transfer).
-  { judul: '', kolom: [['setoran_transfer', 'Setoran Transfer']] },
+  { judul: '', kolom: [['setoran_transfer', 'Setor Transfer']] },
   // Titipan 9% + Tunai.
   { judul: '', kolom: [['sisa_uang', 'Sisa Uang', 'font-semibold']] },
   // SU Lapangan - Sisa Uang: merah = kurang, hijau = lebih.
@@ -33,7 +33,13 @@ const GRUP = [
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
 // Kolom yang bisa diisi kasir -> nama kolom di daily_closings.
-const KOLOM_ISI = { su_lapangan: 'setoran_tunai', setoran_transfer: 'setoran_transfer' };
+// Rekap 1: kasir mengisi kasbon, transport, SU Lapangan, setor transfer.
+const KOLOM_ISI = {
+  kasbon: 'kasbon',
+  transport: 'transport',
+  su_lapangan: 'setoran_tunai',
+  setoran_transfer: 'setoran_transfer',
+};
 
 const ribu = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 const ribuBertanda = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1, signDisplay: 'exceptZero' });
@@ -46,9 +52,10 @@ const Angka = ({ n, bertanda = false }) => {
 };
 
 /**
- * Sel setoran (SU Lapangan / transfer) yang bisa diisi kasir (kantor alur baru, hari belum dikunci).
- * Klik -> ketik nominal penuh (rupiah) -> Enter / klik di luar menyimpan,
- * Esc batal. Kosong = belum dicatat.
+ * Sel isian kasir di Rekap 1 (kasbon, transport, SU Lapangan, setor transfer),
+ * kantor alur baru, hari belum dikunci. Klik -> ketik nominal penuh (rupiah)
+ * -> Enter / klik di luar menyimpan, Esc batal. Setoran kosong = belum
+ * dicatat; kasbon / transport kosong = 0.
  */
 const SelSetoran = ({ r, k, kolom }) => {
   const [ubah, setUbah] = useState(false);
@@ -97,7 +104,7 @@ const SelSetoran = ({ r, k, kolom }) => {
 
 const TableRekapKasir = ({ datas = [] }) => {
   const { auth, server_filter } = usePage().props;
-  // SU Lapangan bisa diisi: kantor alur baru, baris harian, belum dikunci kasir.
+  // Sel isian aktif: kantor alur baru, baris harian, belum dikunci kasir.
   const bisaIsiSu = (r) =>
     server_filter?.migrasi && r.type == 'daily' && !r.status_approve_kasir && auth?.permissions?.includes('can-approve');
   const total = Object.fromEntries(
