@@ -55,6 +55,7 @@ const RekapContent = ({
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">{title}</h1>
+          {show == 'rekapkasir' && <p className="text-xs text-muted-foreground">Angka dalam ribuan.</p>}
         </div>
         <div className="items-center justify-end flex-auto hidden w-full lg:flex">
           <SearchComponent
