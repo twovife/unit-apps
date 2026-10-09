@@ -39,10 +39,14 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   // Drawer ACC KM & drawer angsuran (dari kolom Storting). Status bukanya
   // disimpan di sessionStorage: simpan angsuran lewat Inertia memuat ulang
   // halaman ini, dan tanpa itu drawer tertutup tiap kali bayar/hapus.
+  // Hanya berlaku untuk filter (hari/bulan/kelompok/unit) yang sama: ganti
+  // filter = status drawer dibuang.
   const KUNCI_DRAWER = 'bukutransaksi.drawer';
+  const filterDrawer = `${server_filter.hari}|${server_filter.month}|${server_filter.kelompok}|${server_filter.branch_id}`;
   const bacaDrawer = () => {
     try {
-      return JSON.parse(sessionStorage.getItem(KUNCI_DRAWER)) ?? {};
+      const isi = JSON.parse(sessionStorage.getItem(KUNCI_DRAWER)) ?? {};
+      return isi.filter === filterDrawer ? isi : {};
     } catch {
       return {};
     }
@@ -51,7 +55,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   const [angsuranTarget, setAngsuranTargetState] = useState(() => bacaDrawer().angsuran ?? null);
   const simpanDrawer = (ubah) => {
     try {
-      sessionStorage.setItem(KUNCI_DRAWER, JSON.stringify({ ...bacaDrawer(), ...ubah }));
+      sessionStorage.setItem(KUNCI_DRAWER, JSON.stringify({ ...bacaDrawer(), ...ubah, filter: filterDrawer }));
     } catch {
       /* tanpa storage: drawer tetap jalan, cuma tidak bertahan */
     }
@@ -65,6 +69,19 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
     setAngsuranTargetState(t);
     simpanDrawer({ angsuran: t });
   };
+  // Filter berganti tanpa remount (FilterBar) -> tutup drawer & buang statusnya.
+  const filterSebelum = useRef(filterDrawer);
+  useEffect(() => {
+    if (filterSebelum.current === filterDrawer) return;
+    filterSebelum.current = filterDrawer;
+    setRencanaShowState(false);
+    setAngsuranTargetState(null);
+    try {
+      sessionStorage.removeItem(KUNCI_DRAWER);
+    } catch {
+      /* abaikan */
+    }
+  }, [filterDrawer]);
   const handleOnCreateShowOpen = () => setOnCreateShow(true);
   const handleOnCreateShowClosed = () => setOnCreateShow(false);
 
