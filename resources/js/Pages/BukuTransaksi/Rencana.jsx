@@ -13,32 +13,14 @@ import dayjs from 'dayjs';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
 import KunciKasir from './Components/KunciKasir';
-import { router, usePage } from '@inertiajs/react';
-import { Button } from '@/shadcn/ui/button';
+import { usePage } from '@inertiajs/react';
 
 const Rencana = ({ datas, dataTransaksi }) => {
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
   // Kolom ACC KM membuka dialog approval kepala (ceklist_kepala) -> can-approve
   const isUnit = usePage().props.auth?.permissions?.includes('can-approve');
-  const { server_filter, auth } = usePage().props;
-  const isSuperuser = auth?.roles?.includes('superuser');
-  const [generating, setGenerating] = useState(false);
-
-  // Superuser: paksa materialisasi target auto untuk buku ini (kelompok+hari
-  // cabang aktif) tanpa nunggu cron. Endpoint memanggil service yang sama.
-  const generateTargetAuto = () => {
-    if (generating) return;
-    setGenerating(true);
-    router.post(
-      route('transaction.generate_target_auto'),
-      { kelompok: server_filter?.kelompok, hari: server_filter?.hari },
-      {
-        preserveScroll: true,
-        onFinish: () => setGenerating(false),
-      },
-    );
-  };
+  const { server_filter } = usePage().props;
 
   useEffect(() => {
     setData(datas);
@@ -83,22 +65,6 @@ const Rencana = ({ datas, dataTransaksi }) => {
         datas={data}
       />
       <KunciKasir show={onKunciShow} onClosed={closeKunci} row={kunciRow} />
-      {isSuperuser && (
-        <div className="flex items-center justify-end gap-2 mb-2">
-          <span className="text-xs text-muted-foreground">
-            Superuser: buku {server_filter?.kelompok} · {server_filter?.hari}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={generateTargetAuto}
-            disabled={generating}
-          >
-            {generating ? 'Memproses…' : 'Generate target otomatis (buku ini)'}
-          </Button>
-        </div>
-      )}
       <Table className="w-full table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           <TableRow>
