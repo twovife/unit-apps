@@ -262,6 +262,8 @@ trait RekapTrait
         // SU Lapangan: uang yang dibawa pulang mantri (setoran_mantri, alur
         // baru). Kantor lama tidak mencatatnya -> null.
         'su_lapangan' => $thisDailyRecap?->setoran_mantri ?? null,
+        // Sisa Uang = titipan 9% + tunai (debit - kredit).
+        'sisa_uang' => $titipan9 + ($debit - $kredit),
         'total_storting' => $totalStorting,
         'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),
 

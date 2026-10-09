@@ -29,6 +29,8 @@ const GRUP = [
   },
   // Uang yang dibawa pulang mantri (setoran_mantri).
   { judul: '', kolom: [['su_lapangan', 'SU Lapangan', 'font-semibold']] },
+  // Titipan 9% + Tunai.
+  { judul: '', kolom: [['sisa_uang', 'Sisa Uang', 'font-semibold']] },
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
 
