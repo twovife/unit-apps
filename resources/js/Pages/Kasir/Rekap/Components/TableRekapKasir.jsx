@@ -31,11 +31,20 @@ const GRUP = [
   { judul: '', kolom: [['su_lapangan', 'SU Lapangan', 'font-semibold']] },
   // Titipan 9% + Tunai.
   { judul: '', kolom: [['sisa_uang', 'Sisa Uang', 'font-semibold']] },
+  // SU Lapangan - Sisa Uang: merah = kurang, hijau = lebih.
+  { judul: '', kolom: [['selisih_uang', '-/+', 'font-bold', true]] },
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
 
 const ribu = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
-const Angka = ({ n }) => (Number(n) ? ribu.format(Number(n) / 1000) : <span className="text-slate-300">–</span>);
+const ribuBertanda = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1, signDisplay: 'exceptZero' });
+const Angka = ({ n, bertanda = false }) => {
+  if (!Number(n)) return <span className="text-slate-300">–</span>;
+  if (!bertanda) return ribu.format(Number(n) / 1000);
+  return (
+    <span className={Number(n) < 0 ? 'text-red-600' : 'text-emerald-700'}>{ribuBertanda.format(Number(n) / 1000)}</span>
+  );
+};
 
 const TableRekapKasir = ({ datas = [] }) => {
   const total = Object.fromEntries(
@@ -89,9 +98,9 @@ const TableRekapKasir = ({ datas = [] }) => {
               <td className="sticky left-0 px-3 py-1.5 font-medium text-left bg-inherit whitespace-nowrap">
                 {r.type == 'daily' ? r.kelompok : dayjs(r.tanggal).format('DD-MM')}
               </td>
-              {KOLOM.map(([k, , kelas]) => (
+              {KOLOM.map(([k, , kelas, bertanda]) => (
                 <td key={k} className={`px-3 py-1.5 text-right ${garis(k)} ${kelas ?? ''}`}>
-                  <Angka n={r[k]} />
+                  <Angka n={r[k]} bertanda={bertanda} />
                 </td>
               ))}
             </tr>
@@ -101,9 +110,9 @@ const TableRekapKasir = ({ datas = [] }) => {
           <tfoot className="font-bold border-t-2 bg-slate-100 text-slate-900">
             <tr>
               <td className="sticky left-0 px-3 py-2 text-left bg-slate-100">Total</td>
-              {KOLOM.map(([k]) => (
+              {KOLOM.map(([k, , , bertanda]) => (
                 <td key={k} className={`px-3 py-2 text-right ${garis(k)}`}>
-                  <Angka n={total[k]} />
+                  <Angka n={total[k]} bertanda={bertanda} />
                 </td>
               ))}
             </tr>

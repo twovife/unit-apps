@@ -264,6 +264,11 @@ trait RekapTrait
         'su_lapangan' => $thisDailyRecap?->setoran_mantri ?? null,
         // Sisa Uang = titipan 9% + tunai (debit - kredit).
         'sisa_uang' => $titipan9 + ($debit - $kredit),
+        // -/+ = SU Lapangan - Sisa Uang: minus = uang mantri kurang, plus =
+        // lebih. Null selama SU Lapangan belum dicatat.
+        'selisih_uang' => isset($thisDailyRecap?->setoran_mantri)
+          ? (int) $thisDailyRecap->setoran_mantri - ($titipan9 + ($debit - $kredit))
+          : null,
         'total_storting' => $totalStorting,
         'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),
 
