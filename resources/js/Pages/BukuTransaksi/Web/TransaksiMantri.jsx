@@ -200,11 +200,11 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
       <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} />
 
-      {/* Rencana Drop & Acc KM - tepat di atas tabel, berlabel juga di HP. */}
+      {/* Menu ACC KM (rencana drop, cek KM, kunci kasir) - tepat di atas tabel, berlabel juga di HP. */}
       <div className="flex justify-end mb-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setRencanaShow(true)}>
           <ClipboardList className="h-3.5 w-3.5" />
-          <span className="whitespace-nowrap">Rencana Drop &amp; Acc KM</span>
+          <span className="whitespace-nowrap">ACC KM</span>
         </Button>
       </div>
 
@@ -258,10 +258,10 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       <Sheet open={rencanaShow} onOpenChange={setRencanaShow}>
         <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-5xl">
           <SheetHeader className="px-5 py-4 pr-12 border-b">
-            <SheetTitle>Rencana Drop</SheetTitle>
+            <SheetTitle>ACC KM</SheetTitle>
             <SheetDescription>
-              Kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}. Action = cek KM; kunci kasir sesudah
-              KM mengecek.
+              Rencana drop kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}. Action = ACC KM; kunci kasir
+              sesudah KM meng-ACC.
             </SheetDescription>
           </SheetHeader>
           <div className="p-3 overflow-x-auto">
