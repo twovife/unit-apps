@@ -260,7 +260,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
           <SheetHeader className="px-5 py-4 pr-12 border-b">
             <SheetTitle>ACC KM</SheetTitle>
             <SheetDescription>
-              Rencana drop kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}. Action = ACC KM; kunci kasir
+              Rencana drop kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}. Tombol ACC KM membuka pengecekan; kunci kasir
               sesudah KM meng-ACC.
             </SheetDescription>
           </SheetHeader>

@@ -19,7 +19,7 @@ import { Button } from '@/shadcn/ui/button';
 const Rencana = ({ datas, dataTransaksi }) => {
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
-  // Kolom Action membuka dialog approval kepala (ceklist_kepala) -> can-approve
+  // Kolom ACC KM membuka dialog approval kepala (ceklist_kepala) -> can-approve
   const isUnit = usePage().props.auth?.permissions?.includes('can-approve');
   const { server_filter, auth } = usePage().props;
   const isSuperuser = auth?.roles?.includes('superuser');
@@ -102,7 +102,7 @@ const Rencana = ({ datas, dataTransaksi }) => {
       <Table className="w-full table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           <TableRow>
-            {isUnit && <TableHead className="text-center">Action</TableHead>}
+            {isUnit && <TableHead className="text-center">ACC KM</TableHead>}
             <TableHead className="text-center">Tanggal</TableHead>
             <TableHead className="text-center">Kasbon</TableHead>
             <TableHead className="text-center">Target</TableHead>
@@ -127,7 +127,7 @@ const Rencana = ({ datas, dataTransaksi }) => {
                         onClick={() => handleOnApproveShowOpen(item.tanggal)}
                         size="xs"
                       >
-                        Action
+                        ACC KM
                       </BargeStatus>
                       {/* Cek #2 kasir - alur baru saja */}
                       {server_filter?.migrasi && item.is_kasir && (
