@@ -261,7 +261,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
             <SheetTitle>ACC KM</SheetTitle>
             <SheetDescription>
               Rencana drop kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}. Tombol ACC KM membuka pengecekan; kunci kasir
-              sesudah KM meng-ACC.
+              sesudah KM meng-ACC. Angka dalam ribuan.
             </SheetDescription>
           </SheetHeader>
           <div className="p-3 overflow-x-auto">

@@ -153,10 +153,10 @@ const Rencana = ({ datas, dataTransaksi }) => {
               )}
               <TableCell>{dayjs(item.tanggal).format('DD-MM-YYYY')}</TableCell>
               <TableCell>
-                <FormatNumbering value={item.kasbon} />
+                <FormatNumbering ribuan value={item.kasbon} />
               </TableCell>
               <TableCell>
-                <FormatNumbering value={item.target} />
+                <FormatNumbering ribuan value={item.target} />
                 {item.target_source === 'auto' && (
                   <span
                     className="ml-1 inline-block rounded px-1 text-[10px] font-semibold bg-amber-100 text-amber-700"
@@ -175,10 +175,10 @@ const Rencana = ({ datas, dataTransaksi }) => {
                 )}
               </TableCell>
               <TableCell>
-                <FormatNumbering value={item.masuk} />
+                <FormatNumbering ribuan value={item.masuk} />
               </TableCell>
               <TableCell>
-                <FormatNumbering value={item.keluar} />
+                <FormatNumbering ribuan value={item.keluar} />
               </TableCell>
               <TableCell className="text-blue-600 hover:bg-blue-100">
                 <a
@@ -188,20 +188,20 @@ const Rencana = ({ datas, dataTransaksi }) => {
                     kelompok: item.kelompok,
                   })}
                 >
-                  <FormatNumbering value={item.storting} />
+                  <FormatNumbering ribuan value={item.storting} />
                 </a>
               </TableCell>
               <TableCell>
-                <FormatNumbering value={item.drop} />
+                <FormatNumbering ribuan value={item.drop} />
               </TableCell>
               <TableCell>
-                <FormatNumbering value={item.baru} />
+                <FormatNumbering ribuan value={item.baru} />
               </TableCell>
               <TableCell>
-                <FormatNumbering value={item.lama} />
+                <FormatNumbering ribuan value={item.lama} />
               </TableCell>
               <TableCell>
-                <FormatNumbering value={item.rencana} />
+                <FormatNumbering ribuan value={item.rencana} />
               </TableCell>
             </TableRow>
           ))}
