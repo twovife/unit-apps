@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AppHelper;
 use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\Gembok;
@@ -121,6 +122,9 @@ class ClosingHarianController extends Controller
     /** Simpan kolom manual. Ditolak kalau barisnya sudah terkunci. */
     public function simpanManual(Request $request, TransactionDailyClosing $closing)
     {
+        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+        }
         $this->pastikanBerwenang();
 
         if ($closing->terkunci()) {
@@ -143,6 +147,9 @@ class ClosingHarianController extends Controller
 
     public function approveKepala(TransactionDailyClosing $closing)
     {
+        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+        }
         $this->pastikanBerwenang();
 
         if ($closing->terkunci()) {
@@ -166,6 +173,9 @@ class ClosingHarianController extends Controller
 
     public function kunci(TransactionDailyClosing $closing)
     {
+        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+        }
         $this->pastikanBerwenang();
 
         // Hitung ulang sekali lagi tepat sebelum dibekukan: transaksi bisa
@@ -187,6 +197,9 @@ class ClosingHarianController extends Controller
 
     public function buka(Request $request, TransactionDailyClosing $closing)
     {
+        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+        }
         $request->validate(['alasan' => ['required', 'string', 'min:5']], [
             'alasan.required' => 'Alasan membuka kunci wajib diisi.',
             'alasan.min' => 'Alasan terlalu pendek — tulis yang bisa dipahami orang lain nanti.',

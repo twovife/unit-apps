@@ -3,11 +3,11 @@ import FilterBar from '@/Components/FilterBar';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Head, usePage } from '@inertiajs/react';
-import { FilterIcon, PlusCircle } from 'lucide-react';
+import { ClipboardList, FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import BukuTransaksi from '@/Pages/BukuTransaksi/BukuTransaksi';
 import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
 import Create from './Create';
@@ -35,6 +35,9 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   const { server_filter, auth } = usePage().props;
 
   const [onCreateShow, setOnCreateShow] = useState(false);
+  // Rencana Drop (cek KM + kunci kasir) dibuka sebagai drawer di atas buku,
+  // bukan tab - buku transaksi tetap terlihat di belakangnya.
+  const [rencanaShow, setRencanaShow] = useState(false);
   const handleOnCreateShowOpen = () => setOnCreateShow(true);
   const handleOnCreateShowClosed = () => setOnCreateShow(false);
 
@@ -207,6 +210,12 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
               </PopoverContent>
             </Popover>
           )}
+          <Button type="button" variant="outline" onClick={() => setRencanaShow(true)}>
+            <ClipboardList className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+              Rencana Drop &amp; Cek KM
+            </span>
+          </Button>
           {auth?.can_create && (
             <Button type="button" onClick={handleOnCreateShowOpen}>
               <PlusCircle className="h-3.5 w-3.5" />
@@ -234,15 +243,8 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
       <Create show={onCreateShow} onClosed={handleOnCreateShowClosed} />
 
-      <Tabs defaultValue="bukutransaksi" className="w-full">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="bukutransaksi">Buku Transaksi</TabsTrigger>
-            <TabsTrigger value="dailyTarget">Rencana Drop</TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="w-full">
 
-        <TabsContent value="bukutransaksi">
           {/* Desktop: tabel, dibungkus scroll box seperti sebelumnya */}
           <div
             ref={boxRef}
@@ -291,12 +293,22 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
               </p>
             )}
           </div>
-        </TabsContent>
+      </div>
 
-        <TabsContent value="dailyTarget">
-          <Rencana datas={rencanaGroups} dataTransaksi={groups} />
-        </TabsContent>
-      </Tabs>
+      <Sheet open={rencanaShow} onOpenChange={setRencanaShow}>
+        <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-5xl">
+          <SheetHeader className="px-5 py-4 pr-12 border-b">
+            <SheetTitle>Rencana Drop</SheetTitle>
+            <SheetDescription>
+              Kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}. Action = cek KM; kunci kasir sesudah
+              KM mengecek.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="p-3 overflow-x-auto">
+            <Rencana datas={rencanaGroups} dataTransaksi={groups} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </Authenticated>
   );
 };

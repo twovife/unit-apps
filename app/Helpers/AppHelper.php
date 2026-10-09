@@ -396,8 +396,17 @@ class AppHelper
    */
   public static function bolehAksesPinjaman(?\App\Models\TransactionLoan $loan): bool
   {
+    return self::bolehAksesKelompok($loan?->loan_officer_grouping);
+  }
+
+  /**
+   * Kelompok ini milik kantor yang boleh diakses user, dan (tanpa
+   * view-all-groups) kelompoknya sendiri. Dipakai semua endpoint yang menerima
+   * id kelompok / baris closing dari browser.
+   */
+  public static function bolehAksesKelompok(?\App\Models\TransactionLoanOfficerGrouping $grouping): bool
+  {
     $user = auth()->user();
-    $grouping = $loan?->loan_officer_grouping;
     if (!$user || !$grouping) {
       return false;
     }

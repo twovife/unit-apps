@@ -3,11 +3,13 @@
 namespace App\Helpers;
 
 use App\Models\TransactionDailyClosing;
+use App\Models\WorkDay;
 use Carbon\Carbon;
 
 // Rantai target minggu depan tetap jalan walau KM tidak cek (kantor membelot).
 // Untuk tiap hari tagih D yang sudah LEWAT dan belum dicek KM
-// (kepala_approval_at NULL), lahirkan target minggu depan (D+7):
+// (kepala_approval_at NULL), lahirkan target minggu depan (D+7, atau minggu
+// sesudahnya kalau D+7 libur):
 //   target(D+7) = target(D) + drop(D) * 0,13         (keluar = 0, tak ada saat auto)
 // ditandai target_source='auto', target_on=D. Status "belum dicek" tetap
 // (approval D NULL) -> KM WAJIB cek; saat KM cek belakangan, nilai auto ditimpa
@@ -19,6 +21,23 @@ use Carbon\Carbon;
 // (dipakai tombol manual superuser untuk kelompok+hari+kantor tertentu).
 class TargetMingguan
 {
+    /**
+     * Hari tagih tempat target hasil D jatuh: hari yang sama minggu berikutnya
+     * yang hari kerja (libur dilompati). Kalau D+7 libur, tidak ada tagihan di
+     * sana - target ikut ke tagihan berikutnya, dan tidak ada baris harian di
+     * hari libur yang menyandera rantai kunci.
+     */
+    public static function tanggalDepan($tanggalD): ?string
+    {
+        return WorkDay::hariSamaBerikutnya(Carbon::parse($tanggalD)->startOfDay())?->toDateString();
+    }
+
+    /** Rumus rantai target - satu-satunya tempat. */
+    public static function hitung(int $targetD, int $dropD, int $keluarD): int
+    {
+        return $targetD + (int) round($dropD * 0.13) - $keluarD;
+    }
+
     public static function materialisasiAuto(int $groupingId, ?int $weekday = null, ?Carbon $sampai = null): int
     {
         $batas = ($sampai ?? Carbon::today())->toDateString();
@@ -37,7 +56,10 @@ class TargetMingguan
 
         foreach ($query->get() as $hariD) {
             $tanggalD = Carbon::parse($hariD->date)->toDateString();
-            $tanggalDepan = Carbon::parse($hariD->date)->addDays(7)->toDateString();
+            $tanggalDepan = self::tanggalDepan($tanggalD);
+            if (!$tanggalDepan) {
+                continue;
+            }
 
             $barisDepan = TransactionDailyClosing::firstOrCreate([
                 'transaction_loan_officer_grouping_id' => $groupingId,
@@ -55,7 +77,7 @@ class TargetMingguan
             }
 
             $drop = (int) (HitungAgregat::harian($groupingId, $tanggalD)['drop'] ?? 0);
-            $target = (int) $hariD->target + (int) round($drop * 0.13); // keluar = 0 saat auto
+            $target = self::hitung((int) $hariD->target, $drop, 0); // keluar = 0 saat auto
 
             $barisDepan->update([
                 'target' => $target,

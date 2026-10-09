@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AppHelper;
 use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\GembokBulanan;
@@ -116,6 +117,9 @@ class ClosingBulananController extends Controller
     /** Persetujuan kepala — sekadar tanda "sudah saya lihat". */
     public function approveKepala(TransactionMonthlyClosing $closing)
     {
+        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+        }
         $this->pastikanBerwenang();
 
         if ($closing->terkunci()) {
@@ -133,6 +137,9 @@ class ClosingBulananController extends Controller
     /** Kunci kasir — hanya lolos kalau semua hari kerja bulan itu terkunci. */
     public function kunci(TransactionMonthlyClosing $closing)
     {
+        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+        }
         $this->pastikanBerwenang();
 
         try {
@@ -146,6 +153,9 @@ class ClosingBulananController extends Controller
 
     public function buka(Request $request, TransactionMonthlyClosing $closing)
     {
+        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+        }
         $request->validate(['alasan' => ['required', 'string', 'min:5']], [
             'alasan.required' => 'Alasan membuka kunci wajib diisi.',
             'alasan.min' => 'Alasan terlalu pendek — tulis yang bisa dipahami orang lain nanti.',

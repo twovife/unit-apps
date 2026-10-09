@@ -202,6 +202,9 @@ trait PinjamanTrait
       $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId) {
         $thisDailyRecap = $daily_recap->get($tanggal, collect())->first(); //stored as database
         $thisData = $pengajuan->get($tanggal, collect()); //summary of drop
+        // Drop = pinjaman yang benar-benar cair (success) - sama dengan angka
+        // yang dikunci & dasar target (HitungAgregat::drop).
+        $cair = $thisData->where('status', 'success');
         $thisInstalment = $instalment->get($tanggal, collect())->sum('nominal'); //summary of instalment
 
         // dd($thisData);
@@ -223,12 +226,12 @@ trait PinjamanTrait
           'storting_on_database' => $thisDailyRecap?->storting,
           'storting' => $thisInstalment,
           'storting_validate' => $thisInstalment == ($thisDailyRecap?->storting) ? true : false,
-          'baru' => $thisData->where('drop_langsung', 'baru')->sum('drop_jadi'),
-          'lama' => $thisData->where('drop_langsung', 'lama')->sum('drop_jadi'),
+          'baru' => $cair->where('drop_langsung', 'baru')->sum('drop_jadi'),
+          'lama' => $cair->where('drop_langsung', 'lama')->sum('drop_jadi'),
 
-          'drop' => $thisData->sum('drop_jadi'),
+          'drop' => $cair->sum('drop_jadi'),
           'drop_on_database' => $thisDailyRecap?->drop,
-          'drop_validate' => $thisData->sum('drop_jadi') == ($thisDailyRecap?->drop) ? true : false,
+          'drop_validate' => $cair->sum('drop_jadi') == ($thisDailyRecap?->drop) ? true : false,
 
           'rencana' => $thisData->where('drop_langsung', 'lama')->sum('acc'),
 

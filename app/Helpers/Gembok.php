@@ -79,6 +79,12 @@ class Gembok
             // Jangan menuntut hari-hari SEBELUM kantor migrasi ikut dikunci —
             // di zona itu alur lama yang berlaku.
             ->when($mulai, fn($q) => $q->whereDate('date', '>=', $mulai))
+            // Baris di tanggal yang (belakangan) ditandai libur tidak ikut
+            // rantai: di hari libur tidak boleh ada transaksi, jadi tidak ada
+            // yang perlu dikunci - tanpa ini satu baris libur menyandera
+            // semua hari sesudahnya.
+            ->whereNotIn('date', \App\Models\WorkDay::where('is_libur', true)
+                ->whereDate('date', '<', $baris->date)->select('date'))
             ->whereNull('kasir_lock_at')
             ->orderByDesc('date')
             ->first();

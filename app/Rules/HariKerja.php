@@ -91,7 +91,7 @@ class HariKerja implements ValidationRule
             return;
         }
 
-        $usul = $this->hariSamaBerikutnya($t);
+        $usul = WorkDay::hariSamaBerikutnya($t);
 
         $fail(sprintf(
             '%s %s jatuh pada hari libur%s.%s',
@@ -105,30 +105,6 @@ class HariKerja implements ValidationRule
                 )
                 : ''
         ));
-    }
-
-    /**
-     * Hari tagih yang sama pada minggu berikutnya yang BENAR-BENAR hari kerja.
-     *
-     * Melompat lebih dari satu minggu kalau perlu: menyarankan tanggal yang
-     * ternyata libur juga cuma memindahkan penolakannya satu langkah, dan user
-     * kehilangan kepercayaan pada sarannya. Dibatasi 8 minggu — kalau sampai
-     * sejauh itu tidak ketemu, lebih baik diam daripada menyarankan tanggal
-     * yang tak masuk akal.
-     */
-    private function hariSamaBerikutnya(Carbon $t): ?Carbon
-    {
-        $calon = $t->copy();
-
-        for ($i = 0; $i < 8; $i++) {
-            $calon->addWeek();
-
-            if (WorkDay::tanggalWajar($calon) && WorkDay::hariKerja($calon)) {
-                return $calon;
-            }
-        }
-
-        return null;
     }
 
     /** Sebutkan alasan liburnya kalau kalender mencatatnya. */

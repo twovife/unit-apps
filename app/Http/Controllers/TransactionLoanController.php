@@ -143,6 +143,9 @@ class TransactionLoanController extends Controller
     if (!$grouping || !\App\Helpers\AgregasiScope::sudahMigrasi($grouping->branch_id)) {
       return redirect()->back()->withErrors('Kantor ini belum migrasi ke alur baru.');
     }
+    if (!AppHelper::bolehAksesKelompok($grouping)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
 
     try {
       DB::beginTransaction();
@@ -167,17 +170,20 @@ class TransactionLoanController extends Controller
         'kepala_approval_user' => $user->employee->id,
       ]);
 
-      // Materialisasi target minggu depan (manual), menimpa auto.
-      $tanggalDepan = Carbon::parse($date)->addDays(7)->toDateString();
-      $depan = \App\Models\TransactionDailyClosing::firstOrCreate([
-        'transaction_loan_officer_grouping_id' => $groupingId,
-        'date' => $tanggalDepan,
-      ]);
-      $depan->update([
-        'target' => (int) $closing->target + (int) round($drop * 0.13) - (int) $request->keluar,
-        'target_on' => $date,
-        'target_source' => 'manual',
-      ]);
+      // Materialisasi target minggu depan (manual), menimpa auto. D+7 libur ->
+      // ke hari tagih kerja berikutnya (TargetMingguan::tanggalDepan).
+      $tanggalDepan = \App\Helpers\TargetMingguan::tanggalDepan($date);
+      if ($tanggalDepan) {
+        $depan = \App\Models\TransactionDailyClosing::firstOrCreate([
+          'transaction_loan_officer_grouping_id' => $groupingId,
+          'date' => $tanggalDepan,
+        ]);
+        $depan->update([
+          'target' => \App\Helpers\TargetMingguan::hitung((int) $closing->target, $drop, (int) $request->keluar),
+          'target_on' => $date,
+          'target_source' => 'manual',
+        ]);
+      }
 
       DB::commit();
     } catch (\Throwable $e) {
@@ -198,6 +204,10 @@ class TransactionLoanController extends Controller
     $request->validate([
       'setoran_mantri' => ['required', 'integer', 'min:0'],
     ]);
+
+    if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
 
     if ($closing->kasir_lock_at) {
       return redirect()->back()->withErrors('Baris ini sudah dikunci.');
@@ -454,8 +464,10 @@ class TransactionLoanController extends Controller
       'nomor_anggota' => ['required', 'string', 'max:255'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
-      'request_date' => ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal pengajuan')])],
-      'tanggal_drop' =>  ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal drop')])],
+      // Hari libur ditolak SELALU, juga untuk `bebas` (keputusan mas
+      // 2026-10-09: tidak ada transaksi sama sekali di hari libur).
+      'request_date' => ['required', 'date', new HariKerja('Tanggal pengajuan')],
+      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
       '*.min' => 'minimal diisi 100rb',
       'nomor_anggota.required' => 'Nomor anggota wajib diisi (lihat promes / buku manual).',
@@ -571,7 +583,7 @@ class TransactionLoanController extends Controller
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
 
-      'tanggal_drop' =>  ['required', 'date', ...($bebas ? [] : [new HariKerja('Tanggal drop')])],
+      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
       '*.required' => "Wajib Diisi",
       '*.min' => 'minimal diisi 100rb'
@@ -600,7 +612,7 @@ class TransactionLoanController extends Controller
       // Angsuran di sini divalidasi manual, bukan lewat $request->validate(),
       // jadi Rule HariKerja tidak ikut jalan sendiri. Diperiksa di sini supaya
       // pintu ini tidak jadi satu-satunya yang menerima tanggal libur.
-      $libur = $bebas ? collect() : $angsuran->reject(fn($item) => WorkDay::hariKerja($item['transaction_date']));
+      $libur = $angsuran->reject(fn($item) => WorkDay::hariKerja($item['transaction_date']));
 
       if ($libur->isNotEmpty()) {
         return redirect()->back()->withErrors(sprintf(
