@@ -64,7 +64,8 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   // saat mount, jadi tanpa key baru dia bisa submit nilai hari/bulan lama.
   const searchComponentKey = `${server_filter.hari}-${server_filter.month}-${server_filter.kelompok}`;
 
-  // Infinite-back per bulan: `datas` dari server = bulan berjalan (buku aktif).
+  // Mundur per bulan HANYA lewat klik (tanpa auto-muat saat scroll, keputusan
+  // mas 2026-10-09): `datas` dari server = bulan berjalan (buku aktif).
   // Klik "Muat bulan sebelumnya" menyambung bulan-bulan lebih lama ke bawah,
   // tanpa reload penuh (endpoint transaction.drop_bulan). Reset tiap kali filter
   // (hari/bulan/kelompok) berubah lewat FilterBar -> server kirim datas baru.
@@ -73,16 +74,9 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
   const [oldest, setOldest] = useState(server_filter.month);
   const [loadingMore, setLoadingMore] = useState(false);
   const [bulanKosong, setBulanKosong] = useState(null);
-  // Auto-muat berhenti sendiri setelah kena bulan kosong, supaya scroll tidak
-  // jalan mundur tanpa henti melewati bulan-bulan tanpa transaksi. Tombol tetap
-  // bisa memaksa lebih lama; load yang berisi menyalakan auto lagi.
-  const [autoStop, setAutoStop] = useState(false);
 
-  const boxRef = useRef(null);
-  const sentinelDesktop = useRef(null);
-  const sentinelMobile = useRef(null);
-  // Guard SINKRON. `loadingMore` (state) telat update, jadi klik + observer bisa
-  // sama-sama lolos dan fetch bulan yang sama 2x (baris dobel). Ref langsung set.
+  // Guard SINKRON: klik ganda cepat tidak boleh fetch bulan yang sama 2x
+  // (baris dobel). `loadingMore` (state) telat update, ref langsung set.
   const loadingRef = useRef(false);
 
   useEffect(() => {
@@ -90,7 +84,6 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
     setRencanaGroups(buku_rencana ?? []);
     setOldest(server_filter.month);
     setBulanKosong(null);
-    setAutoStop(false);
   }, [datas, buku_rencana, server_filter.month, server_filter.hari, server_filter.kelompok]);
 
   const bulanSebelum = (m) => {
@@ -135,7 +128,6 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       });
       setOldest(targetSebelum);
       setBulanKosong(kosong ? targetSebelum : null);
-      setAutoStop(kosong); // bulan kosong -> hentikan auto, biar tak mundur terus
     } catch {
       /* biarkan - tombol tetap bisa dicoba lagi */
     } finally {
@@ -144,35 +136,6 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
     }
   };
 
-  // Auto-muat saat sentinel di dasar daftar terlihat (scroll mentok bawah).
-  // loadRef selalu menunjuk versi terbaru supaya observer (dibuat sekali) tidak
-  // menutup nilai state basi. Desktop scroll di dalam box -> root = box; mobile
-  // scroll dokumen -> root = null. Sentinel yang display:none tak pernah memicu.
-  const loadRef = useRef(() => {});
-  loadRef.current = () => {
-    if (!loadingRef.current && !autoStop) muatSebelumnya();
-  };
-
-  useEffect(() => {
-    const cb = (entries) => {
-      if (entries.some((e) => e.isIntersecting)) loadRef.current();
-    };
-    const observers = [];
-    if (sentinelDesktop.current) {
-      const o = new IntersectionObserver(cb, {
-        root: boxRef.current ?? null,
-        rootMargin: '150px',
-      });
-      o.observe(sentinelDesktop.current);
-      observers.push(o);
-    }
-    if (sentinelMobile.current) {
-      const o = new IntersectionObserver(cb, { root: null, rootMargin: '150px' });
-      o.observe(sentinelMobile.current);
-      observers.push(o);
-    }
-    return () => observers.forEach((o) => o.disconnect());
-  }, []);
 
   return (
     <Authenticated header={<Head>Buku Transaksi</Head>}>
@@ -247,7 +210,6 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
           {/* Desktop: tabel, dibungkus scroll box seperti sebelumnya */}
           <div
-            ref={boxRef}
             className="hidden max-h-[70vh] lg:block border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin"
           >
             {groups.map((item, index) => (
@@ -256,8 +218,6 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
                 datas={item}
               />
             ))}
-            {/* sentinel auto-muat (root = box ini) */}
-            <div ref={sentinelDesktop} aria-hidden="true" />
           </div>
 
           {/* Mobile: kartu seperti menu Drop. Tanpa max-h/overflow di sini -
@@ -269,8 +229,6 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
                 datas={item}
               />
             ))}
-            {/* sentinel auto-muat (root = dokumen) */}
-            <div ref={sentinelMobile} aria-hidden="true" />
           </div>
 
           {/* Muat bulan sebelumnya - menyambung ke bawah, terus mundur. */}
