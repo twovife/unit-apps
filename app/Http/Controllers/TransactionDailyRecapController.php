@@ -158,13 +158,8 @@ class TransactionDailyRecapController extends Controller
       return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
     }
 
-    // Kasbon & transport tidak boleh null (ikut rumus tunai) -> kosong = 0.
-    // Setoran: kosong = belum dicatat (null).
-    $nilai = $val['nilai'] ?? null;
-    if (in_array($val['kolom'], ['kasbon', 'transport'], true)) {
-      $nilai = (int) $nilai;
-    }
-    $closing->update([$val['kolom'] => $nilai]);
+    // Bawaan 0 untuk semua isian (keputusan mas 2026-10-09): kosong = 0.
+    $closing->update([$val['kolom'] => (int) ($val['nilai'] ?? 0)]);
 
     $nama = ['kasbon' => 'Kasbon', 'transport' => 'Transport', 'setoran_tunai' => 'SU Lapangan', 'setoran_transfer' => 'Setor transfer'];
 

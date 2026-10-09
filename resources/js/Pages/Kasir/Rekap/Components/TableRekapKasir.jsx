@@ -3,11 +3,11 @@ import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Grup kolom mengikuti
-// buku kasir: TUNAI 1 (kasbon s/d tunai), titipan 9%, SU Lapangan, Sisa Uang,
+// buku kasir: REKAP 1 (kasbon s/d tunai), titipan 9%, SU Lapangan, Sisa Uang,
 // lalu -/+.
 const GRUP = [
   {
-    judul: 'TUNAI 1',
+    judul: 'REKAP 1',
     kolom: [
       ['kasbon', 'Kasbon'],
       ['storting', 'Storting'],
@@ -53,18 +53,25 @@ const Angka = ({ n, bertanda = false }) => {
 
 /**
  * Kotak isian kasir di Rekap 1 (kasbon, transport, SU Lapangan, setor
- * transfer), selalu tampil di tabel untuk kantor alur baru & hari belum
- * dikunci. Nominal penuh (rupiah). Enter / pindah kotak menyimpan; hanya
- * dikirim kalau nilainya berubah. Setoran kosong = belum dicatat; kasbon /
- * transport kosong = 0.
+ * transfer): memenuhi sel, untuk kantor alur baru & hari belum dikunci.
+ * Nominal penuh (rupiah), bawaan 0. Enter / pindah kotak menyimpan; hanya
+ * dikirim kalau nilainya berubah. Kosong = 0.
  */
 const IsianSel = ({ r, k, kolom }) => {
-  const awal = r[k] ?? '';
+  const awal = r[k] ?? 0;
   const [nilai, setNilai] = useState(awal);
-  useEffect(() => setNilai(r[k] ?? ''), [r[k]]);
+  // Hanya dikirim kalau kasir benar-benar mengetik - sekadar lewat (Tab)
+  // tidak mencatat 0 untuk setoran yang belum diisi.
+  const [diketik, setDiketik] = useState(false);
+  useEffect(() => {
+    setNilai(r[k] ?? 0);
+    setDiketik(false);
+  }, [r[k]]);
   const simpan = () => {
-    const baru = nilai === '' ? null : Number(nilai);
-    if (baru === (r[k] ?? null)) return;
+    if (!diketik) return;
+    setDiketik(false);
+    const baru = nilai === '' ? 0 : Number(nilai);
+    if (baru === Number(r[k] ?? 0) && r[k] !== null && r[k] !== undefined) return;
     router.post(
       route('kasir.rekap.simpan_su_lapangan'),
       { id: r.id, date: r.tanggal, kolom, nilai: baru },
@@ -76,14 +83,21 @@ const IsianSel = ({ r, k, kolom }) => {
       type="number"
       min={0}
       inputMode="numeric"
-      placeholder={kolom.startsWith('setoran') ? 'belum' : '0'}
-      className="w-28 h-7 px-1.5 text-right text-sm border rounded border-slate-300 bg-white focus:border-sky-500 focus:outline-none tabular-nums"
+      placeholder="0"
+      onFocus={(e) => e.currentTarget.select()}
+      className="block w-full h-full min-w-[6rem] px-3 py-1.5 text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500"
       value={nilai}
-      onChange={(e) => setNilai(e.target.value)}
+      onChange={(e) => {
+        setNilai(e.target.value);
+        setDiketik(true);
+      }}
       onBlur={simpan}
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
-        if (e.key === 'Escape') setNilai(awal);
+        if (e.key === 'Escape') {
+          setNilai(awal);
+          setDiketik(false);
+        }
       }}
     />
   );
@@ -156,7 +170,10 @@ const TableRekapKasir = ({ datas = [] }) => {
                 {r.type == 'daily' ? r.kelompok : dayjs(r.tanggal).format('DD-MM')}
               </td>
               {KOLOM.map(([k, , kelas, bertanda]) => (
-                <td key={k} className={`px-3 py-1.5 text-right ${garis(k)} ${kelas ?? ''}`}>
+                <td
+                  key={k}
+                  className={`${KOLOM_ISI[k] && bisaIsiSu(r) ? 'p-0' : 'px-3 py-1.5'} text-right ${garis(k)} ${kelas ?? ''}`}
+                >
                   {KOLOM_ISI[k] && bisaIsiSu(r) ? (
                     <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} />
                   ) : (
