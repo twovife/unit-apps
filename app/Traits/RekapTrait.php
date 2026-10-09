@@ -148,6 +148,7 @@ trait RekapTrait
           'kasbon' => (int) $r->kasbon,
           'transport' => (int) $r->transport,
           'tunai' => (int) $r->tunai,
+          'setoran_mantri' => $r->setoran_mantri, // SU Lapangan; null = belum dicatat
           'daily_kepala_approval' => $r->kepala_approval_at !== null,
           'daily_kasir_approval' => $r->kasir_lock_at !== null,
         ]);
@@ -258,6 +259,9 @@ trait RekapTrait
         'storting_cash' => $stortingCash,
         'storting_transfer' => $stortingTransfer,
         'storting_katrol' => $stortingKatrol,
+        // SU Lapangan: uang yang dibawa pulang mantri (setoran_mantri, alur
+        // baru). Kantor lama tidak mencatatnya -> null.
+        'su_lapangan' => $thisDailyRecap?->setoran_mantri ?? null,
         'total_storting' => $totalStorting,
         'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),
 

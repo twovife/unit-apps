@@ -2,8 +2,8 @@ import React from 'react';
 import dayjs from 'dayjs';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Grup kolom mengikuti
-// buku kasir: TUNAI 1 (kasbon s/d tunai), titipan 9%, lalu STORTING per cara
-// bayar.
+// buku kasir: TUNAI 1 (kasbon s/d tunai), titipan 9%, STORTING per cara
+// bayar, lalu SU Lapangan.
 const GRUP = [
   {
     judul: 'TUNAI 1',
@@ -27,6 +27,8 @@ const GRUP = [
       ['storting_katrol', 'Katrol'],
     ],
   },
+  // Uang yang dibawa pulang mantri (setoran_mantri).
+  { judul: '', kolom: [['su_lapangan', 'SU Lapangan', 'font-semibold']] },
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
 
