@@ -148,7 +148,8 @@ trait RekapTrait
           'kasbon' => (int) $r->kasbon,
           'transport' => (int) $r->transport,
           'tunai' => (int) $r->tunai,
-          'setoran_mantri' => $r->setoran_mantri, // SU Lapangan; null = belum dicatat
+          'setoran_tunai' => $r->setoran_tunai, // SU Lapangan; null = belum dicatat
+          'setoran_transfer' => $r->setoran_transfer,
           'daily_kepala_approval' => $r->kepala_approval_at !== null,
           'daily_kasir_approval' => $r->kasir_lock_at !== null,
         ]);
@@ -259,15 +260,16 @@ trait RekapTrait
         'storting_cash' => $stortingCash,
         'storting_transfer' => $stortingTransfer,
         'storting_katrol' => $stortingKatrol,
-        // SU Lapangan: uang yang dibawa pulang mantri (setoran_mantri, alur
+        // SU Lapangan: uang yang dibawa pulang mantri (setoran_tunai, alur
         // baru). Kantor lama tidak mencatatnya -> null.
-        'su_lapangan' => $thisDailyRecap?->setoran_mantri ?? null,
+        'su_lapangan' => $thisDailyRecap?->setoran_tunai ?? null,
+        'setoran_transfer' => $thisDailyRecap?->setoran_transfer ?? null,
         // Sisa Uang = titipan 9% + tunai (debit - kredit).
         'sisa_uang' => $titipan9 + ($debit - $kredit),
-        // -/+ = SU Lapangan - Sisa Uang: minus = uang mantri kurang, plus =
-        // lebih. Null selama SU Lapangan belum dicatat.
-        'selisih_uang' => isset($thisDailyRecap?->setoran_mantri)
-          ? (int) $thisDailyRecap->setoran_mantri - ($titipan9 + ($debit - $kredit))
+        // -/+ = (setoran tunai + transfer) - (tunai + titipan 9%), sama dengan
+        // kolom generated daily_closings.selisih. Null selama belum dicatat.
+        'selisih_uang' => (isset($thisDailyRecap?->setoran_tunai) || isset($thisDailyRecap?->setoran_transfer))
+          ? (int) $thisDailyRecap->setoran_tunai + (int) $thisDailyRecap->setoran_transfer - (($debit - $kredit) + $titipan9)
           : null,
         'total_storting' => $totalStorting,
         'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),

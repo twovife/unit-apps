@@ -120,7 +120,7 @@ class ClosingHarianController extends Controller
     /**
      * Hitung ulang kolom turunan satu baris dari tabel SUMBER.
      *
-     * Kolom manual (kasbon, transport, keluar, setoran_mantri) tidak disentuh —
+     * Kolom manual (kasbon, transport, keluar, setoran_tunai/transfer) tidak disentuh —
      * itu isian manusia, bukan turunan.
      */
     private function hitungUlangTurunan(TransactionDailyClosing $closing): void

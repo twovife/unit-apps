@@ -266,7 +266,7 @@ class KalenderKerja
             ->whereNull('kasir_lock_at')
             ->where('drop', 0)->where('storting', 0)
             ->where('kasbon', 0)->where('transport', 0)
-            ->whereNull('setoran_mantri')
+            ->whereNull('setoran_tunai')->whereNull('setoran_transfer')
             ->delete();
     }
 
@@ -379,7 +379,7 @@ class KalenderKerja
             ->selectRaw('DATE(date) AS d, COUNT(*) AS baris,
                          SUM(kasir_lock_at IS NOT NULL) AS terkunci,
                          SUM(`drop` <> 0 OR storting <> 0 OR kasbon <> 0
-                             OR transport <> 0 OR setoran_mantri IS NOT NULL) AS berisi')
+                             OR transport <> 0 OR setoran_tunai IS NOT NULL OR setoran_transfer IS NOT NULL) AS berisi')
             ->groupBy(DB::raw('DATE(date)'))
             ->get();
 

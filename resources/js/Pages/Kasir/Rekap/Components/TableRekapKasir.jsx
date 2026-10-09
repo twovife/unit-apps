@@ -22,14 +22,18 @@ const GRUP = [
   { judul: '', kolom: [['titipan9', 'Titipan 9%']] },
   // Grup STORTING (cash / transfer / katrol) disembunyikan dulu (mas
   // 2026-10-09); datanya masih dikirim server: storting_cash/_transfer/_katrol.
-  // Uang yang dibawa pulang mantri (setoran_mantri).
+  // Uang yang dibawa pulang mantri (setoran_tunai).
   { judul: '', kolom: [['su_lapangan', 'SU Lapangan', 'font-semibold']] },
+  // Setoran lewat transfer (setoran_transfer).
+  { judul: '', kolom: [['setoran_transfer', 'Setoran Transfer']] },
   // Titipan 9% + Tunai.
   { judul: '', kolom: [['sisa_uang', 'Sisa Uang', 'font-semibold']] },
   // SU Lapangan - Sisa Uang: merah = kurang, hijau = lebih.
   { judul: '', kolom: [['selisih_uang', '-/+', 'font-bold', true]] },
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
+// Kolom yang bisa diisi kasir -> nama kolom di daily_closings.
+const KOLOM_ISI = { su_lapangan: 'setoran_tunai', setoran_transfer: 'setoran_transfer' };
 
 const ribu = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 const ribuBertanda = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1, signDisplay: 'exceptZero' });
@@ -42,20 +46,20 @@ const Angka = ({ n, bertanda = false }) => {
 };
 
 /**
- * Sel SU Lapangan yang bisa diisi kasir (kantor alur baru, hari belum dikunci).
+ * Sel setoran (SU Lapangan / transfer) yang bisa diisi kasir (kantor alur baru, hari belum dikunci).
  * Klik -> ketik nominal penuh (rupiah) -> Enter / klik di luar menyimpan,
  * Esc batal. Kosong = belum dicatat.
  */
-const SelSuLapangan = ({ r }) => {
+const SelSetoran = ({ r, k, kolom }) => {
   const [ubah, setUbah] = useState(false);
   const [nilai, setNilai] = useState('');
   const simpan = () => {
     setUbah(false);
     const baru = nilai === '' ? null : Number(nilai);
-    if (baru === (r.su_lapangan ?? null)) return;
+    if (baru === (r[k] ?? null)) return;
     router.post(
       route('kasir.rekap.simpan_su_lapangan'),
-      { id: r.id, date: r.tanggal, su_lapangan: baru },
+      { id: r.id, date: r.tanggal, kolom, nilai: baru },
       { preserveScroll: true, preserveState: true },
     );
   };
@@ -79,14 +83,14 @@ const SelSuLapangan = ({ r }) => {
   return (
     <button
       type="button"
-      title="Klik untuk mengisi SU Lapangan (rupiah penuh)"
+      title="Klik untuk mengisi (rupiah penuh)"
       className="px-1 rounded hover:bg-sky-100 underline decoration-dotted decoration-sky-400"
       onClick={() => {
-        setNilai(r.su_lapangan ?? '');
+        setNilai(r[k] ?? '');
         setUbah(true);
       }}
     >
-      {r.su_lapangan === null || r.su_lapangan === undefined ? <span className="text-sky-600">isi</span> : <Angka n={r.su_lapangan} />}
+      {r[k] === null || r[k] === undefined ? <span className="text-sky-600">isi</span> : <Angka n={r[k]} />}
     </button>
   );
 };
@@ -149,7 +153,11 @@ const TableRekapKasir = ({ datas = [] }) => {
               </td>
               {KOLOM.map(([k, , kelas, bertanda]) => (
                 <td key={k} className={`px-3 py-1.5 text-right ${garis(k)} ${kelas ?? ''}`}>
-                  {k === 'su_lapangan' && bisaIsiSu(r) ? <SelSuLapangan r={r} /> : <Angka n={r[k]} bertanda={bertanda} />}
+                  {KOLOM_ISI[k] && bisaIsiSu(r) ? (
+                    <SelSetoran r={r} k={k} kolom={KOLOM_ISI[k]} />
+                  ) : (
+                    <Angka n={r[k]} bertanda={bertanda} />
+                  )}
                 </td>
               ))}
             </tr>

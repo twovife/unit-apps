@@ -118,26 +118,28 @@ class TransactionDailyRecapController extends Controller
       return redirect()->back()->withErrors('Belum di-Ceklist Kepala (ACC KM).');
     }
 
-    $closing->update(['setoran_mantri' => (int) ($val['tunai'] ?? 0)]);
+    $closing->update(['setoran_tunai' => (int) ($val['tunai'] ?? 0)]);
 
     return app(ClosingHarianController::class)->kunci($closing->fresh());
   }
 
   /**
-   * SU Lapangan (uang yang dibawa pulang mantri) -> daily_closings.setoran_mantri.
-   * Diisi kasir langsung di sel Rekap 1, kantor alur baru, hari yang belum
-   * dikunci. Kosong = belum dicatat (null), beda dengan 0.
+   * Setoran mantri dari sel Rekap 1 -> daily_closings: SU Lapangan
+   * (setoran_tunai, uang yang dibawa pulang mantri) atau setoran_transfer.
+   * Kantor alur baru, hari yang belum dikunci. Kosong = belum dicatat (null),
+   * beda dengan 0.
    */
   public function simpan_su_lapangan(Request $request)
   {
     if (!auth()->user()->hasPermissionTo('can-approve')) {
-      return redirect()->back()->withErrors('SU Lapangan diisi kasir / KM / pimpinan.');
+      return redirect()->back()->withErrors('Setoran diisi kasir / KM / pimpinan.');
     }
 
     $val = $request->validate([
       'id' => ['required', 'integer'],
       'date' => ['required', 'date', 'before_or_equal:today'],
-      'su_lapangan' => ['nullable', 'integer', 'min:0'],
+      'kolom' => ['required', 'in:setoran_tunai,setoran_transfer'],
+      'nilai' => ['nullable', 'integer', 'min:0'],
     ]);
 
     $grouping = TransactionLoanOfficerGrouping::find($val['id']);
@@ -145,7 +147,7 @@ class TransactionDailyRecapController extends Controller
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
     if (!$this->sudahMigrasi($grouping->id, $val['date'])) {
-      return redirect()->back()->withErrors('SU Lapangan hanya untuk kantor yang sudah migrasi.');
+      return redirect()->back()->withErrors('Setoran hanya untuk kantor yang sudah migrasi.');
     }
 
     $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
@@ -156,9 +158,9 @@ class TransactionDailyRecapController extends Controller
       return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
     }
 
-    $closing->update(['setoran_mantri' => $val['su_lapangan'] ?? null]);
+    $closing->update([$val['kolom'] => $val['nilai'] ?? null]);
 
-    return redirect()->back()->with('message', 'SU Lapangan tersimpan.');
+    return redirect()->back()->with('message', ($val['kolom'] === 'setoran_tunai' ? 'SU Lapangan' : 'Setoran transfer') . ' tersimpan.');
   }
 
   public function ceklist_kepala(Request $request)

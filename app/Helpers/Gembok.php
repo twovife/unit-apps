@@ -45,7 +45,7 @@ class Gembok
         // memang tidak menyetor. Tanpa membedakan keduanya, hari yang terlewat
         // tidak bisa dibedakan dari hari yang sepi.
         if (!$baris->setoranSudahDicatat()) {
-            $alasan[] = 'Setoran mantri belum dicatat kasir.';
+            $alasan[] = 'Setoran tunai / transfer belum dicatat kasir.';
         }
 
         if ($sebelumnya = self::barisSebelumnyaBelumTerkunci($baris)) {

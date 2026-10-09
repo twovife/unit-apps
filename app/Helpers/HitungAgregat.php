@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  * Kolom yang dihitung di sini adalah cache: selalu bisa dihitung ulang dari
  * `transaction_loans` / `_instalments` / `_white_offs`, dan karena itu selalu
  * bisa DIVERIFIKASI ULANG terhadap sumbernya. Kolom manual (kasbon, transport,
- * keluar, setoran_mantri) tidak disentuh sama sekali oleh kelas ini.
+ * keluar, setoran_tunai, setoran_transfer) tidak disentuh sama sekali oleh kelas ini.
  *
  * Tidak menulis apa pun — hanya mengembalikan angka. Yang memutuskan kapan
  * menyimpannya adalah pemanggil.

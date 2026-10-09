@@ -38,7 +38,7 @@ class TransactionDailyClosing extends Model
      */
     public const KOLOM_MANUAL = [
         'kasbon', 'transport', 'keluar', 'target', 'target_on',
-        'target_source', 'setoran_mantri',
+        'target_source', 'setoran_tunai', 'setoran_transfer',
     ];
 
     /** Asal-usul angka target. Lihat §5.3. */
@@ -60,7 +60,8 @@ class TransactionDailyClosing extends Model
         'target_on' => 'date',
         'kepala_approval_at' => 'datetime',
         'kasir_lock_at' => 'datetime',
-        'setoran_mantri' => 'integer',
+        'setoran_tunai' => 'integer',
+        'setoran_transfer' => 'integer',
     ];
 
     public function loan_officer_grouping()
@@ -107,7 +108,7 @@ class TransactionDailyClosing extends Model
      */
     public function setoranSudahDicatat(): bool
     {
-        return $this->setoran_mantri !== null;
+        return $this->setoran_tunai !== null || $this->setoran_transfer !== null;
     }
 
     public function scopeTerkunci($query)

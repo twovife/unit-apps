@@ -179,7 +179,7 @@ trait PinjamanTrait
           ->whereIn('date', $datesMatchDay)->get()
           ->map(fn($r) => (object) [
             'closing_id' => $r->id,               // dipakai tombol kunci kasir di Rencana
-            'setoran_mantri' => $r->setoran_mantri, // null = belum dicatat kasir
+            'setoran_tunai' => $r->setoran_tunai, // null = belum dicatat kasir
             'date' => Carbon::parse($r->date)->toDateString(),
             'kasbon' => (int) $r->kasbon,
             'transport' => (int) $r->transport,
@@ -222,7 +222,7 @@ trait PinjamanTrait
           'closing_id' => $thisDailyRecap?->closing_id,     // alur baru: id baris daily_closings (tombol kunci)
           'dibuka_at' => $dibuka->get($thisDailyRecap?->closing_id)?->created_at?->toDateTimeString(),
           'dibuka_alasan' => $dibuka->get($thisDailyRecap?->closing_id)?->alasan,
-          'setoran_mantri' => $thisDailyRecap?->setoran_mantri,
+          'setoran_tunai' => $thisDailyRecap?->setoran_tunai,
           'kelompok' => $groupingId->kelompok,
           'tanggal' => $tanggal,
           // Hari tagih berikutnya (H+7, libur dilompati) - tempat target &
