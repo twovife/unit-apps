@@ -12,10 +12,10 @@ use Illuminate\Http\Request;
 
 /**
  * Kunci & buka kunci harian alur agregasi baru. Layarnya sudah tidak ada
- * (dicabut 2026-10-09): Ceklist Kepala, kunci kasir, dan buka kunci semuanya
- * dari Buku Transaksi -> ACC KM. Controller ini tinggal menyimpan logika
- * kunci/buka yang dipanggil dari sana (TransactionLoanController::kasir_kunci
- * dan route closing.buka).
+ * (dicabut 2026-10-09): Ceklist Kepala dari Buku Transaksi -> ACC KM, kunci
+ * kasir dari Kasir -> Rekap (Cek Tunai Mantri, lewat
+ * TransactionDailyRecapController::rekap_post). Controller ini tinggal
+ * menyimpan logika kunci/buka (route closing.buka).
  *
  * Urutannya ditegakkan lewat syarat: Ceklist Kepala dulu, setoran mantri
  * dicatat, baru kasir mengunci - dan hari sebelumnya harus sudah terkunci.

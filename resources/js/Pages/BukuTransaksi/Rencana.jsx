@@ -12,7 +12,6 @@ import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
-import KunciKasir from './Components/KunciKasir';
 import { router, usePage } from '@inertiajs/react';
 
 const Rencana = ({ datas, dataTransaksi }) => {
@@ -43,18 +42,6 @@ const Rencana = ({ datas, dataTransaksi }) => {
     setActionData();
   };
 
-  // Cek #2 kasir: dialog kunci per baris (alur baru).
-  const [onKunciShow, setOnKunciShow] = useState(false);
-  const [kunciRow, setKunciRow] = useState(null);
-  const openKunci = (row) => {
-    setKunciRow(row);
-    setOnKunciShow(true);
-  };
-  const closeKunci = () => {
-    setOnKunciShow(false);
-    setKunciRow(null);
-  };
-
   // Buka kunci satu hari (koreksi): superuser / can-edit, alasan wajib.
   const bukaKunci = (row) => {
     const alasan = window.prompt(`Alasan membuka kunci ${dayjs(row.tanggal).format('DD MMM YYYY')}:`);
@@ -71,7 +58,6 @@ const Rencana = ({ datas, dataTransaksi }) => {
         triggeredDate={actionData}
         datas={data}
       />
-      <KunciKasir show={onKunciShow} onClosed={closeKunci} row={kunciRow} />
       <Table className="w-full table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           <TableRow>
@@ -102,7 +88,7 @@ const Rencana = ({ datas, dataTransaksi }) => {
                       >
                         ACC
                       </BargeStatus>
-                      {/* Cek #2 kasir - alur baru saja */}
+                      {/* Status kunci kasir (dikunci dari Kasir -> Rekap) */}
                       {server_filter?.migrasi && item.is_kasir && (
                         <span className="text-[10px] font-semibold text-green-700">
                           🔒 Terkunci
@@ -125,18 +111,6 @@ const Rencana = ({ datas, dataTransaksi }) => {
                           dibuka ulang {dayjs(item.dibuka_at).format('DD MMM YYYY')}
                         </span>
                       )}
-                      {server_filter?.migrasi &&
-                        item.is_approved &&
-                        !item.is_kasir &&
-                        item.closing_id && (
-                          <button
-                            type="button"
-                            onClick={() => openKunci(item)}
-                            className="text-[10px] font-semibold text-blue-600 underline"
-                          >
-                            Kunci kasir
-                          </button>
-                        )}
                     </div>
                   )}
                 </TableCell>

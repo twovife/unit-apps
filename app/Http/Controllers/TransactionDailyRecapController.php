@@ -37,10 +37,10 @@ class TransactionDailyRecapController extends Controller
   public function rekap_post(Request $request)
   {
     // GERBANG alur baru: kantor migrasi TIDAK menulis daily_recaps lagi (juga
-    // menghindari hook target rekursif TransactionDailyRecap::updating). Simpan
-    // kasbon/transport & kunci kasir lewat Buku Transaksi -> ACC KM (kasir_kunci).
+    // menghindari hook target rekursif TransactionDailyRecap::updating). Dialog
+    // kasir yang sama (Kasir -> Rekap) menulis ke daily_closings.
     if ($this->sudahMigrasi($request->id, $request->date)) {
-      return redirect()->back()->withError('Kantor ini sudah migrasi — simpan lewat Buku Transaksi → ACC KM, bukan rekap lama.');
+      return $this->rekapPostAlurBaru($request);
     }
 
     try {
@@ -70,6 +70,57 @@ class TransactionDailyRecapController extends Controller
     }
 
     return redirect()->back()->with('message', 'Data berhasil disimpan.');
+  }
+
+  /**
+   * Kasir alur baru, dari dialog yang sama dengan alur lama (Kasir -> Rekap):
+   *   type 1 = Input Kasbon & Transport -> simpan ke daily_closings;
+   *   type 2 = Cek Tunai Mantri -> setoran mantri = tunai yang dikonfirmasi
+   *            kasir, lalu KUNCI (ClosingHarianController@kunci: hitung ulang,
+   *            syarat Gembok, susun bulanan).
+   * Kunci kasir hanya dari sini; menu ACC KM khusus Ceklist Kepala.
+   */
+  private function rekapPostAlurBaru(Request $request)
+  {
+    $val = $request->validate([
+      'id' => ['required', 'integer'],
+      'date' => ['required', 'date'],
+      'type' => ['required', 'in:1,2'],
+      'kasbon' => ['nullable', 'integer', 'min:0'],
+      'transport' => ['nullable', 'integer', 'min:0'],
+      'tunai' => ['nullable', 'integer'],
+    ]);
+
+    $grouping = TransactionLoanOfficerGrouping::find($val['id']);
+    if (!AppHelper::bolehAksesKelompok($grouping)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+
+    $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
+      'transaction_loan_officer_grouping_id' => $grouping->id,
+      'date' => Carbon::parse($val['date'])->toDateString(),
+    ]);
+
+    if ($closing->kasir_lock_at) {
+      return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
+    }
+
+    $closing->update([
+      'kasbon' => (int) ($val['kasbon'] ?? 0),
+      'transport' => (int) ($val['transport'] ?? 0),
+    ]);
+
+    if ((int) $val['type'] === 1) {
+      return redirect()->back()->with('message', 'Kasbon & transport tersimpan.');
+    }
+
+    if (!$closing->kepala_approval_at) {
+      return redirect()->back()->withErrors('Belum di-Ceklist Kepala (ACC KM).');
+    }
+
+    $closing->update(['setoran_mantri' => (int) ($val['tunai'] ?? 0)]);
+
+    return app(ClosingHarianController::class)->kunci($closing->fresh());
   }
 
   public function ceklist_kepala(Request $request)

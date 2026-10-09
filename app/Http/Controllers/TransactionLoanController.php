@@ -199,36 +199,7 @@ class TransactionLoanController extends Controller
     return redirect()->back()->with('message', 'Ceklist Kepala tersimpan; target minggu depan diperbarui.');
   }
 
-  // Cek #2 kasir dari tab Rencana Drop (alur baru): catat setoran mantri lalu
-  // KUNCI. Penguncian (hitung ulang turunan + Gembok + susun bulanan) sepenuhnya
-  // DIDELEGASIKAN ke ClosingHarianController@kunci -> satu logika, bukan kembar.
-  // Otorisasi (can-approve) & prasyarat (kepala sudah ACC, setoran dicatat, hari
-  // sebelumnya terkunci) dicek di dalam kunci()/Gembok.
-  public function kasir_kunci(Request $request, \App\Models\TransactionDailyClosing $closing)
-  {
-    $val = $request->validate([
-      'setoran_mantri' => ['required', 'integer', 'min:0'],
-      // Opsional (keputusan mas 2026-10-09): kosong = tidak diubah.
-      'kasbon' => ['nullable', 'integer', 'min:0'],
-      'transport' => ['nullable', 'integer', 'min:0'],
-    ]);
 
-    if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
-      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
-    }
-
-    if ($closing->kasir_lock_at) {
-      return redirect()->back()->withErrors('Baris ini sudah dikunci.');
-    }
-
-    $closing->update(array_filter([
-      'setoran_mantri' => (int) $val['setoran_mantri'],
-      'kasbon' => isset($val['kasbon']) ? (int) $val['kasbon'] : null,
-      'transport' => isset($val['transport']) ? (int) $val['transport'] : null,
-    ], fn($v) => $v !== null));
-
-    return app(\App\Http\Controllers\ClosingHarianController::class)->kunci($closing);
-  }
 
 
 
