@@ -81,13 +81,16 @@ const Rencana = ({ datas, dataTransaksi }) => {
                 <TableCell>
                   {item.is_generated && (
                     <div className="flex flex-col items-center gap-1">
-                      <BargeStatus
-                        value={item.is_closed}
-                        onClick={() => handleOnApproveShowOpen(item.tanggal)}
-                        size="xs"
-                      >
-                        ACC
-                      </BargeStatus>
+                      {/* Belum harinya -> belum bisa di-Ceklist Kepala. */}
+                      {item.tanggal <= dayjs().format('YYYY-MM-DD') && (
+                        <BargeStatus
+                          value={item.is_closed}
+                          onClick={() => handleOnApproveShowOpen(item.tanggal)}
+                          size="xs"
+                        >
+                          ACC
+                        </BargeStatus>
+                      )}
                       {/* Status kunci kasir (dikunci dari Kasir -> Rekap) */}
                       {server_filter?.migrasi && item.is_kasir && (
                         <span className="text-[10px] font-semibold text-green-700">

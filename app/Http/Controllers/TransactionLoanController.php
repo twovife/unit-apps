@@ -132,8 +132,10 @@ class TransactionLoanController extends Controller
 
     $request->validate([
       'id' => ['required'],            // grouping id
-      'date' => ['required', 'date'],
+      'date' => ['required', 'date', 'before_or_equal:today'],
       'keluar' => ['required', 'integer', 'min:0'],
+    ], [
+      'date.before_or_equal' => 'Belum harinya — Ceklist Kepala baru bisa pada hari itu atau sesudahnya.',
     ]);
 
     $groupingId = (int) $request->id;
