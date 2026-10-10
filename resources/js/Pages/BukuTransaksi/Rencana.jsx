@@ -14,7 +14,8 @@ import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
 import { usePage } from '@inertiajs/react';
 
-const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null }) => {
+// sorot: 'YYYY-MM-DD' - baris tanggal itu disorot kuning & digulir ke pandangan.
+const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null, sorot = null }) => {
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
   // Kolom ACC KM membuka dialog approval kepala (ceklist_kepala) -> can-approve
@@ -70,7 +71,13 @@ const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null }) => {
         </TableHeader>
         <TableBody>
           {data.map((item, index) => (
-            <TableRow key={index} className={`text-center`}>
+            <TableRow
+              key={index}
+              data-sorot={sorot && dayjs(item.tanggal).format('YYYY-MM-DD') === sorot ? '' : undefined}
+              className={`text-center ${
+                sorot && dayjs(item.tanggal).format('YYYY-MM-DD') === sorot ? 'bg-amber-100 hover:bg-amber-100 ring-2 ring-inset ring-amber-400' : ''
+              }`}
+            >
               {isUnit && (
                 <TableCell>
                   {item.is_generated && (

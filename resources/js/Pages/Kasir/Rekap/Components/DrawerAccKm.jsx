@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import useMuatDrawer from '@/Hooks/useMuatDrawer';
 import dayjs from 'dayjs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
@@ -33,6 +33,11 @@ const DrawerAccKm = ({ target, server_filter, onClosed }) => {
   );
   // Storting di dalam ACC KM -> buku angsuran hari itu, di atas drawer ini.
   const [angsuran, setAngsuran] = useState(null);
+  // Baris tanggal yang dicek disorot & digulir ke pandangan sesudah data datang.
+  const wadah = useRef(null);
+  useEffect(() => {
+    wadah.current?.querySelector('[data-sorot]')?.scrollIntoView({ block: 'center' });
+  }, [isi]);
 
   return (
     <>
@@ -42,11 +47,11 @@ const DrawerAccKm = ({ target, server_filter, onClosed }) => {
             <SheetTitle>ACC KM</SheetTitle>
             <SheetDescription>
               Kelompok {target?.kelompok} · <span className="capitalize">{hari}</span> ·{' '}
-              {target ? dayjs(target.tanggal).format('MMMM YYYY') : ''}. Cari baris tanggal{' '}
-              {target ? dayjs(target.tanggal).format('DD-MM') : ''} lalu klik ACC. Angka dalam ribuan.
+              {target ? dayjs(target.tanggal).format('MMMM YYYY') : ''}. Baris tanggal{' '}
+              {target ? dayjs(target.tanggal).format('DD-MM') : ''} disorot kuning — klik ACC di situ. Angka dalam ribuan.
             </SheetDescription>
           </SheetHeader>
-          <div className="p-3 overflow-x-auto">
+          <div ref={wadah} className="p-3 overflow-x-auto">
             {galat && <div className="text-sm text-red-600">{galat}</div>}
             {!isi && !galat && <div className="text-sm text-slate-500">Memuat…</div>}
             {isi && (
@@ -56,6 +61,7 @@ const DrawerAccKm = ({ target, server_filter, onClosed }) => {
                 onStorting={(item) => setAngsuran({ tanggal: item.tanggal, kelompok: item.kelompok })}
                 // ACC tersimpan -> drawer ditutup (post Inertia mempertahankan state).
                 onAccSelesai={onClosed}
+                sorot={target ? dayjs(target.tanggal).format('YYYY-MM-DD') : null}
               />
             )}
           </div>
