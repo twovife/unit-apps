@@ -209,42 +209,18 @@ class TransactionLoanController extends Controller
         ]);
       }
 
-      // drop hari D satu sumber (bukan kolom tersimpan yang bisa basi).
-      $drop = (int) (\App\Helpers\HitungAgregat::harian($groupingId, $date)['drop'] ?? 0);
-
-      // Verifikasi pimpinan: simpan keluar manual + tanda cek kepala.
-      $closing->update([
-        'keluar' => (int) $request->keluar,
-        'kepala_approval_at' => now(),
-        'kepala_approval_user' => $user->employee->id,
-      ]);
-
-      // Materialisasi target minggu depan (manual), menimpa auto. D+7 libur ->
-      // ke hari tagih kerja berikutnya (TargetMingguan::tanggalDepan).
-      $tanggalDepan = \App\Helpers\TargetMingguan::tanggalDepan($date);
-      if ($tanggalDepan) {
-        $depan = \App\Models\TransactionDailyClosing::firstOrCreate([
-          'transaction_loan_officer_grouping_id' => $groupingId,
-          'date' => $tanggalDepan,
-        ]);
-        // Baris minggu depan yang sudah terkunci tidak ditimpa.
-        if ($depan->kasir_lock_at) {
-          DB::rollBack();
-          return redirect()->back()->withErrors('Target minggu depan (' . Carbon::parse($tanggalDepan)->locale('id')->isoFormat('D MMMM Y') . ') sudah dikunci; Ceklist Kepala tidak disimpan.');
-        }
-        // Target minggu depan yang sudah dikoreksi / di-recount adalah awal
-        // rantai baru - tidak ditimpa (ACC tetap tersimpan).
-        $depanDikoreksi = in_array($depan->target_source, \App\Helpers\TargetMingguan::SUMBER_PUTUS, true);
-        if (!$depanDikoreksi) {
-          $depan->update([
-            'target' => \App\Helpers\TargetMingguan::hitung((int) $closing->target, $drop, (int) $request->keluar),
-            'target_on' => $date,
-            'target_source' => 'manual',
-          ]);
-        }
-      }
+      // Simpan keluar + tanda cek kepala + target minggu depan - logika yang
+      // sama dipakai ACC otomatis saat kunci kasir (CeklistKepala).
+      $depanDikoreksi = \App\Helpers\CeklistKepala::simpan($closing, (int) $request->keluar, $user->employee->id);
 
       DB::commit();
+    } catch (\Illuminate\Database\QueryException $e) {
+      DB::rollBack();
+      return redirect()->back()->withErrors('Gagal menyimpan cek kepala. Ulangi / hubungi IT.');
+    } catch (\RuntimeException $e) {
+      // Pesan untuk user dari CeklistKepala (mis. minggu depan sudah dikunci).
+      DB::rollBack();
+      return redirect()->back()->withErrors($e->getMessage());
     } catch (\Throwable $e) {
       DB::rollBack();
       return redirect()->back()->withErrors('Gagal menyimpan cek kepala. Ulangi / hubungi IT.');

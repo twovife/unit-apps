@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\DB;
  * TransactionDailyRecapController::rekap_post). Controller ini tinggal
  * menyimpan logika kunci/buka (route closing.buka).
  *
- * Urutannya ditegakkan lewat syarat: Ceklist Kepala dulu, setoran mantri
- * dicatat, baru kasir mengunci - dan hari sebelumnya harus sudah terkunci.
+ * Urutannya: hari sebelumnya harus sudah terkunci. Ceklist Kepala yang belum
+ * ada dijalankan otomatis saat kunci (ditandai acc_auto).
  *
  * Lihat .agents/agregasi_rekap.md §4.
  */
@@ -34,14 +34,24 @@ class ClosingHarianController extends Controller
         $this->pastikanBerwenang();
 
         $kasir = auth()->user()->employee->id;
-        $diselesaikan = ['tolak' => 0, 'gagal' => 0];
+        $gagal = 0;
+        $accOtomatis = false;
 
         try {
-            DB::transaction(function () use ($closing, $kasir, &$diselesaikan) {
-                // Yang masih menggantung di hari ini diputus sebelum dikunci
-                // (keputusan mas 2026-10-09): sesudah kunci statusnya tidak
-                // bisa diubah lagi, jadi jangan sampai ada yang beku di open/acc.
-                $diselesaikan = self::selesaikanGantung($closing, $kasir);
+            DB::transaction(function () use ($closing, $kasir, &$gagal, &$accOtomatis) {
+                // Drop hari ini yang masih menggantung digagalkan sebelum
+                // dikunci: sesudah kunci statusnya tidak bisa diubah lagi.
+                // Pengajuan (drop minggu depan) TIDAK disentuh - masih bisa
+                // di-ACC / tolak sesudah kunci (keputusan mas 2026-10-10).
+                $gagal = self::gagalkanDropGantung($closing, $kasir);
+
+                // Belum dicek KM -> ACC KM otomatis (target minggu depan ikut
+                // terbentuk), ditandai kuning di layar (CeklistKepala::otomatis).
+                $closing->refresh();
+                if (!$closing->kepala_approval_at) {
+                    \App\Helpers\CeklistKepala::otomatis($closing, $kasir);
+                    $accOtomatis = true;
+                }
 
                 // Hitung ulang sekali lagi tepat sebelum dibekukan: transaksi
                 // bisa masuk antara Ceklist Kepala dan kunci kasir, dan yang
@@ -69,40 +79,33 @@ class ClosingHarianController extends Controller
         $this->susunBulanan($closing);
 
         $catatan = array_filter([
-            $diselesaikan['tolak'] ? $diselesaikan['tolak'] . ' pengajuan open ditolak' : null,
-            $diselesaikan['gagal'] ? $diselesaikan['gagal'] . ' drop acc digagalkan' : null,
+            $gagal ? $gagal . ' drop hari ini digagalkan' : null,
+            $accOtomatis ? 'ACC KM otomatis (belum dicek KM)' : null,
         ]);
 
         return back()->with('message', 'Terkunci.' . ($catatan ? ' Otomatis: ' . implode(', ', $catatan) . '.' : ''));
     }
 
     /**
-     * Putus semua yang masih menggantung di hari kunci, untuk kelompok ini:
-     *   - drop bertanggal hari itu: open -> tolak, acc -> gagal;
-     *   - pengajuan yang DIAJUKAN hari itu dan masih open -> tolak.
-     * Dicatat atas nama kasir yang mengunci (user_check / check_date).
-     *
-     * @return array{tolak:int,gagal:int}
+     * Drop bertanggal hari kunci yang belum sukses (open / acc) -> gagal, untuk
+     * kelompok ini. Dicatat atas nama kasir yang mengunci (user_check /
+     * check_date). Pengajuan yang diajukan hari itu tidak disentuh.
      */
-    private static function selesaikanGantung(TransactionDailyClosing $closing, int $kasir): array
+    public static function dropGantung(TransactionDailyClosing $closing)
     {
-        $tanggal = $closing->date->toDateString();
-        $hasil = ['tolak' => 0, 'gagal' => 0];
-
-        $gantung = TransactionLoan::where('transaction_loan_officer_grouping_id', $closing->transaction_loan_officer_grouping_id)
-            ->where(fn($q) => $q
-                ->where(fn($q) => $q->whereDate('drop_date', $tanggal)->whereIn('status', ['open', 'acc']))
-                ->orWhere(fn($q) => $q->whereDate('request_date', $tanggal)->where('status', 'open')))
+        return TransactionLoan::where('transaction_loan_officer_grouping_id', $closing->transaction_loan_officer_grouping_id)
+            ->whereDate('drop_date', Carbon::parse($closing->date)->toDateString())
+            ->whereIn('status', ['open', 'acc'])
             ->get();
+    }
 
-        foreach ($gantung as $loan) {
-            $baru = $loan->status === 'acc' ? 'gagal' : 'tolak';
-            // Per model, bukan update massal: hook TransactionLoan ikut jalan.
-            $loan->update(['status' => $baru, 'user_check' => $kasir, 'check_date' => now()->toDateString()]);
-            $hasil[$baru]++;
-        }
+    private static function gagalkanDropGantung(TransactionDailyClosing $closing, int $kasir): int
+    {
+        $gantung = self::dropGantung($closing);
+        // Per model, bukan update massal: hook TransactionLoan ikut jalan.
+        $gantung->each->update(['status' => 'gagal', 'user_check' => $kasir, 'check_date' => now()->toDateString()]);
 
-        return $hasil;
+        return $gantung->count();
     }
 
     public function buka(Request $request, TransactionDailyClosing $closing)

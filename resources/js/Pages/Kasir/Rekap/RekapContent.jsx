@@ -13,6 +13,7 @@ import DrawerBukuAngsuran from './Components/DrawerBukuAngsuran';
 import DrawerBukuDrop from './Components/DrawerBukuDrop';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
 import DrawerAccKm from './Components/DrawerAccKm';
+import DialogKunci from './Components/DialogKunci';
 import Action from './Components/Action';
 
 const RekapContent = ({
@@ -35,6 +36,8 @@ const RekapContent = ({
   const [triggeredType, setTriggeredType] = useState();
   // Drawer detail tunai per kelompok (dari tabel Global).
   const [detailKelompok, setDetailKelompok] = useState(null);
+  // Baris Rekap 1 yang dialog Kunci-nya terbuka.
+  const [barisKunci, setBarisKunci] = useState(null);
 
   // Storting -> drawer buku angsuran kelompok x hari itu, tanggalnya
   // disorot. Statusnya disimpan di sessionStorage (per tanggal filter):
@@ -190,7 +193,14 @@ const RekapContent = ({
             dibuang (2026-10-09); Titipan 9% pindah ke kolom terakhir. */}
         {show == 'rekapkasir' && (
           <>
-            <TableRekapKasir datas={datas} onKlikStorting={bukaBuku} onKlikDrop={bukaDrop} />
+            <TableRekapKasir
+              datas={datas}
+              onKlikStorting={bukaBuku}
+              onKlikDrop={bukaDrop}
+              // Kunci hanya kantor alur baru.
+              onKunci={server_filter.migrasi ? setBarisKunci : null}
+            />
+            <DialogKunci baris={barisKunci} onClosed={() => setBarisKunci(null)} />
             {/* Global: awal bulan s/d tanggal filter, per kelompok. */}
             <h2 className="mt-6 mb-2 text-base font-semibold text-slate-900">
               Global — 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}

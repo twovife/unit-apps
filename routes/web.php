@@ -173,6 +173,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/', "rekap_post")->name('rekap_post');
         // Setoran tunai (SU Lapangan) / transfer dari sel Rekap 1, alur baru.
         Route::post('/su-lapangan', "simpan_su_lapangan")->name('simpan_su_lapangan');
+        // Dialog Kunci di Rekap 1 (alur baru): pratinjau JSON + kunci.
+        Route::get('/pratinjau-kunci', "pratinjau_kunci")->name('pratinjau_kunci');
+        Route::post('/kunci-hari', "kunci_hari")->name('kunci_hari');
         Route::post('/ceklist-kepala', "ceklist_kepala")->name('ceklist_kepala');
         Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
         // JSON detail per kelompok untuk drawer di Rekap 1 (tabel Global).

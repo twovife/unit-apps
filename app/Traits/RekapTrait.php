@@ -103,7 +103,11 @@ trait RekapTrait
       ];
     };
 
-    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($groupingId, $pasangan, $isi, $daily_recap) {
+    $kmOtomatis = $migrasi
+      ? \App\Helpers\CeklistKepala::daftarOtomatis($groupingId->pluck('id'), $startOfMonth, $endOfMonth)
+      : [];
+
+    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($groupingId, $pasangan, $isi, $daily_recap, $kmOtomatis) {
       $p = $pasangan[$tanggal];
 
       return $groupingId->map(fn($g) => [
@@ -113,6 +117,7 @@ trait RekapTrait
         'pasangan' => $p,
         // Ceklist Kepala (ACC KM) hari D sudah? Target pasangan baru final sesudahnya.
         'cek_km' => (bool) ($daily_recap->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $g->id)->first()?->cek_km),
+        'kepala_otomatis' => isset($kmOtomatis[$g->id . '|' . $tanggal]),
       ] + $isi($tanggal, $g->id) + collect($isi($p, $g->id))->mapWithKeys(fn($v, $k) => ["p_$k" => $v])->all());
     })->values();
 
@@ -214,7 +219,12 @@ trait RekapTrait
       ->get()
       ->groupBy('transaction_loan_officer_grouping_id');
 
-    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb, $alurBaru, $harianBulan) {
+    // ACC KM otomatis saat kunci kasir (belum dicek KM) -> ditandai kuning.
+    $kmOtomatis = $alurBaru
+      ? \App\Helpers\CeklistKepala::daftarOtomatis($transactionOffice->pluck('id'), $transaction_date, $transaction_date)
+      : [];
+
+    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb, $alurBaru, $harianBulan, $kmOtomatis) {
       $transaction_date = $transaction_date->format('Y-m-d');
       // dd($transaction_date);
       $thisLoan = $loan->get($item->id, collect());
@@ -315,6 +325,7 @@ trait RekapTrait
         'rekap_status' => $thisDailyRecap ? true : false,
         'status_approve_kepala' => $status_kepala,
         'status_approve_kasir' => $status_kasir,
+        'kepala_otomatis' => isset($kmOtomatis[$item->id . '|' . $transaction_date]),
         'status_dayly_approval' => $status_kepala && $status_kasir,
         'transaction_date' => $transaction_date,
 
@@ -764,7 +775,12 @@ trait RekapTrait
     // BUILD RESPONSE
     // ============================
 
+    $kmOtomatis = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)
+      ? \App\Helpers\CeklistKepala::daftarOtomatis($groupingIds, $startDateofMonth, $endDateofMonth)
+      : [];
+
     $data = collect($datesOfMonth)->map(function ($date) use (
+      $kmOtomatis,
       $transactionOffice,
       $loanAgg,
       $instalmentAgg,
@@ -776,6 +792,7 @@ trait RekapTrait
       return [
         'tanggal' => $date,
         'data' => $transactionOffice->map(function ($item) use (
+          $kmOtomatis,
           $date,
           $loanAgg,
           $instalmentAgg,
@@ -850,6 +867,7 @@ trait RekapTrait
             'rekap_status' => $thisDailyRecap ? true : false,
             'status_approve_kepala' => $thisDailyRecap?->daily_kepala_approval ? true : false,
             'status_approve_kasir' => $thisDailyRecap?->daily_kasir_approval ? true : false,
+            'kepala_otomatis' => isset($kmOtomatis[$item->id . '|' . $date]),
             'status_dayly_approval' => ($thisDailyRecap?->daily_kepala_approval && $thisDailyRecap?->daily_kasir_approval),
 
             'kasbon' => $kasbon,

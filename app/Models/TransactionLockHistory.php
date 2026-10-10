@@ -23,6 +23,8 @@ class TransactionLockHistory extends Model
     public const AKSI_PERBARUI = 'perbarui';
     /** Target hari itu dikoreksi tangan saat Ceklist Kepala (rantai putus). */
     public const AKSI_TARGET = 'target';
+    /** ACC KM dijalankan otomatis saat kunci kasir (hari belum dicek KM). */
+    public const AKSI_ACC_OTOMATIS = 'acc_auto';
 
     protected $fillable = [
         'transaction_daily_closing_id',

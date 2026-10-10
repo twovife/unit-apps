@@ -32,10 +32,14 @@ const KOLOM_HARIAN = [
 
 // Belum dicek: silang + tombol ke tempat ngeceknya (href = pindah halaman,
 // onClick = drawer).
-const Cek = ({ ok, href, onClick }) => (
+// otomatis: ACC KM dijalankan saat kunci kasir (belum dicek KM) -> kuning.
+const Cek = ({ ok, href, onClick, otomatis = false }) => (
   <div className="flex items-center justify-center gap-1.5">
     {ok ? (
-      <CheckCircle className="w-4 h-4 text-green-500" />
+      <CheckCircle
+        className={`w-4 h-4 ${otomatis ? 'text-amber-500' : 'text-green-500'}`}
+        aria-label={otomatis ? 'ACC KM otomatis saat kunci (belum dicek KM)' : 'Sudah dicek'}
+      />
     ) : (
       <>
         <XCircle className="w-4 h-4 text-red-500" />
@@ -215,7 +219,7 @@ const TableRekap = ({
             </td>,
             // Cek Target = drawer ACC KM (kelompok x hari x bulan tanggal ini).
             <td key="target" className="px-3 py-1">
-              {!kosong && <Cek ok={r.status_approve_kepala} onClick={() => onAcc?.({ ...r, tanggal })} />}
+              {!kosong && <Cek ok={r.status_approve_kepala} otomatis={r.kepala_otomatis} onClick={() => onAcc?.({ ...r, tanggal })} />}
             </td>,
           ],
         }}

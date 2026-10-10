@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
-import { PanelRightOpen } from 'lucide-react';
+import { Lock, PanelRightOpen } from 'lucide-react';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
 // buku kasir: kasbon s/d tunai, titipan 9%, SU Lapangan, Sisa Uang,
@@ -133,7 +133,7 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null }) => {
   const { auth, server_filter } = usePage().props;
   // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
   const KLIK = {
@@ -172,12 +172,13 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 {label}
               </th>
             ))}
+            {onKunci && <th className="px-3 py-2 font-medium text-center">Kunci</th>}
           </tr>
         </thead>
         <tbody>
           {datas.length === 0 && (
             <tr>
-              <td colSpan={KOLOM.length + 1} className="py-6 text-center text-slate-500">
+              <td colSpan={KOLOM.length + 1 + (onKunci ? 1 : 0)} className="py-6 text-center text-slate-500">
                 Belum ada data.
               </td>
             </tr>
@@ -222,6 +223,31 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   )}
                 </td>
               ))}
+              {onKunci && (
+                <td className="px-2 py-1 text-center">
+                  {r.type != 'daily' ? null : r.status_approve_kasir ? (
+                    // Kuning = dikunci sebelum KM mengecek (ACC KM otomatis).
+                    <span
+                      title={r.kepala_otomatis ? 'Terkunci — ACC KM otomatis (belum dicek KM)' : 'Terkunci'}
+                      className={`inline-flex items-center justify-center w-7 h-7 rounded-md ${
+                        r.kepala_otomatis ? 'bg-amber-200 text-amber-900 ring-1 ring-amber-400' : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <Lock className="w-4 h-4" />
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!auth?.permissions?.includes('can-approve')}
+                      onClick={() => onKunci(r)}
+                      className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-white rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      Kunci
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -234,6 +260,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   <Angka n={total[k]} bertanda={bertanda} />
                 </td>
               ))}
+              {onKunci && <td />}
             </tr>
           </tfoot>
         )}

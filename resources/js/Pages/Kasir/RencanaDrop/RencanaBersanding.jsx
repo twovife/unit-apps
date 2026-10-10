@@ -84,7 +84,11 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                   {!kosong && (
                     <div className="flex items-center justify-center gap-1.5">
                       {r.cek_km ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        // Kuning = ACC KM otomatis saat kunci kasir (belum dicek KM).
+                        <CheckCircle
+                          className={`w-4 h-4 ${r.kepala_otomatis ? 'text-amber-500' : 'text-green-500'}`}
+                          aria-label={r.kepala_otomatis ? 'ACC KM otomatis saat kunci (belum dicek KM)' : 'Sudah dicek KM'}
+                        />
                       ) : (
                         <>
                           <XCircle className="w-4 h-4 text-red-500" />

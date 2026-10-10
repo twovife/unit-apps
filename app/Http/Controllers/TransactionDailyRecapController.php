@@ -123,6 +123,88 @@ class TransactionDailyRecapController extends Controller
   }
 
   /**
+   * Isi dialog Kunci di Rekap 1 (alur baru): rekap hari itu lengkap -
+   * storting per ember, status cek KM + target minggu depan yang akan
+   * terbentuk kalau KM belum mengecek, drop menggantung yang akan digagalkan,
+   * pengajuan open (tidak disentuh), dan penghalang kunci (hari sebelumnya).
+   */
+  public function pratinjau_kunci(Request $request)
+  {
+    $val = $request->validate(['id' => ['required', 'integer'], 'date' => ['required', 'date']]);
+    $grouping = TransactionLoanOfficerGrouping::findOrFail($val['id']);
+    if (!AppHelper::bolehAksesKelompok($grouping)) {
+      abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+    $date = Carbon::parse($val['date'])->toDateString();
+
+    // Tidak membuat baris: pratinjau hanya membaca.
+    $closing = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $grouping->id)
+      ->whereDate('date', $date)->first()
+      ?? new \App\Models\TransactionDailyClosing(['transaction_loan_officer_grouping_id' => $grouping->id, 'date' => $date]);
+
+    $harian = \App\Helpers\HitungAgregat::harian($grouping->id, $date);
+    $tanggalDepan = \App\Helpers\TargetMingguan::tanggalDepan($date);
+    $sebelumnya = $closing->exists ? \App\Helpers\Gembok::barisSebelumnyaBelumTerkunci($closing) : null;
+    $nama = fn($l) => $l->customer?->nama;
+
+    $dropGantung = ClosingHarianController::dropGantung($closing)->load('customer');
+    $pengajuanOpen = TransactionLoan::with('customer')
+      ->where('transaction_loan_officer_grouping_id', $grouping->id)
+      ->whereDate('request_date', $date)->whereColumn('request_date', '!=', 'drop_date')
+      ->where('status', 'open')->get();
+
+    return response()->json([
+      'kelompok' => $grouping->kelompok,
+      'tanggal' => $date,
+      'terkunci' => (bool) $closing->kasir_lock_at,
+      'storting' => collect(\App\Helpers\Ember::SEMUA)->mapWithKeys(fn($e) => [$e => (int) ($harian['storting_' . $e] ?? 0)])->all()
+        + ['total' => (int) $harian['storting']],
+      'drop' => (int) $harian['drop'],
+      'cek_km' => (bool) $closing->kepala_approval_at,
+      'target' => (int) $closing->target,
+      'keluar' => (int) $closing->keluar,
+      'masuk' => \App\Helpers\TargetMingguan::masuk((int) $harian['drop']),
+      'tanggal_depan' => $tanggalDepan,
+      // Target minggu depan kalau ACC KM otomatis jalan sekarang.
+      'target_depan' => \App\Helpers\TargetMingguan::hitung((int) $closing->target, (int) $harian['drop'], (int) $closing->keluar),
+      'drop_gantung' => $dropGantung->map(fn($l) => [
+        'id' => $l->id, 'nama' => $nama($l), 'status' => $l->status,
+        'nominal' => (int) ($l->approved_nominal ?: $l->request_nominal),
+      ])->values(),
+      'pengajuan_open' => $pengajuanOpen->map(fn($l) => [
+        'id' => $l->id, 'nama' => $nama($l), 'nominal' => (int) $l->request_nominal,
+      ])->values(),
+      'penghalang' => $sebelumnya ? 'Hari sebelumnya (' . $sebelumnya->date->format('d-m-Y') . ') belum dikunci.' : null,
+    ]);
+  }
+
+  /**
+   * Kunci hari itu dari dialog Rekap 1 (alur baru). Tidak menyentuh kasbon /
+   * transport / setoran - itu diisi inline di tabel.
+   */
+  public function kunci_hari(Request $request)
+  {
+    $val = $request->validate(['id' => ['required', 'integer'], 'date' => ['required', 'date', 'before_or_equal:today']]);
+    $grouping = TransactionLoanOfficerGrouping::findOrFail($val['id']);
+    if (!AppHelper::bolehAksesKelompok($grouping)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+    if (!\App\Helpers\AgregasiScope::sudahMigrasi($grouping->branch_id)) {
+      return redirect()->back()->withErrors('Kantor ini belum migrasi ke alur baru.');
+    }
+
+    $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
+      'transaction_loan_officer_grouping_id' => $grouping->id,
+      'date' => Carbon::parse($val['date'])->toDateString(),
+    ]);
+    if ($closing->kasir_lock_at) {
+      return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
+    }
+
+    return app(ClosingHarianController::class)->kunci($closing->fresh());
+  }
+
+  /**
    * Setoran mantri dari sel Rekap 1 -> daily_closings: SU Lapangan
    * (setoran_tunai, uang yang dibawa pulang mantri) atau setoran_transfer.
    * Kantor alur baru, hari yang belum dikunci. Kosong = belum dicatat (null),
