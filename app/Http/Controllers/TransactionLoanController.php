@@ -945,7 +945,9 @@ class TransactionLoanController extends Controller
         'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
         'previous_loan_id' => $transactionLoan->previous_loan_id,
         'postponed_loan_id' => $transactionLoan->id,
-        'request_date' => $transactionLoan->request_date,
+        // Diajukan ulang di tanggal drop yang ditunda (5 Okt -> drop 12 Okt),
+        // bukan tanggal pengajuan lama - supaya ikut rencana ACC KM hari itu.
+        'request_date' => $transactionLoan->drop_date,
         'drop_date' => $tanggalBaru->toDateString(),
         'hari' => $transactionLoan->hari,
         'request_nominal' => $transactionLoan->request_nominal,
