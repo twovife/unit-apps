@@ -1,0 +1,67 @@
+name: deploy
+
+# Rilis ke staging mantriappsv2 hanya lewat tag, contoh:
+#   git tag v0.1.0 && git push origin v0.1.0
+# Polanya sama dengan app_laravel. Migrasi TIDAK pernah dijalankan dari sini -
+# unit-apps dan app_laravel berbagi satu database; migrasi hanya dari app_laravel.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+# Dua tag didorong berdekatan: deploy berjalan berurutan, tidak saling potong
+concurrency:
+  group: deploy-mantriappsv2
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/twovife/mantriappsv2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.ref_name }}
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Siapkan SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      # Key deploy dikunci (command= di authorized_keys VPS) ke deploy.sh;
+      # yang dikirim hanya tag, script di VPS yang menentukan langkahnya.
+      # Isi script: .github/deploy/mantriappsv2-deploy.sh
+      - name: Deploy di VPS
+        run: ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "${{ github.ref_name }}"
