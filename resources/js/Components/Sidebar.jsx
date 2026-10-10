@@ -263,37 +263,33 @@ export default function AppSidebar({ ...props }) {
               </SidebarMenuItem>
             </SidebarMenu>
 
-            {/* Submenu: Persiapan Migrasi Agregasi */}
+            {/* Submenu: Persiapan Migrasi Agregasi - khusus superuser (mas 2026-10-10). */}
+            {isSuperUser && (
             <SidebarSubMenuSection
               icon={ClipboardCheck}
               title="Persiapan Migrasi"
               items={[
-                // Khusus superuser: monitor kesiapan migrasi per kantor.
-                ...(isSuperUser
-                  ? [
-                      {
-                        id: 99,
-                        title: 'Dashboard Migrasi',
-                        link: route('migrasi.dashboard'),
-                        active: route().current('migrasi.dashboard'),
-                        fix: true,
-                      },
-                      {
-                        id: 0,
-                        title: 'Kesiapan Migrasi',
-                        link: route('migrasi.kesiapan'),
-                        active: route().current('migrasi.kesiapan'),
-                        fix: true,
-                      },
-                      {
-                        id: 100,
-                        title: 'Nasabah Macet',
-                        link: route('migrasi.nasabah_macet'),
-                        active: route().current('migrasi.nasabah_macet'),
-                        fix: true,
-                      },
-                    ]
-                  : []),
+                {
+                  id: 99,
+                  title: 'Dashboard Migrasi',
+                  link: route('migrasi.dashboard'),
+                  active: route().current('migrasi.dashboard'),
+                  fix: true,
+                },
+                {
+                  id: 0,
+                  title: 'Kesiapan Migrasi',
+                  link: route('migrasi.kesiapan'),
+                  active: route().current('migrasi.kesiapan'),
+                  fix: true,
+                },
+                {
+                  id: 100,
+                  title: 'Nasabah Macet',
+                  link: route('migrasi.nasabah_macet'),
+                  active: route().current('migrasi.nasabah_macet'),
+                  fix: true,
+                },
                 {
                   id: 1,
                   title: 'Stock-take ML',
@@ -344,6 +340,7 @@ export default function AppSidebar({ ...props }) {
                 },
               ]}
             />
+            )}
           </SidebarGroup>
         )}
 
