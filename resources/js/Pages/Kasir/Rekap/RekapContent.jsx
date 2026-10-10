@@ -91,8 +91,8 @@ const RekapContent = ({
           <h1 className="text-xl font-semibold tracking-tight ">{title}</h1>
           {show == 'rekapkasir' && <p className="text-xs text-muted-foreground">Angka dalam ribuan.</p>}
         </div>
-        {show == 'rekapkasir' ? (
-          // Rekap 1: tanggal lewat FilterBar (chip instan, sama dengan menu
+        {show == 'rekapkasir' || show == 'rekap2' ? (
+          // Rekap 1 (tanggal) & Rekap 2 (bulan) lewat FilterBar (chip instan, sama dengan menu
           // lain); Unit/Wilayah tetap lewat popover kecil.
           (server_filter.userAuthorized.canShowBranch || server_filter.userAuthorized.canShowGroupingBranch) && (
             <Popover>
@@ -152,14 +152,14 @@ const RekapContent = ({
           </>
         )}
       </div>
-      {show == 'rekapkasir' && (
+      {(show == 'rekapkasir' || show == 'rekap2') && (
         <div className="mb-3">
           <FilterBar
             urlLink={urlLink}
             storageKey={localState}
             showHari={false}
-            showMonth={false}
-            showTanggal={true}
+            showMonth={show == 'rekap2'}
+            showTanggal={show == 'rekapkasir'}
             extraParams={{
               ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
               ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),

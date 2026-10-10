@@ -546,7 +546,10 @@ trait RekapTrait
     $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
 
-    $transaction_date = Carbon::parse($request->date ?? Carbon::now());
+    // Rekap 2 difilter per bulan (?month=Y-m, ikut filter global).
+    $transaction_date = preg_match('/^\d{4}-\d{2}$/', (string) $request->month)
+      ? Carbon::parse($request->month . '-01')
+      : Carbon::now()->startOfMonth();
 
     $startDateofMonth = $transaction_date->copy()->startOfMonth()->format('Y-m-d');
     $endDateofMonth = $transaction_date->copy()->endOfMonth()->format('Y-m-d');
@@ -848,6 +851,7 @@ trait RekapTrait
       'saldoAwalBulan' => $saldoAwalBulan,
       'server_filter' => [
         'date' => $transaction_date->format('Y-m-d'),
+        'month' => $transaction_date->format('Y-m'),
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
