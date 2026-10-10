@@ -51,7 +51,9 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       return {};
     }
   };
-  const [rencanaShow, setRencanaShowState] = useState(() => !!bacaDrawer().rencana);
+  // ?acc=1 (tombol Cek Target di Rekap 2) langsung membuka drawer ACC KM.
+  const dariLink = () => new URLSearchParams(window.location.search).has('acc');
+  const [rencanaShow, setRencanaShowState] = useState(() => !!bacaDrawer().rencana || dariLink());
   const [angsuranTarget, setAngsuranTargetState] = useState(() => bacaDrawer().angsuran ?? null);
   const simpanDrawer = (ubah) => {
     try {
@@ -82,6 +84,16 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       /* abaikan */
     }
   }, [filterDrawer]);
+  // Sekali pakai: catat sebagai drawer terbuka lalu buang ?acc dari URL,
+  // supaya muat ulang sesudah drawer ditutup tidak membukanya lagi.
+  useEffect(() => {
+    if (!dariLink()) return;
+    simpanDrawer({ rencana: true });
+    const url = new URL(window.location.href);
+    url.searchParams.delete('acc');
+    window.history.replaceState(window.history.state, '', url);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const handleOnCreateShowOpen = () => setOnCreateShow(true);
   const handleOnCreateShowClosed = () => setOnCreateShow(false);
 

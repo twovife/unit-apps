@@ -308,11 +308,11 @@ const TableRekap = ({
                       {!kosong && <Cek ok={r.status_approve_kasir} href={route('kasir.rekap.rekap_satu', { date: item.tanggal })} />}
                     </td>
                     <td className="px-3 py-1">
-                      {/* Cek Target = ACC KM di Buku Transaksi (tanggal -> hari & bulan). */}
+                      {/* Cek Target = drawer ACC KM di Buku Transaksi (tanggal -> hari & bulan). */}
                       {!kosong && (
                         <Cek
                           ok={r.status_approve_kepala}
-                          href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: item.tanggal })}
+                          href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: item.tanggal, acc: 1 })}
                         />
                       )}
                     </td>
