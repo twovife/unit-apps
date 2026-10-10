@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import { Button } from "@/shadcn/ui/button";
 import Action from "./Action";
 import { router, usePage } from "@inertiajs/react";
+import { useFilterAngsuran } from "../FilterAngsuran";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -111,8 +112,10 @@ const BEKU = {
   Nama: "sticky left-[200px] shadow-[inset_-1px_0_0_#cbd5e1]",
 };
 
-const AngsuranTable = ({ dateOfWeek, datas }) => {
-  const { server_filter, auth } = usePage().props;
+const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false }) => {
+  const { auth } = usePage().props;
+  // Filter dari halaman, atau dari drawer (FilterAngsuranContext).
+  const server_filter = useFilterAngsuran();
   // HP tegak: 4 kolom beku (360px) menghabiskan layar, tidak ada sisa untuk
   // digeser. Di HP cuma Nama yang beku (dan lebih sempit); No/Tgl/No Ang ikut
   // tergeser, Nama menempel di kiri begitu terlewati.
@@ -225,7 +228,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
 
   // ?sorot=YYYY-MM-DD (dari storting Rekap 1): kolom tanggal itu disorot dan
   // digeser ke tengah layar, supaya kasir langsung tahu storting mana yang dicek.
-  const sorot = new URLSearchParams(window.location.search).get('sorot');
+  const sorot = sorotProp ?? new URLSearchParams(window.location.search).get('sorot');
   useEffect(() => {
     if (!sorot || !kepala.current || !badan.current) return;
     const el = kepala.current.querySelector('[data-sorot="1"]');
@@ -248,7 +251,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     // kotak yang hanya menggulir ke samping, gesernya disalin ke header.
     // Kolom kiri beku di keduanya.
     <div className="relative border rounded-lg">
-      <div ref={kepala} className="sticky z-20 overflow-hidden rounded-t-lg top-14 bg-slate-100">
+      <div ref={kepala} className={`sticky z-20 overflow-hidden rounded-t-lg ${diDrawer ? 'top-0' : 'top-14'} bg-slate-100`}>
         <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
           {colgroup}
         <TableHeader className="bg-slate-100">

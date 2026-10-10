@@ -133,7 +133,7 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, tautanStorting = null }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null }) => {
   const { auth, server_filter } = usePage().props;
   // Sel isian aktif: kantor alur baru, baris harian, belum dikunci kasir.
   const bisaIsiSu = (r) =>
@@ -203,15 +203,16 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 >
                   {KOLOM_ISI[k] && bisaIsiSu(r) ? (
                     <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} kuning={!!WARNA_KOLOM[k]} />
-                  ) : k === 'storting' && tautanStorting && Number(r[k]) ? (
-                    // Ke buku angsuran, kolom tanggal ini disorot.
-                    <a
-                      href={tautanStorting(r)}
+                  ) : k === 'storting' && onKlikStorting && Number(r[k]) ? (
+                    // Buku angsuran di drawer, kolom tanggal ini disorot.
+                    <button
+                      type="button"
+                      onClick={() => onKlikStorting(r)}
                       className="text-sky-700 underline decoration-dotted hover:text-sky-900"
                       title="Buka buku angsuran, tanggal ini disorot"
                     >
                       <Angka n={r[k]} />
-                    </a>
+                    </button>
                   ) : (
                     <Angka n={r[k]} bertanda={bertanda} />
                   )}

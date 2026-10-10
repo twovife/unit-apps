@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react';
 import TableRekap from './Components/TableRekap';
 import TableRekapKasir from './Components/TableRekapKasir';
 import DrawerDetailKelompok from './Components/DrawerDetailKelompok';
+import DrawerBukuAngsuran from './Components/DrawerBukuAngsuran';
 import Action from './Components/Action';
 
 const RekapContent = ({
@@ -32,17 +33,30 @@ const RekapContent = ({
   // Drawer detail tunai per kelompok (dari tabel Global).
   const [detailKelompok, setDetailKelompok] = useState(null);
 
-  // Storting -> buku angsuran bulanan kelompok x hari itu, tanggalnya disorot.
-  const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
-  const tautanStorting = (r) =>
-    route('pinjaman.index_pinjaman', {
-      kelompok: r.kelompok,
-      hari: NAMA_HARI[dayjs(r.tanggal).day()],
-      month: dayjs(r.tanggal).format('YYYY-MM'),
-      sorot: dayjs(r.tanggal).format('YYYY-MM-DD'),
-      ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
-      ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
-    });
+  // Storting -> drawer buku angsuran kelompok x hari itu, tanggalnya
+  // disorot. Statusnya disimpan di sessionStorage (per tanggal filter):
+  // bayar / hapus angsuran memuat ulang halaman, tanpa itu drawer tertutup.
+  const KUNCI_BUKU = 'rekap1.buku';
+  const bacaBuku = () => {
+    try {
+      const v = JSON.parse(sessionStorage.getItem(KUNCI_BUKU));
+      return v && v.filter === server_filter.tanggal ? v.target : null;
+    } catch {
+      return null;
+    }
+  };
+  const [bukuTarget, setBukuTargetState] = useState(bacaBuku);
+  const setBukuTarget = (t) => {
+    setBukuTargetState(t);
+    try {
+      t
+        ? sessionStorage.setItem(KUNCI_BUKU, JSON.stringify({ filter: server_filter.tanggal, target: t }))
+        : sessionStorage.removeItem(KUNCI_BUKU);
+    } catch {
+      /* tanpa storage: drawer tetap jalan, cuma tidak bertahan */
+    }
+  };
+  const bukaBuku = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal });
 
   // Event handler function to set the "onCreateShow" state variable to true
   const handleOnCreateShowOpen = (e) => {
@@ -164,7 +178,7 @@ const RekapContent = ({
             dibuang (2026-10-09); Titipan 9% pindah ke kolom terakhir. */}
         {show == 'rekapkasir' && (
           <>
-            <TableRekapKasir datas={datas} tautanStorting={tautanStorting} />
+            <TableRekapKasir datas={datas} onKlikStorting={bukaBuku} />
             {/* Global: awal bulan s/d tanggal filter, per kelompok. */}
             <h2 className="mt-6 mb-2 text-base font-semibold text-slate-900">
               Global — 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}
@@ -178,9 +192,10 @@ const RekapContent = ({
             <DrawerDetailKelompok
               target={detailKelompok}
               server_filter={server_filter}
-              tautanStorting={tautanStorting}
+              onKlikStorting={bukaBuku}
               onClosed={() => setDetailKelompok(null)}
             />
+            <DrawerBukuAngsuran target={bukuTarget} server_filter={server_filter} onClosed={() => setBukuTarget(null)} />
           </>
         )}
       </div>

@@ -74,6 +74,8 @@ Route::middleware('auth')->group(function () {
   Route::prefix('pinjaman')->name('pinjaman.')->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_pinjaman")->name('index_pinjaman');
+      // JSON buku angsuran bulanan untuk drawer storting di Rekap 1.
+      Route::get('/buku-json', "buku_angsuran_json")->name('buku_angsuran_json');
       Route::get('/drop_date', "index_pinjaman_search")->name('index_pinjaman_search');
       Route::get('/pinjaman-macet', "index_pinjaman_macet")->name('index_pinjaman_macet');
       Route::get('/actionloan/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');

@@ -1091,6 +1091,13 @@ class TransactionLoanController extends Controller
 
 
   // INI ADALAH PINJAMAN YA
+  // JSON buku angsuran bulanan (sama dengan index_pinjaman) untuk drawer
+  // storting di Rekap 1.
+  public function buku_angsuran_json(Request $request)
+  {
+    return response()->json($this->getLoan($request));
+  }
+
   public function index_pinjaman(Request $request)
   {
     // dd('asd');
