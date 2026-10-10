@@ -74,12 +74,11 @@ const SidebarSubMenuSection = ({ icon: Icon, title, items }) => {
 export default function AppSidebar({ ...props }) {
   const { auth } = usePage().props;
 
-  const unitAkses =
-    auth?.permissions?.includes('can-approve') ||
-    auth?.permissions?.includes('view-all-groups') ||
-    auth?.permissions?.includes('view-all-branches');
-
   const isSuperUser = auth?.roles?.includes('superuser');
+  // Mantri hanya melihat: Input Mantri (Pengajuan, Drop, Angsuran, ML), Buku
+  // (Transaksi, Angsuran Lancar, Macet) & Rekap Mantri. Peran lain melihat
+  // semua kecuali menu superuser (mas 2026-10-10).
+  const isMantri = auth?.roles?.includes('mantri') && !isSuperUser;
 
   return (
     <Sidebar className="border-r shadow-xs" {...props}>
@@ -194,6 +193,9 @@ export default function AppSidebar({ ...props }) {
           icon={FileSpreadsheet}
           title="Buku Rekap"
           items={[
+            ...(isMantri
+              ? []
+              : [
             {
               id: 1,
               title: 'Rekap 1 & Tunai Mantri',
@@ -214,6 +216,7 @@ export default function AppSidebar({ ...props }) {
               link: route('kasir.rekap.rencana_drop'),
               active: route().current('kasir.rekap.rencana_drop'),
             },
+                ]),
             {
               id: 4,
               title: 'Rekap Mantri',
@@ -224,7 +227,7 @@ export default function AppSidebar({ ...props }) {
         />
 
         {/* FASTCREATE (dulu Input Staf) - di atas Administrasi Cabang. */}
-        {unitAkses && (
+        {!isMantri && (
           <SidebarSubMenuSection
             icon={BookOpen}
             title="FASTCREATE"
@@ -240,7 +243,7 @@ export default function AppSidebar({ ...props }) {
         )}
 
         {/* Group: Operasional Cabang */}
-        {unitAkses && (
+        {!isMantri && (
           <SidebarGroup className="pt-2">
             <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Administrasi Cabang
