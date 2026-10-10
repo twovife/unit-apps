@@ -34,9 +34,16 @@ const GRUP = [
   { judul: '', kolom: [['selisih_uang', '-/+', 'font-bold', true]] },
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
-// Kasbon s/d Tunai berlatar kuning (selang-seling tetap: ganjil/genap beda tua).
-const KUNING = new Set(GRUP[0].kolom.map(([k]) => k));
-const selKuning = 'bg-amber-50 group-even:bg-amber-100 group-hover:bg-amber-200';
+// Warna blok kolom (selang-seling tetap: ganjil/genap beda tua): Kasbon s/d
+// Tunai kuning, Sisa Uang hijau.
+const WARNA = {
+  kuning: { sel: 'bg-amber-50 group-even:bg-amber-100 group-hover:bg-amber-200', kepala: 'bg-amber-200 text-amber-900', total: 'bg-amber-200' },
+  hijau: { sel: 'bg-emerald-50 group-even:bg-emerald-100 group-hover:bg-emerald-200', kepala: 'bg-emerald-200 text-emerald-900', total: 'bg-emerald-200' },
+};
+const WARNA_KOLOM = {
+  ...Object.fromEntries(GRUP[0].kolom.map(([k]) => [k, WARNA.kuning])),
+  sisa_uang: WARNA.hijau,
+};
 // Kolom yang bisa diisi kasir -> nama kolom di daily_closings.
 // Rekap 1: kasir mengisi kasbon, transport, SU Lapangan, setor transfer.
 // Angka bawaan setoran yang belum diisi kasir: storting hari itu per cara
@@ -148,7 +155,7 @@ const TableRekapKasir = ({ datas = [] }) => {
             {KOLOM.map(([k, label]) => (
               <th
                 key={k}
-                className={`px-3 py-2 font-medium text-right whitespace-nowrap ${KUNING.has(k) ? 'bg-amber-200 text-amber-900' : ''}`}
+                className={`px-3 py-2 font-medium text-right whitespace-nowrap ${WARNA_KOLOM[k]?.kepala ?? ''}`}
               >
                 {label}
               </th>
@@ -171,10 +178,10 @@ const TableRekapKasir = ({ datas = [] }) => {
               {KOLOM.map(([k, , kelas, bertanda]) => (
                 <td
                   key={k}
-                  className={`${KOLOM_ISI[k] && bisaIsiSu(r) ? 'p-0' : 'px-3 py-1.5'} text-right ${KUNING.has(k) ? selKuning : ''} ${kelas ?? ''}`}
+                  className={`${KOLOM_ISI[k] && bisaIsiSu(r) ? 'p-0' : 'px-3 py-1.5'} text-right ${WARNA_KOLOM[k]?.sel ?? ''} ${kelas ?? ''}`}
                 >
                   {KOLOM_ISI[k] && bisaIsiSu(r) ? (
-                    <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} kuning={KUNING.has(k)} />
+                    <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} kuning={!!WARNA_KOLOM[k]} />
                   ) : (
                     <Angka n={r[k]} bertanda={bertanda} />
                   )}
@@ -188,7 +195,7 @@ const TableRekapKasir = ({ datas = [] }) => {
             <tr>
               <td className="sticky left-0 px-3 py-2 text-left bg-slate-100">Total</td>
               {KOLOM.map(([k, , , bertanda]) => (
-                <td key={k} className={`px-3 py-2 text-right ${KUNING.has(k) ? 'bg-amber-200' : ''}`}>
+                <td key={k} className={`px-3 py-2 text-right ${WARNA_KOLOM[k]?.total ?? ''}`}>
                   <Angka n={total[k]} bertanda={bertanda} />
                 </td>
               ))}
