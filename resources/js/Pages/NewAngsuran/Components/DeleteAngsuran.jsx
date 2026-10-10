@@ -58,7 +58,7 @@ export default function DeleteAngsuran({ id, tanggal, nominal }) {
               dibatalkan.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
             <Button variant="outline" disabled={proses} onClick={() => setBuka(false)}>
               Batal
             </Button>
