@@ -1453,6 +1453,9 @@ class TransactionLoanController extends Controller
     if (!$permission['status']) {
       return redirect()->back()->withErrors($permission['message']);
     }
+    if ($pesan = AppHelper::tolakHapusLewatSeminggu($transactionLoanInstalment->transaction_loan_officer_grouping_id, $transactionLoanInstalment->transaction_date, 'angsuran')) {
+      return redirect()->back()->withErrors($pesan);
+    }
     try {
       DB::beginTransaction();
       $transactionLoanInstalment->delete();

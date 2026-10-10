@@ -530,9 +530,37 @@ class AppHelper
       || \App\Models\TransactionDailyRecap::where($hari)->whereNotNull('daily_kepala_approval')->exists();
   }
 
+  /**
+   * Kantor BELUM migrasi (mas 2026-10-10): selain superuser, kasir, pusat &
+   * can-edit, hapus angsuran / drop hanya untuk tanggal 7 hari terakhir
+   * (hari ini - 6 s/d hari ini). Kantor migrasi dijaga gembok harian.
+   *
+   * @return string|null  pesan penolakan; null = boleh
+   */
+  public static function tolakHapusLewatSeminggu($groupingId, $tanggal, string $apa): ?string
+  {
+    $user = auth()->user();
+    if (!$tanggal || $user->hasAnyRole(['superuser', 'kasir', 'pusat']) || $user->hasPermissionTo('can-edit')) {
+      return null;
+    }
+    $branchId = \App\Models\TransactionLoanOfficerGrouping::whereKey($groupingId)->value('branch_id');
+    if (\App\Helpers\AgregasiScope::sudahMigrasi($branchId)) {
+      return null;
+    }
+    $batas = Carbon::today()->subDays(6);
+
+    return Carbon::parse($tanggal)->startOfDay()->lt($batas)
+      ? "Hapus {$apa} hanya untuk 7 hari terakhir (sejak " . $batas->locale('id')->isoFormat('D MMM Y') . '). Hubungi kasir / pusat.'
+      : null;
+  }
+
   public static function canDeleteLoan(\App\Models\TransactionLoan $transactionLoan): array
   {
     $user = auth()->user();
+
+    if ($pesan = self::tolakHapusLewatSeminggu($transactionLoan->transaction_loan_officer_grouping_id, $transactionLoan->drop_date, 'drop')) {
+      return ["status" => false, 'message' => $pesan];
+    }
 
     if (self::sudahDiajukanPengganti($transactionLoan)) {
       return ["status" => false, 'message' => 'Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa dihapus.'];
