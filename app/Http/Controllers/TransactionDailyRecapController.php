@@ -219,6 +219,12 @@ class TransactionDailyRecapController extends Controller
     return redirect()->back()->with('message', $message ?? 'Data berhasil disimpan.');
   }
 
+  // JSON detail tunai per hari satu kelompok - drawer dari tabel Global Rekap 1.
+  public function rekap_permantri_json(Request $request)
+  {
+    return response()->json($this->getRekapPermantriData($request));
+  }
+
   public function rekap_permantri(Request $request)
   {
     $data = $this->getRekapPermantriData($request);

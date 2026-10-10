@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
-import { ExternalLink } from 'lucide-react';
+import { PanelRightOpen } from 'lucide-react';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
 // buku kasir: kasbon s/d tunai, titipan 9%, SU Lapangan, Sisa Uang,
@@ -133,7 +133,7 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [], bacaSaja = false, tautanKelompok = null }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null }) => {
   const { auth, server_filter } = usePage().props;
   // Sel isian aktif: kantor alur baru, baris harian, belum dikunci kasir.
   const bisaIsiSu = (r) =>
@@ -182,15 +182,16 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, tautanKelompok = null }
               <td className={`sticky left-0 px-3 py-1.5 font-medium text-left whitespace-nowrap ${WARNA.biru.sel}`}>
                 {r.type != 'daily' ? (
                   dayjs(r.tanggal).format('DD-MM')
-                ) : tautanKelompok ? (
-                  <a
-                    href={tautanKelompok(r)}
+                ) : onKlikKelompok ? (
+                  <button
+                    type="button"
+                    onClick={() => onKlikKelompok(r)}
                     className="inline-flex items-center gap-1 font-semibold text-sky-700 hover:text-sky-900 hover:underline"
                     title="Detail tunai per hari kelompok ini"
                   >
                     {r.kelompok}
-                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                  </a>
+                    <PanelRightOpen className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
                 ) : (
                   r.kelompok
                 )}

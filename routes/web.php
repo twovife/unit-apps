@@ -173,6 +173,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/su-lapangan', "simpan_su_lapangan")->name('simpan_su_lapangan');
         Route::post('/ceklist-kepala', "ceklist_kepala")->name('ceklist_kepala');
         Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
+        // JSON detail per kelompok untuk drawer di Rekap 1 (tabel Global).
+        Route::get('/permantri-json', "rekap_permantri_json")->name('rekap_permantri_json');
         Route::get('/rencana', "rencana_drop")->name('rencana_drop');
         Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');
         Route::get('/rekap-dua', "rekap_dua")->name('rekap_dua');

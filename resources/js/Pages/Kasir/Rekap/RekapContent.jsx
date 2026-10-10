@@ -8,6 +8,7 @@ import { FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import TableRekap from './Components/TableRekap';
 import TableRekapKasir from './Components/TableRekapKasir';
+import DrawerDetailKelompok from './Components/DrawerDetailKelompok';
 import Action from './Components/Action';
 
 const RekapContent = ({
@@ -28,6 +29,8 @@ const RekapContent = ({
   const [onShowModal, setOnShowModal] = useState(false);
   const [triggeredData, setTriggeredData] = useState();
   const [triggeredType, setTriggeredType] = useState();
+  // Drawer detail tunai per kelompok (dari tabel Global).
+  const [detailKelompok, setDetailKelompok] = useState(null);
 
   // Event handler function to set the "onCreateShow" state variable to true
   const handleOnCreateShowOpen = (e) => {
@@ -156,18 +159,14 @@ const RekapContent = ({
             </h2>
             <TableRekapKasir
               bacaSaja
-              // Klik kelompok -> detail tunai per hari (Rekap per Mantri) s/d tanggal ini.
-              tautanKelompok={(r) =>
-                route('kasir.rekap.rekap_permantri', {
-                  kelompok: r.kelompok,
-                  month: dayjs(server_filter.tanggal).format('YYYY-MM'),
-                  sampai: server_filter.tanggal,
-                  tab: 'rekapkasir',
-                  ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
-                  ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
-                })
-              }
+              // Klik kelompok -> drawer detail tunai per hari s/d tanggal ini.
+              onKlikKelompok={(r) => setDetailKelompok(r)}
               datas={(datas ?? []).map((r) => ({ ...r.global, id: r.id, kelompok: r.kelompok, type: 'daily' }))}
+            />
+            <DrawerDetailKelompok
+              target={detailKelompok}
+              server_filter={server_filter}
+              onClosed={() => setDetailKelompok(null)}
             />
           </>
         )}
