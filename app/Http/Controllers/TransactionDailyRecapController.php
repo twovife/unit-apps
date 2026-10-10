@@ -75,9 +75,8 @@ class TransactionDailyRecapController extends Controller
   /**
    * Kasir alur baru, dari dialog yang sama dengan alur lama (Kasir -> Rekap):
    *   type 1 = Input Kasbon & Transport -> simpan ke daily_closings;
-   *   type 2 = Cek Tunai Mantri -> setoran mantri = tunai yang dikonfirmasi
-   *            kasir, lalu KUNCI (ClosingHarianController@kunci: hitung ulang,
-   *            syarat Gembok, susun bulanan).
+   *   type 2 = kunci kasir -> ClosingHarianController@kunci (hitung ulang,
+   *            setoran kosong diisi angka bawaan, syarat Gembok, susun bulanan).
    * Kunci kasir hanya dari sini; menu ACC KM khusus Ceklist Kepala.
    */
   private function rekapPostAlurBaru(Request $request)
@@ -118,8 +117,8 @@ class TransactionDailyRecapController extends Controller
       return redirect()->back()->withErrors('Belum di-Ceklist Kepala (ACC KM).');
     }
 
-    $closing->update(['setoran_tunai' => (int) ($val['tunai'] ?? 0)]);
-
+    // Setoran tidak diambil dari dialog: yang belum diisi di Rekap 1 dibekukan
+    // dengan angka bawaan dari angsuran saat kunci.
     return app(ClosingHarianController::class)->kunci($closing->fresh());
   }
 

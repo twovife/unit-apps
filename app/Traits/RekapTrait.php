@@ -188,7 +188,9 @@ trait RekapTrait
 
     // dd($loan);
 
-    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb) {
+    $alurBaru = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $transaction_date);
+
+    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb, $alurBaru) {
       $transaction_date = $transaction_date->format('Y-m-d');
       // dd($transaction_date);
       $thisLoan = $loan->get($item->id, collect());
@@ -219,10 +221,12 @@ trait RekapTrait
       $storting = $thisInstalment->where('transaction_date', $transaction_date)->sum('nominal') ?? 0;
       // Storting hari ini per cara bayar: transfer (is_transfer), katrol
       // (danatitipan), sisanya cash.
-      $stortingHariIni = $thisInstalment->where('transaction_date', $transaction_date);
-      $stortingTransfer = (int) $stortingHariIni->where('is_transfer', true)->sum('nominal');
-      $stortingKatrol = (int) $stortingHariIni->where('is_transfer', false)->where('danatitipan', true)->sum('nominal');
-      $stortingCash = (int) $storting - $stortingTransfer - $stortingKatrol;
+      $perCara = $thisInstalment->where('transaction_date', $transaction_date)
+        ->groupBy(fn($a) => \App\Helpers\HitungAgregat::caraBayar($a))
+        ->map(fn($g) => (int) $g->sum('nominal'));
+      $stortingTransfer = $perCara->get('transfer', 0);
+      $stortingKatrol = $perCara->get('katrol', 0);
+      $stortingCash = $perCara->get('tunai', 0);
       $do11 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.11) ?? 0;
       $titipan9 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.09) ?? 0;
       $kasbon = $thisDailyRecap?->kasbon ?? 0;
@@ -268,11 +272,15 @@ trait RekapTrait
         'setoran_katrol' => $thisDailyRecap?->setoran_katrol ?? null,
         // Sisa Uang = titipan 9% + tunai (debit - kredit).
         'sisa_uang' => $titipan9 + ($debit - $kredit),
-        // -/+ = (setoran tunai + transfer + katrol) - (tunai + titipan 9%), sama dengan
-        // kolom generated daily_closings.selisih. Setoran kosong = 0. Kantor
-        // lama (tanpa setoran) -> null.
-        'selisih_uang' => property_exists($thisDailyRecap ?? new \stdClass, 'setoran_tunai')
-          ? (int) $thisDailyRecap->setoran_tunai + (int) $thisDailyRecap->setoran_transfer + (int) $thisDailyRecap->setoran_katrol - (($debit - $kredit) + $titipan9)
+        // -/+ = (setoran tunai + transfer + katrol) - (tunai + titipan 9%).
+        // Setoran yang belum diisi kasir memakai angka bawaan dari angsuran
+        // (cash / transfer / katrol) - sama dengan yang ditulis saat kunci.
+        // Kantor lama (tanpa setoran) -> null.
+        'selisih_uang' => $alurBaru
+          ? ($thisDailyRecap?->setoran_tunai ?? $stortingCash)
+            + ($thisDailyRecap?->setoran_transfer ?? $stortingTransfer)
+            + ($thisDailyRecap?->setoran_katrol ?? $stortingKatrol)
+            - (($debit - $kredit) + $titipan9)
           : null,
         'total_storting' => $totalStorting,
         'sirkulasi' => (int) round($sirkulasi + ($totalDrop * 1.3) - ($totalStorting)),
@@ -302,7 +310,7 @@ trait RekapTrait
         'userAuthorized' => $userAuthorized,
         'branch_id' => $branch_id,
         // Kantor alur baru: SU Lapangan bisa diisi kasir di Rekap 1.
-        'migrasi' => \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $transaction_date),
+        'migrasi' => $alurBaru,
       ]
     ];
   }

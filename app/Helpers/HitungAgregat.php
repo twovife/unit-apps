@@ -67,6 +67,42 @@ class HitungAgregat
         return $hasil;
     }
 
+    /**
+     * Cara bayar satu angsuran - satu-satunya aturan: transfer kalau
+     * is_transfer, katrol kalau dana titipan (bukan transfer), selain itu
+     * tunai. Dipakai Rekap 1 (angka bawaan setoran) dan kunci kasir.
+     */
+    public static function caraBayar($angsuran): string
+    {
+        $a = (object) $angsuran;
+        if ($a->is_transfer) {
+            return 'transfer';
+        }
+
+        return $a->danatitipan ? 'katrol' : 'tunai';
+    }
+
+    /**
+     * Storting satu kelompok satu tanggal per cara bayar - angka bawaan
+     * setoran_tunai / setoran_transfer / setoran_katrol.
+     *
+     * @return array{tunai:int,transfer:int,katrol:int}
+     */
+    public static function stortingCaraBayar(int $groupingId, $tanggal): array
+    {
+        $hasil = ['tunai' => 0, 'transfer' => 0, 'katrol' => 0];
+
+        DB::table('transaction_loan_instalments')
+            ->where('transaction_loan_officer_grouping_id', $groupingId)
+            ->whereDate('transaction_date', Carbon::parse($tanggal)->toDateString())
+            ->get(['nominal', 'is_transfer', 'danatitipan'])
+            ->each(function ($a) use (&$hasil) {
+                $hasil[self::caraBayar($a)] += (int) $a->nominal;
+            });
+
+        return $hasil;
+    }
+
     /** Semua kolom turunan bernilai nol. */
     public static function kosong(): array
     {

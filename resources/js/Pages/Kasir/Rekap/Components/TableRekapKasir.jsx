@@ -36,6 +36,9 @@ const GRUP = [
 const KOLOM = GRUP.flatMap((g) => g.kolom);
 // Kolom yang bisa diisi kasir -> nama kolom di daily_closings.
 // Rekap 1: kasir mengisi kasbon, transport, SU Lapangan, setor transfer.
+// Angka bawaan setoran yang belum diisi kasir: storting hari itu per cara
+// bayar. Tampil abu-abu miring; dibekukan saat kunci kasir.
+const BAWAAN = { su_lapangan: 'storting_cash', setoran_transfer: 'storting_transfer', setoran_katrol: 'storting_katrol' };
 const KOLOM_ISI = {
   kasbon: 'kasbon',
   transport: 'transport',
@@ -63,13 +66,15 @@ const Angka = ({ n, bertanda = false }) => {
  */
 const IsianSel = ({ r, k, kolom }) => {
   const keRibu = (v) => (v ? Number(v) / 1000 : 0);
-  const awal = keRibu(r[k]);
+  // Belum diisi kasir -> angka bawaan dari angsuran (kalau kolom ini punya).
+  const pakaiBawaan = (r[k] === null || r[k] === undefined) && BAWAAN[k];
+  const awal = keRibu(pakaiBawaan ? r[BAWAAN[k]] : r[k]);
   const [nilai, setNilai] = useState(awal);
   const [diketik, setDiketik] = useState(false);
   useEffect(() => {
-    setNilai(keRibu(r[k]));
+    setNilai(awal);
     setDiketik(false);
-  }, [r[k]]);
+  }, [r[k], pakaiBawaan ? r[BAWAAN[k]] : null]);
   const simpan = () => {
     if (!diketik) return;
     setDiketik(false);
@@ -90,7 +95,8 @@ const IsianSel = ({ r, k, kolom }) => {
         inputMode="decimal"
         placeholder="0"
         onFocus={(e) => e.currentTarget.select()}
-        className="peer block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-2 focus:pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500"
+        title={pakaiBawaan && !diketik ? 'Angka sistem (dari angsuran) — belum dikonfirmasi kasir' : undefined}
+        className={`${pakaiBawaan && !diketik ? 'italic text-slate-400' : ''} peer block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-2 focus:pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500`}
         value={nilai}
         onChange={(e) => {
           setNilai(e.target.value);

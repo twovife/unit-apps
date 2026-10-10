@@ -47,6 +47,17 @@ class ClosingHarianController extends Controller
                 // bisa masuk antara Ceklist Kepala dan kunci kasir, dan yang
                 // dibekukan harus angka sebenarnya.
                 $this->hitungUlangTurunan($closing);
+
+                // Setoran yang belum diisi kasir dibekukan dengan angka bawaan
+                // dari angsuran hari itu (cash / transfer / katrol) - angka yang
+                // sama dengan yang tampil di Rekap 1.
+                $bawaan = HitungAgregat::stortingCaraBayar($closing->transaction_loan_officer_grouping_id, $closing->date);
+                $closing->refresh();
+                $closing->update(array_filter([
+                    'setoran_tunai' => $closing->setoran_tunai === null ? $bawaan['tunai'] : null,
+                    'setoran_transfer' => $closing->setoran_transfer === null ? $bawaan['transfer'] : null,
+                    'setoran_katrol' => $closing->setoran_katrol === null ? $bawaan['katrol'] : null,
+                ], fn($v) => $v !== null));
                 $closing->refresh();
 
                 Gembok::kunci($closing, $kasir);
