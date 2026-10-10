@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
 
-// Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Grup kolom mengikuti
-// buku kasir: REKAP 1 (kasbon s/d tunai), titipan 9%, SU Lapangan, Sisa Uang,
+// Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
+// buku kasir: kasbon s/d tunai, titipan 9%, SU Lapangan, Sisa Uang,
 // lalu -/+.
 const GRUP = [
   {
@@ -125,9 +125,9 @@ const TableRekapKasir = ({ datas = [] }) => {
   const total = Object.fromEntries(
     KOLOM.map(([k]) => [k, datas.reduce((a, r) => a + (Number(r[k]) || 0), 0)]),
   );
-  // Batas tebal di awal tiap grup supaya grup terbaca sebagai blok.
-  const awalGrup = new Set(GRUP.map((g) => g.kolom[0][0]));
-  const garis = (k) => (awalGrup.has(k) ? 'border-l-2 border-slate-300' : '');
+  // Tanpa judul grup (mas 2026-10-10): satu baris judul kolom, tanpa garis
+  // pemisah grup. GRUP tetap dipakai sebagai urutan kolom.
+  const garis = () => '';
 
   const terkunci = server_filter?.migrasi ? datas.filter((r) => r.type == 'daily' && r.status_approve_kasir).length : 0;
 
@@ -144,30 +144,12 @@ const TableRekapKasir = ({ datas = [] }) => {
       <table className="w-full text-sm tabular-nums">
         <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
           <tr>
-            <th rowSpan={2} className="sticky left-0 z-20 px-3 py-2 text-left bg-slate-100">
-              Kelompok
-            </th>
-            {GRUP.map((g, i) => (
-              <th
-                key={i}
-                colSpan={g.kolom.length}
-                rowSpan={g.judul ? 1 : 2}
-                className={`px-3 py-1.5 text-center font-bold tracking-wide border-l-2 border-slate-300 ${
-                  g.judul ? 'border-b' : 'align-bottom font-medium'
-                }`}
-              >
-                {g.judul || g.kolom[0][1]}
+            <th className="sticky left-0 z-20 px-3 py-2 text-left bg-slate-100">Kelompok</th>
+            {KOLOM.map(([k, label]) => (
+              <th key={k} className="px-3 py-2 font-medium text-right whitespace-nowrap">
+                {label}
               </th>
             ))}
-          </tr>
-          <tr>
-            {GRUP.filter((g) => g.judul).flatMap((g) =>
-              g.kolom.map(([k, label]) => (
-                <th key={k} className={`px-3 py-1.5 text-right font-medium whitespace-nowrap ${garis(k)}`}>
-                  {label}
-                </th>
-              )),
-            )}
           </tr>
         </thead>
         <tbody>
