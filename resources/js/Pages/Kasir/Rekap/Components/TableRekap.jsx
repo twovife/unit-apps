@@ -210,7 +210,7 @@ const TableRekap = ({
       </Dialog>
 
       {/* Tabel harian: satu pita per tanggal, baris per kelompok, subtotal. */}
-      <p className="mb-1 text-xs text-slate-500">Angka dalam ribuan.</p>
+      <p className="mb-1 text-xs text-slate-500">Lompat ke tanggal</p>
       {/* HP: satu baris geser samping; layar lebar: membungkus. */}
       <div ref={deretChip} className="relative flex gap-1 pb-1 mb-2 overflow-x-auto scrollbar-thin sm:flex-wrap sm:overflow-visible">
         {(data ?? []).map((d) => {
