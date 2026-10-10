@@ -739,7 +739,9 @@ trait RekapTrait
     $tanggalBerdata = collect()
       ->merge($instalmentAgg->flatMap(fn($perTanggal) => $perTanggal->keys()))
       ->merge($loanAgg->flatMap(fn($perTanggal) => $perTanggal->keys()))
-      ->merge($transactionDailyRecap->pluck('date'))
+      // Baris rekap harian (kasbon/transport) TIDAK dihitung: Rekap 2 tidak
+      // menampilkan kolomnya, dan baris kosong yang terlanjur dibuat di hari
+      // Minggu/libur memunculkan tanggal itu tanpa angka apa pun.
       ->map(fn($t) => Carbon::parse($t)->toDateString());
 
     $datesOfMonth = \App\Models\WorkDay::tanggalRekapBulan(
