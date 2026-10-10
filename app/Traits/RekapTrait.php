@@ -28,30 +28,32 @@ trait RekapTrait
     $endOfMonth = Carbon::parse($transaction_date)->copy()->endOfMonth();
     $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->get();
 
-    $loan = TransactionLoan::with('loan_officer_grouping', 'customer', 'manage_customer')
-      ->where(function ($data) use ($startOfMonth, $endOfMonth) {
-        $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
-          ->orWhereBetween('request_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')]);
-      })
-      ->whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
-      ->orderBy('drop_date')
-      ->get()
-      ->groupBy('drop_date');
-
     // Sama seperti getDataRekapDua: ikut kalender kerja, tapi tanggal yang
     // sudah punya drop tetap tampil walau libur - biar kelihatan, bukan hilang.
-    $datesMatchDay = \App\Models\WorkDay::tanggalRekapBulan(
-      $startOfMonth,
-      $loan->keys()->map(fn($t) => Carbon::parse($t)->toDateString())
-    );
+    $dropBulanIni = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
+      ->whereBetween('drop_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+      ->distinct()->pluck('drop_date')->map(fn($t) => Carbon::parse($t)->toDateString());
+    $datesMatchDay = \App\Models\WorkDay::tanggalRekapBulan($startOfMonth, $dropBulanIni);
+
+    // BERSANDINGAN (mas 2026-10-10): tiap tanggal D dipasangkan dengan hari
+    // yang sama minggu depan (lompati libur) = tanggal drop pengajuan yang
+    // diinput di D. Kiri = kegiatan D, kanan = rencana & drop di pasangannya.
+    // Pasangan akhir bulan jatuh di bulan depan, jadi data diambil s/d +2 minggu.
+    $pasangan = $datesMatchDay->mapWithKeys(fn($t) => [
+      $t => \App\Models\WorkDay::hariSamaBerikutnya(Carbon::parse($t))?->toDateString(),
+    ]);
+    $semuaTanggal = $datesMatchDay->merge($pasangan->filter()->values())->unique()->values();
+    $sampai = $semuaTanggal->max();
+
+    $loan = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
+      ->whereBetween('drop_date', [$startOfMonth->toDateString(), $sampai])
+      ->get(['transaction_loan_officer_grouping_id', 'drop_date', 'status', 'drop_langsung', 'nominal_drop', 'approved_nominal'])
+      ->groupBy(fn($l) => Carbon::parse($l->drop_date)->toDateString());
 
     $migrasi = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startOfMonth);
 
-    // GERBANG alur baru: kantor migrasi membaca nilai "on database" (kasbon,
-    // transport, keluar, target, storting, drop) dari daily_closings. Dipetakan
-    // ke stdClass ber-date-string supaya groupBy('date') menghasilkan kunci
-    // Y-m-d yang sama seperti recap lama (closing.date di-cast Carbon).
-    // `masuk` adalah kolom arus yang belum ada di alur baru -> 0 sementara.
+    // GERBANG alur baru: kantor migrasi membaca kasbon/transport/keluar/target
+    // dari daily_closings. `masuk` belum ada di alur baru -> 0 sementara.
     if ($migrasi) {
       $daily_recap = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
         ->whereIn('date', $datesMatchDay)->get()
@@ -59,51 +61,60 @@ trait RekapTrait
           'transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id,
           'date' => Carbon::parse($r->date)->toDateString(),
           'kasbon' => (int) $r->kasbon,
-          'transport' => (int) $r->transport,
           'masuk' => 0,
           'keluar' => (int) $r->keluar,
           'target' => (int) $r->target,
-          'storting' => (int) $r->storting,
-          'drop' => (int) $r->drop,
         ])->groupBy('date');
     } else {
-      $daily_recap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))->whereIn('date', $datesMatchDay)->get()->groupBy('date');
+      $daily_recap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
+        ->whereIn('date', $datesMatchDay)->get()
+        ->groupBy(fn($r) => Carbon::parse($r->date)->toDateString());
     }
 
-    $instalment = TransactionLoanInstalment::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))->whereIn('transaction_date', $datesMatchDay)->get()->groupBy('transaction_date');
+    $instalment = TransactionLoanInstalment::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
+      ->whereIn('transaction_date', $datesMatchDay)
+      ->get(['transaction_loan_officer_grouping_id', 'transaction_date', 'nominal'])
+      ->groupBy(fn($a) => Carbon::parse($a->transaction_date)->toDateString());
 
-    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($loan, $daily_recap, $instalment, $groupingId) {
-      $thisDailyRecap = $daily_recap->get($tanggal, collect()); //stored as database
-      $thisData = $loan->get($tanggal, collect()); //summary of drop
-      $thisInstalment = $instalment->get($tanggal, collect()); //summary of instalment
+    // Rencana & drop satu kelompok di satu tanggal (sisi kanan).
+    $sisiDrop = function (?string $tanggal, int $gid) use ($loan) {
+      $l = $tanggal ? $loan->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid) : collect();
+      $sukses = $l->where('status', 'success');
+      return [
+        // Hanya pengajuan yang masih hidup / sudah jadi - tolak & gagal bukan rencana lagi.
+        'rencana' => (int) $l->where('drop_langsung', 0)->whereIn('status', ['open', 'acc', 'success'])->sum('approved_nominal'),
+        'drop' => (int) $sukses->sum('nominal_drop'),
+        'baru' => (int) $sukses->where('drop_langsung', 1)->sum('nominal_drop'),
+        'lama' => (int) $sukses->where('drop_langsung', 0)->sum('nominal_drop'),
+      ];
+    };
 
-      return $groupingId->map(function ($groupingId) use ($tanggal, $thisDailyRecap, $thisData, $thisInstalment) {
-        $thisDataPerGrup = $thisData->where('transaction_loan_officer_grouping_id', $groupingId->id);
-        $thisInstalmentPerGrup = $thisInstalment->where('transaction_loan_officer_grouping_id', $groupingId->id)->sum('nominal');
-        $thisDailyRecapPerGrup = $thisDailyRecap->where('transaction_loan_officer_grouping_id', $groupingId->id)->first();
+    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($groupingId, $daily_recap, $instalment, $pasangan, $sisiDrop) {
+      $p = $pasangan[$tanggal];
+
+      return $groupingId->map(function ($g) use ($tanggal, $p, $daily_recap, $instalment, $sisiDrop) {
+        $rekap = $daily_recap->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $g->id)->first();
+        $kanan = $sisiDrop($p, $g->id);
+
         return [
-          'grouping_id' => $groupingId->id,
-          'kelompok' => $groupingId->kelompok,
+          'grouping_id' => $g->id,
+          'kelompok' => $g->kelompok,
           'tanggal' => $tanggal,
-          'kasbon' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->kasbon : 0,
-          'transport' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->transport : 0,
-          'masuk' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->masuk : 0,
-          'keluar' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->keluar : 0,
-          'target' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->target : 0,
-
-          'storting' => $thisInstalmentPerGrup,
-          'storting_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->storting : 0,
-          'storting_validate' => $thisInstalmentPerGrup == ($thisDailyRecapPerGrup?->storting ?? 0) ? true : false,
-
-          'baru' => $thisDataPerGrup->where('drop_langsung', 1)->where('status', 'success')->sum('nominal_drop'),
-          'lama' => $thisDataPerGrup->where('drop_langsung', 0)->where('status', 'success')->sum('nominal_drop'),
-
-          'drop' => $thisDataPerGrup->where('status', 'success')->sum('nominal_drop'),
-          'drop_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->drop : 0,
-          'drop_validate' => $thisDataPerGrup->sum('drop_jadi') == ($thisDailyRecapPerGrup?->drop ?? 0) ? true : false,
-
-          // Hanya pengajuan yang masih hidup / sudah jadi - tolak & gagal bukan rencana lagi.
-          'rencana' => $thisDataPerGrup->where('drop_langsung', 0)->whereIn('status', ['open', 'acc', 'success'])->sum('approved_nominal'),
+          'pasangan' => $p,
+          // Kiri: hari D.
+          'target' => (int) ($rekap->target ?? 0),
+          'storting' => (int) $instalment->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $g->id)->sum('nominal'),
+          'kasbon' => (int) ($rekap->kasbon ?? 0),
+          'masuk' => (int) ($rekap->masuk ?? 0),
+          'keluar' => (int) ($rekap->keluar ?? 0),
+          // Kanan: pasangan D (minggu depan).
+          'p_rencana' => $kanan['rencana'],
+          'p_drop' => $kanan['drop'],
+          'p_baru' => $kanan['baru'],
+          'p_lama' => $kanan['lama'],
+          // Rencana vs drop yang memang dari pengajuan (lama) - drop langsung
+          // (baru) tidak pernah direncanakan, jadi tidak ikut dibandingkan.
+          'p_selisih' => $kanan['rencana'] - $kanan['lama'],
         ];
       });
     })->values();

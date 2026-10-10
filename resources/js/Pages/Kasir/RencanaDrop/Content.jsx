@@ -10,24 +10,28 @@ import TabelHarian from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 import DrawerBukuDrop from '@/Pages/Kasir/Rekap/Components/DrawerBukuDrop';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
 
-// [kunci, label, kelas tambahan]. Rencana ditebalkan - pokok menu ini.
+// [kunci, label, kelas tambahan]. Kiri = hari D, kanan (garis tebal) =
+// pasangannya minggu depan: rencana yang diinput di D & drop yang jadi.
 const KOLOM = [
-  ['kasbon', 'Kasbon'],
   ['target', 'Target'],
+  ['storting', 'Storting'],
+  ['kasbon', 'Kasbon'],
   ['masuk', 'Masuk'],
   ['keluar', 'Keluar'],
-  ['storting', 'Storting'],
-  ['drop', 'Drop'],
-  ['baru', 'Baru'],
-  ['lama', 'Lama'],
-  ['rencana', 'Rencana', 'font-semibold'],
+  ['p_rencana', 'Rencana', 'border-l-2 border-slate-300 font-semibold'],
+  ['p_drop', 'Drop'],
+  ['p_baru', 'Baru'],
+  ['p_lama', 'Lama'],
+  ['p_selisih', 'Selisih', 'font-semibold text-rose-700'],
 ];
 
 /**
- * Rencana Drop sebulan - tampilan seragam dengan Rekap 2 (TabelHarian).
- * Isi sampai H+7: pengajuan drop jatuh minggu depan, sesudah itu belum ada
- * apa-apa -> kosongan.
- * Klik Storting -> buku angsuran hari itu; klik Drop -> buku drop.
+ * Rencana Drop sebulan, BERSANDINGAN: tiap tanggal D dengan pasangannya
+ * (hari sama minggu depan, lompati libur). Tampilan seragam dengan Rekap 2
+ * (TabelHarian). Rencana untuk D+7 diinput di D, jadi tanggal sesudah hari
+ * ini belum punya isi apa pun -> kosongan.
+ * Klik Storting -> buku angsuran D; klik Drop -> buku drop pasangannya.
+ * Selisih = Rencana - Lama (drop dari pengajuan; drop langsung tidak direncanakan).
  */
 const Content = ({ urlLink, localState, triggeredData }) => {
   const { server_filter } = usePage().props;
@@ -78,10 +82,20 @@ const Content = ({ urlLink, localState, triggeredData }) => {
       <TabelHarian
         data={data}
         kolom={KOLOM}
-        batasIsi={dayjs().add(7, 'day').format('YYYY-MM-DD')}
+        batasIsi={dayjs().format('YYYY-MM-DD')}
+        judulPita={(item) => {
+          const p = item.data[0]?.pasangan;
+          return (
+            <>
+              {dayjs(item.tanggal).format('dddd, DD-MM-YYYY')}
+              <span className="mx-2 text-slate-500">→</span>
+              {p ? dayjs(p).format('dddd, DD-MM-YYYY') : '—'}
+            </>
+          );
+        }}
         klik={{
           storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'harian' }),
-          drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' }),
+          p_drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'drop' }),
         }}
       />
       <DrawerAngsuran target={target?.jenis === 'harian' ? target : null} onClosed={tutup} />
