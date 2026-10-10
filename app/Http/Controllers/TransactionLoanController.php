@@ -1073,6 +1073,9 @@ class TransactionLoanController extends Controller
       if ($request->status == 'gagal') {
         $transactionLoan->update([
           'status' =>  $request->status,
+          // success -> gagal: uang batal cair, nominal drop dikosongkan
+          // (diisi ulang kalau nanti dijadikan success lagi).
+          'nominal_drop' => null,
           'user_check' => auth()->user()->employee->id,
           'check_date' => Carbon::now()->format('Y-m-d'),
         ]);
