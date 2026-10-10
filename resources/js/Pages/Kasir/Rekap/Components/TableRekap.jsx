@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import {
   Accordion,
@@ -50,6 +50,32 @@ const TableRekap = ({
   const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
   // Baris saldo awal yang daftar pemutihannya sedang dibuka.
   const [pemutihan, setPemutihan] = useState(null);
+
+  // Loncat tanggal: chip di atas tabel menggulir kotak tabel ke pita tanggal
+  // itu; saat data datang, otomatis ke hari ini (atau hari kerja terakhir
+  // sebelumnya). Pita tanggal menempel tepat di bawah header.
+  const kotak = useRef(null);
+  const kepala = useRef(null);
+  const [tinggiKepala, setTinggiKepala] = useState(0);
+  const [aktif, setAktif] = useState(null);
+  const hariIni = dayjs().format('YYYY-MM-DD');
+  const loncat = (tgl, halus = true) => {
+    const el = kotak.current?.querySelector(`[data-tanggal="${tgl}"]`);
+    if (!el) return;
+    const k = kotak.current;
+    k.scrollTo({
+      top: k.scrollTop + el.getBoundingClientRect().top - k.getBoundingClientRect().top - (kepala.current?.offsetHeight ?? 0),
+      behavior: halus ? 'smooth' : 'auto',
+    });
+    setAktif(tgl);
+  };
+  useEffect(() => {
+    setTinggiKepala(kepala.current?.offsetHeight ?? 0);
+    // Sesudah `data` (state) dirender, supaya pita tanggalnya sudah ada di DOM.
+    const sampaiHariIni = (data ?? []).filter((d) => d.tanggal <= hariIni);
+    if (sampaiHariIni.length) loncat(sampaiHariIni[sampaiHariIni.length - 1].tanggal, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
   useEffect(() => {
     setData(datas);
     setSirkulasiAwal(saldoAwalBulan);
@@ -177,10 +203,34 @@ const TableRekap = ({
       </Dialog>
 
       {/* Tabel harian: satu pita per tanggal, baris per kelompok, subtotal. */}
-      <p className="mb-1 text-xs text-slate-500">Angka dalam ribuan.</p>
-      <div className="max-h-[65vh] bg-white border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+      <div className="flex flex-wrap items-center gap-1 mb-2">
+        {(data ?? []).map((d) => {
+          const lewat = d.tanggal > hariIni;
+          return (
+            <button
+              key={d.tanggal}
+              type="button"
+              onClick={() => loncat(d.tanggal)}
+              title={dayjs(d.tanggal).format('dddd, DD MMMM YYYY')}
+              className={`min-w-7 h-7 px-1.5 text-xs rounded-md border tabular-nums transition-colors ${
+                aktif === d.tanggal
+                  ? 'bg-sky-600 border-sky-600 text-white font-semibold'
+                  : d.tanggal === hariIni
+                    ? 'border-sky-500 text-sky-700 font-semibold bg-white hover:bg-sky-50'
+                    : lewat
+                      ? 'border-slate-200 text-slate-300 bg-white hover:bg-slate-50'
+                      : 'border-slate-300 text-slate-700 bg-white hover:bg-slate-100'
+              }`}
+            >
+              {dayjs(d.tanggal).date()}
+            </button>
+          );
+        })}
+        <span className="ml-auto text-xs text-slate-500">Angka dalam ribuan.</span>
+      </div>
+      <div ref={kotak} className="max-h-[65vh] bg-white border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         <table className="w-full text-xs tabular-nums">
-          <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
+          <thead ref={kepala} className="sticky top-0 z-20 bg-slate-100 text-slate-700">
             <tr>
               <th className="sticky left-0 z-20 px-3 py-2 font-medium text-left bg-slate-100">Kelompok</th>
               {KOLOM_HARIAN.map(([k, label]) => (
@@ -200,8 +250,14 @@ const TableRekap = ({
               const nilai = (r, k) => (kosong ? 0 : r[k]);
               return (
               <React.Fragment key={item.tanggal}>
-                <tr className={dayjs(item.tanggal).day() === 1 ? 'bg-rose-100' : 'bg-slate-200'}>
-                  <td colSpan={KOLOM_HARIAN.length + 3} className="sticky left-0 px-3 py-1.5 font-semibold text-slate-800">
+                <tr data-tanggal={item.tanggal}>
+                  <td
+                    colSpan={KOLOM_HARIAN.length + 3}
+                    style={{ top: tinggiKepala }}
+                    className={`sticky z-10 px-3 py-1.5 font-semibold text-slate-800 ${
+                      dayjs(item.tanggal).day() === 1 ? 'bg-rose-100' : 'bg-slate-200'
+                    }`}
+                  >
                     {dayjs(item.tanggal).format('dddd, DD-MM-YYYY')}
                   </td>
                 </tr>
