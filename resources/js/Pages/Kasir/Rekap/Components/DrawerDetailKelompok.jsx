@@ -9,7 +9,7 @@ import TableRekapKasir from './TableRekapKasir';
  * dari tabel Global Rekap 1. Data dari kasir.rekap.rekap_permantri_json -
  * fungsi yang sama dengan halaman Rekap per Mantri, jadi jumlahnya = baris Global.
  */
-const DrawerDetailKelompok = ({ target, server_filter, onClosed }) => {
+const DrawerDetailKelompok = ({ target, server_filter, onClosed, tautanStorting = null }) => {
   const [isi, setIsi] = useState(null);
   const [galat, setGalat] = useState(null);
 
@@ -43,7 +43,7 @@ const DrawerDetailKelompok = ({ target, server_filter, onClosed }) => {
         <div className="p-3">
           {galat && <div className="text-sm text-red-600">{galat}</div>}
           {!isi && !galat && <div className="text-sm text-slate-500">Memuat…</div>}
-          {isi && <TableRekapKasir bacaSaja datas={isi} />}
+          {isi && <TableRekapKasir bacaSaja datas={isi} tautanStorting={tautanStorting} />}
         </div>
       </SheetContent>
     </Sheet>

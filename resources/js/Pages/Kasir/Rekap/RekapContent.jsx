@@ -32,6 +32,18 @@ const RekapContent = ({
   // Drawer detail tunai per kelompok (dari tabel Global).
   const [detailKelompok, setDetailKelompok] = useState(null);
 
+  // Storting -> buku angsuran bulanan kelompok x hari itu, tanggalnya disorot.
+  const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+  const tautanStorting = (r) =>
+    route('pinjaman.index_pinjaman', {
+      kelompok: r.kelompok,
+      hari: NAMA_HARI[dayjs(r.tanggal).day()],
+      month: dayjs(r.tanggal).format('YYYY-MM'),
+      sorot: dayjs(r.tanggal).format('YYYY-MM-DD'),
+      ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
+      ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
+    });
+
   // Event handler function to set the "onCreateShow" state variable to true
   const handleOnCreateShowOpen = (e) => {
     setOnShowModal(true);
@@ -152,7 +164,7 @@ const RekapContent = ({
             dibuang (2026-10-09); Titipan 9% pindah ke kolom terakhir. */}
         {show == 'rekapkasir' && (
           <>
-            <TableRekapKasir datas={datas} />
+            <TableRekapKasir datas={datas} tautanStorting={tautanStorting} />
             {/* Global: awal bulan s/d tanggal filter, per kelompok. */}
             <h2 className="mt-6 mb-2 text-base font-semibold text-slate-900">
               Global — 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}
@@ -166,6 +178,7 @@ const RekapContent = ({
             <DrawerDetailKelompok
               target={detailKelompok}
               server_filter={server_filter}
+              tautanStorting={tautanStorting}
               onClosed={() => setDetailKelompok(null)}
             />
           </>

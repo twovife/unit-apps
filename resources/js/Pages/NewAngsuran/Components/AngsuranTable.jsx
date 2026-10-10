@@ -223,6 +223,17 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
     if (kepala.current && badan.current) kepala.current.scrollLeft = badan.current.scrollLeft;
   };
 
+  // ?sorot=YYYY-MM-DD (dari storting Rekap 1): kolom tanggal itu disorot dan
+  // digeser ke tengah layar, supaya kasir langsung tahu storting mana yang dicek.
+  const sorot = new URLSearchParams(window.location.search).get('sorot');
+  useEffect(() => {
+    if (!sorot || !kepala.current || !badan.current) return;
+    const el = kepala.current.querySelector('[data-sorot="1"]');
+    if (el) badan.current.scrollLeft = Math.max(0, el.offsetLeft - badan.current.clientWidth / 2);
+    samakanGeser();
+  }, [sorot, dateOfWeek]);
+  const kelasSorot = (k) => (sorot && k.jenis === 'tgl' && k.d === sorot ? 'bg-yellow-200 ring-1 ring-inset ring-yellow-400' : '');
+
   const [triggeredId, setTriggeredId] = useState(null);
   const [show, setShow] = useState(false);
   const [selectedId, setSelectedId] = useState([]);
@@ -286,7 +297,10 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
             {kolomBlok.map((k, i) => (
               <TableHead
                 key={i}
-                className={`${th} text-right ${k.jenis === "tgl" ? "w-14 font-normal" : k.jenis === "md" ? "w-14" : "w-20"} ${garis(k)}`}
+                data-sorot={kelasSorot(k) ? '1' : undefined}
+                className={`${th} text-right ${k.jenis === "tgl" ? "w-14 font-normal" : k.jenis === "md" ? "w-14" : "w-20"} ${garis(k)} ${
+                  kelasSorot(k) ? 'bg-yellow-300 text-yellow-950 font-bold' : ''
+                }`}
               >
                 {k.label}
               </TableHead>
@@ -375,7 +389,7 @@ const AngsuranTable = ({ dateOfWeek, datas }) => {
                           <Angka
                             key={j}
                             v={v}
-                            kelas={`${WARNA[k.jenis]} ${garis(k)} ${k.jenis === "tgl" ? "" : "font-medium"} ${
+                            kelas={`${kelasSorot(k) || WARNA[k.jenis]} ${garis(k)} ${k.jenis === "tgl" ? "" : "font-medium"} ${
                               katrol || (k.jenis === "md" && v) ? "text-red-600 font-semibold" : ""
                             }`}
                           />
