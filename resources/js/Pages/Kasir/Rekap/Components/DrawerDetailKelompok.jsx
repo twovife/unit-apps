@@ -9,7 +9,7 @@ import TableRekapKasir from './TableRekapKasir';
  * dari tabel Global Rekap 1. Data dari kasir.rekap.rekap_permantri_json -
  * fungsi yang sama dengan halaman Rekap per Mantri, jadi jumlahnya = baris Global.
  */
-const DrawerDetailKelompok = ({ target, server_filter, onClosed, onKlikStorting = null }) => {
+const DrawerDetailKelompok = ({ target, server_filter, onClosed, onKlikStorting = null, onKlikDrop = null }) => {
   const { isi: jawaban, galat } = useMuatDrawer(
     !!target,
     route('kasir.rekap.rekap_permantri_json'),
@@ -36,7 +36,7 @@ const DrawerDetailKelompok = ({ target, server_filter, onClosed, onKlikStorting 
         <div className="p-3">
           {galat && <div className="text-sm text-red-600">{galat}</div>}
           {!isi && !galat && <div className="text-sm text-slate-500">Memuat…</div>}
-          {isi && <TableRekapKasir bacaSaja datas={isi} onKlikStorting={onKlikStorting} />}
+          {isi && <TableRekapKasir bacaSaja datas={isi} onKlikStorting={onKlikStorting} onKlikDrop={onKlikDrop} />}
         </div>
       </SheetContent>
     </Sheet>

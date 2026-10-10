@@ -133,8 +133,13 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null }) => {
   const { auth, server_filter } = usePage().props;
+  // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
+  const KLIK = {
+    storting: [onKlikStorting, 'Buka buku angsuran, tanggal ini disorot'],
+    drop: [onKlikDrop, 'Buka buku drop, tanggal ini disorot'],
+  };
   // Sel isian aktif: kantor alur baru, baris harian, belum dikunci kasir.
   const bisaIsiSu = (r) =>
     !bacaSaja &&
@@ -203,13 +208,12 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 >
                   {KOLOM_ISI[k] && bisaIsiSu(r) ? (
                     <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} kuning={!!WARNA_KOLOM[k]} />
-                  ) : k === 'storting' && onKlikStorting && Number(r[k]) ? (
-                    // Buku angsuran di drawer, kolom tanggal ini disorot.
+                  ) : KLIK[k]?.[0] && Number(r[k]) ? (
                     <button
                       type="button"
-                      onClick={() => onKlikStorting(r)}
+                      onClick={() => KLIK[k][0](r)}
                       className="text-sky-700 underline decoration-dotted hover:text-sky-900"
-                      title="Buka buku angsuran, tanggal ini disorot"
+                      title={KLIK[k][1]}
                     >
                       <Angka n={r[k]} />
                     </button>

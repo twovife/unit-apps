@@ -10,6 +10,7 @@ import TableRekap from './Components/TableRekap';
 import TableRekapKasir from './Components/TableRekapKasir';
 import DrawerDetailKelompok from './Components/DrawerDetailKelompok';
 import DrawerBukuAngsuran from './Components/DrawerBukuAngsuran';
+import DrawerBukuDrop from './Components/DrawerBukuDrop';
 import Action from './Components/Action';
 
 const RekapContent = ({
@@ -56,7 +57,9 @@ const RekapContent = ({
       /* tanpa storage: drawer tetap jalan, cuma tidak bertahan */
     }
   };
-  const bukaBuku = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal });
+  // jenis: 'storting' -> buku angsuran, 'drop' -> buku drop (Buku Transaksi).
+  const bukaBuku = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'storting' });
+  const bukaDrop = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' });
 
   // Event handler function to set the "onCreateShow" state variable to true
   const handleOnCreateShowOpen = (e) => {
@@ -178,7 +181,7 @@ const RekapContent = ({
             dibuang (2026-10-09); Titipan 9% pindah ke kolom terakhir. */}
         {show == 'rekapkasir' && (
           <>
-            <TableRekapKasir datas={datas} onKlikStorting={bukaBuku} />
+            <TableRekapKasir datas={datas} onKlikStorting={bukaBuku} onKlikDrop={bukaDrop} />
             {/* Global: awal bulan s/d tanggal filter, per kelompok. */}
             <h2 className="mt-6 mb-2 text-base font-semibold text-slate-900">
               Global — 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}
@@ -193,9 +196,19 @@ const RekapContent = ({
               target={detailKelompok}
               server_filter={server_filter}
               onKlikStorting={bukaBuku}
+              onKlikDrop={bukaDrop}
               onClosed={() => setDetailKelompok(null)}
             />
-            <DrawerBukuAngsuran target={bukuTarget} server_filter={server_filter} onClosed={() => setBukuTarget(null)} />
+            <DrawerBukuAngsuran
+              target={bukuTarget?.jenis !== 'drop' ? bukuTarget : null}
+              server_filter={server_filter}
+              onClosed={() => setBukuTarget(null)}
+            />
+            <DrawerBukuDrop
+              target={bukuTarget?.jenis === 'drop' ? bukuTarget : null}
+              server_filter={server_filter}
+              onClosed={() => setBukuTarget(null)}
+            />
           </>
         )}
       </div>
