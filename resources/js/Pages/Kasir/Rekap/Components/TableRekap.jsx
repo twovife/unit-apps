@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
   Accordion,
@@ -10,8 +10,7 @@ import { CheckCircle, Wallet, XCircle } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
-// Angka dipangkas ribuannya (1.300.000 -> 1.300).
-const ribu = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
+import TabelHarian, { ribu } from './TabelHarian';
 
 // [kunci, label, kelas tambahan]. Saldo ditebalkan - angka yang dicocokkan.
 const KOLOM_HARIAN = [
@@ -58,45 +57,11 @@ const TableRekap = ({
   onKlikStorting = null,
   onKlikDrop = null,
 }) => {
-  // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
-  const KLIK = { storting: onKlikStorting, drop: onKlikDrop };
   const [data, setData] = useState([]);
   const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
   // Baris saldo awal yang daftar pemutihannya sedang dibuka.
   const [pemutihan, setPemutihan] = useState(null);
 
-  // Loncat tanggal: chip di atas tabel menggulir kotak tabel ke pita tanggal
-  // itu; saat data datang, otomatis ke hari ini (atau hari kerja terakhir
-  // sebelumnya). Pita tanggal menempel tepat di bawah header.
-  const kotak = useRef(null);
-  const kepala = useRef(null);
-  const [tinggiKepala, setTinggiKepala] = useState(0);
-  const [aktif, setAktif] = useState(null);
-  const hariIni = dayjs().format('YYYY-MM-DD');
-  const loncat = (tgl, halus = true) => {
-    const el = kotak.current?.querySelector(`[data-tanggal="${tgl}"]`);
-    if (!el) return;
-    const k = kotak.current;
-    k.scrollTo({
-      top: k.scrollTop + el.getBoundingClientRect().top - k.getBoundingClientRect().top - (kepala.current?.offsetHeight ?? 0),
-      behavior: halus ? 'smooth' : 'auto',
-    });
-    setAktif(tgl);
-  };
-  // Chip aktif selalu kelihatan di deret yang digeser samping (HP).
-  const deretChip = useRef(null);
-  useEffect(() => {
-    const d = deretChip.current;
-    const c = d?.querySelector(`[data-chip="${aktif}"]`);
-    if (c && d.scrollWidth > d.clientWidth) d.scrollLeft = c.offsetLeft - d.clientWidth / 2 + c.offsetWidth / 2;
-  }, [aktif]);
-  useEffect(() => {
-    setTinggiKepala(kepala.current?.offsetHeight ?? 0);
-    // Sesudah `data` (state) dirender, supaya pita tanggalnya sudah ada di DOM.
-    const sampaiHariIni = (data ?? []).filter((d) => d.tanggal <= hariIni);
-    if (sampaiHariIni.length) loncat(sampaiHariIni[sampaiHariIni.length - 1].tanggal, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
   useEffect(() => {
     setData(datas);
     setSirkulasiAwal(saldoAwalBulan);
@@ -223,116 +188,30 @@ const TableRekap = ({
         </DialogContent>
       </Dialog>
 
-      {/* Tabel harian: satu pita per tanggal, baris per kelompok, subtotal. */}
-      <p className="mb-1 text-xs text-slate-500">Lompat ke tanggal</p>
-      {/* HP: satu baris geser samping; layar lebar: membungkus. */}
-      <div ref={deretChip} className="relative flex gap-1 pb-1 mb-2 overflow-x-auto scrollbar-thin sm:flex-wrap sm:overflow-visible">
-        {(data ?? []).map((d) => {
-          const lewat = d.tanggal > hariIni;
-          return (
-            <button
-              key={d.tanggal}
-              type="button"
-              data-chip={d.tanggal}
-              onClick={() => loncat(d.tanggal)}
-              title={dayjs(d.tanggal).format('dddd, DD MMMM YYYY')}
-              className={`shrink-0 min-w-7 h-7 px-1.5 text-xs rounded-md border tabular-nums transition-colors ${
-                aktif === d.tanggal
-                  ? 'bg-sky-600 border-sky-600 text-white font-semibold'
-                  : d.tanggal === hariIni
-                    ? 'border-sky-500 text-sky-700 font-semibold bg-white hover:bg-sky-50'
-                    : lewat
-                      ? 'border-slate-200 text-slate-300 bg-white hover:bg-slate-50'
-                      : 'border-slate-300 text-slate-700 bg-white hover:bg-slate-100'
-              }`}
-            >
-              {dayjs(d.tanggal).date()}
-            </button>
-          );
-        })}
-      </div>
-      <div ref={kotak} className="max-h-[65vh] bg-white border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-        <table className="w-full text-xs tabular-nums">
-          <thead ref={kepala} className="sticky top-0 z-20 bg-slate-100 text-slate-700">
-            <tr>
-              <th className="sticky left-0 z-20 px-3 py-2 font-medium text-left bg-slate-100">Kelompok</th>
-              {KOLOM_HARIAN.map(([k, label]) => (
-                <th key={k} className="px-3 py-2 font-medium text-right whitespace-nowrap">
-                  {label}
-                </th>
-              ))}
-              <th className="px-3 py-2 font-medium text-center whitespace-nowrap">Cek Staff</th>
-              <th className="px-3 py-2 font-medium text-center whitespace-nowrap">Cek Target</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data ?? []).map((item) => {
-              // Tanggal yang belum tiba: tabel kosongan (semua 0), bukan
-              // angka berjalan yang terbawa dari hari terakhir.
-              const kosong = dayjs(item.tanggal).isAfter(dayjs(), 'day');
-              const nilai = (r, k) => (kosong ? 0 : r[k]);
-              return (
-              <React.Fragment key={item.tanggal}>
-                <tr data-tanggal={item.tanggal}>
-                  <td
-                    colSpan={KOLOM_HARIAN.length + 3}
-                    style={{ top: tinggiKepala }}
-                    className={`sticky z-10 px-3 py-1.5 font-semibold text-slate-800 ${
-                      dayjs(item.tanggal).day() === 1 ? 'bg-rose-100' : 'bg-slate-200'
-                    }`}
-                  >
-                    {dayjs(item.tanggal).format('dddd, DD-MM-YYYY')}
-                  </td>
-                </tr>
-                {item.data.map((r) => (
-                  <tr key={r.id} className={`border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
-                    <td className="sticky left-0 px-3 py-1 font-medium bg-inherit">{r.kelompok}</td>
-                    {KOLOM_HARIAN.map(([k, , kelas]) => (
-                      <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
-                        {KLIK[k] && Number(nilai(r, k)) ? (
-                          <button
-                            type="button"
-                            onClick={() => KLIK[k]({ ...r, tanggal: item.tanggal })}
-                            className="text-sky-700 underline decoration-dotted hover:text-sky-900"
-                            title={k === 'drop' ? 'Buka buku drop, tanggal ini disorot' : 'Buka buku angsuran, tanggal ini disorot'}
-                          >
-                            {ribu(r[k])}
-                          </button>
-                        ) : (
-                          ribu(nilai(r, k))
-                        )}
-                      </td>
-                    ))}
-                    <td className="px-3 py-1">
-                      {/* Cek Staff = kunci kasir di Rekap 1. */}
-                      {!kosong && <Cek ok={r.status_approve_kasir} href={route('kasir.rekap.rekap_satu', { date: item.tanggal })} />}
-                    </td>
-                    <td className="px-3 py-1">
-                      {/* Cek Target = drawer ACC KM di Buku Transaksi (tanggal -> hari & bulan). */}
-                      {!kosong && (
-                        <Cek
-                          ok={r.status_approve_kepala}
-                          href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: item.tanggal, acc: 1 })}
-                        />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="font-bold border-t bg-emerald-50 text-slate-900">
-                  <td className="sticky left-0 px-3 py-1.5 bg-emerald-50">Total</td>
-                  {KOLOM_HARIAN.map(([k, , kelas]) => (
-                    <td key={k} className={`px-3 py-1.5 text-right ${kelas ?? ''}`}>
-                      {ribu(kosong ? 0 : calculateTotals(item.data, k))}
-                    </td>
-                  ))}
-                  <td colSpan={2} />
-                </tr>
-              </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <TabelHarian
+        data={data ?? []}
+        kolom={KOLOM_HARIAN}
+        klik={{ storting: onKlikStorting, drop: onKlikDrop }}
+        nolkanMasaDepan
+        ekstra={{
+          kepala: ['Cek Staff', 'Cek Target'],
+          sel: (r, tanggal, kosong) => [
+            // Cek Staff = kunci kasir di Rekap 1.
+            <td key="staf" className="px-3 py-1">
+              {!kosong && <Cek ok={r.status_approve_kasir} href={route('kasir.rekap.rekap_satu', { date: tanggal })} />}
+            </td>,
+            // Cek Target = drawer ACC KM di Buku Transaksi (tanggal -> hari & bulan).
+            <td key="target" className="px-3 py-1">
+              {!kosong && (
+                <Cek
+                  ok={r.status_approve_kepala}
+                  href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: tanggal, acc: 1 })}
+                />
+              )}
+            </td>,
+          ],
+        }}
+      />
     </div>
   );
 };

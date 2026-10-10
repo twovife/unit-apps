@@ -98,7 +98,7 @@ trait RekapTrait
           'baru' => $thisDataPerGrup->where('drop_langsung', 1)->where('status', 'success')->sum('nominal_drop'),
           'lama' => $thisDataPerGrup->where('drop_langsung', 0)->where('status', 'success')->sum('nominal_drop'),
 
-          'drop' => $thisDataPerGrup->sum('nominal_drop'),
+          'drop' => $thisDataPerGrup->where('status', 'success')->sum('nominal_drop'),
           'drop_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->drop : 0,
           'drop_validate' => $thisDataPerGrup->sum('drop_jadi') == ($thisDailyRecapPerGrup?->drop ?? 0) ? true : false,
 
