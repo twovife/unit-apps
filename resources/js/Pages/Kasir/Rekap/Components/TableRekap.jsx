@@ -19,7 +19,8 @@ import {
 import { CheckCircle, Wallet, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
-const rupiah = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
+// Angka saldo awal dipangkas ribuannya (1.300.000 -> 1.300).
+const ribu = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
 
 const TableRekap = ({
   setOnShowModal,
@@ -54,10 +55,11 @@ const TableRekap = ({
               <Wallet className="w-5 h-5 text-sky-600 shrink-0" aria-hidden="true" />
               Saldo Awal Bulan
             </span>
+            <span className="ml-auto mr-2 text-xs font-normal text-slate-500">ribuan</span>
           </AccordionTrigger>
           <AccordionContent className="pb-0">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm tabular-nums">
+              <table className="w-full text-xs tabular-nums">
                 <thead className="bg-slate-100 text-slate-700">
                   <tr>
                     <th className="px-3 py-2 font-medium text-left">Kelompok</th>
@@ -81,15 +83,15 @@ const TableRekap = ({
                               title="Pemutihan bulan lalu - klik untuk lihat nasabahnya"
                               className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md bg-amber-100 text-amber-800 ring-1 ring-amber-300 hover:bg-amber-200"
                             >
-                              PMT {rupiah(item.pemutihan)}
+                              PMT {ribu(item.pemutihan)}
                             </button>
                           )}
-                          {rupiah(item.sirkulasi)}
+                          {ribu(item.sirkulasi)}
                         </div>
                       </td>
-                      <td className="px-3 py-1.5 text-right">{rupiah(item.sirkulasiCm)}</td>
-                      <td className="px-3 py-1.5 text-right">{rupiah(item.sirkulasiMb)}</td>
-                      <td className="px-3 py-1.5 text-right">{rupiah(item.sirkulasiMl)}</td>
+                      <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiCm)}</td>
+                      <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiMb)}</td>
+                      <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiMl)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -101,15 +103,15 @@ const TableRekap = ({
                         <div className="flex items-center justify-end gap-2">
                           {calculateTotals(sirkulasiAwal, 'pemutihan') > 0 && (
                             <span className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md bg-amber-100 text-amber-800 ring-1 ring-amber-300">
-                              PMT {rupiah(calculateTotals(sirkulasiAwal, 'pemutihan'))}
+                              PMT {ribu(calculateTotals(sirkulasiAwal, 'pemutihan'))}
                             </span>
                           )}
-                          {rupiah(calculateTotals(sirkulasiAwal, 'sirkulasi'))}
+                          {ribu(calculateTotals(sirkulasiAwal, 'sirkulasi'))}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-right">{rupiah(calculateTotals(sirkulasiAwal, 'sirkulasiCm'))}</td>
-                      <td className="px-3 py-2 text-right">{rupiah(calculateTotals(sirkulasiAwal, 'sirkulasiMb'))}</td>
-                      <td className="px-3 py-2 text-right">{rupiah(calculateTotals(sirkulasiAwal, 'sirkulasiMl'))}</td>
+                      <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'sirkulasiCm'))}</td>
+                      <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'sirkulasiMb'))}</td>
+                      <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'sirkulasiMl'))}</td>
                     </tr>
                   </tfoot>
                 )}
@@ -124,11 +126,11 @@ const TableRekap = ({
           <DialogHeader>
             <DialogTitle>Pemutihan bulan lalu — Kelompok {pemutihan?.kelompok}</DialogTitle>
             <DialogDescription>
-              Sudah keluar dari sirkulasi di saldo awal bulan ini. Total Rp {rupiah(pemutihan?.pemutihan)}.
+              Sudah keluar dari sirkulasi di saldo awal bulan ini. Total {ribu(pemutihan?.pemutihan)}. Angka dalam ribuan.
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-x-auto border rounded-lg">
-            <table className="w-full text-sm tabular-nums">
+            <table className="w-full text-xs tabular-nums">
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="px-3 py-2 font-medium text-left">Tgl Putih</th>
@@ -146,8 +148,8 @@ const TableRekap = ({
                     <td className="px-3 py-1.5">{w.nama ?? '—'}</td>
                     <td className="px-3 py-1.5 capitalize">{w.hari ?? '—'}</td>
                     <td className="px-3 py-1.5 whitespace-nowrap">{w.drop_date ? dayjs(w.drop_date).format('DD-MM-YY') : '—'}</td>
-                    <td className="px-3 py-1.5 text-right">{rupiah(w.pinjaman)}</td>
-                    <td className="px-3 py-1.5 font-semibold text-right">{rupiah(w.nominal)}</td>
+                    <td className="px-3 py-1.5 text-right">{ribu(w.pinjaman)}</td>
+                    <td className="px-3 py-1.5 font-semibold text-right">{ribu(w.nominal)}</td>
                   </tr>
                 ))}
               </tbody>
