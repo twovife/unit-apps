@@ -48,5 +48,8 @@ export default function useMuatDrawer(aktif, url, params, kunci, { muatUlangSesu
     [aktif, muatUlangSesudahSimpan, muat],
   );
 
-  return { isi, galat };
+  // Saat drawer baru ditutup, render penutupan (animasi) terjadi sebelum
+  // efek di atas mengosongkan isi - jangan serahkan data lama ke render yang
+  // targetnya sudah null (itu yang membuat halaman blank).
+  return { isi: aktif ? isi : null, galat: aktif ? galat : null };
 }

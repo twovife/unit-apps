@@ -45,7 +45,7 @@ const DrawerBukuAngsuran = ({ target, server_filter, onClosed }) => {
         <div className="p-3">
           {galat && <div className="text-sm text-red-600">{galat}</div>}
           {!isi && !galat && <div className="text-sm text-slate-500">Memuat…</div>}
-          {isi && (
+          {isi && target && (
             <FilterAngsuranContext.Provider value={isi.server_filter}>
               <AngsuranTable
                 diDrawer
