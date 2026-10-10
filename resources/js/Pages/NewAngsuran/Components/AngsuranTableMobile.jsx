@@ -200,12 +200,13 @@ const AngsuranTableMobile = ({ datas }) => {
   );
 };
 
-// Baris jumlah dengan susunan kolom yang sama. Subtotal: garis atas tebal di
-// bawah grupnya. Total: bar gelap yang menempel di dasar layar.
+// Baris jumlah dengan susunan kolom yang sama. Subtotal: latar hijau muda +
+// garis atas hijau, beda jelas dari baris nasabah. Total: bar gelap yang
+// menempel di dasar layar.
 const Jumlah = ({ label, rows, total = false }) => (
   <div
     className={`${KOLOM} px-2 py-1.5 font-bold ${
-      total ? 'sticky bottom-0 z-10 mt-4 bg-gray-900 text-white' : 'bg-gray-50 border-t-2 border-gray-400'
+      total ? 'sticky bottom-0 z-10 mt-4 bg-gray-900 text-white' : 'bg-emerald-100 text-emerald-950 border-t-2 border-emerald-500'
     }`}
   >
     <div className="min-w-0 col-span-3 truncate">{label}</div>
@@ -213,8 +214,8 @@ const Jumlah = ({ label, rows, total = false }) => (
       {rb(jumlah(rows, 'angs_today'))}
     </div>
     <div className="col-span-3" />
-    <div className={`text-[11px] text-right ${total ? 'text-gray-300' : 'text-gray-600'}`}>{rb(jumlah(rows, 'pinjaman'))}</div>
-    <div className={`text-[11px] text-right ${total ? 'text-gray-300' : 'text-gray-600'}`}>{rb(jumlah(rows, 'saldo'))}</div>
+    <div className={`text-[11px] text-right ${total ? 'text-gray-300' : 'text-emerald-900/70'}`}>{rb(jumlah(rows, 'pinjaman'))}</div>
+    <div className={`text-[11px] font-extrabold text-right ${total ? 'text-white' : 'text-gray-900'}`}>{rb(jumlah(rows, 'saldo'))}</div>
   </div>
 );
 
