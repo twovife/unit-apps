@@ -296,8 +296,14 @@ class TransactionLoan extends Model
    *  - sudah di-drop (success) dan belum punya pengganti open/acc/success
    *  - ember pada $tanggal belum MB/ML (bukan status angsuran terakhir, yang
    *    basi kalau nasabah lama tidak bayar)
-   *  - sisa saldo F8 <= 40% pinjaman
+   *  - drop sudah lewat 5 minggu (tanggal pengajuan >= drop + 35 hari)
+   *  - sisa saldo F8 <= 48% DROP (bukan pinjaman) - keputusan 2026-10-10;
+   *    drop 500rb -> sisa saldo maks 240rb
    */
+  /** Syarat pengajuan pelunasan: sisa saldo <= 48% drop, drop >= 5 minggu. */
+  public const PELUNASAN_BATAS_DROP = 0.48;
+  public const PELUNASAN_MINGGU = 5;
+
   public function alasanTolakPengajuan(string $tanggal): ?string
   {
     if ($this->status !== 'success') {
@@ -309,8 +315,14 @@ class TransactionLoan extends Model
     if (in_array(\App\Helpers\Ember::dari($this->drop_date, $tanggal), [\App\Helpers\Ember::MB, \App\Helpers\Ember::ML], true)) {
       return 'Pinjaman sudah MB/ML.';
     }
-    if (\App\Helpers\PenyesuaianSaldo::hitungSaldo($this)['saldo'] > $this->pinjaman * 0.4) {
-      return 'Sisa saldo masih di atas 40% pinjaman.';
+    $bolehMulai = \Carbon\Carbon::parse($this->drop_date)->addWeeks(self::PELUNASAN_MINGGU)->startOfDay();
+    if (\Carbon\Carbon::parse($tanggal)->startOfDay()->lt($bolehMulai)) {
+      return 'Drop belum lewat ' . self::PELUNASAN_MINGGU . ' minggu (baru bisa mulai '
+        . $bolehMulai->locale('id')->isoFormat('D MMM Y') . ').';
+    }
+    $batas = (int) round((int) $this->nominal_drop * self::PELUNASAN_BATAS_DROP);
+    if (\App\Helpers\PenyesuaianSaldo::hitungSaldo($this)['saldo'] > $batas) {
+      return 'Sisa saldo masih di atas 48% drop (maksimal Rp ' . number_format($batas, 0, ',', '.') . ').';
     }
     return null;
   }
