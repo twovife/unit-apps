@@ -497,9 +497,25 @@ class AppHelper
     return self::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, $loan->drop_date);
   }
 
+  /**
+   * Tanggal sebelum migrasi kantor kelompok ini = beku (data patokan migrasi).
+   * Pasangan aplikasi untuk trigger beku di DB (2026_10_10_100000).
+   */
+  public static function tanggalBeku($groupingId, $tanggal): bool
+  {
+    $branchId = \App\Models\TransactionLoanOfficerGrouping::whereKey($groupingId)->value('branch_id');
+    $mulai = \App\Helpers\AgregasiScope::tanggalMulai($branchId);
+
+    return $mulai !== null && Carbon::parse($tanggal)->startOfDay()->lt(Carbon::parse($mulai)->startOfDay());
+  }
+
   /** Tanggal ini di kelompok ini sudah dikunci (aturan sama dengan hariDropTerkunci). */
   public static function tanggalTerkunci($groupingId, $tanggal): bool
   {
+    if (self::tanggalBeku($groupingId, $tanggal)) {
+      return true;
+    }
+
     $hari = fn($q) => $q->where('transaction_loan_officer_grouping_id', $groupingId)
       ->whereDate('date', Carbon::parse($tanggal)->toDateString());
 
