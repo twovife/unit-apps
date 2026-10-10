@@ -20,6 +20,8 @@ const GRUP = [
     ],
   },
   { judul: '', kolom: [['titipan9', 'Titipan 9%']] },
+  // Titipan 9% + Tunai.
+  { judul: '', kolom: [['sisa_uang', 'Sisa Uang', 'font-semibold']] },
   // Grup STORTING (cash / transfer / katrol) disembunyikan dulu (mas
   // 2026-10-09); datanya masih dikirim server: storting_cash/_transfer/_katrol.
   // Uang yang dibawa pulang mantri (setoran_tunai).
@@ -28,8 +30,6 @@ const GRUP = [
   { judul: '', kolom: [['setoran_transfer', 'Setor Transfer']] },
   // Katrolan diketik kasir (setoran_katrol), ikut -/+.
   { judul: '', kolom: [['setoran_katrol', 'Katrolan']] },
-  // Titipan 9% + Tunai.
-  { judul: '', kolom: [['sisa_uang', 'Sisa Uang', 'font-semibold']] },
   // SU Lapangan - Sisa Uang: merah = kurang, hijau = lebih.
   { judul: '', kolom: [['selisih_uang', '-/+', 'font-bold', true]] },
 ];
