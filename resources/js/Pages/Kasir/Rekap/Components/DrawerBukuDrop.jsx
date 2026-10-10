@@ -40,7 +40,14 @@ const DrawerBukuDrop = ({ target, server_filter, onClosed }) => {
     el?.scrollIntoView({ block: 'start' });
   }, [isi]);
 
-  const KELAS_SOROT = 'rounded-lg ring-2 ring-amber-400 bg-amber-50/60';
+  // Sorot tegas: bingkai + baris tabel (desktop) & kepala kartu (HP) kuning.
+  const KELAS_SOROT =
+    'my-2 overflow-hidden rounded-lg ring-2 ring-amber-400 bg-amber-50 [&_tbody_tr]:bg-amber-100 [&_tbody_tr:hover]:bg-amber-200 [&_.bg-muted]:bg-amber-200';
+  const Label = () => (
+    <div className="px-3 py-1 text-xs font-semibold text-amber-900 bg-amber-300">
+      Drop {dayjs(sorot).format('dddd, DD MMMM YYYY')} — tanggal yang dicek
+    </div>
+  );
 
   return (
     <Sheet open={!!target} onOpenChange={(o) => (o ? '' : onClosed())}>
@@ -63,6 +70,7 @@ const DrawerBukuDrop = ({ target, server_filter, onClosed }) => {
               <div className="hidden lg:block">
                 {groups.map((item, i) => (
                   <div key={item?.[0]?.tanggal_drop ?? i} {...(kena(item) ? { 'data-sorot': '', className: KELAS_SOROT } : {})}>
+                    {kena(item) && <Label />}
                     <BukuTransaksi datas={item} />
                   </div>
                 ))}
@@ -70,6 +78,7 @@ const DrawerBukuDrop = ({ target, server_filter, onClosed }) => {
               <div className="space-y-3 lg:hidden">
                 {groups.map((item, i) => (
                   <div key={item?.[0]?.tanggal_drop ?? i} {...(kena(item) ? { 'data-sorot': '', className: KELAS_SOROT } : {})}>
+                    {kena(item) && <Label />}
                     <BukuTransaksiKepala datas={item} />
                   </div>
                 ))}
