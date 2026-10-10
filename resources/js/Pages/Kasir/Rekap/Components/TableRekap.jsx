@@ -192,7 +192,8 @@ const TableRekap = ({
         data={data ?? []}
         kolom={KOLOM_HARIAN}
         klik={{ storting: onKlikStorting, drop: onKlikDrop }}
-        nolkanMasaDepan
+        // Tanggal yang belum tiba = kosongan.
+        batasIsi={dayjs().format('YYYY-MM-DD')}
         ekstra={{
           kepala: ['Cek Staff', 'Cek Target'],
           sel: (r, tanggal, kosong) => [

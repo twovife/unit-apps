@@ -102,7 +102,8 @@ trait RekapTrait
           'drop_on_database' => $thisDailyRecapPerGrup ? $thisDailyRecapPerGrup->drop : 0,
           'drop_validate' => $thisDataPerGrup->sum('drop_jadi') == ($thisDailyRecapPerGrup?->drop ?? 0) ? true : false,
 
-          'rencana' => $thisDataPerGrup->where('drop_langsung', 0)->sum('approved_nominal'),
+          // Hanya pengajuan yang masih hidup / sudah jadi - tolak & gagal bukan rencana lagi.
+          'rencana' => $thisDataPerGrup->where('drop_langsung', 0)->whereIn('status', ['open', 'acc', 'success'])->sum('approved_nominal'),
         ];
       });
     })->values();

@@ -15,10 +15,11 @@ const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
  * - data: [{ tanggal, data: [baris] }]
  * - kolom: [[kunci, label, kelasTambahan?]]
  * - klik: { kunci: (baris) => void } - angka bukan nol jadi tombol
- * - nolkanMasaDepan: tanggal yang belum tiba ditampilkan 0 (angka berjalan)
+ * - batasIsi: 'YYYY-MM-DD' - tanggal sesudahnya ditampilkan 0 (tabel kosongan)
+ *   dan chip-nya pudar. Tanpa ini semua tanggal tampil apa adanya.
  * - ekstra: { kepala: [label], sel: (baris, tanggal, kosong) => [<td>] }
  */
-const TabelHarian = ({ data = [], kolom, klik = {}, nolkanMasaDepan = false, ekstra = null }) => {
+const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null }) => {
   const kotak = useRef(null);
   const kepala = useRef(null);
   const deretChip = useRef(null);
@@ -70,7 +71,7 @@ const TabelHarian = ({ data = [], kolom, klik = {}, nolkanMasaDepan = false, eks
                 ? 'bg-sky-600 border-sky-600 text-white font-semibold'
                 : d.tanggal === hariIni
                   ? 'border-sky-500 text-sky-700 font-semibold bg-white hover:bg-sky-50'
-                  : d.tanggal > hariIni
+                  : d.tanggal > (batasIsi ?? hariIni)
                     ? 'border-slate-200 text-slate-300 bg-white hover:bg-slate-50'
                     : 'border-slate-300 text-slate-700 bg-white hover:bg-slate-100'
             }`}
@@ -108,9 +109,9 @@ const TabelHarian = ({ data = [], kolom, klik = {}, nolkanMasaDepan = false, eks
               </tr>
             )}
             {data.map((item) => {
-              // Tanggal yang belum tiba: tabel kosongan (semua 0), bukan
-              // angka berjalan yang terbawa dari hari terakhir.
-              const kosong = nolkanMasaDepan && item.tanggal > hariIni;
+              // Sesudah batas isi: tabel kosongan (semua 0), bukan angka
+              // berjalan yang terbawa dari hari terakhir.
+              const kosong = !!batasIsi && item.tanggal > batasIsi;
               const nilai = (r, k) => (kosong ? 0 : r[k]);
               return (
                 <React.Fragment key={item.tanggal}>

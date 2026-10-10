@@ -5,6 +5,7 @@ import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { usePage } from '@inertiajs/react';
 import { FilterIcon } from 'lucide-react';
+import dayjs from 'dayjs';
 import TabelHarian from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 import DrawerBukuDrop from '@/Pages/Kasir/Rekap/Components/DrawerBukuDrop';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
@@ -24,7 +25,8 @@ const KOLOM = [
 
 /**
  * Rencana Drop sebulan - tampilan seragam dengan Rekap 2 (TabelHarian).
- * Tanggal yang belum tiba TIDAK dinolkan: rencana ke depan justru yang dilihat.
+ * Isi sampai H+7: pengajuan drop jatuh minggu depan, sesudah itu belum ada
+ * apa-apa -> kosongan.
  * Klik Storting -> buku angsuran hari itu; klik Drop -> buku drop.
  */
 const Content = ({ urlLink, localState, triggeredData }) => {
@@ -76,6 +78,7 @@ const Content = ({ urlLink, localState, triggeredData }) => {
       <TabelHarian
         data={data}
         kolom={KOLOM}
+        batasIsi={dayjs().add(7, 'day').format('YYYY-MM-DD')}
         klik={{
           storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'harian' }),
           drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' }),
