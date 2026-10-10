@@ -156,7 +156,7 @@ const TableRekapKasir = ({ datas = [] }) => {
       <table className="w-full text-sm tabular-nums">
         <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
           <tr>
-            <th className="sticky left-0 z-20 px-3 py-2 text-left bg-slate-100">Kelompok</th>
+            <th className={`sticky left-0 z-20 px-3 py-2 text-left ${WARNA.biru.kepala}`}>Kelompok</th>
             {KOLOM.map(([k, label]) => (
               <th
                 key={k}
@@ -177,7 +177,7 @@ const TableRekapKasir = ({ datas = [] }) => {
           )}
           {datas.map((r, i) => (
             <tr key={i} className="bg-white border-t group even:bg-slate-50 hover:bg-sky-50">
-              <td className="sticky left-0 px-3 py-1.5 font-medium text-left bg-inherit whitespace-nowrap">
+              <td className={`sticky left-0 px-3 py-1.5 font-medium text-left whitespace-nowrap ${WARNA.biru.sel}`}>
                 {r.type == 'daily' ? r.kelompok : dayjs(r.tanggal).format('DD-MM')}
               </td>
               {KOLOM.map(([k, , kelas, bertanda]) => (
@@ -198,7 +198,7 @@ const TableRekapKasir = ({ datas = [] }) => {
         {datas.length > 0 && (
           <tfoot className="font-bold border-t-2 bg-slate-100 text-slate-900">
             <tr>
-              <td className="sticky left-0 px-3 py-2 text-left bg-slate-100">Total</td>
+              <td className={`sticky left-0 px-3 py-2 text-left ${WARNA.biru.total}`}>Total</td>
               {KOLOM.map(([k, , , bertanda]) => (
                 <td key={k} className={`px-3 py-2 text-right ${WARNA_KOLOM[k]?.total ?? ''}`}>
                   <Angka n={total[k]} bertanda={bertanda} />
