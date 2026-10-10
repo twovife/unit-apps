@@ -219,12 +219,15 @@ const FilterBar = ({
     const saved = readSaved();
     if (!saved) return;
 
+    // Kelompok TIDAK dipulihkan per halaman: kelompok global (session server,
+    // sama di semua menu) yang dipakai. Hanya hari/bulan/tanggal yang dipulihkan.
+    const pulih = { ...saved, kelompok: active.kelompok };
     const berbeda = managedKeys.some(
-      (key) => String(saved[key] ?? '') !== String(active[key] ?? ''),
+      (key) => String(pulih[key] ?? '') !== String(active[key] ?? ''),
     );
     if (!berbeda) return;
 
-    go(saved, { replace: true });
+    go(pulih, { replace: true });
   }, []);
 
   // Selaraskan cermin lokal setiap kali server mengirim filter aktif yang baru.

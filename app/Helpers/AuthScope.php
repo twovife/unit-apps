@@ -67,13 +67,28 @@ class AuthScope
                 // Mantri dipaksa melihat area-nya masing-masing
                 $kelompok = $user->employee->area ?? 1;
             } else {
-                // KM/Pimpinan menggunakan request jika ada, jika tidak cari kelompok pertama di cabang ini
-                $kelompok = request('kelompok');
-                if (!$kelompok) {
+                // KM/Pimpinan: kelompok GLOBAL lintas menu (keputusan mas
+                // 2026-10-10) - pilihan terakhir disimpan di session per user,
+                // jadi buka kelompok 1 di Drop lalu pindah ke Angsuran tetap
+                // kelompok 1. ?kelompok di URL mengganti pilihan itu. Kalau
+                // kelompoknya tidak ada di cabang aktif (ganti cabang),
+                // jatuh ke kelompok pertama cabang itu.
+                $kunci = "active_kelompok_{$user->id}";
+                $diminta = request('kelompok') ?: Session::get($kunci);
+                $ada = $diminta && \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)
+                    ->where('kelompok', $diminta)->exists();
+                if ($ada) {
+                    $kelompok = (int) $diminta;
+                } else {
                     $firstGroup = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)
                                                                             ->orderBy('kelompok')
                                                                             ->first();
                     $kelompok = $firstGroup ? $firstGroup->kelompok : 1;
+                }
+                // Hanya pindah halaman yang mengubah pilihan global - JSON drawer
+                // (mis. detail kelompok 5 dari Rekap 1) & simpan data tidak.
+                if (request()->isMethod('get') && !request()->wantsJson()) {
+                    Session::put($kunci, $kelompok);
                 }
             }
         }
