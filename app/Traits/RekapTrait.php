@@ -895,16 +895,21 @@ trait RekapTrait
       ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
       ->get();
 
-    // Tanggal yang berisi: drop, angsuran, atau isian kasir (kasbon /
-    // transport / setoran). Opsional dibatasi s/d ?sampai (detail dari tabel
-    // Global Rekap 1, supaya jumlahnya sama).
-    $sampai = $request->filled('sampai') ? Carbon::parse($request->sampai)->toDateString() : null;
-    $dates = $loan->pluck('drop_date')->merge($instalment->pluck('transaction_date'))
+    // Semua hari kerja (Kalender Kerja) + tanggal libur yang ternyata berisi
+    // (drop, angsuran, isian kasir) - hari kerja kosong tetap tampil, libur
+    // kosong disembunyikan. Dibatasi s/d ?sampai (detail dari tabel Global
+    // Rekap 1, supaya jumlahnya sama), selain itu s/d hari ini.
+    $berdata = $loan->pluck('drop_date')->merge($instalment->pluck('transaction_date'))
       ->merge($transactionDailyRecap->filter(fn($r) => ($r->kasbon ?? 0) || ($r->transport ?? 0)
-        || isset($r->setoran_tunai) || isset($r->setoran_transfer) || isset($r->setoran_katrol))->pluck('date'))
-      ->map(fn($d) => Carbon::parse($d)->toDateString())
-      ->when($sampai, fn($c) => $c->filter(fn($d) => $d <= $sampai))
-      ->unique()->sort()->values();
+        || isset($r->setoran_tunai) || isset($r->setoran_transfer) || isset($r->setoran_katrol))->pluck('date'));
+    $sampai = $request->filled('sampai') ? Carbon::parse($request->sampai)->toDateString() : null;
+    $hariIni = min($endDateofMonth, Carbon::today()->toDateString());
+    $tglBerdata = $berdata->map(fn($b) => Carbon::parse($b)->toDateString())->flip();
+    $dates = \App\Models\WorkDay::tanggalRekapBulan($startDateofMonth, $berdata)
+      // ?sampai: tegas s/d tanggal itu. Tanpa itu: hari kerja s/d hari ini,
+      // plus tanggal sesudahnya yang ternyata berisi (supaya kelihatan).
+      ->filter(fn($d) => $sampai ? $d <= $sampai : ($d <= $hariIni || $tglBerdata->has($d)))
+      ->values();
 
     $saldoAwalBulan = $transactionSirculation->map(function ($item) {
       return [
