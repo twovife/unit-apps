@@ -193,7 +193,12 @@ const TableRekap = ({
             </tr>
           </thead>
           <tbody>
-            {(data ?? []).map((item) => (
+            {(data ?? []).map((item) => {
+              // Tanggal yang belum tiba: tabel kosongan (semua 0), bukan
+              // angka berjalan yang terbawa dari hari terakhir.
+              const kosong = dayjs(item.tanggal).isAfter(dayjs(), 'day');
+              const nilai = (r, k) => (kosong ? 0 : r[k]);
+              return (
               <React.Fragment key={item.tanggal}>
                 <tr className={dayjs(item.tanggal).day() === 1 ? 'bg-rose-100' : 'bg-slate-200'}>
                   <td colSpan={KOLOM_HARIAN.length + 3} className="sticky left-0 px-3 py-1.5 font-semibold text-slate-800">
@@ -201,11 +206,11 @@ const TableRekap = ({
                   </td>
                 </tr>
                 {item.data.map((r) => (
-                  <tr key={r.id} className="border-t even:bg-slate-50 hover:bg-sky-50">
+                  <tr key={r.id} className={`border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
                     <td className="sticky left-0 px-3 py-1 font-medium bg-inherit">{r.kelompok}</td>
                     {KOLOM_HARIAN.map(([k, , kelas]) => (
                       <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
-                        {KLIK[k] && Number(r[k]) ? (
+                        {KLIK[k] && Number(nilai(r, k)) ? (
                           <button
                             type="button"
                             onClick={() => KLIK[k]({ ...r, tanggal: item.tanggal })}
@@ -215,29 +220,26 @@ const TableRekap = ({
                             {ribu(r[k])}
                           </button>
                         ) : (
-                          ribu(r[k])
+                          ribu(nilai(r, k))
                         )}
                       </td>
                     ))}
-                    <td className="px-3 py-1">
-                      <Cek ok={r.status_approve_kasir} />
-                    </td>
-                    <td className="px-3 py-1">
-                      <Cek ok={r.status_approve_kepala} />
-                    </td>
+                    <td className="px-3 py-1">{!kosong && <Cek ok={r.status_approve_kasir} />}</td>
+                    <td className="px-3 py-1">{!kosong && <Cek ok={r.status_approve_kepala} />}</td>
                   </tr>
                 ))}
                 <tr className="font-bold border-t bg-emerald-50 text-slate-900">
                   <td className="sticky left-0 px-3 py-1.5 bg-emerald-50">Total</td>
                   {KOLOM_HARIAN.map(([k, , kelas]) => (
                     <td key={k} className={`px-3 py-1.5 text-right ${kelas ?? ''}`}>
-                      {ribu(calculateTotals(item.data, k))}
+                      {ribu(kosong ? 0 : calculateTotals(item.data, k))}
                     </td>
                   ))}
                   <td colSpan={2} />
                 </tr>
               </React.Fragment>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
