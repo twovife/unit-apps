@@ -185,6 +185,43 @@ class Gembok
         }
     }
 
+    /**
+     * Hari yang TERBUKA DI TENGAH RANTAI: belum terkunci padahal ada hari
+     * sesudahnya (kelompok sama) yang sudah terkunci - hasil buka kunci /
+     * koreksi can-edit yang belum dikunci lagi. Selama ada, kasir tidak bisa
+     * mengunci hari sesudahnya. Dipakai pemberitahuan di Rekap 1 & 2.
+     *
+     * @return array<int,array{kelompok:int,tanggal:string,alasan:?string,dibuka_at:?string}>
+     */
+    public static function hariTerbuka($branchId): array
+    {
+        $grup = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('kelompok', 'id');
+        if ($grup->isEmpty()) {
+            return [];
+        }
+
+        $baris = TransactionDailyClosing::from('transaction_daily_closings as c')
+            ->whereIn('c.transaction_loan_officer_grouping_id', $grup->keys())
+            ->whereNull('c.kasir_lock_at')
+            ->whereExists(fn($q) => $q->select(DB::raw(1))->from('transaction_daily_closings as n')
+                ->whereColumn('n.transaction_loan_officer_grouping_id', 'c.transaction_loan_officer_grouping_id')
+                ->whereColumn('n.date', '>', 'c.date')
+                ->whereNotNull('n.kasir_lock_at'))
+            ->orderBy('c.date')
+            ->get(['c.id', 'c.transaction_loan_officer_grouping_id', 'c.date']);
+
+        $buka = TransactionLockHistory::whereIn('transaction_daily_closing_id', $baris->pluck('id'))
+            ->where('aksi', TransactionLockHistory::AKSI_BUKA)
+            ->orderBy('id')->get()->keyBy('transaction_daily_closing_id');
+
+        return $baris->map(fn($b) => [
+            'kelompok' => (int) $grup[$b->transaction_loan_officer_grouping_id],
+            'tanggal' => \Carbon\Carbon::parse($b->date)->toDateString(),
+            'alasan' => $buka->get($b->id)?->alasan,
+            'dibuka_at' => $buka->get($b->id)?->created_at?->toDateTimeString(),
+        ])->values()->all();
+    }
+
     public static function bolehBuka($user): bool
     {
         if (!$user || !$user->employee) {

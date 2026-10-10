@@ -14,6 +14,7 @@ import DrawerBukuDrop from './Components/DrawerBukuDrop';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
 import DrawerAccKm from './Components/DrawerAccKm';
 import DialogKunci from './Components/DialogKunci';
+import BannerHariTerbuka from './Components/BannerHariTerbuka';
 import Action from './Components/Action';
 
 const RekapContent = ({
@@ -160,6 +161,7 @@ const RekapContent = ({
           </>
         )}
       </div>
+      {(show == 'rekapkasir' || show == 'rekap2') && <BannerHariTerbuka hari={server_filter.hari_terbuka} />}
       {(show == 'rekapkasir' || show == 'rekap2') && (
         <div className="mb-3">
           <FilterBar

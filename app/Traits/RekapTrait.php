@@ -393,6 +393,8 @@ trait RekapTrait
         'branch_id' => $branch_id,
         // Kantor alur baru: SU Lapangan bisa diisi kasir di Rekap 1.
         'migrasi' => $alurBaru,
+        // Hari dibuka ulang yang belum dikunci lagi (menahan rantai kunci).
+        'hari_terbuka' => $alurBaru ? \App\Helpers\Gembok::hariTerbuka($branch_id) : [],
       ]
     ];
   }
@@ -911,6 +913,7 @@ trait RekapTrait
         'month' => $transaction_date->format('Y-m'),
         // Dibaca Rencana/Approval di drawer ACC KM (alur baru vs lama).
         'migrasi' => \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth),
+        'hari_terbuka' => \App\Helpers\AgregasiScope::sudahMigrasi($branch_id) ? \App\Helpers\Gembok::hariTerbuka($branch_id) : [],
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
