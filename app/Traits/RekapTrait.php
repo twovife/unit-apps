@@ -65,10 +65,12 @@ trait RekapTrait
           'masuk' => 0,
           'keluar' => (int) $r->keluar,
           'target' => (int) $r->target,
+          'cek_km' => $r->kepala_approval_at !== null,
         ])->groupBy('date');
     } else {
       $daily_recap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
         ->whereIn('date', $semuaTanggal)->get()
+        ->each(fn($r) => $r->cek_km = (bool) $r->daily_kepala_approval)
         ->groupBy(fn($r) => Carbon::parse($r->date)->toDateString());
     }
 
@@ -100,7 +102,7 @@ trait RekapTrait
       ];
     };
 
-    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($groupingId, $pasangan, $isi) {
+    $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($groupingId, $pasangan, $isi, $daily_recap) {
       $p = $pasangan[$tanggal];
 
       return $groupingId->map(fn($g) => [
@@ -108,6 +110,8 @@ trait RekapTrait
         'kelompok' => $g->kelompok,
         'tanggal' => $tanggal,
         'pasangan' => $p,
+        // Ceklist Kepala (ACC KM) hari D sudah? Target pasangan baru final sesudahnya.
+        'cek_km' => (bool) ($daily_recap->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $g->id)->first()?->cek_km),
       ] + $isi($tanggal, $g->id) + collect($isi($p, $g->id))->mapWithKeys(fn($v, $k) => ["p_$k" => $v])->all());
     })->values();
 

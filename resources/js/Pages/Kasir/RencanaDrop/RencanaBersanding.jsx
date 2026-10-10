@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { ArrowDown, ArrowUp } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 
 // Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
@@ -34,8 +35,10 @@ const Panah = ({ ini, dulu }) =>
 /**
  * Satu tabel kecil: judul tanggal sendiri, baris per kelompok, total hijau.
  * banding: { kunciKanan: kunciKiri } -> panah naik/turun di kolom itu.
+ * tandaKm: kunci kolom yang diberi tanda "ACC" kalau hari D belum dicek KM
+ * (target pasangan belum final) - tombolnya ke drawer ACC KM.
  */
-const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {} }) => (
+const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, tandaKm = null }) => (
   <div className="overflow-hidden bg-white border rounded-lg">
     <div className={`px-3 py-1.5 text-xs font-semibold ${warna}`}>
       {judul} · <span className="capitalize">{tanggal ? dayjs(tanggal).format('dddd, DD-MM-YYYY') : '—'}</span>
@@ -60,6 +63,15 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {} }
                 const v = kosong ? 0 : r[k];
                 return (
                   <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${kelas ?? ''}`}>
+                    {k === tandaKm && !kosong && !r.cek_km && (
+                      <Link
+                        href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: r.tanggal, acc: 1 })}
+                        title="Hari ini belum dicek KM - target minggu depan belum final. Klik untuk ACC KM."
+                        className="mr-1.5 px-1 py-0.5 text-[10px] font-semibold rounded bg-amber-100 text-amber-800 ring-1 ring-amber-300 hover:bg-amber-200"
+                      >
+                        ACC
+                      </Link>
+                    )}
                     {banding[k] && !kosong && <Panah ini={r[k]} dulu={r[banding[k]]} />}
                     {klik[k] && Number(v) ? (
                       <button
@@ -178,6 +190,7 @@ const RencanaBersanding = ({ data, klik }) => {
                 warna="bg-sky-100 text-sky-900"
                 // Target minggu depan dibanding target hari ini.
                 banding={{ p_target: 'target' }}
+                tandaKm="p_target"
               />
             </div>
           );
