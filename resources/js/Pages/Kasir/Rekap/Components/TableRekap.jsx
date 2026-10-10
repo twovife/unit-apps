@@ -1,14 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/shadcn/ui/table';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
+import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
   Accordion,
@@ -19,8 +9,32 @@ import {
 import { CheckCircle, Wallet, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
-// Angka saldo awal dipangkas ribuannya (1.300.000 -> 1.300).
+// Angka dipangkas ribuannya (1.300.000 -> 1.300).
 const ribu = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
+
+// [kunci, label, kelas tambahan]. Saldo ditebalkan - angka yang dicocokkan.
+const KOLOM_HARIAN = [
+  ['drop', 'Drop'],
+  ['total_drop', 'Jml Drop'],
+  ['storting', 'Storting'],
+  ['total_storting', 'Jml Storting'],
+  ['sirkulasi', 'Sirkulasi', 'font-semibold'],
+  ['angsuran_cm', 'Angs CM'],
+  ['total_angsuran_cm', 'Jml CM'],
+  ['saldo_cm', 'Saldo CM', 'font-semibold'],
+  ['angsuran_mb', 'Angs MB'],
+  ['total_angsuran_mb', 'Jml MB'],
+  ['saldo_mb', 'Saldo MB', 'font-semibold'],
+  ['angsuran_ml', 'Angs ML'],
+  ['total_angsuran_ml', 'Jml ML'],
+  ['saldo_ml', 'Saldo ML', 'font-semibold'],
+];
+
+const Cek = ({ ok }) => (
+  <div className="flex justify-center">
+    {ok ? <CheckCircle className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />}
+  </div>
+);
 
 const TableRekap = ({
   setOnShowModal,
@@ -158,202 +172,59 @@ const TableRekap = ({
         </DialogContent>
       </Dialog>
 
-      <div className="max-h-[65vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-        <Table className="w-full mb-3 table-auto">
-          <TableHeader className="sticky top-0 z-10 bg-gray-100">
-            <TableRow>
-              <TableHead className="text-center">Tanggal</TableHead>
-              <TableHead className="text-center">Kelompok</TableHead>
-              <TableHead className="text-center">Drop</TableHead>
-              <TableHead className="text-center">Jumlah Drop</TableHead>
-              <TableHead className="text-center">Storting</TableHead>
-              <TableHead className="text-center">Jumlah Storting</TableHead>
-              <TableHead className="text-center">Sirkulasi</TableHead>
-              <TableHead className="text-center">Angsuran CM</TableHead>
-              <TableHead className="text-center">Jumlah CM</TableHead>
-              <TableHead className="text-center">Saldo CM</TableHead>
-              <TableHead className="text-center">Angsuran MB</TableHead>
-              <TableHead className="text-center">Jumlah MB</TableHead>
-              <TableHead className="text-center">Saldo MB</TableHead>
-              <TableHead className="text-center">Angsuran ML</TableHead>
-              <TableHead className="text-center">Jumlah ML</TableHead>
-              <TableHead className="text-center">Saldo ML</TableHead>
-              <TableHead className="text-center">Cek Staff</TableHead>
-              <TableHead className="text-center">Cek Target</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data &&
-              data.map((item, key) => (
-                <>
-                  <TableRow
-                    key={key}
-                    className={`${
-                      dayjs(item.tanggal).format('dddd') == 'Senin'
-                        ? 'bg-red-300 hover:bg-red-400'
-                        : ''
-                    }`}
-                  >
-                    <TableCell className="whitespace-nowrap" colSpan="18">
-                      {dayjs(item.tanggal).format('dddd')},
-                      {dayjs(item.tanggal).format('DD-MM-YYYY')}
-                    </TableCell>
-                  </TableRow>
-
-                  {item.data.map((subitem, subkey) => (
-                    <TableRow key={subkey}>
-                      <TableCell></TableCell>
-                      <TableCell>{subitem.kelompok}</TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.drop} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.total_drop} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.storting} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.total_storting} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.sirkulasi} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.angsuran_cm} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.total_angsuran_cm} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.saldo_cm} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.angsuran_mb} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.total_angsuran_mb} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.saldo_mb} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.angsuran_ml} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.total_angsuran_ml} />
-                      </TableCell>
-                      <TableCell>
-                        <FormatNumbering value={subitem.saldo_ml} />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center">
-                          {subitem.status_approve_kasir ? (
-                            <CheckCircle className="text-green-500" />
-                          ) : (
-                            <XCircle className="text-red-500" />
-                          )}
-                        </div>
-                        {/* {subitem.status_approve_kasir
-                          ? dayjs(subitem.status_approve_kasir).format('DD-MM')
-                          : ''} */}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center ">
-                          {subitem.status_approve_kepala ? (
-                            <CheckCircle className="text-green-500" />
-                          ) : (
-                            <XCircle className="text-red-500" />
-                          )}
-                        </div>
-                        {/* {subitem.status_approve_kepala
-                          ? dayjs(subitem.status_approve_kepala).format('DD-MM')
-                          : ''} */}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-
-                  <TableRow className="bg-gray-100">
-                    <TableCell></TableCell>
-                    <TableCell className="font-semibold">TOTAL</TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'drop')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'total_drop')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'storting')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'total_storting')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'sirkulasi')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'angsuran_cm')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'total_angsuran_cm')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'saldo_cm')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'angsuran_mb')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'total_angsuran_mb')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'saldo_mb')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'angsuran_ml')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'total_angsuran_ml')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering
-                        value={calculateTotals(item.data, 'saldo_ml')}
-                      />
-                    </TableCell>
-                    <TableCell></TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                </>
+      {/* Tabel harian: satu pita per tanggal, baris per kelompok, subtotal. */}
+      <p className="mb-1 text-xs text-slate-500">Angka dalam ribuan.</p>
+      <div className="max-h-[65vh] bg-white border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <table className="w-full text-xs tabular-nums">
+          <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
+            <tr>
+              <th className="sticky left-0 z-20 px-3 py-2 font-medium text-left bg-slate-100">Kelompok</th>
+              {KOLOM_HARIAN.map(([k, label]) => (
+                <th key={k} className="px-3 py-2 font-medium text-right whitespace-nowrap">
+                  {label}
+                </th>
               ))}
-          </TableBody>
-          <TableFooter></TableFooter>
-        </Table>
+              <th className="px-3 py-2 font-medium text-center whitespace-nowrap">Cek Staff</th>
+              <th className="px-3 py-2 font-medium text-center whitespace-nowrap">Cek Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(data ?? []).map((item) => (
+              <React.Fragment key={item.tanggal}>
+                <tr className={dayjs(item.tanggal).day() === 1 ? 'bg-rose-100' : 'bg-slate-200'}>
+                  <td colSpan={KOLOM_HARIAN.length + 3} className="sticky left-0 px-3 py-1.5 font-semibold text-slate-800">
+                    {dayjs(item.tanggal).format('dddd, DD-MM-YYYY')}
+                  </td>
+                </tr>
+                {item.data.map((r) => (
+                  <tr key={r.id} className="border-t even:bg-slate-50 hover:bg-sky-50">
+                    <td className="sticky left-0 px-3 py-1 font-medium bg-inherit">{r.kelompok}</td>
+                    {KOLOM_HARIAN.map(([k, , kelas]) => (
+                      <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
+                        {ribu(r[k])}
+                      </td>
+                    ))}
+                    <td className="px-3 py-1">
+                      <Cek ok={r.status_approve_kasir} />
+                    </td>
+                    <td className="px-3 py-1">
+                      <Cek ok={r.status_approve_kepala} />
+                    </td>
+                  </tr>
+                ))}
+                <tr className="font-bold border-t bg-emerald-50 text-slate-900">
+                  <td className="sticky left-0 px-3 py-1.5 bg-emerald-50">Total</td>
+                  {KOLOM_HARIAN.map(([k, , kelas]) => (
+                    <td key={k} className={`px-3 py-1.5 text-right ${kelas ?? ''}`}>
+                      {ribu(calculateTotals(item.data, k))}
+                    </td>
+                  ))}
+                  <td colSpan={2} />
+                </tr>
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
