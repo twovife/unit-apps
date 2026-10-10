@@ -5,38 +5,20 @@ import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { usePage } from '@inertiajs/react';
 import { FilterIcon } from 'lucide-react';
-import dayjs from 'dayjs';
-import TabelHarian from '@/Pages/Kasir/Rekap/Components/TabelHarian';
+import RencanaBersanding from './RencanaBersanding';
 import DrawerBukuDrop from '@/Pages/Kasir/Rekap/Components/DrawerBukuDrop';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
 
-// [kunci, label, kelas tambahan]. Kiri = hari D, kanan (garis tebal) =
-// pasangannya minggu depan: rencana yang diinput di D & drop yang jadi.
-const KOLOM = [
-  ['target', 'Target'],
-  ['storting', 'Storting'],
-  ['kasbon', 'Kasbon'],
-  ['masuk', 'Masuk'],
-  ['keluar', 'Keluar'],
-  ['p_rencana', 'Rencana', 'border-l-2 border-slate-300 font-semibold'],
-  ['p_drop', 'Drop'],
-  ['p_baru', 'Baru'],
-  ['p_lama', 'Lama'],
-  ['p_selisih', 'Selisih', 'font-semibold text-rose-700'],
-];
-
 /**
- * Rencana Drop sebulan, BERSANDINGAN: tiap tanggal D dengan pasangannya
- * (hari sama minggu depan, lompati libur). Tampilan seragam dengan Rekap 2
- * (TabelHarian). Rencana untuk D+7 diinput di D, jadi tanggal sesudah hari
- * ini belum punya isi apa pun -> kosongan.
+ * Rencana Drop sebulan, BERSANDINGAN per minggu (RencanaBersanding): tiap
+ * tanggal D dengan pasangannya (hari sama minggu depan, lompati libur).
  * Klik Storting -> buku angsuran D; klik Drop -> buku drop pasangannya.
  * Selisih = Rencana - Lama (drop dari pengajuan; drop langsung tidak direncanakan).
  */
 const Content = ({ urlLink, localState, triggeredData }) => {
   const { server_filter } = usePage().props;
-  // Server mengirim per tanggal: [baris kelompok...]; TabelHarian minta {tanggal, data}.
-  // useMemo: TabelHarian loncat ke hari ini tiap `data` berganti - jangan tiap render.
+  // Server mengirim per tanggal: [baris kelompok...]; RencanaBersanding minta {tanggal, data}.
+  // useMemo: minggu bawaan dipilih ulang tiap `data` berganti - jangan tiap render.
   const data = useMemo(
     () => (triggeredData ?? []).map((rows) => ({ tanggal: rows[0]?.tanggal, data: rows })),
     [triggeredData],
@@ -79,20 +61,8 @@ const Content = ({ urlLink, localState, triggeredData }) => {
           ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
         }}
       />
-      <TabelHarian
+      <RencanaBersanding
         data={data}
-        kolom={KOLOM}
-        batasIsi={dayjs().format('YYYY-MM-DD')}
-        judulPita={(item) => {
-          const p = item.data[0]?.pasangan;
-          return (
-            <>
-              {dayjs(item.tanggal).format('dddd, DD-MM-YYYY')}
-              <span className="mx-2 text-slate-500">→</span>
-              {p ? dayjs(p).format('dddd, DD-MM-YYYY') : '—'}
-            </>
-          );
-        }}
         klik={{
           storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'harian' }),
           p_drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'drop' }),

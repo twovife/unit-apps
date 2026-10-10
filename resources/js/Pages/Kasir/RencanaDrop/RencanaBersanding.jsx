@@ -1,0 +1,174 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
+
+// Kiri = hari D, kanan = pasangannya minggu depan. [kunci, label, kelas?]
+const KIRI = [
+  ['target', 'Target'],
+  ['storting', 'Storting'],
+  ['kasbon', 'Kasbon'],
+  ['masuk', 'Masuk'],
+  ['keluar', 'Keluar'],
+];
+const KANAN = [
+  ['p_rencana', 'Rencana', 'font-semibold'],
+  ['p_drop', 'Drop'],
+  ['p_baru', 'Baru'],
+  ['p_lama', 'Lama'],
+  ['p_selisih', 'Selisih', 'font-semibold text-rose-700'],
+];
+
+const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+// Senin minggu itu (dayjs: Minggu = 0).
+const seninDari = (t) => dayjs(t).subtract((dayjs(t).day() + 6) % 7, 'day').format('YYYY-MM-DD');
+
+/** Satu tabel kecil: judul tanggal sendiri, baris per kelompok, total hijau. */
+const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna }) => (
+  <div className="overflow-hidden bg-white border rounded-lg">
+    <div className={`px-3 py-1.5 text-xs font-semibold ${warna}`}>
+      {judul} · <span className="capitalize">{tanggal ? dayjs(tanggal).format('dddd, DD-MM-YYYY') : '—'}</span>
+    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs tabular-nums">
+        <thead className="bg-slate-100 text-slate-700">
+          <tr>
+            <th className="px-3 py-1.5 font-medium text-left">Kel</th>
+            {kolom.map(([k, label]) => (
+              <th key={k} className="px-3 py-1.5 font-medium text-right whitespace-nowrap">
+                {label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.grouping_id} className={`border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
+              <td className="px-3 py-1 font-medium">{r.kelompok}</td>
+              {kolom.map(([k, , kelas]) => {
+                const v = kosong ? 0 : r[k];
+                return (
+                  <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
+                    {klik[k] && Number(v) ? (
+                      <button
+                        type="button"
+                        onClick={() => klik[k](r)}
+                        className="text-sky-700 underline decoration-dotted hover:text-sky-900"
+                      >
+                        {ribu(v)}
+                      </button>
+                    ) : (
+                      ribu(v)
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold border-t bg-emerald-50 text-slate-900">
+            <td className="px-3 py-1.5">Total</td>
+            {kolom.map(([k, , kelas]) => (
+              <td key={k} className={`px-3 py-1.5 text-right ${kelas ?? ''}`}>
+                {ribu(kosong ? 0 : jumlah(rows, k))}
+              </td>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+);
+
+/**
+ * Rencana Drop bersanding, satu MINGGU per tampilan (chip minggu di atas).
+ * Tiap tanggal D = dua tabel: kiri kegiatan D, kanan pasangannya (hari sama
+ * minggu depan) dengan rencana yang diinput di D & drop yang jadi.
+ * Tanggal sesudah hari ini belum punya isi -> kosongan.
+ *
+ * - data: [{ tanggal, data: [baris] }] - baris membawa `pasangan`
+ * - klik: { kunci: (baris) => void }
+ */
+const RencanaBersanding = ({ data, klik }) => {
+  const hariIni = dayjs().format('YYYY-MM-DD');
+
+  const minggu = useMemo(() => {
+    const g = {};
+    data.forEach((d) => (g[seninDari(d.tanggal)] ??= []).push(d));
+    return Object.entries(g).map(([senin, hari]) => ({ senin, hari }));
+  }, [data]);
+
+  // Bawaan: minggu yang memuat hari ini, atau minggu terakhir yang sudah lewat.
+  const mingguAwal = () => {
+    const lewat = minggu.filter((m) => m.senin <= hariIni);
+    return (lewat[lewat.length - 1] ?? minggu[0])?.senin ?? null;
+  };
+  const [pilih, setPilih] = useState(mingguAwal);
+  useEffect(() => setPilih(mingguAwal()), [minggu]); // eslint-disable-line react-hooks/exhaustive-deps
+  const aktif = minggu.find((m) => m.senin === pilih) ?? minggu[0];
+
+  if (!aktif) return <div className="py-6 text-sm text-center text-slate-500">Belum ada data.</div>;
+
+  return (
+    <>
+      <p className="mb-1 text-xs text-slate-500">Pilih minggu</p>
+      <div className="flex gap-1 pb-1 mb-3 overflow-x-auto scrollbar-thin sm:flex-wrap sm:overflow-visible">
+        {minggu.map((m) => {
+          const awal = m.hari[0].tanggal;
+          const akhir = m.hari[m.hari.length - 1].tanggal;
+          const ini = awal <= hariIni && hariIni <= akhir;
+          return (
+            <button
+              key={m.senin}
+              type="button"
+              onClick={() => setPilih(m.senin)}
+              className={`shrink-0 h-7 px-2.5 text-xs rounded-md border tabular-nums whitespace-nowrap transition-colors ${
+                m.senin === aktif.senin
+                  ? 'bg-sky-600 border-sky-600 text-white font-semibold'
+                  : ini
+                    ? 'border-sky-500 text-sky-700 font-semibold bg-white hover:bg-sky-50'
+                    : awal > hariIni
+                      ? 'border-slate-200 text-slate-300 bg-white hover:bg-slate-50'
+                      : 'border-slate-300 text-slate-700 bg-white hover:bg-slate-100'
+              }`}
+            >
+              {dayjs(awal).format('D')}–{dayjs(akhir).format('D MMM')}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="space-y-4">
+        {aktif.hari.map((item) => {
+          const kosong = item.tanggal > hariIni;
+          const pasangan = item.data[0]?.pasangan;
+          return (
+            // Satu pasangan = dua tabel bersebelahan (HP: atas-bawah).
+            <div key={item.tanggal} className="grid gap-2 p-2 border rounded-xl bg-slate-50 lg:grid-cols-2">
+              <Sisi
+                judul="Hari pengajuan"
+                tanggal={item.tanggal}
+                rows={item.data}
+                kolom={KIRI}
+                kosong={kosong}
+                klik={klik}
+                warna={dayjs(item.tanggal).day() === 1 ? 'bg-rose-100 text-slate-800' : 'bg-slate-200 text-slate-800'}
+              />
+              <Sisi
+                judul="Hari drop"
+                tanggal={pasangan}
+                rows={item.data}
+                kolom={KANAN}
+                kosong={kosong}
+                klik={klik}
+                warna="bg-sky-100 text-sky-900"
+              />
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+};
+
+export default RencanaBersanding;

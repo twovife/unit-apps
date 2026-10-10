@@ -18,9 +18,8 @@ const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
  * - batasIsi: 'YYYY-MM-DD' - tanggal sesudahnya ditampilkan 0 (tabel kosongan)
  *   dan chip-nya pudar. Tanpa ini semua tanggal tampil apa adanya.
  * - ekstra: { kepala: [label], sel: (baris, tanggal, kosong) => [<td>] }
- * - judulPita: (item) => isi pita tanggal (bawaan: 'Senin, 01-10-2026')
  */
-const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null, judulPita = null }) => {
+const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null }) => {
   const kotak = useRef(null);
   const kepala = useRef(null);
   const deretChip = useRef(null);
@@ -89,8 +88,8 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
           <thead ref={kepala} className="sticky top-0 z-20 bg-slate-100 text-slate-700">
             <tr>
               <th className="sticky left-0 z-20 px-3 py-2 font-medium text-left bg-slate-100">Kelompok</th>
-              {kolom.map(([k, label, kelas]) => (
-                <th key={k} className={`px-3 py-2 font-medium text-right whitespace-nowrap ${kelas?.includes('border-l') ? 'border-l-2 border-slate-300' : ''}`}>
+              {kolom.map(([k, label]) => (
+                <th key={k} className="px-3 py-2 font-medium text-right whitespace-nowrap">
                   {label}
                 </th>
               ))}
@@ -124,7 +123,7 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                         dayjs(item.tanggal).day() === 1 ? 'bg-rose-100' : 'bg-slate-200'
                       }`}
                     >
-                      {judulPita ? judulPita(item) : dayjs(item.tanggal).format('dddd, DD-MM-YYYY')}
+                      {dayjs(item.tanggal).format('dddd, DD-MM-YYYY')}
                     </td>
                   </tr>
                   {item.data.map((r) => (
@@ -140,7 +139,7 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                               type="button"
                               onClick={() => klik[k]({ ...r, tanggal: item.tanggal })}
                               className="text-sky-700 underline decoration-dotted hover:text-sky-900"
-                              title={k.endsWith('drop') ? 'Buka buku drop, tanggal ini disorot' : 'Buka buku angsuran tanggal ini'}
+                              title={k === 'drop' ? 'Buka buku drop, tanggal ini disorot' : 'Buka buku angsuran tanggal ini'}
                             >
                               {ribu(r[k])}
                             </button>
