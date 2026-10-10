@@ -12,6 +12,7 @@ import DrawerDetailKelompok from './Components/DrawerDetailKelompok';
 import DrawerBukuAngsuran from './Components/DrawerBukuAngsuran';
 import DrawerBukuDrop from './Components/DrawerBukuDrop';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
+import DrawerAccKm from './Components/DrawerAccKm';
 import Action from './Components/Action';
 
 const RekapContent = ({
@@ -58,7 +59,8 @@ const RekapContent = ({
       /* tanpa storage: drawer tetap jalan, cuma tidak bertahan */
     }
   };
-  // jenis: 'storting' -> buku angsuran bulanan, 'harian' -> buku angsuran hari itu, 'drop' -> buku drop.
+  // jenis: 'storting' -> buku angsuran bulanan, 'harian' -> buku angsuran hari itu, 'drop' -> buku drop,
+  // 'acc' -> drawer ACC KM.
   const bukaBuku = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'storting' });
   const bukaDrop = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' });
 
@@ -178,6 +180,7 @@ const RekapContent = ({
             // Rekap 2: storting -> buku angsuran HARIAN (= mobile_apps.angsuran).
             onKlikStorting={(r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'harian' })}
             onKlikDrop={bukaDrop}
+            onAcc={(r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'acc' })}
             saldoAwalBulan={saldoAwalBulan}
           />
         )}
@@ -218,6 +221,11 @@ const RekapContent = ({
         onClosed={() => setBukuTarget(null)}
       />
       <DrawerAngsuran target={bukuTarget?.jenis === 'harian' ? bukuTarget : null} onClosed={() => setBukuTarget(null)} />
+      <DrawerAccKm
+        target={bukuTarget?.jenis === 'acc' ? bukuTarget : null}
+        server_filter={server_filter}
+        onClosed={() => setBukuTarget(null)}
+      />
     </>
   );
 };

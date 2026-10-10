@@ -30,20 +30,31 @@ const KOLOM_HARIAN = [
   ['saldo_ml', 'Saldo ML', 'font-semibold'],
 ];
 
-// Belum dicek: silang + tombol ke tempat ngeceknya.
-const Cek = ({ ok, href }) => (
+// Belum dicek: silang + tombol ke tempat ngeceknya (href = pindah halaman,
+// onClick = drawer).
+const Cek = ({ ok, href, onClick }) => (
   <div className="flex items-center justify-center gap-1.5">
     {ok ? (
       <CheckCircle className="w-4 h-4 text-green-500" />
     ) : (
       <>
         <XCircle className="w-4 h-4 text-red-500" />
-        <Link
-          href={href}
-          className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md text-sky-700 ring-1 ring-sky-300 bg-white hover:bg-sky-50 whitespace-nowrap"
-        >
-          Cek
-        </Link>
+        {onClick ? (
+          <button
+            type="button"
+            onClick={onClick}
+            className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md text-sky-700 ring-1 ring-sky-300 bg-white hover:bg-sky-50 whitespace-nowrap"
+          >
+            Cek
+          </button>
+        ) : (
+          <Link
+            href={href}
+            className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md text-sky-700 ring-1 ring-sky-300 bg-white hover:bg-sky-50 whitespace-nowrap"
+          >
+            Cek
+          </Link>
+        )}
       </>
     )}
   </div>
@@ -56,6 +67,7 @@ const TableRekap = ({
   datas,
   onKlikStorting = null,
   onKlikDrop = null,
+  onAcc = null,
 }) => {
   const [data, setData] = useState([]);
   const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
@@ -201,14 +213,9 @@ const TableRekap = ({
             <td key="staf" className="px-3 py-1">
               {!kosong && <Cek ok={r.status_approve_kasir} href={route('kasir.rekap.rekap_satu', { date: tanggal })} />}
             </td>,
-            // Cek Target = drawer ACC KM di Buku Transaksi (tanggal -> hari & bulan).
+            // Cek Target = drawer ACC KM (kelompok x hari x bulan tanggal ini).
             <td key="target" className="px-3 py-1">
-              {!kosong && (
-                <Cek
-                  ok={r.status_approve_kepala}
-                  href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: tanggal, acc: 1 })}
-                />
-              )}
+              {!kosong && <Cek ok={r.status_approve_kepala} onClick={() => onAcc?.({ ...r, tanggal })} />}
             </td>,
           ],
         }}

@@ -890,6 +890,8 @@ trait RekapTrait
       'server_filter' => [
         'date' => $transaction_date->format('Y-m-d'),
         'month' => $transaction_date->format('Y-m'),
+        // Dibaca Rencana/Approval di drawer ACC KM (alur baru vs lama).
+        'migrasi' => \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth),
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
