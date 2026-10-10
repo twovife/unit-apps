@@ -108,7 +108,8 @@ trait PinjamanTrait
       ->unique()
       ->flip();
 
-    $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer, $approvedRecapDates, $sudahDiajukanPenggantiIds) {
+    $bolehKoreksi = \App\Helpers\Gembok::bolehBuka(auth()->user());
+    $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer, $approvedRecapDates, $sudahDiajukanPenggantiIds, $bolehKoreksi) {
       $countPinjaman = $transactionManageCustomer->get($drop->transaction_manage_customer_id, collect())->count('id') + 1;
       $dropDateKey = $drop->drop_date ? Carbon::parse($drop->drop_date)->format('Y-m-d') : null;
       return [
@@ -136,7 +137,8 @@ trait PinjamanTrait
 
         // true = rekap harian tanggal drop ini sudah di-approve kepala,
         // sehingga Reset Status & Hapus Pinjaman harus dikunci di UI.
-        'recap_approved' => $dropDateKey ? $approvedRecapDates->has($dropDateKey) : false,
+        // can-edit / superuser boleh reset / hapus di hari terkunci (dibuka otomatis).
+        'recap_approved' => $dropDateKey && !$bolehKoreksi ? $approvedRecapDates->has($dropDateKey) : false,
 
         'nomor_pengajuan' => $drop->id,
         'nik' => $drop->customer->nik,
@@ -879,7 +881,9 @@ trait PinjamanTrait
         'month' => $transaction_date->format('Y-m'),
         'hari' => $hari,
         'tanggal' => $tanggalSeleksi,
-        'is_locked' => $isLocked,
+        // can-edit / superuser: tetap bisa mengubah - kunci dibuka otomatis.
+        'is_locked' => $isLocked && !\App\Helpers\Gembok::bolehBuka(auth()->user()),
+        'koreksi_kunci' => $isLocked && \App\Helpers\Gembok::bolehBuka(auth()->user()),
         'is_kepala_approved' => $isKepalaApproved,
         'is_libur' => !$hariKerjaTerpilih,
         'libur_alasan' => $hariKerjaTerpilih ? null : ($liburTerpilih?->keterangan ?? 'Hari libur'),

@@ -157,6 +157,34 @@ class Gembok
         });
     }
 
+    /**
+     * Koreksi oleh user can-edit / superuser di tanggal yang sudah dikunci:
+     * kunci tanggal itu dibuka OTOMATIS sebelum perubahan ditulis (mas
+     * 2026-10-10), tercatat di riwayat gembok dengan alasannya. Dikunci lagi
+     * satu per satu lewat Rekap 1. User lain tidak dibukakan - trigger DB
+     * tetap menolak. Tanggal sebelum migrasi tidak punya baris harian, jadi
+     * tetap beku.
+     *
+     * Dipanggil dari event model angsuran & pinjaman, jadi semua jalur tulis
+     * ikut. Berjalan di transaksi pemanggil: tulisnya gagal -> bukanya batal.
+     */
+    public static function bukaOtomatis($groupingId, $tanggal, string $alasan): void
+    {
+        $user = auth()->user();
+        if (!$groupingId || !$tanggal || !self::bolehBuka($user)) {
+            return;
+        }
+
+        $baris = TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId)
+            ->whereDate('date', \Carbon\Carbon::parse($tanggal)->toDateString())
+            ->whereNotNull('kasir_lock_at')
+            ->first();
+
+        if ($baris) {
+            self::buka($baris, $user, 'Dibuka otomatis: ' . $alasan);
+        }
+    }
+
     public static function bolehBuka($user): bool
     {
         if (!$user || !$user->employee) {

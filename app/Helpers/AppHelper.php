@@ -515,6 +515,11 @@ class AppHelper
     if (self::tanggalBeku($groupingId, $tanggal)) {
       return true;
     }
+    // can-edit / superuser boleh mengoreksi hari terkunci - kuncinya dibuka
+    // otomatis saat perubahan ditulis (Gembok::bukaOtomatis).
+    if (\App\Helpers\Gembok::bolehBuka(auth()->user())) {
+      return false;
+    }
 
     $hari = fn($q) => $q->where('transaction_loan_officer_grouping_id', $groupingId)
       ->whereDate('date', Carbon::parse($tanggal)->toDateString());

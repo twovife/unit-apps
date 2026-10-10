@@ -39,6 +39,12 @@ const DrawerAngsuran = ({ target, onClosed }) => {
               {f.tanggal} hari libur — tidak ada tarikan.
             </div>
           )}
+          {f?.koreksi_kunci && (
+            <div className="p-3 mb-3 text-sm border rounded-lg border-amber-300 bg-amber-50 text-amber-900">
+              <b>Tanggal {f.tanggal} sudah dikunci kasir.</b> Anda boleh mengoreksi — perubahan akan membuka kunci tanggal
+              ini otomatis (tercatat). Kunci lagi lewat Rekap 1.
+            </div>
+          )}
           {f?.is_locked && (
             <div className="p-3 mb-3 text-sm border rounded-lg border-slate-300 bg-slate-50 text-slate-700">
               <b>Tanggal {f.tanggal} sudah dikunci kasir.</b> Data bisa dilihat tapi tidak bisa diubah.

@@ -59,6 +59,26 @@ class TransactionLoan extends Model
   {
     parent::boot();
 
+    // Koreksi user can-edit di tanggal drop yang sudah dikunci -> tanggalnya
+    // dibuka otomatis (Gembok::bukaOtomatis). Hanya kolom yang menggeser
+    // angka - sama dengan trigger tl_kunci_before_update; tanggal lunas /
+    // keluar target otomatis tidak membuka apa pun.
+    static::creating(function (self $loan) {
+      \App\Helpers\Gembok::bukaOtomatis($loan->transaction_loan_officer_grouping_id, $loan->drop_date, 'pinjaman baru');
+    });
+    static::updating(function (self $loan) {
+      if (!$loan->isDirty(['status', 'nominal_drop', 'drop_date', 'transaction_loan_officer_grouping_id'])) {
+        return;
+      }
+      $aksi = sprintf('ubah pinjaman #%d (%s)', $loan->id, implode(', ', array_keys(array_intersect_key(
+        $loan->getDirty(), array_flip(['status', 'nominal_drop', 'drop_date', 'transaction_loan_officer_grouping_id'])))));
+      \App\Helpers\Gembok::bukaOtomatis($loan->getOriginal('transaction_loan_officer_grouping_id'), $loan->getOriginal('drop_date'), $aksi);
+      \App\Helpers\Gembok::bukaOtomatis($loan->transaction_loan_officer_grouping_id, $loan->drop_date, $aksi);
+    });
+    static::deleting(function (self $loan) {
+      \App\Helpers\Gembok::bukaOtomatis($loan->transaction_loan_officer_grouping_id, $loan->drop_date, 'hapus pinjaman #' . $loan->id);
+    });
+
     /**
      * SIKLUS rekening pada DROP baru (BUKAN topup — topup ditangani hook
      * `updating` di bawah -> 'pelunasan'). Prinsipnya: setiap input ulang

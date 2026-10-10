@@ -24,6 +24,12 @@ class TransactionLoanInstalment extends Model
   ];
 
 
+  private static function bukaKunci($groupingId, $tanggal, string $aksi, $nominal): void
+  {
+    \App\Helpers\Gembok::bukaOtomatis($groupingId, $tanggal,
+      sprintf('%s Rp %s', $aksi, number_format((int) $nominal, 0, ',', '.')));
+  }
+
   protected static function boot()
   {
     parent::boot();
@@ -33,6 +39,18 @@ class TransactionLoanInstalment extends Model
       if ($angsuran->nominal < 0) {
         throw new \DomainException('Nominal angsuran tidak boleh minus.');
       }
+      self::bukaKunci($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date, 'tambah angsuran', $angsuran->nominal);
+    });
+
+    // Koreksi user can-edit di tanggal terkunci -> tanggalnya dibuka otomatis
+    // (Gembok::bukaOtomatis). Tanggal lama & baru sama-sama.
+    static::updating(function (self $angsuran) {
+      self::bukaKunci($angsuran->getOriginal('transaction_loan_officer_grouping_id'), $angsuran->getOriginal('transaction_date'), 'ubah angsuran #' . $angsuran->id, $angsuran->getOriginal('nominal'));
+      self::bukaKunci($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date, 'ubah angsuran #' . $angsuran->id, $angsuran->nominal);
+    });
+
+    static::deleting(function (self $angsuran) {
+      self::bukaKunci($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date, 'hapus angsuran #' . $angsuran->id, $angsuran->nominal);
     });
 
     // F1: angsuran masuk/keluar -> status lunas induk dihitung ulang penuh dari
