@@ -16,11 +16,12 @@ const pad = (n) => String(n).padStart(2, '0');
  * Pemilih bulan bergaya sama dengan TanggalKerja - pengganti <input
  * type="month"> yang tampilannya tergantung browser (Firefox/Safari desktop
  * malah cuma kotak teks). onChange menerima { target: { name, value } },
- * value = 'YYYY-MM'. `max` ('YYYY-MM', opsional) mematikan bulan sesudahnya.
+ * value = 'YYYY-MM'. `min` / `max` ('YYYY-MM', opsional) mematikan bulan di luar rentangnya.
  */
-const PilihBulan = ({ name, value, onChange, disabled, max, placeholder = 'Pilih bulan', className }) => {
+const PilihBulan = ({ name, value, onChange, disabled, min, max, placeholder = 'Pilih bulan', className }) => {
   const sekarang = new Date();
   const [tahunBatas, bulanBatas] = max ? max.split('-').map(Number) : [Infinity, 12];
+  const [tahunMin, bulanMin] = min ? min.split('-').map(Number) : [-Infinity, 1];
   const tahunIni = sekarang.getFullYear();
   const [tahunNilai, bulanNilai] = value ? value.split('-').map(Number) : [];
 
@@ -56,7 +57,14 @@ const PilihBulan = ({ name, value, onChange, disabled, max, placeholder = 'Pilih
 
         <PopoverContent className="w-[18rem] p-3" align="start">
           <div className="flex items-center justify-between mb-2">
-            <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => setTahun(tahun - 1)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              disabled={tahun <= tahunMin}
+              onClick={() => setTahun(tahun - 1)}
+            >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-sm font-semibold tabular-nums">{tahun}</span>
@@ -75,7 +83,11 @@ const PilihBulan = ({ name, value, onChange, disabled, max, placeholder = 'Pilih
             {BULAN_PENDEK.map((label, i) => {
               const b = i + 1;
               const terpilih = tahun === tahunNilai && b === bulanNilai;
-              const lewatBatas = tahun > tahunBatas || (tahun === tahunBatas && b > bulanBatas);
+              const lewatBatas =
+                tahun > tahunBatas ||
+                (tahun === tahunBatas && b > bulanBatas) ||
+                tahun < tahunMin ||
+                (tahun === tahunMin && b < bulanMin);
               return (
                 <Button
                   key={label}

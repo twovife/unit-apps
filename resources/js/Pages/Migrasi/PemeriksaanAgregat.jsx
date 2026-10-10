@@ -1,4 +1,5 @@
 import Authenticated from "@/Layouts/AuthenticatedLayout";
+import PilihBulan from '@/Components/shadcn/PilihBulan';
 import React from "react";
 import { Head, router } from "@inertiajs/react";
 import {
@@ -9,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shadcn/ui/table";
-import { Input } from "@/shadcn/ui/input";
 import { Button } from "@/shadcn/ui/button";
 import { ShieldCheck, ShieldAlert, RefreshCw } from "lucide-react";
 import dayjs from "dayjs";
@@ -71,10 +71,9 @@ const PemeriksaanAgregat = ({ hasil, server_filter }) => {
               <label className="block mb-1 text-xs font-medium text-slate-600">
                 Periode
               </label>
-              <Input
-                type="month"
-                className="w-40"
-                defaultValue={dayjs(server_filter?.periode).format("YYYY-MM")}
+              <PilihBulan
+                className="w-44"
+                value={dayjs(server_filter?.periode).format("YYYY-MM")}
                 onChange={(e) => periksaUlang(`${e.target.value}-01`)}
               />
             </div>

@@ -1,4 +1,5 @@
 import Authenticated from "@/Layouts/AuthenticatedLayout";
+import PilihBulan from '@/Components/shadcn/PilihBulan';
 import React, { useMemo, useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import axios from "axios";
@@ -136,12 +137,11 @@ const MutasiNasabah = ({ kelompok = [], hari_opsi = [], riwayat = [], server_fil
           </div>
           <div>
             <label className="text-xs text-slate-500">Berlaku mulai</label>
-            <Input
-              type="month"
+            <PilihBulan
               value={bulan}
               min={bulanDepan}
               onChange={(e) => setBulan(e.target.value)}
-              className="mt-1 h-9"
+              className="mt-1"
             />
           </div>
           <Button onClick={cari} disabled={sibuk}>

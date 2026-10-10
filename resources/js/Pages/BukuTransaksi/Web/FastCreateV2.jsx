@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PilihBulan from '@/Components/shadcn/PilihBulan';
 import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Input } from '@/shadcn/ui/input';
 import InputLabel from '@/Components/InputLabel';
@@ -288,11 +289,7 @@ const FastCreateV2 = () => {
         >
           <div className="mb-3">
             <InputLabel value="Tanggal Awal" className="mb-1" />
-            <Input
-              type="month"
-              value={currentMonth}
-              onChange={(e) => setCurrentMonth(e.target.value)}
-            />
+            <PilihBulan value={currentMonth} onChange={(e) => setCurrentMonth(e.target.value)} />
           </div>
           <form className="mb-1" onSubmit={onNikSubmit}>
             <InputLabel value="NIK" className="mb-1" />

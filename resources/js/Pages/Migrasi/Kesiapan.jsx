@@ -1,8 +1,8 @@
 import Authenticated from '@/Layouts/AuthenticatedLayout';
+import PilihBulan from '@/Components/shadcn/PilihBulan';
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
-import { Input } from '@/shadcn/ui/input';
 import dayjs from 'dayjs';
 import ModalMigrasi from './Components/ModalMigrasi';
 
@@ -78,10 +78,9 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
           </div>
           <div>
             <label className="block mb-1 text-xs font-medium text-slate-600">Periode</label>
-            <Input
-              type="month"
-              className="w-40"
-              defaultValue={dayjs(server_filter?.periode).format('YYYY-MM')}
+            <PilihBulan
+              className="w-44"
+              value={dayjs(server_filter?.periode).format('YYYY-MM')}
               onChange={(e) => gantiPeriode(e.target.value)}
             />
           </div>

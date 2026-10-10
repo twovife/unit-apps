@@ -1,4 +1,5 @@
 import Authenticated from '@/Layouts/AuthenticatedLayout';
+import PilihBulan from '@/Components/shadcn/PilihBulan';
 import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 import EditableRow from '@/Pages/Administrasi/BatchInput/EditableRow';
@@ -377,12 +378,7 @@ const Index = () => {
             <label className="block mb-1 text-[10px] font-black text-gray-500 uppercase tracking-widest italic">
               2. Bulan Input
             </label>
-            <input
-              type="month"
-              value={monthInput}
-              onChange={(e) => setMonthInput(e.target.value)}
-              className="text-xs rounded-lg border-gray-200"
-            />
+            <PilihBulan value={monthInput} onChange={(e) => setMonthInput(e.target.value)} />
           </div>
           <div>
             <label className="block mb-1 text-[10px] font-black text-gray-500 uppercase tracking-widest italic">
