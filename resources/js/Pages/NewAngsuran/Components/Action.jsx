@@ -264,10 +264,10 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                   <FormatNumbering value={item.nominal} className="inline" />
                                 </TableCell>
                                 <TableCell className="px-1.5 py-1.5 truncate text-slate-700" title={item.mantri ?? ''}>
-                                  {item.mantri ?? '–'}
+                                  {namaPendek(item.mantri) || '–'}
                                 </TableCell>
                                 <TableCell className="px-1.5 py-1.5 truncate text-slate-500" title={item.user_input ?? ''}>
-                                  {item.user_input ?? '–'}
+                                  {namaPendek(item.user_input) || '–'}
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -448,6 +448,9 @@ const LoanDetail = ({ customerData }) => {
     </div>
   );
 };
+
+/** Nama karyawan dipendekkan ke 2 kata pertama (lengkapnya di title sel). */
+const namaPendek = (nama) => String(nama ?? '').trim().split(/\s+/).slice(0, 2).join(' ');
 
 /**
  * Rincian angsuran dikelompokkan per bulan (terbaru di atas, sama dengan urutan
