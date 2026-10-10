@@ -185,8 +185,10 @@ class ClosingHarianController extends Controller
                 $closing->loan_officer_grouping?->kelompok),
         ];
 
-        // Sampai BULAN DEPAN: saldo awal bulan depan (= akhir bulan ini) sudah
-        // tersedia sementara sejak sekarang, berubah tiap kunci (mas 2026-10-10).
+        // Sampai BULAN DEPAN: tiap tutup harian menghitung ulang bulan ini dan
+        // saldo awal bulan depan (= akhir bulan ini), jadi saldo awal bulan
+        // depan sudah ada sejak sekarang dan ikut bergerak tiap kunci
+        // (mas 2026-10-10). Tidak dihitung saat layar dibuka.
         $sampai = Carbon::now()->startOfMonth()->addMonthNoOverflow();
         for ($bulan = $periode->copy(); $bulan->lte($sampai); $bulan->addMonthNoOverflow()) {
             $this->segarkanHariBelumTerkunci($groupingId, $bulan);
