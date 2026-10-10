@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import FilterBar from '@/Components/FilterBar';
 import { usePage } from '@inertiajs/react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import AngsuranTable from './Components/AngsuranTable';
 import BukuStorting from './Components/BukuStorting';
 import { Button } from '@/shadcn/ui/button';
-import { FilterIcon } from 'lucide-react';
+import { BookOpen, FilterIcon } from 'lucide-react';
 import AngsuranTableMobile from './Components/AngsuranTableMobile';
 import { Input } from '@/shadcn/ui/input';
 import BukuStortingMobile from './Components/BukuStortingMobile';
@@ -28,6 +28,9 @@ const Angsuran = ({
   type = 'desktop',
 }) => {
   const { server_filter } = usePage().props;
+  const [stortingBuka, setStortingBuka] = useState(
+    () => new URLSearchParams(window.location.search).get('tab') === 'bukustorting',
+  );
 
   const canFilterUnit =
     server_filter.userAuthorized.canShowBranch ||
@@ -107,42 +110,38 @@ const Angsuran = ({
         </div>
       )}
       {type === 'mobile' && server_filter.is_libur ? null : (
-      <Tabs
-        // ?tab=bukustorting membuka tab Buku Storting langsung (link dari Kesiapan Migrasi).
-        defaultValue={new URLSearchParams(window.location.search).get('tab') === 'bukustorting' ? 'bukustorting' : 'bukuangsuran'}
-        className="w-full"
-      >
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="bukuangsuran">Buku Angsuran</TabsTrigger>
-            <TabsTrigger value="bukustorting">Buku Storting</TabsTrigger>
-          </TabsList>
+      <>
+        {/* Buku Storting dibuka sebagai drawer di atas buku angsuran (dulu
+            tab). Datanya sama dengan halaman ini - tidak ada muat tambahan.
+            ?tab=bukustorting (link dari Kesiapan Migrasi) membukanya langsung. */}
+        <div className="flex justify-end mb-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setStortingBuka(true)}>
+            <BookOpen className="h-3.5 w-3.5" />
+            Buku Storting
+          </Button>
         </div>
-        <TabsContent value="bukuangsuran">
-          {type === 'mobile' && (
-            <AngsuranTableMobile dateOfWeek={dateOfWeek} datas={datas} />
-          )}
-          {type === 'desktop' && (
-            <AngsuranTable dateOfWeek={dateOfWeek} datas={datas} />
-          )}
-        </TabsContent>
-        <TabsContent value="bukustorting">
-          {type === 'mobile' && (
-            <BukuStortingMobile
-              dateOfWeek={dateOfWeek}
-              datas={datas}
-              sirkulasi={sirkulasi}
-            />
-          )}
-          {type === 'desktop' && (
-            <BukuStorting
-              dateOfWeek={dateOfWeek}
-              datas={datas}
-              sirkulasi={sirkulasi}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+        {type === 'mobile' && <AngsuranTableMobile dateOfWeek={dateOfWeek} datas={datas} />}
+        {type === 'desktop' && <AngsuranTable dateOfWeek={dateOfWeek} datas={datas} />}
+
+        <Sheet open={stortingBuka} onOpenChange={setStortingBuka}>
+          <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-5xl lg:max-w-none">
+            <SheetHeader className="px-5 py-4 pr-14 border-b">
+              <SheetTitle>Buku Storting</SheetTitle>
+              <SheetDescription>
+                Kelompok {server_filter.kelompok}
+                {server_filter.hari ? ` · ${server_filter.hari}` : ''}
+                {server_filter.tanggal ? ` · ${server_filter.tanggal}` : server_filter.month ? ` · ${server_filter.month}` : ''}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="p-3">
+              {type === 'mobile' && (
+                <BukuStortingMobile dateOfWeek={dateOfWeek} datas={datas} sirkulasi={sirkulasi} />
+              )}
+              {type === 'desktop' && <BukuStorting dateOfWeek={dateOfWeek} datas={datas} sirkulasi={sirkulasi} />}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
       )}
     </>
   );
