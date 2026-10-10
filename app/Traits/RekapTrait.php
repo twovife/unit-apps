@@ -605,6 +605,15 @@ trait RekapTrait
         ->get();
     }
 
+    // Bulan DEPAN dibuka (mis. November saat masih Oktober): saldo awalnya =
+    // akhir bulan berjalan yang masih bergerak, jadi disusun ulang tiap dibuka
+    // - sementara, bukan menunggu bulannya tiba (mas 2026-10-10). Bulan
+    // berjalan & lampau tidak disentuh (disusun saat kunci kasir).
+    if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)
+      && $startDateofMonth === Carbon::now()->startOfMonth()->addMonthNoOverflow()->toDateString()) {
+      \App\Helpers\TutupBulanan::susun($groupingIds->all(), $startDateofMonth);
+    }
+
     // GERBANG alur baru: base grid harian (sirkulasi + saldo cm/mb/ml per hari)
     // ikut saldo awal baru. Untuk kantor migrasi diambil dari monthly_closings
     // awal_*, dipetakan ke nama kolom sirkulasi lama supaya sum() di grid tak

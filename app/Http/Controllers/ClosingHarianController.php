@@ -185,7 +185,10 @@ class ClosingHarianController extends Controller
                 $closing->loan_officer_grouping?->kelompok),
         ];
 
-        for ($bulan = $periode->copy(); $bulan->lte(Carbon::now()->startOfMonth()); $bulan->addMonthNoOverflow()) {
+        // Sampai BULAN DEPAN: saldo awal bulan depan (= akhir bulan ini) sudah
+        // tersedia sementara sejak sekarang, berubah tiap kunci (mas 2026-10-10).
+        $sampai = Carbon::now()->startOfMonth()->addMonthNoOverflow();
+        for ($bulan = $periode->copy(); $bulan->lte($sampai); $bulan->addMonthNoOverflow()) {
             $this->segarkanHariBelumTerkunci($groupingId, $bulan);
             TutupBulanan::susun([$groupingId], $bulan, true, $perbarui);
         }
