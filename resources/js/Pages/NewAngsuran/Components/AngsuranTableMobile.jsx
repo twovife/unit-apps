@@ -160,7 +160,8 @@ const AngsuranTableMobile = ({ datas }) => {
                 {Number(r.pemutihan_today) > 0 && ` · pemutihan ${rb(r.pemutihan_today)}`}
               </div>
               <div className={`${KECIL} text-right`}>{rb(r.pinjaman)}</div>
-              <div className={`${KECIL} text-right`}>
+              {/* Sisa tebal & lebih gelap: angka yang paling sering dilihat. */}
+              <div className={`${KECIL} text-right font-bold text-gray-800`}>
                 {r.lunas ? <span className="text-green-700">lunas</span> : rb(r.saldo)}
               </div>
             </button>
