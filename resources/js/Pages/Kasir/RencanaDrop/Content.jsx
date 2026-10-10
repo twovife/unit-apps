@@ -8,6 +8,7 @@ import { FilterIcon } from 'lucide-react';
 import RencanaBersanding from './RencanaBersanding';
 import DrawerBukuDrop from '@/Pages/Kasir/Rekap/Components/DrawerBukuDrop';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
+import DrawerAccKm from '@/Pages/Kasir/Rekap/Components/DrawerAccKm';
 
 /**
  * Rencana Drop sebulan, BERSANDINGAN per minggu (RencanaBersanding): tiap
@@ -68,9 +69,11 @@ const Content = ({ urlLink, localState, triggeredData }) => {
           p_storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'harian' }),
           p_drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'drop' }),
         }}
+        onAcc={(r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'acc' })}
       />
       <DrawerAngsuran target={target?.jenis === 'harian' ? target : null} onClosed={tutup} />
       <DrawerBukuDrop target={target?.jenis === 'drop' ? target : null} server_filter={server_filter} onClosed={tutup} />
+      <DrawerAccKm target={target?.jenis === 'acc' ? target : null} server_filter={server_filter} onClosed={tutup} />
     </>
   );
 };

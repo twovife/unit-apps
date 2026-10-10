@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { ArrowDown, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
-import { Link } from '@inertiajs/react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 
 // Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
@@ -36,9 +35,9 @@ const Panah = ({ ini, dulu }) =>
  * Satu tabel kecil: judul tanggal sendiri, baris per kelompok, total hijau.
  * banding: { kunciKanan: kunciKiri } -> panah naik/turun di kolom itu.
  * kolomKm: kolom "Cek KM" sesudah kolom terakhir (Rencana) - centang kalau hari
- * D sudah dicek KM, kalau belum silang + tombol ACC ke drawer ACC KM.
+ * D sudah dicek KM, kalau belum silang + tombol ACC (onAcc -> drawer ACC KM).
  */
-const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, kolomKm = false }) => (
+const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, kolomKm = false, onAcc = null }) => (
   <div className="overflow-hidden bg-white border rounded-lg">
     <div className={`px-3 py-1.5 text-xs font-semibold ${warna}`}>
       {judul} · <span className="capitalize">{tanggal ? dayjs(tanggal).format('dddd, DD-MM-YYYY') : '—'}</span>
@@ -88,13 +87,14 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                       ) : (
                         <>
                           <XCircle className="w-4 h-4 text-red-500" />
-                          <Link
-                            href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: r.tanggal, acc: 1 })}
+                          <button
+                            type="button"
+                            onClick={() => onAcc?.(r)}
                             title="Belum dicek KM. Klik untuk ACC KM."
                             className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md text-sky-700 ring-1 ring-sky-300 bg-white hover:bg-sky-50"
                           >
                             ACC
-                          </Link>
+                          </button>
                         </>
                       )}
                     </div>
@@ -129,8 +129,9 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
  *
  * - data: [{ tanggal, data: [baris] }] - baris membawa `pasangan`
  * - klik: { kunci: (baris) => void }
+ * - onAcc: (baris) => void - tombol ACC di kolom Cek KM
  */
-const RencanaBersanding = ({ data, klik }) => {
+const RencanaBersanding = ({ data, klik, onAcc }) => {
   const hariIni = dayjs().format('YYYY-MM-DD');
 
   const minggu = useMemo(() => {
@@ -195,6 +196,7 @@ const RencanaBersanding = ({ data, klik }) => {
                 klik={klik}
                 warna={dayjs(item.tanggal).day() === 1 ? 'bg-rose-100 text-slate-800' : 'bg-slate-200 text-slate-800'}
                 kolomKm
+                onAcc={onAcc}
               />
               <Sisi
                 judul="Hari drop"

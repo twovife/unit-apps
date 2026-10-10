@@ -122,7 +122,9 @@ trait RekapTrait
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
-        'branch_id' => $branch_id
+        'branch_id' => $branch_id,
+        // Dibaca Rencana/Approval di drawer ACC KM (alur baru vs lama).
+        'migrasi' => $migrasi,
       ]
     ];
   }
