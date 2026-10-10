@@ -41,7 +41,11 @@ const TableRekap = ({
   saldoAwalBulan,
   setTriggeredData,
   datas,
+  onKlikStorting = null,
+  onKlikDrop = null,
 }) => {
+  // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
+  const KLIK = { storting: onKlikStorting, drop: onKlikDrop };
   const [data, setData] = useState([]);
   const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
   // Baris saldo awal yang daftar pemutihannya sedang dibuka.
@@ -201,7 +205,18 @@ const TableRekap = ({
                     <td className="sticky left-0 px-3 py-1 font-medium bg-inherit">{r.kelompok}</td>
                     {KOLOM_HARIAN.map(([k, , kelas]) => (
                       <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
-                        {ribu(r[k])}
+                        {KLIK[k] && Number(r[k]) ? (
+                          <button
+                            type="button"
+                            onClick={() => KLIK[k]({ ...r, tanggal: item.tanggal })}
+                            className="text-sky-700 underline decoration-dotted hover:text-sky-900"
+                            title={k === 'drop' ? 'Buka buku drop, tanggal ini disorot' : 'Buka buku angsuran, tanggal ini disorot'}
+                          >
+                            {ribu(r[k])}
+                          </button>
+                        ) : (
+                          ribu(r[k])
+                        )}
                       </td>
                     ))}
                     <td className="px-3 py-1">

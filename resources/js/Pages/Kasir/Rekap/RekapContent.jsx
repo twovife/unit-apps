@@ -41,7 +41,7 @@ const RekapContent = ({
   const bacaBuku = () => {
     try {
       const v = JSON.parse(sessionStorage.getItem(KUNCI_BUKU));
-      return v && v.filter === server_filter.tanggal ? v.target : null;
+      return v && v.filter === (server_filter.tanggal ?? server_filter.month) ? v.target : null;
     } catch {
       return null;
     }
@@ -51,7 +51,7 @@ const RekapContent = ({
     setBukuTargetState(t);
     try {
       t
-        ? sessionStorage.setItem(KUNCI_BUKU, JSON.stringify({ filter: server_filter.tanggal, target: t }))
+        ? sessionStorage.setItem(KUNCI_BUKU, JSON.stringify({ filter: server_filter.tanggal ?? server_filter.month, target: t }))
         : sessionStorage.removeItem(KUNCI_BUKU);
     } catch {
       /* tanpa storage: drawer tetap jalan, cuma tidak bertahan */
@@ -174,6 +174,8 @@ const RekapContent = ({
             setOnShowModal={setOnShowModal}
             setTriggeredData={setTriggeredData}
             datas={datas}
+            onKlikStorting={bukaBuku}
+            onKlikDrop={bukaDrop}
             saldoAwalBulan={saldoAwalBulan}
           />
         )}
@@ -199,19 +201,20 @@ const RekapContent = ({
               onKlikDrop={bukaDrop}
               onClosed={() => setDetailKelompok(null)}
             />
-            <DrawerBukuAngsuran
-              target={bukuTarget?.jenis !== 'drop' ? bukuTarget : null}
-              server_filter={server_filter}
-              onClosed={() => setBukuTarget(null)}
-            />
-            <DrawerBukuDrop
-              target={bukuTarget?.jenis === 'drop' ? bukuTarget : null}
-              server_filter={server_filter}
-              onClosed={() => setBukuTarget(null)}
-            />
           </>
         )}
       </div>
+      {/* Drawer buku dari angka Storting / Drop (Rekap 1 & Rekap 2). */}
+      <DrawerBukuAngsuran
+        target={bukuTarget?.jenis !== 'drop' ? bukuTarget : null}
+        server_filter={server_filter}
+        onClosed={() => setBukuTarget(null)}
+      />
+      <DrawerBukuDrop
+        target={bukuTarget?.jenis === 'drop' ? bukuTarget : null}
+        server_filter={server_filter}
+        onClosed={() => setBukuTarget(null)}
+      />
     </>
   );
 };
