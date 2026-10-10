@@ -1,128 +1,93 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
+import FilterBar from '@/Components/FilterBar';
 import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Head, usePage } from '@inertiajs/react';
-import { FilterIcon, PlusCircle } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-import TableRekap from './Components/TableRekap';
+import { usePage } from '@inertiajs/react';
+import { FilterIcon } from 'lucide-react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import TableRekapKasir from './Components/TableRekapKasir';
-import TunaiMantri from './Components/TunaiMantri';
-import Action from './Components/Action';
 import TableRekapPerMantri from './Components/TableRekapPerMantri';
+import DrawerBukuDrop from './Components/DrawerBukuDrop';
+import DrawerAccKm from './Components/DrawerAccKm';
+import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
 
-const Permantri = ({
-  rekapData,
-  saldoAwalBulan,
-  auth,
-  urlLink,
-  localState,
-  title,
-}) => {
-
-  const [datas, setDatas] = useState([]);
+/**
+ * Rekap Mantri: satu kelompok sebulan. Tab Tunai Mantri dibuang (2026-10-10),
+ * sama dengan Rekap 1. Filter bulan + kelompok lewat FilterBar (global).
+ */
+const Permantri = ({ rekapData = [], saldoAwalBulan = [], urlLink, localState, title }) => {
   const { server_filter } = usePage().props;
-  useEffect(() => {
-    setDatas(rekapData);
-  }, [rekapData]);
+  // jenis: 'harian' -> buku angsuran hari itu, 'drop' -> buku drop, 'acc' -> ACC KM.
+  const [target, setTarget] = useState(null);
+  const buka = (jenis) => (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis });
+  const tutup = () => setTarget(null);
 
-  const [onShowModal, setOnShowModal] = useState(false);
-  const [triggeredData, setTriggeredData] = useState();
-
-  // Event handler function to set the "onCreateShow" state variable to true
-  const handleOnCreateShowOpen = (e) => {
-    setOnShowModal(true);
-  };
-
-  // Event handler function to set the "onCreateShow" state variable to false
-  const handleOnCreateShowClosed = (e) => {
-    setOnShowModal(false);
-    setTriggeredData();
-  };
-
-  const [nexOrPrevious, setNexOrPrevious] = useState(null);
-  const onNexOrPreviousTogler = (params) => {
-    setNexOrPrevious(params);
-  };
+  const bisaGantiUnit = server_filter.userAuthorized.canShowBranch || server_filter.userAuthorized.canShowGroupingBranch;
 
   return (
     <>
-      <Action
-        show={onShowModal}
-        onClosed={handleOnCreateShowClosed}
-        triggeredData={triggeredData}
-      />
-
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
-        <div className="flex-none shrink-0 whitespace-nowrap">
-          <h1 className="text-xl font-semibold tracking-tight ">{title}</h1>
-        </div>
-        <div className="items-center justify-end flex-auto hidden w-full lg:flex">
-          <SearchComponent
-            urlLink={urlLink}
-            localState={localState}
-            searchMonth={true}
-            searchKelompok={server_filter.userAuthorized.canShowKelompok}
-            searchBranch={server_filter.userAuthorized.canShowBranch}
-            searchGroupingBranch={
-              server_filter.userAuthorized.canShowGroupingBranch
-            }
-          ></SearchComponent>
-        </div>
-        <div className="flex justify-end gap-3 lg:hidden">
+        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+        {bisaGantiUnit && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline">
                 <FilterIcon className="h-4" />
-                Filter
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Unit</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent>
               <SearchComponent
                 urlLink={urlLink}
                 localState={localState}
-                searchMonth={true}
-                searchKelompok={server_filter.userAuthorized.canShowKelompok}
                 searchBranch={server_filter.userAuthorized.canShowBranch}
-                searchGroupingBranch={
-                  server_filter.userAuthorized.canShowGroupingBranch
-                }
+                searchGroupingBranch={server_filter.userAuthorized.canShowGroupingBranch}
               />
             </PopoverContent>
           </Popover>
-        </div>
+        )}
       </div>
-      <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-none">
-        {/* ?tab=rekapkasir membuka detail tunai langsung (dari tabel Global Rekap 1). */}
-        <Tabs
-          defaultValue={new URLSearchParams(window.location.search).get('tab') === 'rekapkasir' ? 'rekapkasir' : 'rekappimpinan'}
-          className="w-full"
-        >
-          <TabsList>
-            <TabsTrigger value="rekappimpinan">Rekap Mantri</TabsTrigger>
-            <TabsTrigger value="rekapkasir">Rekap Kasir Mantri</TabsTrigger>
-            <TabsTrigger value="tunaimantri">Tunai Mantri</TabsTrigger>
-          </TabsList>
+      <FilterBar
+        urlLink={urlLink}
+        storageKey={localState}
+        showHari={false}
+        showMonth
+        showKelompok={server_filter.userAuthorized.canShowKelompok}
+        extraParams={{
+          ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
+          ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
+        }}
+      />
 
-          <TabsContent value="rekappimpinan">
-            <TableRekapPerMantri
-              setOnShowModal={setOnShowModal}
-              setTriggeredData={setTriggeredData}
-              saldoAwalBulan={saldoAwalBulan}
-              datas={datas}
-            />
-          </TabsContent>
+      {/* ?tab=rekapkasir membuka detail tunai langsung (dari tabel Global Rekap 1). */}
+      <Tabs
+        defaultValue={new URLSearchParams(window.location.search).get('tab') === 'rekapkasir' ? 'rekapkasir' : 'rekapmantri'}
+        className="w-full"
+      >
+        <TabsList>
+          <TabsTrigger value="rekapmantri">Rekap Mantri</TabsTrigger>
+          <TabsTrigger value="rekapkasir">Rekap Kasir Mantri</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="rekapkasir">
-            <TableRekapKasir datas={datas} />
-          </TabsContent>
+        <TabsContent value="rekapmantri">
+          <TableRekapPerMantri
+            saldoAwalBulan={saldoAwalBulan}
+            datas={rekapData}
+            onKlikStorting={buka('harian')}
+            onKlikDrop={buka('drop')}
+            onAcc={buka('acc')}
+          />
+        </TabsContent>
 
-          <TabsContent value="tunaimantri">
-            <TunaiMantri datas={datas} />
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="rekapkasir">
+          <TableRekapKasir datas={rekapData} bacaSaja onKlikStorting={buka('harian')} onKlikDrop={buka('drop')} />
+        </TabsContent>
+      </Tabs>
+
+      <DrawerAngsuran target={target?.jenis === 'harian' ? target : null} onClosed={tutup} />
+      <DrawerBukuDrop target={target?.jenis === 'drop' ? target : null} server_filter={server_filter} onClosed={tutup} />
+      <DrawerAccKm target={target?.jenis === 'acc' ? target : null} server_filter={server_filter} onClosed={tutup} />
     </>
   );
 };

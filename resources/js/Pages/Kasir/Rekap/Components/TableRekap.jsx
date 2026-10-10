@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import TabelHarian, { ribu } from './TabelHarian';
 
 // [kunci, label, kelas tambahan]. Saldo ditebalkan - angka yang dicocokkan.
-const KOLOM_HARIAN = [
+export const KOLOM_HARIAN = [
   ['drop', 'Drop'],
   ['total_drop', 'Jml Drop'],
   ['storting', 'Storting'],
@@ -33,7 +33,7 @@ const KOLOM_HARIAN = [
 // Belum dicek: silang + tombol ke tempat ngeceknya (href = pindah halaman,
 // onClick = drawer).
 // otomatis: ACC KM dijalankan saat kunci kasir (belum dicek KM) -> kuning.
-const Cek = ({ ok, href, onClick, otomatis = false }) => (
+export const Cek = ({ ok, href, onClick, otomatis = false }) => (
   <div className="flex items-center justify-center gap-1.5">
     {ok ? (
       <CheckCircle

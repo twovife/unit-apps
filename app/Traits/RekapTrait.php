@@ -986,10 +986,19 @@ trait RekapTrait
       ->whereBetween('transaction_date', [$startDateofMonth, $endDateofMonth])
       ->get();
 
+    // Hanya yang sukses cair - sama dengan Rekap 1 & 2.
     $loan = TransactionLoan::select('transaction_loan_officer_grouping_id', 'drop_date', 'nominal_drop', 'pinjaman')
       ->where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+      ->where('status', 'success')
       ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
       ->get();
+
+    // Kantor migrasi: angsuran per ember (CM/MB/ML) dari HitungAgregat - ember
+    // menurut tanggal drop, sama dengan Rekap 2 & daily_closings - bukan kolom
+    // status angsuran lama.
+    $emberHarian = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)
+      ? \App\Helpers\HitungAgregat::harianBanyak([$transactionOffice->id], $startDateofMonth, $endDateofMonth)
+      : null;
 
     // Semua hari kerja (Kalender Kerja) + tanggal libur yang ternyata berisi
     // (drop, angsuran, isian kasir) - hari kerja kosong tetap tampil, libur
@@ -1022,7 +1031,11 @@ trait RekapTrait
     // dd($saldoAwalBulan);
     $alurBaruMantri = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth);
 
-    $data = $dates->map(function ($date) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transactionOffice, $startDateofMonth, $kelompok, $alurBaruMantri) {
+    $kmOtomatis = $alurBaruMantri
+      ? \App\Helpers\CeklistKepala::daftarOtomatis([$transactionOffice->id], $startDateofMonth, $endDateofMonth)
+      : [];
+
+    $data = $dates->map(function ($date) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transactionOffice, $startDateofMonth, $kelompok, $alurBaruMantri, $emberHarian, $kmOtomatis) {
       // 'tanggal' => $date,
 
       $transaction_date = Carbon::parse($date)->format('Y-m-d');
@@ -1045,6 +1058,15 @@ trait RekapTrait
 
       $angusuranExistingMl = $thisInstalment->where('status', 4)->sum('nominal') ?? 0;
       $totalStortingMl = $instalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 4)->sum('nominal') ?? 0;
+
+      if ($emberHarian !== null) {
+        $sampaiHariIni = collect($emberHarian)->filter(fn($v, $k) => explode('|', $k)[1] <= $transaction_date);
+        $hariIni = $emberHarian[$transactionOffice->id . '|' . $transaction_date] ?? \App\Helpers\HitungAgregat::kosong();
+        foreach (['cm' => 'Cm', 'mb' => 'Mb', 'ml' => 'Ml'] as $e => $E) {
+          ${'angusuranExisting' . $E} = $hariIni['storting_' . $e];
+          ${'totalStorting' . $E} = $sampaiHariIni->sum('storting_' . $e);
+        }
+      }
 
       $sirkulasi = $thisSirculation->sum('amount') ?? 0;
       $sirkulasiCm = $thisSirculation->sum('cm_amount') ?? 0;
@@ -1075,6 +1097,7 @@ trait RekapTrait
         'rekap_status' => $thisDailyRecap ? true : false,
         'status_approve_kepala' => $status_kepala,
         'status_approve_kasir' => $status_kasir,
+        'kepala_otomatis' => isset($kmOtomatis[$transactionOffice->id . '|' . $transaction_date]),
         'status_dayly_approval' => $status_kepala && $status_kasir,
         'transaction_date' => $transaction_date,
 
@@ -1114,6 +1137,9 @@ trait RekapTrait
       'saldoAwalBulan' => $saldoAwalBulan,
       'server_filter' => [
         'month' => $transaction_date->format('Y-m'),
+        // Dibaca drawer ACC KM (alur baru vs lama).
+        'migrasi' => $alurBaruMantri,
+        'kelompok' => $kelompok,
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
