@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 
@@ -35,10 +35,10 @@ const Panah = ({ ini, dulu }) =>
 /**
  * Satu tabel kecil: judul tanggal sendiri, baris per kelompok, total hijau.
  * banding: { kunciKanan: kunciKiri } -> panah naik/turun di kolom itu.
- * tandaKm: kunci kolom yang diberi tanda "ACC" kalau hari D belum dicek KM -
- * tombolnya ke drawer ACC KM.
+ * kolomKm: kolom "Cek KM" sesudah kolom terakhir (Rencana) - centang kalau hari
+ * D sudah dicek KM, kalau belum silang + tombol ACC ke drawer ACC KM.
  */
-const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, tandaKm = null }) => (
+const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, kolomKm = false }) => (
   <div className="overflow-hidden bg-white border rounded-lg">
     <div className={`px-3 py-1.5 text-xs font-semibold ${warna}`}>
       {judul} · <span className="capitalize">{tanggal ? dayjs(tanggal).format('dddd, DD-MM-YYYY') : '—'}</span>
@@ -53,6 +53,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                 {label}
               </th>
             ))}
+            {kolomKm && <th className="px-3 py-1.5 font-medium text-center whitespace-nowrap">Cek KM</th>}
           </tr>
         </thead>
         <tbody>
@@ -63,15 +64,6 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                 const v = kosong ? 0 : r[k];
                 return (
                   <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${kelas ?? ''}`}>
-                    {k === tandaKm && !kosong && !r.cek_km && (
-                      <Link
-                        href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: r.tanggal, acc: 1 })}
-                        title="Hari ini belum dicek KM. Klik untuk ACC KM."
-                        className="mr-1.5 px-1 py-0.5 text-[10px] font-semibold rounded bg-amber-100 text-amber-800 ring-1 ring-amber-300 hover:bg-amber-200"
-                      >
-                        ACC
-                      </Link>
-                    )}
                     {banding[k] && !kosong && <Panah ini={r[k]} dulu={r[banding[k]]} />}
                     {klik[k] && Number(v) ? (
                       <button
@@ -87,6 +79,28 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                   </td>
                 );
               })}
+              {kolomKm && (
+                <td className="px-3 py-1">
+                  {!kosong && (
+                    <div className="flex items-center justify-center gap-1.5">
+                      {r.cek_km ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <>
+                          <XCircle className="w-4 h-4 text-red-500" />
+                          <Link
+                            href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: r.tanggal, acc: 1 })}
+                            title="Belum dicek KM. Klik untuk ACC KM."
+                            className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md text-sky-700 ring-1 ring-sky-300 bg-white hover:bg-sky-50"
+                          >
+                            ACC
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -99,6 +113,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                 {ribu(kosong ? 0 : jumlah(rows, k))}
               </td>
             ))}
+            {kolomKm && <td />}
           </tr>
         </tfoot>
       </table>
@@ -179,8 +194,7 @@ const RencanaBersanding = ({ data, klik }) => {
                 kosong={kosong}
                 klik={klik}
                 warna={dayjs(item.tanggal).day() === 1 ? 'bg-rose-100 text-slate-800' : 'bg-slate-200 text-slate-800'}
-                // Hari D belum dicek KM -> tanda ACC di Target, tombol ke drawer ACC KM.
-                tandaKm="target"
+                kolomKm
               />
               <Sisi
                 judul="Hari drop"
