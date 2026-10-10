@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import Loading from '@/Components/Loading';
 import TanggalKerja from '@/Components/shadcn/TanggalKerja';
+import PilihBulan from '@/Components/shadcn/PilihBulan';
 
 /**
  * FilterBar - filter inline (bukan dropdown/popover) untuk halaman mobile.
@@ -279,16 +279,13 @@ const FilterBar = ({
       <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
         Bulan
       </Label>
-      <Input
-        type="month"
+      <PilihBulan
         name="month"
-        className="h-9 mt-1"
+        className="mt-1"
         disabled={loading}
         value={local.month ?? ''}
         onChange={(e) => {
           const value = e.target.value;
-          // Selalu pantulkan ketikan ke input; kirim query hanya saat nilainya
-          // sudah lengkap (YYYY-MM), supaya input setengah jadi tak memicu request.
           setLocal((prev) => ({ ...prev, month: value }));
           if (MONTH_PATTERN.test(value)) applyNow('month', value);
         }}
