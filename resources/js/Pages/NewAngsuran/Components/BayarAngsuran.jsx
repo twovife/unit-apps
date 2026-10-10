@@ -226,7 +226,8 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
           {errors.nominal && <p className="mt-1 text-xs text-red-600">{errors.nominal}</p>}
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        {/* Tombol nominal rata kanan: dekat jempol kanan di HP. */}
+        <div className="flex flex-wrap justify-end gap-1.5">
           {pilihan.map((nilai) => (
             <Button
               key={nilai}
@@ -242,7 +243,7 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <span className="text-xs text-muted-foreground">Tambah</span>
           {[1000, 5000, 10000].map((v) => (
             <Button key={v} type="button" variant="outline" size="xs" onClick={() => tambah(v)} disabled={terkunci}>
