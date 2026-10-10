@@ -637,6 +637,32 @@ trait RekapTrait
       })->sortBy('kelompok')->values();
     }
 
+    // Pemutihan bulan SEBELUMNYA per kelompok: sirkulasi bulan itu belum
+    // dikurangi pemutihan (aturan mas 2026-10-05), baru keluar di saldo awal
+    // bulan ini - jadi ditampilkan di samping sirkulasi awal, plus siapa saja.
+    $kelompokPerGrup = $transactionOffice->pluck('kelompok', 'id');
+    $bulanLalu = Carbon::parse($startDateofMonth)->subMonth();
+    $pemutihan = \App\Models\TransactionWhiteOff::with('transaction_loan.customer')
+      ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+      ->whereBetween('transaction_date', [$bulanLalu->toDateString(), $bulanLalu->copy()->endOfMonth()->toDateString()])
+      ->orderBy('transaction_date')
+      ->get()
+      ->groupBy(fn($w) => $kelompokPerGrup[$w->transaction_loan_officer_grouping_id] ?? null);
+    $saldoAwalBulan = $saldoAwalBulan->map(function ($r) use ($pemutihan) {
+      $daftar = $pemutihan->get($r['kelompok'], collect());
+      return $r + [
+        'pemutihan' => (int) $daftar->sum('nominal'),
+        'pemutihan_daftar' => $daftar->map(fn($w) => [
+          'tanggal' => Carbon::parse($w->transaction_date)->toDateString(),
+          'nama' => $w->transaction_loan?->customer?->nama,
+          'hari' => $w->transaction_loan?->hari,
+          'drop_date' => $w->transaction_loan?->drop_date ? Carbon::parse($w->transaction_loan->drop_date)->toDateString() : null,
+          'pinjaman' => (int) ($w->transaction_loan?->pinjaman ?? 0),
+          'nominal' => (int) $w->nominal,
+        ])->values(),
+      ];
+    })->values();
+
     // GERBANG alur baru: drop & storting (per ember cm/mb/ml) dari
     // HitungAgregat - sumber yang sama dengan daily_closings: hanya pinjaman
     // sukses, nasabah saldo_awal tidak dihitung sebagai drop, ember ikut
