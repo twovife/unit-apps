@@ -35,14 +35,16 @@ const GRUP = [
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
 // Warna blok kolom (selang-seling tetap: ganjil/genap beda tua): Kasbon s/d
-// Tunai kuning, Sisa Uang hijau.
+// Tunai kuning, Sisa Uang hijau, -/+ merah.
 const WARNA = {
   kuning: { sel: 'bg-amber-50 group-even:bg-amber-100 group-hover:bg-amber-200', kepala: 'bg-amber-200 text-amber-900', total: 'bg-amber-200' },
   hijau: { sel: 'bg-emerald-50 group-even:bg-emerald-100 group-hover:bg-emerald-200', kepala: 'bg-emerald-200 text-emerald-900', total: 'bg-emerald-200' },
+  merah: { sel: 'bg-rose-50 group-even:bg-rose-100 group-hover:bg-rose-200', kepala: 'bg-rose-200 text-rose-900', total: 'bg-rose-200' },
 };
 const WARNA_KOLOM = {
   ...Object.fromEntries(GRUP[0].kolom.map(([k]) => [k, WARNA.kuning])),
   sisa_uang: WARNA.hijau,
+  selisih_uang: WARNA.merah,
 };
 // Kolom yang bisa diisi kasir -> nama kolom di daily_closings.
 // Rekap 1: kasir mengisi kasbon, transport, SU Lapangan, setor transfer.
