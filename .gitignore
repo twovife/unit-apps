@@ -25,3 +25,6 @@ Homestead.json
 .dockerignore
 runtime/
 
+
+# Worktree lokal Claude Code - jangan ikut repo (bikin checkout CI gagal)
+.claude/worktrees/
