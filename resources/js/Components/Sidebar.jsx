@@ -223,6 +223,22 @@ export default function AppSidebar({ ...props }) {
           ]}
         />
 
+        {/* FASTCREATE (dulu Input Staf) - di atas Administrasi Cabang. */}
+        {unitAkses && (
+          <SidebarSubMenuSection
+            icon={BookOpen}
+            title="FASTCREATE"
+            items={[
+              {
+                id: 2,
+                title: 'Input Pinjaman',
+                link: route('transaction.fastcreate'),
+                active: route().current('transaction.fastcreate'),
+              },
+            ]}
+          />
+        )}
+
         {/* Group: Operasional Cabang */}
         {unitAkses && (
           <SidebarGroup className="pt-2">
@@ -246,20 +262,6 @@ export default function AppSidebar({ ...props }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-
-            {/* Submenu: Buku Transaksi */}
-            <SidebarSubMenuSection
-              icon={BookOpen}
-              title="Input Staf"
-              items={[
-                {
-                  id: 2,
-                  title: 'Input Pinjaman',
-                  link: route('transaction.fastcreate'),
-                  active: route().current('transaction.fastcreate'),
-                },
-              ]}
-            />
 
             {/* Submenu: Persiapan Migrasi Agregasi */}
             <SidebarSubMenuSection
