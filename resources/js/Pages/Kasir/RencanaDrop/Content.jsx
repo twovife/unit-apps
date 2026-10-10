@@ -13,7 +13,7 @@ import DrawerAccKm from '@/Pages/Kasir/Rekap/Components/DrawerAccKm';
 /**
  * Rencana Drop sebulan, BERSANDINGAN per minggu (RencanaBersanding): tiap
  * tanggal D dengan pasangannya (hari sama minggu depan, lompati libur).
- * Klik Storting -> buku angsuran; klik Drop / Rencana -> buku drop tanggal itu.
+ * Klik Storting -> buku angsuran D; klik Drop -> buku drop pasangannya.
  */
 const Content = ({ urlLink, localState, triggeredData }) => {
   const { server_filter } = usePage().props;
@@ -68,9 +68,6 @@ const Content = ({ urlLink, localState, triggeredData }) => {
           drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' }),
           p_storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'harian' }),
           p_drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'drop' }),
-          // Rencana = pengajuan ber-tanggal drop itu -> ada di buku drop tanggal yang sama.
-          rencana: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' }),
-          p_rencana: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'drop' }),
         }}
         onAcc={(r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'acc' })}
       />
