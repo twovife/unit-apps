@@ -284,9 +284,12 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                 <FormatNumbering value={bulan.total} className="inline" />
                               </TableCell>
                               {/* Sisa di bawah kolom Mantri. */}
-                              <TableCell className="px-1.5 py-2 tabular-nums whitespace-nowrap">
-                                <span className="font-normal opacity-70">Sisa </span>
-                                <FormatNumbering value={bulan.saldo} className="inline" />
+                              <TableCell className="py-2 pl-4 pr-1.5 tabular-nums whitespace-nowrap">
+                                {/* "Sisa" kiri, nominal kanan. */}
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-normal opacity-70">Sisa</span>
+                                  <FormatNumbering value={bulan.saldo} className="inline" />
+                                </div>
                               </TableCell>
                               <TableCell className="px-1.5 py-2" />
                             </TableRow>
