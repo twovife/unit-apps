@@ -132,16 +132,17 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [] }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false }) => {
   const { auth, server_filter } = usePage().props;
   // Sel isian aktif: kantor alur baru, baris harian, belum dikunci kasir.
   const bisaIsiSu = (r) =>
+    !bacaSaja &&
     server_filter?.migrasi && r.type == 'daily' && !r.status_approve_kasir && auth?.permissions?.includes('can-approve');
   const total = Object.fromEntries(
     KOLOM.map(([k]) => [k, datas.reduce((a, r) => a + (Number(r[k]) || 0), 0)]),
   );
 
-  const terkunci = server_filter?.migrasi ? datas.filter((r) => r.type == 'daily' && r.status_approve_kasir).length : 0;
+  const terkunci = server_filter?.migrasi && !bacaSaja ? datas.filter((r) => r.type == 'daily' && r.status_approve_kasir).length : 0;
 
   return (
     <>

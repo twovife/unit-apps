@@ -1,5 +1,6 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import FilterBar from '@/Components/FilterBar';
+import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Head, usePage } from '@inertiajs/react';
@@ -147,7 +148,17 @@ const RekapContent = ({
         {/* Rekap 1: tempat kasir mengecek & mengunci. Tab Tunai Mantri
             dibuang (2026-10-09); Titipan 9% pindah ke kolom terakhir. */}
         {show == 'rekapkasir' && (
-          <TableRekapKasir datas={datas} />
+          <>
+            <TableRekapKasir datas={datas} />
+            {/* Global: awal bulan s/d tanggal filter, per kelompok. */}
+            <h2 className="mt-6 mb-2 text-base font-semibold text-slate-900">
+              Global — 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}
+            </h2>
+            <TableRekapKasir
+              bacaSaja
+              datas={(datas ?? []).map((r) => ({ ...r.global, id: r.id, kelompok: r.kelompok, type: 'daily' }))}
+            />
+          </>
         )}
       </div>
     </>

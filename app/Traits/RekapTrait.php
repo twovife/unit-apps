@@ -190,7 +190,17 @@ trait RekapTrait
 
     $alurBaru = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $transaction_date);
 
-    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb, $alurBaru) {
+    // GLOBAL Rekap 1 = awal bulan s/d tanggal filter. Isian manual harian
+    // sebulan itu (kasbon, transport, setoran) per kelompok per tanggal.
+    $harianBulan = ($alurBaru
+      ? \App\Models\TransactionDailyClosing::query()
+      : TransactionDailyRecap::query())
+      ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+      ->whereBetween('date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
+      ->get()
+      ->groupBy('transaction_loan_officer_grouping_id');
+
+    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb, $alurBaru, $harianBulan) {
       $transaction_date = $transaction_date->format('Y-m-d');
       // dd($transaction_date);
       $thisLoan = $loan->get($item->id, collect());
@@ -236,8 +246,55 @@ trait RekapTrait
       $nominaldrop =  $thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop');
       $kredit = $nominaldrop + $transport;
 
+      // --- GLOBAL (awal bulan s/d tanggal filter), rumus sama dengan harian.
+      $hb = $harianBulan->get($item->id, collect())->keyBy(fn($r) => Carbon::parse($r->date)->toDateString());
+      $gDrop = (int) $thisLoan->sum('nominal_drop');
+      $gStorting = (int) $thisInstalment->sum('nominal');
+      $gKasbon = (int) $hb->sum('kasbon');
+      $gTransport = (int) $hb->sum('transport');
+      $gDo11 = (int) $thisLoan->groupBy(fn($l) => Carbon::parse($l->drop_date)->toDateString())
+        ->sum(fn($g) => round($g->sum('nominal_drop') * 0.11));
+      $gTitipan9 = (int) $thisLoan->groupBy(fn($l) => Carbon::parse($l->drop_date)->toDateString())
+        ->sum(fn($g) => round($g->sum('nominal_drop') * 0.09));
+      $gDebit = $gDo11 + $gKasbon + $gStorting;
+      $gKredit = $gDrop + $gTransport;
+      // Setoran per hari: isian kasir, atau angka bawaan dari angsuran hari itu.
+      $gSetoran = ['setoran_tunai' => 0, 'setoran_transfer' => 0, 'setoran_katrol' => 0];
+      if ($alurBaru) {
+        $perHari = $thisInstalment->groupBy(fn($a) => Carbon::parse($a->transaction_date)->toDateString());
+        $tanggalBerisi = $perHari->keys()->merge($hb->keys())->unique();
+        foreach ($tanggalBerisi as $t) {
+          $cara = $perHari->get($t, collect())
+            ->groupBy(fn($a) => \App\Helpers\HitungAgregat::caraBayar($a))
+            ->map(fn($g) => (int) $g->sum('nominal'));
+          $baris = $hb->get($t);
+          $gSetoran['setoran_tunai'] += (int) ($baris?->setoran_tunai ?? $cara->get('tunai', 0));
+          $gSetoran['setoran_transfer'] += (int) ($baris?->setoran_transfer ?? $cara->get('transfer', 0));
+          $gSetoran['setoran_katrol'] += (int) ($baris?->setoran_katrol ?? $cara->get('katrol', 0));
+        }
+      }
+      $global = [
+        'kasbon' => $gKasbon,
+        'storting' => $gStorting,
+        'do11' => $gDo11,
+        'debit' => $gDebit,
+        'drop' => $gDrop,
+        'transport' => $gTransport,
+        'kredit' => $gKredit,
+        'tunai' => $gDebit - $gKredit,
+        'titipan9' => $gTitipan9,
+        'sisa_uang' => $gTitipan9 + ($gDebit - $gKredit),
+        'su_lapangan' => $alurBaru ? $gSetoran['setoran_tunai'] : null,
+        'setoran_transfer' => $alurBaru ? $gSetoran['setoran_transfer'] : null,
+        'setoran_katrol' => $alurBaru ? $gSetoran['setoran_katrol'] : null,
+        'selisih_uang' => $alurBaru
+          ? array_sum($gSetoran) - ($gTitipan9 + ($gDebit - $gKredit))
+          : null,
+      ];
+
       return [
         'type' => 'daily',
+        'global' => $global,
         'kelompok' => $item->kelompok,
         'id' => $item->id,
         'tanggal' => $transaction_date,
