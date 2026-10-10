@@ -365,6 +365,34 @@ trait PinjamanTrait
         ->first();
     }
 
+    // Tutup Buku Storting alur baru (mas 2026-10-10): angka dari baris
+    // bulanan buku ini (awal/akhir per ember) + awal bulan depan; tanda
+    // tangan sekali (GembokBulanan::tutupBuku), lalu tombolnya hilang.
+    $tutupBuku = null;
+    if ($migrasi && $mc) {
+      $depan = \App\Models\TransactionMonthlyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
+        ->where('hari', $hari)
+        ->whereDate('periode', $transaction_start_date->copy()->addMonthNoOverflow()->format('Y-m-d'))
+        ->first();
+      $ember = fn($b, $awalan) => $b ? collect(\App\Helpers\Ember::SEMUA)->mapWithKeys(fn($e) => [$e => (int) $b->{$awalan . $e}])->all() : null;
+      $tutupBuku = [
+        'id' => $mc->id,
+        'awal' => $ember($mc, 'awal_'),
+        'akhir' => $ember($mc, 'akhir_'),
+        'depan' => $ember($depan, 'awal_'),
+        'awal_total' => (int) $mc->awal_total,
+        'akhir_total' => (int) $mc->akhir_total,
+        'drop' => (int) $mc->drop,
+        'storting' => (int) $mc->storting,
+        'pemutihan' => (int) $mc->pemutihan,
+        'hari_kerja' => (int) $mc->hari_kerja,
+        'hari_terkunci' => (int) $mc->hari_terkunci,
+        'ditutup_at' => $mc->kasir_lock_at?->toDateTimeString(),
+        'ditutup_oleh' => $mc->kasir?->nama_karyawan,
+        'halangan' => \App\Helpers\GembokBulanan::halanganTutupBuku($mc),
+      ];
+    }
+
     $loan = TransactionLoan::with(
       ['loan_instalment' => function ($item) {
         $item->orderByDesc('transaction_date');
@@ -575,6 +603,7 @@ trait PinjamanTrait
       'datas' => $mergedData,
       'dateOfWeek' => $dateOfWeek,
       'sirkulasi' => $transactionSirkulan,
+      'tutup_buku' => $tutupBuku,
       'server_filter' => [
         'closed_transaction' => $ClosedTransaction,
         'month' => $transaction_date->format('Y-m'),

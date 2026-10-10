@@ -69,6 +69,12 @@ class ClosingBulananController extends Controller
 
         $user = auth()->user();
 
+        // Sambungan antar bulan: awal bulan depan buku yang sama harus = akhir
+        // bulan ini. Belum ada barisnya (bulan depan belum disusun) -> null.
+        $depan = TransactionMonthlyClosing::whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereDate('periode', $periode->copy()->addMonthNoOverflow()->toDateString())
+            ->get()->keyBy(fn($b) => $b->transaction_loan_officer_grouping_id . '|' . $b->hari);
+
         // Tanda "diperbarui sesudah diteken": jejak 'perbarui' terakhir per baris.
         $perbarui = \App\Models\TransactionLockHistory::whereIn('transaction_monthly_closing_id', $baris->pluck('id'))
             ->where('aksi', \App\Models\TransactionLockHistory::AKSI_PERBARUI)
@@ -76,8 +82,14 @@ class ClosingBulananController extends Controller
             ->keyBy('transaction_monthly_closing_id');
 
         return Inertia::render('Closing/Bulanan', [
-            'datas' => $baris->map(function (TransactionMonthlyClosing $b) use ($perbarui) {
+            'datas' => $baris->map(function (TransactionMonthlyClosing $b) use ($perbarui, $depan) {
+                $ember = fn($awalan) => collect(\App\Helpers\Ember::SEMUA)->mapWithKeys(fn($e) => [$e => (int) $b->{$awalan . $e}])->all();
+                $bd = $depan->get($b->transaction_loan_officer_grouping_id . '|' . $b->hari);
+
                 return [
+                    'awal' => $ember('awal_'),
+                    'akhir' => $ember('akhir_'),
+                    'awal_depan' => $bd ? (int) $bd->awal_total : null,
                     'id' => $b->id,
                     'kelompok' => $b->loan_officer_grouping->kelompok ?? null,
                     'hari' => $b->hari,
@@ -90,6 +102,8 @@ class ClosingBulananController extends Controller
                     'storting' => (int) $b->storting,
                     'pemutihan' => (int) $b->pemutihan,
                     'saldo_masuk' => (int) $b->saldo_masuk,
+                    'mutasi_masuk' => (int) $b->mutasi_masuk,
+                    'mutasi_keluar' => (int) $b->mutasi_keluar,
                     // status pengesahan
                     'kepala_approval_at' => $b->kepala_approval_at?->toDateTimeString(),
                     'kepala_nama' => $b->kepala?->nama_karyawan,
@@ -97,7 +111,7 @@ class ClosingBulananController extends Controller
                     'kasir_nama' => $b->kasir?->nama_karyawan,
                     'terkunci' => $b->terkunci(),
                     'sudah_serah_terima' => $b->sudahDiserahTerimakan(),
-                    'halangan' => GembokBulanan::bolehKunci($b)['alasan'],
+                    'halangan' => GembokBulanan::halanganTutupBuku($b),
                     'diperbarui_at' => $perbarui->get($b->id)?->created_at?->toDateTimeString(),
                     'diperbarui_alasan' => $perbarui->get($b->id)?->alasan,
                 ];
@@ -109,33 +123,20 @@ class ClosingBulananController extends Controller
                 'berikutnya' => $periode->copy()->addMonthNoOverflow()->format('Y-m'),
                 'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
                 'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
-                'boleh_buka' => GembokBulanan::bolehBuka($user),
+                // Hari dibuka ulang yang belum dikunci lagi (menahan kelengkapan).
+                'hari_terbuka' => AgregasiScope::sudahMigrasi($scope->branch_id) ? \App\Helpers\Gembok::hariTerbuka($scope->branch_id) : [],
             ],
         ]);
     }
 
     /** Persetujuan kepala — sekadar tanda "sudah saya lihat". */
-    public function approveKepala(TransactionMonthlyClosing $closing)
-    {
-        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
-            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
-        }
-        $this->pastikanBerwenang();
-
-        if ($closing->terkunci()) {
-            return back()->withErrors('Baris ini sudah dikunci kasir.');
-        }
-
-        $closing->update([
-            'kepala_approval_at' => now(),
-            'kepala_approval_user' => auth()->user()->employee->id,
-        ]);
-
-        return back()->with('message', 'Disetujui kepala.');
-    }
-
-    /** Kunci kasir — hanya lolos kalau semua hari kerja bulan itu terkunci. */
-    public function kunci(TransactionMonthlyClosing $closing)
+    /**
+     * Tutup Buku Storting (kantor migrasi): tanda tangan bulanan satu langkah
+     * untuk satu buku (kelompok x hari x bulan). Dipanggil dari tombol Tutup
+     * Buku di buku storting; sesudahnya tombol hilang. Tombol ACC / Kunci /
+     * Buka di layar ini dicabut (2026-10-10) - layar ini laporan saja.
+     */
+    public function tutupBuku(TransactionMonthlyClosing $closing)
     {
         if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
             abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
@@ -143,30 +144,11 @@ class ClosingBulananController extends Controller
         $this->pastikanBerwenang();
 
         try {
-            GembokBulanan::kunci($closing, auth()->user()->employee->id);
+            GembokBulanan::tutupBuku($closing, auth()->user()->employee->id);
         } catch (\Throwable $e) {
-            return back()->withErrors($e->getMessage());
+            return back()->withErrors(AppHelper::pesanGagal($e, $e->getMessage()));
         }
 
-        return back()->with('message', 'Bulan terkunci.');
-    }
-
-    public function buka(Request $request, TransactionMonthlyClosing $closing)
-    {
-        if (!AppHelper::bolehAksesKelompok($closing->loan_officer_grouping)) {
-            abort(403, AppHelper::PESAN_BUKAN_WILAYAH);
-        }
-        $request->validate(['alasan' => ['required', 'string', 'min:5']], [
-            'alasan.required' => 'Alasan membuka kunci wajib diisi.',
-            'alasan.min' => 'Alasan terlalu pendek — tulis yang bisa dipahami orang lain nanti.',
-        ]);
-
-        try {
-            GembokBulanan::buka($closing, auth()->user(), $request->alasan);
-        } catch (\Throwable $e) {
-            return back()->withErrors($e->getMessage());
-        }
-
-        return back()->with('message', 'Kunci bulanan dibuka dan tercatat.');
+        return back()->with('message', 'Buku storting ditutup.');
     }
 }

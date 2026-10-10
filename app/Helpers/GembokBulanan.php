@@ -117,6 +117,39 @@ class GembokBulanan
     }
 
     /**
+     * Tutup Buku Storting (kantor migrasi, mas 2026-10-10): tanda tangan
+     * bulanan SATU langkah - persetujuan kepala + kunci sekaligus, atas nama
+     * yang menekan. Syaratnya sama dengan kunci (lengkap, serah terima bulan
+     * pertama), kecuali "kepala belum menyetujui" yang justru diisi di sini.
+     *
+     * @throws \RuntimeException
+     */
+    public static function tutupBuku(TransactionMonthlyClosing $baris, int $employeeId): TransactionMonthlyClosing
+    {
+        $alasan = self::halanganTutupBuku($baris);
+        if ($alasan) {
+            throw new \RuntimeException(implode(' ', $alasan));
+        }
+
+        return DB::transaction(function () use ($baris, $employeeId) {
+            if ($baris->kepala_approval_at === null) {
+                $baris->update(['kepala_approval_at' => now(), 'kepala_approval_user' => $employeeId]);
+            }
+
+            return self::kunci($baris->fresh(), $employeeId);
+        });
+    }
+
+    /** Alasan Tutup Buku belum bisa (kosong = boleh). */
+    public static function halanganTutupBuku(TransactionMonthlyClosing $baris): array
+    {
+        return array_values(array_filter(
+            self::bolehKunci($baris)['alasan'],
+            fn($a) => !str_starts_with($a, 'Kepala belum menyetujui')
+        ));
+    }
+
+    /**
      * Buka kunci bulanan. Aturannya sama dengan buka kunci harian
      * (Gembok::bolehBuka): superuser atau permission `can-edit`.
      *

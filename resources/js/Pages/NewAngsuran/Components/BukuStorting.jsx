@@ -14,8 +14,12 @@ import { Button } from '@/shadcn/ui/button';
 import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 import ApprovalAkhir from './ApprovalAkhir';
+import TutupBukuBaru from './TutupBukuBaru';
+import { usePage } from '@inertiajs/react';
 
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
+  // Kantor migrasi: tutup buku = tanda tangan baris bulanan (sekali).
+  const { tutup_buku: tb, server_filter } = usePage().props;
   const [data, setData] = useState([]);
   const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
     ml: {
@@ -249,17 +253,32 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
       <div className="flex items-center justify-end gap-3 mt-6">
         <div>Tutup Buku Storting</div>
         <div>
-          <Button onClick={onShowApproval} variant="green" size="sm">
-            Tutup Buku
-          </Button>
+          {tb?.ditutup_at ? (
+            // Sudah ditutup: tombol hilang, tinggal keterangan (klik untuk lihat angkanya).
+            <button
+              type="button"
+              onClick={onShowApproval}
+              className="px-2 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-800 ring-1 ring-emerald-300"
+            >
+              Ditutup{tb.ditutup_oleh ? ` · ${tb.ditutup_oleh}` : ''} · {dayjs(tb.ditutup_at).format('DD-MM-YY')}
+            </button>
+          ) : (
+            <Button onClick={onShowApproval} variant="green" size="sm">
+              Tutup Buku
+            </Button>
+          )}
         </div>
       </div>
 
-      <ApprovalAkhir
-        show={showApproval}
-        onClosed={onClosedShowApproval}
-        datas={sirkulasiAkhir}
-      />
+      {tb ? (
+        <TutupBukuBaru tb={tb} month={server_filter.month} show={showApproval} onClosed={onClosedShowApproval} />
+      ) : (
+        <ApprovalAkhir
+          show={showApproval}
+          onClosed={onClosedShowApproval}
+          datas={sirkulasiAkhir}
+        />
+      )}
       <Action
         datas={data}
         show={show}

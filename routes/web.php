@@ -162,9 +162,8 @@ Route::middleware('auth')->group(function () {
   Route::controller(\App\Http\Controllers\ClosingBulananController::class)
     ->prefix('closing/bulanan')->name('closing.bulanan.')->group(function () {
       Route::get('/', 'index')->name('index');
-      Route::post('/{closing}/approve-kepala', 'approveKepala')->name('approve_kepala');
-      Route::post('/{closing}/kunci', 'kunci')->name('kunci');
-      Route::post('/{closing}/buka', 'buka')->name('buka');
+      // Tutup Buku Storting (satu langkah); ACC / Kunci / Buka bulanan dicabut.
+      Route::post('/{closing}/tutup-buku', 'tutupBuku')->name('tutup_buku');
     });
 
   Route::prefix('kasir')->name('kasir.')->group(function () {
