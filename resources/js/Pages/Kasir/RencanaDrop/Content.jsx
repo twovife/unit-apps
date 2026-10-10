@@ -65,6 +65,8 @@ const Content = ({ urlLink, localState, triggeredData }) => {
         data={data}
         klik={{
           storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'harian' }),
+          drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' }),
+          p_storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'harian' }),
           p_drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'drop' }),
         }}
       />

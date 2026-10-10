@@ -2,21 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 
-// Kiri = hari D, kanan = pasangannya minggu depan. [kunci, label, kelas?]
-const KIRI = [
-  ['target', 'Target'],
-  ['storting', 'Storting'],
+// Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
+// sisi kanan berawalan p_). [kunci, label, kelas?]
+const KOLOM = [
   ['kasbon', 'Kasbon'],
+  ['target', 'Target'],
   ['masuk', 'Masuk'],
   ['keluar', 'Keluar'],
+  ['storting', 'Storting'],
+  ['drop', 'Drop'],
+  ['baru', 'Baru'],
+  ['lama', 'Lama'],
+  ['rencana', 'Rencana', 'font-semibold'],
+  ['selisih', 'Selisih', 'font-semibold text-rose-700'],
 ];
-const KANAN = [
-  ['p_rencana', 'Rencana', 'font-semibold'],
-  ['p_drop', 'Drop'],
-  ['p_baru', 'Baru'],
-  ['p_lama', 'Lama'],
-  ['p_selisih', 'Selisih', 'font-semibold text-rose-700'],
-];
+const KIRI = KOLOM;
+const KANAN = KOLOM.map(([k, ...rest]) => [`p_${k}`, ...rest]);
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Senin minggu itu (dayjs: Minggu = 0).
