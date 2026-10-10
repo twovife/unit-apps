@@ -120,7 +120,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
       <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-2xl">
         <Loading show={processing} />
         <SheetHeader className="px-5 py-4 pr-12 border-b">
-          <SheetTitle>Approval Akhir Bulan</SheetTitle>
+          <SheetTitle>Tutup Buku Storting</SheetTitle>
           <SheetDescription>
             Sirkulasi awal &amp; akhir bulan ini, lalu saldo awal bulan depan per ember — diambil dari saldo akhir
             dengan ember bergeser satu tingkat. Semua angka hasil hitung, tidak bisa diubah.
@@ -189,7 +189,7 @@ const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
           </label>
 
           <Button type="submit" className="w-full" disabled={processing}>
-            Simpan approval akhir
+            Simpan tutup buku
           </Button>
         </form>
       </SheetContent>

@@ -9,7 +9,7 @@ const jumlah = (rows, key) => rows.reduce((t, r) => t + (Number(r[key]) || 0), 0
 const KOLOM = 'grid grid-cols-[1fr_5rem_4.5rem] gap-x-2 items-center px-2 tabular-nums';
 
 // Buku storting per hari ini: storting (angsuran masuk) dan MD (pemutihan) pada
-// tanggal terpilih, per bulan drop. Tombol Approval Akhir Bulan sengaja tidak
+// tanggal terpilih, per bulan drop. Tombol Tutup Buku Storting sengaja tidak
 // ada di versi mobile: komponen ini tidak menghitung saldo, sehingga approval dari
 // sini mengirim saldo awal bulan depan = 0.
 const BukuStortingMobile = ({ datas }) => {

@@ -247,10 +247,10 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
         </TableFooter>
       </Table>
       <div className="flex items-center justify-end gap-3 mt-6">
-        <div>Approval Akhir Bulan</div>
+        <div>Tutup Buku Storting</div>
         <div>
           <Button onClick={onShowApproval} variant="green" size="sm">
-            Approval
+            Tutup Buku
           </Button>
         </div>
       </div>
