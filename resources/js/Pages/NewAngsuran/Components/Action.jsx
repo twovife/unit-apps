@@ -210,21 +210,24 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   </div>
                 ))}
 
-                {/* table-fixed + lebar kolom: muat di modal HP tanpa geser
-                    horizontal; Mantri mengambil sisa ruang dan dipotong. */}
+                {/* Tabel rincian: per bulan (terbaru di atas), baris ringkasan
+                    bulan di bawahnya - Sisa sejajar kolom Mantri. table-fixed
+                    supaya muat di modal HP; nama dipotong, lengkapnya di title. */}
+                <div className="overflow-hidden border rounded-md border-slate-200">
                 <Table className="text-xs table-fixed">
                   <colgroup>
                     <col className="w-[3.4rem]" />
                     <col className="w-[2.9rem]" />
-                    <col className="w-[4.8rem]" />
+                    <col className="w-[5rem]" />
+                    <col />
                     <col />
                   </colgroup>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      {['', 'Tgl', 'Angsuran', 'Mantri'].map((judul) => (
+                  <TableHeader className="bg-slate-100">
+                    <TableRow className="hover:bg-slate-100">
+                      {['', 'Tgl', 'Angsuran', 'Mantri', 'Input'].map((judul) => (
                         <TableHead
                           key={judul}
-                          className={`h-8 px-1 text-[10px] font-semibold tracking-wide uppercase ${judul === 'Angsuran' ? 'text-right' : 'text-left'}`}
+                          className={`h-8 px-1.5 text-[10px] font-semibold tracking-wide uppercase text-slate-600 ${judul === 'Angsuran' ? 'text-right' : 'text-left'}`}
                         >
                           {judul}
                         </TableHead>
@@ -234,11 +237,11 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   <TableBody>
                     {Object.keys(customerData).length !== 0 ? (
                       rincianPerBulan(instalment, customerData.pinjaman, koreksi, customerData.tanggal_drop).map(
-                        (bulan, i, arr) => (
+                        (bulan) => (
                           <React.Fragment key={bulan.kunci}>
                             {bulan.rows.map((item) => (
-                              <TableRow key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                <TableCell className="px-1 py-1.5">
+                              <TableRow key={item.id} className="border-b border-slate-100 even:bg-slate-50/60 hover:bg-sky-50">
+                                <TableCell className="px-1.5 py-1.5">
                                   {item.pelunasan ? (
                                     <span className="text-[10px] font-semibold text-muted-foreground">Pelunasan</span>
                                   ) : (
@@ -247,11 +250,11 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                     )
                                   )}
                                 </TableCell>
-                                <TableCell className="px-1 py-1.5 text-muted-foreground whitespace-nowrap">
+                                <TableCell className="px-1.5 py-1.5 tabular-nums text-slate-600 whitespace-nowrap">
                                   {dayjs(item.transaction_date).format('DD-MM')}
                                 </TableCell>
                                 <TableCell
-                                  className={`px-1 py-1.5 text-right font-medium tabular-nums whitespace-nowrap ${
+                                  className={`px-1.5 py-1.5 text-right font-medium tabular-nums whitespace-nowrap ${
                                     item.danatitipan == 1 ? 'text-red-600 font-semibold' : ''
                                   }`}
                                 >
@@ -260,47 +263,50 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                   )}
                                   <FormatNumbering value={item.nominal} className="inline" />
                                 </TableCell>
-                                <TableCell className="px-1 py-1.5 truncate text-muted-foreground">{item.mantri}</TableCell>
+                                <TableCell className="px-1.5 py-1.5 truncate text-slate-700" title={item.mantri ?? ''}>
+                                  {item.mantri ?? '–'}
+                                </TableCell>
+                                <TableCell className="px-1.5 py-1.5 truncate text-slate-500" title={item.user_input ?? ''}>
+                                  {item.user_input ?? '–'}
+                                </TableCell>
                               </TableRow>
                             ))}
-                            <TableRow className={`border-0 font-semibold ${WARNA_EMBER[bulan.kategori]}`}>
-                              <TableCell colSpan={2} className="px-1 py-2">
+                            <TableRow className={`border-b-2 border-slate-300 font-semibold ${WARNA_EMBER[bulan.kategori]}`}>
+                              <TableCell colSpan={2} className="px-1.5 py-2">
                                 <div className="truncate">
                                   {bulan.nama}
                                   <span className="font-normal opacity-70"> · {bulan.kategori.toUpperCase()}</span>
                                 </div>
                               </TableCell>
-                              <TableCell className="px-1 py-2 text-right tabular-nums whitespace-nowrap">
+                              <TableCell className="px-1.5 py-2 text-right tabular-nums whitespace-nowrap">
                                 <FormatNumbering value={bulan.total} className="inline" />
                               </TableCell>
-                              <TableCell className="px-1 py-2 text-right tabular-nums whitespace-nowrap">
+                              {/* Sisa di bawah kolom Mantri. */}
+                              <TableCell className="px-1.5 py-2 tabular-nums whitespace-nowrap">
                                 <span className="font-normal opacity-70">Sisa </span>
                                 <FormatNumbering value={bulan.saldo} className="inline" />
                               </TableCell>
+                              <TableCell className="px-1.5 py-2" />
                             </TableRow>
-                            {i < arr.length - 1 && (
-                              <TableRow className="border-0 hover:bg-transparent">
-                                <TableCell colSpan={4} className="h-3 p-0" />
-                              </TableRow>
-                            )}
                           </React.Fragment>
                         ),
                       )
                     ) : erorAxios ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="font-semibold text-red-500">
+                        <TableCell colSpan={5} className="font-semibold text-red-500">
                           TERJADI KESALAHAN SAAT PENGAMBILAN DATA, MOHON REFRESH BROWSER
                         </TableCell>
                       </TableRow>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-muted-foreground">
+                        <TableCell colSpan={5} className="text-muted-foreground">
                           Menunggu data . . .
                         </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           </div>

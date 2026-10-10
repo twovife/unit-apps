@@ -1229,6 +1229,7 @@ class TransactionLoanController extends Controller
         'is_transfer' => (bool) $instalment->is_transfer,
         'pelunasan' => (bool) $instalment->settled_by_loan_id,
         'mantri' => $instalment->usermantri?->nama_karyawan,
+        'user_input' => $instalment->userinput?->nama_karyawan,
         'saldo' => $saldoBefore
       ];
     });
