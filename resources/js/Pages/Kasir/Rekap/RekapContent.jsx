@@ -153,8 +153,7 @@ const RekapContent = ({
         )}
       </div>
       {(show == 'rekapkasir' || show == 'rekap2') && (
-        // Satu field saja - di desktop tidak perlu selebar layar.
-        <div className="mb-3 lg:max-w-sm">
+        <div className="mb-3">
           <FilterBar
             urlLink={urlLink}
             storageKey={localState}
