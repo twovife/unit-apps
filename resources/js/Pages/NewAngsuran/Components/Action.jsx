@@ -29,7 +29,7 @@ import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
 import { Toaster } from '@/shadcn/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import { Copy, CircleX } from 'lucide-react';
+import { Copy, CircleX, Lock } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import Pengajuan from './Pengajuan';
 import Loading from '@/Components/Loading';
@@ -247,9 +247,15 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                   {item.pelunasan ? (
                                     <span className="text-[10px] font-semibold text-muted-foreground">Pelunasan</span>
                                   ) : (
-                                    (!closed_transaction || closed_transaction <= item.transaction_date) && (
+                                    (!closed_transaction || closed_transaction <= item.transaction_date) &&
+                                    (item.terkunci ? (
+                                      // Tanggal terkunci kasir / beku: tidak bisa dihapus.
+                                      <span title="Tanggal ini sudah dikunci" className="inline-flex text-slate-400">
+                                        <Lock className="w-3.5 h-3.5" aria-label="terkunci" />
+                                      </span>
+                                    ) : (
                                       <DeleteAngsuran id={item.id} tanggal={item.transaction_date} nominal={item.nominal} />
-                                    )
+                                    ))
                                   )}
                                 </TableCell>
                                 <TableCell className="px-1.5 py-1.5 tabular-nums text-slate-600 whitespace-nowrap">

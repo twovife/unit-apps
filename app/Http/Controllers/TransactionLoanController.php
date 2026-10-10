@@ -1198,7 +1198,19 @@ class TransactionLoanController extends Controller
     ];
 
     $saldo = $loan->pinjaman - $loan->loan_instalment->sum('nominal');
-    $instalment = $loan->loan_instalment->map(function ($instalment) use (&$saldo) {
+    // Tanggal angsuran yang terkunci kasir / beku (sebelum migrasi) - tombol
+    // hapus disembunyikan di layar. can-edit / superuser tetap boleh (kunci
+    // dibuka otomatis), kecuali beku.
+    $bolehKoreksi = \App\Helpers\Gembok::bolehBuka(auth()->user());
+    $tglKunci = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $loan->loan_instalment->pluck('transaction_loan_officer_grouping_id')->unique())
+      ->whereIn('date', $loan->loan_instalment->pluck('transaction_date')->unique())
+      ->whereNotNull('kasir_lock_at')
+      ->get(['transaction_loan_officer_grouping_id', 'date'])
+      ->map(fn($c) => $c->transaction_loan_officer_grouping_id . '|' . $c->date->toDateString())
+      ->flip();
+    $terkunci = fn($i) => AppHelper::tanggalBeku($i->transaction_loan_officer_grouping_id, $i->transaction_date)
+      || (!$bolehKoreksi && $tglKunci->has($i->transaction_loan_officer_grouping_id . '|' . \Carbon\Carbon::parse($i->transaction_date)->toDateString()));
+    $instalment = $loan->loan_instalment->map(function ($instalment) use (&$saldo, $terkunci) {
       $saldoBefore = $saldo;
       $saldo += $instalment->nominal;
       return [
@@ -1211,6 +1223,7 @@ class TransactionLoanController extends Controller
         'pelunasan' => (bool) $instalment->settled_by_loan_id,
         'mantri' => $instalment->usermantri?->nama_karyawan,
         'user_input' => $instalment->userinput?->nama_karyawan,
+        'terkunci' => $terkunci($instalment),
         'saldo' => $saldoBefore
       ];
     });
@@ -1470,7 +1483,7 @@ class TransactionLoanController extends Controller
         'user_id' => auth()->id(),
         'line' => $e->getLine(),
       ]);
-      return redirect()->back()->withErrors('Data gagal dihapus: ' . $e->getMessage());
+      return redirect()->back()->withErrors(AppHelper::pesanGagal($e, 'Data gagal dihapus. Ulangi / hubungi IT.'));
     }
     return redirect()->back()->with('message', 'data berhasil diubah');
   }
