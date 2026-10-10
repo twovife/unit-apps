@@ -403,8 +403,10 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                   );
                 })}
 
-                <TableRow className="font-semibold border-b-2 border-b-slate-300 bg-slate-100 hover:bg-slate-100">
-                  <TableCell colSpan={4} className={`px-2 py-2 text-slate-700 truncate bg-slate-100 ${isMobile ? "" : "sticky left-0 z-[1] shadow-[inset_-1px_0_0_#cbd5e1]"}`}>
+                {/* Baris total: hijau muda (sama dengan buku HP); sel angka hijau
+                    lebih pudar supaya kontras, sisa sangat tebal. */}
+                <TableRow className="font-semibold border-t-2 border-t-emerald-500 border-b-2 border-b-slate-300 bg-emerald-100 text-emerald-950 hover:bg-emerald-100">
+                  <TableCell colSpan={4} className={`px-2 py-2 truncate bg-emerald-100 ${isMobile ? "" : "sticky left-0 z-[1] shadow-[inset_-1px_0_0_#cbd5e1]"}`}>
                     Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
                   <TableCell colSpan={7} />
@@ -417,13 +419,13 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                       <Angka
                         key={j}
                         v={grup.data.reduce((t, r) => t + Number(k.nilai(r) || 0), 0)}
-                        kelas={`${WARNA[k.jenis]} ${garis(k)}`}
+                        kelas={`bg-emerald-50 ${garis(k)}`}
                       />
                     ),
                   )}
                   <Angka
                     v={grup.data.reduce((t, r) => t + Number(r.saldo || 0), 0)}
-                    kelas={`${WARNA.saldo} border-l-2 border-l-slate-300`}
+                    kelas="bg-emerald-50 font-extrabold text-gray-900 border-l-2 border-l-slate-300"
                   />
                 </TableRow>
               </React.Fragment>
