@@ -1,25 +1,27 @@
-name: deploy
+name: deploy-staging
 
-# Rilis ke staging mantriappsv2 hanya lewat tag, contoh:
-#   git tag v0.1.0 && git push origin v0.1.0
-# Polanya sama dengan app_laravel. Migrasi TIDAK pernah dijalankan dari sini -
-# unit-apps dan app_laravel berbagi satu database; migrasi hanya dari app_laravel.
+# Staging (mv2.ubmidigital.com, /srv/apps/staging/mantriappsv2): setiap push ke
+# branch `develop` di-build lalu dideploy otomatis, tag image staging-<sha>.
+# Production (tag v* dari main) menyusul. Polanya sama dengan app_laravel.
+# Migrasi TIDAK pernah dijalankan dari sini - unit-apps dan app_laravel berbagi
+# satu database; migrasi hanya dari app_laravel.
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - develop
 
 permissions:
   contents: read
   packages: write
 
-# Dua tag didorong berdekatan: deploy berjalan berurutan, tidak saling potong
+# Dua push berdekatan: deploy berjalan berurutan, tidak saling potong
 concurrency:
-  group: deploy-mantriappsv2
+  group: deploy-staging
   cancel-in-progress: false
 
 env:
-  IMAGE: ghcr.io/twovife/mantriappsv2
+  IMAGE: ghcr.io/twovife/mantriapps
+  TAG: staging-${{ github.sha }}
 
 jobs:
   build:
@@ -43,8 +45,10 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE }}:${{ github.ref_name }}
-            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:${{ env.TAG }}
+            ${{ env.IMAGE }}:staging
+          # Menautkan package ghcr ke repo ini (izin tulis GITHUB_TOKEN).
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -62,6 +66,6 @@ jobs:
 
       # Key deploy dikunci (command= di authorized_keys VPS) ke deploy.sh;
       # yang dikirim hanya tag, script di VPS yang menentukan langkahnya.
-      # Isi script: .github/deploy/mantriappsv2-deploy.sh
+      # Isi script: .github/deploy/mantriapps-staging-deploy.sh
       - name: Deploy di VPS
-        run: ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "${{ github.ref_name }}"
+        run: ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "${{ env.TAG }}"
