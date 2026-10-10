@@ -634,38 +634,65 @@ trait RekapTrait
       })->sortBy('kelompok')->values();
     }
 
-    // ============================
-    // AGREGASI INSTALMENT (SQL)
-    // ============================
+    // GERBANG alur baru: drop & storting (per ember cm/mb/ml) dari
+    // HitungAgregat - sumber yang sama dengan daily_closings: hanya pinjaman
+    // sukses, nasabah saldo_awal tidak dihitung sebagai drop, ember ikut
+    // drop_date (bukan status angsuran). Dibentuk sama dengan agregasi lama
+    // supaya kode di bawah tidak berubah.
+    if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
+      $drop = [];
+      $angsur = [];
+      foreach (\App\Helpers\HitungAgregat::harianBanyak($groupingIds->all(), $startDateofMonth, $endDateofMonth) as $k => $v) {
+        [$g, $t] = explode('|', $k);
+        if ($v['drop']) {
+          $drop[$g][$t] = collect([(object) ['drop_total' => $v['drop']]]);
+        }
+        if ($v['storting']) {
+          $angsur[$g][$t] = collect([(object) [
+            'total' => $v['storting'],
+            'cm' => $v['storting_cm'],
+            'mb' => $v['storting_mb'],
+            'ml' => $v['storting_ml'],
+          ]]);
+        }
+      }
+      $loanAgg = collect($drop)->map(fn($perTanggal) => collect($perTanggal));
+      $instalmentAgg = collect($angsur)->map(fn($perTanggal) => collect($perTanggal));
+    } else {
+      // ============================
+      // AGREGASI INSTALMENT (SQL)
+      // ============================
 
-    $instalmentAgg = TransactionLoanInstalment::selectRaw("
-        transaction_loan_officer_grouping_id,
-        transaction_date,
-        SUM(nominal) as total,
-        SUM(CASE WHEN status = 2 THEN nominal ELSE 0 END) as cm,
-        SUM(CASE WHEN status = 3 THEN nominal ELSE 0 END) as mb,
-        SUM(CASE WHEN status = 4 THEN nominal ELSE 0 END) as ml
-    ")
-      ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
-      ->whereBetween('transaction_date', [$startDateofMonth, $endDateofMonth])
-      ->groupBy('transaction_loan_officer_grouping_id', 'transaction_date')
-      ->get()
-      ->groupBy(['transaction_loan_officer_grouping_id', 'transaction_date']);
+      $instalmentAgg = TransactionLoanInstalment::selectRaw("
+          transaction_loan_officer_grouping_id,
+          transaction_date,
+          SUM(nominal) as total,
+          SUM(CASE WHEN status = 2 THEN nominal ELSE 0 END) as cm,
+          SUM(CASE WHEN status = 3 THEN nominal ELSE 0 END) as mb,
+          SUM(CASE WHEN status = 4 THEN nominal ELSE 0 END) as ml
+      ")
+        ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->whereBetween('transaction_date', [$startDateofMonth, $endDateofMonth])
+        ->groupBy('transaction_loan_officer_grouping_id', 'transaction_date')
+        ->get()
+        ->groupBy(['transaction_loan_officer_grouping_id', 'transaction_date']);
 
-    // ============================
-    // AGREGASI LOAN (SQL)
-    // ============================
+      // ============================
+      // AGREGASI LOAN (SQL)
+      // ============================
 
-    $loanAgg = TransactionLoan::selectRaw("
-        transaction_loan_officer_grouping_id,
-        drop_date,
-        SUM(nominal_drop) as drop_total
-    ")
-      ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
-      ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
-      ->groupBy('transaction_loan_officer_grouping_id', 'drop_date')
-      ->get()
-      ->groupBy(['transaction_loan_officer_grouping_id', 'drop_date']);
+      $loanAgg = TransactionLoan::selectRaw("
+          transaction_loan_officer_grouping_id,
+          drop_date,
+          SUM(nominal_drop) as drop_total
+      ")
+        ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->where('status', 'success')
+        ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
+        ->groupBy('transaction_loan_officer_grouping_id', 'drop_date')
+        ->get()
+        ->groupBy(['transaction_loan_officer_grouping_id', 'drop_date']);
+    }
 
     // ============================
     // GENERATE DATES
