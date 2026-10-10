@@ -211,16 +211,18 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 ))}
 
                 {/* Tabel rincian: per bulan (terbaru di atas), baris ringkasan
-                    bulan di bawahnya - Sisa sejajar kolom Mantri. table-fixed
-                    supaya muat di modal HP; nama dipotong, lengkapnya di title. */}
+                    bulan di bawahnya - Sisa sejajar kolom Mantri. table-fixed,
+                    nama dipotong, lengkapnya di title. */}
                 <div className="overflow-hidden border rounded-md border-slate-200">
                 <Table className="text-xs table-fixed">
+                  {/* Lebar proporsional: tidak menumpuk di kiri saat modal lebar,
+                      batas bawah supaya tetap muat di HP. */}
                   <colgroup>
-                    <col className="w-[3.4rem]" />
-                    <col className="w-[2.9rem]" />
-                    <col className="w-[5rem]" />
-                    <col />
-                    <col />
+                    <col className="w-[14%] min-w-[3.4rem]" />
+                    <col className="w-[13%] min-w-[2.9rem]" />
+                    <col className="w-[19%] min-w-[5rem]" />
+                    <col className="w-[27%]" />
+                    <col className="w-[27%]" />
                   </colgroup>
                   <TableHeader className="bg-slate-100">
                     <TableRow className="hover:bg-slate-100">
