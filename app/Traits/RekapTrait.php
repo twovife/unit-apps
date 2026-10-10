@@ -258,19 +258,18 @@ trait RekapTrait
         ->sum(fn($g) => round($g->sum('nominal_drop') * 0.09));
       $gDebit = $gDo11 + $gKasbon + $gStorting;
       $gKredit = $gDrop + $gTransport;
-      // Setoran per hari: isian kasir, atau angka bawaan dari angsuran hari itu.
+      // Setoran global = hanya yang benar-benar diisi kasir (mas 2026-10-10);
+      // angka bawaan tidak ikut. Belum ada isian sama sekali -> kosong.
       $gSetoran = ['setoran_tunai' => 0, 'setoran_transfer' => 0, 'setoran_katrol' => 0];
+      $adaSetoran = false;
       if ($alurBaru) {
-        $perHari = $thisInstalment->groupBy(fn($a) => Carbon::parse($a->transaction_date)->toDateString());
-        $tanggalBerisi = $perHari->keys()->merge($hb->keys())->unique();
-        foreach ($tanggalBerisi as $t) {
-          $cara = $perHari->get($t, collect())
-            ->groupBy(fn($a) => \App\Helpers\HitungAgregat::caraBayar($a))
-            ->map(fn($g) => (int) $g->sum('nominal'));
-          $baris = $hb->get($t);
-          $gSetoran['setoran_tunai'] += (int) ($baris?->setoran_tunai ?? $cara->get('tunai', 0));
-          $gSetoran['setoran_transfer'] += (int) ($baris?->setoran_transfer ?? $cara->get('transfer', 0));
-          $gSetoran['setoran_katrol'] += (int) ($baris?->setoran_katrol ?? $cara->get('katrol', 0));
+        foreach ($hb as $baris) {
+          foreach ($gSetoran as $kol => $v) {
+            if ($baris->$kol !== null) {
+              $gSetoran[$kol] += (int) $baris->$kol;
+              $adaSetoran = true;
+            }
+          }
         }
       }
       $global = [
@@ -284,10 +283,10 @@ trait RekapTrait
         'tunai' => $gDebit - $gKredit,
         'titipan9' => $gTitipan9,
         'sisa_uang' => $gTitipan9 + ($gDebit - $gKredit),
-        'su_lapangan' => $alurBaru ? $gSetoran['setoran_tunai'] : null,
-        'setoran_transfer' => $alurBaru ? $gSetoran['setoran_transfer'] : null,
-        'setoran_katrol' => $alurBaru ? $gSetoran['setoran_katrol'] : null,
-        'selisih_uang' => $alurBaru
+        'su_lapangan' => $adaSetoran ? $gSetoran['setoran_tunai'] : null,
+        'setoran_transfer' => $adaSetoran ? $gSetoran['setoran_transfer'] : null,
+        'setoran_katrol' => $adaSetoran ? $gSetoran['setoran_katrol'] : null,
+        'selisih_uang' => $adaSetoran
           ? array_sum($gSetoran) - ($gTitipan9 + ($gDebit - $gKredit))
           : null,
       ];
