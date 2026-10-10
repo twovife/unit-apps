@@ -180,8 +180,11 @@ trait RekapTrait
       ->whereBetween('transaction_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
       ->get()->groupBy('transaction_loan_officer_grouping_id');
 
+    // Hanya yang sukses cair - sama dengan HitungAgregat::drop. success->gagal
+    // tidak mengosongkan nominal_drop, jadi tanpa ini drop yang batal ikut terhitung.
     $loan = TransactionLoan::select('transaction_loan_officer_grouping_id', 'drop_date', 'nominal_drop', 'pinjaman')
       ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+      ->where('status', 'success')
       ->whereBetween('drop_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
       ->get()->groupBy('transaction_loan_officer_grouping_id');
 
