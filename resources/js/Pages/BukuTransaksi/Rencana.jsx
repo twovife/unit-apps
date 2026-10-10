@@ -14,7 +14,7 @@ import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
 import { usePage } from '@inertiajs/react';
 
-const Rencana = ({ datas, dataTransaksi, onStorting }) => {
+const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null }) => {
   const [data, setData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
   // Kolom ACC KM membuka dialog approval kepala (ceklist_kepala) -> can-approve
@@ -50,6 +50,7 @@ const Rencana = ({ datas, dataTransaksi, onStorting }) => {
         staticData={customerData}
         triggeredDate={actionData}
         datas={data}
+        onSukses={onAccSelesai}
       />
       <Table className="w-full table-auto">
         <TableHeader className="sticky top-0 z-10 bg-gray-100">

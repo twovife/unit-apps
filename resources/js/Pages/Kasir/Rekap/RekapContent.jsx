@@ -52,7 +52,9 @@ const RekapContent = ({
   const setBukuTarget = (t) => {
     setBukuTargetState(t);
     try {
-      t
+      // Drawer ACC KM tidak disimpan: sesudah ACC halaman dimuat ulang dan
+      // drawernya memang harus tertutup.
+      t && t.jenis !== 'acc'
         ? sessionStorage.setItem(KUNCI_BUKU, JSON.stringify({ filter: server_filter.tanggal ?? server_filter.month, target: t }))
         : sessionStorage.removeItem(KUNCI_BUKU);
     } catch {

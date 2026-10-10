@@ -13,7 +13,7 @@ const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu
  * yang SAMA dengan drawer ACC KM di Buku Transaksi; datanya dari
  * transaction.drop_bulan (getTransactionLoan - sumber yang sama). Rencana &
  * Approval membaca server_filter.migrasi dari halaman pemanggil, jadi halaman
- * itu wajib mengirimnya. Dimuat ulang sesudah ACC tersimpan.
+ * itu wajib mengirimnya. Ditutup sesudah ACC tersimpan.
  */
 const DrawerAccKm = ({ target, server_filter, onClosed }) => {
   const hari = target ? NAMA_HARI[dayjs(target.tanggal).day()] : '';
@@ -28,6 +28,7 @@ const DrawerAccKm = ({ target, server_filter, onClosed }) => {
       ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
     },
     `${target?.kelompok}|${target?.tanggal}`,
+    // Dimuat ulang sesudah bayar/hapus angsuran dari drawer storting di dalamnya.
     { muatUlangSesudahSimpan: true },
   );
   // Storting di dalam ACC KM -> buku angsuran hari itu, di atas drawer ini.
@@ -53,6 +54,8 @@ const DrawerAccKm = ({ target, server_filter, onClosed }) => {
                 datas={isi.buku_rencana}
                 dataTransaksi={isi.datas}
                 onStorting={(item) => setAngsuran({ tanggal: item.tanggal, kelompok: item.kelompok })}
+                // ACC tersimpan -> drawer ditutup (post Inertia mempertahankan state).
+                onAccSelesai={onClosed}
               />
             )}
           </div>

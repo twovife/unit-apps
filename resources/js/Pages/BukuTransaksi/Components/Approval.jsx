@@ -45,6 +45,8 @@ const Approval = ({
   triggeredDate,
   staticData,
   datas,
+  // Dipanggil sesudah ACC tersimpan (mis. menutup drawer ACC KM pembungkusnya).
+  onSukses = null,
 }) => {
   const { data, setData, post, reset, errors, processing } = useForm({
     id: '',
@@ -263,6 +265,7 @@ const Approval = ({
         reset();
         setEditTarget(false);
         onClosed();
+        onSukses?.();
       },
     });
   };

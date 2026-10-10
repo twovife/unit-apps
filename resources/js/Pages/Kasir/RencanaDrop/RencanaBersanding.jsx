@@ -45,7 +45,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
     <div className="overflow-x-auto">
       <table className="w-full text-xs tabular-nums">
         <thead className="bg-slate-100 text-slate-700">
-          <tr>
+          <tr className="h-8">
             <th className="px-3 py-1.5 font-medium text-left">Kel</th>
             {kolom.map(([k, label]) => (
               <th key={k} className="px-3 py-1.5 font-medium text-right whitespace-nowrap">
@@ -57,7 +57,8 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.grouping_id} className={`border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
+            // Tinggi baris tetap (h-8) supaya baris kiri (ada tombol ACC) & kanan sejajar.
+            <tr key={r.grouping_id} className={`h-8 border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
               <td className="px-3 py-1 font-medium">{r.kelompok}</td>
               {kolom.map(([k, , kelas]) => {
                 const v = kosong ? 0 : r[k];
@@ -105,7 +106,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
           ))}
         </tbody>
         <tfoot>
-          <tr className="font-bold border-t bg-emerald-50 text-slate-900">
+          <tr className="h-8 font-bold border-t bg-emerald-50 text-slate-900">
             <td className="px-3 py-1.5">Total</td>
             {kolom.map(([k, , kelas]) => (
               <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
