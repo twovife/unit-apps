@@ -26,6 +26,7 @@ class AuthScope
     {
         $kunci = self::kunciFilterGlobal();
         Session::put($kunci, array_merge(Session::get($kunci, []), $isi));
+        request()->attributes->remove('authscope');
     }
 
     public static function getActiveBranchId()
@@ -64,6 +65,22 @@ class AuthScope
      * Mengembalikan object dengan data yang siap dipakai.
      */
     public static function resolve()
+    {
+        // Disimpan sekali per permintaan (atribut request): resolve() dipanggil
+        // di banyak tempat dan tiap kali mengulang kueri cabang/izin/kelompok
+        // yang sama. Dibuang saat paket filter diubah (simpanFilterGlobal).
+        $req = request();
+        if ($req->attributes->has('authscope')) {
+            return $req->attributes->get('authscope');
+        }
+
+        $hasil = self::hitungScope();
+        $req->attributes->set('authscope', $hasil);
+
+        return $hasil;
+    }
+
+    private static function hitungScope()
     {
         $user = auth()->user();
 
