@@ -219,10 +219,10 @@ const FilterBar = ({
     const saved = readSaved();
     if (!saved) return;
 
-    // Kelompok, hari & bulan TIDAK dipulihkan per halaman: ketiganya global
-    // (session server, sama di semua menu, reset saat login ulang). Hanya
-    // tanggal yang dipulihkan per halaman.
-    const pulih = { ...saved, kelompok: active.kelompok, hari: active.hari, month: active.month };
+    // Kelompok, hari, bulan & tanggal semuanya global (session server, sama
+    // di semua menu, reset saat login ulang) - tidak ada lagi yang dipulihkan
+    // per halaman dari localStorage.
+    const pulih = { ...saved, kelompok: active.kelompok, hari: active.hari, month: active.month, date: active.date };
     const berbeda = managedKeys.some(
       (key) => String(pulih[key] ?? '') !== String(active[key] ?? ''),
     );
