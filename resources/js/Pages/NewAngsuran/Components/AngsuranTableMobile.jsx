@@ -210,7 +210,7 @@ const Jumlah = ({ label, rows, total = false }) => (
     }`}
   >
     <div className="min-w-0 col-span-3 truncate">{label}</div>
-    <div className={`col-span-2 pr-1 text-base text-right ${total ? 'text-green-300' : 'text-green-700 bg-amber-50'}`}>
+    <div className={`col-span-2 pr-1 text-base text-right ${total ? 'text-green-300' : 'text-green-700 bg-emerald-50'}`}>
       {rb(jumlah(rows, 'angs_today'))}
     </div>
     <div className="col-span-3" />
