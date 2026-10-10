@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from '@/shadcn/ui/accordion';
 import { CheckCircle, Wallet, XCircle } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
 // Angka dipangkas ribuannya (1.300.000 -> 1.300).
@@ -30,9 +31,22 @@ const KOLOM_HARIAN = [
   ['saldo_ml', 'Saldo ML', 'font-semibold'],
 ];
 
-const Cek = ({ ok }) => (
-  <div className="flex justify-center">
-    {ok ? <CheckCircle className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />}
+// Belum dicek: silang + tombol ke tempat ngeceknya.
+const Cek = ({ ok, href }) => (
+  <div className="flex items-center justify-center gap-1.5">
+    {ok ? (
+      <CheckCircle className="w-4 h-4 text-green-500" />
+    ) : (
+      <>
+        <XCircle className="w-4 h-4 text-red-500" />
+        <Link
+          href={href}
+          className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md text-sky-700 ring-1 ring-sky-300 bg-white hover:bg-sky-50 whitespace-nowrap"
+        >
+          Cek
+        </Link>
+      </>
+    )}
   </div>
 );
 
@@ -177,7 +191,7 @@ const TableRekap = ({
           <DialogHeader>
             <DialogTitle>Pemutihan bulan lalu — Kelompok {pemutihan?.kelompok}</DialogTitle>
             <DialogDescription>
-              Sudah keluar dari sirkulasi di saldo awal bulan ini. Total {ribu(pemutihan?.pemutihan)}. Angka dalam ribuan.
+              Sudah keluar dari sirkulasi di saldo awal bulan ini. Total {ribu(pemutihan?.pemutihan)}.
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-x-auto border rounded-lg">
@@ -289,8 +303,19 @@ const TableRekap = ({
                         )}
                       </td>
                     ))}
-                    <td className="px-3 py-1">{!kosong && <Cek ok={r.status_approve_kasir} />}</td>
-                    <td className="px-3 py-1">{!kosong && <Cek ok={r.status_approve_kepala} />}</td>
+                    <td className="px-3 py-1">
+                      {/* Cek Staff = kunci kasir di Rekap 1. */}
+                      {!kosong && <Cek ok={r.status_approve_kasir} href={route('kasir.rekap.rekap_satu', { date: item.tanggal })} />}
+                    </td>
+                    <td className="px-3 py-1">
+                      {/* Cek Target = ACC KM di Buku Transaksi (tanggal -> hari & bulan). */}
+                      {!kosong && (
+                        <Cek
+                          ok={r.status_approve_kepala}
+                          href={route('transaction.index_buku_transaksi', { kelompok: r.kelompok, date: item.tanggal })}
+                        />
+                      )}
+                    </td>
                   </tr>
                 ))}
                 <tr className="font-bold border-t bg-emerald-50 text-slate-900">
