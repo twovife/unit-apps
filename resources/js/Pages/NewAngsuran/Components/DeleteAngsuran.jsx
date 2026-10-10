@@ -1,52 +1,73 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import dayjs from 'dayjs';
+import { Trash2 } from 'lucide-react';
+import { Button } from '@/shadcn/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shadcn/ui/dialog';
 
-const BATAS_YAKIN_MS = 3000;
+const rupiah = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
 /**
- * Hapus angsuran dua ketukan: "Hapus" -> merah "Yakin?" -> hapus.
- * Konfirmasi kedaluwarsa sendiri setelah 3 detik (garis di bawah tombol
- * menyusut sebagai hitung mundur). Dulu pembatalnya cuma onMouseLeave, jadi
- * di HP (tanpa mouse) tombol "Yakin?" tertinggal aktif selamanya.
+ * Hapus satu angsuran: tombol "Hapus" (ikon sampah di HP) -> dialog
+ * konfirmasi yang menyebut tanggal & nominalnya -> hapus.
  */
-export default function DeleteAngsuran({ id }) {
+export default function DeleteAngsuran({ id, tanggal, nominal }) {
   const { auth } = usePage().props;
   const boleh = auth.permissions.includes('can-create');
-  const [yakin, setYakin] = useState(false);
+  const [buka, setBuka] = useState(false);
   const [proses, setProses] = useState(false);
 
-  useEffect(() => {
-    if (!yakin || proses) return;
-    const t = setTimeout(() => setYakin(false), BATAS_YAKIN_MS);
-    return () => clearTimeout(t);
-  }, [yakin, proses]);
-
-  const klik = () => {
-    if (!yakin) {
-      setYakin(true);
-      return;
-    }
+  const hapus = () =>
     router.delete(route('pinjaman.destroy_angsuran', id), {
       preserveScroll: true,
       onStart: () => setProses(true),
       onFinish: () => {
         setProses(false);
-        setYakin(false);
+        setBuka(false);
       },
     });
-  };
 
   return (
-    <button
-      type="button"
-      disabled={!boleh || proses}
-      onClick={klik}
-      className={`relative inline-flex items-center h-6 px-2 overflow-hidden text-[11px] font-semibold rounded-md border transition-colors duration-200 disabled:opacity-40 ${
-        yakin ? 'bg-red-600 border-red-600 text-white' : 'bg-white text-red-600 border-red-200 hover:border-red-400'
-      }`}
-    >
-      {proses ? 'Menghapus…' : yakin ? 'Yakin?' : 'Hapus'}
-      {yakin && !proses && <span className="absolute bottom-0 left-0 h-0.5 bg-white/80 animate-susut" />}
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={!boleh || proses}
+        onClick={() => setBuka(true)}
+        title="Hapus angsuran"
+        aria-label="Hapus angsuran"
+        className="inline-flex items-center justify-center h-6 px-1.5 sm:px-2 text-[11px] font-semibold text-red-600 bg-white border border-red-200 rounded-md transition-colors hover:border-red-400 hover:bg-red-50 disabled:opacity-40"
+      >
+        <Trash2 className="w-3.5 h-3.5 sm:hidden" aria-hidden="true" />
+        <span className="hidden sm:inline">Hapus</span>
+      </button>
+
+      <Dialog open={buka} onOpenChange={(o) => !proses && setBuka(o)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Hapus angsuran?</DialogTitle>
+            <DialogDescription>
+              Angsuran{tanggal ? ` ${dayjs(tanggal).format('DD MMM YYYY')}` : ''}
+              {nominal !== undefined ? ` sebesar Rp ${rupiah(nominal)}` : ''} akan dihapus. Tindakan ini tidak bisa
+              dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" disabled={proses} onClick={() => setBuka(false)}>
+              Batal
+            </Button>
+            <Button className="bg-red-600 hover:bg-red-700" disabled={proses} onClick={hapus}>
+              {proses ? 'Menghapus…' : 'Ya, hapus'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

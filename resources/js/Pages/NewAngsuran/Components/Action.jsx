@@ -248,7 +248,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                     <span className="text-[10px] font-semibold text-muted-foreground">Pelunasan</span>
                                   ) : (
                                     (!closed_transaction || closed_transaction <= item.transaction_date) && (
-                                      <DeleteAngsuran id={item.id} />
+                                      <DeleteAngsuran id={item.id} tanggal={item.transaction_date} nominal={item.nominal} />
                                     )
                                   )}
                                 </TableCell>
