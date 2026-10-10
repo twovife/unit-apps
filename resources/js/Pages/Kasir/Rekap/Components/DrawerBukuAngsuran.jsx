@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
+import React from 'react';
+import useMuatDrawer from '@/Hooks/useMuatDrawer';
 import dayjs from 'dayjs';
-import { router } from '@inertiajs/react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import AngsuranTable from '@/Pages/NewAngsuran/Components/AngsuranTable';
 import { FilterAngsuranContext } from '@/Pages/NewAngsuran/FilterAngsuran';
@@ -16,32 +15,19 @@ const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu
  * bayar / hapus angsuran.
  */
 const DrawerBukuAngsuran = ({ target, server_filter, onClosed }) => {
-  const [isi, setIsi] = useState(null);
-  const [galat, setGalat] = useState(null);
-
-  const muat = useCallback(() => {
-    if (!target) return;
-    setGalat(null);
-    axios
-      .get(route('pinjaman.buku_angsuran_json'), {
-        params: {
-          kelompok: target.kelompok,
-          hari: NAMA_HARI[dayjs(target.tanggal).day()],
-          month: dayjs(target.tanggal).format('YYYY-MM'),
-          ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
-          ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
-        },
-      })
-      .then(({ data }) => setIsi(data))
-      .catch(() => setGalat('Buku angsuran gagal dimuat.'));
-  }, [target?.kelompok, target?.tanggal]);
-
-  useEffect(() => {
-    setIsi(null);
-    muat();
-  }, [muat]);
-
-  useEffect(() => (target ? router.on('success', muat) : undefined), [target, muat]);
+  const { isi, galat } = useMuatDrawer(
+    !!target,
+    route('pinjaman.buku_angsuran_json'),
+    target && {
+      kelompok: target.kelompok,
+      hari: NAMA_HARI[dayjs(target.tanggal).day()],
+      month: dayjs(target.tanggal).format('YYYY-MM'),
+      ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
+      ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
+    },
+    `${target?.kelompok}|${target?.tanggal}`,
+    { muatUlangSesudahSimpan: true },
+  );
 
   return (
     <Sheet open={!!target} onOpenChange={(o) => (o ? '' : onClosed())}>

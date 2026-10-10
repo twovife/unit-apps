@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React from 'react';
+import useMuatDrawer from '@/Hooks/useMuatDrawer';
 import dayjs from 'dayjs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import TableRekapKasir from './TableRekapKasir';
@@ -10,26 +10,19 @@ import TableRekapKasir from './TableRekapKasir';
  * fungsi yang sama dengan halaman Rekap per Mantri, jadi jumlahnya = baris Global.
  */
 const DrawerDetailKelompok = ({ target, server_filter, onClosed, onKlikStorting = null }) => {
-  const [isi, setIsi] = useState(null);
-  const [galat, setGalat] = useState(null);
-
-  useEffect(() => {
-    if (!target) return;
-    setIsi(null);
-    setGalat(null);
-    axios
-      .get(route('kasir.rekap.rekap_permantri_json'), {
-        params: {
-          kelompok: target.kelompok,
-          month: dayjs(server_filter.tanggal).format('YYYY-MM'),
-          sampai: server_filter.tanggal,
-          ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
-          ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
-        },
-      })
-      .then(({ data }) => setIsi(data.datas ?? []))
-      .catch(() => setGalat('Detail gagal dimuat.'));
-  }, [target?.kelompok, server_filter.tanggal]);
+  const { isi: jawaban, galat } = useMuatDrawer(
+    !!target,
+    route('kasir.rekap.rekap_permantri_json'),
+    target && {
+      kelompok: target.kelompok,
+      month: dayjs(server_filter.tanggal).format('YYYY-MM'),
+      sampai: server_filter.tanggal,
+      ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
+      ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
+    },
+    `${target?.kelompok}|${server_filter.tanggal}`,
+  );
+  const isi = jawaban ? jawaban.datas ?? [] : null;
 
   return (
     <Sheet open={!!target} onOpenChange={(o) => (o ? '' : onClosed())}>

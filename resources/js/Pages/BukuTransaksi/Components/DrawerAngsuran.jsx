@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
+import React from 'react';
+import useMuatDrawer from '@/Hooks/useMuatDrawer';
 import dayjs from 'dayjs';
-import { router } from '@inertiajs/react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import AngsuranTableMobile from '@/Pages/NewAngsuran/Components/AngsuranTableMobile';
 import { FilterAngsuranContext } from '@/Pages/NewAngsuran/FilterAngsuran';
@@ -14,25 +13,14 @@ import { FilterAngsuranContext } from '@/Pages/NewAngsuran/FilterAngsuran';
  * halaman Buku Transaksi.
  */
 const DrawerAngsuran = ({ target, onClosed }) => {
-  const [isi, setIsi] = useState(null);
-  const [galat, setGalat] = useState(null);
-
-  const muat = useCallback(() => {
-    if (!target) return;
-    setGalat(null);
-    axios
-      .get(route('transaction.angsuran_hari'), { params: { date: target.tanggal, kelompok: target.kelompok } })
-      .then(({ data }) => setIsi(data))
-      .catch(() => setGalat('Buku angsuran gagal dimuat.'));
-  }, [target?.tanggal, target?.kelompok]);
-
-  useEffect(() => {
-    setIsi(null);
-    muat();
-  }, [muat]);
-
-  // Bayar / hapus angsuran lewat Inertia -> muat ulang isi drawer sesudahnya.
-  useEffect(() => (target ? router.on('success', muat) : undefined), [target, muat]);
+  // Bayar / hapus angsuran lewat Inertia -> isi drawer dimuat ulang.
+  const { isi, galat } = useMuatDrawer(
+    !!target,
+    route('transaction.angsuran_hari'),
+    target && { date: target.tanggal, kelompok: target.kelompok },
+    `${target?.tanggal}|${target?.kelompok}`,
+    { muatUlangSesudahSimpan: true },
+  );
 
   const f = isi?.server_filter;
 
