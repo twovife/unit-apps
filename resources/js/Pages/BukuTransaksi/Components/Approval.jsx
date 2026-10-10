@@ -188,17 +188,19 @@ const Approval = ({
       // dilompati) - sama dengan tempat server menaruh targetnya.
       uniqueDropDatesString = triggeredData.tanggal_depan ?? null;
 
-      if (filteredData.length > 0) {
-        // Rencana = ACC pengajuan hari ini yang dropnya minggu depan.
-        const filteredData2 = filteredData.filter((item) => {
-          return item.tanggal_drop === uniqueDropDatesString;
-        });
-
-        // Hitung jumlah acc dari filteredData2
-        rencana = filteredData2.reduce((a, item) => {
-          return a + item.acc;
-        }, 0);
-      }
+      // Rencana = semua pengajuan (bukan drop langsung) yang drop-nya minggu
+      // depan & masih hidup - menurut TANGGAL DROP, bukan tanggal pengajuan.
+      // Tundaan dibuat ulang dengan request_date lama (mis. diajukan 28 Sep,
+      // ditunda dari 5 ke 12 Okt) dan dulu hilang dari rencana ACC 5 Okt.
+      // Sama dengan kolom Rencana di server (RekapTrait).
+      rencana = flaatenData
+        .filter(
+          (item) =>
+            item.tanggal_drop === uniqueDropDatesString &&
+            item.tanggal_drop !== item.request_date &&
+            ['open', 'acc', 'success'].includes(item.status),
+        )
+        .reduce((a, item) => a + (Number(item.acc) || 0), 0);
 
       setData({
         id: triggeredData.grouping_id,
