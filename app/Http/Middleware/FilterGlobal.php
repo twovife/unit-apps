@@ -8,8 +8,9 @@ use Closure;
 use Illuminate\Http\Request;
 
 /**
- * Filter GLOBAL lintas menu: tanggal, hari tagih & bulan (keputusan mas
- * 2026-10-10), pasangan kelompok global di AuthScope. Ketiganya selalu
+ * Filter GLOBAL lintas menu: kelompok, tanggal, hari tagih & bulan (keputusan
+ * mas 2026-10-10), satu paket di session. Kelompok diambil dari ?kelompok;
+ * AuthScope memvalidasinya terhadap cabang aktif. Tanggal/hari/bulan selalu
  * selaras:
  *
  * - pilih TANGGAL  -> hari & bulan ikut tanggal itu (Kamis 17 Sep -> kamis,
@@ -40,6 +41,8 @@ class FilterGlobal
 
         $kunci = "filter_global_{$user->id}";
         $simpan = $request->session()->get($kunci, []);
+        // Disimpan dulu: blok tanggal di bawah menyusun ulang $simpan.
+        $kelompokLama = $simpan['kelompok'] ?? null;
 
         $tanggal = $this->tanggalSah($request->query('date'));
         $hari = in_array(strtolower((string) $request->query('hari')), self::HARI, true) ? strtolower($request->query('hari')) : null;
@@ -63,12 +66,19 @@ class FilterGlobal
             ]);
         }
 
+        // Kelompok ikut paket yang sama (bebas dari tanggal/hari/bulan).
+        if (ctype_digit((string) $request->query('kelompok'))) {
+            $simpan['kelompok'] = (int) $request->query('kelompok');
+        } elseif (isset($kelompokLama)) {
+            $simpan['kelompok'] = $kelompokLama;
+        }
+
         if ($simpan) {
             $request->session()->put($kunci, $simpan);
         }
 
         // Isi parameter yang tidak dibawa permintaan dari pilihan global.
-        foreach (['date', 'hari', 'month'] as $param) {
+        foreach (['date', 'hari', 'month', 'kelompok'] as $param) {
             if (!$request->has($param) && isset($simpan[$param])) {
                 $request->merge([$param => $simpan[$param]]);
             }
