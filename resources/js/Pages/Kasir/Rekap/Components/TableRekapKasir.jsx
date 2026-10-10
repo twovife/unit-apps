@@ -34,6 +34,9 @@ const GRUP = [
   { judul: '', kolom: [['selisih_uang', '-/+', 'font-bold', true]] },
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
+// Kasbon s/d Tunai berlatar kuning (selang-seling tetap: ganjil/genap beda tua).
+const KUNING = new Set(GRUP[0].kolom.map(([k]) => k));
+const selKuning = 'bg-amber-50 group-even:bg-amber-100 group-hover:bg-amber-200';
 // Kolom yang bisa diisi kasir -> nama kolom di daily_closings.
 // Rekap 1: kasir mengisi kasbon, transport, SU Lapangan, setor transfer.
 // Angka bawaan setoran yang belum diisi kasir: storting hari itu per cara
@@ -64,7 +67,7 @@ const Angka = ({ n, bertanda = false }) => {
  * akhiran saat kotak sedang diisi. Bawaan & kosong = 0. Enter / pindah kotak menyimpan, hanya kalau
  * kasir benar-benar mengetik.
  */
-const IsianSel = ({ r, k, kolom }) => {
+const IsianSel = ({ r, k, kolom, kuning = false }) => {
   const keRibu = (v) => (v ? Number(v) / 1000 : 0);
   // Belum diisi kasir -> angka bawaan dari angsuran (kalau kolom ini punya).
   const pakaiBawaan = (r[k] === null || r[k] === undefined) && BAWAAN[k];
@@ -96,7 +99,7 @@ const IsianSel = ({ r, k, kolom }) => {
         placeholder="0"
         onFocus={(e) => e.currentTarget.select()}
         title={pakaiBawaan && !diketik ? 'Angka sistem (dari angsuran) — belum dikonfirmasi kasir' : undefined}
-        className={`${pakaiBawaan && !diketik ? 'italic text-slate-400' : ''} peer block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-2 focus:pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm bg-sky-50/60 border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500`}
+        className={`${pakaiBawaan && !diketik ? 'italic text-slate-400' : ''} peer block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-2 focus:pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm ${kuning ? 'bg-transparent' : 'bg-sky-50/60'} border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500`}
         value={nilai}
         onChange={(e) => {
           setNilai(e.target.value);
@@ -125,9 +128,6 @@ const TableRekapKasir = ({ datas = [] }) => {
   const total = Object.fromEntries(
     KOLOM.map(([k]) => [k, datas.reduce((a, r) => a + (Number(r[k]) || 0), 0)]),
   );
-  // Tanpa judul grup (mas 2026-10-10): satu baris judul kolom, tanpa garis
-  // pemisah grup. GRUP tetap dipakai sebagai urutan kolom.
-  const garis = () => '';
 
   const terkunci = server_filter?.migrasi ? datas.filter((r) => r.type == 'daily' && r.status_approve_kasir).length : 0;
 
@@ -146,7 +146,10 @@ const TableRekapKasir = ({ datas = [] }) => {
           <tr>
             <th className="sticky left-0 z-20 px-3 py-2 text-left bg-slate-100">Kelompok</th>
             {KOLOM.map(([k, label]) => (
-              <th key={k} className="px-3 py-2 font-medium text-right whitespace-nowrap">
+              <th
+                key={k}
+                className={`px-3 py-2 font-medium text-right whitespace-nowrap ${KUNING.has(k) ? 'bg-amber-200 text-amber-900' : ''}`}
+              >
                 {label}
               </th>
             ))}
@@ -161,17 +164,17 @@ const TableRekapKasir = ({ datas = [] }) => {
             </tr>
           )}
           {datas.map((r, i) => (
-            <tr key={i} className="bg-white border-t even:bg-slate-50 hover:bg-sky-50">
+            <tr key={i} className="bg-white border-t group even:bg-slate-50 hover:bg-sky-50">
               <td className="sticky left-0 px-3 py-1.5 font-medium text-left bg-inherit whitespace-nowrap">
                 {r.type == 'daily' ? r.kelompok : dayjs(r.tanggal).format('DD-MM')}
               </td>
               {KOLOM.map(([k, , kelas, bertanda]) => (
                 <td
                   key={k}
-                  className={`${KOLOM_ISI[k] && bisaIsiSu(r) ? 'p-0' : 'px-3 py-1.5'} text-right ${garis(k)} ${kelas ?? ''}`}
+                  className={`${KOLOM_ISI[k] && bisaIsiSu(r) ? 'p-0' : 'px-3 py-1.5'} text-right ${KUNING.has(k) ? selKuning : ''} ${kelas ?? ''}`}
                 >
                   {KOLOM_ISI[k] && bisaIsiSu(r) ? (
-                    <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} />
+                    <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} kuning={KUNING.has(k)} />
                   ) : (
                     <Angka n={r[k]} bertanda={bertanda} />
                   )}
@@ -185,7 +188,7 @@ const TableRekapKasir = ({ datas = [] }) => {
             <tr>
               <td className="sticky left-0 px-3 py-2 text-left bg-slate-100">Total</td>
               {KOLOM.map(([k, , , bertanda]) => (
-                <td key={k} className={`px-3 py-2 text-right ${garis(k)}`}>
+                <td key={k} className={`px-3 py-2 text-right ${KUNING.has(k) ? 'bg-amber-200' : ''}`}>
                   <Angka n={total[k]} bertanda={bertanda} />
                 </td>
               ))}
