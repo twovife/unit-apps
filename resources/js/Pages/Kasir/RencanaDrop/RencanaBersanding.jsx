@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 
 // Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
@@ -14,7 +15,6 @@ const KOLOM = [
   ['baru', 'Baru'],
   ['lama', 'Lama'],
   ['rencana', 'Rencana', 'font-semibold'],
-  ['selisih', 'Selisih', 'font-semibold text-rose-700'],
 ];
 const KIRI = KOLOM;
 const KANAN = KOLOM.map(([k, ...rest]) => [`p_${k}`, ...rest]);
@@ -23,8 +23,19 @@ const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Senin minggu itu (dayjs: Minggu = 0).
 const seninDari = (t) => dayjs(t).subtract((dayjs(t).day() + 6) % 7, 'day').format('YYYY-MM-DD');
 
-/** Satu tabel kecil: judul tanggal sendiri, baris per kelompok, total hijau. */
-const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna }) => (
+// Panah naik/turun dibanding nilai sisi kiri (mis. target minggu depan vs hari ini).
+const Panah = ({ ini, dulu }) =>
+  ini > dulu ? (
+    <ArrowUp className="inline w-3 h-3 mr-1 text-emerald-600" aria-label="naik" />
+  ) : ini < dulu ? (
+    <ArrowDown className="inline w-3 h-3 mr-1 text-rose-600" aria-label="turun" />
+  ) : null;
+
+/**
+ * Satu tabel kecil: judul tanggal sendiri, baris per kelompok, total hijau.
+ * banding: { kunciKanan: kunciKiri } -> panah naik/turun di kolom itu.
+ */
+const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {} }) => (
   <div className="overflow-hidden bg-white border rounded-lg">
     <div className={`px-3 py-1.5 text-xs font-semibold ${warna}`}>
       {judul} · <span className="capitalize">{tanggal ? dayjs(tanggal).format('dddd, DD-MM-YYYY') : '—'}</span>
@@ -48,7 +59,8 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna }) => (
               {kolom.map(([k, , kelas]) => {
                 const v = kosong ? 0 : r[k];
                 return (
-                  <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
+                  <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${kelas ?? ''}`}>
+                    {banding[k] && !kosong && <Panah ini={r[k]} dulu={r[banding[k]]} />}
                     {klik[k] && Number(v) ? (
                       <button
                         type="button"
@@ -70,7 +82,8 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna }) => (
           <tr className="font-bold border-t bg-emerald-50 text-slate-900">
             <td className="px-3 py-1.5">Total</td>
             {kolom.map(([k, , kelas]) => (
-              <td key={k} className={`px-3 py-1.5 text-right ${kelas ?? ''}`}>
+              <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
+                {banding[k] && !kosong && <Panah ini={jumlah(rows, k)} dulu={jumlah(rows, banding[k])} />}
                 {ribu(kosong ? 0 : jumlah(rows, k))}
               </td>
             ))}
@@ -163,6 +176,8 @@ const RencanaBersanding = ({ data, klik }) => {
                 kosong={kosong}
                 klik={klik}
                 warna="bg-sky-100 text-sky-900"
+                // Target minggu depan dibanding target hari ini.
+                banding={{ p_target: 'target' }}
               />
             </div>
           );

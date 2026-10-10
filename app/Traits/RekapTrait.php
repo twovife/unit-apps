@@ -80,14 +80,11 @@ trait RekapTrait
     // Semua kolom satu kelompok di satu tanggal - dipakai untuk D & pasangannya.
     $isi = function (?string $tanggal, int $gid) use ($loan, $daily_recap, $instalment) {
       if (!$tanggal) {
-        return array_fill_keys(['kasbon', 'target', 'masuk', 'keluar', 'storting', 'drop', 'baru', 'lama', 'rencana', 'selisih'], 0);
+        return array_fill_keys(['kasbon', 'target', 'masuk', 'keluar', 'storting', 'drop', 'baru', 'lama', 'rencana'], 0);
       }
       $rekap = $daily_recap->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid)->first();
       $l = $loan->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid);
       $sukses = $l->where('status', 'success');
-      // Hanya pengajuan yang masih hidup / sudah jadi - tolak & gagal bukan rencana lagi.
-      $rencana = (int) $l->where('drop_langsung', 0)->whereIn('status', ['open', 'acc', 'success'])->sum('approved_nominal');
-      $lama = (int) $sukses->where('drop_langsung', 0)->sum('nominal_drop');
 
       return [
         'kasbon' => (int) ($rekap->kasbon ?? 0),
@@ -97,11 +94,9 @@ trait RekapTrait
         'storting' => (int) $instalment->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid)->sum('nominal'),
         'drop' => (int) $sukses->sum('nominal_drop'),
         'baru' => (int) $sukses->where('drop_langsung', 1)->sum('nominal_drop'),
-        'lama' => $lama,
-        'rencana' => $rencana,
-        // Rencana vs drop yang memang dari pengajuan (lama) - drop langsung
-        // (baru) tidak pernah direncanakan, jadi tidak ikut dibandingkan.
-        'selisih' => $rencana - $lama,
+        'lama' => (int) $sukses->where('drop_langsung', 0)->sum('nominal_drop'),
+        // Hanya pengajuan yang masih hidup / sudah jadi - tolak & gagal bukan rencana lagi.
+        'rencana' => (int) $l->where('drop_langsung', 0)->whereIn('status', ['open', 'acc', 'success'])->sum('approved_nominal'),
       ];
     };
 

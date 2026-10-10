@@ -13,7 +13,6 @@ import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
  * Rencana Drop sebulan, BERSANDINGAN per minggu (RencanaBersanding): tiap
  * tanggal D dengan pasangannya (hari sama minggu depan, lompati libur).
  * Klik Storting -> buku angsuran D; klik Drop -> buku drop pasangannya.
- * Selisih = Rencana - Lama (drop dari pengajuan; drop langsung tidak direncanakan).
  */
 const Content = ({ urlLink, localState, triggeredData }) => {
   const { server_filter } = usePage().props;
