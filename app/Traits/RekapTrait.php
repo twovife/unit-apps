@@ -80,7 +80,7 @@ trait RekapTrait
       ->groupBy(fn($a) => Carbon::parse($a->transaction_date)->toDateString());
 
     // Semua kolom satu kelompok di satu tanggal - dipakai untuk D & pasangannya.
-    $isi = function (?string $tanggal, int $gid) use ($loan, $daily_recap, $instalment) {
+    $isi = function (?string $tanggal, int $gid) use ($loan, $daily_recap, $instalment, $migrasi) {
       if (!$tanggal) {
         return array_fill_keys(['kasbon', 'target', 'masuk', 'keluar', 'storting', 'drop', 'baru', 'lama', 'rencana'], 0);
       }
@@ -91,7 +91,8 @@ trait RekapTrait
       return [
         'kasbon' => (int) ($rekap->kasbon ?? 0),
         'target' => (int) ($rekap->target ?? 0),
-        'masuk' => (int) ($rekap->masuk ?? 0),
+        // Alur baru tidak menyimpan masuk: 13% drop, rumus yang sama dengan target.
+        'masuk' => $migrasi ? \App\Helpers\TargetMingguan::masuk((int) $sukses->sum('nominal_drop')) : (int) ($rekap->masuk ?? 0),
         'keluar' => (int) ($rekap->keluar ?? 0),
         'storting' => (int) $instalment->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid)->sum('nominal'),
         'drop' => (int) $sukses->sum('nominal_drop'),

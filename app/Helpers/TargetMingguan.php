@@ -38,7 +38,16 @@ class TargetMingguan
     /** Rumus rantai target - satu-satunya tempat. */
     public static function hitung(int $targetD, int $dropD, int $keluarD): int
     {
-        return $targetD + (int) round($dropD * 0.13) - $keluarD;
+        return $targetD + self::masuk($dropD) - $keluarD;
+    }
+
+    /**
+     * MASUK target = 13% drop hari D. Alur baru tidak menyimpannya (dihitung
+     * ulang dari drop), jadi tampilan memakai fungsi yang sama dengan hitung().
+     */
+    public static function masuk(int $dropD): int
+    {
+        return (int) round($dropD * 0.13);
     }
 
     public static function materialisasiAuto(int $groupingId, ?int $weekday = null, ?Carbon $sampai = null): int

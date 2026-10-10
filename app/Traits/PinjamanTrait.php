@@ -207,7 +207,7 @@ trait PinjamanTrait
           ->keyBy('transaction_daily_closing_id')
         : collect();
 
-      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $dibuka) {
+      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $dibuka, $migrasi) {
         $thisDailyRecap = $daily_recap->get($tanggal, collect())->first(); //stored as database
         $thisData = $pengajuan->get($tanggal, collect()); //summary of drop
         // Drop = pinjaman yang benar-benar cair (success) - sama dengan angka
@@ -232,7 +232,8 @@ trait PinjamanTrait
           'tanggal_depan' => \App\Helpers\TargetMingguan::tanggalDepan($tanggal),
           'kasbon' =>  $thisDailyRecap?->kasbon,
           'transport' => $thisDailyRecap?->transport,
-          'masuk' => $thisDailyRecap?->masuk,
+          // Alur baru tidak menyimpan masuk: 13% drop D, rumus yang sama dengan target.
+          'masuk' => $migrasi ? \App\Helpers\TargetMingguan::masuk((int) $cair->sum('drop_jadi')) : $thisDailyRecap?->masuk,
           'keluar' => $thisDailyRecap?->keluar,
           'target' => $thisDailyRecap?->target,
           // Sumber target: 'manual' = sudah dicek KM, 'auto' = placeholder cron
