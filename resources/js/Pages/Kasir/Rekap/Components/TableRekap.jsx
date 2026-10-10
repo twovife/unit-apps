@@ -16,7 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/shadcn/ui/accordion';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Wallet, XCircle } from 'lucide-react';
 
 const TableRekap = ({
   setOnShowModal,
@@ -41,15 +41,27 @@ const TableRekap = ({
 
   return (
     <div>
-      <Accordion type="single" collapsible className="mb-3">
-        <AccordionItem value="item-1">
-          <AccordionTrigger className="px-3">Saldo Awal Bulan</AccordionTrigger>
-          <AccordionContent>
+      {/* Kartu lipat: berbingkai + ikon + petunjuk supaya jelas bisa diklik. */}
+      <Accordion type="single" collapsible className="mb-3 overflow-hidden bg-white border rounded-lg">
+        <AccordionItem value="item-1" className="border-b-0">
+          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 hover:no-underline data-[state=open]:border-b">
+            <span className="flex items-center gap-3 text-left">
+              <Wallet className="w-5 h-5 text-sky-600 shrink-0" aria-hidden="true" />
+              <span>
+                <span className="block font-semibold text-slate-900">Saldo Awal Bulan</span>
+                <span className="block text-xs font-normal text-slate-500">
+                  Sirkulasi {new Intl.NumberFormat('id-ID').format(calculateTotals(sirkulasiAwal ?? [], 'sirkulasi'))}{' '}
+                  · klik untuk lihat per kelompok
+                </span>
+              </span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="pb-0">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-200">
                   <TableHead className="text-center">Kelompok</TableHead>
-                  <TableHead className="text-center">Surkulasi</TableHead>
+                  <TableHead className="text-center">Sirkulasi</TableHead>
                   <TableHead className="text-center">Saldo CM</TableHead>
                   <TableHead className="text-center">Saldo MB</TableHead>
                   <TableHead className="text-center">Saldo ML</TableHead>
