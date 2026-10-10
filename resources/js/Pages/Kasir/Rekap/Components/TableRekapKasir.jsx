@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
+import { ExternalLink } from 'lucide-react';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
 // buku kasir: kasbon s/d tunai, titipan 9%, SU Lapangan, Sisa Uang,
@@ -182,8 +183,13 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, tautanKelompok = null }
                 {r.type != 'daily' ? (
                   dayjs(r.tanggal).format('DD-MM')
                 ) : tautanKelompok ? (
-                  <a href={tautanKelompok(r)} className="text-sky-700 underline decoration-dotted" title="Detail tunai per hari kelompok ini">
+                  <a
+                    href={tautanKelompok(r)}
+                    className="inline-flex items-center gap-1 font-semibold text-sky-700 hover:text-sky-900 hover:underline"
+                    title="Detail tunai per hari kelompok ini"
+                  >
                     {r.kelompok}
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                   </a>
                 ) : (
                   r.kelompok
