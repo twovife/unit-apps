@@ -132,7 +132,7 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [], bacaSaja = false }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false, tautanKelompok = null }) => {
   const { auth, server_filter } = usePage().props;
   // Sel isian aktif: kantor alur baru, baris harian, belum dikunci kasir.
   const bisaIsiSu = (r) =>
@@ -179,7 +179,15 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false }) => {
           {datas.map((r, i) => (
             <tr key={i} className="bg-white border-t group even:bg-slate-50 hover:bg-sky-50">
               <td className={`sticky left-0 px-3 py-1.5 font-medium text-left whitespace-nowrap ${WARNA.biru.sel}`}>
-                {r.type == 'daily' ? r.kelompok : dayjs(r.tanggal).format('DD-MM')}
+                {r.type != 'daily' ? (
+                  dayjs(r.tanggal).format('DD-MM')
+                ) : tautanKelompok ? (
+                  <a href={tautanKelompok(r)} className="text-sky-700 underline decoration-dotted" title="Detail tunai per hari kelompok ini">
+                    {r.kelompok}
+                  </a>
+                ) : (
+                  r.kelompok
+                )}
               </td>
               {KOLOM.map(([k, , kelas, bertanda]) => (
                 <td

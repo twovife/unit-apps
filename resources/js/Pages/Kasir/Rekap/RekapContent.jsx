@@ -156,6 +156,17 @@ const RekapContent = ({
             </h2>
             <TableRekapKasir
               bacaSaja
+              // Klik kelompok -> detail tunai per hari (Rekap per Mantri) s/d tanggal ini.
+              tautanKelompok={(r) =>
+                route('kasir.rekap.rekap_permantri', {
+                  kelompok: r.kelompok,
+                  month: dayjs(server_filter.tanggal).format('YYYY-MM'),
+                  sampai: server_filter.tanggal,
+                  tab: 'rekapkasir',
+                  ...(server_filter.branch_id ? { branch_id: server_filter.branch_id } : {}),
+                  ...(server_filter.wilayah ? { wilayah: server_filter.wilayah } : {}),
+                })
+              }
               datas={(datas ?? []).map((r) => ({ ...r.global, id: r.id, kelompok: r.kelompok, type: 'daily' }))}
             />
           </>

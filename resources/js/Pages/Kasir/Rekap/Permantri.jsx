@@ -94,7 +94,11 @@ const Permantri = ({
         </div>
       </div>
       <div className="max-h-[70vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-none">
-        <Tabs defaultValue="rekappimpinan" className="w-full">
+        {/* ?tab=rekapkasir membuka detail tunai langsung (dari tabel Global Rekap 1). */}
+        <Tabs
+          defaultValue={new URLSearchParams(window.location.search).get('tab') === 'rekapkasir' ? 'rekapkasir' : 'rekappimpinan'}
+          className="w-full"
+        >
           <TabsList>
             <TabsTrigger value="rekappimpinan">Rekap Mantri</TabsTrigger>
             <TabsTrigger value="rekapkasir">Rekap Kasir Mantri</TabsTrigger>

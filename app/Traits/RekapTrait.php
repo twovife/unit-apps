@@ -286,7 +286,8 @@ trait RekapTrait
         'su_lapangan' => $adaSetoran ? $gSetoran['setoran_tunai'] : null,
         'setoran_transfer' => $adaSetoran ? $gSetoran['setoran_transfer'] : null,
         'setoran_katrol' => $adaSetoran ? $gSetoran['setoran_katrol'] : null,
-        'selisih_uang' => $adaSetoran
+        // -/+ global: setoran kosong = 0, jadi = jumlah -/+ detail per hari.
+        'selisih_uang' => $alurBaru
           ? array_sum($gSetoran) - ($gTitipan9 + ($gDebit - $gKredit))
           : null,
       ];
@@ -857,6 +858,9 @@ trait RekapTrait
           'kasbon' => (int) $r->kasbon,
           'transport' => (int) $r->transport,
           'tunai' => (int) $r->tunai,
+          'setoran_tunai' => $r->setoran_tunai,
+          'setoran_transfer' => $r->setoran_transfer,
+          'setoran_katrol' => $r->setoran_katrol,
           'daily_kepala_approval' => $r->kepala_approval_at !== null,
           'daily_kasir_approval' => $r->kasir_lock_at !== null,
         ]);
@@ -891,7 +895,16 @@ trait RekapTrait
       ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
       ->get();
 
-    $dates = $loan->pluck('drop_date')->merge($instalment->pluck('transaction_date'))->unique()->sort()->values();
+    // Tanggal yang berisi: drop, angsuran, atau isian kasir (kasbon /
+    // transport / setoran). Opsional dibatasi s/d ?sampai (detail dari tabel
+    // Global Rekap 1, supaya jumlahnya sama).
+    $sampai = $request->filled('sampai') ? Carbon::parse($request->sampai)->toDateString() : null;
+    $dates = $loan->pluck('drop_date')->merge($instalment->pluck('transaction_date'))
+      ->merge($transactionDailyRecap->filter(fn($r) => ($r->kasbon ?? 0) || ($r->transport ?? 0)
+        || isset($r->setoran_tunai) || isset($r->setoran_transfer) || isset($r->setoran_katrol))->pluck('date'))
+      ->map(fn($d) => Carbon::parse($d)->toDateString())
+      ->when($sampai, fn($c) => $c->filter(fn($d) => $d <= $sampai))
+      ->unique()->sort()->values();
 
     $saldoAwalBulan = $transactionSirculation->map(function ($item) {
       return [
@@ -906,7 +919,9 @@ trait RekapTrait
     })->sortBy('day')->values();
 
     // dd($saldoAwalBulan);
-    $data = $dates->map(function ($date) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transactionOffice, $startDateofMonth, $kelompok) {
+    $alurBaruMantri = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth);
+
+    $data = $dates->map(function ($date) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transactionOffice, $startDateofMonth, $kelompok, $alurBaruMantri) {
       // 'tanggal' => $date,
 
       $transaction_date = Carbon::parse($date)->format('Y-m-d');
@@ -944,8 +959,15 @@ trait RekapTrait
       $transport = $thisDailyRecap?->transport ?? 0;
       $nominaldrop = $thisLoan->sum('nominal_drop');
       $kredit = $nominaldrop + $transport;
+      // Setoran = hanya isian kasir, kosong = 0 (sama dengan tabel Global Rekap 1).
+      $setoran = (int) ($thisDailyRecap?->setoran_tunai ?? 0) + (int) ($thisDailyRecap?->setoran_transfer ?? 0) + (int) ($thisDailyRecap?->setoran_katrol ?? 0);
       return [
         'type' => 'permantri',
+        'sisa_uang' => $titipan9 + ($debit - $kredit),
+        'su_lapangan' => $thisDailyRecap?->setoran_tunai ?? null,
+        'setoran_transfer' => $thisDailyRecap?->setoran_transfer ?? null,
+        'setoran_katrol' => $thisDailyRecap?->setoran_katrol ?? null,
+        'selisih_uang' => $alurBaruMantri ? $setoran - ($titipan9 + ($debit - $kredit)) : null,
         'kelompok' => $kelompok,
         'id' => $transactionOffice->id,
         'tanggal' => $transaction_date,
