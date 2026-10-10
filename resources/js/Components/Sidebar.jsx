@@ -261,26 +261,6 @@ export default function AppSidebar({ ...props }) {
               ]}
             />
 
-            {/* Submenu: Angsuran Cabang */}
-            <SidebarSubMenuSection
-              icon={HandCoins}
-              title="Angsuran Cabang"
-              items={[
-                {
-                  id: 1,
-                  title: 'Angsuran Lancar',
-                  link: route('pinjaman.index_pinjaman'),
-                  active: route().current('pinjaman.index_pinjaman'),
-                },
-                {
-                  id: 2,
-                  title: 'Macet',
-                  link: route('pinjaman.index_pinjaman_macet'),
-                  active: route().current('pinjaman.index_pinjaman_macet'),
-                },
-              ]}
-            />
-
             {/* Submenu: Persiapan Migrasi Agregasi */}
             <SidebarSubMenuSection
               icon={ClipboardCheck}
