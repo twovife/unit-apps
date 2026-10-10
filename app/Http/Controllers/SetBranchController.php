@@ -22,7 +22,7 @@ class SetBranchController extends Controller
         if ($user) {
             $allowedBranches = \App\Models\Branch::getAllowedBranchIds($user);
             if ($allowedBranches === null || in_array($request->branch_id, $allowedBranches)) {
-                Session::put("active_branch_id_{$user->id}", $request->branch_id);
+                \App\Helpers\AuthScope::simpanFilterGlobal(['branch_id' => (int) $request->branch_id]);
                 return back()->with('message', 'Cabang aktif berhasil diubah.');
             }
         }

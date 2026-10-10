@@ -15,6 +15,19 @@ class AuthScope
      *
      * @return int
      */
+    /** Kunci session paket filter global user ini (cabang, kelompok, tanggal, hari, bulan). */
+    public static function kunciFilterGlobal(): string
+    {
+        return 'filter_global_' . (auth()->id() ?? 0);
+    }
+
+    /** Ubah sebagian isi paket filter global. */
+    public static function simpanFilterGlobal(array $isi): void
+    {
+        $kunci = self::kunciFilterGlobal();
+        Session::put($kunci, array_merge(Session::get($kunci, []), $isi));
+    }
+
     public static function getActiveBranchId()
     {
         $user = auth()->user();
@@ -23,8 +36,9 @@ class AuthScope
         }
 
         $allowedBranches = Branch::getAllowedBranchIds($user);
-        // Cek dari session yang terikat dengan user ID
-        $activeBranchId = Session::get("active_branch_id_{$user->id}");
+        // Cabang aktif ada di paket filter global yang sama dengan kelompok,
+        // tanggal, hari & bulan.
+        $activeBranchId = Session::get(self::kunciFilterGlobal())['branch_id'] ?? null;
 
 // dd(['activebranch'=>$activeBranchId],['alowedbranch'=>$allowedBranches]);
 
@@ -40,7 +54,7 @@ class AuthScope
         $defaultId = Branch::getDefaultBranchId($user);
 
         // Update session dengan default agar konsisten
-        Session::put("active_branch_id_{$user->id}", $defaultId);
+        self::simpanFilterGlobal(['branch_id' => $defaultId]);
 // dd($defaultId);
         return $defaultId;
     }
@@ -72,8 +86,7 @@ class AuthScope
                 // yang juga mengisi request('kelompok') kalau URL tidak
                 // membawanya. Kalau kelompoknya tidak ada di cabang aktif
                 // (ganti cabang), jatuh ke kelompok pertama cabang itu.
-                $kunci = "filter_global_{$user->id}";
-                $diminta = request('kelompok') ?: (Session::get($kunci)['kelompok'] ?? null);
+                $diminta = request('kelompok') ?: (Session::get(self::kunciFilterGlobal())['kelompok'] ?? null);
                 $ada = $diminta && \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)
                     ->where('kelompok', $diminta)->exists();
                 if ($ada) {
@@ -87,7 +100,7 @@ class AuthScope
                 // Hanya pindah halaman yang mengubah pilihan global - JSON drawer
                 // (mis. detail kelompok 5 dari Rekap 1) & simpan data tidak.
                 if (request()->isMethod('get') && !request()->wantsJson()) {
-                    Session::put($kunci, array_merge(Session::get($kunci, []), ['kelompok' => $kelompok]));
+                    self::simpanFilterGlobal(['kelompok' => $kelompok]);
                 }
             }
         }

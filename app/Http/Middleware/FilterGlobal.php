@@ -8,9 +8,10 @@ use Closure;
 use Illuminate\Http\Request;
 
 /**
- * Filter GLOBAL lintas menu: kelompok, tanggal, hari tagih & bulan (keputusan
- * mas 2026-10-10), satu paket di session. Kelompok diambil dari ?kelompok;
- * AuthScope memvalidasinya terhadap cabang aktif. Tanggal/hari/bulan selalu
+ * Filter GLOBAL lintas menu: cabang, kelompok, tanggal, hari tagih & bulan
+ * (keputusan mas 2026-10-10), satu paket di session (AuthScope::
+ * kunciFilterGlobal). Cabang diganti lewat POST set-branch; kelompok dari
+ * ?kelompok, divalidasi AuthScope terhadap cabang aktif. Tanggal/hari/bulan selalu
  * selaras:
  *
  * - pilih TANGGAL  -> hari & bulan ikut tanggal itu (Kamis 17 Sep -> kamis,
@@ -39,38 +40,37 @@ class FilterGlobal
             return $next($request);
         }
 
-        $kunci = "filter_global_{$user->id}";
+        $kunci = \App\Helpers\AuthScope::kunciFilterGlobal();
         $simpan = $request->session()->get($kunci, []);
-        // Disimpan dulu: blok tanggal di bawah menyusun ulang $simpan.
-        $kelompokLama = $simpan['kelompok'] ?? null;
 
         $tanggal = $this->tanggalSah($request->query('date'));
         $hari = in_array(strtolower((string) $request->query('hari')), self::HARI, true) ? strtolower($request->query('hari')) : null;
         $bulan = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('month')) ? $request->query('month') : null;
 
+        // Hanya bagian tanggal/hari/bulan yang disusun ulang; cabang & kelompok
+        // di paket yang sama tetap.
         if ($tanggal) {
             // Tanggal menentukan hari & bulan.
-            $simpan = [
+            $simpan = array_merge($simpan, [
                 'date' => $tanggal->toDateString(),
                 'hari' => strtolower($tanggal->locale('id')->dayName),
                 'month' => $tanggal->format('Y-m'),
-            ];
+            ]);
         } elseif ($hari || $bulan) {
             // Hari / bulan baru -> tanggal = hari tagih terakhir di bulan itu.
             $hari ??= $simpan['hari'] ?? null;
             $bulan ??= $simpan['month'] ?? Carbon::today()->format('Y-m');
-            $simpan = array_filter([
+            unset($simpan['date']);
+            $simpan = array_merge($simpan, array_filter([
                 'hari' => $hari,
                 'month' => $bulan,
                 'date' => $hari ? $this->tagihTerakhir($hari, $bulan) : null,
-            ]);
+            ]));
         }
 
         // Kelompok ikut paket yang sama (bebas dari tanggal/hari/bulan).
         if (ctype_digit((string) $request->query('kelompok'))) {
             $simpan['kelompok'] = (int) $request->query('kelompok');
-        } elseif (isset($kelompokLama)) {
-            $simpan['kelompok'] = $kelompokLama;
         }
 
         if ($simpan) {
