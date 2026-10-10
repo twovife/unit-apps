@@ -69,6 +69,13 @@ const TableRekap = ({
     });
     setAktif(tgl);
   };
+  // Chip aktif selalu kelihatan di deret yang digeser samping (HP).
+  const deretChip = useRef(null);
+  useEffect(() => {
+    const d = deretChip.current;
+    const c = d?.querySelector(`[data-chip="${aktif}"]`);
+    if (c && d.scrollWidth > d.clientWidth) d.scrollLeft = c.offsetLeft - d.clientWidth / 2 + c.offsetWidth / 2;
+  }, [aktif]);
   useEffect(() => {
     setTinggiKepala(kepala.current?.offsetHeight ?? 0);
     // Sesudah `data` (state) dirender, supaya pita tanggalnya sudah ada di DOM.
@@ -203,16 +210,19 @@ const TableRekap = ({
       </Dialog>
 
       {/* Tabel harian: satu pita per tanggal, baris per kelompok, subtotal. */}
-      <div className="flex flex-wrap items-center gap-1 mb-2">
+      <p className="mb-1 text-xs text-slate-500">Angka dalam ribuan.</p>
+      {/* HP: satu baris geser samping; layar lebar: membungkus. */}
+      <div ref={deretChip} className="relative flex gap-1 pb-1 mb-2 overflow-x-auto scrollbar-thin sm:flex-wrap sm:overflow-visible">
         {(data ?? []).map((d) => {
           const lewat = d.tanggal > hariIni;
           return (
             <button
               key={d.tanggal}
               type="button"
+              data-chip={d.tanggal}
               onClick={() => loncat(d.tanggal)}
               title={dayjs(d.tanggal).format('dddd, DD MMMM YYYY')}
-              className={`min-w-7 h-7 px-1.5 text-xs rounded-md border tabular-nums transition-colors ${
+              className={`shrink-0 min-w-7 h-7 px-1.5 text-xs rounded-md border tabular-nums transition-colors ${
                 aktif === d.tanggal
                   ? 'bg-sky-600 border-sky-600 text-white font-semibold'
                   : d.tanggal === hariIni
@@ -226,7 +236,6 @@ const TableRekap = ({
             </button>
           );
         })}
-        <span className="ml-auto text-xs text-slate-500">Angka dalam ribuan.</span>
       </div>
       <div ref={kotak} className="max-h-[65vh] bg-white border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
         <table className="w-full text-xs tabular-nums">
