@@ -65,7 +65,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                 return (
                   <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${kelas ?? ''}`}>
                     {banding[k] && !kosong && <Panah ini={r[k]} dulu={r[banding[k]]} />}
-                    {klik[k] && Number(v) ? (
+                    {klik[k] && !kosong ? (
                       <button
                         type="button"
                         onClick={() => klik[k](r)}

@@ -208,7 +208,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 >
                   {KOLOM_ISI[k] && bisaIsiSu(r) ? (
                     <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} kuning={!!WARNA_KOLOM[k]} />
-                  ) : KLIK[k]?.[0] && Number(r[k]) ? (
+                  ) : KLIK[k]?.[0] ? (
                     <button
                       type="button"
                       onClick={() => KLIK[k][0](r)}

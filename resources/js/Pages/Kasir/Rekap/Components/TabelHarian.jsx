@@ -14,7 +14,7 @@ const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
  *
  * - data: [{ tanggal, data: [baris] }]
  * - kolom: [[kunci, label, kelasTambahan?]]
- * - klik: { kunci: (baris) => void } - angka bukan nol jadi tombol
+ * - klik: { kunci: (baris) => void } - angkanya jadi tombol (termasuk 0)
  * - batasIsi: 'YYYY-MM-DD' - tanggal sesudahnya ditampilkan 0 (tabel kosongan)
  *   dan chip-nya pudar. Tanpa ini semua tanggal tampil apa adanya.
  * - ekstra: { kepala: [label], sel: (baris, tanggal, kosong) => [<td>] }
@@ -134,7 +134,7 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                       <td className="sticky left-0 px-3 py-1 font-medium bg-inherit">{r.kelompok}</td>
                       {kolom.map(([k, , kelas]) => (
                         <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
-                          {klik[k] && Number(nilai(r, k)) ? (
+                          {klik[k] && !kosong ? (
                             <button
                               type="button"
                               onClick={() => klik[k]({ ...r, tanggal: item.tanggal })}
