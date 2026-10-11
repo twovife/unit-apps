@@ -176,7 +176,10 @@ class DaftarMigrasi
     /**
      * Bawa kolom MANUAL dari daily_recaps lama ke daily_closings bulan migrasi.
      *
-     * kasbon/transport/keluar/target itu DIKETIK manusia — tak bisa dihitung
+     * kasbon/transport/keluar/target itu DIKETIK manusia, begitu juga Ceklist
+ * Kepala (ACC KM) - tanda KM sudah mengecek hari itu ikut dibawa, termasuk
+ * hari SESUDAH batas kunci migrasi (mas 2026-10-11). Kunci kasir TIDAK
+ * dibawa: hari sesudah batas kunci tetap terbuka, dikunci lagi lewat Rekap 1. — tak bisa dihitung
      * ulang dari sumber seperti drop/storting/ember. Kalau tidak ikut dibawa saat
      * kantor pindah tabel, data yang sudah diinput kasir/kepala di bulan migrasi
      * HILANG (dan `tunai` yang generated dari kasbon/transport jadi salah). Hanya
@@ -197,7 +200,8 @@ class DaftarMigrasi
         $recaps = DB::table('transaction_daily_recaps')
             ->whereIn('transaction_loan_officer_grouping_id', $ids)
             ->whereBetween('date', [$periode->toDateString(), $periode->copy()->endOfMonth()->toDateString()])
-            ->get(['transaction_loan_officer_grouping_id', 'date', 'kasbon', 'transport', 'keluar', 'target', 'target_on']);
+            ->get(['transaction_loan_officer_grouping_id', 'date', 'kasbon', 'transport', 'keluar', 'target', 'target_on',
+                'daily_kepala_approval', 'daily_kepala_approval_user']);
 
         $terbawa = 0;
 
@@ -211,7 +215,10 @@ class DaftarMigrasi
                     'keluar' => (int) ($r->keluar ?? 0),
                     'target' => (int) ($r->target ?? 0),
                     'target_on' => $r->target_on,
-                ]);
+                ] + ($r->daily_kepala_approval ? [
+                    'kepala_approval_at' => $r->daily_kepala_approval,
+                    'kepala_approval_user' => $r->daily_kepala_approval_user,
+                ] : []));
         }
 
         return $terbawa;
