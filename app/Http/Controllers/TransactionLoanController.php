@@ -481,7 +481,7 @@ class TransactionLoanController extends Controller
       'isActiveMember' => ['boolean', 'required'],
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'nik' => ['required', 'digits:16'],
-      'nomor_anggota' => ['required', 'string', 'max:255'],
+      'nomor_anggota' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
       // Hari libur ditolak SELALU (keputusan mas
@@ -489,6 +489,7 @@ class TransactionLoanController extends Controller
       'request_date' => ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal pengajuan')],
       'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
+      'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
       '*.min' => 'minimal diisi 100rb',
       'request_date.before_or_equal' => 'Tanggal pengajuan tidak boleh di masa depan.',
       'nomor_anggota.required' => 'Nomor anggota wajib diisi (lihat promes / buku manual).',
@@ -603,13 +604,14 @@ class TransactionLoanController extends Controller
 
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'kelompok' => ['required'],
-      'nomor_anggota' => ['required', 'string', 'max:255'],
+      'nomor_anggota' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
 
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
 
       'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
+      'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
       '*.required' => "Wajib Diisi",
       '*.min' => 'minimal diisi 100rb'
 
@@ -796,9 +798,10 @@ class TransactionLoanController extends Controller
       'request_date' => ['required', 'date', new HariKerja('Tanggal pengajuan')],
       'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
       'type' =>  ['required'],
-      'nomor_anggota' => ['required', 'string', 'max:255'],
+      'nomor_anggota' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
       'residential_address' => ['nullable', 'string', 'max:255'],
     ], [
+      'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
       '*.min' => 'minimal diisi 100rb'
     ]);
 
@@ -1395,8 +1398,8 @@ class TransactionLoanController extends Controller
     }
 
     $val = $request->validate([
-      'nomor_anggota' => ['nullable', 'string', 'max:255'],
-    ]);
+      'nomor_anggota' => ['nullable', 'regex:/^[0-9]+$/', 'max:20'],
+    ], ['nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.']);
 
     TransactionManageCustomer::whereKey($transactionLoan->transaction_manage_customer_id)
       ->update(['nomor_anggota' => trim((string) ($val['nomor_anggota'] ?? '')) ?: null]);

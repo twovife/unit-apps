@@ -125,8 +125,9 @@ class BatchInputController extends Controller
           'day' => $dayOfWeek,
         ]);
         // Kolom "NO ANGGOTA" (nomor di promes / buku manual), melekat ke rekening.
-        if (!empty($ns['no'])) {
-          $manage->update(['nomor_anggota' => $ns['no']]);
+        // Hanya angka (sama dengan validateData); selain itu diabaikan.
+        if (!empty($ns['no']) && ctype_digit(trim((string) $ns['no']))) {
+          $manage->update(['nomor_anggota' => trim((string) $ns['no'])]);
         }
 
         if ($isPast) {
@@ -316,6 +317,7 @@ class BatchInputController extends Controller
       // 3. Cek Format Data Kritikal
       if (empty($ns['nama'])) $errors[] = "NAMA KOSONG";
       if (empty($ns['no'])) $errors[] = "NO ANGGOTA KOSONG";
+      elseif (!ctype_digit(trim((string) $ns['no']))) $errors[] = "NO ANGGOTA HARUS ANGKA";
       if (empty($ns['drop_date'])) $errors[] = "TANGGAL KOSONG";
 
       $status = empty($errors) ? 'ok' : 'error';

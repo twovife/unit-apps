@@ -318,9 +318,12 @@ const InputMacet = ({ show, onClosed }) => {
                             </Label>
                             <Input
                               type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               name="nomor_anggota"
                               value={data.nomor_anggota}
-                              onChange={onInputChange}
+                              // Nomor anggota hanya angka: huruf dibuang saat diketik.
+                              onChange={(e) => setData('nomor_anggota', e.target.value.replace(/\D/g, ''))}
                               required={true}
                             />
                             <InputError message={errors.nomor_anggota} />

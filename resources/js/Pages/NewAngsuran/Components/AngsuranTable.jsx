@@ -73,7 +73,9 @@ const SelNomorAnggota = ({ r, boleh, className = "" }) => {
           autoFocus
           className="w-full h-6 px-1 text-xs text-center border rounded border-sky-400 outline-none"
           value={nilai}
-          onChange={(e) => setNilai(e.target.value)}
+          inputMode="numeric"
+          // Nomor anggota hanya angka.
+          onChange={(e) => setNilai(e.target.value.replace(/\D/g, ''))}
           onBlur={kirim}
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur(); // blur -> kirim, sekali saja

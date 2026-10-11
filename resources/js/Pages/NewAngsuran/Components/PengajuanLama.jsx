@@ -203,10 +203,13 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
             <Label>Nomor Anggota</Label>
             <Input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               name="nomor_anggota"
               required={true}
               value={data.nomor_anggota}
-              onChange={onInputChange}
+              // Nomor anggota hanya angka: huruf dibuang saat diketik.
+              onChange={(e) => setData('nomor_anggota', e.target.value.replace(/\D/g, ''))}
             />
             <InputError message={errors.nomor_anggota} />
           </div>
