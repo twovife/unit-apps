@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
+import { WARNA } from './TableRekapKasir';
 
 // Angka dipangkas ribuannya (1.300.000 -> 1.300).
 export const ribu = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
@@ -18,8 +19,9 @@ const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
  * - batasIsi: 'YYYY-MM-DD' - tanggal sesudahnya ditampilkan 0 (tabel kosongan)
  *   dan chip-nya pudar. Tanpa ini semua tanggal tampil apa adanya.
  * - ekstra: { kepala: [label], sel: (baris, tanggal, kosong) => [<td>] }
+ * - warna: { kunci: WARNA.x } - warna blok kolom ala Rekap 1 (TableRekapKasir)
  */
-const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null }) => {
+const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null, warna = {} }) => {
   const kotak = useRef(null);
   const kepala = useRef(null);
   const deretChip = useRef(null);
@@ -87,9 +89,9 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
         <table className="w-full text-xs tabular-nums">
           <thead ref={kepala} className="sticky top-0 z-20 bg-slate-100 text-slate-700">
             <tr>
-              <th className="sticky left-0 z-20 px-3 py-2 font-medium text-left bg-slate-100">Kelompok</th>
+              <th className={`sticky left-0 z-20 px-3 py-2 font-medium text-left ${WARNA.biru.kepala}`}>Kelompok</th>
               {kolom.map(([k, label]) => (
-                <th key={k} className="px-3 py-2 font-medium text-right whitespace-nowrap">
+                <th key={k} className={`px-3 py-2 font-medium text-right whitespace-nowrap ${warna[k]?.kepala ?? ''}`}>
                   {label}
                 </th>
               ))}
@@ -130,11 +132,12 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                     <tr
                       key={r.id ?? r.grouping_id ?? r.kelompok}
                       // bg-white: kolom Kelompok yang beku mewarisi latar ini (jangan transparan).
-                      className={`border-t bg-white even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}
+                      // group: warna blok kolom ikut selang-seling & hover baris (group-even/hover).
+                      className={`group border-t bg-white even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}
                     >
-                      <td className="sticky left-0 px-3 py-1 font-medium bg-inherit">{r.kelompok}</td>
+                      <td className={`sticky left-0 px-3 py-1 font-medium ${WARNA.biru.sel}`}>{r.kelompok}</td>
                       {kolom.map(([k, , kelas]) => (
-                        <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
+                        <td key={k} className={`px-3 py-1 text-right ${warna[k]?.sel ?? ''} ${kelas ?? ''}`}>
                           {klik[k] && !kosong ? (
                             <button
                               type="button"
@@ -153,9 +156,9 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                     </tr>
                   ))}
                   <tr className="font-bold border-t bg-emerald-50 text-slate-900">
-                    <td className="sticky left-0 px-3 py-1.5 bg-emerald-50">Total</td>
+                    <td className={`sticky left-0 px-3 py-1.5 ${WARNA.biru.total}`}>Total</td>
                     {kolom.map(([k, , kelas]) => (
-                      <td key={k} className={`px-3 py-1.5 text-right ${kelas ?? ''}`}>
+                      <td key={k} className={`px-3 py-1.5 text-right ${warna[k]?.total ?? ''} ${kelas ?? ''}`}>
                         {ribu(kosong ? 0 : jumlah(item.data, k))}
                       </td>
                     ))}

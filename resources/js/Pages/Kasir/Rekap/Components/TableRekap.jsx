@@ -11,6 +11,18 @@ import { Link } from '@inertiajs/react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
 import TabelHarian, { ribu } from './TabelHarian';
+import { WARNA } from './TableRekapKasir';
+
+// Warna blok kolom Rekap 2, seragam dengan Rekap 1: drop biru, storting kuning,
+// sirkulasi hijau, CM biru, MB kuning, ML merah.
+const WARNA_HARIAN = {
+  drop: WARNA.biru, total_drop: WARNA.biru,
+  storting: WARNA.kuning, total_storting: WARNA.kuning,
+  sirkulasi: WARNA.hijau,
+  angsuran_cm: WARNA.biru, total_angsuran_cm: WARNA.biru, saldo_cm: WARNA.biru,
+  angsuran_mb: WARNA.kuning, total_angsuran_mb: WARNA.kuning, saldo_mb: WARNA.kuning,
+  angsuran_ml: WARNA.merah, total_angsuran_ml: WARNA.merah, saldo_ml: WARNA.merah,
+};
 
 // [kunci, label, kelas tambahan]. Saldo ditebalkan - angka yang dicocokkan.
 export const KOLOM_HARIAN = [
@@ -207,6 +219,7 @@ const TableRekap = ({
       <TabelHarian
         data={data ?? []}
         kolom={KOLOM_HARIAN}
+        warna={WARNA_HARIAN}
         klik={{ storting: onKlikStorting, drop: onKlikDrop }}
         // Tanggal yang belum tiba = kosongan.
         batasIsi={dayjs().format('YYYY-MM-DD')}
