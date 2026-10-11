@@ -55,7 +55,12 @@ class AuthenticatedSessionController extends Controller
       return redirect()->route('transaction.index_buku_transaksi');
     }
 
-    return redirect()->intended(RouteServiceProvider::HOME);
+    // Selalu ke Home sesudah login (mas 2026-10-11), bukan ke halaman terakhir
+    // yang sempat dibuka sebelum sesi habis (intended) - itu yang membuat
+    // login mendarat di Pengajuan.
+    $request->session()->forget('url.intended');
+
+    return redirect(RouteServiceProvider::HOME);
   }
 
   /**
