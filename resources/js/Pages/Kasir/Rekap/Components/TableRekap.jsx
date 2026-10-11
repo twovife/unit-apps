@@ -15,7 +15,7 @@ import { WARNA } from './TableRekapKasir';
 
 // Warna blok kolom Rekap 2, seragam dengan Rekap 1: drop biru, storting kuning,
 // sirkulasi hijau, CM biru, MB kuning, ML merah.
-const WARNA_HARIAN = {
+export const WARNA_HARIAN = {
   drop: WARNA.biru, total_drop: WARNA.biru,
   storting: WARNA.kuning, total_storting: WARNA.kuning,
   sirkulasi: WARNA.hijau,

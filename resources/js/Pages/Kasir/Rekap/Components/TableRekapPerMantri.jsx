@@ -3,7 +3,8 @@ import dayjs from 'dayjs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shadcn/ui/accordion';
 import { Wallet } from 'lucide-react';
 import { ribu } from './TabelHarian';
-import { Cek, KOLOM_HARIAN } from './TableRekap';
+import { Cek, KOLOM_HARIAN, WARNA_HARIAN } from './TableRekap';
+import { WARNA } from './TableRekapKasir';
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Kolom "Jml"/saldo itu angka berjalan - totalnya = baris terakhir, bukan jumlah.
@@ -75,9 +76,9 @@ const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, 
         <table className="w-full text-xs tabular-nums">
           <thead className="sticky top-0 z-20 bg-slate-100 text-slate-700">
             <tr>
-              <th className="sticky left-0 z-20 px-3 py-2 font-medium text-left bg-slate-100">Tanggal</th>
+              <th className={`sticky left-0 z-20 px-3 py-2 font-medium text-left ${WARNA.biru.kepala}`}>Tanggal</th>
               {KOLOM_HARIAN.map(([k, label]) => (
-                <th key={k} className="px-3 py-2 font-medium text-right whitespace-nowrap">
+                <th key={k} className={`px-3 py-2 font-medium text-right whitespace-nowrap ${WARNA_HARIAN[k]?.kepala ?? ''}`}>
                   {label}
                 </th>
               ))}
@@ -97,13 +98,18 @@ const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, 
               <tr
                 key={r.tanggal}
                 // Latar padat (bukan transparan): kolom Tanggal yang beku mewarisinya.
-                className={`border-t hover:bg-sky-50 ${dayjs(r.tanggal).day() === 1 ? 'bg-rose-50' : 'bg-white even:bg-slate-50'}`}
+                // group: warna blok kolom (sama dengan Rekap 2) ikut selang-seling & hover.
+                className={`group border-t hover:bg-sky-50 ${dayjs(r.tanggal).day() === 1 ? 'bg-rose-50' : 'bg-white even:bg-slate-50'}`}
               >
-                <td className="sticky left-0 px-3 py-1 font-medium whitespace-nowrap bg-inherit">
+                <td
+                  className={`sticky left-0 px-3 py-1 font-medium whitespace-nowrap ${
+                    dayjs(r.tanggal).day() === 1 ? 'bg-rose-200' : WARNA.biru.sel
+                  }`}
+                >
                   {dayjs(r.tanggal).format('ddd, DD-MM')}
                 </td>
                 {KOLOM_HARIAN.map(([k, , kelas]) => (
-                  <td key={k} className={`px-3 py-1 text-right ${kelas ?? ''}`}>
+                  <td key={k} className={`px-3 py-1 text-right ${WARNA_HARIAN[k]?.sel ?? ''} ${kelas ?? ''}`}>
                     {klik[k] ? (
                       <button
                         type="button"
@@ -129,9 +135,9 @@ const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, 
           {datas.length > 0 && (
             <tfoot className="sticky bottom-0 font-bold border-t-2 bg-emerald-50 text-slate-900">
               <tr>
-                <td className="sticky left-0 px-3 py-2 bg-emerald-50">Total</td>
+                <td className={`sticky left-0 px-3 py-2 ${WARNA.biru.total}`}>Total</td>
                 {KOLOM_HARIAN.map(([k, , kelas]) => (
-                  <td key={k} className={`px-3 py-2 text-right ${kelas ?? ''}`}>
+                  <td key={k} className={`px-3 py-2 text-right ${WARNA_HARIAN[k]?.total ?? ''} ${kelas ?? ''}`}>
                     {ribu(BERJALAN.has(k) ? akhir[k] : jumlah(datas, k))}
                   </td>
                 ))}
