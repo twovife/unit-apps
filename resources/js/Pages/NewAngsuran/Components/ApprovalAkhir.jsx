@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
+import { useFilterAngsuran } from '../FilterAngsuran';
 import { Button } from '@/shadcn/ui/button';
 import dayjs from 'dayjs';
 import Loading from '@/Components/Loading';
@@ -40,11 +41,12 @@ const Panah = ({ miring }) => (
 
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
-const ApprovalAkhir = ({ datas, show = false, onClosed }) => {
-  const {
-    sirkulasi,
-    server_filter: { month, hari, groupId },
-  } = usePage().props;
+// sirkulasi & filter boleh datang dari luar (drawer Buku Storting di halaman
+// lain); bawaannya props halaman.
+const ApprovalAkhir = ({ datas, show = false, onClosed, sirkulasi: sirkulasiProp }) => {
+  const halaman = usePage().props;
+  const sirkulasi = sirkulasiProp !== undefined ? sirkulasiProp : halaman.sirkulasi;
+  const { month, hari, groupId } = useFilterAngsuran();
 
   const { data, setData, post, reset, processing, errors, transform } = useForm(
     {

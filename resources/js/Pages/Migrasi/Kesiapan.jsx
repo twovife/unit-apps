@@ -5,6 +5,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import dayjs from 'dayjs';
 import ModalMigrasi from './Components/ModalMigrasi';
+import DrawerBukuStorting from '@/Pages/NewAngsuran/Components/DrawerBukuStorting';
 
 const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
@@ -43,6 +44,7 @@ const GRUP = [
 const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
   const [hanyaBelum, setHanyaBelum] = useState(false);
   const [modal, setModal] = useState(false);
+  const [storting, setStorting] = useState(null);
   const baris = hanyaBelum ? datas.filter((b) => !b.siap) : datas;
   const lancarSistem = (s) => s.month1 + s.month2 + s.ccm;
   // Data real = posisi hari terakhir bulan sebelumnya; bucket = baris sirkulasi tanggal 1 periode.
@@ -172,17 +174,14 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                 <TableRow key={b.kunci} className={b.siap ? '' : 'bg-amber-50/50'}>
                   <TableCell className="sticky left-0 px-2 py-1.5 font-medium bg-inherit">{b.kelompok}</TableCell>
                   <TableCell className="px-2 py-1.5 capitalize">
-                    {/* Ke Buku Storting kelompok x hari ini, posisi hari tagih terakhir bulan sebelumnya. */}
-                    <Link
-                      href={route('pinjaman.index_pinjaman', {
-                        date: tanggalBuku(b.hari),
-                        kelompok: b.kelompok,
-                        tab: 'bukustorting',
-                      })}
-                      className="underline decoration-dotted"
+                    {/* Buku Storting kelompok x hari ini (drawer), posisi hari tagih terakhir bulan sebelumnya. */}
+                    <button
+                      type="button"
+                      onClick={() => setStorting({ kelompok: b.kelompok, hari: b.hari, tanggal: tanggalBuku(b.hari) })}
+                      className="capitalize underline decoration-dotted text-sky-700 hover:text-sky-900"
                     >
                       {b.hari}
-                    </Link>
+                    </button>
                   </TableCell>
                   <Angka n={b.sistem.month2} kelas="text-slate-500" batas />
                   <Angka n={b.sistem.ccm} kelas="text-slate-500" />
@@ -261,6 +260,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
           </Table>
         </div>
       </div>
+      <DrawerBukuStorting target={storting} onClosed={() => setStorting(null)} />
     </Authenticated>
   );
 };

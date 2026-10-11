@@ -16,10 +16,14 @@ import { Badge } from '@/shadcn/ui/badge';
 import ApprovalAkhir from './ApprovalAkhir';
 import TutupBukuBaru from './TutupBukuBaru';
 import { usePage } from '@inertiajs/react';
+import { useFilterAngsuran } from '../FilterAngsuran';
 
-const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
+// tutupBuku: diisi saat dipakai di drawer (data JSON); bawaan dari props halaman.
+const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
   // Kantor migrasi: tutup buku = tanda tangan baris bulanan (sekali).
-  const { tutup_buku: tb, server_filter } = usePage().props;
+  const halaman = usePage().props;
+  const tb = tutupBuku !== undefined ? tutupBuku : halaman.tutup_buku;
+  const server_filter = useFilterAngsuran();
   const [data, setData] = useState([]);
   const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
     ml: {
@@ -274,6 +278,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
         <TutupBukuBaru tb={tb} month={server_filter.month} show={showApproval} onClosed={onClosedShowApproval} />
       ) : (
         <ApprovalAkhir
+          sirkulasi={sirkulasi}
           show={showApproval}
           onClosed={onClosedShowApproval}
           datas={sirkulasiAkhir}
