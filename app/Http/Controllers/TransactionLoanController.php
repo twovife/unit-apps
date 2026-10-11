@@ -1163,7 +1163,7 @@ class TransactionLoanController extends Controller
     // dipakai rincian per bulan supaya sisa tiap bulan ikut rumus yang sama.
     $pemutihan = \App\Models\TransactionWhiteOff::where('transaction_loan_id', $loan->id)
       ->orderBy('transaction_date')
-      ->get(['transaction_date', 'nominal']);
+      ->get(['id', 'transaction_loan_officer_grouping_id', 'transaction_date', 'nominal']);
     $koreksi = $pemutihan->map(fn($w) => ['tanggal' => $w->transaction_date, 'efek' => -(int) $w->nominal])
       ->concat(
         \App\Models\TransactionSaldoAdjustment::where('transaction_loan_id', $loan->id)
@@ -1255,6 +1255,15 @@ class TransactionLoanController extends Controller
     });
 
 
+
+    // Pemutihan + boleh dihapus? (tanggal terkunci kasir / beku -> tidak;
+    // can-edit / superuser boleh di hari terkunci, kecuali beku).
+    $pemutihan = $pemutihan->map(fn($w) => [
+      'id' => $w->id,
+      'transaction_date' => \Carbon\Carbon::parse($w->transaction_date)->toDateString(),
+      'nominal' => (int) $w->nominal,
+      'terkunci' => AppHelper::tanggalTerkunci($w->transaction_loan_officer_grouping_id, $w->transaction_date),
+    ]);
 
     return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment, 'pemutihan' => $pemutihan, 'koreksi' => $koreksi], 200);
   }
@@ -1451,6 +1460,14 @@ class TransactionLoanController extends Controller
     if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
+    if (\App\Models\TransactionWhiteOff::where('transaction_loan_id', $transactionLoan->id)->exists()) {
+      return redirect()->back()->withErrors('Pinjaman ini sudah diputihkan. Hapus pemutihan lama dulu kalau perlu diulang.');
+    }
+    // Tanggal yang sudah dikunci kasir / beku tidak bisa dipakai (can-edit:
+    // boleh, kuncinya dibuka otomatis lewat model TransactionWhiteOff).
+    if (AppHelper::tanggalTerkunci($transactionLoan->transaction_loan_officer_grouping_id, $request->transaction_date)) {
+      return redirect()->back()->withErrors('Tanggal ' . Carbon::parse($request->transaction_date)->format('d-m-Y') . ' sudah dikunci. Pilih tanggal yang belum dikunci.');
+    }
 
     try {
       DB::beginTransaction();
@@ -1472,6 +1489,37 @@ class TransactionLoanController extends Controller
     }
 
     return redirect()->back()->with('message', 'Data berhasil diubah');
+  }
+
+  /**
+   * Hapus pemutihan selama tanggalnya belum dikunci (can-edit: boleh, kunci
+   * dibuka otomatis; beku: tidak). Status lunas & keluar target karena
+   * pemutihan ikut dihitung ulang -> batal.
+   */
+  public function destroy_white_off(\App\Models\TransactionWhiteOff $transactionWhiteOff)
+  {
+    $loan = $transactionWhiteOff->transaction_loan;
+    if (!auth()->user()->hasPermissionTo('can-create')) {
+      return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
+    }
+    if (!$loan || !AppHelper::bolehAksesPinjaman($loan)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+    if (AppHelper::tanggalTerkunci($transactionWhiteOff->transaction_loan_officer_grouping_id, $transactionWhiteOff->transaction_date)) {
+      return redirect()->back()->withErrors('Tanggal pemutihan sudah dikunci, pemutihan tidak bisa dihapus.');
+    }
+
+    try {
+      DB::beginTransaction();
+      $transactionWhiteOff->delete();
+      $loan->hitungUlangPelunasan();
+      DB::commit();
+    } catch (Exception $e) {
+      DB::rollBack();
+      return redirect()->back()->withErrors(AppHelper::pesanGagal($e, 'Pemutihan gagal dihapus'));
+    }
+
+    return redirect()->back()->with('message', 'Pemutihan dihapus, target keluar dibatalkan.');
   }
 
   /**

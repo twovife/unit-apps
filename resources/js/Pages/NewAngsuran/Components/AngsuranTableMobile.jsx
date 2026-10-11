@@ -16,12 +16,14 @@ const jumlah = (rows, key) => rows.reduce((t, r) => t + (Number(r[key]) || 0), 0
 
 // Angsuran wajib per minggu = pinjaman / 10 (= drop × 13%). Angsuran terakhir
 // cukup sebesar sisanya, jadi dibatasi sisa sebelum bayar hari ini.
-const wajib = (r) => Math.min(Number(r.pinjaman) / 10, Number(r.saldo) + Number(r.angs_today));
+const wajib = (r) => Math.min(Number(r.pinjaman) / 10, Number(r.saldo) + Number(r.angs_today) + md(r));
+// Pemutihan (MD) di tanggal terpilih - dianggap terbayar (nasabah dilunaskan).
+const md = (r) => Number(r.md_hari_ini) || 0;
 
 // Status hari ini: drop baru (belum bisa ditagih) / belum dicatat / dicatat
 // tidak bayar (0) / bayar.
 const statusHariIni = (r) =>
-  r.drop_baru ? 'baru' : !r.is_paid ? 'belum' : Number(r.angs_today) > 0 ? 'bayar' : 'tidak';
+  r.drop_baru ? 'baru' : !r.is_paid ? 'belum' : Number(r.angs_today) > 0 || md(r) > 0 ? 'bayar' : 'tidak';
 
 // Cara bayar hari ini (`instalment` dari server hanya berisi tanggal terpilih).
 // Aturan sama dengan HitungAgregat::caraBayar: transfer > katrol > tunai.
@@ -39,7 +41,7 @@ const warnaBaris = (r) => {
   if (s === 'baru') return 'bg-gray-50 text-gray-400';
   if (s === 'belum') return 'bg-white';
   if (s === 'tidak') return 'bg-red-100 border-l-4 border-l-red-500';
-  if (caraBayar(r) !== 'katrol' && Number(r.angs_today) < wajib(r)) return 'bg-amber-100 border-l-4 border-l-amber-500';
+  if (caraBayar(r) !== 'katrol' && Number(r.angs_today) + md(r) < wajib(r)) return 'bg-amber-100 border-l-4 border-l-amber-500';
   return 'bg-emerald-100 border-l-4 border-l-emerald-500';
 };
 
@@ -47,7 +49,7 @@ const warnaBaris = (r) => {
 const warnaAngka = (r) => {
   const s = statusHariIni(r);
   if (s === 'tidak') return 'text-red-600';
-  if (caraBayar(r) !== 'katrol' && Number(r.angs_today) < wajib(r)) return 'text-amber-600';
+  if (caraBayar(r) !== 'katrol' && Number(r.angs_today) + md(r) < wajib(r)) return 'text-amber-600';
   return 'text-emerald-600';
 };
 
@@ -140,7 +142,7 @@ const AngsuranTableMobile = ({ datas }) => {
           <span className="px-1 rounded bg-emerald-100 text-emerald-800">sesuai</span>{' '}
           <span className="px-1 text-amber-800 rounded bg-amber-100">kurang</span>{' '}
           <span className="px-1 text-red-800 bg-red-100 rounded">0</span>{' '}
-          · <b>K</b> katrol · <b>TF</b> transfer ·{' '}
+          · <b>K</b> katrol · <b>TF</b> transfer · <b className="text-red-600">MD</b> pemutihan ·{' '}
           <span className="px-1 text-gray-500 bg-white border rounded">belum</span>
         </div>
 
@@ -183,7 +185,6 @@ const AngsuranTableMobile = ({ datas }) => {
               <div />
               <div className={`${KECIL} min-w-0 truncate`}>
                 {r.alamat}
-                {Number(r.pemutihan_today) > 0 && ` · pemutihan ${rb(r.pemutihan_today)}`}
               </div>
               <div className={`${KECIL} text-right`}>{rb(r.pinjaman)}</div>
               {/* Sisa tebal & lebih gelap: angka yang paling sering dilihat. */}
@@ -283,17 +284,28 @@ const Angs = ({ r }) => {
     return <span className="text-base text-gray-300">–</span>;
   }
 
+  // Pemutihan hari itu: "MD -nominal" kecil di bawah angka angsuran.
+  const tandaMd = md(r) > 0 && (
+    <span className="block text-[11px] font-semibold leading-tight text-red-600">
+      <span className="mr-0.5 text-[9px]">MD</span>-{rb(md(r))}
+    </span>
+  );
+  if (Number(r.angs_today) === 0 && md(r) > 0) return tandaMd;
+
   return (
     // Angka paling mencolok di baris: tebal, warna senada latar (warnaAngka).
     // Tanda kecil di depan angka: K = katrol (dana titipan), TF = transfer.
-    <span className={`text-lg font-extrabold ${warnaAngka(r)}`}>
-      {caraBayar(r) !== 'tunai' && (
-        <span className="mr-1 align-middle text-[10px] font-semibold text-gray-600">
-          {caraBayar(r) === 'tf' ? 'TF' : 'K'}
-        </span>
-      )}
-      {rb(r.angs_today)}
-    </span>
+    <>
+      <span className={`text-lg font-extrabold ${warnaAngka(r)}`}>
+        {caraBayar(r) !== 'tunai' && (
+          <span className="mr-1 align-middle text-[10px] font-semibold text-gray-600">
+            {caraBayar(r) === 'tf' ? 'TF' : 'K'}
+          </span>
+        )}
+        {rb(r.angs_today)}
+      </span>
+      {tandaMd}
+    </>
   );
 };
 
