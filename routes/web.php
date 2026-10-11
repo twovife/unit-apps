@@ -24,7 +24,8 @@ use Inertia\Inertia;
 
 
 Route::get('/', function () {
-  return Inertia::render('Dashboard');
+  // Video panduan pengumuman (MinIO, link sementara) - kosong kalau belum disetel.
+  return Inertia::render('Dashboard', ['video' => \App\Helpers\VideoPengumuman::url()]);
 })->middleware(['auth'])->name('home');
 
 Route::middleware('auth')->group(function () {

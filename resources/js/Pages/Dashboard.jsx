@@ -1,17 +1,20 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { Megaphone } from 'lucide-react';
+import { useState } from 'react';
+import { Megaphone, PlayCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
 // Pengumuman pembaruan aplikasi, per bagian. `judul` null = tanpa judul.
-// `penting` = ditampilkan merah.
+// `penting` = ditampilkan merah. `video` = kunci video panduan (props.video,
+// link sementara MinIO dari VideoPengumuman) -> klik membuka modal pemutar.
 const PENGUMUMAN = [
   {
     judul: null,
     isi: [
-      { teks: 'Update tampilan aplikasi.' },
-      { teks: 'Pengajuan nasabah lama lewat menu Angsuran.' },
-      { teks: 'Perubahan tampilan menu Angsuran.' },
-      { teks: 'Input Nomor Anggota (agar nama nasabah urut berdasarkan nomor anggota).' },
+      { teks: 'Update tampilan aplikasi.', video: 'tampilan_baru' },
+      { teks: 'Pengajuan nasabah lama lewat menu Angsuran.', video: 'pelunasan' },
+      { teks: 'Perubahan tampilan menu Angsuran.', video: 'input_angsuran' },
+      { teks: 'Input Nomor Anggota (agar nama nasabah urut berdasarkan nomor anggota).', video: 'nasabah_baru' },
       { teks: 'Perubahan pemilihan Tanggal Drop (agar tidak salah input tanggal libur).' },
       { teks: 'Perubahan tampilan menu Drop & input Target.' },
       { teks: 'Perubahan tampilan menu Buku Angsuran.' },
@@ -40,6 +43,9 @@ const PENGUMUMAN = [
 ];
 
 export default function Dashboard(props) {
+  const video = props.video ?? {};
+  const [putar, setPutar] = useState(null); // { judul, src }
+
   return (
     <AuthenticatedLayout auth={props.auth} errors={props.errors} header="Home">
       <Head title="Home" />
@@ -61,7 +67,18 @@ export default function Dashboard(props) {
                       className={`flex gap-2 ${p.penting ? 'p-2 -mx-2 rounded-md bg-red-50 text-red-700 font-semibold' : 'text-slate-700'}`}
                     >
                       <span className="w-5 text-right shrink-0 tabular-nums">{i + 1}.</span>
-                      <span>{p.teks}</span>
+                      {p.video && video[p.video] ? (
+                        <button
+                          type="button"
+                          onClick={() => setPutar({ judul: p.teks, src: video[p.video] })}
+                          className="flex items-start gap-1.5 text-left text-sky-700 hover:text-sky-900"
+                        >
+                          <span className="underline decoration-dotted underline-offset-2">{p.teks}</span>
+                          <PlayCircle className="w-4 h-4 mt-0.5 shrink-0" aria-label="putar video" />
+                        </button>
+                      ) : (
+                        <span>{p.teks}</span>
+                      )}
                     </li>
                   ))}
                 </ol>
@@ -70,6 +87,18 @@ export default function Dashboard(props) {
           </div>
         </section>
       </div>
+
+      <Dialog open={!!putar} onOpenChange={(o) => !o && setPutar(null)}>
+        <DialogContent className="max-w-3xl p-3 sm:p-4">
+          <DialogHeader>
+            <DialogTitle className="pr-8 text-base">{putar?.judul}</DialogTitle>
+          </DialogHeader>
+          {/* key: ganti video -> elemen baru, mulai dari awal. */}
+          {putar && (
+            <video key={putar.src} src={putar.src} controls autoPlay playsInline className="w-full bg-black rounded-md max-h-[75vh]" />
+          )}
+        </DialogContent>
+      </Dialog>
     </AuthenticatedLayout>
   );
 }
