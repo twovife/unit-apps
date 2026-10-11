@@ -105,6 +105,11 @@ class DaftarMigrasi
             foreach ($bulan as $b) {
                 TutupBulanan::susun($ids, $b);
             }
+
+            // Saldo awal BULAN DEPAN (= akhir bulan berjalan) langsung tersedia,
+            // sama dengan tiap tutup harian (ClosingHarianController::
+            // susunBulanan) - tidak menunggu kunci kasir pertama.
+            TutupBulanan::susun($ids, Carbon::now()->startOfMonth()->addMonthNoOverflow());
         });
 
         AgregasiScope::lupakanCache();
