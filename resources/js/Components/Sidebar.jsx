@@ -364,12 +364,14 @@ export default function AppSidebar({ ...props }) {
                   title: 'Koreksi Data Beku',
                   link: route('migrasi.koreksi_beku'),
                   active: route().current('migrasi.koreksi_beku'),
+                  fix: true,
                 },
                 {
                   id: 2,
                   title: 'Log Koreksi',
                   link: route('migrasi.koreksi_beku_log'),
                   active: route().current('migrasi.koreksi_beku_log'),
+                  fix: true,
                 },
               ]}
             />
