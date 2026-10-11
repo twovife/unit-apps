@@ -168,8 +168,11 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
           )}
 
           {/* Drop dibatalkan (success -> gagal). Server menolak kalau sudah ada
-              angsuran, sudah jadi dasar pengajuan lain, atau hari terkunci. */}
-          {status === 'success' && canCreate && (
+              angsuran, sudah jadi dasar pengajuan lain, atau hari terkunci.
+              Hari drop sudah terkunci / di-ACC KM (recap_approved) -> tombol
+              disembunyikan; can-edit / superuser tetap melihatnya (server
+              mengirim recap_approved=false, kunci dibuka otomatis). */}
+          {status === 'success' && canCreate && !triggeredData?.recap_approved && (
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
                 Hanya bisa selama belum ada angsuran dan hari drop belum dikunci.
