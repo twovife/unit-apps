@@ -10,7 +10,7 @@ import { Eye, EyeOff, Info, Lock, LogIn, User } from 'lucide-react';
 
 /**
  * Halaman login: panel merek gelap (warna logo) di kiri pada desktop, di atas
- * pada HP; formulir di kanan/bawah. `status` = pesan dari server (mis. sesi
+ * pada HP (seluruh layar hitam); formulir di kanan/bawah. `status` = pesan dari server (mis. sesi
  * habis, akun nonaktif) -> kotak info di atas formulir.
  */
 export default function Login({ status }) {
@@ -28,28 +28,30 @@ export default function Login({ status }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 lg:flex-row">
-      <Head title="Log in" />
+    // HP: satu layar hitam - logo & nama di atas, kartu putih di bawahnya.
+    // Desktop (lg): dibelah dua - panel merek kiri, formulir kanan di latar abu.
+    <div className="flex flex-col min-h-screen bg-black lg:flex-row">
+      <Head title="Masuk" />
       <Loading show={processing} />
 
       {/* Panel merek */}
-      <div className="relative flex flex-col items-center justify-center gap-4 px-6 pt-12 pb-16 overflow-hidden text-white bg-black lg:w-1/2 lg:min-h-screen lg:pb-12">
+      <div className="relative flex flex-col items-center justify-center gap-3 px-6 pt-10 pb-8 text-white lg:w-1/2 lg:min-h-screen lg:gap-5">
         <div
           aria-hidden="true"
-          className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_20%,#334155,transparent_60%)]"
+          className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_50%_0%,#334155,transparent_65%)] lg:bg-[radial-gradient(circle_at_30%_20%,#334155,transparent_60%)]"
         />
-        <img src="/icons/icon-512.png" alt="UBMI" className="relative w-24 h-24 rounded-2xl lg:w-40 lg:h-40" />
+        <img src="/icons/icon-512.png" alt="UBMI" className="relative w-20 h-20 rounded-2xl lg:w-40 lg:h-40" />
         <div className="relative text-center">
-          <h1 className="text-2xl font-bold tracking-tight lg:text-4xl">UBMI Apps</h1>
-          <p className="mt-1 text-sm text-slate-300 lg:text-base">Sistem transaksi &amp; pembukuan cabang</p>
+          <h1 className="text-2xl font-extrabold tracking-wide lg:text-4xl">UBMI DIGITAL</h1>
+          <p className="mt-1 text-sm text-slate-400 lg:text-base">Aplikasi Pembukuan Kantor</p>
         </div>
       </div>
 
       {/* Formulir */}
-      <div className="flex items-start justify-center flex-1 px-4 -mt-8 lg:items-center lg:mt-0">
-        <div className="w-full max-w-sm p-6 bg-white border shadow-lg rounded-2xl lg:shadow-sm">
+      <div className="flex flex-col items-center flex-1 px-4 pb-6 lg:justify-center lg:bg-slate-50 lg:pb-0">
+        <div className="w-full max-w-sm p-5 bg-white shadow-xl rounded-2xl sm:p-6 lg:border lg:shadow-sm">
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-slate-900">Masuk</h2>
+            <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">Masuk</h2>
             <p className="text-sm text-slate-500">Gunakan username &amp; password akun Anda.</p>
           </div>
 
@@ -115,7 +117,7 @@ export default function Login({ status }) {
           </form>
 
           <div className="flex items-center justify-between pt-4 mt-5 text-xs border-t text-slate-400">
-            <span>© {new Date().getFullYear()} UBMI</span>
+            <span>© {new Date().getFullYear()} UBMI DIGITAL</span>
             <TombolPasangAplikasi />
           </div>
         </div>

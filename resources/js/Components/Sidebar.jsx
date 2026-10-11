@@ -94,10 +94,10 @@ export default function AppSidebar({ ...props }) {
                 <img src="/icons/icon-192.png" alt="UBMI" className="rounded-lg shadow-sm size-9" />
                 <div className="grid flex-1 text-sm leading-tight text-left">
                   <span className="font-bold tracking-tight truncate text-slate-900">
-                    UBMI APPS
+                    UBMI DIGITAL
                   </span>
                   <span className="text-xs font-medium truncate text-slate-500">
-                    Cabang Transaction
+                    Aplikasi Pembukuan Kantor
                   </span>
                 </div>
               </div>

@@ -7,7 +7,7 @@ import { dengar, pasang, sudahTerpasang } from '@/lib/pasangAplikasi';
 const iOS = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 
 /**
- * Tombol "Install" di header: pasang UBMI Apps sebagai ikon di layar HP.
+ * Tombol "Install" di header: pasang UBMI DIGITAL sebagai ikon di layar HP.
  * Chrome/Edge Android & desktop: dialog pasang bawaan. Browser tanpa dialog
  * itu (iPhone Safari, dll.): petunjuk manual. Hilang kalau sudah dibuka
  * sebagai aplikasi terpasang.
@@ -33,7 +33,7 @@ export default function TombolPasangAplikasi() {
       <Dialog open={petunjuk} onOpenChange={setPetunjuk}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Install UBMI Apps</DialogTitle>
+            <DialogTitle>Install UBMI DIGITAL</DialogTitle>
             <DialogDescription asChild>
               {iOS() ? (
                 <ol className="pl-4 space-y-1 text-sm list-decimal">

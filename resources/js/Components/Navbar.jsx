@@ -9,7 +9,7 @@ const Navbar = ({ header }) => {
       <div className="flex items-center gap-3">
         <SidebarTrigger />
         <span className="font-semibold text-slate-800 text-sm hidden sm:inline-block">
-          UBMI APPS
+          UBMI DIGITAL
         </span>
         <TombolPasangAplikasi />
       </div>
