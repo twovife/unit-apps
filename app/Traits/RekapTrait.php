@@ -970,6 +970,8 @@ trait RekapTrait
         // Dibaca Rencana/Approval di drawer ACC KM (alur baru vs lama).
         'migrasi' => \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth),
         'hari_terbuka' => \App\Helpers\AgregasiScope::sudahMigrasi($branch_id) ? \App\Helpers\Gembok::hariTerbuka($branch_id) : [],
+        // Jumlah Koreksi Data Beku kantor ini (penanda di Saldo Awal Bulan).
+        'koreksi_beku' => \App\Models\TransactionKoreksiBeku::where('branch_id', $branch_id)->count(),
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,

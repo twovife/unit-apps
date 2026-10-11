@@ -145,6 +145,17 @@ Route::middleware('auth')->group(function () {
       ->name('penyesuaian_saldo_setujui');
     Route::get('/serah-terima', [\App\Http\Controllers\MigrasiController::class, 'serahTerima'])
       ->name('serah_terima');
+    // Koreksi Pasca Migrasi (superuser): koreksi angsuran sebelum tanggal migrasi + log.
+    Route::get('/koreksi-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'index'])
+      ->name('koreksi_beku');
+    Route::get('/koreksi-beku/tujuan', [\App\Http\Controllers\KoreksiBekuController::class, 'cariTujuan'])
+      ->name('koreksi_beku_tujuan');
+    Route::post('/koreksi-beku/pratinjau', [\App\Http\Controllers\KoreksiBekuController::class, 'pratinjau'])
+      ->name('koreksi_beku_pratinjau');
+    Route::post('/koreksi-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'simpan'])
+      ->name('koreksi_beku_simpan');
+    Route::get('/koreksi-beku/log', [\App\Http\Controllers\KoreksiBekuController::class, 'log'])
+      ->name('koreksi_beku_log');
     Route::put('/serah-terima/{closing}/z', [\App\Http\Controllers\MigrasiController::class, 'simpanZ'])
       ->name('serah_terima_z');
     Route::post('/serah-terima/sahkan', [\App\Http\Controllers\MigrasiController::class, 'sahkanSerahTerima'])

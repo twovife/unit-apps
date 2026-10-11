@@ -1,4 +1,5 @@
 import Authenticated from '@/Layouts/AuthenticatedLayout';
+import BadgeKoreksiBeku from '@/Components/BadgeKoreksiBeku';
 import React, { useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
@@ -110,7 +111,10 @@ const Bulanan = ({ datas = [], server_filter }) => {
       <div className="p-4 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">Closing Bulanan — {server_filter?.unit}</h1>
+            <h1 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-slate-900">
+              Closing Bulanan — {server_filter?.unit}
+              <BadgeKoreksiBeku jumlah={server_filter?.koreksi_beku} />
+            </h1>
             <p className="max-w-3xl mt-1 text-sm text-slate-600">
               Laporan pemeriksaan bulan. Angka tersusun otomatis tiap hari dikunci; tanda tangan dilakukan sekali per buku
               lewat <b>Tutup Buku Storting</b>. Angka dalam ribuan.

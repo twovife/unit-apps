@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import BadgeKoreksiBeku from '@/Components/BadgeKoreksiBeku';
+import { usePage } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import {
   Accordion,
@@ -112,6 +114,9 @@ const TableRekap = ({
             <span className="flex items-center gap-3 font-semibold text-slate-900">
               <Wallet className="w-5 h-5 text-sky-600 shrink-0" aria-hidden="true" />
               Saldo Awal Bulan
+            </span>
+            <span className="ml-3">
+              <BadgeKoreksiBeku jumlah={usePage().props.server_filter?.koreksi_beku} />
             </span>
             <span className="ml-auto mr-2 text-xs font-normal text-slate-500">ribuan</span>
           </AccordionTrigger>

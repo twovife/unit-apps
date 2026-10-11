@@ -38,6 +38,8 @@ class TutupBulanan
      * ditulis ulang kalau angkanya berubah (keputusan mas 2026-10-06, sama
      * dengan proses kantor), tanda tangannya tetap, dan jejak 'perbarui'
      * dicatat sebagai tandanya. Tanpa $perbarui, baris terkunci dilewati.
+     * `paksa_awal` => true (Koreksi Data Beku): saldo awal ikut dihitung ulang
+     * walau serah terima sudah diteken.
      *
      * @return array{dibuat:int,diperbarui:int,dilewati:int}
      */
@@ -81,7 +83,8 @@ class TutupBulanan
                     $akhir[$k] ?? [],
                     $saldoMasuk[$k] ?? 0,
                     $kelengkapan[$k] ?? ['hari_kerja' => 0, 'hari_terkunci' => 0],
-                    $baris
+                    $baris,
+                    (bool) ($perbarui['paksa_awal'] ?? false)
                 );
 
                 // Baris bulanan yang sudah DIKUNCI tidak disentuh hitung ulang
@@ -173,7 +176,8 @@ class TutupBulanan
         array $akhir,
         int $saldoMasuk,
         array $kelengkapan,
-        ?TransactionMonthlyClosing $baris = null
+        ?TransactionMonthlyClosing $baris = null,
+        bool $paksaAwal = false
     ): array {
         $isi = [
             'drop' => $arus['drop'] ?? 0,
@@ -199,7 +203,11 @@ class TutupBulanan
         // `akhir_*` TETAP dihitung ulang: itu memang cerminan keadaan sekarang,
         // dan justru selisih `akhir` terhadap `awal` yang membuat sisipan
         // semacam itu terlihat, bukan tersembunyi. Lihat §13.2.
-        $sudahSerahTerima = $baris && $baris->serah_terima_at !== null;
+        //
+        // Satu pengecualian ($paksaAwal): Koreksi Data Beku oleh superuser
+        // (KoreksiBeku) - tujuannya justru membetulkan patokan itu, dengan
+        // alasan tertulis dan jejak di log koreksi & riwayat kunci.
+        $sudahSerahTerima = !$paksaAwal && $baris && $baris->serah_terima_at !== null;
 
         foreach (Ember::SEMUA as $e) {
             $isi['storting_' . $e] = $arus['storting_' . $e] ?? 0;

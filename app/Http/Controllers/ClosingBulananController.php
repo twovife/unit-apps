@@ -122,6 +122,7 @@ class ClosingBulananController extends Controller
                 'sebelumnya' => $periode->copy()->subMonthNoOverflow()->format('Y-m'),
                 'berikutnya' => $periode->copy()->addMonthNoOverflow()->format('Y-m'),
                 'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+                'koreksi_beku' => \App\Models\TransactionKoreksiBeku::where('branch_id', $scope->branch_id)->count(),
                 'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
                 // Hari dibuka ulang yang belum dikunci lagi (menahan kelengkapan).
                 'hari_terbuka' => AgregasiScope::sudahMigrasi($scope->branch_id) ? \App\Helpers\Gembok::hariTerbuka($scope->branch_id) : [],

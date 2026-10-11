@@ -29,6 +29,7 @@ import {
   Calendar,
   ChevronsUpDown,
   ClipboardCheck,
+  FilePenLine,
   FileSpreadsheet,
   HandCoins,
   Home,
@@ -338,6 +339,28 @@ export default function AppSidebar({ ...props }) {
                   title: 'Target Bayangan',
                   link: route('migrasi.target_bayangan'),
                   active: route().current('migrasi.target_bayangan'),
+                },
+              ]}
+            />
+            )}
+
+            {/* Koreksi Pasca Migrasi - khusus superuser (mas 2026-10-11). */}
+            {isSuperUser && (
+            <SidebarSubMenuSection
+              icon={FilePenLine}
+              title="Koreksi Pasca Migrasi"
+              items={[
+                {
+                  id: 1,
+                  title: 'Koreksi Data Beku',
+                  link: route('migrasi.koreksi_beku'),
+                  active: route().current('migrasi.koreksi_beku'),
+                },
+                {
+                  id: 2,
+                  title: 'Log Koreksi',
+                  link: route('migrasi.koreksi_beku_log'),
+                  active: route().current('migrasi.koreksi_beku_log'),
                 },
               ]}
             />
