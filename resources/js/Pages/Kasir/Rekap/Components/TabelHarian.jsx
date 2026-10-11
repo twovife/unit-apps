@@ -172,7 +172,7 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                   </tr>
                   {gantiMinggu && (
                     <tr aria-hidden="true">
-                      <td colSpan={lebar} className="h-5 p-0 border-t-2 bg-slate-300 border-slate-400" />
+                      <td colSpan={lebar} className="h-6 p-0 bg-white" />
                     </tr>
                   )}
                 </React.Fragment>
