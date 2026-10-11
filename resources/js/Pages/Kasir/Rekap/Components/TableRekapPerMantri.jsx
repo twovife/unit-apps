@@ -96,7 +96,8 @@ const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, 
             {datas.map((r) => (
               <tr
                 key={r.tanggal}
-                className={`border-t hover:bg-sky-50 ${dayjs(r.tanggal).day() === 1 ? 'bg-rose-50' : 'even:bg-slate-50'}`}
+                // Latar padat (bukan transparan): kolom Tanggal yang beku mewarisinya.
+                className={`border-t hover:bg-sky-50 ${dayjs(r.tanggal).day() === 1 ? 'bg-rose-50' : 'bg-white even:bg-slate-50'}`}
               >
                 <td className="sticky left-0 px-3 py-1 font-medium whitespace-nowrap bg-inherit">
                   {dayjs(r.tanggal).format('ddd, DD-MM')}

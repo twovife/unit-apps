@@ -129,7 +129,8 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                   {item.data.map((r) => (
                     <tr
                       key={r.id ?? r.grouping_id ?? r.kelompok}
-                      className={`border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}
+                      // bg-white: kolom Kelompok yang beku mewarisi latar ini (jangan transparan).
+                      className={`border-t bg-white even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}
                     >
                       <td className="sticky left-0 px-3 py-1 font-medium bg-inherit">{r.kelompok}</td>
                       {kolom.map(([k, , kelas]) => (

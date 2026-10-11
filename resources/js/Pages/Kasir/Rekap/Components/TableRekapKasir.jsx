@@ -163,7 +163,10 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
       <table className="w-full text-sm tabular-nums">
         <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
           <tr>
-            <th className={`sticky left-0 z-20 px-3 py-2 text-left ${WARNA.biru.kepala}`}>Kelompok</th>
+            {/* Rekap per mantri: baris = tanggal, bukan kelompok. */}
+            <th className={`sticky left-0 z-20 px-3 py-2 text-left ${WARNA.biru.kepala}`}>
+              {datas.length && datas.every((r) => r.type != 'daily') ? 'Tanggal' : 'Kelompok'}
+            </th>
             {KOLOM.map(([k, label]) => (
               <th
                 key={k}
