@@ -14,7 +14,8 @@ use Illuminate\Http\Request;
 
 trait RekapTrait
 {
-  public function getRencanaDropKepalaData(Request $request)
+  // $hanyaKelompok: Rekap Mantri cukup satu kelompok, bukan seluruh cabang.
+  public function getRencanaDropKepalaData(Request $request, $hanyaKelompok = null)
   {
     $scope = \App\Helpers\AuthScope::resolve();
     $branch_id = $scope->branch_id;
@@ -26,7 +27,8 @@ trait RekapTrait
     $transaction_date = $request->month ?? Carbon::now()->format('Y-m');
     $startOfMonth = Carbon::parse($transaction_date)->copy()->startOfMonth();
     $endOfMonth = Carbon::parse($transaction_date)->copy()->endOfMonth();
-    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->get();
+    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)
+      ->when($hanyaKelompok, fn($q) => $q->where('kelompok', $hanyaKelompok))->get();
 
     // Sama seperti getDataRekapDua: ikut kalender kerja, tapi tanggal yang
     // sudah punya drop tetap tampil walau libur - biar kelihatan, bukan hilang.

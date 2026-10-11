@@ -310,6 +310,8 @@ class TransactionDailyRecapController extends Controller
   public function rekap_permantri(Request $request)
   {
     $data = $this->getRekapPermantriData($request);
+    // Tab "Rencana Drop": satu kelompok saja, ikut satu request (5 kueri kecil).
+    $data['rencana'] = collect($this->getRencanaDropKepalaData($request, $data['server_filter']['kelompok'])['datas'])->flatten(1)->values();
     return Inertia::render('WebView/Rekap/RekapPerMantri', $data);
   }
 

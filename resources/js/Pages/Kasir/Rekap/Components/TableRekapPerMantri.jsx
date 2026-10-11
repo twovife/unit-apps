@@ -14,7 +14,8 @@ const BERJALAN = new Set(['total_drop', 'total_storting', 'sirkulasi', 'total_an
  * Rekap Mantri: satu kelompok sebulan, satu baris per tanggal. Tampilan
  * seragam dengan Rekap 2 (kolom KOLOM_HARIAN, ribuan, Cek Staff / Cek Target).
  * Klik Storting -> buku angsuran hari itu, Drop -> buku drop, Cek Target ->
- * drawer ACC KM, Cek Staff -> Rekap 1 tanggal itu.
+ * drawer ACC KM (hanya kalau onAcc diberikan). Cek Staff hanya status: mantri
+ * tidak punya akses ke Rekap 1.
  */
 const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, onKlikDrop, onAcc }) => {
   const klik = { storting: onKlikStorting, drop: onKlikDrop };
@@ -124,10 +125,10 @@ const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, 
                   </td>
                 ))}
                 <td className="px-3 py-1">
-                  <Cek ok={r.status_approve_kasir} href={route('kasir.rekap.rekap_satu', { date: r.tanggal })} />
+                  <Cek ok={r.status_approve_kasir} />
                 </td>
                 <td className="px-3 py-1">
-                  <Cek ok={r.status_approve_kepala} otomatis={r.kepala_otomatis} onClick={() => onAcc?.(r)} />
+                  <Cek ok={r.status_approve_kepala} otomatis={r.kepala_otomatis} onClick={onAcc && (() => onAcc(r))} />
                 </td>
               </tr>
             ))}

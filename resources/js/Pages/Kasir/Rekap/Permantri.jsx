@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import TableRekapKasir from './Components/TableRekapKasir';
 import TableRekapPerMantri from './Components/TableRekapPerMantri';
+import RencanaPerHari from './Components/RencanaPerHari';
 import DrawerBukuDrop from './Components/DrawerBukuDrop';
 import DrawerAccKm from './Components/DrawerAccKm';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
@@ -16,8 +17,10 @@ import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
  * Rekap Mantri: satu kelompok sebulan. Tab Tunai Mantri dibuang (2026-10-10),
  * sama dengan Rekap 1. Filter bulan + kelompok lewat FilterBar (global).
  */
-const Permantri = ({ rekapData = [], saldoAwalBulan = [], urlLink, localState, title }) => {
-  const { server_filter } = usePage().props;
+const Permantri = ({ rekapData = [], saldoAwalBulan = [], rencana = [], urlLink, localState, title }) => {
+  const { server_filter, auth } = usePage().props;
+  // ACC KM hanya untuk yang boleh (server: can-approve, bukan stafkontrol); mantri cuma lihat status.
+  const bolehAcc = auth.permissions.includes('can-approve') && !auth.roles.includes('stafkontrol');
   // jenis: 'harian' -> buku angsuran hari itu, 'drop' -> buku drop, 'acc' -> ACC KM.
   const [target, setTarget] = useState(null);
   const buka = (jenis) => (r) => setTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis });
@@ -68,6 +71,7 @@ const Permantri = ({ rekapData = [], saldoAwalBulan = [], urlLink, localState, t
         <TabsList>
           <TabsTrigger value="rekapmantri">Rekap Mantri</TabsTrigger>
           <TabsTrigger value="rekapkasir">Rekap Kasir Mantri</TabsTrigger>
+          <TabsTrigger value="rencana">Rencana Drop</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rekapmantri">
@@ -76,7 +80,15 @@ const Permantri = ({ rekapData = [], saldoAwalBulan = [], urlLink, localState, t
             datas={rekapData}
             onKlikStorting={buka('harian')}
             onKlikDrop={buka('drop')}
-            onAcc={buka('acc')}
+            onAcc={bolehAcc ? buka('acc') : undefined}
+          />
+        </TabsContent>
+
+        <TabsContent value="rencana">
+          <RencanaPerHari
+            rows={rencana}
+            onAcc={bolehAcc ? buka('acc') : undefined}
+            klik={{ storting: buka('harian'), drop: buka('drop') }}
           />
         </TabsContent>
 

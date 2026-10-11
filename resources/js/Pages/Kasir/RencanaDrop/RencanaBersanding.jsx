@@ -116,6 +116,7 @@ export const Sisi = ({
                       ) : (
                         <>
                           <XCircle className="w-4 h-4 text-red-500" />
+                          {onAcc && (
                           <button
                             type="button"
                             onClick={() => onAcc?.(r)}
@@ -124,6 +125,7 @@ export const Sisi = ({
                           >
                             ACC
                           </button>
+                          )}
                         </>
                       )}
                     </div>

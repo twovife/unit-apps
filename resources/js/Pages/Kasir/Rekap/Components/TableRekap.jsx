@@ -63,14 +63,14 @@ export const Cek = ({ ok, href, onClick, otomatis = false }) => (
           >
             Cek
           </button>
-        ) : (
+        ) : href ? (
           <Link
             href={href}
             className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md text-sky-700 ring-1 ring-sky-300 bg-white hover:bg-sky-50 whitespace-nowrap"
           >
             Cek
           </Link>
-        )}
+        ) : null}
       </>
     )}
   </div>
