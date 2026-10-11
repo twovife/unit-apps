@@ -448,8 +448,8 @@ const NewNasabah = ({
                           DROP BARU
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-sky-800">
-                          Pengajuan drop
+                        <span className="inline-flex items-center px-3 py-1 text-base font-bold tracking-wide text-white rounded-md shadow-sm bg-sky-600">
+                          PENGAJUAN DROP
                         </span>
                       )}
                     </div>
