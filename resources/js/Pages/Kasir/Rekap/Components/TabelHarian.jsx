@@ -6,6 +6,8 @@ import { WARNA } from './TableRekapKasir';
 export const ribu = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+// Senin minggu itu (dayjs: Minggu = 0) - penanda minggu.
+const seninDari = (t) => dayjs(t).subtract((dayjs(t).day() + 6) % 7, 'day').format('YYYY-MM-DD');
 
 /**
  * Tabel harian sebulan (Rekap 2, Rencana Drop): satu pita per tanggal, baris
@@ -110,7 +112,11 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                 </td>
               </tr>
             )}
-            {data.map((item) => {
+            {data.map((item, idx) => {
+              // Jarak sesudah tanggal terakhir minggu itu (biasanya Sabtu) -
+              // supaya pergantian minggu kelihatan.
+              const berikut = data[idx + 1]?.tanggal;
+              const gantiMinggu = berikut && seninDari(berikut) !== seninDari(item.tanggal);
               // Sesudah batas isi: tabel kosongan (semua 0), bukan angka
               // berjalan yang terbawa dari hari terakhir.
               const kosong = !!batasIsi && item.tanggal > batasIsi;
@@ -164,6 +170,11 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                     ))}
                     {ekstra && <td colSpan={ekstra.kepala.length} />}
                   </tr>
+                  {gantiMinggu && (
+                    <tr aria-hidden="true">
+                      <td colSpan={lebar} className="h-5 p-0 border-t-2 bg-slate-300 border-slate-400" />
+                    </tr>
+                  )}
                 </React.Fragment>
               );
             })}
