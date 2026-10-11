@@ -127,9 +127,9 @@ const TableRekap = ({
                               type="button"
                               onClick={() => setPemutihan(item)}
                               title="Pemutihan bulan lalu - klik untuk lihat nasabahnya"
-                              className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md bg-amber-100 text-amber-800 ring-1 ring-amber-300 hover:bg-amber-200"
+                              className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md bg-white text-red-600 border border-red-500 hover:bg-red-50"
                             >
-                              PMT {ribu(item.pemutihan)}
+                              MD {ribu(item.pemutihan)}
                             </button>
                           )}
                           {ribu(item.sirkulasi)}
@@ -148,8 +148,8 @@ const TableRekap = ({
                       <td className="px-3 py-2 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {calculateTotals(sirkulasiAwal, 'pemutihan') > 0 && (
-                            <span className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md bg-amber-100 text-amber-800 ring-1 ring-amber-300">
-                              PMT {ribu(calculateTotals(sirkulasiAwal, 'pemutihan'))}
+                            <span className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md bg-white text-red-600 border border-red-500">
+                              MD {ribu(calculateTotals(sirkulasiAwal, 'pemutihan'))}
                             </span>
                           )}
                           {ribu(calculateTotals(sirkulasiAwal, 'sirkulasi'))}
