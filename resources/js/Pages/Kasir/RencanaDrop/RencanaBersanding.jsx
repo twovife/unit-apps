@@ -44,7 +44,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
     </div>
     <div className="overflow-x-auto">
       <table className="w-full text-xs tabular-nums">
-        <thead className="bg-slate-100 text-slate-700">
+        <thead className="bg-slate-200 text-slate-800">
           <tr className="h-8">
             <th className="px-3 py-1.5 font-medium text-left">Kel</th>
             {kolom.map(([k, label]) => (
@@ -110,7 +110,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
           ))}
         </tbody>
         <tfoot>
-          <tr className="h-8 font-bold border-t bg-emerald-50 text-slate-900">
+          <tr className="h-8 font-bold border-t bg-emerald-100 text-emerald-900">
             <td className="px-3 py-1.5">Total</td>
             {kolom.map(([k, , kelas]) => (
               <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
@@ -191,7 +191,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
           const pasangan = item.data[0]?.pasangan;
           return (
             // Satu pasangan = dua tabel bersebelahan (HP: atas-bawah).
-            <div key={item.tanggal} className="grid gap-2 p-2 border rounded-xl bg-slate-50 lg:grid-cols-2">
+            <div key={item.tanggal} className="grid gap-2 p-2 border rounded-xl bg-slate-100 lg:grid-cols-2">
               <Sisi
                 judul="Hari pengajuan"
                 tanggal={item.tanggal}
@@ -199,7 +199,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KIRI}
                 kosong={kosong}
                 klik={klik}
-                warna={dayjs(item.tanggal).day() === 1 ? 'bg-rose-100 text-slate-800' : 'bg-slate-200 text-slate-800'}
+                warna={dayjs(item.tanggal).day() === 1 ? 'bg-rose-500 text-white' : 'bg-slate-600 text-white'}
                 kolomKm
                 onAcc={onAcc}
               />
@@ -210,7 +210,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KANAN}
                 kosong={kosong}
                 klik={klik}
-                warna="bg-sky-100 text-sky-900"
+                warna="bg-sky-600 text-white"
                 // Target minggu depan dibanding target hari ini.
                 banding={{ p_target: 'target' }}
               />
