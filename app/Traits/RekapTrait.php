@@ -47,10 +47,19 @@ trait RekapTrait
     $semuaTanggal = $datesMatchDay->merge($pasangan->filter()->values())->unique()->values();
     $sampai = $semuaTanggal->max();
 
+    // Dijumlah di SQL per (tanggal, kelompok) - dulu ribuan baris pinjaman &
+    // angsuran ditarik lalu disaring koleksi per sel, itu yang membuat menu
+    // ini ~1 detik lebih lambat. Kunci: "Y-m-d|grouping_id".
     $loan = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
       ->whereBetween('drop_date', [$startOfMonth->toDateString(), $sampai])
-      ->get(['transaction_loan_officer_grouping_id', 'drop_date', 'status', 'drop_langsung', 'nominal_drop', 'approved_nominal'])
-      ->groupBy(fn($l) => Carbon::parse($l->drop_date)->toDateString());
+      ->groupBy('transaction_loan_officer_grouping_id', 'drop_date')
+      ->selectRaw("transaction_loan_officer_grouping_id AS g, drop_date AS d,
+        SUM(CASE WHEN status = 'success' THEN nominal_drop ELSE 0 END) AS drop_,
+        SUM(CASE WHEN status = 'success' AND drop_langsung = 1 THEN nominal_drop ELSE 0 END) AS baru,
+        SUM(CASE WHEN status = 'success' AND drop_langsung = 0 THEN nominal_drop ELSE 0 END) AS lama,
+        SUM(CASE WHEN drop_langsung = 0 AND status IN ('open', 'acc', 'success') THEN approved_nominal ELSE 0 END) AS rencana")
+      ->toBase()->get()
+      ->keyBy(fn($r) => Carbon::parse($r->d)->toDateString() . '|' . $r->g);
 
     $migrasi = \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startOfMonth);
 
@@ -78,8 +87,10 @@ trait RekapTrait
 
     $instalment = TransactionLoanInstalment::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
       ->whereIn('transaction_date', $semuaTanggal)
-      ->get(['transaction_loan_officer_grouping_id', 'transaction_date', 'nominal'])
-      ->groupBy(fn($a) => Carbon::parse($a->transaction_date)->toDateString());
+      ->groupBy('transaction_loan_officer_grouping_id', 'transaction_date')
+      ->selectRaw('transaction_loan_officer_grouping_id AS g, transaction_date AS d, SUM(nominal) AS n')
+      ->toBase()->get()
+      ->mapWithKeys(fn($r) => [Carbon::parse($r->d)->toDateString() . '|' . $r->g => (int) $r->n]);
 
     // Semua kolom satu kelompok di satu tanggal - dipakai untuk D & pasangannya.
     $isi = function (?string $tanggal, int $gid) use ($loan, $daily_recap, $instalment, $migrasi) {
@@ -87,21 +98,21 @@ trait RekapTrait
         return array_fill_keys(['kasbon', 'target', 'masuk', 'keluar', 'storting', 'drop', 'baru', 'lama', 'rencana'], 0);
       }
       $rekap = $daily_recap->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid)->first();
-      $l = $loan->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid);
-      $sukses = $l->where('status', 'success');
+      $l = $loan->get("$tanggal|$gid");
+      $drop = (int) ($l->drop_ ?? 0);
 
       return [
         'kasbon' => (int) ($rekap->kasbon ?? 0),
         'target' => (int) ($rekap->target ?? 0),
         // Alur baru tidak menyimpan masuk: 13% drop, rumus yang sama dengan target.
-        'masuk' => $migrasi ? \App\Helpers\TargetMingguan::masuk((int) $sukses->sum('nominal_drop')) : (int) ($rekap->masuk ?? 0),
+        'masuk' => $migrasi ? \App\Helpers\TargetMingguan::masuk($drop) : (int) ($rekap->masuk ?? 0),
         'keluar' => (int) ($rekap->keluar ?? 0),
-        'storting' => (int) $instalment->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $gid)->sum('nominal'),
-        'drop' => (int) $sukses->sum('nominal_drop'),
-        'baru' => (int) $sukses->where('drop_langsung', 1)->sum('nominal_drop'),
-        'lama' => (int) $sukses->where('drop_langsung', 0)->sum('nominal_drop'),
+        'storting' => $instalment->get("$tanggal|$gid", 0),
+        'drop' => $drop,
+        'baru' => (int) ($l->baru ?? 0),
+        'lama' => (int) ($l->lama ?? 0),
         // Hanya pengajuan yang masih hidup / sudah jadi - tolak & gagal bukan rencana lagi.
-        'rencana' => (int) $l->where('drop_langsung', 0)->whereIn('status', ['open', 'acc', 'success'])->sum('approved_nominal'),
+        'rencana' => (int) ($l->rencana ?? 0),
       ];
     };
 
