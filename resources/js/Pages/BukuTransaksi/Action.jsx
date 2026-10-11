@@ -211,13 +211,9 @@ const Action = ({ show = false, onClosed, triggeredData }) => {
                       <p className="text-lg font-semibold text-red-500">
                         Hapus Pinjaman
                       </p>
-                      <p className="mb-1 text-xs italic font-light text-red-500">
-                        Perhatian !!!, Jika pengajuan berstatus sukses, maka
-                        pengajuan sudah masuk dalam daftar angsuran, jika tetap
-                        dihapus akan mempengaruhi data pada angsuran, dan
-                        angsuran akan ikut terhapus.
-                        <br /> ( Penghapusan hanya bisa dilakukan 2hari dari
-                        tanggal drop (Mantri) dan 2bulan (Admin & Kepala))
+                      <p className="mb-2 text-xs text-slate-500">
+                        Bisa dihapus selama hari drop belum dikunci. Mantri: pinjaman hari ini, atau pengajuan yang
+                        belum di-ACC KM.
                       </p>
                       <div className="text-right">
                         <RemoveLoan

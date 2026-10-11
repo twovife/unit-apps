@@ -21,6 +21,52 @@ import React, { useRef, useState } from 'react';
  *  - can-approve: boleh.
  *  - lainnya    : tidak boleh sama sekali.
  */
+const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
+
+/**
+ * Apa yang terjadi kalau pinjaman ini dihapus, dalam bahasa sederhana:
+ *  - sukses + pelunasan : angsuran pelunasan pinjaman lama ikut terhapus,
+ *                         storting tanggal itu berkurang
+ *  - sukses biasa       : pinjaman & angsurannya hilang dari buku angsuran
+ *  - pengajuan pelunasan: target keluar nasabah di buku angsuran batal
+ *  - pengajuan biasa    : hilang dari rencana drop
+ */
+const Penjelasan = ({ d }) => {
+  if (!d) return null;
+  let nada = 'border-slate-200 bg-slate-50 text-slate-700';
+  let isi;
+
+  if (d.status === 'success' && d.dari_pelunasan) {
+    nada = 'border-amber-300 bg-amber-50 text-amber-900';
+    isi = d.pelunasan ? (
+      <>
+        Drop ini <b>pelunasan pinjaman lama</b>. Jika dihapus, angsuran pelunasan <b>Rp {rp(d.pelunasan.nominal)}</b> tanggal{' '}
+        <b>{dayjs(d.pelunasan.tanggal).format('DD-MM-YYYY')}</b> ikut terhapus: storting tanggal itu berkurang Rp{' '}
+        {rp(d.pelunasan.nominal)} dan pinjaman lama kembali belum lunas.
+      </>
+    ) : (
+      <>
+        Drop ini <b>pelunasan pinjaman lama</b>. Jika dihapus, pelunasan pinjaman lama ikut batal.
+      </>
+    );
+  } else if (d.status === 'success') {
+    isi = <>Pinjaman ini dan angsurannya (kalau ada) akan hilang dari buku angsuran.</>;
+  } else if (['open', 'acc'].includes(d.status) && d.dari_pelunasan) {
+    nada = 'border-amber-300 bg-amber-50 text-amber-900';
+    isi = (
+      <>
+        Ini <b>pengajuan pelunasan</b>. Menghapusnya akan <b>membatalkan target keluar</b> nasabah ini di buku angsuran.
+      </>
+    );
+  } else if (['open', 'acc'].includes(d.status)) {
+    isi = <>Pengajuan ini akan dihapus dari rencana drop.</>;
+  } else {
+    isi = <>Pengajuan {d.status} ini hanya akan dirapikan dari daftar.</>;
+  }
+
+  return <div className={`mb-2 p-2 text-xs text-left border rounded-md leading-relaxed ${nada}`}>{isi}</div>;
+};
+
 const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
   const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
   const passwordInput = useRef();
@@ -51,6 +97,9 @@ const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
     bolehHapus = false;
     pesanTerkunci = 'Hari drop pinjaman ini sudah dikunci, pinjaman tidak bisa dihapus.';
     severity = 'destructive';
+  } else if (isMantri && triggeredData?.status === 'acc') {
+    bolehHapus = false;
+    pesanTerkunci = 'Pengajuan sudah di-ACC oleh KM, hanya KM yang bisa menghapus.';
   } else if (isMantri) {
     bolehHapus = bisaHapusMantri;
     pesanTerkunci =
@@ -102,6 +151,7 @@ const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
   if (!bolehHapus) {
     return (
       <div className="text-right">
+        <Penjelasan d={triggeredData} />
         <Button variant="destructiveoutline2" type="button" disabled>
           Hapus
         </Button>
@@ -118,6 +168,7 @@ const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
 
   return (
     <div ref={buttonArea} onMouseLeave={cancelUserDeletion}>
+      <Penjelasan d={triggeredData} />
       <Loading show={processing} />
       <form onSubmit={deleteUser}>
         <div className="flex flex-col overflow-hidden h-9">

@@ -108,8 +108,15 @@ trait PinjamanTrait
       ->unique()
       ->flip();
 
+    // Angsuran pelunasan otomatis pinjaman lama (topup sukses), per pinjaman
+    // baru - dialog Hapus menyebut storting yang ikut berkurang.
+    $angsuranPelunasan = \App\Models\TransactionLoanInstalment::whereIn('settled_by_loan_id', $loanIds)
+      ->get(['settled_by_loan_id', 'transaction_date', 'nominal'])
+      ->groupBy('settled_by_loan_id');
+
     $bolehKoreksi = \App\Helpers\Gembok::bolehBuka(auth()->user());
-    $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer, $approvedRecapDates, $sudahDiajukanPenggantiIds, $bolehKoreksi) {
+    $pengajuan = collect($loan->map(function ($drop, $key) use ($transactionManageCustomer, $approvedRecapDates, $sudahDiajukanPenggantiIds, $bolehKoreksi, $angsuranPelunasan) {
+      $lunasi = $angsuranPelunasan->get($drop->id);
       $countPinjaman = $transactionManageCustomer->get($drop->transaction_manage_customer_id, collect())->count('id') + 1;
       $dropDateKey = $drop->drop_date ? Carbon::parse($drop->drop_date)->format('Y-m-d') : null;
       return [
@@ -156,6 +163,14 @@ trait PinjamanTrait
         // masih aktif (top-up ATAU Tundaan) - Reset Status & Hapus Pinjaman
         // harus dikunci di UI.
         'sudah_diajukan_pengganti' => $sudahDiajukanPenggantiIds->has($drop->id),
+
+        // Pengajuan pelunasan (topup): menghapusnya membatalkan keluar target
+        // pinjaman lama; kalau sudah sukses, angsuran pelunasannya ikut terhapus.
+        'dari_pelunasan' => (bool) $drop->previous_loan_id,
+        'pelunasan' => $lunasi ? [
+          'tanggal' => Carbon::parse($lunasi->first()->transaction_date)->toDateString(),
+          'nominal' => (int) $lunasi->sum('nominal'),
+        ] : null,
       ];
     })->sortBy('nama')->sortBy('drop_langsung_status')->sortBy('tanggal_drop')->groupBy('tanggal_drop'));
 

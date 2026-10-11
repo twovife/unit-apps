@@ -576,6 +576,11 @@ class AppHelper
       $dropDate = $transactionLoan->drop_date ? Carbon::parse($transactionLoan->drop_date)->format('Y-m-d') : null;
       $requestDate = $transactionLoan->request_date ? Carbon::parse($transactionLoan->request_date)->format('Y-m-d') : null;
 
+      // Sudah di-ACC KM: keputusan KM, mantri tidak bisa membatalkannya.
+      if ($transactionLoan->status === 'acc') {
+        return ["status" => false, 'message' => 'Pengajuan sudah di-ACC oleh KM, hanya KM yang bisa menghapus.'];
+      }
+
       if ($dropDate === $today || $requestDate === $today) {
         return ["status" => true];
       }
