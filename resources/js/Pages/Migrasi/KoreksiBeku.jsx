@@ -271,6 +271,9 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
     akhir && akhir.b === b ? akhir.n++ : acc.push({ b, n: 1 });
     return acc;
   }, []);
+  // Kolom saldo patokan (akhir bulan sebelum migrasi) disisipkan tepat sebelum
+  // tanggal pertama bulan migrasi.
+  const kolomPertamaMigrasi = kolom.find((t) => t >= kantor.mulai);
   const jumlahKolom = (t) => nasabah.reduce((a, n) => a + (n.angsuran[t] ?? []).reduce((x, i) => x + i.nominal, 0), 0);
 
   return (
@@ -341,13 +344,21 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                   <th rowSpan={2} className="px-2 py-1.5 font-medium text-right">Pinjaman</th>
                   <th rowSpan={2} className="px-2 py-1.5 font-medium text-center">Ember</th>
                   {bulanKolom.map((m) => (
-                    <th key={m.b} colSpan={m.n} className="px-2 py-1 font-medium text-center border-l-2 border-slate-300">
-                      {dayjs(`${m.b}-01`).format('MMMM YYYY')}
-                    </th>
+                    <React.Fragment key={m.b}>
+                      {m.b === kantor.mulai.slice(0, 7) && (
+                        <th rowSpan={2} className="px-2 py-1.5 font-medium text-right border-l-2 border-slate-300 whitespace-nowrap bg-amber-100">
+                          Saldo {dayjs(kantor.mulai).subtract(1, 'day').format('DD-MM')}
+                        </th>
+                      )}
+                      <th
+                        colSpan={m.n}
+                        className={`px-2 py-1 font-medium text-center border-l-2 border-slate-300 ${m.b >= kantor.mulai.slice(0, 7) ? 'bg-sky-100' : ''}`}
+                      >
+                        {dayjs(`${m.b}-01`).format('MMMM YYYY')}
+                        {m.b >= kantor.mulai.slice(0, 7) && <span className="ml-1 font-normal text-slate-500">(sesudah migrasi)</span>}
+                      </th>
+                    </React.Fragment>
                   ))}
-                  <th rowSpan={2} className="px-2 py-1.5 font-medium text-right border-l-2 border-slate-300 whitespace-nowrap">
-                    Saldo {dayjs(kantor.mulai).subtract(1, 'day').format('DD-MM')}
-                  </th>
                 </tr>
                 <tr>
                   {kolom.map((t, i) => (
@@ -376,7 +387,17 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                       const isi = n.angsuran[t] ?? [];
                       const total = isi.reduce((a, x) => a + x.nominal, 0);
                       const sebelumDrop = t < n.drop_date;
+                      const sesudah = t >= kantor.mulai;
                       return (
+                        <React.Fragment key={t}>
+                        {t === kolomPertamaMigrasi && (
+                          <td className="px-2 py-1 font-semibold text-right border-l-2 border-slate-300 bg-amber-50">{rb(n.saldo_awal)}</td>
+                        )}
+                        {sesudah ? (
+                          <td className={`px-2 py-1 text-right bg-sky-50/60 ${t === kolomPertamaMigrasi ? 'border-l-2 border-slate-300' : 'border-l'}`}>
+                            {isi.length ? rb(total) : <span className="text-slate-300">·</span>}
+                          </td>
+                        ) : (
                         <td
                           key={t}
                           className={`p-0 text-right ${
@@ -395,14 +416,15 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                             </button>
                           )}
                         </td>
+                        )}
+                        </React.Fragment>
                       );
                     })}
-                    <td className="px-2 py-1 font-semibold text-right border-l-2 border-slate-300">{rb(n.saldo_awal)}</td>
                   </tr>
                 ))}
                 {nasabah.length === 0 && (
                   <tr>
-                    <td colSpan={kolom.length + 5} className="py-6 text-center text-slate-500">
+                    <td colSpan={kolom.length + 6} className="py-6 text-center text-slate-500">
                       Tidak ada nasabah drop {dayjs(`${filter.bulan}-01`).format('MMMM YYYY')} di kelompok {filter.kelompok} hari{' '}
                       {filter.hari}.
                     </td>
@@ -417,14 +439,19 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                     <td className="px-2 py-1.5 text-right">{rb(nasabah.reduce((a, n) => a + n.pinjaman, 0))}</td>
                     <td />
                     {kolom.map((t, i) => (
-                      <td
-                        key={t}
-                        className={`px-2 py-1.5 text-right ${i === 0 || kolom[i - 1].slice(0, 7) !== t.slice(0, 7) ? 'border-l-2 border-slate-300' : 'border-l'}`}
-                      >
-                        {rb(jumlahKolom(t))}
-                      </td>
+                      <React.Fragment key={t}>
+                        {t === kolomPertamaMigrasi && (
+                          <td className="px-2 py-1.5 text-right border-l-2 border-slate-300 bg-amber-100">
+                            {rb(nasabah.reduce((a, n) => a + n.saldo_awal, 0))}
+                          </td>
+                        )}
+                        <td
+                          className={`px-2 py-1.5 text-right ${i === 0 || kolom[i - 1].slice(0, 7) !== t.slice(0, 7) ? 'border-l-2 border-slate-300' : 'border-l'}`}
+                        >
+                          {rb(jumlahKolom(t))}
+                        </td>
+                      </React.Fragment>
                     ))}
-                    <td className="px-2 py-1.5 text-right border-l-2 border-slate-300">{rb(nasabah.reduce((a, n) => a + n.saldo_awal, 0))}</td>
                   </tr>
                 </tfoot>
               )}

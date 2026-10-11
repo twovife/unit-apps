@@ -57,8 +57,9 @@ class KoreksiBekuController extends Controller
     /**
      * Buku angsuran beku, seperti buku angsuran: kelompok x hari x BULAN DROP.
      * Baris = pinjaman yang di-drop di bulan itu; kolom = tanggal tagih dari
-     * bulan drop s/d sehari sebelum migrasi (+ tanggal lain yang ternyata
-     * berisi angsuran). Bulan sendiri (?bulan), tidak ikut bulan global.
+     * bulan drop s/d akhir BULAN MIGRASI (+ tanggal lain yang ternyata berisi
+     * angsuran). Kolom sebelum migrasi bisa dikoreksi; bulan migrasi hanya
+     * tampil (ubah lewat menu biasa). Bulan sendiri (?bulan), tidak ikut global.
      */
     public function index(Request $request)
     {
@@ -87,10 +88,11 @@ class KoreksiBekuController extends Controller
             $bulan = $mulai->copy()->subMonthNoOverflow()->startOfMonth();
         }
         $akhir = $mulai->copy()->subDay();
+        $akhirTampil = $mulai->copy()->endOfMonth();
 
         $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->where('kelompok', $scope->kelompok)->first();
         $loans = $grouping
-            ? TransactionLoan::with(['customer', 'manage_customer', 'loan_instalment' => fn($q) => $q->where('transaction_date', '<', $mulai->toDateString())])
+            ? TransactionLoan::with(['customer', 'manage_customer', 'loan_instalment' => fn($q) => $q->where('transaction_date', '<=', $akhirTampil->toDateString())])
                 ->where('transaction_loan_officer_grouping_id', $grouping->id)
                 ->where('hari', $hari)
                 ->where('status', 'success')
@@ -104,7 +106,7 @@ class KoreksiBekuController extends Controller
         // Kolom: semua tanggal hari tagih itu dari awal bulan drop s/d sebelum migrasi,
         // ditambah tanggal lain yang berisi angsuran (supaya tidak ada yang tersembunyi).
         $tanggal = collect();
-        for ($d = $bulan->copy(); $d->lte($akhir); $d->addDay()) {
+        for ($d = $bulan->copy(); $d->lte($akhirTampil); $d->addDay()) {
             if (\App\Helpers\AppHelper::dateName($d) === $hari) {
                 $tanggal->push($d->toDateString());
             }
