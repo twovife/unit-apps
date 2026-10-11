@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { ArrowDown, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
+import { WARNA } from '@/Pages/Kasir/Rekap/Components/TableRekapKasir';
 
 // Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
 // sisi kanan berawalan p_). [kunci, label, kelas?]
@@ -16,6 +17,17 @@ const KOLOM = [
   ['lama', 'Lama'],
   ['rencana', 'Rencana', 'font-semibold'],
 ];
+// Warna blok kolom ala Rekap 1 (sama di kedua sisi; kunci tanpa awalan p_):
+// kasbon & storting kuning, target/masuk/keluar biru, drop/baru/lama merah,
+// rencana hijau.
+const WARNA_KOLOM = {
+  kasbon: WARNA.kuning,
+  target: WARNA.biru, masuk: WARNA.biru, keluar: WARNA.biru,
+  storting: WARNA.kuning,
+  drop: WARNA.merah, baru: WARNA.merah, lama: WARNA.merah,
+  rencana: WARNA.hijau,
+};
+const warnaDari = (k) => WARNA_KOLOM[k.replace(/^p_/, '')];
 const KIRI = KOLOM;
 const KANAN = KOLOM.map(([k, ...rest]) => [`p_${k}`, ...rest]);
 
@@ -46,9 +58,9 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
       <table className="w-full text-xs tabular-nums">
         <thead className="bg-slate-100 text-slate-700">
           <tr className="h-8">
-            <th className="px-3 py-1.5 font-medium text-left">Kel</th>
+            <th className={`px-3 py-1.5 font-medium text-left ${WARNA.biru.kepala}`}>Kel</th>
             {kolom.map(([k, label]) => (
-              <th key={k} className="px-3 py-1.5 font-medium text-right whitespace-nowrap">
+              <th key={k} className={`px-3 py-1.5 font-medium text-right whitespace-nowrap ${warnaDari(k)?.kepala ?? ''}`}>
                 {label}
               </th>
             ))}
@@ -58,12 +70,13 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
         <tbody>
           {rows.map((r) => (
             // Tinggi baris tetap (h-8) supaya baris kiri (ada tombol ACC) & kanan sejajar.
-            <tr key={r.grouping_id} className={`h-8 border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
-              <td className="px-3 py-1 font-medium">{r.kelompok}</td>
+            // group: warna blok ikut selang-seling & hover baris (group-even/hover).
+            <tr key={r.grouping_id} className={`group h-8 border-t bg-white even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
+              <td className={`px-3 py-1 font-medium ${WARNA.biru.sel}`}>{r.kelompok}</td>
               {kolom.map(([k, , kelas]) => {
                 const v = kosong ? 0 : r[k];
                 return (
-                  <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${kelas ?? ''}`}>
+                  <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${warnaDari(k)?.sel ?? ''} ${kelas ?? ''}`}>
                     {banding[k] && !kosong && <Panah ini={r[k]} dulu={r[banding[k]]} />}
                     {klik[k] && !kosong ? (
                       <button
@@ -111,9 +124,9 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
         </tbody>
         <tfoot>
           <tr className="h-8 font-bold border-t bg-emerald-50 text-slate-900">
-            <td className="px-3 py-1.5">Total</td>
+            <td className={`px-3 py-1.5 ${WARNA.biru.total}`}>Total</td>
             {kolom.map(([k, , kelas]) => (
-              <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
+              <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${warnaDari(k)?.total ?? ''} ${kelas ?? ''}`}>
                 {banding[k] && !kosong && <Panah ini={jumlah(rows, k)} dulu={jumlah(rows, banding[k])} />}
                 {ribu(kosong ? 0 : jumlah(rows, k))}
               </td>
