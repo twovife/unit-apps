@@ -204,18 +204,37 @@ trait RekapTrait
 
     // dd($transactionSirculation);
 
-    $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal', 'is_transfer', 'danatitipan')
-      ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+    // Dijumlah di SQL per kelompok (dulu ribuan baris angsuran sebulan ditarik
+    // sebagai model lalu disaring ~10x per kelompok). `h_*` = hari ini saja;
+    // cara bayar mengikuti HitungAgregat::caraBayar (transfer > katrol > tunai).
+    $instalment = TransactionLoanInstalment::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
       ->whereBetween('transaction_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
-      ->get()->groupBy('transaction_loan_officer_grouping_id');
+      ->groupBy('transaction_loan_officer_grouping_id')
+      ->selectRaw("transaction_loan_officer_grouping_id AS g, SUM(nominal) AS total,
+        SUM(CASE WHEN status = 2 THEN nominal ELSE 0 END) AS cm,
+        SUM(CASE WHEN status = 3 THEN nominal ELSE 0 END) AS mb,
+        SUM(CASE WHEN status = 4 THEN nominal ELSE 0 END) AS ml,
+        SUM(CASE WHEN transaction_date = ? THEN nominal ELSE 0 END) AS h_total,
+        SUM(CASE WHEN transaction_date = ? AND status = 2 THEN nominal ELSE 0 END) AS h_cm,
+        SUM(CASE WHEN transaction_date = ? AND status = 3 THEN nominal ELSE 0 END) AS h_mb,
+        SUM(CASE WHEN transaction_date = ? AND status = 4 THEN nominal ELSE 0 END) AS h_ml,
+        SUM(CASE WHEN transaction_date = ? AND COALESCE(is_transfer, 0) THEN nominal ELSE 0 END) AS h_transfer,
+        SUM(CASE WHEN transaction_date = ? AND NOT COALESCE(is_transfer, 0) AND COALESCE(danatitipan, 0) THEN nominal ELSE 0 END) AS h_katrol,
+        SUM(CASE WHEN transaction_date = ? AND NOT COALESCE(is_transfer, 0) AND NOT COALESCE(danatitipan, 0) THEN nominal ELSE 0 END) AS h_tunai",
+        array_fill(0, 7, $transaction_date->format('Y-m-d')))
+      ->toBase()->get()->keyBy('g');
 
     // Hanya yang sukses cair - sama dengan HitungAgregat::drop. success->gagal
     // tidak mengosongkan nominal_drop, jadi tanpa ini drop yang batal ikut terhitung.
-    $loan = TransactionLoan::select('transaction_loan_officer_grouping_id', 'drop_date', 'nominal_drop', 'pinjaman')
-      ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+    // Per kelompok per tanggal (do11/titipan9 global dibulatkan per tanggal).
+    $loan = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
       ->where('status', 'success')
       ->whereBetween('drop_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
-      ->get()->groupBy('transaction_loan_officer_grouping_id');
+      ->groupBy('transaction_loan_officer_grouping_id', 'drop_date')
+      ->selectRaw('transaction_loan_officer_grouping_id AS g, drop_date AS d, SUM(nominal_drop) AS n')
+      ->toBase()->get()
+      ->map(fn($r) => (object) ['g' => $r->g, 'd' => Carbon::parse($r->d)->toDateString(), 'n' => (int) $r->n])
+      ->groupBy('g');
 
 
     // dd($loan);
@@ -241,58 +260,53 @@ trait RekapTrait
       $transaction_date = $transaction_date->format('Y-m-d');
       // dd($transaction_date);
       $thisLoan = $loan->get($item->id, collect());
-      $thisInstalment = $instalment->get($item->id, collect());
+      $i = $instalment->get($item->id);
       $thisSirculation = $transactionSirculation->get($item->id, collect());
       $thisDailyRecap = $transactionDailyRecap->where('transaction_loan_officer_grouping_id', $item->id)->first();
       $status_kepala = $thisDailyRecap?->daily_kepala_approval ? true : false;
       $status_kasir = $thisDailyRecap?->daily_kasir_approval ? true : false;
 
-      $totalDrop = $thisLoan->whereBetween('drop_date', [$startDateofMonth, $transaction_date])->sum('nominal_drop') ?? 0;
+      $totalDrop = $thisLoan->sum('n');
 
-      $totalStorting = $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->sum('nominal') ?? 0;
+      $totalStorting = (int) ($i->total ?? 0);
 
-      $angusuranExistingCm = $thisInstalment->where('transaction_date', $transaction_date)->where('status', 2)->sum('nominal') ?? 0;
-      $totalStortingCm =  $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 2)->sum('nominal') ?? 0;
+      $angusuranExistingCm = (int) ($i->h_cm ?? 0);
+      $totalStortingCm = (int) ($i->cm ?? 0);
 
-      $angusuranExistingMb = $thisInstalment->where('transaction_date', $transaction_date)->where('status', 3)->sum('nominal') ?? 0;
-      $totalStortingMb =  $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 3)->sum('nominal') ?? 0;
+      $angusuranExistingMb = (int) ($i->h_mb ?? 0);
+      $totalStortingMb = (int) ($i->mb ?? 0);
 
-      $angusuranExistingMl = $thisInstalment->where('transaction_date', $transaction_date)->where('status', 4)->sum('nominal') ?? 0;
-      $totalStortingMl =  $thisInstalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 4)->sum('nominal') ?? 0;
+      $angusuranExistingMl = (int) ($i->h_ml ?? 0);
+      $totalStortingMl = (int) ($i->ml ?? 0);
 
       $sirkulasi = $thisSirculation->sum('amount') ?? 0;
       $sirkulasiCm = $thisSirculation->sum('cm_amount') ?? 0;
       $sirkulasiMb = $thisSirculation->sum('mb_amount') ?? 0;
       $sirkulasiMl = $thisSirculation->sum('ml_amount') ?? 0;
 
-      $storting = $thisInstalment->where('transaction_date', $transaction_date)->sum('nominal') ?? 0;
+      $storting = (int) ($i->h_total ?? 0);
       // Storting hari ini per cara bayar: transfer (is_transfer), katrol
       // (danatitipan), sisanya cash.
-      $perCara = $thisInstalment->where('transaction_date', $transaction_date)
-        ->groupBy(fn($a) => \App\Helpers\HitungAgregat::caraBayar($a))
-        ->map(fn($g) => (int) $g->sum('nominal'));
-      $stortingTransfer = $perCara->get('transfer', 0);
-      $stortingKatrol = $perCara->get('katrol', 0);
-      $stortingCash = $perCara->get('tunai', 0);
-      $do11 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.11) ?? 0;
-      $titipan9 = (int) round($thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop') * 0.09) ?? 0;
+      $stortingTransfer = (int) ($i->h_transfer ?? 0);
+      $stortingKatrol = (int) ($i->h_katrol ?? 0);
+      $stortingCash = (int) ($i->h_tunai ?? 0);
+      $nominaldrop = $thisLoan->where('d', $transaction_date)->sum('n');
+      $do11 = (int) round($nominaldrop * 0.11);
+      $titipan9 = (int) round($nominaldrop * 0.09);
       $kasbon = $thisDailyRecap?->kasbon ?? 0;
       $debit = $do11 + $kasbon + $storting;
 
       $transport = $thisDailyRecap?->transport ?? 0;
-      $nominaldrop =  $thisLoan->where('drop_date', $transaction_date)->sum('nominal_drop');
       $kredit = $nominaldrop + $transport;
 
       // --- GLOBAL (awal bulan s/d tanggal filter), rumus sama dengan harian.
       $hb = $harianBulan->get($item->id, collect())->keyBy(fn($r) => Carbon::parse($r->date)->toDateString());
-      $gDrop = (int) $thisLoan->sum('nominal_drop');
-      $gStorting = (int) $thisInstalment->sum('nominal');
+      $gDrop = (int) $totalDrop;
+      $gStorting = $totalStorting;
       $gKasbon = (int) $hb->sum('kasbon');
       $gTransport = (int) $hb->sum('transport');
-      $gDo11 = (int) $thisLoan->groupBy(fn($l) => Carbon::parse($l->drop_date)->toDateString())
-        ->sum(fn($g) => round($g->sum('nominal_drop') * 0.11));
-      $gTitipan9 = (int) $thisLoan->groupBy(fn($l) => Carbon::parse($l->drop_date)->toDateString())
-        ->sum(fn($g) => round($g->sum('nominal_drop') * 0.09));
+      $gDo11 = (int) $thisLoan->sum(fn($l) => round($l->n * 0.11));
+      $gTitipan9 = (int) $thisLoan->sum(fn($l) => round($l->n * 0.09));
       $gDebit = $gDo11 + $gKasbon + $gStorting;
       $gKredit = $gDrop + $gTransport;
       // Setoran global = hanya yang benar-benar diisi kasir (mas 2026-10-10);
@@ -1023,17 +1037,26 @@ trait RekapTrait
         ->get();
     }
 
-    $instalment = TransactionLoanInstalment::select('transaction_loan_officer_grouping_id', 'transaction_date', 'status', 'nominal')
-      ->where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+    // Dijumlah di SQL per tanggal (dulu ribuan baris angsuran ditarik lalu
+    // disaring & dijumlah ulang per tanggal - Rekap Mantri sampai 3 detik).
+    $instalment = TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
       ->whereBetween('transaction_date', [$startDateofMonth, $endDateofMonth])
-      ->get();
+      ->groupBy('transaction_date')
+      ->selectRaw('transaction_date AS d, SUM(nominal) AS total,
+        SUM(CASE WHEN status = 2 THEN nominal ELSE 0 END) AS cm,
+        SUM(CASE WHEN status = 3 THEN nominal ELSE 0 END) AS mb,
+        SUM(CASE WHEN status = 4 THEN nominal ELSE 0 END) AS ml')
+      ->toBase()->get()
+      ->keyBy(fn($r) => Carbon::parse($r->d)->toDateString());
 
     // Hanya yang sukses cair - sama dengan Rekap 1 & 2.
-    $loan = TransactionLoan::select('transaction_loan_officer_grouping_id', 'drop_date', 'nominal_drop', 'pinjaman')
-      ->where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+    $loan = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
       ->where('status', 'success')
       ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
-      ->get();
+      ->groupBy('drop_date')
+      ->selectRaw('drop_date AS d, SUM(nominal_drop) AS n')
+      ->toBase()->get()
+      ->keyBy(fn($r) => Carbon::parse($r->d)->toDateString());
 
     // Kantor migrasi: angsuran per ember (CM/MB/ML) dari HitungAgregat - ember
     // menurut tanggal drop, sama dengan Rekap 2 & daily_closings - bukan kolom
@@ -1046,7 +1069,7 @@ trait RekapTrait
     // (drop, angsuran, isian kasir) - hari kerja kosong tetap tampil, libur
     // kosong disembunyikan. Dibatasi s/d ?sampai (detail dari tabel Global
     // Rekap 1, supaya jumlahnya sama), selain itu s/d hari ini.
-    $berdata = $loan->pluck('drop_date')->merge($instalment->pluck('transaction_date'))
+    $berdata = $loan->keys()->merge($instalment->keys())
       ->merge($transactionDailyRecap->filter(fn($r) => ($r->kasbon ?? 0) || ($r->transport ?? 0)
         || isset($r->setoran_tunai) || isset($r->setoran_transfer) || isset($r->setoran_katrol))->pluck('date'));
     $sampai = $request->filled('sampai') ? Carbon::parse($request->sampai)->toDateString() : null;
@@ -1077,36 +1100,66 @@ trait RekapTrait
       ? \App\Helpers\CeklistKepala::daftarOtomatis([$transactionOffice->id], $startDateofMonth, $endDateofMonth)
       : [];
 
-    $data = $dates->map(function ($date) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transactionOffice, $startDateofMonth, $kelompok, $alurBaruMantri, $emberHarian, $kmOtomatis) {
+    // Total berjalan s/d tiap tanggal, sekali jalan atas tanggal urut (semua
+    // tanggal berisi ikut dijumlah, termasuk yang tidak ditampilkan).
+    $berjalan = [];
+    $ember = collect($emberHarian ?? [])->mapWithKeys(fn($v, $k) => [explode('|', $k)[1] => $v]);
+    $sumber = ['drop' => $loan, 'inst' => $instalment, 'ember' => $ember];
+    $kunciUrut = array_map(fn($c) => $c->keys()->sort()->values()->all(), $sumber);
+    $pos = ['drop' => 0, 'inst' => 0, 'ember' => 0];
+    $acc = ['drop' => 0, 'total' => 0, 'cm' => 0, 'mb' => 0, 'ml' => 0, 'e_cm' => 0, 'e_mb' => 0, 'e_ml' => 0];
+    foreach ($dates->sort()->values() as $t) {
+      for (; $pos['drop'] < count($kunciUrut['drop']) && $kunciUrut['drop'][$pos['drop']] <= $t; $pos['drop']++) {
+        $acc['drop'] += (int) $loan[$kunciUrut['drop'][$pos['drop']]]->n;
+      }
+      for (; $pos['inst'] < count($kunciUrut['inst']) && $kunciUrut['inst'][$pos['inst']] <= $t; $pos['inst']++) {
+        $r = $instalment[$kunciUrut['inst'][$pos['inst']]];
+        foreach (['total', 'cm', 'mb', 'ml'] as $k) {
+          $acc[$k] += (int) $r->$k;
+        }
+      }
+      for (; $pos['ember'] < count($kunciUrut['ember']) && $kunciUrut['ember'][$pos['ember']] <= $t; $pos['ember']++) {
+        $v = $ember[$kunciUrut['ember'][$pos['ember']]];
+        foreach (['cm', 'mb', 'ml'] as $e) {
+          $acc['e_' . $e] += $v['storting_' . $e];
+        }
+      }
+      $berjalan[$t] = $acc;
+    }
+    $recapIdx = [];
+    foreach ($transactionDailyRecap as $r) {
+      $recapIdx[Carbon::parse($r->date)->toDateString()] ??= $r;
+    }
+
+    $data = $dates->map(function ($date) use ($loan, $instalment, $transactionSirculation, $recapIdx, $berjalan, $transactionOffice, $kelompok, $alurBaruMantri, $emberHarian, $kmOtomatis) {
       // 'tanggal' => $date,
 
       $transaction_date = Carbon::parse($date)->format('Y-m-d');
 
-      $thisLoan = $loan->where('drop_date', $transaction_date);
-      $thisInstalment = $instalment->where('transaction_date', $transaction_date);
+      $thisInst = $instalment->get($transaction_date);
       $thisSirculation = $transactionSirculation;
-      $thisDailyRecap = $transactionDailyRecap->where('date', $transaction_date)->first();
+      $thisDailyRecap = $recapIdx[$transaction_date] ?? null;
       $status_kepala = $thisDailyRecap?->daily_kepala_approval ? true : false;
       $status_kasir = $thisDailyRecap?->daily_kasir_approval ? true : false;
 
-      $totalDrop = $loan->whereBetween('drop_date', [$startDateofMonth, $transaction_date])->sum('nominal_drop') ?? 0;
-      $totalStorting = $instalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->sum('nominal') ?? 0;
+      $jalan = $berjalan[$transaction_date];
+      $totalDrop = $jalan['drop'];
+      $totalStorting = $jalan['total'];
 
-      $angusuranExistingCm = $thisInstalment->where('status', 2)->sum('nominal') ?? 0;
-      $totalStortingCm = $instalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 2)->sum('nominal') ?? 0;
+      $angusuranExistingCm = (int) ($thisInst->cm ?? 0);
+      $totalStortingCm = $jalan['cm'];
 
-      $angusuranExistingMb = $thisInstalment->where('status', 3)->sum('nominal') ?? 0;
-      $totalStortingMb = $instalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 3)->sum('nominal') ?? 0;
+      $angusuranExistingMb = (int) ($thisInst->mb ?? 0);
+      $totalStortingMb = $jalan['mb'];
 
-      $angusuranExistingMl = $thisInstalment->where('status', 4)->sum('nominal') ?? 0;
-      $totalStortingMl = $instalment->whereBetween('transaction_date', [$startDateofMonth, $transaction_date])->where('status', 4)->sum('nominal') ?? 0;
+      $angusuranExistingMl = (int) ($thisInst->ml ?? 0);
+      $totalStortingMl = $jalan['ml'];
 
       if ($emberHarian !== null) {
-        $sampaiHariIni = collect($emberHarian)->filter(fn($v, $k) => explode('|', $k)[1] <= $transaction_date);
         $hariIni = $emberHarian[$transactionOffice->id . '|' . $transaction_date] ?? \App\Helpers\HitungAgregat::kosong();
         foreach (['cm' => 'Cm', 'mb' => 'Mb', 'ml' => 'Ml'] as $e => $E) {
           ${'angusuranExisting' . $E} = $hariIni['storting_' . $e];
-          ${'totalStorting' . $E} = $sampaiHariIni->sum('storting_' . $e);
+          ${'totalStorting' . $E} = $jalan['e_' . $e];
         }
       }
 
@@ -1115,14 +1168,14 @@ trait RekapTrait
       $sirkulasiMb = $thisSirculation->sum('mb_amount') ?? 0;
       $sirkulasiMl = $thisSirculation->sum('ml_amount') ?? 0;
 
-      $storting = $thisInstalment->sum('nominal') ?? 0;
-      $do11 = (int) round($thisLoan->sum('nominal_drop') * 0.11) ?? 0;
-      $titipan9 = (int) round($thisLoan->sum('nominal_drop') * 0.09) ?? 0;
+      $nominaldrop = (int) ($loan->get($transaction_date)?->n ?? 0);
+      $storting = (int) ($thisInst->total ?? 0);
+      $do11 = (int) round($nominaldrop * 0.11);
+      $titipan9 = (int) round($nominaldrop * 0.09);
       $kasbon = $thisDailyRecap?->kasbon ?? 0;
       $debit = $do11 + $kasbon + $storting;
 
       $transport = $thisDailyRecap?->transport ?? 0;
-      $nominaldrop = $thisLoan->sum('nominal_drop');
       $kredit = $nominaldrop + $transport;
       // Setoran = hanya isian kasir, kosong = 0 (sama dengan tabel Global Rekap 1).
       $setoran = (int) ($thisDailyRecap?->setoran_tunai ?? 0) + (int) ($thisDailyRecap?->setoran_transfer ?? 0) + (int) ($thisDailyRecap?->setoran_katrol ?? 0);
