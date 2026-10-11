@@ -156,8 +156,8 @@ export default function AppSidebar({ ...props }) {
               {
                 id: 5,
                 title: 'ML',
-                link: route('pinjaman.index_pinjaman_macet'),
-                active: route().current('pinjaman.index_pinjaman_macet'),
+                link: route('mobile_apps.ml'),
+                active: route().current('mobile_apps.ml'),
               },
             ]}
           />

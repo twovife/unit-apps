@@ -33,4 +33,11 @@ class MobileAppsMantriController extends Controller
     $data = $this->getLoanMantri($request, true);
     return Inertia::render("MobileApps/Angsuran/Index", $data);
   }
+
+  // Menu ML: tampilan & filter sama dengan Angsuran Lancar, isinya hanya ML.
+  public function ml(Request $request)
+  {
+    $data = $this->getLoanMantri($request, true, true);
+    return Inertia::render("MobileApps/Angsuran/Ml", $data);
+  }
 }

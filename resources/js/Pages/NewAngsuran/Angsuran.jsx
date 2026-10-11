@@ -26,6 +26,7 @@ const Angsuran = ({
   urlLink,
   localState,
   type = 'desktop',
+  judul = 'Angsuran Lancar',
 }) => {
   const { server_filter } = usePage().props;
   const [stortingBuka, setStortingBuka] = useState(
@@ -54,7 +55,7 @@ const Angsuran = ({
           buku bulanan (pilih hari tagih + bulan). */}
       <div className="flex items-center justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Angsuran Lancar</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{judul}</h1>
           {type === 'desktop' && (
             <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih. Angka dalam ribuan.</p>
           )}

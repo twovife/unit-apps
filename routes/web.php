@@ -194,6 +194,7 @@ Route::middleware('auth')->group(function () {
     Route::controller(MobileAppsMantriController::class)->group(function () {
       Route::get('/create', "create")->name('create');
       Route::get('/angsuran', "angsuran")->name('angsuran');
+      Route::get('/ml', "ml")->name('ml');
     });
   });
 

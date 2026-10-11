@@ -633,7 +633,10 @@ trait PinjamanTrait
       || in_array(\App\Helpers\Ember::dari($loan->drop_date, $tanggal), [\App\Helpers\Ember::MB, \App\Helpers\Ember::ML], true);
   }
 
-  public function getLoanMantri(Request $request, $dailyView = true)
+  // $hanyaMl: menu ML (Angsuran Lancar versi ML) - hanya grup ML, berisi SEMUA
+  // pinjaman ML yang belum lunas sebelum tanggal terpilih (bukan cuma yang
+  // bayar bulan ini).
+  public function getLoanMantri(Request $request, $dailyView = true, $hanyaMl = false)
   {
 
     // Filter menu angsuran kini berbasis TANGGAL, bukan nama hari + bulan.
@@ -750,6 +753,7 @@ trait PinjamanTrait
     $loan = TransactionLoan::with(
       ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer', 'white_off']
     )
+      ->when($hanyaMl, fn($q) => $q->whereRaw('1 = 0'))
       // Pinjaman yang di-drop SESUDAH tanggal terpilih belum ada pada tanggal itu.
       ->whereBetween('drop_date', [$begin_transaction, $tanggalSeleksi])
       ->where($filterEfektif)
@@ -762,14 +766,18 @@ trait PinjamanTrait
     // dd($loan);
 
     $loanMl = TransactionLoan::with(
-      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer']
+      ['loan_instalment' => fn($q) => $q->where('transaction_date', $tanggalSeleksi), 'manage_customer', 'customer', 'white_off']
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
       ->where($filterEfektif)
-      ->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
+      // Angsuran Lancar: ML hanya yang bayar bulan ini. Menu ML: semua yang
+      // belum lunas sebelum tanggal terpilih (pay_off_date = tanggal lunas;
+      // disaring lagi dengan saldo F8 di bawah).
+      ->when(!$hanyaMl, fn($q) => $q->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
         $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
           ->where('nominal', '>', 0);
-      })
+      }))
+      ->when($hanyaMl, fn($q) => $q->where(fn($w) => $w->whereNull('pay_off_date')->orWhere('pay_off_date', '>=', $tanggalSeleksi)))
       ->where('status', 'success')
       ->orderBy('drop_date')
       ->get();
@@ -779,6 +787,14 @@ trait PinjamanTrait
       $loan->collapse()->pluck('id')->merge($loanMl->pluck('id'))->all(),
       $tanggalSeleksi
     );
+
+    if ($hanyaMl) {
+      // Lunas SEBELUM tanggal terpilih -> hilang. Yang lunas tepat di tanggal
+      // itu (dibayar / diputihkan hari itu) tetap tampil.
+      $loanMl = $loanMl->filter(fn($l) => $saldoF8[$l->id]['saldo'] > 0
+        || $l->loan_instalment->isNotEmpty()
+        || $l->white_off?->transaction_date == $tanggalSeleksi)->values();
+    }
 
     $dataMlGenerate = [
       'month' => "ML",
@@ -901,7 +917,9 @@ trait PinjamanTrait
 
     // ddd($groupByMonth);
 
-    $mergedData = collect([$dataMlGenerate])->merge($groupByMonth)->values();
+    $mergedData = $hanyaMl
+      ? collect([$dataMlGenerate])
+      : collect([$dataMlGenerate])->merge($groupByMonth)->values();
 
     $dateOfWeek = [$tanggalSeleksi];
     // for ($date = $transaction_start_date; $date->lte($transaction_date); $date->addDay()) {
