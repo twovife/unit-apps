@@ -983,6 +983,12 @@ class TransactionLoanController extends Controller
       }
     }
 
+    // Drop hanya di hari drop-nya atau sesudahnya - pengajuan minggu depan
+    // tidak bisa ter-drop lebih dulu (salah klik).
+    if ($request->status == 'success' && Carbon::parse($transactionLoan->drop_date)->startOfDay()->gt(Carbon::today())) {
+      return redirect()->back()->withErrors('Belum hari drop (' . Carbon::parse($transactionLoan->drop_date)->format('d-m-Y') . '). Drop baru bisa di hari drop-nya.');
+    }
+
 
     $val = $request->validate([
       'status' => ['required'],

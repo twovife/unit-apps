@@ -7,6 +7,7 @@ import { Label } from '@/shadcn/ui/label';
 import { useForm, usePage } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import CurrencyInput from 'react-currency-input-field';
+import dayjs from 'dayjs';
 
 const Acc = ({ id, acc, onClosed, triggeredData }) => {
   const { data, setData, put, errors, processing, reset, transform } = useForm({
@@ -27,6 +28,9 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
   const status = triggeredData?.status;
   // success/gagal = realisasi drop: can-create (mantri/pembuat yang nge-drop).
   const canCreate = auth?.permissions?.includes('can-create');
+  // Drop baru bisa di hari drop-nya (server juga menolak) - pengajuan minggu
+  // depan tidak ter-drop karena salah klik.
+  const belumHariDrop = triggeredData?.tanggal_drop && String(triggeredData.tanggal_drop).slice(0, 10) > dayjs().format('YYYY-MM-DD');
 
   useEffect(() => {
     setData((prevData) => ({
@@ -133,6 +137,11 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                   Anda tidak punya akses untuk menutup pencairan (drop).
                 </p>
               )}
+              {belumHariDrop && (
+                <p className="mt-2 text-xs font-medium text-amber-600">
+                  Belum hari drop ({dayjs(triggeredData.tanggal_drop).format('DD-MM-YYYY')}). Tombol DROP aktif di hari drop-nya.
+                </p>
+              )}
               <div className="flex flex-wrap items-center justify-end gap-3 mt-2">
                 {status === 'acc' && canApprove && (
                   <Tundaan
@@ -144,7 +153,8 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 <AppButton
                   variant="submission"
                   size="sm"
-                  disabled={!canCreate}
+                  disabled={!canCreate || belumHariDrop}
+                  title={belumHariDrop ? 'Belum hari drop' : undefined}
                   onClick={() => accPinjaman('success')}
                 >
                   DROP
