@@ -598,10 +598,12 @@ trait RekapTrait
     // (alur baru), bukan daily_recaps lama. Dibungkus stdClass berdate-string
     // supaya `->where('date',$date)` di bawah cocok sama seperti recap lama
     // (recap.date string mentah; closing.date di-cast Carbon).
+    $closingBulan = collect();
     if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
-      $transactionDailyRecap = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+      $closingBulan = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
         ->whereBetween('date', [$startDateofMonth, $endDateofMonth])
-        ->get()
+        ->get();
+      $transactionDailyRecap = $closingBulan
         ->map(fn($r) => (object) [
           'transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id,
           'date' => Carbon::parse($r->date)->toDateString(),
@@ -706,9 +708,35 @@ trait RekapTrait
     // drop_date (bukan status angsuran). Dibentuk sama dengan agregasi lama
     // supaya kode di bawah tidak berubah.
     if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
+      // Hari yang SUDAH dikunci dibaca dari daily_closings (angka final; sumbernya
+      // dibekukan trigger, jadi sama dengan hitungan langsung). Hitung langsung
+      // dari sumber hanya mulai hari pertama yang belum aman di salah satu
+      // kelompok: baris terbuka pertama, atau sehari sesudah kunci terakhir.
+      // Kunci berurutan, jadi hari tanpa baris di bawah kunci terakhir = kosong.
+      // ponytail: anggap data tanpa baris closing di hari yang sudah lewat kunci
+      // tidak ada (dicek 2026-10-11: 0 kasus); kalau muncul, hitung langsung semua.
+      $angka = [];
+      $mulaiLive = $endDateofMonth;
+      foreach ($groupingIds as $gid) {
+        $baris = $closingBulan->where('transaction_loan_officer_grouping_id', $gid);
+        $terkunci = $baris->whereNotNull('kasir_lock_at');
+        $terbuka = $baris->whereNull('kasir_lock_at')->min(fn($r) => $r->date->toDateString());
+        $batas = $terkunci->isEmpty()
+          ? $startDateofMonth
+          : $terkunci->max('date')->copy()->addDay()->toDateString();
+        $mulaiLive = min($mulaiLive, $terbuka ?? $batas, $batas);
+        foreach ($terkunci as $r) {
+          $angka[$gid . '|' . $r->date->toDateString()] = $r->only(['drop', 'storting', 'storting_cm', 'storting_mb', 'storting_ml']);
+        }
+      }
+      $angka = array_filter($angka, fn($k) => substr($k, strpos($k, '|') + 1) < $mulaiLive, ARRAY_FILTER_USE_KEY);
+      if ($mulaiLive <= $endDateofMonth) {
+        $angka += \App\Helpers\HitungAgregat::harianBanyak($groupingIds->all(), $mulaiLive, $endDateofMonth);
+      }
+
       $drop = [];
       $angsur = [];
-      foreach (\App\Helpers\HitungAgregat::harianBanyak($groupingIds->all(), $startDateofMonth, $endDateofMonth) as $k => $v) {
+      foreach ($angka as $k => $v) {
         [$g, $t] = explode('|', $k);
         if ($v['drop']) {
           $drop[$g][$t] = collect([(object) ['drop_total' => $v['drop']]]);
@@ -794,14 +822,44 @@ trait RekapTrait
       ? \App\Helpers\CeklistKepala::daftarOtomatis($groupingIds, $startDateofMonth, $endDateofMonth)
       : [];
 
+    // Total berjalan per kelompok per tanggal, sekali jalan (dulu tiap sel
+    // menyaring & menjumlah ulang semua tanggal sebelumnya). Rekap harian
+    // diindeks "grouping|tanggal" (dulu ->where() memindai semua baris per sel).
+    $berjalan = [];
+    $tanggalUrut = collect($datesOfMonth)->sort()->values();
+    foreach ($transactionOffice as $item) {
+      $dropG = collect($loanAgg[$item->id] ?? [])->filter(fn($r, $d) => $d >= $startDateofMonth)->sortKeys();
+      $instG = collect($instalmentAgg[$item->id] ?? [])->filter(fn($r, $d) => $d >= $startDateofMonth)->sortKeys();
+      $dk = $dropG->keys()->all();
+      $ik = $instG->keys()->all();
+      $di = $ii = 0;
+      $acc = ['drop' => 0, 'total' => 0, 'cm' => 0, 'mb' => 0, 'ml' => 0];
+      foreach ($tanggalUrut as $t) {
+        for (; $di < count($dk) && $dk[$di] <= $t; $di++) {
+          $acc['drop'] += $dropG[$dk[$di]]->first()->drop_total ?? 0;
+        }
+        for (; $ii < count($ik) && $ik[$ii] <= $t; $ii++) {
+          $row = $instG[$ik[$ii]]->first();
+          foreach (['total', 'cm', 'mb', 'ml'] as $k) {
+            $acc[$k] += $row->$k ?? 0;
+          }
+        }
+        $berjalan[$item->id][$t] = $acc;
+      }
+    }
+    $recapIdx = [];
+    foreach ($transactionDailyRecap as $r) {
+      $recapIdx[$r->transaction_loan_officer_grouping_id . '|' . Carbon::parse($r->date)->toDateString()] ??= $r;
+    }
+
     $data = collect($datesOfMonth)->map(function ($date) use (
       $kmOtomatis,
       $transactionOffice,
       $loanAgg,
       $instalmentAgg,
       $transactionSirculation,
-      $transactionDailyRecap,
-      $startDateofMonth
+      $berjalan,
+      $recapIdx
     ) {
 
       return [
@@ -812,8 +870,8 @@ trait RekapTrait
           $loanAgg,
           $instalmentAgg,
           $transactionSirculation,
-          $transactionDailyRecap,
-          $startDateofMonth
+          $berjalan,
+          $recapIdx
         ) {
 
           $thisLoan = data_get($loanAgg, $item->id . '.' . $date . '.0.drop_total', 0);
@@ -825,40 +883,11 @@ trait RekapTrait
           $ml = $thisInst->ml ?? 0;
 
           $thisSirculation = $transactionSirculation->get($item->id, collect());
-          $thisDailyRecap = $transactionDailyRecap
-            ->where('transaction_loan_officer_grouping_id', $item->id)
-            ->where('date', $date)
-            ->first();
+          $thisDailyRecap = $recapIdx[$item->id . '|' . $date] ?? null;
 
-          $totalDrop = collect($loanAgg[$item->id] ?? [])
-            ->filter(function ($rows, $d) use ($startDateofMonth, $date) {
-              return $d >= $startDateofMonth && $d <= $date;
-            })
-            ->sum(function ($rows) {
-              return $rows->first()->drop_total ?? 0;
-            });
-
-
-          $stortingAgg = collect($instalmentAgg[$item->id] ?? [])
-            ->filter(function ($rows, $d) use ($startDateofMonth, $date) {
-              return $d >= $startDateofMonth && $d <= $date;
-            })
-            ->reduce(function ($carry, $rows) {
-
-              $row = $rows->first();
-
-              $carry['total'] += $row->total ?? 0;
-              $carry['cm'] += $row->cm ?? 0;
-              $carry['mb'] += $row->mb ?? 0;
-              $carry['ml'] += $row->ml ?? 0;
-
-              return $carry;
-            }, [
-              'total' => 0,
-              'cm' => 0,
-              'mb' => 0,
-              'ml' => 0
-            ]);
+          $jalan = $berjalan[$item->id][$date];
+          $totalDrop = $jalan['drop'];
+          $stortingAgg = $jalan;
 
           $totalStorting = $stortingAgg['total'];
           $totalStortingCm = $stortingAgg['cm'];
