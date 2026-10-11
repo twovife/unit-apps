@@ -91,9 +91,7 @@ export default function AppSidebar({ ...props }) {
               className="hover:bg-transparent"
             >
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center text-sm font-bold text-white rounded-lg shadow-sm size-9 bg-slate-900">
-                  UB
-                </div>
+                <img src="/icons/icon-192.png" alt="UBMI" className="rounded-lg shadow-sm size-9" />
                 <div className="grid flex-1 text-sm leading-tight text-left">
                   <span className="font-bold tracking-tight truncate text-slate-900">
                     UBMI APPS
