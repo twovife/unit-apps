@@ -125,7 +125,7 @@ const Angsuran = ({
           <Button
             type="button"
             onClick={() => setStortingBuka(true)}
-            className="font-semibold text-white shadow-sm bg-sky-600 hover:bg-sky-700"
+            className="gap-1 font-semibold text-white shadow-sm bg-sky-600 hover:bg-sky-700"
           >
             <BookOpen className="w-4 h-4" />
             Buku Storting
