@@ -193,11 +193,16 @@ const AngsuranTableMobile = ({ datas }) => {
             </button>
           ))}
 
-          <Jumlah label={`Jumlah ${g.month}`} rows={g.data} />
+          <Jumlah label={`Jumlah ${g.month}`} rows={g.data} ml={g.type === 'ml'} />
         </section>
       ))}
 
-      <Jumlah label={`TOTAL (${semuaTampil.length})`} rows={semuaTampil} total />
+      <Jumlah
+        label={`TOTAL (${semuaTampil.length})`}
+        rows={semuaTampil}
+        total
+        ml={grupTampil.length > 0 && grupTampil.every((g) => g.type === 'ml')}
+      />
 
       <Dialog open={!!dropBaru} onOpenChange={(open) => !open && setDropBaru(null)}>
         <DialogContent className="max-w-xs">
@@ -228,8 +233,9 @@ const AngsuranTableMobile = ({ datas }) => {
 
 // Baris jumlah dengan susunan kolom yang sama. Subtotal: latar hijau muda +
 // garis atas hijau, beda jelas dari baris nasabah. Total: bar gelap yang
-// menempel di dasar layar.
-const Jumlah = ({ label, rows, total = false }) => (
+// menempel di dasar layar. ML: hanya angsuran hari ini (jumlah pinjaman &
+// sisa ML tidak berguna dibaca).
+const Jumlah = ({ label, rows, total = false, ml = false }) => (
   <div
     className={`${KOLOM} px-2 py-1.5 font-bold ${
       total ? 'sticky bottom-0 z-10 mt-4 bg-gray-900 text-white' : 'bg-emerald-100 text-emerald-950 border-t-2 border-emerald-500'
@@ -239,9 +245,13 @@ const Jumlah = ({ label, rows, total = false }) => (
     <div className={`col-span-2 pr-1 text-base text-right ${total ? 'text-green-300' : 'text-green-700 bg-emerald-50'}`}>
       {rb(jumlah(rows, 'angs_today'))}
     </div>
-    <div className="col-span-3" />
-    <div className={`text-[11px] text-right ${total ? 'text-gray-300' : 'text-emerald-900/70'}`}>{rb(jumlah(rows, 'pinjaman'))}</div>
-    <div className={`text-[11px] font-extrabold text-right ${total ? 'text-white' : 'text-gray-900'}`}>{rb(jumlah(rows, 'saldo'))}</div>
+    {!ml && (
+      <>
+        <div className="col-span-3" />
+        <div className={`text-[11px] text-right ${total ? 'text-gray-300' : 'text-emerald-900/70'}`}>{rb(jumlah(rows, 'pinjaman'))}</div>
+        <div className={`text-[11px] font-extrabold text-right ${total ? 'text-white' : 'text-gray-900'}`}>{rb(jumlah(rows, 'saldo'))}</div>
+      </>
+    )}
   </div>
 );
 
