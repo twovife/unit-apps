@@ -28,6 +28,8 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
   // ringkasan pengajuan yang sudah ada + link ke drop hari itu. `null`
   // berarti belum dicek / boleh mengajukan.
   const [existingPengajuan, setExistingPengajuan] = useState(null);
+  // Belum selesai dicek -> jangan tampilkan form dulu (kedip form sebelum kartu).
+  const [dicek, setDicek] = useState(false);
 
   const [mixDate, setMixDate] = useState();
 
@@ -86,6 +88,8 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
       setExistingPengajuan(sudah_diajukan ? pengajuan : null);
     } catch (error) {
       console.log(error);
+    } finally {
+      setDicek(true);
     }
   };
 
@@ -121,6 +125,8 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
       // preserveState: true,
     });
   };
+  if (!dicek) return <div className="text-xs text-muted-foreground">Memeriksa pengajuan…</div>;
+
   return (
     <div>
       {existingPengajuan ? (

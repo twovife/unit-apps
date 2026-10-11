@@ -3,7 +3,8 @@ import { Button } from '@/shadcn/ui/button';
 import PengajuanLama from './PengajuanLama';
 
 /**
- * Kartu kecil di bawah Input Angsuran: syarat belum terpenuhi -> keterangan,
+ * Kartu kecil di bawah Input Angsuran: sudah ada pengajuan berjalan ->
+ * ringkasan + Batalkan pengajuan; syarat belum terpenuhi -> keterangan,
  * sudah -> tombol. Syaratnya dihitung server (TransactionLoan::
  * alasanTolakPengajuan), aturan yang sama dengan saat pengajuan disimpan.
  */
@@ -11,6 +12,16 @@ const Pengajuan = ({ triggeredId, triggeredPinjaman, terkunci }) => {
   const [buka, setBuka] = useState(false);
   const alasan = triggeredPinjaman?.alasan_tolak_pengajuan;
   const boleh = !alasan;
+
+  // Sudah ada pengajuan pelunasan yang berjalan (open/acc): kartu langsung
+  // menampilkan pengajuan itu + tombol Batalkan pengajuan.
+  if (triggeredPinjaman?.pengajuan_pengganti) {
+    return (
+      <div className="p-3 border rounded-lg border-amber-300 bg-amber-50/40">
+        <PengajuanLama isActive triggeredId={triggeredId} triggeredPinjaman={triggeredPinjaman} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-3 border rounded-lg">
