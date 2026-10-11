@@ -23,6 +23,18 @@ const wajib = (r) => Math.min(Number(r.pinjaman) / 10, Number(r.saldo) + Number(
 const statusHariIni = (r) =>
   r.drop_baru ? 'baru' : !r.is_paid ? 'belum' : Number(r.angs_today) > 0 ? 'bayar' : 'tidak';
 
+// Warna BARIS menurut angsuran hari ini (konsep 2026-10-11: latar yang berubah,
+// bukan warna angka). Katrol = dana titipan hari ini.
+const warnaBaris = (r) => {
+  const s = statusHariIni(r);
+  if (s === 'baru') return 'bg-gray-50 text-gray-400';
+  if (s === 'belum') return 'bg-white';
+  if (s === 'tidak') return 'bg-red-100 border-l-4 border-l-red-500';
+  if (Object.values(r.instalment ?? {}).some((i) => i.is_active)) return 'bg-purple-100 border-l-4 border-l-purple-500';
+  if (Number(r.angs_today) < wajib(r)) return 'bg-amber-100 border-l-4 border-l-amber-500';
+  return 'bg-emerald-100 border-l-4 border-l-emerald-500';
+};
+
 // Urutan dalam grup: tanggal drop -> yang punya nomor anggota dulu (kecil ke
 // besar, angka dibanding sebagai angka) -> yang belum punya nomor: nama A-Z.
 const urut = (a, b) =>
@@ -42,7 +54,7 @@ const FILTER = [
 //   no.anggota | drop | nama   | ANGS (melebar 2 kolom, besar)
 //   (TG)       |      | alamat | pinj | sisa   (kecil, abu)
 const KOLOM = 'grid grid-cols-[2.2rem_2.4rem_1fr_3.2rem_3.2rem] gap-x-1 tabular-nums';
-const ANGS = 'col-span-2 text-right pr-1 bg-amber-50';
+const ANGS = 'col-span-2 text-right pr-1';
 const KECIL = 'text-[11px] text-gray-500';
 
 const AngsuranTableMobile = ({ datas }) => {
@@ -108,11 +120,12 @@ const AngsuranTableMobile = ({ datas }) => {
           )}
         </div>
         <div className="px-2 pb-1 text-[10px] text-gray-500">
-          Ketuk baris untuk bayar / lihat detail · angka dalam ribuan · Angs:{' '}
-          <span className="font-semibold text-green-700">sesuai</span>{' '}
-          <span className="font-semibold text-orange-600">kurang</span>{' '}
-          <span className="font-semibold text-red-600">0</span>{' '}
-          <span className="font-bold text-red-600">katrol</span>
+          Ketuk baris untuk bayar / lihat detail · angka dalam ribuan · Warna baris:{' '}
+          <span className="px-1 rounded bg-emerald-100 text-emerald-800">sesuai</span>{' '}
+          <span className="px-1 text-amber-800 rounded bg-amber-100">kurang</span>{' '}
+          <span className="px-1 text-red-800 bg-red-100 rounded">0</span>{' '}
+          <span className="px-1 text-purple-800 bg-purple-100 rounded">katrol</span>{' '}
+          <span className="px-1 text-gray-500 bg-white border rounded">belum</span>
         </div>
 
         <div className={`${KOLOM} px-2 py-1 text-gray-500 border-t`}>
@@ -140,9 +153,7 @@ const AngsuranTableMobile = ({ datas }) => {
               key={r.id}
               type="button"
               onClick={() => (r.drop_baru ? setDropBaru(r) : buka(r.id))}
-              className={`${KOLOM} w-full px-2 py-1.5 text-left border-b active:bg-gray-100 ${
-                r.drop_baru ? 'bg-gray-50 text-gray-400' : ''
-              }`}
+              className={`${KOLOM} w-full px-2 py-1.5 text-left border-b active:brightness-95 ${warnaBaris(r)}`}
             >
               <NoAnggota r={r} />
               <div className="text-gray-500">{dayjs(r.tanggal_drop).format('DD-MM')}</div>
@@ -248,17 +259,8 @@ const Angs = ({ r }) => {
   }
 
   return (
-    <span
-      className={`text-base font-bold ${
-        // Katrol (dana titipan) hari ini: merah tebal. `instalment` dari server
-        // hanya berisi tanggal terpilih.
-        s === 'tidak' || Object.values(r.instalment ?? {}).some((i) => i.is_active)
-          ? 'text-red-600'
-          : Number(r.angs_today) < wajib(r)
-            ? 'text-orange-600'
-            : 'text-green-700'
-      }`}
-    >
+    // Status dibawa warna latar baris (warnaBaris); angkanya cukup gelap & tebal.
+    <span className="text-base font-bold text-gray-900">
       {rb(r.angs_today)}
     </span>
   );
