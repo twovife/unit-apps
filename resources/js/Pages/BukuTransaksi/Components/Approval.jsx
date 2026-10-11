@@ -263,6 +263,8 @@ const Approval = ({
       : route('kasir.rekap.ceklist_kepala');
 
     post(url, {
+      // Jangan lompat ke atas daftar sesudah simpan.
+      preserveScroll: true,
       onSuccess: () => {
         reset();
         setEditTarget(false);

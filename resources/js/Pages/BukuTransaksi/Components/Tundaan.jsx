@@ -41,6 +41,8 @@ const Tundaan = ({ id, dropDateLama, onClosed }) => {
 
   const submit = () => {
     post(route('transaction.tundaan_pengajuan', id), {
+      // Jangan lompat ke atas daftar sesudah simpan.
+      preserveScroll: true,
       onSuccess: () => {
         reset();
         setOpen(false);

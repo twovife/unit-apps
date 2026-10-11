@@ -46,6 +46,8 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
       status: status,
     }));
     put(route('transaction.action_buku_transaksi', id), {
+      // Jangan lompat ke atas daftar sesudah simpan.
+      preserveScroll: true,
       onSuccess: () => {
         reset();
         onClosed();

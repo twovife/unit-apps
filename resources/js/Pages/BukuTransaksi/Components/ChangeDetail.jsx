@@ -138,6 +138,8 @@ const ChangeDetail = ({ triggeredData, onClosed }) => {
     }));
 
     put(route('transaction.updateEverything', triggeredData?.nomor_pengajuan), {
+      // Jangan lompat ke atas daftar sesudah simpan.
+      preserveScroll: true,
       preventDefault: true,
       preserveState: true,
       onSuccess: () => {

@@ -86,6 +86,8 @@ const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
     if (!bolehHapus) return;
 
     destroy(route('pinjaman.destroy_loan', triggeredId), {
+      // Jangan lompat ke atas daftar sesudah hapus.
+      preserveScroll: true,
       onSuccess: () => {
         reset();
         onClosed();
