@@ -3,7 +3,7 @@ import Loading from '@/Components/Loading';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
@@ -95,6 +95,22 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
     }
   }, [isActive, triggeredId]);
 
+  // Batalkan pengajuan (hapus pinjaman pengganti open/acc). Aturannya sama
+  // dengan Hapus Pinjaman di Buku Transaksi (AppHelper::canDeleteLoan).
+  const [batalYakin, setBatalYakin] = useState(false);
+  const [membatalkan, setMembatalkan] = useState(false);
+  const batalkan = () =>
+    router.delete(route('pinjaman.destroy_loan', existingPengajuan.id), {
+      preserveScroll: true,
+      preserveState: true,
+      onStart: () => setMembatalkan(true),
+      onFinish: () => {
+        setMembatalkan(false);
+        setBatalYakin(false);
+        getDataAxios();
+      },
+    });
+
   const submitForm = (e) => {
     e.preventDefault();
     post(route('pinjaman.store_pengajuan_lama', triggeredId), {
@@ -150,6 +166,34 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
           >
             Lihat Drop Hari Itu
           </a>
+          {existingPengajuan.batal && (
+            <div className="pt-2 mt-2 border-t">
+              {existingPengajuan.batal.status ? (
+                <>
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    Selama pengajuan ini ada, angsuran nasabah ini tidak bisa dihapus. Batalkan dulu kalau angsurannya
+                    perlu dikoreksi.
+                  </p>
+                  {batalYakin ? (
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" disabled={membatalkan} onClick={() => setBatalYakin(false)}>
+                        Tidak
+                      </Button>
+                      <Button variant="destructive" size="sm" disabled={membatalkan} onClick={batalkan}>
+                        {membatalkan ? 'Membatalkan…' : 'Ya, batalkan pengajuan'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" className="text-red-600 border-red-200" onClick={() => setBatalYakin(true)}>
+                      Batalkan pengajuan
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs font-medium text-amber-600">{existingPengajuan.batal.message}</p>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div>

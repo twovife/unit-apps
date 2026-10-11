@@ -1284,6 +1284,10 @@ class TransactionLoanController extends Controller
         'nominal_drop' => $penggantiLoan->nominal_drop,
         'request_nominal' => $penggantiLoan->request_nominal,
         'kelompok' => $penggantiLoan->loan_officer_grouping?->kelompok,
+        // Tombol "Batalkan pengajuan" (open/acc): boleh tidaknya ikut aturan hapus pinjaman.
+        'batal' => in_array($penggantiLoan->status, ['open', 'acc'], true)
+          ? AppHelper::canDeleteLoan($penggantiLoan)
+          : null,
       ] : null,
     ];
 
@@ -1486,6 +1490,12 @@ class TransactionLoanController extends Controller
     }
     if (!AppHelper::bolehAksesPinjaman($transactionLoanInstalment->loan)) {
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+    // Nasabah sudah diajukan pinjaman baru (pelunasan) yang masih berjalan:
+    // syarat pengajuan dihitung dari angsuran ini, jadi angsuran tidak boleh
+    // dihapus sebelum pengajuannya dibatalkan.
+    if (TransactionLoan::where('previous_loan_id', $transactionLoanInstalment->transaction_loan_id)->whereIn('status', ['open', 'acc'])->exists()) {
+      return redirect()->back()->withErrors('Nasabah ini sudah diajukan pinjaman baru. Batalkan pengajuannya dulu (menu Pengajuan), baru angsuran bisa dihapus.');
     }
 
     $permission =  AppHelper::havePermissionByDate($transactionLoanInstalment->transaction_date);

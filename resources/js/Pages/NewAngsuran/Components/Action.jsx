@@ -213,6 +213,12 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 {/* Tabel rincian: per bulan (terbaru di atas), baris ringkasan
                     bulan di bawahnya - Sisa sejajar kolom Mantri. table-fixed,
                     nama dipotong, lengkapnya di title. */}
+                {customerData.pengajuan_pengganti && (
+                  <div className="p-2 mb-2 text-xs border rounded-md border-amber-300 bg-amber-50 text-amber-900">
+                    Nasabah ini sudah diajukan pinjaman baru - angsuran tidak bisa dihapus. Batalkan pengajuannya dulu di
+                    bagian Pengajuan.
+                  </div>
+                )}
                 <div className="overflow-hidden border rounded-md border-slate-200">
                 <Table className="text-xs table-fixed">
                   {/* Lebar proporsional: tidak menumpuk di kiri saat modal lebar,
@@ -252,6 +258,14 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                       // Tanggal terkunci kasir / beku: tidak bisa dihapus.
                                       <span title="Tanggal ini sudah dikunci" className="inline-flex text-slate-400">
                                         <Lock className="w-3.5 h-3.5" aria-label="terkunci" />
+                                      </span>
+                                    ) : customerData.pengajuan_pengganti ? (
+                                      // Sudah diajukan pinjaman baru: batalkan pengajuannya dulu.
+                                      <span
+                                        title="Nasabah sudah diajukan. Batalkan pengajuan dulu (menu Pengajuan) untuk menghapus angsuran."
+                                        className="inline-flex text-amber-500"
+                                      >
+                                        <Lock className="w-3.5 h-3.5" aria-label="ada pengajuan" />
                                       </span>
                                     ) : (
                                       <DeleteAngsuran id={item.id} tanggal={item.transaction_date} nominal={item.nominal} />
