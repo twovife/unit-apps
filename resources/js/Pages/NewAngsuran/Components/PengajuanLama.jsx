@@ -166,10 +166,13 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
           </div>
           <div className="w-full mb-3">
             <Label>Tanggal Drop</Label>
+            {/* Dikunci: selalu hari tagih kerja berikutnya sesudah pengajuan
+                (diisi otomatis di atas; server menegakkan aturan yang sama). */}
             <TanggalKerja
               name="tanggal_drop"
               min={mixDate}
               required={true}
+              disabled
               value={data.tanggal_drop}
               onChange={onInputChange}
             />

@@ -389,7 +389,7 @@ const NewNasabah = ({
                                   (minggu depan)
                                 </option>
                                 <option value={data.request_date}>
-                                  {dayjs(data.request_date).format('DD MMM YYYY')} (drop langsung)
+                                  {dayjs(data.request_date).format('DD MMM YYYY')} (drop baru)
                                 </option>
                               </>
                             )}

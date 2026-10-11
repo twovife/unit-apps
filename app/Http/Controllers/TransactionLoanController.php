@@ -792,6 +792,20 @@ class TransactionLoanController extends Controller
     if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
+    // Pengajuan nasabah lama: drop dikunci ke hari tagih kerja berikutnya
+    // (minggu depan, lompati libur) - tidak ada drop di hari pengajuan.
+    try {
+      $dropSeharusnya = WorkDay::hariSamaBerikutnya(Carbon::parse($request->request_date)->startOfDay());
+      $tglDrop = Carbon::parse($request->tanggal_drop)->startOfDay();
+    } catch (\Throwable $e) {
+      return redirect()->back()->withErrors('Tanggal pengajuan / drop tidak terbaca.');
+    }
+    if (!$dropSeharusnya || !$tglDrop->equalTo($dropSeharusnya)) {
+      return redirect()->back()->withErrors(sprintf(
+        'Tanggal drop harus %s (hari tagih kerja berikutnya sesudah pengajuan).',
+        $dropSeharusnya ? $dropSeharusnya->locale('id')->isoFormat('D MMMM Y') : '-'
+      ));
+    }
 
     $val = $request->validate([
       'request_nominal' =>  ["required", 'integer', 'min:100000'],

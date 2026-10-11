@@ -80,7 +80,10 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
     post(route('pinjaman.bayar_pinjaman', data.id), {
       preserveScroll: true,
       onSuccess: () => {
-        reset('transaction_date', 'nominal', 'danatitipan', 'is_transfer');
+        // transaction_date JANGAN di-reset: nilai awalnya '' dan efek yang
+        // mengisinya tidak jalan lagi -> hapus lalu bayar ulang (modal masih
+        // terbuka) terkirim tanpa tanggal dan ditolak.
+        reset('nominal', 'danatitipan', 'is_transfer');
       },
     });
   };
