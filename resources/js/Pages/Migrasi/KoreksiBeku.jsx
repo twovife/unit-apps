@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
-import { History, Lock, Search } from 'lucide-react';
+import { History, Lock } from 'lucide-react';
 import DampakKoreksi from './Components/DampakKoreksi';
 
 const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
@@ -49,7 +49,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman, mulai }) => {
 
   useEffect(() => {
     setNominal(angsuran ? String(angsuran.nominal) : '');
-    setTanggal('');
+    setTanggal(buka?.tanggal ?? '');
     setAlasan('');
     setCariTujuan('');
     setHasilTujuan([]);
@@ -195,15 +195,83 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman, mulai }) => {
   );
 };
 
+const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+const PILIH = 'h-9 px-2 text-sm border rounded-md border-input bg-background';
+const rb = (n) => new Intl.NumberFormat('id-ID').format(Math.round((n ?? 0) / 1000));
+
+/** Isi satu sel (nasabah x tanggal): daftar angsuran + aksi. */
+const DialogSel = ({ sel, onClosed, onAksi }) => {
+  const isi = sel ? sel.nasabah.angsuran[sel.tanggal] ?? [] : [];
+  return (
+    <Dialog open={!!sel} onOpenChange={(o) => !o && onClosed()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {sel?.nasabah.nama} · {sel && dayjs(sel.tanggal).format('dddd, DD MMM YYYY')}
+          </DialogTitle>
+          <DialogDescription>
+            Drop {sel && dayjs(sel.nasabah.drop_date).format('DD-MM-YYYY')} · Rp {rp(sel?.nasabah.pinjaman)}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2 text-sm">
+          {isi.length === 0 && <div className="text-slate-500">Tidak ada angsuran di tanggal ini.</div>}
+          {isi.map((a) => (
+            <div key={a.id} className="flex items-center justify-between gap-2 p-2 border rounded-md">
+              <div>
+                <b>Rp {rp(a.nominal)}</b>{' '}
+                <span className="text-xs text-slate-500">
+                  {[a.katrol && 'katrol', a.transfer && 'transfer', a.topup && 'pelunasan topup'].filter(Boolean).join(', ')}
+                </span>
+              </div>
+              {a.topup ? (
+                <Lock className="w-4 h-4 text-slate-400" aria-label="Pelunasan topup, tidak bisa dikoreksi" />
+              ) : (
+                <div className="flex gap-1">
+                  {['ubah', 'pindah', 'hapus'].map((x) => (
+                    <Button
+                      key={x}
+                      size="xs"
+                      variant="outline"
+                      className={`capitalize ${x === 'hapus' ? 'text-red-600 border-red-200' : ''}`}
+                      onClick={() => onAksi({ aksi: x, angsuran: a })}
+                    >
+                      {x}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onAksi({ aksi: 'tambah', tanggal: sel.tanggal })}>
+            Tambah angsuran di tanggal ini
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 /**
- * Koreksi Data Beku (superuser): angsuran bertanggal sebelum migrasi kantor.
- * Kantor ikut filter global. Cari nasabah -> pilih pinjaman -> ubah / hapus /
- * tambah / pindah angsuran, dengan pratinjau dampak & alasan wajib.
+ * Koreksi Data Beku (superuser), tampil seperti buku angsuran: kantor (filter
+ * global) x kelompok x hari x BULAN DROP. Baris = nasabah drop bulan itu,
+ * kolom = tanggal tagih s/d sebelum migrasi. Klik sel -> ubah / hapus /
+ * pindah / tambah, dengan pratinjau dampak & alasan wajib.
  */
-const KoreksiBeku = ({ kantor, q, hasil = [], pinjaman }) => {
-  const [cari, setCari] = useState(q ?? '');
+const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
+  const [sel, setSel] = useState(null);
   const [buka, setBuka] = useState(null);
-  const pilih = (id) => router.get(route('migrasi.koreksi_beku'), { q: cari, loan: id }, { preserveScroll: true });
+  const ganti = (ubah) => router.get(route('migrasi.koreksi_beku'), { ...filter && { kelompok: filter.kelompok, hari: filter.hari, bulan: filter.bulan }, ...ubah }, { preserveScroll: true });
+
+  // Kepala bulan di atas kolom tanggal.
+  const bulanKolom = kolom.reduce((acc, t) => {
+    const b = t.slice(0, 7);
+    const akhir = acc[acc.length - 1];
+    akhir && akhir.b === b ? akhir.n++ : acc.push({ b, n: 1 });
+    return acc;
+  }, []);
+  const jumlahKolom = (t) => nasabah.reduce((a, n) => a + (n.angsuran[t] ?? []).reduce((x, i) => x + i.nominal, 0), 0);
 
   return (
     <Authenticated>
@@ -213,8 +281,8 @@ const KoreksiBeku = ({ kantor, q, hasil = [], pinjaman }) => {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Koreksi Data Beku</h1>
           <p className="text-sm text-slate-500">
-            {kantor.unit} · angsuran sebelum migrasi ({kantor.mulai ? dayjs(kantor.mulai).format('DD MMM YYYY') : '—'}). Superuser saja;
-            setiap koreksi menghitung ulang saldo bulanan dari bulan migrasi dan tercatat di log.
+            {kantor.unit} · angsuran sebelum migrasi ({kantor.mulai ? dayjs(kantor.mulai).format('DD MMM YYYY') : '—'}). Klik sel untuk
+            mengoreksi; saldo bulanan dihitung ulang dan tercatat di log. Angka dalam ribuan.
           </p>
         </div>
         <Button asChild variant="outline" className="gap-1">
@@ -230,102 +298,155 @@ const KoreksiBeku = ({ kantor, q, hasil = [], pinjaman }) => {
           Kantor ini belum migrasi - datanya belum beku. Ubah angsuran lewat menu biasa.
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
-          <div className="bg-white border rounded-lg">
-            <form
-              className="flex gap-2 p-3 border-b"
-              onSubmit={(e) => {
-                e.preventDefault();
-                router.get(route('migrasi.koreksi_beku'), { q: cari }, { preserveState: true });
-              }}
-            >
-              <Input placeholder="Nama / NIK / no. anggota (min. 3 huruf)" value={cari} onChange={(e) => setCari(e.target.value)} />
-              <Button type="submit" size="icon" variant="outline" aria-label="Cari">
-                <Search className="w-4 h-4" />
-              </Button>
-            </form>
-            <div className="max-h-[60vh] overflow-y-auto">
-              {hasil.map((l) => (
-                <BarisPinjaman key={l.id} l={l} aktif={pinjaman?.id === l.id} onClick={() => pilih(l.id)} />
+        <>
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <select className={PILIH} value={filter.kelompok} onChange={(e) => ganti({ kelompok: e.target.value })}>
+              {filter.kelompok_ada.map((k) => (
+                <option key={k} value={k}>
+                  Kelompok {k}
+                </option>
               ))}
-              {q && hasil.length === 0 && <div className="p-3 text-sm text-slate-500">Tidak ada pinjaman sebelum migrasi yang cocok.</div>}
+            </select>
+            <div className="flex flex-wrap gap-1">
+              {HARI.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => ganti({ hari: h })}
+                  className={`h-9 px-3 text-sm capitalize rounded-md border ${
+                    filter.hari === h ? 'bg-sky-600 border-sky-600 text-white font-semibold' : 'bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  {h}
+                </button>
+              ))}
             </div>
+            <select className={PILIH} value={filter.bulan} onChange={(e) => ganti({ bulan: e.target.value })}>
+              {filter.bulan_ada.map((b) => (
+                <option key={b} value={b}>
+                  Drop {dayjs(`${b}-01`).format('MMMM YYYY')}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div>
-            {!pinjaman ? (
-              <div className="p-6 text-sm text-center bg-white border rounded-lg text-slate-500">Pilih pinjaman di kiri.</div>
-            ) : (
-              <div className="bg-white border rounded-lg">
-                <div className="flex flex-wrap items-start justify-between gap-3 p-4 border-b">
-                  <div>
-                    <div className="text-lg font-semibold">{pinjaman.nama}</div>
-                    <div className="text-sm capitalize text-slate-500">
-                      No. {pinjaman.nomor_anggota || '–'} · Kel {pinjaman.kelompok} · {pinjaman.hari} · drop{' '}
-                      {dayjs(pinjaman.drop_date).format('DD-MM-YYYY')} · Rp {rp(pinjaman.pinjaman)}
-                    </div>
-                    <div className="mt-1 text-sm">
-                      Ember di {dayjs(kantor.mulai).format('MMMM YYYY')}:{' '}
-                      <b className="uppercase">{EMBER[pinjaman.ember] ?? pinjaman.ember}</b> · saldo per{' '}
-                      {dayjs(kantor.mulai).subtract(1, 'day').format('DD-MM-YYYY')}: <b>Rp {rp(pinjaman.saldo_awal)}</b>
-                    </div>
-                  </div>
-                  <Button onClick={() => setBuka({ aksi: 'tambah' })}>Tambah angsuran</Button>
-                </div>
-                <table className="w-full text-sm tabular-nums">
-                  <thead className="bg-slate-100 text-slate-700">
-                    <tr>
-                      <th className="px-3 py-2 font-medium text-left">Tanggal</th>
-                      <th className="px-3 py-2 font-medium text-right">Nominal</th>
-                      <th className="px-3 py-2 font-medium text-left">Ket</th>
-                      <th className="px-3 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pinjaman.angsuran.map((a) => (
-                      <tr key={a.id} className="border-t even:bg-slate-50">
-                        <td className="px-3 py-1.5">{dayjs(a.tanggal).format('DD-MM-YYYY')}</td>
-                        <td className="px-3 py-1.5 text-right">{rp(a.nominal)}</td>
-                        <td className="px-3 py-1.5 text-xs text-slate-500">
-                          {[a.katrol && 'katrol', a.transfer && 'transfer', a.topup && 'pelunasan topup'].filter(Boolean).join(', ')}
-                        </td>
-                        <td className="px-3 py-1.5 text-right whitespace-nowrap">
-                          {a.topup ? (
-                            <Lock className="inline w-4 h-4 text-slate-400" aria-label="Pelunasan topup, tidak bisa dikoreksi" />
-                          ) : (
-                            <div className="inline-flex gap-1">
-                              {['ubah', 'pindah', 'hapus'].map((x) => (
-                                <Button
-                                  key={x}
-                                  size="xs"
-                                  variant="outline"
-                                  className={`capitalize ${x === 'hapus' ? 'text-red-600 border-red-200' : ''}`}
-                                  onClick={() => setBuka({ aksi: x, angsuran: a })}
-                                >
-                                  {x}
-                                </Button>
-                              ))}
-                            </div>
+          <div className="overflow-auto bg-white border rounded-lg max-h-[70vh]">
+            <table className="w-full text-xs tabular-nums">
+              <thead className="sticky top-0 z-20 bg-slate-100 text-slate-700">
+                <tr>
+                  <th rowSpan={2} className="sticky left-0 z-20 px-2 py-1.5 font-medium text-left bg-slate-100">
+                    Nasabah
+                  </th>
+                  <th rowSpan={2} className="px-2 py-1.5 font-medium text-left">Drop</th>
+                  <th rowSpan={2} className="px-2 py-1.5 font-medium text-right">Pinjaman</th>
+                  <th rowSpan={2} className="px-2 py-1.5 font-medium text-center">Ember</th>
+                  {bulanKolom.map((m) => (
+                    <th key={m.b} colSpan={m.n} className="px-2 py-1 font-medium text-center border-l-2 border-slate-300">
+                      {dayjs(`${m.b}-01`).format('MMMM YYYY')}
+                    </th>
+                  ))}
+                  <th rowSpan={2} className="px-2 py-1.5 font-medium text-right border-l-2 border-slate-300 whitespace-nowrap">
+                    Saldo {dayjs(kantor.mulai).subtract(1, 'day').format('DD-MM')}
+                  </th>
+                </tr>
+                <tr>
+                  {kolom.map((t, i) => (
+                    <th
+                      key={t}
+                      className={`px-2 py-1 font-normal text-right whitespace-nowrap ${
+                        i === 0 || kolom[i - 1].slice(0, 7) !== t.slice(0, 7) ? 'border-l-2 border-slate-300' : 'border-l'
+                      } ${dayjs(t).format('dddd').toLowerCase() !== filter.hari ? 'text-amber-700' : ''}`}
+                    >
+                      {dayjs(t).format('DD')}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {nasabah.map((n) => (
+                  <tr key={n.id} className="border-t even:bg-slate-50 hover:bg-sky-50">
+                    <td className="sticky left-0 z-10 px-2 py-1 bg-inherit whitespace-nowrap">
+                      <div className="font-medium text-slate-900">{n.nama}</div>
+                      <div className="text-[10px] text-slate-500">No. {n.nomor_anggota || '–'}</div>
+                    </td>
+                    <td className="px-2 py-1 whitespace-nowrap">{dayjs(n.drop_date).format('DD-MM')}</td>
+                    <td className="px-2 py-1 text-right">{rb(n.pinjaman)}</td>
+                    <td className="px-2 py-1 font-semibold text-center uppercase">{EMBER[n.ember] ?? n.ember}</td>
+                    {kolom.map((t, i) => {
+                      const isi = n.angsuran[t] ?? [];
+                      const total = isi.reduce((a, x) => a + x.nominal, 0);
+                      const sebelumDrop = t < n.drop_date;
+                      return (
+                        <td
+                          key={t}
+                          className={`p-0 text-right ${
+                            i === 0 || kolom[i - 1].slice(0, 7) !== t.slice(0, 7) ? 'border-l-2 border-slate-300' : 'border-l'
+                          } ${sebelumDrop ? 'bg-slate-100' : ''}`}
+                        >
+                          {!sebelumDrop && (
+                            <button
+                              type="button"
+                              onClick={() => setSel({ nasabah: n, tanggal: t })}
+                              className={`w-full h-full px-2 py-1 text-right hover:bg-sky-100 ${isi.length ? 'text-slate-900' : 'text-slate-300'}`}
+                            >
+                              {isi.some((x) => x.katrol) && <span className="mr-0.5 text-[9px] font-semibold text-emerald-700">K</span>}
+                              {isi.length ? rb(total) : '·'}
+                              {isi.length > 1 && <sup className="ml-0.5 text-amber-600">{isi.length}</sup>}
+                            </button>
                           )}
                         </td>
-                      </tr>
+                      );
+                    })}
+                    <td className="px-2 py-1 font-semibold text-right border-l-2 border-slate-300">{rb(n.saldo_awal)}</td>
+                  </tr>
+                ))}
+                {nasabah.length === 0 && (
+                  <tr>
+                    <td colSpan={kolom.length + 5} className="py-6 text-center text-slate-500">
+                      Tidak ada nasabah drop {dayjs(`${filter.bulan}-01`).format('MMMM YYYY')} di kelompok {filter.kelompok} hari{' '}
+                      {filter.hari}.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              {nasabah.length > 0 && (
+                <tfoot className="sticky bottom-0 font-bold border-t-2 bg-emerald-50 text-slate-900">
+                  <tr>
+                    <td className="sticky left-0 px-2 py-1.5 bg-emerald-50">Total ({nasabah.length})</td>
+                    <td />
+                    <td className="px-2 py-1.5 text-right">{rb(nasabah.reduce((a, n) => a + n.pinjaman, 0))}</td>
+                    <td />
+                    {kolom.map((t, i) => (
+                      <td
+                        key={t}
+                        className={`px-2 py-1.5 text-right ${i === 0 || kolom[i - 1].slice(0, 7) !== t.slice(0, 7) ? 'border-l-2 border-slate-300' : 'border-l'}`}
+                      >
+                        {rb(jumlahKolom(t))}
+                      </td>
                     ))}
-                    {pinjaman.angsuran.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="px-3 py-4 text-center text-slate-500">
-                          Belum ada angsuran sebelum migrasi.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    <td className="px-2 py-1.5 text-right border-l-2 border-slate-300">{rb(nasabah.reduce((a, n) => a + n.saldo_awal, 0))}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
-        </div>
+        </>
       )}
 
-      <DialogKoreksi buka={buka} onClosed={() => setBuka(null)} pinjaman={pinjaman} mulai={kantor.mulai} />
+      <DialogSel
+        sel={sel}
+        onClosed={() => setSel(null)}
+        onAksi={(b) => {
+          setBuka({ ...b, nasabah: sel.nasabah });
+          setSel(null);
+        }}
+      />
+      <DialogKoreksi
+        buka={buka}
+        onClosed={() => setBuka(null)}
+        pinjaman={buka?.nasabah}
+        mulai={kantor.mulai}
+      />
     </Authenticated>
   );
 };

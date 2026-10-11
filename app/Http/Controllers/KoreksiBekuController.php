@@ -54,54 +54,98 @@ class KoreksiBekuController extends Controller
             ]);
     }
 
+    /**
+     * Buku angsuran beku, seperti buku angsuran: kelompok x hari x BULAN DROP.
+     * Baris = pinjaman yang di-drop di bulan itu; kolom = tanggal tagih dari
+     * bulan drop s/d sehari sebelum migrasi (+ tanggal lain yang ternyata
+     * berisi angsuran). Bulan sendiri (?bulan), tidak ikut bulan global.
+     */
     public function index(Request $request)
     {
         $this->wajibSuperuser();
-        $branchId = AuthScope::resolve()->branch_id;
+        $scope = AuthScope::resolve();
+        $branchId = $scope->branch_id;
         $mulai = AgregasiScope::tanggalMulai($branchId);
-        $q = trim((string) $request->input('q', ''));
+        $hari = \App\Helpers\AppHelper::hariTagih($request->input('hari'));
 
-        $pinjaman = null;
-        if ($mulai && $request->filled('loan')) {
-            $l = TransactionLoan::with(['customer', 'manage_customer', 'loan_officer_grouping'])->findOrFail($request->integer('loan'));
-            abort_unless((int) $l->loan_officer_grouping?->branch_id === (int) $branchId, 403, 'Pinjaman ini milik kantor lain.');
+        $kantor = [
+            'unit' => Branch::whereKey($branchId)->value('unit'),
+            'mulai' => $mulai?->toDateString(),
+            'jumlah_koreksi' => TransactionKoreksiBeku::where('branch_id', $branchId)->count(),
+        ];
+        $kelompokAda = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->orderBy('kelompok')->pluck('kelompok');
 
-            $pinjaman = [
+        if (!$mulai) {
+            return Inertia::render('Migrasi/KoreksiBeku', ['kantor' => $kantor, 'filter' => null, 'kolom' => [], 'nasabah' => []]);
+        }
+
+        // Bulan drop: bawaan sebulan sebelum migrasi; tidak boleh >= bulan migrasi.
+        $bulan = preg_match('/^\d{4}-\d{2}$/', (string) $request->input('bulan'))
+            ? Carbon::parse($request->input('bulan') . '-01')
+            : $mulai->copy()->subMonthNoOverflow()->startOfMonth();
+        if ($bulan->gte($mulai->copy()->startOfMonth())) {
+            $bulan = $mulai->copy()->subMonthNoOverflow()->startOfMonth();
+        }
+        $akhir = $mulai->copy()->subDay();
+
+        $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->where('kelompok', $scope->kelompok)->first();
+        $loans = $grouping
+            ? TransactionLoan::with(['customer', 'manage_customer', 'loan_instalment' => fn($q) => $q->where('transaction_date', '<', $mulai->toDateString())])
+                ->where('transaction_loan_officer_grouping_id', $grouping->id)
+                ->where('hari', $hari)
+                ->where('status', 'success')
+                ->whereBetween('drop_date', [$bulan->toDateString(), $bulan->copy()->endOfMonth()->toDateString()])
+                ->orderBy('drop_date')
+                ->get()
+            : collect();
+
+        $saldo = PenyesuaianSaldo::saldoBanyak($loans->pluck('id')->all(), $akhir);
+
+        // Kolom: semua tanggal hari tagih itu dari awal bulan drop s/d sebelum migrasi,
+        // ditambah tanggal lain yang berisi angsuran (supaya tidak ada yang tersembunyi).
+        $tanggal = collect();
+        for ($d = $bulan->copy(); $d->lte($akhir); $d->addDay()) {
+            if (\App\Helpers\AppHelper::dateName($d) === $hari) {
+                $tanggal->push($d->toDateString());
+            }
+        }
+        $tanggal = $tanggal
+            ->merge($loans->flatMap(fn($l) => $l->loan_instalment->map(fn($a) => Carbon::parse($a->transaction_date)->toDateString())))
+            ->unique()->sort()->values();
+
+        return Inertia::render('Migrasi/KoreksiBeku', [
+            'kantor' => $kantor,
+            'filter' => [
+                'kelompok' => $scope->kelompok,
+                'kelompok_ada' => $kelompokAda,
+                'hari' => $hari,
+                'bulan' => $bulan->format('Y-m'),
+                // Pilihan bulan drop: 12 bulan sebelum migrasi.
+                'bulan_ada' => collect(range(1, 12))->map(fn($i) => $mulai->copy()->startOfMonth()->subMonthsNoOverflow($i)->format('Y-m'))->values(),
+            ],
+            'kolom' => $tanggal,
+            'nasabah' => $loans->map(fn($l) => [
                 'id' => $l->id,
                 'nama' => $l->customer?->nama,
                 'nik' => $l->customer?->nik,
                 'nomor_anggota' => $l->manage_customer?->nomor_anggota,
-                'kelompok' => $l->loan_officer_grouping?->kelompok,
+                'kelompok' => $scope->kelompok,
                 'hari' => $l->hari,
                 'drop_date' => Carbon::parse($l->drop_date)->toDateString(),
                 'pinjaman' => (int) $l->pinjaman,
                 'ember' => Ember::dari($l->drop_date, $mulai),
-                // Saldo per hari terakhir sebelum migrasi (patokan saldo awal).
-                'saldo_awal' => PenyesuaianSaldo::hitungSaldo($l, $mulai->copy()->subDay())['saldo'],
-                'angsuran' => $l->loan_instalment()
-                    ->where('transaction_date', '<', $mulai->toDateString())
-                    ->orderBy('transaction_date')
-                    ->get()
-                    ->map(fn($a) => [
+                'saldo_awal' => $saldo[$l->id]['saldo'] ?? 0,
+                'angsuran' => $l->loan_instalment
+                    ->groupBy(fn($a) => Carbon::parse($a->transaction_date)->toDateString())
+                    ->map(fn($g) => $g->map(fn($a) => [
                         'id' => $a->id,
                         'tanggal' => Carbon::parse($a->transaction_date)->toDateString(),
                         'nominal' => (int) $a->nominal,
                         'katrol' => (bool) $a->danatitipan,
                         'transfer' => (bool) $a->is_transfer,
                         'topup' => (bool) $a->settled_by_loan_id,
-                    ]),
-            ];
-        }
-
-        return Inertia::render('Migrasi/KoreksiBeku', [
-            'kantor' => [
-                'unit' => Branch::whereKey($branchId)->value('unit'),
-                'mulai' => $mulai?->toDateString(),
-                'jumlah_koreksi' => TransactionKoreksiBeku::where('branch_id', $branchId)->count(),
-            ],
-            'q' => $q,
-            'hasil' => $mulai && mb_strlen($q) >= 3 ? $this->cari($branchId, $q, $mulai) : [],
-            'pinjaman' => $pinjaman,
+                    ])->values()),
+            ])->values(),
         ]);
     }
 
