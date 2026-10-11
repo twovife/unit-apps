@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { ArrowDown, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
+// Palet sama dengan Rekap 1 & 2 (tanpa blok warna per kolom).
+import { WARNA } from '@/Pages/Kasir/Rekap/Components/TableRekapKasir';
 
 // Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
 // sisi kanan berawalan p_). [kunci, label, kelas?]
@@ -44,7 +46,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
     </div>
     <div className="overflow-x-auto">
       <table className="w-full text-xs tabular-nums">
-        <thead className="bg-slate-200 text-slate-800">
+        <thead className={WARNA.biru.kepala}>
           <tr className="h-8">
             <th className="px-3 py-1.5 font-medium text-left">Kel</th>
             {kolom.map(([k, label]) => (
@@ -110,7 +112,7 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
           ))}
         </tbody>
         <tfoot>
-          <tr className="h-8 font-bold border-t bg-emerald-100 text-emerald-900">
+          <tr className={`h-8 font-bold border-t text-slate-900 ${WARNA.hijau.total}`}>
             <td className="px-3 py-1.5">Total</td>
             {kolom.map(([k, , kelas]) => (
               <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
@@ -199,7 +201,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KIRI}
                 kosong={kosong}
                 klik={klik}
-                warna={dayjs(item.tanggal).day() === 1 ? 'bg-rose-500 text-white' : 'bg-slate-600 text-white'}
+                warna={dayjs(item.tanggal).day() === 1 ? WARNA.merah.kepala : WARNA.biru.kepala}
                 kolomKm
                 onAcc={onAcc}
               />
@@ -210,7 +212,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KANAN}
                 kosong={kosong}
                 klik={klik}
-                warna="bg-sky-600 text-white"
+                warna={WARNA.hijau.kepala}
                 // Target minggu depan dibanding target hari ini.
                 banding={{ p_target: 'target' }}
               />
