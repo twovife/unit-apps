@@ -28,8 +28,9 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
   const status = triggeredData?.status;
   // success/gagal = realisasi drop: can-create (mantri/pembuat yang nge-drop).
   const canCreate = auth?.permissions?.includes('can-create');
-  // Drop baru bisa di hari drop-nya (server juga menolak) - pengajuan minggu
-  // depan tidak ter-drop karena salah klik.
+  // Drop / Gagal / Tundaan baru bisa di hari drop-nya (server juga menolak);
+  // sebelum itu cuma ACC / Tolak - pengajuan minggu depan tidak ter-drop
+  // karena salah klik.
   const belumHariDrop = triggeredData?.tanggal_drop && String(triggeredData.tanggal_drop).slice(0, 10) > dayjs().format('YYYY-MM-DD');
 
   useEffect(() => {
@@ -139,11 +140,12 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
               )}
               {belumHariDrop && (
                 <p className="mt-2 text-xs font-medium text-amber-600">
-                  Belum hari drop ({dayjs(triggeredData.tanggal_drop).format('DD-MM-YYYY')}). Tombol DROP aktif di hari drop-nya.
+                  Belum hari drop ({dayjs(triggeredData.tanggal_drop).format('DD-MM-YYYY')}). DROP / GAGAL / Tundaan aktif di hari
+                  drop-nya; sekarang hanya ACC / Tolak.
                 </p>
               )}
               <div className="flex flex-wrap items-center justify-end gap-3 mt-2">
-                {status === 'acc' && canApprove && (
+                {status === 'acc' && canApprove && !belumHariDrop && (
                   <Tundaan
                     id={id}
                     dropDateLama={triggeredData?.tanggal_drop}
@@ -163,7 +165,7 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                   <AppButton
                     variant="danger"
                     size="sm"
-                    disabled={!canCreate}
+                    disabled={!canCreate || belumHariDrop}
                     onClick={() => accPinjaman('gagal')}
                   >
                     GAGAL

@@ -910,6 +910,9 @@ class TransactionLoanController extends Controller
     if ($transactionLoan->status !== 'acc') {
       return redirect()->back()->withErrors('Tundaan cuma bisa dilakukan pada pengajuan yang sudah di-ACC.');
     }
+    if (Carbon::parse($transactionLoan->drop_date)->startOfDay()->gt(Carbon::today())) {
+      return redirect()->back()->withErrors('Belum hari drop. Sebelum hari drop hanya bisa ACC / Tolak.');
+    }
     if (!AppHelper::bolehAksesPinjaman($transactionLoan)) {
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
@@ -983,10 +986,10 @@ class TransactionLoanController extends Controller
       }
     }
 
-    // Drop hanya di hari drop-nya atau sesudahnya - pengajuan minggu depan
-    // tidak bisa ter-drop lebih dulu (salah klik).
-    if ($request->status == 'success' && Carbon::parse($transactionLoan->drop_date)->startOfDay()->gt(Carbon::today())) {
-      return redirect()->back()->withErrors('Belum hari drop (' . Carbon::parse($transactionLoan->drop_date)->format('d-m-Y') . '). Drop baru bisa di hari drop-nya.');
+    // Drop / Gagal hanya di hari drop-nya atau sesudahnya - sebelum itu cuma
+    // ACC / Tolak (pengajuan minggu depan tidak ter-drop karena salah klik).
+    if (in_array($request->status, ['success', 'gagal'], true) && Carbon::parse($transactionLoan->drop_date)->startOfDay()->gt(Carbon::today())) {
+      return redirect()->back()->withErrors('Belum hari drop (' . Carbon::parse($transactionLoan->drop_date)->format('d-m-Y') . '). Sebelum hari drop hanya bisa ACC / Tolak.');
     }
 
 
