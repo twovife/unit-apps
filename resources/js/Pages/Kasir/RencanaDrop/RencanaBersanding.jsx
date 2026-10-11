@@ -18,8 +18,8 @@ const KOLOM = [
   ['lama', 'Lama'],
   ['rencana', 'Rencana', 'font-semibold'],
 ];
-const KIRI = KOLOM;
-const KANAN = KOLOM.map(([k, ...rest]) => [`p_${k}`, ...rest]);
+export const KIRI = KOLOM;
+export const KANAN = KOLOM.map(([k, ...rest]) => [`p_${k}`, ...rest]);
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Senin minggu itu (dayjs: Minggu = 0).
@@ -39,16 +39,36 @@ const Panah = ({ ini, dulu }) =>
  * kolomKm: kolom "Cek KM" sesudah kolom terakhir (Rencana) - centang kalau hari
  * D sudah dicek KM, kalau belum silang + tombol ACC (onAcc -> drawer ACC KM).
  */
-const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, kolomKm = false, onAcc = null }) => (
+export const Sisi = ({
+  judul,
+  tanggal,
+  rows,
+  kolom,
+  kosong,
+  klik,
+  warna,
+  banding = {},
+  kolomKm = false,
+  onAcc = null,
+  // Dipakai ulang Rekap Mantri (satu kelompok, baris = tanggal):
+  subjudul = null, // pengganti tanggal di pita judul
+  kepalaPertama = 'Kel',
+  isiPertama = (r) => r.kelompok,
+  kunciBaris = (r) => r.grouping_id,
+  kosongBaris = null, // (r) => bool, kosong per baris (bawaan: `kosong` satu tabel)
+}) => {
+  const ksBaris = (r) => (kosongBaris ? kosongBaris(r) : kosong);
+  const aktif = rows.filter((r) => !ksBaris(r));
+  return (
   <div className="overflow-hidden bg-white border rounded-lg">
     <div className={`px-3 py-1.5 text-xs font-semibold ${warna}`}>
-      {judul} · <span className="capitalize">{tanggal ? dayjs(tanggal).format('dddd, DD-MM-YYYY') : '—'}</span>
+      {judul} · <span className="capitalize">{subjudul ?? (tanggal ? dayjs(tanggal).format('dddd, DD-MM-YYYY') : '—')}</span>
     </div>
     <div className="overflow-x-auto">
       <table className="w-full text-xs tabular-nums">
         <thead className={WARNA.biru.kepala}>
           <tr className="h-8">
-            <th className="px-3 py-1.5 font-medium text-left">Kel</th>
+            <th className="px-3 py-1.5 font-medium text-left">{kepalaPertama}</th>
             {kolom.map(([k, label]) => (
               <th key={k} className="px-3 py-1.5 font-medium text-right whitespace-nowrap">
                 {label}
@@ -58,10 +78,12 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {rows.map((r) => {
+            const kosong = ksBaris(r);
+            return (
             // Tinggi baris tetap (h-8) supaya baris kiri (ada tombol ACC) & kanan sejajar.
-            <tr key={r.grouping_id} className={`h-8 border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
-              <td className="px-3 py-1 font-medium">{r.kelompok}</td>
+            <tr key={kunciBaris(r)} className={`h-8 border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
+              <td className="px-3 py-1 font-medium whitespace-nowrap">{isiPertama(r)}</td>
               {kolom.map(([k, , kelas]) => {
                 const v = kosong ? 0 : r[k];
                 return (
@@ -109,15 +131,16 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
                 </td>
               )}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
         <tfoot>
           <tr className={`h-8 font-bold border-t text-slate-900 ${WARNA.hijau.total}`}>
             <td className="px-3 py-1.5">Total</td>
             {kolom.map(([k, , kelas]) => (
               <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
-                {banding[k] && !kosong && <Panah ini={jumlah(rows, k)} dulu={jumlah(rows, banding[k])} />}
-                {ribu(kosong ? 0 : jumlah(rows, k))}
+                {banding[k] && aktif.length > 0 && <Panah ini={jumlah(aktif, k)} dulu={jumlah(aktif, banding[k])} />}
+                {ribu(jumlah(aktif, k))}
               </td>
             ))}
             {kolomKm && <td />}
@@ -126,7 +149,8 @@ const Sisi = ({ judul, tanggal, rows, kolom, kosong, klik, warna, banding = {}, 
       </table>
     </div>
   </div>
-);
+  );
+};
 
 /**
  * Rencana Drop bersanding, satu MINGGU per tampilan (chip minggu di atas).

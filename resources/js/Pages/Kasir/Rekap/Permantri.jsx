@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import TableRekapKasir from './Components/TableRekapKasir';
 import TableRekapPerMantri from './Components/TableRekapPerMantri';
+import RencanaPerHari from './Components/RencanaPerHari';
 import DrawerBukuDrop from './Components/DrawerBukuDrop';
 import DrawerAccKm from './Components/DrawerAccKm';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
@@ -16,7 +17,7 @@ import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
  * Rekap Mantri: satu kelompok sebulan. Tab Tunai Mantri dibuang (2026-10-10),
  * sama dengan Rekap 1. Filter bulan + kelompok lewat FilterBar (global).
  */
-const Permantri = ({ rekapData = [], saldoAwalBulan = [], urlLink, localState, title }) => {
+const Permantri = ({ rekapData = [], saldoAwalBulan = [], rencana = [], urlLink, localState, title }) => {
   const { server_filter } = usePage().props;
   // jenis: 'harian' -> buku angsuran hari itu, 'drop' -> buku drop, 'acc' -> ACC KM.
   const [target, setTarget] = useState(null);
@@ -68,6 +69,7 @@ const Permantri = ({ rekapData = [], saldoAwalBulan = [], urlLink, localState, t
         <TabsList>
           <TabsTrigger value="rekapmantri">Rekap Mantri</TabsTrigger>
           <TabsTrigger value="rekapkasir">Rekap Kasir Mantri</TabsTrigger>
+          <TabsTrigger value="rencana">Rencana per Hari</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rekapmantri">
@@ -77,6 +79,20 @@ const Permantri = ({ rekapData = [], saldoAwalBulan = [], urlLink, localState, t
             onKlikStorting={buka('harian')}
             onKlikDrop={buka('drop')}
             onAcc={buka('acc')}
+          />
+        </TabsContent>
+
+        <TabsContent value="rencana">
+          <RencanaPerHari
+            rows={rencana}
+            onAcc={buka('acc')}
+            klik={{
+              storting: buka('harian'),
+              drop: buka('drop'),
+              // Sisi kanan: tanggal pasangan (minggu depan).
+              p_storting: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'harian' }),
+              p_drop: (r) => setTarget({ kelompok: r.kelompok, tanggal: r.pasangan, jenis: 'drop' }),
+            }}
           />
         </TabsContent>
 
