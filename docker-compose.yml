@@ -13,6 +13,8 @@ services:
       - .:/var/www/html
     networks:
       - app_laravel_laravel-network
+      # MinIO lokal (container minio_storage, host "miniostorage") - disk s3.
+      - minio-network
 
   vite:
     image: node:20-alpine
@@ -43,4 +45,6 @@ services:
 
 networks:
   app_laravel_laravel-network:
+    external: true
+  minio-network:
     external: true
