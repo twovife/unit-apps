@@ -121,8 +121,13 @@ const Angsuran = ({
             tab). Datanya sama dengan halaman ini - tidak ada muat tambahan.
             ?tab=bukustorting (link dari Kesiapan Migrasi) membukanya langsung. */}
         <div className="flex justify-end mb-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setStortingBuka(true)}>
-            <BookOpen className="h-3.5 w-3.5" />
+          {/* Tombol utama halaman ini - dibuat menonjol (isi biru, teks putih). */}
+          <Button
+            type="button"
+            onClick={() => setStortingBuka(true)}
+            className="font-semibold text-white shadow-sm bg-sky-600 hover:bg-sky-700"
+          >
+            <BookOpen className="w-4 h-4" />
             Buku Storting
           </Button>
         </div>
