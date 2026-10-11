@@ -12,9 +12,10 @@ import React, { useRef, useState } from 'react';
  *                 lain yang masih aktif (top-up ATAU Tundaan) - blokir total,
  *                 TIDAK ADA pengecualian role apa pun (dicek PALING AWAL,
  *                 sebelum aturan mantri/can-approve di bawah).
- *  - mantri     : boleh hanya jika drop_date ATAU request_date pinjaman ini
- *                 adalah HARI INI (dibandingkan di klien, sumber kebenarannya
- *                 tetap server - ini murni supaya tombol tidak menyesatkan).
+ *  - mantri     : boleh jika drop_date ATAU request_date pinjaman ini adalah
+ *                 HARI INI, atau pengajuan yang belum di-ACC KM (status open,
+ *                 drop belum lewat). Dibandingkan di klien, sumber kebenarannya
+ *                 tetap server - ini murni supaya tombol tidak menyesatkan.
  *  - terkunci   : `recap_approved` (hari drop dikunci kasir / di-ACC kepala)
  *                 - blokir semua peran, termasuk mantri dan superuser.
  *  - can-approve: boleh.
@@ -33,7 +34,8 @@ const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
   const todayStr = dayjs().format('YYYY-MM-DD');
   const bisaHapusMantri =
     triggeredData?.tanggal_drop === todayStr ||
-    triggeredData?.request_date === todayStr;
+    triggeredData?.request_date === todayStr ||
+    (triggeredData?.status === 'open' && triggeredData?.tanggal_drop >= todayStr);
 
   let bolehHapus = false;
   let pesanTerkunci = null;
@@ -52,7 +54,7 @@ const RemoveLoan = ({ triggeredId, onClosed, triggeredData }) => {
   } else if (isMantri) {
     bolehHapus = bisaHapusMantri;
     pesanTerkunci =
-      'Mantri hanya bisa menghapus pinjaman dengan tanggal pengajuan atau tanggal drop hari ini. Hubungi KM / Pimpinan untuk tanggal lain.';
+      'Mantri hanya bisa menghapus pinjaman hari ini, atau pengajuan yang belum di-ACC KM. Hubungi KM / Pimpinan untuk yang lain.';
   } else if (canApprove) {
     bolehHapus = true;
   } else {

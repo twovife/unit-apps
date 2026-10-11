@@ -580,7 +580,13 @@ class AppHelper
         return ["status" => true];
       }
 
-      return ["status" => false, 'message' => 'Mantri hanya bisa menghapus pinjaman dengan tanggal pengajuan atau tanggal drop hari ini. Hubungi KM / Pimpinan untuk tanggal lain.'];
+      // Pengajuan (minggu depan) yang belum di-ACC KM masih milik mantri:
+      // boleh dihapus selama statusnya open dan tanggal drop belum lewat.
+      if ($transactionLoan->status === 'open' && $dropDate >= $today) {
+        return ["status" => true];
+      }
+
+      return ["status" => false, 'message' => 'Mantri hanya bisa menghapus pinjaman hari ini, atau pengajuan yang belum di-ACC KM. Hubungi KM / Pimpinan untuk yang lain.'];
     }
 
     if ($user->hasPermissionTo('can-approve')) {
