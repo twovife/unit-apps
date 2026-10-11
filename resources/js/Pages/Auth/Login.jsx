@@ -18,7 +18,6 @@ export default function Login({ status, canResetPassword }) {
   const { data, setData, post, processing, errors, reset } = useForm({
     username: '',
     password: '',
-    remember: '',
   });
 
   useEffect(() => {

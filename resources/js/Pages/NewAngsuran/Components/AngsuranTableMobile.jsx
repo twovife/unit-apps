@@ -43,6 +43,14 @@ const warnaBaris = (r) => {
   return 'bg-emerald-100 border-l-4 border-l-emerald-500';
 };
 
+// Warna ANGKA angsuran hari ini: senada dengan latar baris, lebih menyala.
+const warnaAngka = (r) => {
+  const s = statusHariIni(r);
+  if (s === 'tidak') return 'text-red-600';
+  if (caraBayar(r) !== 'katrol' && Number(r.angs_today) < wajib(r)) return 'text-amber-600';
+  return 'text-emerald-600';
+};
+
 // Urutan dalam grup: tanggal drop -> yang punya nomor anggota dulu (kecil ke
 // besar, angka dibanding sebagai angka) -> yang belum punya nomor: nama A-Z.
 const urut = (a, b) =>
@@ -141,7 +149,7 @@ const AngsuranTableMobile = ({ datas }) => {
           <div className={`${KECIL} row-span-2 self-center text-center`}>No</div>
           <div className="self-center row-span-2 text-center">Drop</div>
           <div className="self-center row-span-2">Nasabah</div>
-          <div className={`${ANGS} font-semibold text-gray-700`}>Angs</div>
+          <div className={`${ANGS} font-bold text-gray-800`}>Hari ini</div>
           <div className={`${KECIL} text-right`}>Pinj</div>
           <div className={`${KECIL} text-right`}>Sisa</div>
         </div>
@@ -266,9 +274,9 @@ const Angs = ({ r }) => {
   }
 
   return (
-    // Status dibawa warna latar baris (warnaBaris); angkanya cukup gelap & tebal.
+    // Angka paling mencolok di baris: tebal, warna senada latar (warnaAngka).
     // Tanda kecil di depan angka: K = katrol (dana titipan), TF = transfer.
-    <span className="text-base font-bold text-gray-900">
+    <span className={`text-lg font-extrabold ${warnaAngka(r)}`}>
       {caraBayar(r) !== 'tunai' && (
         <span className="mr-1 align-middle text-[10px] font-semibold text-gray-600">
           {caraBayar(r) === 'tf' ? 'TF' : 'K'}

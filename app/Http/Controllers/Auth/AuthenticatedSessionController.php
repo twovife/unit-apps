@@ -50,14 +50,8 @@ class AuthenticatedSessionController extends Controller
 
 
 
-    if ($authUser->hasRole('mantri')) {
-      // Landing mobile_apps sudah dihapus; mantri masuk ke layar transaksi.
-      return redirect()->route('transaction.index_buku_transaksi');
-    }
-
-    // Selalu ke Home sesudah login (mas 2026-10-11), bukan ke halaman terakhir
-    // yang sempat dibuka sebelum sesi habis (intended) - itu yang membuat
-    // login mendarat di Pengajuan.
+    // Semua role (termasuk mantri) selalu ke Home sesudah login (mas 2026-10-11),
+    // bukan ke halaman terakhir yang sempat dibuka sebelum sesi habis (intended).
     $request->session()->forget('url.intended');
 
     return redirect(RouteServiceProvider::HOME);
