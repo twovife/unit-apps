@@ -487,7 +487,9 @@ trait PinjamanTrait
               'total_nominal' => $instalments->sum('nominal'),
               'is_active' => $instalments->contains(function ($instalment) {
                 return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
-              })
+              }),
+              // Dibayar lewat transfer (label TF di buku angsuran HP).
+              'is_transfer' => $instalments->contains(fn($instalment) => (bool) $instalment['is_transfer'])
             ];
           }),
           'angs_today' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)?->sum('nominal') ?? 0,
@@ -557,7 +559,9 @@ trait PinjamanTrait
                 'total_nominal' => $instalments->sum('nominal'),
                 'is_active' => $instalments->contains(function ($instalment) {
                   return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
-                })
+                }),
+                // Dibayar lewat transfer (label TF di buku angsuran HP).
+                'is_transfer' => $instalments->contains(fn($instalment) => (bool) $instalment['is_transfer'])
               ];
             }),
             'angs_today' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)?->sum('nominal') ?? 0,
@@ -813,7 +817,9 @@ trait PinjamanTrait
               'total_nominal' => $instalments->sum('nominal'),
               'is_active' => $instalments->contains(function ($instalment) {
                 return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
-              })
+              }),
+              // Dibayar lewat transfer (label TF di buku angsuran HP).
+              'is_transfer' => $instalments->contains(fn($instalment) => (bool) $instalment['is_transfer'])
             ];
           }),
           'pemutihan_today' => $pemutihan,
@@ -871,7 +877,9 @@ trait PinjamanTrait
                 'total_nominal' => $instalments->sum('nominal'),
                 'is_active' => $instalments->contains(function ($instalment) {
                   return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
-                })
+                }),
+                // Dibayar lewat transfer (label TF di buku angsuran HP).
+                'is_transfer' => $instalments->contains(fn($instalment) => (bool) $instalment['is_transfer'])
               ];
             }),
             'pemutihan_today' => $pemutihan,
@@ -1169,7 +1177,9 @@ trait PinjamanTrait
                 'total_nominal' => $instalments->sum('nominal'),
                 'is_active' => $instalments->contains(function ($instalment) {
                   return $instalment['danatitipan'] == true;  // Cek apakah ada 'isactive' yang true
-                })
+                }),
+                // Dibayar lewat transfer (label TF di buku angsuran HP).
+                'is_transfer' => $instalments->contains(fn($instalment) => (bool) $instalment['is_transfer'])
               ];
             }),
             'angs_today' => $item->loan_instalment->where('transaction_date', $tanggalSeleksi)?->sum('nominal') ?? 0,

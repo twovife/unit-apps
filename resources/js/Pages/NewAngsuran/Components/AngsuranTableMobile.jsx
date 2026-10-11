@@ -23,15 +23,23 @@ const wajib = (r) => Math.min(Number(r.pinjaman) / 10, Number(r.saldo) + Number(
 const statusHariIni = (r) =>
   r.drop_baru ? 'baru' : !r.is_paid ? 'belum' : Number(r.angs_today) > 0 ? 'bayar' : 'tidak';
 
+// Cara bayar hari ini (`instalment` dari server hanya berisi tanggal terpilih).
+// Aturan sama dengan HitungAgregat::caraBayar: transfer > katrol > tunai.
+const caraBayar = (r) => {
+  const i = Object.values(r.instalment ?? {});
+  if (i.some((x) => x.is_transfer)) return 'tf';
+  if (i.some((x) => x.is_active)) return 'katrol';
+  return 'tunai';
+};
+
 // Warna BARIS menurut angsuran hari ini (konsep 2026-10-11: latar yang berubah,
-// bukan warna angka). Katrol = dana titipan hari ini.
+// bukan warna angka). Katrol dianggap terbayar -> hijau, ditandai "K".
 const warnaBaris = (r) => {
   const s = statusHariIni(r);
   if (s === 'baru') return 'bg-gray-50 text-gray-400';
   if (s === 'belum') return 'bg-white';
   if (s === 'tidak') return 'bg-red-100 border-l-4 border-l-red-500';
-  if (Object.values(r.instalment ?? {}).some((i) => i.is_active)) return 'bg-purple-100 border-l-4 border-l-purple-500';
-  if (Number(r.angs_today) < wajib(r)) return 'bg-amber-100 border-l-4 border-l-amber-500';
+  if (caraBayar(r) !== 'katrol' && Number(r.angs_today) < wajib(r)) return 'bg-amber-100 border-l-4 border-l-amber-500';
   return 'bg-emerald-100 border-l-4 border-l-emerald-500';
 };
 
@@ -124,7 +132,7 @@ const AngsuranTableMobile = ({ datas }) => {
           <span className="px-1 rounded bg-emerald-100 text-emerald-800">sesuai</span>{' '}
           <span className="px-1 text-amber-800 rounded bg-amber-100">kurang</span>{' '}
           <span className="px-1 text-red-800 bg-red-100 rounded">0</span>{' '}
-          <span className="px-1 text-purple-800 bg-purple-100 rounded">katrol</span>{' '}
+          · <b>K</b> katrol · <b>TF</b> transfer ·{' '}
           <span className="px-1 text-gray-500 bg-white border rounded">belum</span>
         </div>
 
@@ -260,7 +268,13 @@ const Angs = ({ r }) => {
 
   return (
     // Status dibawa warna latar baris (warnaBaris); angkanya cukup gelap & tebal.
+    // Tanda kecil di depan angka: K = katrol (dana titipan), TF = transfer.
     <span className="text-base font-bold text-gray-900">
+      {caraBayar(r) !== 'tunai' && (
+        <span className="mr-1 align-middle text-[10px] font-semibold text-gray-600">
+          {caraBayar(r) === 'tf' ? 'TF' : 'K'}
+        </span>
+      )}
       {rb(r.angs_today)}
     </span>
   );
