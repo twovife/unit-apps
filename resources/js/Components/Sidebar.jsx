@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
   Sidebar,
@@ -72,8 +72,17 @@ const SidebarSubMenuSection = ({ icon: Icon, title, items }) => {
   );
 };
 
+// Posisi gulir sidebar. Sidebar dipasang ulang tiap pindah halaman Inertia
+// (layout per halaman), jadi tanpa ini selalu loncat ke atas. Variabel modul
+// bertahan selama aplikasi terbuka; muat ulang penuh kembali ke atas.
+let posisiGulir = 0;
+
 export default function AppSidebar({ ...props }) {
   const { auth } = usePage().props;
+  const gulir = useRef(null);
+  useLayoutEffect(() => {
+    if (gulir.current) gulir.current.scrollTop = posisiGulir;
+  }, []);
 
   const isSuperUser = auth?.roles?.includes('superuser');
   // Mantri hanya melihat: Input Mantri (Pengajuan, Drop, Angsuran, ML), Buku
@@ -107,7 +116,7 @@ export default function AppSidebar({ ...props }) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="px-1 py-2">
+      <SidebarContent ref={gulir} onScroll={(e) => (posisiGulir = e.currentTarget.scrollTop)} className="px-1 py-2">
         {/* Group: Navigasi Utama */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
