@@ -175,6 +175,8 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
             />
             {data.request_date &&
               data.tanggal_drop &&
+              // Bukan untuk drop di hari pengajuan.
+              data.tanggal_drop !== data.request_date &&
               data.tanggal_drop !==
                 dayjs(data.request_date).add(1, 'week').format('YYYY-MM-DD') && (
                 <p className="mt-1 text-xs text-amber-700">

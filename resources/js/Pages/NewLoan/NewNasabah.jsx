@@ -413,8 +413,11 @@ const NewNasabah = ({
                           onChange={onInputChange}
                         />
                         )}
+                        {/* Peringatan libur hanya untuk pengajuan (drop minggu depan),
+                            bukan drop langsung (drop = hari pengajuan). */}
                         {data.request_date &&
                           data.tanggal_drop &&
+                          data.tanggal_drop !== data.request_date &&
                           data.tanggal_drop !==
                             dayjs(data.request_date)
                               .add(1, 'week')
@@ -441,8 +444,8 @@ const NewNasabah = ({
                     <div className="w-full mb-3">
                       {data.request_date &&
                       data.request_date == data.tanggal_drop ? (
-                        <span className="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
-                          Drop baru &mdash; cair hari pengajuan
+                        <span className="inline-flex items-center px-3 py-1 text-base font-bold tracking-wide text-white bg-red-600 rounded-md shadow-sm">
+                          DROP BARU
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-sky-800">
