@@ -137,12 +137,11 @@ const AngsuranTableMobile = ({ datas }) => {
         </div>
 
         <div className={`${KOLOM} px-2 py-1 text-gray-500 border-t`}>
+          {/* No & Drop di tengah (dua baris); Nasabah satu label saja. */}
           <div className={`${KECIL} row-span-2 self-center text-center`}>No</div>
-          <div>Drop</div>
-          <div>Nasabah</div>
+          <div className="self-center row-span-2 text-center">Drop</div>
+          <div className="self-center row-span-2">Nasabah</div>
           <div className={`${ANGS} font-semibold text-gray-700`}>Angs</div>
-          <div />
-          <div className={KECIL}>Alamat</div>
           <div className={`${KECIL} text-right`}>Pinj</div>
           <div className={`${KECIL} text-right`}>Sisa</div>
         </div>
@@ -164,7 +163,7 @@ const AngsuranTableMobile = ({ datas }) => {
               className={`${KOLOM} w-full px-2 py-1.5 text-left border-b active:brightness-95 ${warnaBaris(r)}`}
             >
               <NoAnggota r={r} />
-              <div className="text-gray-500">{dayjs(r.tanggal_drop).format('DD-MM')}</div>
+              <div className="text-center text-gray-500">{dayjs(r.tanggal_drop).format('DD-MM')}</div>
               <div className="min-w-0 text-sm font-semibold truncate">
                 {r.nama}
                 {r.notes && <BadgeStatus className="ml-1">{r.notes}</BadgeStatus>}
