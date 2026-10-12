@@ -13,6 +13,17 @@ import dayjs from 'dayjs';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import Approval from './Components/Approval';
 import { usePage } from '@inertiajs/react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react';
+
+// Urutan tanggal ACC KM diingat per browser; storage bisa tidak tersedia.
+const KUNCI_URUT = 'acc_km_urut';
+const bacaUrut = () => {
+  try {
+    return window.localStorage.getItem(KUNCI_URUT) === 'desc' ? 'desc' : 'asc';
+  } catch {
+    return 'asc';
+  }
+};
 
 // sorot: 'YYYY-MM-DD' - baris tanggal itu disorot kuning & digulir ke pandangan.
 const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null, sorot = null }) => {
@@ -26,6 +37,22 @@ const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null, sorot 
     setData(datas);
     setCustomerData(dataTransaksi);
   }, [datas, dataTransaksi]);
+
+  // asc = terlama ke terbaru, desc = terbaru ke terlama.
+  const [urut, setUrut] = useState(bacaUrut);
+  const gantiUrut = () => {
+    const baru = urut === 'asc' ? 'desc' : 'asc';
+    setUrut(baru);
+    try {
+      window.localStorage.setItem(KUNCI_URUT, baru);
+    } catch {
+      /* tanpa storage: berlaku sampai halaman dimuat ulang */
+    }
+  };
+  const tampil = useMemo(() => {
+    const t = (x) => dayjs(x.tanggal).valueOf();
+    return [...(data ?? [])].sort((a, b) => (urut === 'asc' ? t(a) - t(b) : t(b) - t(a)));
+  }, [data, urut]);
 
   // Declare a state variable to track the visibility of the "onApproveShow" component
   const [onApproveShow, setOnApproveShow] = useState(false);
@@ -57,7 +84,17 @@ const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null, sorot 
         <TableHeader className="sticky top-0 z-10 bg-gray-100">
           <TableRow>
             {isUnit && <TableHead className="text-center">ACC KM</TableHead>}
-            <TableHead className="text-center">Tanggal</TableHead>
+            <TableHead className="text-center">
+              <button
+                type="button"
+                onClick={gantiUrut}
+                title={urut === 'asc' ? 'Terlama ke terbaru — klik untuk terbaru dulu' : 'Terbaru ke terlama — klik untuk terlama dulu'}
+                className="inline-flex items-center gap-1 font-medium hover:text-slate-900"
+              >
+                Tanggal
+                {urut === 'asc' ? <ArrowUpNarrowWide className="w-3.5 h-3.5" /> : <ArrowDownWideNarrow className="w-3.5 h-3.5" />}
+              </button>
+            </TableHead>
             <TableHead className="text-center">Kasbon</TableHead>
             <TableHead className="text-center">Target</TableHead>
             <TableHead className="text-center">Masuk</TableHead>
@@ -70,9 +107,9 @@ const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null, sorot 
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((item, index) => (
+          {tampil.map((item, index) => (
             <TableRow
-              key={index}
+              key={item.tanggal ?? index}
               data-sorot={sorot && dayjs(item.tanggal).format('YYYY-MM-DD') === sorot ? '' : undefined}
               className={`text-center ${
                 sorot && dayjs(item.tanggal).format('YYYY-MM-DD') === sorot ? 'bg-amber-100 hover:bg-amber-100 ring-2 ring-inset ring-amber-400' : ''
