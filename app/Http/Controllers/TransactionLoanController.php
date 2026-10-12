@@ -1232,6 +1232,14 @@ class TransactionLoanController extends Controller
         ->whereIn('status', ['open', 'acc'])
         ->latest('id')
         ->first(['id', 'drop_date', 'status']),
+      // Kartu "Hapus Pinjaman" di modal Angsuran: hanya untuk can-edit /
+      // superuser (koreksi). null = kartu tidak ditampilkan.
+      'hapus_pinjaman' => \App\Helpers\Gembok::bolehBuka(auth()->user()) ? AppHelper::canDeleteLoan($loan) + [
+        'dari_pelunasan' => (bool) $loan->previous_loan_id,
+        'jumlah_angsuran' => $loan->loan_instalment->count(),
+        'total_angsuran' => (int) $loan->loan_instalment->sum('nominal'),
+        'migrasi' => \App\Helpers\AgregasiScope::sudahMigrasi($loan->loan_officer_grouping->branch_id),
+      ] : null,
     ];
 
     $saldo = $loan->pinjaman - $loan->loan_instalment->sum('nominal');

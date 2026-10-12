@@ -577,6 +577,14 @@ class AppHelper
       return ["status" => false, 'message' => 'Hari drop pinjaman ini sudah dikunci, pinjaman tidak bisa dihapus.'];
     }
 
+    // can-edit / superuser (koreksi): boleh menghapus pinjaman apa pun yang
+    // lolos pagar di atas, termasuk akun mantri ber-can-edit. Hari drop yang
+    // terkunci (kantor migrasi) dibuka otomatis saat dihapus; data beku tetap
+    // ditolak (hariDropTerkunci di atas).
+    if (\App\Helpers\Gembok::bolehBuka($user)) {
+      return ["status" => true];
+    }
+
     if ($user->hasRole('mantri')) {
       $today = Carbon::now()->format('Y-m-d');
       $dropDate = $transactionLoan->drop_date ? Carbon::parse($transactionLoan->drop_date)->format('Y-m-d') : null;

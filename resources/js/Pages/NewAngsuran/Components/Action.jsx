@@ -33,6 +33,7 @@ import { Copy, CircleX, Lock } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import Pengajuan from './Pengajuan';
 import HapusPemutihan from './HapusPemutihan';
+import HapusPinjamanKoreksi from './HapusPinjamanKoreksi';
 import Loading from '@/Components/Loading';
 import '../../../../css/loader.css';
 
@@ -187,6 +188,8 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 </TabsContent>
                 <TabsContent value="detail" className="mt-3">
                   <LoanDetail customerData={customerData} />
+                  {/* Khusus can-edit / superuser (server mengisi hapus_pinjaman hanya untuk mereka). */}
+                  <HapusPinjamanKoreksi data={customerData.hapus_pinjaman} id={customerData.id} onClosed={modalIsClosed} />
                 </TabsContent>
                 <TabsContent value="pemutihan" className="relative mt-3">
                   {gateValue && <NoEditOverlay value={gateValue} />}
