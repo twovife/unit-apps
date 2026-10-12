@@ -465,8 +465,14 @@ class TransactionLoanController extends Controller
     } catch (\Throwable $e) {
       return redirect()->back()->withErrors('Tanggal pengajuan / drop tidak terbaca.');
     }
+    // can-edit (koreksi): tanggal bebas - cukup drop tidak sebelum pengajuan.
+    // Libur tetap ditolak lewat validasi HariKerja di bawah.
+    $tanggalBebas = auth()->user()->hasPermissionTo('can-edit');
+    if ($tanggalBebas && $tglDrop->lt($tglPengajuan)) {
+      return redirect()->back()->withErrors('Tanggal drop tidak boleh sebelum tanggal pengajuan.');
+    }
     $dropSeharusnya = WorkDay::hariSamaBerikutnya($tglPengajuan);
-    if (!$tglDrop->equalTo($tglPengajuan) && !($dropSeharusnya && $tglDrop->equalTo($dropSeharusnya))) {
+    if (!$tanggalBebas && !$tglDrop->equalTo($tglPengajuan) && !($dropSeharusnya && $tglDrop->equalTo($dropSeharusnya))) {
       return redirect()->back()->withErrors(sprintf(
         'Tanggal drop harus %s (hari tagih kerja berikutnya sesudah pengajuan), atau sama dengan tanggal pengajuan untuk drop langsung.',
         $dropSeharusnya ? $dropSeharusnya->locale('id')->isoFormat('D MMMM Y') : '-'
@@ -486,7 +492,7 @@ class TransactionLoanController extends Controller
       'alamat' => ['required_if:isActiveMember,false'],
       // Hari libur ditolak SELALU (keputusan mas
       // 2026-10-09: tidak ada transaksi sama sekali di hari libur).
-      'request_date' => ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal pengajuan')],
+      'request_date' => array_merge(['required', 'date'], $tanggalBebas ? [] : ['before_or_equal:today'], [new HariKerja('Tanggal pengajuan')]),
       'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
       'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
@@ -794,13 +800,18 @@ class TransactionLoanController extends Controller
     }
     // Pengajuan nasabah lama: drop dikunci ke hari tagih kerja berikutnya
     // (minggu depan, lompati libur) - tidak ada drop di hari pengajuan.
+    // can-edit (koreksi): tanggal bebas, cukup hari sama & drop tidak sebelum pengajuan.
+    $tanggalBebas = auth()->user()->hasPermissionTo('can-edit');
     try {
       $dropSeharusnya = WorkDay::hariSamaBerikutnya(Carbon::parse($request->request_date)->startOfDay());
       $tglDrop = Carbon::parse($request->tanggal_drop)->startOfDay();
     } catch (\Throwable $e) {
       return redirect()->back()->withErrors('Tanggal pengajuan / drop tidak terbaca.');
     }
-    if (!$dropSeharusnya || !$tglDrop->equalTo($dropSeharusnya)) {
+    if ($tanggalBebas && $tglDrop->lt(Carbon::parse($request->request_date)->startOfDay())) {
+      return redirect()->back()->withErrors('Tanggal drop tidak boleh sebelum tanggal pengajuan.');
+    }
+    if (!$tanggalBebas && (!$dropSeharusnya || !$tglDrop->equalTo($dropSeharusnya))) {
       return redirect()->back()->withErrors(sprintf(
         'Tanggal drop harus %s (hari tagih kerja berikutnya sesudah pengajuan).',
         $dropSeharusnya ? $dropSeharusnya->locale('id')->isoFormat('D MMMM Y') : '-'

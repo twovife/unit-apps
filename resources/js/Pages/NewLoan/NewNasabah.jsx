@@ -37,13 +37,13 @@ const NewNasabah = ({
   typeInput = 'number',
   // Mobile create: batasi tanggal pengajuan (maks hari ini, maks 7 hari lalu)
   // dan matikan tanggal drop sampai pengajuan dipilih.
-  batasiPengajuan = false,
+  batasiPengajuan: batasiProp = false,
   // Popup bukutransaksi / fastcreate: bebaskan tanggal sepenuhnya (sementara).
-  bebasTanggal = false,
+  bebasTanggal: bebasProp = false,
   // Pengajuan biasa (popup Buku Transaksi & mobile): tanggal drop tidak dipilih
   // bebas - hanya hari tagih kerja berikutnya, atau drop langsung. Server
   // (store_buku_transaksi) menegakkan aturan yang sama.
-  aturanDrop = false,
+  aturanDrop: aturanDropProp = false,
 }) => {
   // getLink after generate
   const { printUrl } = usePage().props;
@@ -52,6 +52,12 @@ const NewNasabah = ({
   const { auth } = usePage().props;
   const isCreator = auth?.permissions?.includes('can-create');
   const isCanShowKelompok = auth?.permissions?.includes('view-all-groups');
+  // can-edit (koreksi): tanggal pengajuan & drop bebas (libur tetap ditolak
+  // server). Aturan drop / batas 7 hari hanya untuk user biasa.
+  const bolehTanggalBebas = auth?.permissions?.includes('can-edit');
+  const aturanDrop = aturanDropProp && !bolehTanggalBebas;
+  const batasiPengajuan = batasiProp && !bolehTanggalBebas;
+  const bebasTanggal = bebasProp || bolehTanggalBebas;
 
   const [newGenerate, setNewGenerate] = useState(null);
 

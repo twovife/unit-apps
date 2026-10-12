@@ -3,7 +3,7 @@ import Loading from '@/Components/Loading';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
-import { router, useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
@@ -27,6 +27,8 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
   // berjalan (open/acc/success) tidak boleh diajukan lagi - form diganti
   // ringkasan pengajuan yang sudah ada + link ke drop hari itu. `null`
   // berarti belum dicek / boleh mengajukan.
+  // can-edit (koreksi): tanggal drop bebas (server juga mengizinkan).
+  const tanggalBebas = usePage().props.auth?.permissions?.includes('can-edit');
   const [existingPengajuan, setExistingPengajuan] = useState(null);
   // Belum selesai dicek -> jangan tampilkan form dulu (kedip form sebelum kartu).
   const [dicek, setDicek] = useState(false);
@@ -217,12 +219,14 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
           <div className="w-full mb-3">
             <Label>Tanggal Drop</Label>
             {/* Dikunci: selalu hari tagih kerja berikutnya sesudah pengajuan
-                (diisi otomatis di atas; server menegakkan aturan yang sama). */}
+                (diisi otomatis di atas; server menegakkan aturan yang sama).
+                can-edit (koreksi): bebas memilih, hari tagih tetap sama. */}
             <TanggalKerja
               name="tanggal_drop"
               min={mixDate}
               required={true}
-              disabled
+              disabled={!tanggalBebas}
+              hariTagih={tanggalBebas && data.request_date ? dayjs(data.request_date).day() : undefined}
               value={data.tanggal_drop}
               onChange={onInputChange}
             />
