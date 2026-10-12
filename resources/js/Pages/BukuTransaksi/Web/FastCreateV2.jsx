@@ -355,7 +355,7 @@ const FastCreateV2 = () => {
                         <div className="w-full mb-3">
                           <Label>
                             Nomor Anggota{' '}
-                            <span className="font-normal text-gray-500">(nomor anggota sesuai promes / buku manual)</span>
+                            <span className="font-normal text-gray-500">(opsional, sesuai promes / buku manual)</span>
                           </Label>
                           <Input
                             type="text"
@@ -365,7 +365,6 @@ const FastCreateV2 = () => {
                             value={data.nomor_anggota}
                             // Nomor anggota hanya angka: huruf dibuang saat diketik.
                             onChange={(e) => setData('nomor_anggota', e.target.value.replace(/\D/g, ''))}
-                            required={true}
                           />
                           <InputError message={errors.nomor_anggota} />
                         </div>

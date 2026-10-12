@@ -611,7 +611,8 @@ class TransactionLoanController extends Controller
 
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'kelompok' => ['required'],
-      'nomor_anggota' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
+      // Opsional (mas 2026-10-12): diisi kalau ada, angka saja.
+      'nomor_anggota' => ['nullable', 'regex:/^[0-9]+$/', 'max:20'],
 
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
