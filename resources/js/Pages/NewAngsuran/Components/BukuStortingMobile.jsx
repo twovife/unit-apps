@@ -1,9 +1,10 @@
 import React from 'react';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
+import { angka, useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 // Angka dalam ribuan, sama dengan Buku Angsuran mobile.
-const ribuan = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
-const rb = (v) => ribuan.format((Number(v) || 0) / 1000);
+const rb = (v) => angka(v);
 const jumlah = (rows, key) => rows.reduce((t, r) => t + (Number(r[key]) || 0), 0);
 
 const KOLOM = 'grid grid-cols-[1fr_5rem_4.5rem] gap-x-2 items-center px-2 tabular-nums';
@@ -13,12 +14,13 @@ const KOLOM = 'grid grid-cols-[1fr_5rem_4.5rem] gap-x-2 items-center px-2 tabula
 // ada di versi mobile: komponen ini tidak menghitung saldo, sehingga approval dari
 // sini mengirim saldo awal bulan depan = 0.
 const BukuStortingMobile = ({ datas }) => {
+  useModeRibuan();
   const grup = datas ?? [];
   const semua = grup.flatMap((g) => g.data);
 
   return (
     <div className="text-xs">
-      <div className="px-2 pb-1 text-[10px] text-gray-500">Angka dalam ribuan · MD = pemutihan hari ini</div>
+      <div className="px-2 pb-1 text-[10px] text-gray-500"><SatuanAngka titik={false} /> · MD = pemutihan hari ini</div>
 
       <div className={`${KOLOM} py-1.5 text-gray-500 bg-gray-100 border-y`}>
         <div>Bulan</div>

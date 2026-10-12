@@ -3,6 +3,7 @@ import useMuatDrawer from '@/Hooks/useMuatDrawer';
 import dayjs from 'dayjs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import TableRekapKasir from './TableRekapKasir';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 /**
  * Detail tunai per hari satu kelompok (awal bulan s/d tanggal filter), dibuka
@@ -30,7 +31,7 @@ const DrawerDetailKelompok = ({ target, server_filter, onClosed, onKlikStorting 
         <SheetHeader className="px-5 py-4 pr-14 border-b">
           <SheetTitle>Detail Tunai — Kelompok {target?.kelompok}</SheetTitle>
           <SheetDescription>
-            Per hari, 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}. Angka dalam ribuan.
+            Per hari, 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}. <SatuanAngka />
           </SheetDescription>
         </SheetHeader>
         <div className="p-3">

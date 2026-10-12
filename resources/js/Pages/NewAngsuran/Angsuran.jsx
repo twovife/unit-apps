@@ -12,6 +12,7 @@ import { BookOpen, FilterIcon } from 'lucide-react';
 import AngsuranTableMobile from './Components/AngsuranTableMobile';
 import { Input } from '@/shadcn/ui/input';
 import BukuStortingMobile from './Components/BukuStortingMobile';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 /**
  * Filter HP & desktop sama-sama `FilterBar` (chip instan, tanpa tombol
@@ -57,7 +58,7 @@ const Angsuran = ({
         <div>
           <h1 className="text-xl font-semibold tracking-tight">{judul}</h1>
           {type === 'desktop' && (
-            <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih. Angka dalam ribuan.</p>
+            <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih. <SatuanAngka /></p>
           )}
         </div>
         {canFilterUnit && (

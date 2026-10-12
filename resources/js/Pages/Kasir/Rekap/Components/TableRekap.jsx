@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 import TabelHarian, { ribu } from './TabelHarian';
 import { WARNA } from './TableRekapKasir';
+import { useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 // Warna blok kolom Rekap 2, seragam dengan Rekap 1: drop biru, storting kuning,
 // sirkulasi hijau, CM biru, MB kuning, ML merah.
@@ -87,6 +89,7 @@ const TableRekap = ({
   onKlikDrop = null,
   onAcc = null,
 }) => {
+  useModeRibuan();
   const [data, setData] = useState([]);
   const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
   // Baris saldo awal yang daftar pemutihannya sedang dibuka.
@@ -118,7 +121,7 @@ const TableRekap = ({
             <span className="ml-3">
               <BadgeKoreksiBeku jumlah={usePage().props.server_filter?.koreksi_beku} />
             </span>
-            <span className="ml-auto mr-2 text-xs font-normal text-slate-500">ribuan</span>
+            <span className="ml-auto mr-2 text-xs font-normal text-slate-500"><SatuanAngka pendek /></span>
           </AccordionTrigger>
           <AccordionContent className="pb-0">
             <div className="overflow-x-auto">

@@ -8,6 +8,8 @@ import { Input } from '@/shadcn/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import { History, Lock } from 'lucide-react';
 import DampakKoreksi from './Components/DampakKoreksi';
+import { angka, useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
 const EMBER = { month1: 'M1', month2: 'M2', ccm: 'CCM', cm: 'CM', mb: 'MB', ml: 'ML' };
@@ -197,7 +199,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman, mulai }) => {
 
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const PILIH = 'h-9 px-2 text-sm border rounded-md border-input bg-background';
-const rb = (n) => new Intl.NumberFormat('id-ID').format(Math.round((n ?? 0) / 1000));
+const rb = (n) => angka(n, { bulat: true });
 
 /** Isi satu sel (nasabah x tanggal): daftar angsuran + aksi. */
 const DialogSel = ({ sel, onClosed, onAksi }) => {
@@ -260,6 +262,7 @@ const DialogSel = ({ sel, onClosed, onAksi }) => {
  * pindah / tambah, dengan pratinjau dampak & alasan wajib.
  */
 const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
+  useModeRibuan();
   const [sel, setSel] = useState(null);
   const [buka, setBuka] = useState(null);
   const ganti = (ubah) => router.get(route('migrasi.koreksi_beku'), { ...filter && { kelompok: filter.kelompok, hari: filter.hari, bulan: filter.bulan }, ...ubah }, { preserveScroll: true });
@@ -285,7 +288,7 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
           <h1 className="text-xl font-semibold tracking-tight">Koreksi Data Beku</h1>
           <p className="text-sm text-slate-500">
             {kantor.unit} · angsuran sebelum migrasi ({kantor.mulai ? dayjs(kantor.mulai).format('DD MMM YYYY') : '—'}). Klik sel untuk
-            mengoreksi; saldo bulanan dihitung ulang dan tercatat di log. Angka dalam ribuan.
+            mengoreksi; saldo bulanan dihitung ulang dan tercatat di log. <SatuanAngka />
           </p>
         </div>
         <Button asChild variant="outline" className="gap-1">

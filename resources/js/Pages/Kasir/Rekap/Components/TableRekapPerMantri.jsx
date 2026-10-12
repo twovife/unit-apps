@@ -5,6 +5,8 @@ import { Wallet } from 'lucide-react';
 import { ribu } from './TabelHarian';
 import { Cek, KOLOM_HARIAN, WARNA_HARIAN } from './TableRekap';
 import { WARNA } from './TableRekapKasir';
+import { useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Kolom "Jml"/saldo itu angka berjalan - totalnya = baris terakhir, bukan jumlah.
@@ -18,6 +20,7 @@ const BERJALAN = new Set(['total_drop', 'total_storting', 'sirkulasi', 'total_an
  * tidak punya akses ke Rekap 1.
  */
 const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, onKlikDrop, onAcc }) => {
+  useModeRibuan();
   const klik = { storting: onKlikStorting, drop: onKlikDrop };
   const akhir = datas[datas.length - 1] ?? {};
 
@@ -30,7 +33,7 @@ const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, 
               <Wallet className="w-5 h-5 text-sky-600 shrink-0" aria-hidden="true" />
               Saldo Awal Bulan
             </span>
-            <span className="ml-auto mr-2 text-xs font-normal text-slate-500">ribuan</span>
+            <span className="ml-auto mr-2 text-xs font-normal text-slate-500"><SatuanAngka pendek /></span>
           </AccordionTrigger>
           <AccordionContent className="pb-0">
             <div className="overflow-x-auto">

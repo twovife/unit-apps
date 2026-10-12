@@ -1,5 +1,6 @@
 import React from 'react';
 import { NumericFormat } from 'react-number-format';
+import { useModeRibuan } from '@/lib/modeAngka';
 
 const FormatNumbering = ({
   value = 0,
@@ -7,8 +8,10 @@ const FormatNumbering = ({
   suffix,
   className = 'text-end',
   // Tampilkan dalam ribuan (65000 -> 65), buang "000" di tabel padat.
-  ribuan = false,
+  // Ikut saklar global di header: mode rupiah penuh mematikannya.
+  ribuan: ribuanProp = false,
 }) => {
+  const ribuan = useModeRibuan() && ribuanProp;
   return (
     <div className={`${className}`}>
       <NumericFormat

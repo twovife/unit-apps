@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import { WARNA } from './TableRekapKasir';
+import { angka, useModeRibuan } from '@/lib/modeAngka';
 
-// Angka dipangkas ribuannya (1.300.000 -> 1.300).
-export const ribu = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
+// Angka dipangkas ribuannya (1.300.000 -> 1.300), atau rupiah penuh kalau
+// saklar header bilang begitu. Komponen pemakai memanggil useModeRibuan().
+export const ribu = (n) => angka(n, { bulat: true });
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Senin minggu itu (dayjs: Minggu = 0) - penanda minggu.
@@ -24,6 +26,7 @@ const seninDari = (t) => dayjs(t).subtract((dayjs(t).day() + 6) % 7, 'day').form
  * - warna: { kunci: WARNA.x } - warna blok kolom ala Rekap 1 (TableRekapKasir)
  */
 const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null, warna = {} }) => {
+  useModeRibuan();
   const kotak = useRef(null);
   const kepala = useRef(null);
   const deretChip = useRef(null);

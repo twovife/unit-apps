@@ -4,8 +4,10 @@ import dayjs from 'dayjs';
 import { Lock } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
+import { angka, useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
-const rb = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
+const rb = (n) => angka(n, { bulat: true });
 const EMBER = [
   ['month1', 'Month 1'],
   ['month2', 'Month 2'],
@@ -23,6 +25,7 @@ const jumlah = (o) => Object.values(o ?? {}).reduce((a, n) => a + (Number(n) || 
  * (closing.bulanan.tutup_buku); sesudahnya tombol di buku hilang.
  */
 const TutupBukuBaru = ({ tb, month, show, onClosed }) => {
+  useModeRibuan();
   const [proses, setProses] = useState(false);
   const bulan = dayjs(month);
   const namaBulan = (d) => d.toDate().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
@@ -42,7 +45,7 @@ const TutupBukuBaru = ({ tb, month, show, onClosed }) => {
           <SheetTitle>Tutup Buku Storting — {namaBulan(bulan)}</SheetTitle>
           <SheetDescription>
             Saldo per ember awal & akhir bulan, lalu saldo awal bulan depan (ember naik satu tingkat). Semua angka hasil
-            hitung otomatis. Angka dalam ribuan.
+            hitung otomatis. <SatuanAngka />
           </SheetDescription>
         </SheetHeader>
 

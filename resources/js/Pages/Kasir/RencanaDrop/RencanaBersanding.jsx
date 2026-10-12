@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 // Palet sama dengan Rekap 1 & 2 (tanpa blok warna per kolom).
 import { WARNA } from '@/Pages/Kasir/Rekap/Components/TableRekapKasir';
+import { useModeRibuan } from '@/lib/modeAngka';
 
 // Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
 // sisi kanan berawalan p_). [kunci, label, kelas?]
@@ -57,6 +58,7 @@ export const Sisi = ({
   kunciBaris = (r) => r.grouping_id,
   kosongBaris = null, // (r) => bool, kosong per baris (bawaan: `kosong` satu tabel)
 }) => {
+  useModeRibuan();
   const ksBaris = (r) => (kosongBaris ? kosongBaris(r) : kosong);
   const aktif = rows.filter((r) => !ksBaris(r));
   return (
@@ -165,6 +167,7 @@ export const Sisi = ({
  * - onAcc: (baris) => void - tombol ACC di kolom Cek KM
  */
 const RencanaBersanding = ({ data, klik, onAcc }) => {
+  useModeRibuan();
   const hariIni = dayjs().format('YYYY-MM-DD');
 
   const minggu = useMemo(() => {

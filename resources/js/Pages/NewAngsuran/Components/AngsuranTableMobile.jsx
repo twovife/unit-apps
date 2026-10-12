@@ -7,10 +7,11 @@ import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 import Action from './Action';
 import { Button } from '@/shadcn/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
+import { angka, useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 // Angka dalam ribuan: 650000 -> "650", 1300000 -> "1.300", 35500 -> "35,5".
-const ribuan = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
-const rb = (v) => ribuan.format((Number(v) || 0) / 1000);
+const rb = (v) => angka(v);
 
 const jumlah = (rows, key) => rows.reduce((t, r) => t + (Number(r[key]) || 0), 0);
 
@@ -76,6 +77,7 @@ const ANGS = 'col-span-2 text-right pr-1';
 const KECIL = 'text-[11px] text-gray-500';
 
 const AngsuranTableMobile = ({ datas }) => {
+  useModeRibuan();
   const [filterName, setFilterName] = useState('');
   const [filterStatus, setFilterStatus] = useState('semua');
   const [triggeredId, setTriggeredId] = useState(null);
@@ -138,7 +140,7 @@ const AngsuranTableMobile = ({ datas }) => {
           )}
         </div>
         <div className="px-2 pb-1 text-[10px] text-gray-500">
-          Ketuk baris untuk bayar / lihat detail · angka dalam ribuan · Warna baris:{' '}
+          Ketuk baris untuk bayar / lihat detail · <SatuanAngka kecil titik={false} /> · Warna baris:{' '}
           <span className="px-1 rounded bg-emerald-100 text-emerald-800">sesuai</span>{' '}
           <span className="px-1 text-amber-800 rounded bg-amber-100">kurang</span>{' '}
           <span className="px-1 text-red-800 bg-red-100 rounded">0</span>{' '}

@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import AngsuranTable from '@/Pages/NewAngsuran/Components/AngsuranTable';
 import { FilterAngsuranContext } from '@/Pages/NewAngsuran/FilterAngsuran';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
@@ -39,7 +40,7 @@ const DrawerBukuAngsuran = ({ target, server_filter, onClosed }) => {
           </SheetTitle>
           <SheetDescription>
             Kolom {target ? dayjs(target.tanggal).format('DD MMMM YYYY') : ''} disorot kuning — storting yang dicek.
-            Angka dalam ribuan.
+            <SatuanAngka />
           </SheetDescription>
         </SheetHeader>
         <div className="p-3">

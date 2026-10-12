@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
 import { Lock, PanelRightOpen } from 'lucide-react';
+import { angka, useModeRibuan } from '@/lib/modeAngka';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
 // buku kasir: kasbon s/d tunai, titipan 9%, SU Lapangan, Sisa Uang,
@@ -63,13 +64,12 @@ const KOLOM_ISI = {
   setoran_katrol: 'setoran_katrol',
 };
 
-const ribu = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
-const ribuBertanda = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1, signDisplay: 'exceptZero' });
 const Angka = ({ n, bertanda = false }) => {
+  useModeRibuan();
   if (!Number(n)) return <span className="text-slate-300">–</span>;
-  if (!bertanda) return ribu.format(Number(n) / 1000);
+  if (!bertanda) return angka(n);
   return (
-    <span className={Number(n) < 0 ? 'text-red-600' : 'text-emerald-700'}>{ribuBertanda.format(Number(n) / 1000)}</span>
+    <span className={Number(n) < 0 ? 'text-red-600' : 'text-emerald-700'}>{Number(n) > 0 ? '+' : ''}{angka(n)}</span>
   );
 };
 

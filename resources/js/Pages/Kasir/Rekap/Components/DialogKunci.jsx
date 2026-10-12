@@ -5,8 +5,10 @@ import { router } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
+import { angka, useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
-const rb = (n) => new Intl.NumberFormat('id-ID').format(Math.round((Number(n) || 0) / 1000));
+const rb = (n) => angka(n, { bulat: true });
 const EMBER = [
   ['month1', 'Month 1'],
   ['month2', 'Month 2'],
@@ -38,6 +40,7 @@ const Kotak = ({ judul, children, warna = 'border-slate-200' }) => (
  * kasir.rekap.pratinjau_kunci; angka kas dari baris Rekap 1 (`baris`).
  */
 const DialogKunci = ({ baris, onClosed }) => {
+  useModeRibuan();
   const [isi, setIsi] = useState(null);
   const [galat, setGalat] = useState(null);
   const [proses, setProses] = useState(false);
@@ -75,7 +78,7 @@ const DialogKunci = ({ baris, onClosed }) => {
           <DialogTitle>
             Kunci Kelompok {baris?.kelompok} — {baris ? dayjs(baris.tanggal).format('dddd, DD MMMM YYYY') : ''}
           </DialogTitle>
-          <DialogDescription>Sesudah dikunci, transaksi hari ini tidak bisa diubah. Angka dalam ribuan.</DialogDescription>
+          <DialogDescription>Sesudah dikunci, transaksi hari ini tidak bisa diubah. <SatuanAngka /></DialogDescription>
         </DialogHeader>
 
         {galat && <div className="text-sm text-red-600">{galat}</div>}

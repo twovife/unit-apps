@@ -16,6 +16,7 @@ import DrawerAccKm from './Components/DrawerAccKm';
 import DialogKunci from './Components/DialogKunci';
 import BannerHariTerbuka from './Components/BannerHariTerbuka';
 import Action from './Components/Action';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 const RekapContent = ({
   rekapData,
@@ -98,7 +99,7 @@ const RekapContent = ({
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div className="flex-none shrink-0 whitespace-nowrap">
           <h1 className="text-xl font-semibold tracking-tight ">{title}</h1>
-          {show == 'rekapkasir' && <p className="text-xs text-muted-foreground">Angka dalam ribuan.</p>}
+          {show == 'rekapkasir' && <p className="text-xs text-muted-foreground"><SatuanAngka /></p>}
         </div>
         {show == 'rekapkasir' || show == 'rekap2' ? (
           // Rekap 1 (tanggal) & Rekap 2 (bulan) lewat FilterBar (chip instan, sama dengan menu

@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import Rencana from '@/Pages/BukuTransaksi/Rencana';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
@@ -48,7 +49,7 @@ const DrawerAccKm = ({ target, server_filter, onClosed }) => {
             <SheetDescription>
               Kelompok {target?.kelompok} · <span className="capitalize">{hari}</span> ·{' '}
               {target ? dayjs(target.tanggal).format('MMMM YYYY') : ''}. Baris tanggal{' '}
-              {target ? dayjs(target.tanggal).format('DD-MM') : ''} disorot kuning — klik ACC di situ. Angka dalam ribuan.
+              {target ? dayjs(target.tanggal).format('DD-MM') : ''} disorot kuning — klik ACC di situ. <SatuanAngka />
             </SheetDescription>
           </SheetHeader>
           <div ref={wadah} className="p-3 overflow-x-auto">

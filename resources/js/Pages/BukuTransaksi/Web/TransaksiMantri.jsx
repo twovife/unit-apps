@@ -13,6 +13,7 @@ import BukuTransaksiKepala from '@/Pages/BukuTransaksi/BukuTransaksiKepala';
 import Create from './Create';
 import Rencana from '@/Pages/BukuTransaksi/Rencana';
 import DrawerAngsuran from '@/Pages/BukuTransaksi/Components/DrawerAngsuran';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -322,7 +323,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
             <SheetTitle>ACC KM</SheetTitle>
             <SheetDescription>
               Rencana drop kelompok {server_filter.kelompok} · {hariLabel} · {bulanLabel}. Tombol ACC membuka pengecekan; kunci kasir
-              sesudah KM meng-ACC. Angka dalam ribuan.
+              sesudah KM meng-ACC. <SatuanAngka />
             </SheetDescription>
           </SheetHeader>
           <div className="p-3 overflow-x-auto">

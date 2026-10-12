@@ -10,6 +10,7 @@ import { Button } from '@/shadcn/ui/button';
 import { FilterIcon, SearchIcon } from 'lucide-react';
 import { Input } from '@/shadcn/ui/input';
 import InputMacet from '../BukuTransaksi/Web/InputMacet';
+import SatuanAngka from '@/Components/SatuanAngka';
 
 /**
  * CATATAN: cabang `type === 'mobile'` sudah tidak dipakai lagi - caller-nya
@@ -104,7 +105,7 @@ const AngsuranByDate = ({
         <div>
           <h1 className="text-xl font-semibold tracking-tight">{headerName}</h1>
           {server_filter.type_show === 'macet' && (
-            <p className="text-xs text-muted-foreground">Nasabah ML per bulan, termasuk yang lunas di bulan itu. Angka dalam ribuan.</p>
+            <p className="text-xs text-muted-foreground">Nasabah ML per bulan, termasuk yang lunas di bulan itu. <SatuanAngka /></p>
           )}
         </div>
         <div className="flex items-center gap-2">
