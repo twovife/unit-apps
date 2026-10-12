@@ -23,10 +23,6 @@ use Illuminate\Support\Facades\DB;
  *      (hari_terkunci >= hari_kerja). INILAH yang membuat "lupa tutup buku"
  *      mustahil lolos: bukan karena ada yang mengingatkan, tapi karena
  *      tombolnya tidak bisa ditekan.
- *   3. Kalau ini BULAN PERTAMA kantor (bulan migrasi), saldo awalnya sudah
- *      diserahterimakan (serah_terima_at). Mengunci bulan pertama di atas
- *      saldo awal yang belum diterima berarti membekukan angka yang alasnya
- *      belum diperiksa.
  *
  * Kunci bulanan hanya membubuhkan tanda tangan. Ia TIDAK menghitung ulang —
  * angkanya sudah disusun TutupBulanan tiap hari dikunci, dan TutupBulanan
@@ -61,36 +57,7 @@ class GembokBulanan
             );
         }
 
-        if (self::bulanPertamaBelumSerahTerima($baris)) {
-            $alasan[] = 'Saldo awal bulan pertama belum diserahterimakan.';
-        }
-
         return ['boleh' => empty($alasan), 'alasan' => $alasan];
-    }
-
-    /**
-     * Bulan ini bulan migrasi kantor, TAPI saldo awalnya belum diterima?
-     *
-     * Hanya berlaku untuk bulan pertama. Bulan-bulan sesudahnya saldo awalnya
-     * lahir dari bulan sebelumnya di sistem yang sama — tidak ada yang perlu
-     * diserahterimakan, jadi syarat ini tidak menahannya.
-     */
-    private static function bulanPertamaBelumSerahTerima(TransactionMonthlyClosing $baris): bool
-    {
-        $branchId = DB::table('transaction_loan_officer_groupings')
-            ->where('id', $baris->transaction_loan_officer_grouping_id)
-            ->value('branch_id');
-
-        $mulai = AgregasiScope::tanggalMulai($branchId);
-
-        if (!$mulai) {
-            return false;
-        }
-
-        $bulanIni = \Carbon\Carbon::parse($baris->periode)->startOfMonth();
-        $bulanMigrasi = $mulai->copy()->startOfMonth();
-
-        return $bulanIni->equalTo($bulanMigrasi) && !$baris->sudahDiserahTerimakan();
     }
 
     /**

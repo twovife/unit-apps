@@ -110,7 +110,6 @@ class ClosingBulananController extends Controller
                     'kasir_lock_at' => $b->kasir_lock_at?->toDateTimeString(),
                     'kasir_nama' => $b->kasir?->nama_karyawan,
                     'terkunci' => $b->terkunci(),
-                    'sudah_serah_terima' => $b->sudahDiserahTerimakan(),
                     'halangan' => GembokBulanan::halanganTutupBuku($b),
                     'diperbarui_at' => $perbarui->get($b->id)?->created_at?->toDateTimeString(),
                     'diperbarui_alasan' => $perbarui->get($b->id)?->alasan,

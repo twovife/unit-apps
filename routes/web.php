@@ -104,8 +104,6 @@ Route::middleware('auth')->group(function () {
   // alias itu tidak terdaftar di app/Http/Kernel.php, dan merantai middleware
   // setelah ->group() juga tidak menempel (lihat 05_temuan_dan_jebakan.md A1).
   Route::prefix('migrasi')->name('migrasi.')->group(function () {
-    Route::get('/stock-take-ml', [\App\Http\Controllers\MigrasiController::class, 'stockTakeMl'])
-      ->name('stock_take_ml');
     Route::get('/kesiapan-closing', [\App\Http\Controllers\MigrasiController::class, 'kesiapanClosing'])
       ->name('kesiapan_closing');
     Route::get('/pemantau', [\App\Http\Controllers\MigrasiController::class, 'pemantauMigrasi'])
@@ -145,8 +143,6 @@ Route::middleware('auth')->group(function () {
       ->name('penyesuaian_saldo_simpan');
     Route::post('/penyesuaian-saldo/{adjustment}/setujui', [\App\Http\Controllers\MigrasiController::class, 'setujuiPenyesuaian'])
       ->name('penyesuaian_saldo_setujui');
-    Route::get('/serah-terima', [\App\Http\Controllers\MigrasiController::class, 'serahTerima'])
-      ->name('serah_terima');
     // Koreksi Pasca Migrasi (superuser): koreksi angsuran sebelum tanggal migrasi + log.
     Route::get('/koreksi-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'index'])
       ->name('koreksi_beku');
@@ -158,10 +154,6 @@ Route::middleware('auth')->group(function () {
       ->name('koreksi_beku_simpan');
     Route::get('/koreksi-beku/log', [\App\Http\Controllers\KoreksiBekuController::class, 'log'])
       ->name('koreksi_beku_log');
-    Route::put('/serah-terima/{closing}/z', [\App\Http\Controllers\MigrasiController::class, 'simpanZ'])
-      ->name('serah_terima_z');
-    Route::post('/serah-terima/sahkan', [\App\Http\Controllers\MigrasiController::class, 'sahkanSerahTerima'])
-      ->name('serah_terima_sahkan');
   });
 
   // Buka kunci harian alur baru. Otorisasi dicek di controller.

@@ -302,22 +302,10 @@ export default function AppSidebar({ ...props }) {
                   fix: true,
                 },
                 {
-                  id: 1,
-                  title: 'Stock-take ML',
-                  link: route('migrasi.stock_take_ml'),
-                  active: route().current('migrasi.stock_take_ml'),
-                },
-                {
                   id: 2,
                   title: 'Kesiapan Closing',
                   link: route('migrasi.kesiapan_closing'),
                   active: route().current('migrasi.kesiapan_closing'),
-                },
-                {
-                  id: 3,
-                  title: 'Serah Terima Saldo Awal',
-                  link: route('migrasi.serah_terima'),
-                  active: route().current('migrasi.serah_terima'),
                 },
                 {
                   id: 31,
