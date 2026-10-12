@@ -31,19 +31,22 @@ export default function Login({ status }) {
   };
 
   return (
-    // HP: satu layar merah gelap - logo & nama di atas, kartu kaca di bawahnya.
+    // HP: awan merah di 60% atas, sisanya hitam - logo & nama di atas, kartu kaca di bawahnya.
     // min-h-dvh (bukan 100vh): di HP 100vh lebih tinggi dari layar yang
     // terlihat (bilah alamat), itu yang membuat halaman bisa digulir.
     // Desktop (lg): dibelah dua - panel merek kiri, formulir kanan di latar abu.
-    <div className="relative flex flex-col overflow-hidden min-h-dvh bg-gradient-to-b from-red-950 via-black via-35% to-black lg:bg-none lg:bg-black lg:flex-row">
+    <div className="relative flex flex-col overflow-hidden min-h-dvh bg-black lg:flex-row">
       <Head title="Masuk" />
       <Loading show={processing} />
 
-      {/* HP: bola warna kabur di belakang kartu kaca (glassmorphism). */}
-      <div aria-hidden="true" className="absolute inset-0 pointer-events-none lg:hidden">
-        <div className="absolute rounded-full -left-16 top-1/3 w-72 h-72 bg-red-600/25 blur-3xl" />
-        <div className="absolute rounded-full -right-20 top-1/2 w-72 h-72 bg-rose-500/20 blur-3xl" />
-        <div className="absolute rounded-full left-1/4 -bottom-16 w-64 h-64 bg-orange-500/10 blur-3xl" />
+      {/* HP: awan merah (gradasi + bola kabur) hanya di 60% atas, memudar ke
+          hitam; kartu kaca separuh di atasnya (glassmorphism). */}
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 overflow-hidden pointer-events-none h-[60%] lg:hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-red-900/80 via-red-950/50 to-black" />
+        <div className="absolute rounded-full -left-16 -top-10 w-72 h-72 bg-red-600/50 blur-3xl" />
+        <div className="absolute rounded-full -right-16 top-1/4 w-64 h-64 bg-rose-500/40 blur-3xl" />
+        <div className="absolute rounded-full left-1/4 top-1/2 w-56 h-56 bg-orange-500/25 blur-3xl" />
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black" />
       </div>
 
       {/* Panel merek */}
