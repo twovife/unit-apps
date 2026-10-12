@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
-import { Check, Lock, PanelRightOpen, PenLine } from 'lucide-react';
+import { Check, Lock, PanelRightOpen, PenLine, X } from 'lucide-react';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
@@ -203,13 +203,14 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 {label}
               </th>
             ))}
+            {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">ACC KM</th>}
             {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">{migrasi ? 'Kunci' : 'TTD Kasir'}</th>}
           </tr>
         </thead>
         <tbody>
           {datas.length === 0 && (
             <tr>
-              <td colSpan={KOLOM_TAMPIL.length + 1 + (onKunci ? 1 : 0)} className="py-6 text-center text-slate-500">
+              <td colSpan={KOLOM_TAMPIL.length + 1 + (onKunci ? 2 : 0)} className="py-6 text-center text-slate-500">
                 Belum ada data.
               </td>
             </tr>
@@ -254,6 +255,19 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   )}
                 </td>
               ))}
+              {/* ACC KM: centang = sudah (kuning = otomatis saat kunci/TTD), silang = belum. */}
+              {onKunci && (
+                <td className="px-2 py-1 text-center">
+                  {r.type != 'daily' ? null : r.status_approve_kepala ? (
+                    <Check
+                      className={`inline w-4 h-4 ${r.kepala_otomatis ? 'text-amber-500' : 'text-emerald-600'}`}
+                      aria-label={r.kepala_otomatis ? 'ACC KM otomatis' : 'Sudah ACC KM'}
+                    />
+                  ) : (
+                    <X className="inline w-4 h-4 text-rose-500" aria-label="Belum ACC KM" />
+                  )}
+                </td>
+              )}
               {onKunci && (
                 <td className="px-2 py-1 text-center">
                   {r.type != 'daily' ? null : r.status_approve_kasir ? (
@@ -291,6 +305,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   <Angka n={total[k]} bertanda={bertanda} />
                 </td>
               ))}
+              {onKunci && <td />}
               {onKunci && <td />}
             </tr>
           </tfoot>
