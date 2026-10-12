@@ -14,7 +14,7 @@ import { Eye, EyeOff, Info, Lock, LogIn, User } from 'lucide-react';
  * habis, akun nonaktif) -> kotak info di atas formulir.
  */
 // Isian kaca di HP, normal di desktop.
-const KACA = 'bg-black/50 border-white/25 text-white placeholder:text-white/50 lg:bg-white lg:border-input lg:text-slate-900 lg:placeholder:text-slate-400';
+const KACA = 'text-base md:text-base bg-black/50 border-white/25 text-white placeholder:text-white/50 lg:bg-white lg:border-input lg:text-slate-900 lg:placeholder:text-slate-400';
 
 export default function Login({ status }) {
   const { data, setData, post, processing, errors, reset } = useForm({
@@ -68,11 +68,11 @@ export default function Login({ status }) {
         <div
           className="relative w-full max-w-sm p-5 text-white border shadow-2xl rounded-2xl sm:p-6 bg-white/10 border-white/20 backdrop-blur-xl
             lg:text-slate-900 lg:bg-white lg:border-slate-200 lg:shadow-sm lg:backdrop-blur-none
-            [&_label]:text-white/90 lg:[&_label]:text-slate-900"
+            [&_label]:text-white/90 [&_label]:text-base lg:[&_label]:text-slate-900"
         >
           <div className="mb-5">
-            <h2 className="text-lg font-semibold sm:text-xl">Masuk</h2>
-            <p className="text-sm text-white/70 lg:text-slate-500">Gunakan username &amp; password akun Anda.</p>
+            <h2 className="text-xl font-semibold sm:text-2xl">Masuk</h2>
+            <p className="text-base text-white/70 lg:text-slate-500">Gunakan username &amp; password akun Anda.</p>
           </div>
 
           {status && (
@@ -86,7 +86,7 @@ export default function Login({ status }) {
             <div className="grid gap-1.5">
               <Label htmlFor="username">Username</Label>
               <div className="relative">
-                <User className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-white/60 lg:text-slate-400" aria-hidden="true" />
+                <User className="absolute w-5 h-5 -translate-y-1/2 left-3 top-1/2 text-white/60 lg:text-slate-400" aria-hidden="true" />
                 <Input
                   id="username"
                   name="username"
@@ -96,7 +96,7 @@ export default function Login({ status }) {
                   autoComplete="username"
                   autoCapitalize="none"
                   autoFocus
-                  className={`h-11 pl-9 ${KACA}`}
+                  className={`h-12 pl-10 ${KACA}`}
                   value={data.username}
                   onChange={(e) => setData('username', e.target.value)}
                 />
@@ -107,14 +107,14 @@ export default function Login({ status }) {
             <div className="grid gap-1.5">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-white/60 lg:text-slate-400" aria-hidden="true" />
+                <Lock className="absolute w-5 h-5 -translate-y-1/2 left-3 top-1/2 text-white/60 lg:text-slate-400" aria-hidden="true" />
                 <Input
                   id="password"
                   name="password"
                   type={lihat ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
-                  className={`h-11 pl-9 pr-10 ${KACA}`}
+                  className={`h-12 pl-10 pr-11 ${KACA}`}
                   value={data.password}
                   onChange={(e) => setData('password', e.target.value)}
                 />
@@ -124,14 +124,14 @@ export default function Login({ status }) {
                   className="absolute p-1 -translate-y-1/2 rounded right-2 top-1/2 text-white/60 hover:text-white lg:text-slate-400 lg:hover:text-slate-700"
                   aria-label={lihat ? 'Sembunyikan password' : 'Tampilkan password'}
                 >
-                  {lihat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {lihat ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               <InputError message={errors.password} />
             </div>
 
-            <Button type="submit" disabled={processing} className="w-full gap-2 h-11 bg-white text-slate-900 hover:bg-white/90 lg:bg-primary lg:text-primary-foreground lg:hover:bg-primary/90">
-              <LogIn className="w-4 h-4" aria-hidden="true" />
+            <Button type="submit" disabled={processing} className="w-full gap-2 h-12 text-base bg-white text-slate-900 hover:bg-white/90 lg:bg-primary lg:text-primary-foreground lg:hover:bg-primary/90">
+              <LogIn className="w-5 h-5" aria-hidden="true" />
               Masuk
             </Button>
           </form>
