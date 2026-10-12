@@ -32,6 +32,26 @@ const Kotak = ({ judul, children, warna = 'border-slate-200' }) => (
   </section>
 );
 
+/** Satu pinjaman di dialog: nama + keterangan status, bisa diklik ke buku drop. */
+const BarisPinjaman = ({ l, ket, onKlik }) => {
+  const isi = (
+    <div className="flex justify-between gap-3 py-0.5">
+      <span className="text-slate-700">
+        <span className={onKlik ? 'underline decoration-dotted' : ''}>{l.nama ?? '—'}</span>
+        <span className="ml-1 text-xs text-slate-500">— {ket}</span>
+      </span>
+      <span className="tabular-nums">{angka(l.nominal, { bulat: true })}</span>
+    </div>
+  );
+  return onKlik ? (
+    <button type="button" onClick={onKlik} className="block w-full text-left rounded hover:bg-white/70">
+      {isi}
+    </button>
+  ) : (
+    isi
+  );
+};
+
 /**
  * Dialog Kunci Rekap 1 (alur baru): keterangan rekap hari itu lengkap, storting
  * per ember, status cek KM, dan yang akan diproses otomatis saat dikunci -
@@ -147,41 +167,44 @@ const DialogKunci = ({ baris, onClosed, onBukaDrop = null }) => {
             </div>
 
             <Kotak
-              judul={`Diproses otomatis saat ${aksi}`}
+              judul="Drop & pengajuan"
               warna={isi.drop_gantung.length ? 'border-rose-300 bg-rose-50 sm:col-span-2' : 'sm:col-span-2'}
             >
               {isi.drop_gantung.length ? (
                 <>
                   <div className="mb-1 font-medium text-rose-800">
-                    {isi.drop_gantung.length} drop hari ini belum sukses → digagalkan:
+                    Drop hari ini belum di-DROP / GAGAL ({isi.drop_gantung.length}) → digagalkan:
                   </div>
-                  {isi.drop_gantung.map((l) =>
-                    onBukaDrop ? (
-                      <button
-                        key={l.id}
-                        type="button"
-                        onClick={() => onBukaDrop(baris)}
-                        title="Buka buku drop hari ini untuk DROP / GAGAL / Tundaan dulu"
-                        className="block w-full text-left rounded hover:bg-rose-100"
-                      >
-                        <Baris label={<span className="underline decoration-dotted">{`${l.nama ?? '—'} (${l.status})`}</span>} nilai={rb(l.nominal)} />
-                      </button>
-                    ) : (
-                      <Baris key={l.id} label={`${l.nama ?? '—'} (${l.status})`} nilai={rb(l.nominal)} />
-                    ),
-                  )}
-                  {onBukaDrop && (
-                    <div className="mt-1 text-xs text-rose-700">Klik nama untuk membereskannya dulu di buku drop.</div>
-                  )}
+                  {isi.drop_gantung.map((l) => (
+                    <BarisPinjaman
+                      key={l.id}
+                      l={l}
+                      ket={l.status === 'acc' ? 'sudah ACC, belum di-DROP / GAGAL' : 'belum di-ACC, belum di-DROP / GAGAL'}
+                      onKlik={onBukaDrop && (() => onBukaDrop(baris))}
+                    />
+                  ))}
                 </>
               ) : (
-                <div className="text-slate-600">Tidak ada drop menggantung.</div>
+                <div className="text-slate-600">Tidak ada drop hari ini yang menggantung.</div>
               )}
               {isi.pengajuan_open.length > 0 && (
-                <div className="pt-1 mt-2 text-xs border-t text-slate-500">
-                  {isi.pengajuan_open.length} pengajuan minggu depan masih open — tidak disentuh, masih bisa di-ACC / tolak
-                  sesudahnya.
+                <div className="pt-2 mt-2 border-t">
+                  <div className="mb-1 font-medium text-amber-800">
+                    Pengajuan minggu depan belum di-ACC ({isi.pengajuan_open.length}) — tidak disentuh, masih bisa di-ACC / tolak
+                    sesudahnya:
+                  </div>
+                  {isi.pengajuan_open.map((l) => (
+                    <BarisPinjaman
+                      key={l.id}
+                      l={l}
+                      ket={`belum di-ACC · drop ${dayjs(l.drop_date).format('DD-MM')}`}
+                      onKlik={onBukaDrop && (() => onBukaDrop({ ...baris, tanggal: l.drop_date }))}
+                    />
+                  ))}
                 </div>
+              )}
+              {onBukaDrop && (isi.drop_gantung.length > 0 || isi.pengajuan_open.length > 0) && (
+                <div className="mt-1 text-xs text-slate-500">Klik nama untuk membuka buku drop tanggal itu.</div>
               )}
             </Kotak>
 

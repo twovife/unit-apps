@@ -178,6 +178,7 @@ class TransactionDailyRecapController extends Controller
       ])->values(),
       'pengajuan_open' => $pengajuanOpen->map(fn($l) => [
         'id' => $l->id, 'nama' => $nama($l), 'nominal' => (int) $l->request_nominal,
+        'drop_date' => Carbon::parse($l->drop_date)->toDateString(),
       ])->values(),
       'penghalang' => $sebelumnya ? 'Hari sebelumnya (' . $sebelumnya->date->format('d-m-Y') . ') belum dikunci.' : null,
     ]);
@@ -301,7 +302,8 @@ class TransactionDailyRecapController extends Controller
         ->where('transaction_loan_officer_grouping_id', $grouping->id)
         ->whereDate('request_date', $date)->whereColumn('request_date', '!=', 'drop_date')
         ->where('status', 'open')->get()
-        ->map(fn($l) => ['id' => $l->id, 'nama' => $nama($l), 'nominal' => (int) $l->request_nominal])->values(),
+        ->map(fn($l) => ['id' => $l->id, 'nama' => $nama($l), 'nominal' => (int) $l->request_nominal,
+          'drop_date' => Carbon::parse($l->drop_date)->toDateString()])->values(),
       'penghalang' => null,
     ];
   }
