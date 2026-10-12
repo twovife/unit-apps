@@ -169,15 +169,26 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
                 value={data.transaction_date}
                 onChange={(e) => setData('transaction_date', e.target.value)}
                 hariTagih={triggeredPinjaman?.hari}
-                min={awalBulan.format('YYYY-MM-DD')}
+                // Tidak lagi terkunci ke bulan buku (mas 2026-10-13): mulai sesudah
+                // tanggal drop, jadi angsuran bulan lalu bisa diinput dari buku ini.
+                min={
+                  triggeredData?.tanggal_drop
+                    ? dayjs(triggeredData.tanggal_drop).add(1, 'day').format('YYYY-MM-DD')
+                    : awalBulan.format('YYYY-MM-DD')
+                }
                 // Paling jauh HARI INI, bukan akhir bulan buku: buku bulan lalu
                 // tetap bisa dipakai menginput angsuran bulan berjalan.
                 max={dayjs().format('YYYY-MM-DD')}
               />
               <small className="block mt-1 text-[11px] text-muted-foreground">
-                Pilih tanggal tagih mulai bulan buku ini sampai hari ini. Angsuran di luar bulan buku tampil di buku
-                bulan tanggalnya.
+                Pilih tanggal tagih sesudah tanggal drop sampai hari ini.
               </small>
+              {data.transaction_date && !dayjs(data.transaction_date).isSame(awalBulan, 'month') && (
+                <small className="block mt-1 text-[11px] font-medium text-amber-700">
+                  Tanggal ini di luar bulan buku — angsurannya tampil di buku{' '}
+                  {dayjs(data.transaction_date).format('MMMM YYYY')}, bukan di buku yang sedang dibuka.
+                </small>
+              )}
             </>
           ) : (
           <>
