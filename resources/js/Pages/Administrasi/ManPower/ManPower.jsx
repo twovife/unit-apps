@@ -15,6 +15,37 @@ const TAB = [
   ['semua', 'Semua'],
 ];
 
+// Foto profil (link sementara dari server) atau inisial kalau tidak ada / gagal dimuat.
+const Avatar = ({ d, besar = false }) => {
+  const [gagal, setGagal] = useState(false);
+  const ukuran = besar ? 'w-11 h-11 text-sm' : 'w-9 h-9 text-xs';
+  const inisial = String(d.employee_name ?? '?')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((k) => k[0])
+    .join('')
+    .toUpperCase();
+  return d.avatar && !gagal ? (
+    <img
+      src={d.avatar}
+      alt={d.employee_name}
+      loading="lazy"
+      onError={() => setGagal(true)}
+      className={`${ukuran} rounded-full object-cover shrink-0 bg-slate-100 ${d.isActive ? '' : 'grayscale'}`}
+    />
+  ) : (
+    <span
+      className={`${ukuran} inline-flex items-center justify-center rounded-full shrink-0 font-semibold ${
+        d.isActive ? 'bg-sky-100 text-sky-700' : 'bg-slate-200 text-slate-500'
+      }`}
+      aria-hidden="true"
+    >
+      {inisial}
+    </span>
+  );
+};
+
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
 
 const Status = ({ aktif }) => (
@@ -132,11 +163,16 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
                 <tr key={d.id} className={`border-t align-top even:bg-slate-50 hover:bg-sky-50 ${d.isActive ? '' : 'text-slate-500'}`}>
                   <td className="px-3 py-2 text-slate-400 tabular-nums">{i + 1}</td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900">{d.employee_name}</span>
-                      <Status aktif={d.isActive} />
+                    <div className="flex items-center gap-3">
+                      <Avatar d={d} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-slate-900">{d.employee_name}</span>
+                          <Status aktif={d.isActive} />
+                        </div>
+                        <div className="text-xs text-slate-500 tabular-nums">{d.identity_id || '–'}</div>
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500 tabular-nums">{d.identity_id || '–'}</div>
                   </td>
                   <td className="px-3 py-2 capitalize whitespace-nowrap">{d.employment}</td>
                   <td className="px-3 py-2">
@@ -157,9 +193,12 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
         {tampil.map((d) => (
           <div key={d.id} className={`p-3 bg-white border rounded-lg ${d.isActive ? '' : 'opacity-70'}`}>
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="font-semibold truncate text-slate-900">{d.employee_name}</div>
-                <div className="text-xs capitalize text-slate-500">{d.employment}</div>
+              <div className="flex items-center min-w-0 gap-3">
+                <Avatar d={d} besar />
+                <div className="min-w-0">
+                  <div className="font-semibold truncate text-slate-900">{d.employee_name}</div>
+                  <div className="text-xs capitalize text-slate-500">{d.employment}</div>
+                </div>
               </div>
               <Status aktif={d.isActive} />
             </div>

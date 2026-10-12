@@ -33,14 +33,36 @@ class EmployeeController extends Controller
 
 
     $employee = Employee::with('username.rolelist', 'employment')->where('branch_id', $branch_id)
-      ->select('id', 'branch_id', 'nik', 'nama_karyawan', 'alamat', 'hire_date', 'area', 'janis_jaminan', 'date_resign', 'resign_status', 'resign_reson', 'employment_id')
+      ->select('id', 'branch_id', 'nik', 'nama_karyawan', 'alamat', 'hire_date', 'area', 'janis_jaminan', 'date_resign', 'resign_status', 'resign_reson', 'employment_id', 'avatar')
       ->orderBy('date_resign')
       ->orderBy('employment_id')
       ->orderBy('area')
       ->get();
 
 
-    $data = $employee->map(function ($item) {
+    // Foto profil: diunggah lewat app_laravel ke MinIO (disk s3, folder
+    // avatars/). Di sini cukup link sementara lewat s3_publik; MinIO belum
+    // disetel / gagal -> null, layar jatuh ke inisial nama.
+    $disk = null;
+    if (config('filesystems.disks.s3_publik.bucket')) {
+      try {
+        $disk = \Illuminate\Support\Facades\Storage::disk('s3_publik');
+      } catch (\Throwable $e) {
+        $disk = null;
+      }
+    }
+    $foto = function (?string $path) use ($disk) {
+      if (!$disk || !$path) {
+        return null;
+      }
+      try {
+        return $disk->temporaryUrl($path, now()->addHours(3));
+      } catch (\Throwable $e) {
+        return null;
+      }
+    };
+
+    $data = $employee->map(function ($item) use ($foto) {
       $username = $item->username->first();
       $jabatanName = $item->employment?->jabatan ?? '-';
       return [
@@ -48,6 +70,7 @@ class EmployeeController extends Controller
         'branch_id' => $item->branch_id,
         'identity_id' => $item->nik,
         'employee_name' => $item->nama_karyawan,
+        'avatar' => $foto($item->avatar),
         'username' => $username?->username,
         'rolelist' => $username?->rolelist->map(function ($role) {
           return [
