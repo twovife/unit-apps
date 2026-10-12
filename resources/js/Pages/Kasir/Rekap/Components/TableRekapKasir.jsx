@@ -81,6 +81,9 @@ const Angka = ({ n, bertanda = false }) => {
  * kasir benar-benar mengetik.
  */
 const IsianSel = ({ r, k, kolom, kuning = false }) => {
+  // Mode rupiah penuh (saklar header): akhiran .000 selalu tampil supaya isian
+  // (tetap diketik dalam ribuan) tidak terbaca 1000x lebih kecil dari sel lain.
+  const penuh = !useModeRibuan();
   const keRibu = (v) => (v ? Number(v) / 1000 : 0);
   // Belum diisi kasir -> angka bawaan dari angsuran (kalau kolom ini punya).
   const pakaiBawaan = (r[k] === null || r[k] === undefined) && BAWAAN[k];
@@ -112,7 +115,7 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
         placeholder="0"
         onFocus={(e) => e.currentTarget.select()}
         title={pakaiBawaan && !diketik ? 'Angka sistem (dari angsuran) — belum dikonfirmasi kasir' : undefined}
-        className={`${pakaiBawaan && !diketik ? 'italic text-slate-400' : ''} peer block w-full h-full min-w-[7rem] py-1.5 pl-2 pr-2 focus:pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm ${kuning ? 'bg-transparent' : 'bg-sky-50/60'} border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500`}
+        className={`${pakaiBawaan && !diketik ? 'italic text-slate-400' : ''} peer block w-full h-full min-w-[7rem] py-1.5 pl-2 ${penuh ? 'pr-9' : 'pr-2'} focus:pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-right text-sm ${kuning ? 'bg-transparent' : 'bg-sky-50/60'} border-0 rounded-none outline-none tabular-nums focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500`}
         value={nilai}
         onChange={(e) => {
           setNilai(e.target.value);
@@ -127,8 +130,8 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
           }
         }}
       />
-      {/* Akhiran .000 hanya saat mengetik. */}
-      <span className="absolute hidden text-xs -translate-y-1/2 pointer-events-none right-2 top-1/2 text-slate-400 peer-focus:block">.000</span>
+      {/* Akhiran .000 saat mengetik; di mode rupiah penuh selalu. */}
+      <span className={`absolute ${penuh ? 'block' : 'hidden'} text-xs -translate-y-1/2 pointer-events-none right-2 top-1/2 text-slate-400 peer-focus:block`}>.000</span>
     </div>
   );
 };
