@@ -348,18 +348,6 @@ export default function AppSidebar({ ...props }) {
                   active: route().current('adminpanel.index'),
                 },
                 {
-                  id: 2,
-                  title: 'Monitoring Staff',
-                  link: route('adminpanel.monitoring_staff'),
-                  active: route().current('adminpanel.monitoring_staff'),
-                },
-                {
-                  id: 3,
-                  title: 'Loan Balancing',
-                  link: route('adminpanel.loan_balancing'),
-                  active: route().current('adminpanel.loan_balancing'),
-                },
-                {
                   id: 4,
                   title: 'Kalender Kerja',
                   link: route('kalender.index'),
