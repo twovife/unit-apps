@@ -5,13 +5,8 @@ namespace App\Http\Controllers;
 use App\Helpers\AppHelper;
 use App\Models\Branch;
 use App\Models\Employee;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
-use Spatie\Permission\Models\Role;
 
 class EmployeeController extends Controller
 {
@@ -37,9 +32,6 @@ class EmployeeController extends Controller
     // dd($scope->branch_id);
 
 
-    // Hanya id & nama untuk pilihan role di Generate User (superuser). Dulu
-    // seluruh role + semua user-nya ikut terkirim (~870 KB) ke setiap pengunjung.
-    $roles = auth()->user()->hasRole('superuser') ? Role::orderBy('name')->get(['id', 'name']) : [];
     $employee = Employee::with('username.rolelist', 'employment')->where('branch_id', $branch_id)
       ->select('id', 'branch_id', 'nik', 'nama_karyawan', 'alamat', 'hire_date', 'area', 'janis_jaminan', 'date_resign', 'resign_status', 'resign_reson', 'employment_id')
       ->orderBy('date_resign')
@@ -75,7 +67,6 @@ class EmployeeController extends Controller
 
     return Inertia::render('WebView/ManPower/Index', [
       'datas' => $data,
-      'roles' => $roles,
       'server_filter' => [
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
@@ -91,52 +82,6 @@ class EmployeeController extends Controller
   public function create()
   {
     //
-  }
-
-  /**
-   * Store a newly created resource in storage.
-   */
-  public function store(Request $request)
-  {
-    // Membuat akun + memberi role = superuser saja. Tanpa gerbang ini user
-    // login mana pun bisa membuat akun ber-role apa pun (termasuk superuser).
-    abort_unless(auth()->user()->hasRole('superuser'), 403, 'Generate user khusus superuser.');
-
-    $branchCode = Branch::find($request->branch_id)->code;
-    $_suffix = "_" . strtolower($branchCode);
-    $request->merge(['username' => $request->username . $_suffix]);
-    $validate = $request->validate([
-      'id' => ['required'],
-      'branch_id' => ['required'],
-      'username' => ['required', 'unique:users,username'],
-      'role' => ['required'],
-    ]);
-
-
-    try {
-      DB::beginTransaction();
-      $employee = Employee::find($request->id);
-      $users = $employee->username()->create([
-        'username' => $request->username,
-        'password' => Hash::make('4343abab'),
-        'email' => $request->username . '@usberdigital.com',
-        'isactive' => 1
-      ]);
-
-      $role = Role::findById($request->role);
-      $users->syncRoles($role);
-      DB::commit();
-    } catch (Exception $e) {
-      DB::rollBack();
-      // `ddd($e)` dihapus 2026-08-12 - membuat baris di bawahnya tidak pernah
-      // tercapai, jadi kegagalan pembuatan user tampil sebagai layar dump.
-      Log::error('EmployeeController@store gagal: ' . $e->getMessage(), [
-        'user_id' => auth()->id(),
-        'line' => $e->getLine(),
-      ]);
-      return redirect()->back()->withErrors('Gagal Membuat User: ' . $e->getMessage());
-    }
-    return redirect()->back()->with('message', 'Berhasil Membuat User');
   }
 
   /**
