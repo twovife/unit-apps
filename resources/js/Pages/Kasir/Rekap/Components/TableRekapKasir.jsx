@@ -203,8 +203,8 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 {label}
               </th>
             ))}
-            {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">ACC KM</th>}
             {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">{migrasi ? 'Kunci' : 'TTD Kasir'}</th>}
+            {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">ACC KM</th>}
           </tr>
         </thead>
         <tbody>
@@ -255,19 +255,6 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   )}
                 </td>
               ))}
-              {/* ACC KM: centang = sudah (kuning = otomatis saat kunci/TTD), silang = belum. */}
-              {onKunci && (
-                <td className="px-2 py-1 text-center">
-                  {r.type != 'daily' ? null : r.status_approve_kepala ? (
-                    <Check
-                      className={`inline w-4 h-4 ${r.kepala_otomatis ? 'text-amber-500' : 'text-emerald-600'}`}
-                      aria-label={r.kepala_otomatis ? 'ACC KM otomatis' : 'Sudah ACC KM'}
-                    />
-                  ) : (
-                    <X className="inline w-4 h-4 text-rose-500" aria-label="Belum ACC KM" />
-                  )}
-                </td>
-              )}
               {onKunci && (
                 <td className="px-2 py-1 text-center">
                   {r.type != 'daily' ? null : r.status_approve_kasir ? (
@@ -290,6 +277,19 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                       {migrasi ? <Lock className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
                       {migrasi ? 'Kunci' : 'TTD'}
                     </button>
+                  )}
+                </td>
+              )}
+              {/* ACC KM: centang = sudah (kuning = otomatis saat kunci/TTD), silang = belum. */}
+              {onKunci && (
+                <td className="px-2 py-1 text-center">
+                  {r.type != 'daily' ? null : r.status_approve_kepala ? (
+                    <Check
+                      className={`inline w-4 h-4 ${r.kepala_otomatis ? 'text-amber-500' : 'text-emerald-600'}`}
+                      aria-label={r.kepala_otomatis ? 'ACC KM otomatis' : 'Sudah ACC KM'}
+                    />
+                  ) : (
+                    <X className="inline w-4 h-4 text-rose-500" aria-label="Belum ACC KM" />
                   )}
                 </td>
               )}
