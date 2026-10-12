@@ -167,7 +167,7 @@ class PenyesuaianSaldo
         $berlaku = AgregasiScope::acuanPenyesuaian($branchId)->toDateString();
 
         return DB::transaction(function () use ($loan, $jenis, $efekDiperlukan, $catatan, $user, $berlaku) {
-            return TransactionSaldoAdjustment::create([
+            $adj = TransactionSaldoAdjustment::create([
                 'transaction_loan_id' => $loan->id,
                 'transaction_loan_officer_grouping_id' => $loan->transaction_loan_officer_grouping_id,
                 'jenis' => $jenis,
@@ -176,6 +176,12 @@ class PenyesuaianSaldo
                 'user_input' => $user->employee->id,
                 'catatan' => $catatan ?: null,
             ]);
+
+            // Saldo berubah -> status lunas ikut: saldo jadi 0 = lunas,
+            // pinjaman lunas yang ditambah saldonya = aktif lagi.
+            $loan->refresh()->hitungUlangPelunasan();
+
+            return $adj;
         });
     }
 
