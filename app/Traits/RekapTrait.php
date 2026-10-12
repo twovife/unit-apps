@@ -352,7 +352,11 @@ trait RekapTrait
         'rekap_status' => $thisDailyRecap ? true : false,
         'status_approve_kepala' => $status_kepala,
         'status_approve_kasir' => $status_kasir,
-        'kepala_otomatis' => isset($kmOtomatis[$item->id . '|' . $transaction_date]),
+        // Kantor lama: ACC KM otomatis saat TTD kasir = waktu ACC KM sama persis dengan TTD.
+        'kepala_otomatis' => $alurBaru
+          ? isset($kmOtomatis[$item->id . '|' . $transaction_date])
+          : ($status_kepala && $status_kasir
+            && (string) $thisDailyRecap->daily_kepala_approval === (string) $thisDailyRecap->daily_kasir_approval),
         'status_dayly_approval' => $status_kepala && $status_kasir,
         'transaction_date' => $transaction_date,
 

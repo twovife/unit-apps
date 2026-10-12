@@ -99,7 +99,7 @@ class ClosingHarianController extends Controller
             ->get();
     }
 
-    private static function gagalkanDropGantung(TransactionDailyClosing $closing, int $kasir): int
+    public static function gagalkanDropGantung(TransactionDailyClosing $closing, int $kasir): int
     {
         $gantung = self::dropGantung($closing);
         // Per model, bukan update massal: hook TransactionLoan ikut jalan.

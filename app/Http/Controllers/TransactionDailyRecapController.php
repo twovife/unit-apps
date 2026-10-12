@@ -137,6 +137,11 @@ class TransactionDailyRecapController extends Controller
     }
     $date = Carbon::parse($val['date'])->toDateString();
 
+    // Kantor belum migrasi: dialog yang sama, data dari daily_recaps (TTD kasir).
+    if (!$this->sudahMigrasi($grouping->id, $date)) {
+      return response()->json($this->pratinjauLama($grouping, $date));
+    }
+
     // Tidak membuat baris: pratinjau hanya membaca.
     $closing = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $grouping->id)
       ->whereDate('date', $date)->first()
@@ -189,8 +194,8 @@ class TransactionDailyRecapController extends Controller
     if (!AppHelper::bolehAksesKelompok($grouping)) {
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
-    if (!\App\Helpers\AgregasiScope::sudahMigrasi($grouping->branch_id)) {
-      return redirect()->back()->withErrors('Kantor ini belum migrasi ke alur baru.');
+    if (!$this->sudahMigrasi($grouping->id, $val['date'])) {
+      return $this->ttdLama($grouping, Carbon::parse($val['date'])->toDateString());
     }
 
     $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
@@ -262,46 +267,116 @@ class TransactionDailyRecapController extends Controller
   }
 
   /**
-   * Tanda tangan kasir kantor BELUM migrasi (mas 2026-10-12): mengisi
-   * daily_kasir_approval di daily_recaps, sama seperti dialog lama rekap_post
-   * type 2, tanpa kunci alur baru. Syarat: KM sudah ACC hari itu.
+   * Isi dialog Kunci untuk kantor BELUM migrasi (TTD kasir di daily_recaps).
+   * Bentuknya sama dengan pratinjau alur baru; tidak ada syarat urut hari.
    */
-  public function ttd_kasir_lama(Request $request)
+  private function pratinjauLama(TransactionLoanOfficerGrouping $grouping, string $date): array
+  {
+    $recap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $grouping->id)->whereDate('date', $date)->first();
+    $harian = \App\Helpers\HitungAgregat::harian($grouping->id, $date);
+    $keluar = (int) ($recap?->keluar ?? 0);
+    $target = (int) ($recap?->target ?? 0);
+    $nama = fn($l) => $l->customer?->nama;
+    $wadah = new \App\Models\TransactionDailyClosing(['transaction_loan_officer_grouping_id' => $grouping->id, 'date' => $date]);
+
+    return [
+      'kelompok' => $grouping->kelompok,
+      'tanggal' => $date,
+      'migrasi' => false,
+      'terkunci' => (bool) $recap?->daily_kasir_approval,
+      'storting' => collect(\App\Helpers\Ember::SEMUA)->mapWithKeys(fn($e) => [$e => (int) ($harian['storting_' . $e] ?? 0)])->all()
+        + ['total' => (int) $harian['storting']],
+      'drop' => (int) $harian['drop'],
+      'cek_km' => (bool) $recap?->daily_kepala_approval,
+      'target' => $target,
+      'keluar' => $keluar,
+      'masuk' => \App\Helpers\TargetMingguan::masuk((int) $harian['drop']),
+      'tanggal_depan' => \App\Helpers\TargetMingguan::tanggalDepan($date),
+      'target_depan' => \App\Helpers\TargetMingguan::hitung($target, (int) $harian['drop'], $keluar),
+      'drop_gantung' => ClosingHarianController::dropGantung($wadah)->load('customer')->map(fn($l) => [
+        'id' => $l->id, 'nama' => $nama($l), 'status' => $l->status,
+        'nominal' => (int) ($l->approved_nominal ?: $l->request_nominal),
+      ])->values(),
+      'pengajuan_open' => TransactionLoan::with('customer')
+        ->where('transaction_loan_officer_grouping_id', $grouping->id)
+        ->whereDate('request_date', $date)->whereColumn('request_date', '!=', 'drop_date')
+        ->where('status', 'open')->get()
+        ->map(fn($l) => ['id' => $l->id, 'nama' => $nama($l), 'nominal' => (int) $l->request_nominal])->values(),
+      'penghalang' => null,
+    ];
+  }
+
+  /**
+   * TTD kasir kantor BELUM migrasi (mas 2026-10-12), disamakan dengan Kunci
+   * alur baru: drop hari ini yang menggantung -> gagal; belum di-ACC KM ->
+   * ACC KM otomatis gaya lama (drop/storting/keluar + target minggu depan,
+   * seperti ceklist_kepala); lalu daily_kasir_approval. ACC KM otomatis
+   * ditandai dengan waktu ACC KM = waktu TTD (tampil kuning di Rekap 1).
+   */
+  private function ttdLama(TransactionLoanOfficerGrouping $grouping, string $date)
   {
     if (!auth()->user()->hasPermissionTo('can-approve')) {
       return redirect()->back()->withErrors('Tanda tangan diisi kasir / KM / pimpinan.');
     }
 
-    $val = $request->validate([
-      'id' => ['required', 'integer'],
-      'date' => ['required', 'date', 'before_or_equal:today'],
+    $kasir = auth()->user()->employee->id;
+    $gagal = 0;
+    $accOtomatis = false;
+
+    try {
+      DB::transaction(function () use ($grouping, $date, $kasir, &$gagal, &$accOtomatis) {
+        $recap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $grouping->id)
+          ->whereDate('date', $date)->lockForUpdate()->first()
+          ?? TransactionDailyRecap::create(['transaction_loan_officer_grouping_id' => $grouping->id, 'date' => $date]);
+        if ($recap->daily_kasir_approval) {
+          throw new \RuntimeException('Hari ini sudah ditandatangani kasir.');
+        }
+
+        $wadah = new \App\Models\TransactionDailyClosing(['transaction_loan_officer_grouping_id' => $grouping->id, 'date' => $date]);
+        $gagal = ClosingHarianController::gagalkanDropGantung($wadah, $kasir);
+
+        $sekarang = Carbon::now();
+        if (!$recap->daily_kepala_approval) {
+          $drop = (int) TransactionLoan::where('transaction_loan_officer_grouping_id', $grouping->id)
+            ->whereDate('drop_date', $date)->where('status', 'success')->sum('nominal_drop');
+          $storting = (int) TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $grouping->id)
+            ->whereDate('transaction_date', $date)->sum('nominal');
+          $keluar = (int) ($recap->keluar ?? 0);
+
+          $recap->update([
+            'drop' => $drop,
+            'storting' => $storting,
+            'keluar' => $keluar,
+            'daily_kepala_approval' => $sekarang,
+            'daily_kepala_approval_user' => $kasir,
+          ]);
+
+          $tanggalDepan = \App\Helpers\TargetMingguan::tanggalDepan($date);
+          if ($tanggalDepan) {
+            TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $grouping->id, 'date' => $tanggalDepan])
+              ->update([
+                'target' => \App\Helpers\TargetMingguan::hitung((int) $recap->target, $drop, $keluar),
+                'target_on' => $date,
+              ]);
+          }
+          $accOtomatis = true;
+        }
+
+        $recap->update([
+          'daily_kasir_approval' => $sekarang,
+          'daily_kasir_approval_user' => $kasir,
+        ]);
+      });
+    } catch (\Throwable $e) {
+      return redirect()->back()->withErrors(AppHelper::pesanGagal($e, $e->getMessage()));
+    }
+
+    $catatan = array_filter([
+      $gagal ? $gagal . ' drop hari ini digagalkan' : null,
+      $accOtomatis ? 'ACC KM otomatis (belum dicek KM)' : null,
     ]);
 
-    $grouping = TransactionLoanOfficerGrouping::find($val['id']);
-    if (!AppHelper::bolehAksesKelompok($grouping)) {
-      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
-    }
-    if ($this->sudahMigrasi($grouping->id, $val['date'])) {
-      return redirect()->back()->withErrors('Kantor ini sudah migrasi — pakai tombol Kunci.');
-    }
-
-    $recap = TransactionDailyRecap::firstOrNew([
-      'transaction_loan_officer_grouping_id' => $grouping->id,
-      'date' => Carbon::parse($val['date'])->toDateString(),
-    ]);
-    if (!$recap->daily_kepala_approval) {
-      return redirect()->back()->withErrors('Belum di-ACC KM (Buku Transaksi → ACC KM).');
-    }
-    if ($recap->daily_kasir_approval) {
-      return redirect()->back()->withErrors('Hari ini sudah ditandatangani kasir.');
-    }
-
-    $recap->fill([
-      'daily_kasir_approval' => Carbon::now(),
-      'daily_kasir_approval_user' => auth()->user()->employee->id,
-    ])->save();
-
-    return redirect()->back()->with('message', 'Ditandatangani kasir.');
+    return redirect()->back()->with('message', 'Ditandatangani kasir.' . ($catatan ? ' Otomatis: ' . implode(', ', $catatan) . '.' : ''));
   }
 
   public function ceklist_kepala(Request $request)

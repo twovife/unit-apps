@@ -140,7 +140,7 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null, onTtd = null }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null }) => {
   const { auth, server_filter } = usePage().props;
   // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
   const KLIK = {
@@ -188,14 +188,13 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 {label}
               </th>
             ))}
-            {onKunci && <th className="px-3 py-2 font-medium text-center">Kunci</th>}
-            {onTtd && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">TTD Kasir</th>}
+            {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">{migrasi ? 'Kunci' : 'TTD Kasir'}</th>}
           </tr>
         </thead>
         <tbody>
           {datas.length === 0 && (
             <tr>
-              <td colSpan={KOLOM_TAMPIL.length + 1 + (onKunci || onTtd ? 1 : 0)} className="py-6 text-center text-slate-500">
+              <td colSpan={KOLOM_TAMPIL.length + 1 + (onKunci ? 1 : 0)} className="py-6 text-center text-slate-500">
                 Belum ada data.
               </td>
             </tr>
@@ -245,12 +244,12 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   {r.type != 'daily' ? null : r.status_approve_kasir ? (
                     // Kuning = dikunci sebelum KM mengecek (ACC KM otomatis).
                     <span
-                      title={r.kepala_otomatis ? 'Terkunci — ACC KM otomatis (belum dicek KM)' : 'Terkunci'}
+                      title={`${migrasi ? 'Terkunci' : 'Ditandatangani kasir'}${r.kepala_otomatis ? ' — ACC KM otomatis (belum dicek KM)' : ''}`}
                       className={`inline-flex items-center justify-center w-7 h-7 rounded-md ${
                         r.kepala_otomatis ? 'bg-amber-200 text-amber-900 ring-1 ring-amber-400' : 'bg-slate-100 text-slate-600'
                       }`}
                     >
-                      <Lock className="w-4 h-4" />
+                      {migrasi ? <Lock className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                     </span>
                   ) : (
                     <button
@@ -259,33 +258,8 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                       onClick={() => onKunci(r)}
                       className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-white rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40"
                     >
-                      <Lock className="w-3.5 h-3.5" />
-                      Kunci
-                    </button>
-                  )}
-                </td>
-              )}
-              {/* Kantor belum migrasi: tanda tangan kasir saja (daily_recaps), tanpa kunci. */}
-              {onTtd && (
-                <td className="px-2 py-1 text-center">
-                  {r.type != 'daily' ? null : r.status_approve_kasir ? (
-                    <span
-                      title="Sudah ditandatangani kasir"
-                      className="inline-flex items-center justify-center gap-1 h-7 px-2 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-800"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      TTD
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={!auth?.permissions?.includes('can-approve') || !r.status_approve_kepala}
-                      title={r.status_approve_kepala ? 'Tanda tangan kasir hari ini' : 'Belum di-ACC KM'}
-                      onClick={() => onTtd(r)}
-                      className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-white rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40"
-                    >
-                      <PenLine className="w-3.5 h-3.5" />
-                      TTD
+                      {migrasi ? <Lock className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
+                      {migrasi ? 'Kunci' : 'TTD'}
                     </button>
                   )}
                 </td>
@@ -302,7 +276,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   <Angka n={total[k]} bertanda={bertanda} />
                 </td>
               ))}
-              {(onKunci || onTtd) && <td />}
+              {onKunci && <td />}
             </tr>
           </tfoot>
         )}
