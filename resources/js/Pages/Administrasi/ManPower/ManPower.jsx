@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Button } from '@/shadcn/ui/button';
 import { FilterIcon } from 'lucide-react';
 
-const ManPower = ({ datas, title }) => {
+const ManPower = ({ datas, title = 'Data Karyawan' }) => {
   const { auth, server_filter } = usePage().props;
 
   const [onShowCreateUser, setOnShowCreateUser] = useState(false);
@@ -77,7 +77,7 @@ const ManPower = ({ datas, title }) => {
           <TableHeader>
             <TableRow>
               <TableHead>Nomor</TableHead>
-              <TableHead>Nama Karaywan</TableHead>
+              <TableHead>Nama Karyawan</TableHead>
               <TableHead>Username</TableHead>
               <TableHead>NIK</TableHead>
               <TableHead>Alamat</TableHead>
@@ -119,7 +119,7 @@ const ManPower = ({ datas, title }) => {
                     {auth.roles.includes('superuser') && (
                       <div className="flex gap-1">
                         {data.rolelist?.map((item) => (
-                          <span>{item.name}</span>
+                          <span key={item.name} className="text-xs text-slate-500">{item.name}</span>
                         ))}
                       </div>
                     )}

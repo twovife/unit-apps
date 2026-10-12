@@ -21,8 +21,15 @@ class EmployeeController extends Controller
   public function index(Request $request)
   {
 
+    // Data karyawan (NIK, alamat) hanya untuk KM / kasir / pimpinan ke atas,
+    // dan hanya cabang yang boleh diakses user - ?branch_id dari URL dulu
+    // dipakai mentah, jadi siapa pun bisa membaca karyawan cabang mana pun.
+    abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403, 'Data karyawan untuk kepala mantri, kasir, dan pimpinan.');
     $scope = \App\Helpers\AuthScope::resolve();
-    $branch_id = $request->branch_id ?? $scope->branch_id;
+    $boleh = Branch::getAllowedBranchIds(auth()->user());
+    $branch_id = $request->filled('branch_id') && ($boleh === null || in_array((int) $request->branch_id, $boleh))
+      ? (int) $request->branch_id
+      : $scope->branch_id;
     $wilayah = $scope->wilayah;
     $kelompok = $scope->kelompok;
     $authorized = $scope->user;
@@ -30,7 +37,9 @@ class EmployeeController extends Controller
     // dd($scope->branch_id);
 
 
-    $roles = Role::with('permissions', 'users')->get();
+    // Hanya id & nama untuk pilihan role di Generate User (superuser). Dulu
+    // seluruh role + semua user-nya ikut terkirim (~870 KB) ke setiap pengunjung.
+    $roles = auth()->user()->hasRole('superuser') ? Role::orderBy('name')->get(['id', 'name']) : [];
     $employee = Employee::with('username.rolelist', 'employment')->where('branch_id', $branch_id)
       ->select('id', 'branch_id', 'nik', 'nama_karyawan', 'alamat', 'hire_date', 'area', 'janis_jaminan', 'date_resign', 'resign_status', 'resign_reson', 'employment_id')
       ->orderBy('date_resign')
@@ -89,6 +98,10 @@ class EmployeeController extends Controller
    */
   public function store(Request $request)
   {
+    // Membuat akun + memberi role = superuser saja. Tanpa gerbang ini user
+    // login mana pun bisa membuat akun ber-role apa pun (termasuk superuser).
+    abort_unless(auth()->user()->hasRole('superuser'), 403, 'Generate user khusus superuser.');
+
     $branchCode = Branch::find($request->branch_id)->code;
     $_suffix = "_" . strtolower($branchCode);
     $request->merge(['username' => $request->username . $_suffix]);
