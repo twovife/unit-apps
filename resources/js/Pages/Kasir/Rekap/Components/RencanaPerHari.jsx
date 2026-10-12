@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import dayjs from 'dayjs';
 import { Sisi, KIRI } from '@/Pages/Kasir/RencanaDrop/RencanaBersanding';
-import { WARNA } from './TableRekapKasir';
+import { WARNA_KEPALA } from './TableRekapKasir';
 
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
@@ -35,7 +35,7 @@ const RencanaPerHari = ({ rows = [], klik = {}, onAcc }) => {
           // Tanggal sesudah hari ini belum punya isi -> kosongan.
           kosongBaris={(r) => r.tanggal > hariIni}
           klik={klik}
-          warna={hari === 'senin' ? WARNA.merah.kepala : WARNA.biru.kepala}
+          warna={hari === 'senin' ? WARNA_KEPALA.merah : WARNA_KEPALA.biru}
           kolomKm
           onAcc={onAcc}
           kepalaPertama="Tanggal"

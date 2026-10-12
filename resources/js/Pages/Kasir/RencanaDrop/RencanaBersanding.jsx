@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { ArrowDown, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
 import { ribu } from '@/Pages/Kasir/Rekap/Components/TabelHarian';
 // Palet sama dengan Rekap 1 & 2 (tanpa blok warna per kolom).
-import { WARNA } from '@/Pages/Kasir/Rekap/Components/TableRekapKasir';
+import { WARNA, WARNA_KEPALA } from '@/Pages/Kasir/Rekap/Components/TableRekapKasir';
 import { useModeRibuan } from '@/lib/modeAngka';
 
 // Kolom SAMA di kedua sisi (kiri = hari D, kanan = pasangannya; kunci
@@ -68,7 +68,7 @@ export const Sisi = ({
     </div>
     <div className="overflow-x-auto">
       <table className="w-full text-xs tabular-nums">
-        <thead className={WARNA.biru.kepala}>
+        <thead className={WARNA_KEPALA.biru}>
           <tr className="h-8">
             <th className="px-3 py-1.5 font-medium text-left">{kepalaPertama}</th>
             {kolom.map(([k, label]) => (
@@ -230,7 +230,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KIRI}
                 kosong={kosong}
                 klik={klik}
-                warna={dayjs(item.tanggal).day() === 1 ? WARNA.merah.kepala : WARNA.biru.kepala}
+                warna={dayjs(item.tanggal).day() === 1 ? WARNA_KEPALA.merah : WARNA_KEPALA.biru}
                 kolomKm
                 onAcc={onAcc}
               />
@@ -241,7 +241,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KANAN}
                 kosong={kosong}
                 klik={klik}
-                warna={WARNA.hijau.kepala}
+                warna={WARNA_KEPALA.hijau}
                 // Target minggu depan dibanding target hari ini.
                 banding={{ p_target: 'target' }}
               />

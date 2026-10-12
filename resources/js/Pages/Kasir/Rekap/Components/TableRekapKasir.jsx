@@ -41,6 +41,13 @@ const KOLOM = GRUP.flatMap((g) => g.kolom);
 // blok warna terlalu mencolok).
 const NETRAL = 'bg-white group-even:bg-slate-50 group-hover:bg-sky-50';
 const KEPALA = 'bg-slate-100 text-slate-700';
+// Warna kepala asli untuk layar yang tetap berwarna (Rencana Drop).
+export const WARNA_KEPALA = {
+  kuning: 'bg-amber-200 text-amber-900',
+  hijau: 'bg-emerald-200 text-emerald-900',
+  merah: 'bg-rose-200 text-rose-900',
+  biru: 'bg-sky-200 text-sky-900',
+};
 export const WARNA = {
   kuning: { sel: NETRAL, kepala: KEPALA, total: 'bg-amber-200' },
   hijau: { sel: NETRAL, kepala: KEPALA, total: 'bg-emerald-200' },
