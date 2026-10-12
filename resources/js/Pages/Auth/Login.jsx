@@ -31,11 +31,11 @@ export default function Login({ status }) {
   };
 
   return (
-    // HP: satu layar hitam - logo & nama di atas, kartu kaca di bawahnya.
+    // HP: satu layar merah gelap - logo & nama di atas, kartu kaca di bawahnya.
     // min-h-dvh (bukan 100vh): di HP 100vh lebih tinggi dari layar yang
     // terlihat (bilah alamat), itu yang membuat halaman bisa digulir.
     // Desktop (lg): dibelah dua - panel merek kiri, formulir kanan di latar abu.
-    <div className="relative flex flex-col overflow-hidden min-h-dvh bg-black lg:flex-row">
+    <div className="relative flex flex-col overflow-hidden min-h-dvh bg-gradient-to-b from-red-800 via-red-950 to-black lg:bg-none lg:bg-black lg:flex-row">
       <Head title="Masuk" />
       <Loading show={processing} />
 
