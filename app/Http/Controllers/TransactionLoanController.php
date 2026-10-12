@@ -1544,7 +1544,7 @@ class TransactionLoanController extends Controller
     if ($transactionLoanInstalment->settled_by_loan_id) {
       return redirect()->back()->withErrors('Angsuran pelunasan hanya bisa dibatalkan lewat reset / hapus drop penggantinya.');
     }
-    if (!auth()->user()->hasPermissionTo('can-create')) {
+    if (!auth()->user()->hasPermissionTo('can-create') && !auth()->user()->hasPermissionTo('can-edit')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
     if (!AppHelper::bolehAksesPinjaman($transactionLoanInstalment->loan)) {

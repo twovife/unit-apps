@@ -20,7 +20,8 @@ const rupiah = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
  */
 export default function DeleteAngsuran({ id, tanggal, nominal }) {
   const { auth } = usePage().props;
-  const boleh = auth.permissions.includes('can-create');
+  // can-edit (koreksi) boleh menghapus walau tanpa can-create.
+  const boleh = auth.permissions.includes('can-create') || auth.permissions.includes('can-edit');
   const [buka, setBuka] = useState(false);
   const [proses, setProses] = useState(false);
 

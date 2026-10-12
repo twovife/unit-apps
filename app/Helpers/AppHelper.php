@@ -438,6 +438,12 @@ class AppHelper
     $date = Carbon::parse($date);
     $now = Carbon::now();
 
+    // can-edit / superuser (koreksi): tanpa batas tanggal & peran - hari
+    // terkunci dibuka otomatis, data beku tetap ditolak trigger.
+    if (\App\Helpers\Gembok::bolehBuka(auth()->user())) {
+      return ["status" => true];
+    }
+
     if (auth()->user()->hasRole('mantri')) {
       if ($date->lt($now->subDays(2))) {
         return ["status" => false, 'message' => 'Tanggal Sudah Lewat 2 Hari, Hubungi Pimpinan Untuk Merubah'];
