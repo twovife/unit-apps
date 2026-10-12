@@ -301,42 +301,6 @@ export default function AppSidebar({ ...props }) {
                   active: route().current('migrasi.nasabah_macet'),
                   fix: true,
                 },
-                {
-                  id: 2,
-                  title: 'Kesiapan Closing',
-                  link: route('migrasi.kesiapan_closing'),
-                  active: route().current('migrasi.kesiapan_closing'),
-                },
-                {
-                  id: 31,
-                  title: 'Penyesuaian Saldo',
-                  link: route('migrasi.penyesuaian_saldo'),
-                  active: route().current('migrasi.penyesuaian_saldo'),
-                },
-                {
-                  id: 41,
-                  title: 'Closing Bulanan',
-                  link: route('closing.bulanan.index'),
-                  active: route().current('closing.bulanan.index'),
-                },
-                {
-                  id: 5,
-                  title: 'Pemantau Migrasi',
-                  link: route('migrasi.pemantau'),
-                  active: route().current('migrasi.pemantau'),
-                },
-                {
-                  id: 6,
-                  title: 'Pemeriksaan Agregat',
-                  link: route('migrasi.pemeriksaan'),
-                  active: route().current('migrasi.pemeriksaan'),
-                },
-                {
-                  id: 7,
-                  title: 'Target Bayangan',
-                  link: route('migrasi.target_bayangan'),
-                  active: route().current('migrasi.target_bayangan'),
-                },
               ]}
             />
             )}

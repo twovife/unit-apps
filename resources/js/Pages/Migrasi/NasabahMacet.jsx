@@ -21,21 +21,20 @@ const Kartu = ({ judul, utama, nada = 'text-slate-900', children }) => (
   </div>
 );
 
-/** Isian penyesuaian satu pinjaman: sisa saldo seharusnya + jenis + catatan. */
-const FormSesuai = ({ loan, jenis, wajib, onKetik }) => {
+/** Isian penyesuaian satu pinjaman: sisa saldo seharusnya + catatan (arah otomatis dari angkanya). */
+const FormSesuai = ({ loan, onKetik }) => {
   const [sisa, setSisaAsli] = useState('');
   const setSisa = (v) => {
     setSisaAsli(v);
     onKetik(v);
   };
-  const [pilihan, setPilihan] = useState(jenis[0]);
   const [catatan, setCatatan] = useState('');
   const [proses, setProses] = useState(false);
 
   const simpan = () =>
     router.post(
       route('migrasi.penyesuaian_saldo_simpan'),
-      { loan_id: loan.id, jenis: pilihan, sisa_saldo: sisa, catatan },
+      { loan_id: loan.id, sisa_saldo: sisa, catatan },
       {
         preserveScroll: true,
         onStart: () => setProses(true),
@@ -59,14 +58,6 @@ const FormSesuai = ({ loan, jenis, wajib, onKetik }) => {
         value={sisa}
         onValueChange={(v) => setSisa(v ?? '')}
       />
-      <select className={PILIH} value={pilihan} onChange={(e) => setPilihan(e.target.value)}>
-        {jenis.map((j) => (
-          <option key={j} value={j}>
-            {j.replace('_', ' ')}
-            {wajib.includes(j) ? ' *' : ''}
-          </option>
-        ))}
-      </select>
       <input
         className="w-36 h-8 px-2 text-sm border rounded-md border-input"
         placeholder="catatan"
@@ -80,7 +71,7 @@ const FormSesuai = ({ loan, jenis, wajib, onKetik }) => {
   );
 };
 
-const NasabahMacet = ({ datas = [], ringkasan, jenis = [], wajib_persetujuan = [], server_filter }) => {
+const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
   const f = server_filter ?? {};
   const ganti = (kunci, nilai) =>
     router.get(route('migrasi.nasabah_macet'), { kelompok: f.kelompok, hari: f.hari, [kunci]: nilai });
@@ -108,12 +99,8 @@ const NasabahMacet = ({ datas = [], ringkasan, jenis = [], wajib_persetujuan = [
             <p className="max-w-3xl mt-1 text-sm text-slate-600">
               Pinjaman ember ML ({dayjs(f.periode).format('MMMM YYYY')}) yang belum lunas. Ketik <b>sisa saldo
               seharusnya</b> (sekarang) untuk menyesuaikan; selisihnya masuk tabel penyesuaian dan berlaku{' '}
-              {dayjs(f.periode).format('MMMM YYYY')}, jadi ikut saldo awal di Kesiapan Migrasi. Jenis bertanda *
-              butuh persetujuan orang kedua di{' '}
-              <Link href={route('migrasi.penyesuaian_saldo')} className="underline">
-                Penyesuaian Saldo
-              </Link>
-              .
+              {dayjs(f.periode).format('MMMM YYYY')}, jadi ikut saldo awal di Kesiapan Migrasi. Lebih besar dari
+              saldo sekarang = saldo ditambah, lebih kecil = dikurangi; langsung berlaku.
             </p>
           </div>
           <div className="flex items-end gap-2">
@@ -200,14 +187,11 @@ const NasabahMacet = ({ datas = [], ringkasan, jenis = [], wajib_persetujuan = [
                           {a.efek > 0 ? '+' : ''}
                           {rp(a.efek)}
                         </span>
-                        {a.menunggu && <span className="ml-1 text-amber-700">(menunggu persetujuan)</span>}
                       </div>
                     ))}
                     {d.boleh ? (
                       <FormSesuai
                         loan={d}
-                        jenis={jenis}
-                        wajib={wajib_persetujuan}
                         onKetik={(v) => setKetik((k) => ({ ...k, [d.id]: v }))}
                       />
                     ) : (

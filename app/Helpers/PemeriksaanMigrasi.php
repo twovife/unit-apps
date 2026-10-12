@@ -2,7 +2,6 @@
 
 namespace App\Helpers;
 
-use App\Models\TransactionSaldoAdjustment;
 use App\Models\WorkDay;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +45,7 @@ class PemeriksaanMigrasi
 
         $hasil = [];
         // $buku: halaman tempat membetulkan baris - 'storting' (buku angsuran),
-        // 'transaksi' (buku drop), 'penyesuaian', atau null; string atau fn($r).
+        // 'transaksi' (buku drop), atau null; string atau fn($r).
         $tambah = function (string $kode, string $judul, bool $menahan, $baris, ?callable $ket = null, $buku = null) use (&$hasil) {
             $baris = collect($baris)->values();
             $hasil[] = [
@@ -182,15 +181,6 @@ class PemeriksaanMigrasi
                 ->get(['l.id', 'c.nama', 'g.kelompok', 'l.hari', DB::raw('MAX(w.transaction_date) as tanggal'),
                     DB::raw('SUM(w.nominal) as nominal'), DB::raw('COUNT(*) as n')]),
             fn($r) => $r->n . ' pemutihan', 'storting');
-
-        // 10. Penyesuaian yang menunggu persetujuan: belum dihitung di saldo.
-        $tambah('penyesuaian_menunggu', 'Penyesuaian saldo menunggu persetujuan', false,
-            $pinjaman()->join('transaction_saldo_adjustments as a', 'a.transaction_loan_id', '=', 'l.id')
-                ->whereIn('a.transaction_loan_officer_grouping_id', $ids)
-                ->whereIn('a.jenis', TransactionSaldoAdjustment::WAJIB_PERSETUJUAN)
-                ->whereNull('a.approved_at')
-                ->get(['l.id', 'c.nama', 'g.kelompok', 'l.hari', 'a.berlaku_bulan as tanggal', 'a.nominal', 'a.jenis']),
-            fn($r) => $r->jenis, 'penyesuaian');
 
         // 13. Angsuran bernominal nol.
         $tambah('angsuran_nol', 'Angsuran bernominal 0', false,

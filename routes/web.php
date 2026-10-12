@@ -104,10 +104,6 @@ Route::middleware('auth')->group(function () {
   // alias itu tidak terdaftar di app/Http/Kernel.php, dan merantai middleware
   // setelah ->group() juga tidak menempel (lihat 05_temuan_dan_jebakan.md A1).
   Route::prefix('migrasi')->name('migrasi.')->group(function () {
-    Route::get('/kesiapan-closing', [\App\Http\Controllers\MigrasiController::class, 'kesiapanClosing'])
-      ->name('kesiapan_closing');
-    Route::get('/pemantau', [\App\Http\Controllers\MigrasiController::class, 'pemantauMigrasi'])
-      ->name('pemantau');
     // Kesiapan migrasi per kantor (superuser, baca-saja): bucket sistem vs sirkulasi lama + Z.
     Route::get('/kesiapan', [\App\Http\Controllers\MigrasiController::class, 'kesiapanMigrasi'])
       ->name('kesiapan');
@@ -128,21 +124,8 @@ Route::middleware('auth')->group(function () {
     // Isi modal Migrasikan: anomali, usulan tanggal kunci, pratinjau (JSON).
     Route::get('/kesiapan/periksa', [\App\Http\Controllers\MigrasiController::class, 'periksaMigrasi'])
       ->name('periksa_migrasi');
-    Route::get('/pemeriksaan', [\App\Http\Controllers\MigrasiController::class, 'pemeriksaanAgregat'])
-      ->name('pemeriksaan');
-    Route::get('/target-bayangan', [\App\Http\Controllers\MigrasiController::class, 'targetBayangan'])
-      ->name('target_bayangan');
-    // Recount SEED satu buku (superuser): setel target ke portofolio, rantai lanjut.
-    Route::post('/target-bayangan/recount', [\App\Http\Controllers\MigrasiController::class, 'recountTarget'])
-      ->name('recount_target');
-    Route::get('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'penyesuaianSaldo'])
-      ->name('penyesuaian_saldo');
-    Route::post('/penyesuaian-saldo/cari', [\App\Http\Controllers\MigrasiController::class, 'cariPenyesuaian'])
-      ->name('penyesuaian_saldo_cari');
     Route::post('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'simpanPenyesuaian'])
       ->name('penyesuaian_saldo_simpan');
-    Route::post('/penyesuaian-saldo/{adjustment}/setujui', [\App\Http\Controllers\MigrasiController::class, 'setujuiPenyesuaian'])
-      ->name('penyesuaian_saldo_setujui');
     // Koreksi Pasca Migrasi (superuser): koreksi angsuran sebelum tanggal migrasi + log.
     Route::get('/koreksi-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'index'])
       ->name('koreksi_beku');
@@ -163,11 +146,10 @@ Route::middleware('auth')->group(function () {
       // Kasir -> Rekap (Cek Tunai Mantri), buka kunci dari drawer ACC KM.
       Route::post('/harian/{closing}/buka', 'buka')->name('buka');
     });
-  // Layar tutup buku BULANAN alur baru. Otorisasi dicek di controller.
+  // Tutup buku BULANAN alur baru (dari buku storting). Otorisasi di controller.
   Route::controller(\App\Http\Controllers\ClosingBulananController::class)
     ->prefix('closing/bulanan')->name('closing.bulanan.')->group(function () {
-      Route::get('/', 'index')->name('index');
-      // Tutup Buku Storting (satu langkah); ACC / Kunci / Buka bulanan dicabut.
+      // Tutup Buku Storting (satu langkah); layar Closing Bulanan dicabut.
       Route::post('/{closing}/tutup-buku', 'tutupBuku')->name('tutup_buku');
     });
 

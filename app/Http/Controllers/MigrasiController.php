@@ -8,9 +8,7 @@ use App\Helpers\DaftarMigrasi;
 use App\Helpers\PemeriksaanMigrasi;
 use App\Helpers\Ember;
 use App\Helpers\HitungAgregat;
-use App\Helpers\PemeriksaAgregat;
 use App\Helpers\PenyesuaianSaldo;
-use App\Helpers\TargetBayangan;
 use App\Models\Branch;
 use App\Models\TransactionCustomer;
 use App\Models\TransactionLoan;
@@ -25,7 +23,7 @@ use Inertia\Inertia;
  * Perkakas persiapan migrasi ke alur agregasi baru.
  *
  * Sebagian besar laporan baca-saja; yang menulis hanya penyesuaian saldo,
- * pinjaman macet lama, recount target, dan tombol Migrasikan.
+ * pinjaman macet lama, dan tombol Migrasikan.
  *
  * Lihat .agents/agregasi_rekap.md §13.2.
  */
@@ -44,226 +42,15 @@ class MigrasiController extends Controller
     public const NIK_MACET_LAMA = 'ML00000000000001';
 
     /**
-     * Pemeriksaan agregat: buktikan angka tersimpan masih sama dengan sumbernya.
-     *
-     * Memakai App\Helpers\PemeriksaAgregat — helper yang sama dengan perintah
-     * CLI `closing:verifikasi`, supaya layar dan perintah mustahil menyimpang.
-     *
-     * BACA-SAJA, dan sengaja tidak menyediakan tombol "perbaiki": memperbaiki
-     * diam-diam menghapus buktinya. Kalau angka terkunci meleset, yang perlu
-     * dilakukan adalah membuka kunci lewat jalur resmi (beralasan, tercatat),
-     * bukan menimpanya tanpa jejak.
+     * Simpan satu penyesuaian dari sisa saldo yang diketik. Arahnya dari
+     * angka itu sendiri (lihat PenyesuaianSaldo::buat), tanpa persetujuan.
      */
-    /**
-     * Laporan bayangan target: rantai (tersimpan) vs hitung (dari sumber).
-     * Read-only, view-all-groups.
-     */
-    public function targetBayangan(Request $request)
-    {
-        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
-            abort(403, 'Laporan target untuk kepala mantri, kasir, dan pimpinan.');
-        }
-
-        $scope = AuthScope::resolve();
-        $periode = $request->filled('periode')
-            ? Carbon::parse($request->periode)->startOfMonth()
-            : Carbon::now()->startOfMonth();
-
-        $ids = DB::table('transaction_loan_officer_groupings')
-            ->where('branch_id', $scope->branch_id)->pluck('id')->all();
-
-        // Kantor migrasi: rantai dibaca dari daily_closings (alur baru), bukan
-        // daily_recaps yang beku sejak migrasi.
-        $migrasi = \App\Helpers\AgregasiScope::pakaiAgregatBaru($scope->branch_id, $periode);
-        $baris = TargetBayangan::laporan($ids, $periode, $migrasi);
-
-        $totalRantai = array_sum(array_column($baris, 'rantai'));
-        $totalHitung = array_sum(array_column($baris, 'hitung'));
-
-        return Inertia::render('Migrasi/TargetBayangan', [
-            'baris' => $baris,
-            'ringkas' => [
-                'rantai' => $totalRantai,
-                'hitung' => $totalHitung,
-                'selisih' => $totalRantai - $totalHitung,
-                'meleset' => count(array_filter($baris, fn($b) => $b['selisih'] !== 0)),
-            ],
-            'server_filter' => [
-                'periode' => $periode->format('Y-m'),
-                'sebelumnya' => $periode->copy()->subMonthNoOverflow()->format('Y-m'),
-                'berikutnya' => $periode->copy()->addMonthNoOverflow()->format('Y-m'),
-                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
-            ],
-        ]);
-    }
-
-    /**
-     * Recount (stok-opname) SEED satu buku: setel target hari tagih berikutnya
-     * yang belum terkunci = target_hitung portofolio, target_source='recount'.
-     * Rantai lanjut dari basis yang sudah benar. Superuser + kantor migrasi saja.
-     */
-    public function recountTarget(Request $request)
-    {
-        if (!auth()->user()->hasRole('superuser')) {
-            abort(403, 'Hanya superuser yang boleh recount target.');
-        }
-
-        $request->validate([
-            'kelompok' => ['required'],
-            'hari' => ['required', 'string'],
-            'periode' => ['nullable'],
-        ]);
-
-        $branchId = (int) AuthScope::getActiveBranchId();
-        if (!AgregasiScope::sudahMigrasi($branchId)) {
-            return redirect()->back()->withErrors('Kantor ini belum migrasi ke alur baru.');
-        }
-
-        $grouping = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)
-            ->where('kelompok', $request->kelompok)->first();
-        if (!$grouping) {
-            return redirect()->back()->withErrors('Kelompok tidak ditemukan di cabang aktif.');
-        }
-
-        $periode = $request->filled('periode')
-            ? Carbon::parse($request->periode)->startOfMonth()
-            : Carbon::now()->startOfMonth();
-
-        // target_hitung dari portofolio - reuse laporan (bukan logika kembar).
-        $rows = TargetBayangan::laporan([$grouping->id], $periode, true);
-        $hitung = collect($rows)->firstWhere('hari', strtolower($request->hari))['hitung'] ?? null;
-        if ($hitung === null) {
-            return redirect()->back()->withErrors('Tidak ada data hitung untuk buku ini.');
-        }
-
-        // Seed = hari tagih berikutnya (>= hari ini) yang belum terkunci kasir.
-        $weekday = \App\Helpers\AppHelper::getNumbDays($request->hari); // Carbon dayOfWeek
-        $today = Carbon::today();
-
-        $seed = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $grouping->id)
-            ->whereNull('kasir_lock_at')
-            ->whereDate('date', '>=', $today->toDateString())
-            ->whereRaw('DAYOFWEEK(date) = ?', [$weekday + 1])
-            ->orderBy('date')->first();
-
-        if (!$seed) {
-            $tgl = $today->copy();
-            while ($tgl->dayOfWeek !== $weekday) {
-                $tgl->addDay();
-            }
-            $seed = \App\Models\TransactionDailyClosing::firstOrCreate([
-                'transaction_loan_officer_grouping_id' => $grouping->id,
-                'date' => $tgl->toDateString(),
-            ]);
-        }
-
-        $seed->update([
-            'target' => (int) $hitung,
-            'target_on' => $today->toDateString(),
-            'target_source' => 'recount',
-        ]);
-
-        return redirect()->back()->with('message', sprintf(
-            'Recount: target %s (kelompok %s, %s) disetel ke %s dari portofolio.',
-            Carbon::parse($seed->date)->format('d M Y'),
-            $request->kelompok,
-            $request->hari,
-            number_format((int) $hitung, 0, ',', '.')
-        ));
-    }
-
-    /**
-     * Layar penyesuaian saldo nasabah lama.
-     *
-     * Melihat: view-all-groups. Membuat/menyetujui: + can-edit (bolehUbah...).
-     */
-    public function penyesuaianSaldo(Request $request)
-    {
-        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
-            abort(403, 'Penyesuaian saldo untuk kepala mantri, kasir, dan pimpinan.');
-        }
-
-        $scope = AuthScope::resolve();
-        $ids = DB::table('transaction_loan_officer_groupings')
-            ->where('branch_id', $scope->branch_id)->pluck('id');
-
-        $periode = Carbon::now()->startOfMonth();
-
-        // Antrean butuh persetujuan (jenis wajib-persetujuan, belum disetujui).
-        $antrean = TransactionSaldoAdjustment::with('loan.customer', 'penginput', 'loan_officer_grouping')
-            ->whereIn('transaction_loan_officer_grouping_id', $ids)
-            ->whereIn('jenis', TransactionSaldoAdjustment::WAJIB_PERSETUJUAN)
-            ->whereNull('approved_at')
-            ->orderByDesc('id')
-            ->limit(100)
-            ->get()
-            ->map(fn($a) => [
-                'id' => $a->id,
-                'jenis' => $a->jenis,
-                'nominal' => (int) $a->nominal,
-                'kelompok' => $a->loan_officer_grouping->kelompok ?? null,
-                'catatan' => $a->catatan,
-                'penginput' => $a->penginput->nama_karyawan ?? null,
-                'user_input' => $a->user_input,
-            ]);
-
-        // Laporan total penyesuaian per mantri bulan ini — pagar wajib (§7):
-        // penyesuaian yang menumpuk di satu mantri harus terlihat.
-        $perMantri = TransactionSaldoAdjustment::whereIn('transaction_loan_officer_grouping_id', $ids)
-            ->whereYear('berlaku_bulan', $periode->year)
-            ->whereMonth('berlaku_bulan', $periode->month)
-            ->join('employees', 'employees.id', '=', 'transaction_saldo_adjustments.user_input')
-            ->selectRaw('employees.nama_karyawan AS mantri, COUNT(*) AS jml, SUM(nominal) AS total')
-            ->groupBy('employees.nama_karyawan')
-            ->orderByDesc('total')
-            ->get();
-
-        return Inertia::render('Migrasi/PenyesuaianSaldo', [
-            'antrean' => $antrean,
-            'per_mantri' => $perMantri,
-            'server_filter' => [
-                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
-                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
-                'batas' => AgregasiScope::batasPenyesuaian($scope->branch_id)?->toDateString(),
-                'boleh_ubah' => $this->bolehUbahSaldo(),
-                'periode' => $periode->format('Y-m'),
-            ],
-            'jenis_opsi' => [
-                ['nilai' => TransactionSaldoAdjustment::JENIS_SALDO_AWAL, 'label' => 'Saldo awal (nasabah lama, mengurangi)', 'butuh_persetujuan' => false],
-                ['nilai' => TransactionSaldoAdjustment::JENIS_DUPLIKAT, 'label' => 'Duplikat (mengurangi)', 'butuh_persetujuan' => true],
-                ['nilai' => TransactionSaldoAdjustment::JENIS_LEBIH_INPUT, 'label' => 'Lebih input (mengurangi)', 'butuh_persetujuan' => true],
-                ['nilai' => TransactionSaldoAdjustment::JENIS_KURANG_INPUT, 'label' => 'Kurang input (menambah)', 'butuh_persetujuan' => true],
-            ],
-        ]);
-    }
-
-    /** Cari pinjaman ML yang memenuhi syarat berdasarkan NIK (axios). */
-    public function cariPenyesuaian(Request $request)
-    {
-        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
-            abort(403);
-        }
-
-        $val = $request->validate(['nik' => ['required', 'digits:16']], [
-            'nik.required' => 'NIK wajib diisi.',
-            'nik.digits' => 'NIK harus 16 digit.',
-        ]);
-
-        $scope = AuthScope::resolve();
-
-        return response()->json([
-            'loans' => PenyesuaianSaldo::cariEligible($scope->branch_id, $val['nik']),
-        ]);
-    }
-
-    /** Simpan satu penyesuaian dari sisa saldo yang diketik. */
     public function simpanPenyesuaian(Request $request)
     {
         $this->pastikanBolehUbahSaldo();
 
         $val = $request->validate([
             'loan_id' => ['required', 'integer'],
-            'jenis' => ['required', 'string'],
             'sisa_saldo' => ['required', 'integer', 'min:0'],
             'catatan' => ['nullable', 'string', 'max:500'],
         ]);
@@ -282,33 +69,12 @@ class MigrasiController extends Controller
         }
 
         try {
-            PenyesuaianSaldo::buat($loan, $val['jenis'], (int) $val['sisa_saldo'], $val['catatan'] ?? null, auth()->user());
+            PenyesuaianSaldo::buat($loan, null, (int) $val['sisa_saldo'], $val['catatan'] ?? null, auth()->user());
         } catch (\Throwable $e) {
             return back()->withErrors($e->getMessage());
         }
 
         return back()->with('message', 'Penyesuaian tersimpan.');
-    }
-
-    /** Setujui penyesuaian (orang kedua). */
-    public function setujuiPenyesuaian(TransactionSaldoAdjustment $adjustment)
-    {
-        $this->pastikanBolehUbahSaldo();
-
-        $scope = AuthScope::resolve();
-        $branchLoan = DB::table('transaction_loan_officer_groupings')
-            ->where('id', $adjustment->transaction_loan_officer_grouping_id)->value('branch_id');
-        if ((int) $branchLoan !== (int) $scope->branch_id) {
-            abort(403, 'Penyesuaian ini milik kantor lain.');
-        }
-
-        try {
-            PenyesuaianSaldo::setujui($adjustment, auth()->user());
-        } catch (\Throwable $e) {
-            return back()->withErrors($e->getMessage());
-        }
-
-        return back()->with('message', 'Penyesuaian disetujui.');
     }
 
     /**
@@ -368,8 +134,8 @@ class MigrasiController extends Controller
      * Nasabah macet (ember ML pada bulan acuan) yang belum lunas, satu
      * kelompok x hari - tempat menyesuaikan saldo sebelum / sesudah migrasi
      * supaya saldo awal benar. Superuser. Penyimpanan lewat route
-     * penyesuaian_saldo_simpan (PenyesuaianSaldo::buat, aturan yang sama
-     * dengan layar per NIK).
+     * penyesuaian_saldo_simpan (PenyesuaianSaldo::buat; arahnya otomatis
+     * dari angka yang diketik).
      *
      * ponytail: kelompok & hari diambil dari kolom asli pinjaman, bukan
      * kelompok efektif mutasi; samakan dengan Mutasi::ekspresiEfektifSql kalau
@@ -425,7 +191,6 @@ class MigrasiController extends Controller
                 'penyesuaian' => ($penyesuaian[$l->id] ?? collect())->map(fn($a) => [
                     'jenis' => $a->jenis,
                     'efek' => $a->efek_saldo,
-                    'menunggu' => $a->butuhPersetujuan() && $a->approved_at === null,
                 ])->values(),
             ])
             ->values();
@@ -433,8 +198,6 @@ class MigrasiController extends Controller
         return Inertia::render('Migrasi/NasabahMacet', [
             'datas' => $datas,
             'ringkasan' => $this->barisKesiapan($scope->branch_id, $periode, $kelompok)->firstWhere('hari', $hari),
-            'jenis' => array_keys(TransactionSaldoAdjustment::ARAH),
-            'wajib_persetujuan' => TransactionSaldoAdjustment::WAJIB_PERSETUJUAN,
             'server_filter' => [
                 'kelompok' => (string) $kelompok,
                 'hari' => $hari,
@@ -770,227 +533,6 @@ class MigrasiController extends Controller
         if (!$this->bolehUbahSaldo()) {
             abort(403, 'Penyesuaian saldo butuh wewenang kepala mantri/kasir/pimpinan DAN izin can-edit dari superuser.');
         }
-    }
-
-    public function pemeriksaanAgregat(Request $request)
-    {
-        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
-            abort(403, 'Pemeriksaan agregat untuk kepala mantri, kasir, dan pimpinan.');
-        }
-
-        $scope = AuthScope::resolve();
-
-        $periode = $request->filled('periode')
-            ? Carbon::parse($request->periode)->startOfMonth()
-            : Carbon::now()->startOfMonth();
-
-        $hasil = PemeriksaAgregat::periksa($scope->branch_id, $periode);
-
-        return Inertia::render('Migrasi/PemeriksaanAgregat', [
-            'hasil' => $hasil,
-            'server_filter' => [
-                'periode' => $periode->format('Y-m-d'),
-                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
-                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
-                'mulai' => AgregasiScope::tanggalMulai($scope->branch_id)?->format('Y-m-d'),
-            ],
-        ]);
-    }
-
-    /**
-     * Pemantau migrasi nasional: berapa kantor sudah menyeberang, dan yang
-     * belum itu tersendat di mana.
-     *
-     * Kantor menyeberang dengan MENUTUP BUKU bulan sebelumnya, jadi yang perlu
-     * dilihat bukan cuma "sudah atau belum", melainkan APA YANG KURANG:
-     * kantor yang sudah menutup buku tapi belum menyeberang berarti ada yang
-     * salah; kantor yang belum menutup buku tinggal dikejar tutup bukunya.
-     */
-    public function pemantauMigrasi(Request $request)
-    {
-        if (!auth()->user()->hasPermissionTo('view-all-branches')) {
-            abort(403, 'Pemantau migrasi untuk staf pusat dan superuser.');
-        }
-
-        $bulan = DaftarMigrasi::bulanMigrasi();
-
-        $branches = Branch::orderBy('wilayah')->orderBy('unit')
-            ->get(['id', 'unit', 'wilayah', 'type', 'mulai_pendataan_baru']);
-
-        $ids = $branches->pluck('id');
-
-        // Sudah menutup buku untuk bulan migrasi? Barisnya lahir hanya kalau
-        // ada yang benar-benar menutup buku, jadi ini penanda yang jujur.
-        $sudahTutupBuku = collect();
-        if ($bulan) {
-            $sudahTutupBuku = DB::table('transaction_sirculations as s')
-                ->join('transaction_loan_officer_groupings as og', 'og.id', '=', 's.transaction_loan_officer_grouping_id')
-                ->whereIn('og.branch_id', $ids)
-                ->whereDate('s.date', $bulan->toDateString())
-                ->groupBy('og.branch_id')
-                ->pluck(DB::raw('COUNT(*)'), 'og.branch_id');
-        }
-
-        $barisClosing = DB::table('transaction_daily_closings as d')
-            ->join('transaction_loan_officer_groupings as og', 'og.id', '=', 'd.transaction_loan_officer_grouping_id')
-            ->whereIn('og.branch_id', $ids)
-            ->groupBy('og.branch_id')
-            ->get([
-                'og.branch_id',
-                DB::raw('COUNT(*) AS baris'),
-                DB::raw('SUM(d.kasir_lock_at IS NOT NULL) AS terkunci'),
-            ])
-            ->keyBy('branch_id');
-
-        $datas = $branches->map(function ($b) use ($sudahTutupBuku, $barisClosing) {
-            $tutupBuku = (int) ($sudahTutupBuku[$b->id] ?? 0);
-            $closing = $barisClosing->get($b->id);
-            $menyeberang = $b->mulai_pendataan_baru !== null;
-
-            return [
-                'branch_id' => $b->id,
-                'unit' => $b->unit,
-                'wilayah' => $b->wilayah,
-                'menyeberang' => $menyeberang,
-                'mulai' => $b->mulai_pendataan_baru?->toDateString(),
-                'kelompok_tutup_buku' => $tutupBuku,
-                'baris_closing' => (int) ($closing->baris ?? 0),
-                'terkunci' => (int) ($closing->terkunci ?? 0),
-                'status' => $this->statusMigrasi($menyeberang, $tutupBuku),
-            ];
-        })->values();
-
-        return Inertia::render('Migrasi/Pemantau', [
-            'datas' => $datas,
-            'ringkasan' => [
-                'bulan_migrasi' => $bulan?->format('Y-m'),
-                'total' => $datas->count(),
-                'menyeberang' => $datas->where('menyeberang', true)->count(),
-                'siap' => $datas->where('status', 'siap')->count(),
-                'belum_tutup_buku' => $datas->where('status', 'belum_tutup_buku')->count(),
-            ],
-        ]);
-    }
-
-    /**
-     * Status sebuah kantor terhadap migrasi.
-     *
-     * `siap` itu keadaan yang perlu diperiksa: kantornya sudah menutup buku,
-     * jadi pendaftarannya semestinya sudah jalan. Kalau masih tersangkut di
-     * sini, ada yang gagal - bukan sekadar belum dikerjakan.
-     */
-    private function statusMigrasi(bool $menyeberang, int $tutupBuku): string
-    {
-        if ($menyeberang) {
-            return 'menyeberang';
-        }
-
-        return $tutupBuku > 0 ? 'siap' : 'belum_tutup_buku';
-    }
-
-    /**
-     * Kesiapan closing lama: telusuri hari demi hari dari tanggal 1, berhenti
-     * di hari pertama yang salah satu approval-nya belum ada.
-     *
-     * KENAPA BERHENTI, BUKAN MENGHITUNG TOTAL
-     * ---------------------------------------
-     * Rekap harian hanya bisa dipercaya sebagai rangkaian. Kalau tanggal 5
-     * belum diteken kasir, angka tanggal 6 ke atas tidak otomatis batal — tapi
-     * saldo berjalannya sudah tidak bisa ditelusuri lewat rantai yang utuh.
-     * Jadi yang berguna diketahui bukan "berapa hari yang lengkap", melainkan
-     * "sampai hari ke berapa rantainya masih utuh".
-     *
-     * Angka 22 dari 27 hari terisi bisa terdengar bagus, padahal kalau yang
-     * bolong justru hari pertama, rantainya putus sejak awal.
-     */
-    public function kesiapanClosing(Request $request)
-    {
-        if (!auth()->user()->hasPermissionTo('view-all-groups')) {
-            abort(403, 'Laporan ini untuk kepala mantri, kasir, dan pimpinan.');
-        }
-
-        $scope = AuthScope::resolve();
-
-        $periode = $request->filled('periode')
-            ? Carbon::parse($request->periode)->startOfMonth()
-            : Carbon::now()->startOfMonth();
-
-        $groupings = DB::table('transaction_loan_officer_groupings')
-            ->where('branch_id', $scope->branch_id)
-            ->orderBy('kelompok')
-            ->get(['id', 'kelompok']);
-
-        $rekap = DB::table('transaction_daily_recaps')
-            ->whereIn('transaction_loan_officer_grouping_id', $groupings->pluck('id'))
-            ->whereBetween('date', [
-                $periode->toDateString(),
-                $periode->copy()->endOfMonth()->toDateString(),
-            ])
-            ->orderBy('date')
-            ->get([
-                'transaction_loan_officer_grouping_id AS g',
-                'date',
-                'drop',
-                'storting',
-                'daily_kepala_approval AS kepala',
-                'daily_kasir_approval AS kasir',
-            ])
-            ->groupBy('g');
-
-        $datas = $groupings->map(function ($g) use ($rekap) {
-            $baris = $rekap->get($g->id, collect());
-            $putus = false;
-
-            $hari = $baris->map(function ($r) use (&$putus) {
-                $adaKepala = $r->kepala !== null;
-                $adaKasir = $r->kasir !== null;
-                $lengkap = $adaKepala && $adaKasir;
-
-                // Begitu satu hari tidak lengkap, seluruh hari sesudahnya
-                // ditandai "di luar rantai" - bukan karena angkanya salah,
-                // tapi karena tidak lagi bisa ditelusuri sebagai rangkaian.
-                $diLuarRantai = $putus;
-                if (!$lengkap) {
-                    $putus = true;
-                }
-
-                return [
-                    'tanggal' => Carbon::parse($r->date)->toDateString(),
-                    'drop' => (int) $r->drop,
-                    'storting' => (int) $r->storting,
-                    'kepala' => $adaKepala,
-                    'kasir' => $adaKasir,
-                    'lengkap' => $lengkap,
-                    'di_luar_rantai' => $diLuarRantai,
-                ];
-            })->values();
-
-            $utuhSampai = null;
-            foreach ($hari as $h) {
-                if (!$h['lengkap']) {
-                    break;
-                }
-                $utuhSampai = $h['tanggal'];
-            }
-
-            return [
-                'kelompok' => $g->kelompok,
-                'hari' => $hari,
-                'jumlah_hari' => $hari->count(),
-                'jumlah_lengkap' => $hari->where('lengkap', true)->count(),
-                'utuh_sampai' => $utuhSampai,
-                'putus_di' => $hari->firstWhere('lengkap', false)['tanggal'] ?? null,
-            ];
-        })->values();
-
-        return Inertia::render('Migrasi/KesiapanClosing', [
-            'datas' => $datas,
-            'server_filter' => [
-                'periode' => $periode->format('Y-m-d'),
-                'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
-                'branch_id' => $scope->branch_id,
-            ],
-        ]);
     }
 
 }

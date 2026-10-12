@@ -50,18 +50,12 @@ class TransactionSaldoAdjustment extends Model
     ];
 
     /**
-     * Jenis yang WAJIB disetujui orang kedua.
-     *
-     * `saldo_awal` sengaja tidak masuk: pembatasnya kuota ML (§13.3), bukan
-     * orang. Mewajibkan dua orang untuk ribuan baris input nasabah lama cuma
-     * mendorong staf mencari jalan pintas — dan jalan pintas yang tersedia
-     * adalah inputmacet lama yang justru membuat drop palsu.
+     * Jenis yang WAJIB disetujui orang kedua. Kosong sejak 2026-10-12 (mas):
+     * penyesuaian hanya dilakukan superuser dari Nasabah Macet, jadi semuanya
+     * langsung berlaku. Konstanta dipertahankan supaya kolom approved_at dan
+     * ekspresiBerlakuSql tetap bermakna kalau persetujuan dihidupkan lagi.
      */
-    public const WAJIB_PERSETUJUAN = [
-        self::JENIS_DUPLIKAT,
-        self::JENIS_KURANG_INPUT,
-        self::JENIS_LEBIH_INPUT,
-    ];
+    public const WAJIB_PERSETUJUAN = [];
 
     protected $fillable = [
         'transaction_loan_id',

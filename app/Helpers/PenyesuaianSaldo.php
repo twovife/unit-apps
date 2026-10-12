@@ -109,69 +109,16 @@ class PenyesuaianSaldo
     }
 
     /**
-     * Pinjaman milik satu NIK yang MEMENUHI SYARAT disesuaikan di satu kantor.
-     *
-     * Syaratnya sudah ML lama: drop_date <= batas (bulan migrasi − 6 bulan).
-     * Himpunan ini beku sejak migrasi dan hanya mengecil — alat migrasi
-     * berbatas waktu, bukan lubang permanen (§7).
-     *
-     * @return array<int,array>
-     */
-    public static function cariEligible(int $branchId, string $nik): array
-    {
-        $batas = AgregasiScope::batasPenyesuaian($branchId);
-
-        if (!$batas) {
-            return [];
-        }
-
-        $ids = DB::table('transaction_loan_officer_groupings')
-            ->where('branch_id', $branchId)->pluck('id');
-
-        $loans = TransactionLoan::with('loan_officer_grouping')
-            ->whereIn('transaction_loan_officer_grouping_id', $ids)
-            ->where('status', 'success')
-            ->where('drop_date', '<=', $batas->toDateString())
-            ->whereHas('customer', fn($q) => $q->where('nik', $nik))
-            ->orderByDesc('drop_date')
-            ->get();
-
-        return $loans->map(function (TransactionLoan $l) {
-            $s = self::hitungSaldo($l);
-            $penyesuaian = TransactionSaldoAdjustment::where('transaction_loan_id', $l->id)
-                ->orderByDesc('id')->get();
-
-            return [
-                'loan_id' => $l->id,
-                'grouping_id' => $l->transaction_loan_officer_grouping_id,
-                'kelompok' => $l->loan_officer_grouping->kelompok ?? null,
-                'hari' => $l->hari,
-                'drop_date' => Carbon::parse($l->drop_date)->toDateString(),
-                'nominal_drop' => (int) $l->nominal_drop,
-                'pinjaman' => $s['pinjaman'],
-                'angsuran' => $s['angsuran'],
-                'pemutihan' => $s['pemutihan'],
-                'saldo' => $s['saldo'],
-                'penyesuaian' => $penyesuaian->map(fn($a) => [
-                    'id' => $a->id,
-                    'jenis' => $a->jenis,
-                    'nominal' => (int) $a->nominal,
-                    'efek' => $a->efek_saldo,
-                    'disetujui' => $a->sudahDisetujui(),
-                    'butuh_persetujuan' => $a->butuhPersetujuan(),
-                ])->values(),
-            ];
-        })->all();
-    }
-
-    /**
      * Buat penyesuaian dari sisa saldo yang diketik staf.
+     *
+     * $jenis null = ikut arah angkanya: sisa lebih besar dari saldo sistem
+     * -> kurang_input (menambah), lebih kecil -> saldo_awal (mengurangi).
      *
      * @throws \RuntimeException
      */
-    public static function buat(TransactionLoan $loan, string $jenis, int $sisaSaldo, ?string $catatan, $user): TransactionSaldoAdjustment
+    public static function buat(TransactionLoan $loan, ?string $jenis, int $sisaSaldo, ?string $catatan, $user): TransactionSaldoAdjustment
     {
-        if (!array_key_exists($jenis, TransactionSaldoAdjustment::ARAH)) {
+        if ($jenis !== null && !array_key_exists($jenis, TransactionSaldoAdjustment::ARAH)) {
             throw new \RuntimeException('Jenis penyesuaian tidak dikenal.');
         }
 
@@ -198,6 +145,9 @@ class PenyesuaianSaldo
 
         $saldo = self::hitungSaldo($loan)['saldo'];
         $efekDiperlukan = $sisaSaldo - $saldo; // + menambah, − mengurangi
+        $jenis ??= $efekDiperlukan > 0
+            ? TransactionSaldoAdjustment::JENIS_KURANG_INPUT
+            : TransactionSaldoAdjustment::JENIS_SALDO_AWAL;
         $arah = TransactionSaldoAdjustment::ARAH[$jenis];
 
         if ($efekDiperlukan === 0) {
@@ -229,41 +179,4 @@ class PenyesuaianSaldo
         });
     }
 
-    /**
-     * Setujui penyesuaian yang butuh persetujuan.
-     *
-     * Pagar terpenting: penyetuju ≠ pengaju. Satu orang tidak boleh menyetujui
-     * penyesuaiannya sendiri — tanpa itu "wajib disetujui" cuma formalitas.
-     *
-     * @throws \RuntimeException
-     */
-    public static function setujui(TransactionSaldoAdjustment $adj, $user): TransactionSaldoAdjustment
-    {
-        if (!$adj->butuhPersetujuan()) {
-            throw new \RuntimeException('Jenis ini tidak butuh persetujuan.');
-        }
-
-        if ($adj->approved_at !== null) {
-            throw new \RuntimeException('Sudah disetujui.');
-        }
-
-        $branchId = DB::table('transaction_loan_officer_groupings')
-            ->where('id', $adj->transaction_loan_officer_grouping_id)
-            ->value('branch_id');
-
-        if (AgregasiScope::sudahMigrasi($branchId)) {
-            throw new \RuntimeException('Kantor ini sudah migrasi — penyesuaian tidak bisa disetujui lagi.');
-        }
-
-        if ((int) $adj->user_input === (int) $user->employee->id) {
-            throw new \RuntimeException('Penyetuju tidak boleh sama dengan pengaju.');
-        }
-
-        $adj->update([
-            'user_approve' => $user->employee->id,
-            'approved_at' => now(),
-        ]);
-
-        return $adj->fresh();
-    }
 }

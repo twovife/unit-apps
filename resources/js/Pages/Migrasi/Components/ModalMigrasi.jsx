@@ -15,7 +15,6 @@ const tautan = (r) => {
   return {
     storting: () => route('pinjaman.index_pinjaman', buku),
     transaksi: () => route('transaction.index_buku_transaksi', buku),
-    penyesuaian: () => route('migrasi.penyesuaian_saldo'),
   }[r.buku]?.();
 };
 
