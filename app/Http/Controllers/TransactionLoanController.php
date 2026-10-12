@@ -465,14 +465,10 @@ class TransactionLoanController extends Controller
     } catch (\Throwable $e) {
       return redirect()->back()->withErrors('Tanggal pengajuan / drop tidak terbaca.');
     }
-    // can-edit (koreksi): tanggal bebas - cukup drop tidak sebelum pengajuan.
-    // Libur tetap ditolak lewat validasi HariKerja di bawah.
-    $tanggalBebas = auth()->user()->hasPermissionTo('can-edit');
-    if ($tanggalBebas && $tglDrop->lt($tglPengajuan)) {
-      return redirect()->back()->withErrors('Tanggal drop tidak boleh sebelum tanggal pengajuan.');
-    }
+    // Berlaku juga untuk can-edit (mas 2026-10-12): pengajuan salah ketik ke
+    // tanggal jauh membuat rencana drop KM melenceng.
     $dropSeharusnya = WorkDay::hariSamaBerikutnya($tglPengajuan);
-    if (!$tanggalBebas && !$tglDrop->equalTo($tglPengajuan) && !($dropSeharusnya && $tglDrop->equalTo($dropSeharusnya))) {
+    if (!$tglDrop->equalTo($tglPengajuan) && !($dropSeharusnya && $tglDrop->equalTo($dropSeharusnya))) {
       return redirect()->back()->withErrors(sprintf(
         'Tanggal drop harus %s (hari tagih kerja berikutnya sesudah pengajuan), atau sama dengan tanggal pengajuan untuk drop langsung.',
         $dropSeharusnya ? $dropSeharusnya->locale('id')->isoFormat('D MMMM Y') : '-'
@@ -493,7 +489,7 @@ class TransactionLoanController extends Controller
       'alamat' => ['required_if:isActiveMember,false'],
       // Hari libur ditolak SELALU (keputusan mas
       // 2026-10-09: tidak ada transaksi sama sekali di hari libur).
-      'request_date' => array_merge(['required', 'date'], $tanggalBebas ? [] : ['before_or_equal:today'], [new HariKerja('Tanggal pengajuan')]),
+      'request_date' => ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal pengajuan')],
       'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
     ], [
       'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
@@ -594,6 +590,11 @@ class TransactionLoanController extends Controller
     // `bebas` (fastcreate) melewati cek tanggal ketat untuk sementara.
     $bebas = $request->boolean('bebas');
 
+    // Input Macet dimatikan untuk kantor yang sudah migrasi (mas 2026-10-12).
+    if ($request->boolean('macet') && \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId())) {
+      return redirect()->back()->withErrors('Input Macet tidak tersedia untuk kantor yang sudah migrasi.');
+    }
+
     if (!$bebas && AppHelper::dateName($request->tanggal_drop) === 'minggu') {
       return redirect()->back()->withErrors('Tidak bisa input transaksi untuk hari Minggu');
     }
@@ -615,9 +616,12 @@ class TransactionLoanController extends Controller
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
 
-      'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
+      // Fastcreate / input macet langsung jadi pinjaman success: drop tidak
+      // mungkin di masa depan (mas 2026-10-12).
+      'tanggal_drop' =>  ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal drop')],
     ], [
       'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
+      'tanggal_drop.before_or_equal' => 'Tanggal drop tidak boleh di masa depan.',
       '*.required' => "Wajib Diisi",
       '*.min' => 'minimal diisi 100rb'
 
@@ -800,18 +804,14 @@ class TransactionLoanController extends Controller
     }
     // Pengajuan nasabah lama: drop dikunci ke hari tagih kerja berikutnya
     // (minggu depan, lompati libur) - tidak ada drop di hari pengajuan.
-    // can-edit (koreksi): tanggal bebas, cukup hari sama & drop tidak sebelum pengajuan.
-    $tanggalBebas = auth()->user()->hasPermissionTo('can-edit');
+    // Berlaku juga untuk can-edit (mas 2026-10-12).
     try {
       $dropSeharusnya = WorkDay::hariSamaBerikutnya(Carbon::parse($request->request_date)->startOfDay());
       $tglDrop = Carbon::parse($request->tanggal_drop)->startOfDay();
     } catch (\Throwable $e) {
       return redirect()->back()->withErrors('Tanggal pengajuan / drop tidak terbaca.');
     }
-    if ($tanggalBebas && $tglDrop->lt(Carbon::parse($request->request_date)->startOfDay())) {
-      return redirect()->back()->withErrors('Tanggal drop tidak boleh sebelum tanggal pengajuan.');
-    }
-    if (!$tanggalBebas && (!$dropSeharusnya || !$tglDrop->equalTo($dropSeharusnya))) {
+    if (!$dropSeharusnya || !$tglDrop->equalTo($dropSeharusnya)) {
       return redirect()->back()->withErrors(sprintf(
         'Tanggal drop harus %s (hari tagih kerja berikutnya sesudah pengajuan).',
         $dropSeharusnya ? $dropSeharusnya->locale('id')->isoFormat('D MMMM Y') : '-'
@@ -820,13 +820,14 @@ class TransactionLoanController extends Controller
 
     $val = $request->validate([
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
-      'request_date' => ['required', 'date', new HariKerja('Tanggal pengajuan')],
+      'request_date' => ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal pengajuan')],
       'tanggal_drop' =>  ['required', 'date', new HariKerja('Tanggal drop')],
       'type' =>  ['required'],
       'nomor_anggota' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
       'residential_address' => ['nullable', 'string', 'max:255'],
     ], [
       'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
+      'request_date.before_or_equal' => 'Tanggal pengajuan tidak boleh di masa depan.',
       '*.min' => 'minimal diisi 100rb'
     ]);
 
@@ -1130,6 +1131,8 @@ class TransactionLoanController extends Controller
   {
 
     $data = $this->getLoanByDate($request);
+    // Input Macet dimatikan untuk kantor migrasi (mas 2026-10-12, menu baru menyusul).
+    $data['input_macet_mati'] = \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId());
     return Inertia::render("WebView/Angsuran/SearchByDate", $data);
   }
 
@@ -1137,6 +1140,8 @@ class TransactionLoanController extends Controller
   {
     $data = $this->getLoanMacet($request, true);
     // dd($data);
+    // Input Macet dimatikan untuk kantor migrasi (mas 2026-10-12, menu baru menyusul).
+    $data['input_macet_mati'] = \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId());
     return Inertia::render("WebView/Angsuran/SearchByDate", $data);
   }
 

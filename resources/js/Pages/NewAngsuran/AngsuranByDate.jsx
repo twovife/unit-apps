@@ -37,7 +37,7 @@ const AngsuranByDate = ({
   searchHari,
   type = 'desktop',
 }) => {
-  const { server_filter } = usePage().props;
+  const { server_filter, input_macet_mati } = usePage().props;
   const [showInputMacet, setShowInputMacet] = useState(false);
   const onShowMacet = () => {
     setShowInputMacet(true);
@@ -127,9 +127,11 @@ const AngsuranByDate = ({
               </PopoverContent>
             </Popover>
           )}
-          <Button onClick={onShowMacet} variant="outline">
-            Input Macet
-          </Button>
+          {!input_macet_mati && (
+            <Button onClick={onShowMacet} variant="outline">
+              Input Macet
+            </Button>
+          )}
         </div>
       </div>
 

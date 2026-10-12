@@ -329,7 +329,7 @@ const FastCreateV2 = () => {
                             <TanggalKerja
                               name="tanggal_drop"
                               required={true}
-                              bebas={true}
+                              max={dayjs().format('YYYY-MM-DD')}
                               value={data.tanggal_drop}
                               onChange={onInputChange}
                             />

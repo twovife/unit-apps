@@ -58,6 +58,8 @@ const InputMacet = ({ show, onClosed }) => {
     kelompok: currentKelompok || '',
     request_nominal: 0,
     saldo_before: 0,
+    // Penanda untuk server: input macet ditolak di kantor migrasi.
+    macet: true,
     angsuran: [
       {
         transaction_date: '',

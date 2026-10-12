@@ -52,12 +52,12 @@ const NewNasabah = ({
   const { auth } = usePage().props;
   const isCreator = auth?.permissions?.includes('can-create');
   const isCanShowKelompok = auth?.permissions?.includes('view-all-groups');
-  // can-edit (koreksi): tanggal pengajuan & drop bebas (libur tetap ditolak
-  // server). Aturan drop / batas 7 hari hanya untuk user biasa.
+  // can-edit (koreksi): boleh pengajuan lebih dari 7 hari lalu, tapi tetap
+  // maks hari ini dan drop tetap pilihan select (mas 2026-10-12).
   const bolehTanggalBebas = auth?.permissions?.includes('can-edit');
-  const aturanDrop = aturanDropProp && !bolehTanggalBebas;
-  const batasiPengajuan = batasiProp && !bolehTanggalBebas;
-  const bebasTanggal = bebasProp || bolehTanggalBebas;
+  const aturanDrop = aturanDropProp;
+  const batasiPengajuan = batasiProp;
+  const bebasTanggal = bebasProp;
 
   const [newGenerate, setNewGenerate] = useState(null);
 
@@ -369,8 +369,8 @@ const NewNasabah = ({
                         <TanggalKerja
                           name="request_date"
                           required={true}
-                          min={batasiPengajuan ? minPengajuan : undefined}
-                          max={batasiPengajuan ? hariIni : undefined}
+                          min={batasiPengajuan && !bolehTanggalBebas ? minPengajuan : undefined}
+                          max={batasiPengajuan || aturanDrop ? hariIni : undefined}
                           bebas={bebasTanggal}
                           value={data.request_date}
                           onChange={onInputChange}
