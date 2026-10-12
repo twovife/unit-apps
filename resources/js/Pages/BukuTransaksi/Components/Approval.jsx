@@ -198,7 +198,8 @@ const Approval = ({
           (item) =>
             item.tanggal_drop === uniqueDropDatesString &&
             item.tanggal_drop !== item.request_date &&
-            ['open', 'acc', 'success'].includes(item.status),
+            // Rencana = sudah di-ACC, termasuk yang akhirnya gagal (sama dengan RekapTrait).
+            ['open', 'acc', 'success', 'gagal'].includes(item.status),
         )
         .reduce((a, item) => a + (Number(item.acc) || 0), 0);
 

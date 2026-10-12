@@ -57,7 +57,7 @@ trait RekapTrait
         SUM(CASE WHEN status = 'success' THEN nominal_drop ELSE 0 END) AS drop_,
         SUM(CASE WHEN status = 'success' AND drop_langsung = 1 THEN nominal_drop ELSE 0 END) AS baru,
         SUM(CASE WHEN status = 'success' AND drop_langsung = 0 THEN nominal_drop ELSE 0 END) AS lama,
-        SUM(CASE WHEN drop_langsung = 0 AND status IN ('open', 'acc', 'success') THEN approved_nominal ELSE 0 END) AS rencana")
+        SUM(CASE WHEN drop_langsung = 0 AND status IN ('open', 'acc', 'success', 'gagal') THEN approved_nominal ELSE 0 END) AS rencana")
       ->toBase()->get()
       ->keyBy(fn($r) => Carbon::parse($r->d)->toDateString() . '|' . $r->g);
 
@@ -111,7 +111,8 @@ trait RekapTrait
         'drop' => $drop,
         'baru' => (int) ($l->baru ?? 0),
         'lama' => (int) ($l->lama ?? 0),
-        // Hanya pengajuan yang masih hidup / sudah jadi - tolak & gagal bukan rencana lagi.
+        // Rencana = yang sudah di-ACC (approved_nominal), termasuk yang akhirnya
+        // gagal (mas 2026-10-13); hanya tolak yang bukan rencana.
         'rencana' => (int) ($l->rencana ?? 0),
       ];
     };
