@@ -14,7 +14,7 @@ import { Eye, EyeOff, Info, Lock, LogIn, User } from 'lucide-react';
  * habis, akun nonaktif) -> kotak info di atas formulir.
  */
 // Isian kaca di HP, normal di desktop.
-const KACA = 'bg-white/10 border-white/25 text-white placeholder:text-white/50 lg:bg-white lg:border-input lg:text-slate-900 lg:placeholder:text-slate-400';
+const KACA = 'bg-black/50 border-white/25 text-white placeholder:text-white/50 lg:bg-white lg:border-input lg:text-slate-900 lg:placeholder:text-slate-400';
 
 export default function Login({ status }) {
   const { data, setData, post, processing, errors, reset } = useForm({
