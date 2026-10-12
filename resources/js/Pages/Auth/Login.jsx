@@ -41,9 +41,9 @@ export default function Login({ status }) {
 
       {/* HP: bola warna kabur di belakang kartu kaca (glassmorphism). */}
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none lg:hidden">
-        <div className="absolute rounded-full -left-16 top-1/3 w-72 h-72 bg-sky-500/40 blur-3xl" />
-        <div className="absolute rounded-full -right-20 top-1/2 w-72 h-72 bg-fuchsia-500/30 blur-3xl" />
-        <div className="absolute rounded-full left-1/4 -bottom-16 w-64 h-64 bg-emerald-500/30 blur-3xl" />
+        <div className="absolute rounded-full -left-16 top-1/3 w-72 h-72 bg-red-600/45 blur-3xl" />
+        <div className="absolute rounded-full -right-20 top-1/2 w-72 h-72 bg-rose-500/35 blur-3xl" />
+        <div className="absolute rounded-full left-1/4 -bottom-16 w-64 h-64 bg-orange-500/25 blur-3xl" />
       </div>
 
       {/* Panel merek */}
