@@ -487,7 +487,8 @@ class TransactionLoanController extends Controller
       'isActiveMember' => ['boolean', 'required'],
       'request_nominal' =>  ["required", 'integer', 'min:100000'],
       'nik' => ['required', 'digits:16'],
-      'nomor_anggota' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
+      // Opsional (mas 2026-10-12): diisi kalau ada, angka saja.
+      'nomor_anggota' => ['nullable', 'regex:/^[0-9]+$/', 'max:20'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
       // Hari libur ditolak SELALU (keputusan mas
@@ -498,7 +499,6 @@ class TransactionLoanController extends Controller
       'nomor_anggota.regex' => 'Nomor anggota hanya boleh angka.',
       '*.min' => 'minimal diisi 100rb',
       'request_date.before_or_equal' => 'Tanggal pengajuan tidak boleh di masa depan.',
-      'nomor_anggota.required' => 'Nomor anggota wajib diisi (lihat promes / buku manual).',
     ]);
 
     // Permission 'can show kelompok'/'can show branch' tidak pernah ada -> can()

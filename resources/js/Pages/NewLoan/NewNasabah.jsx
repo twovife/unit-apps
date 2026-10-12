@@ -519,7 +519,7 @@ const NewNasabah = ({
                     <div className="w-full mb-3">
                       <Label>
                         Nomor Anggota{' '}
-                        <span className="font-normal text-gray-500">(nomor anggota di promes / buku manual)</span>
+                        <span className="font-normal text-gray-500">(opsional - nomor di promes / buku manual)</span>
                       </Label>
                       <Input
                         type="text"
@@ -529,7 +529,6 @@ const NewNasabah = ({
                         value={data.nomor_anggota}
                         // Nomor anggota hanya angka: huruf dibuang saat diketik.
                         onChange={(e) => setData('nomor_anggota', e.target.value.replace(/\D/g, ''))}
-                        required={true}
                       />
                       <InputError message={errors.nomor_anggota} />
                     </div>
