@@ -105,7 +105,7 @@ class AgregasiScope
     }
 
     /** Bulan mulai pendataan baru yang direncanakan untuk kantor yang belum migrasi. */
-    public const RENCANA_MULAI = '2026-09-01';
+    public const RENCANA_MULAI = '2026-10-01';
 
     /**
      * Bulan acuan penyesuaian saldo: bulan migrasi kantor, atau RENCANA_MULAI
