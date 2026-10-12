@@ -156,6 +156,9 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                             >
                               {ribu(r[k])}
                             </button>
+                          ) : kosong ? (
+                            // Hari yang belum tiba: tanda, bukan 0.
+                            <span className="text-slate-300">–</span>
                           ) : (
                             ribu(nilai(r, k))
                           )}
@@ -168,7 +171,7 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                     <td className={`sticky left-0 px-3 py-1.5 ${WARNA.biru.total}`}>Total</td>
                     {kolom.map(([k, , kelas]) => (
                       <td key={k} className={`px-3 py-1.5 text-right ${warna[k]?.total ?? ''} ${kelas ?? ''}`}>
-                        {ribu(kosong ? 0 : jumlah(item.data, k))}
+                        {kosong ? <span className="font-normal text-slate-300">–</span> : ribu(jumlah(item.data, k))}
                       </td>
                     ))}
                     {ekstra && <td colSpan={ekstra.kepala.length} />}

@@ -68,9 +68,11 @@ const KOLOM_ISI = {
   setoran_katrol: 'setoran_katrol',
 };
 
-const Angka = ({ n, bertanda = false }) => {
+// Kosong = 0 (mas 2026-10-12); tanda – hanya untuk hari yang belum tiba.
+const Angka = ({ n, bertanda = false, belum = false }) => {
   useModeRibuan();
-  if (!Number(n)) return <span className="text-slate-300">–</span>;
+  if (belum) return <span className="text-slate-300">–</span>;
+  if (!Number(n)) return <span className="text-slate-400">0</span>;
   if (!bertanda) return angka(n);
   return (
     <span className={Number(n) < 0 ? 'text-red-600' : 'text-emerald-700'}>{Number(n) > 0 ? '+' : ''}{angka(n)}</span>
@@ -142,6 +144,8 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
 
 const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null }) => {
   const { auth, server_filter } = usePage().props;
+  const hariIni = dayjs().format('YYYY-MM-DD');
+  const belum = (r) => !!r.tanggal && dayjs(r.tanggal).format('YYYY-MM-DD') > hariIni;
   // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
   const KLIK = {
     storting: [onKlikStorting, 'Buka buku angsuran, tanggal ini disorot'],
@@ -232,10 +236,10 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                       className="text-sky-700 underline decoration-dotted hover:text-sky-900"
                       title={KLIK[k][1]}
                     >
-                      <Angka n={r[k]} />
+                      <Angka n={r[k]} belum={belum(r)} />
                     </button>
                   ) : (
-                    <Angka n={r[k]} bertanda={bertanda} />
+                    <Angka n={r[k]} bertanda={bertanda} belum={belum(r)} />
                   )}
                 </td>
               ))}
