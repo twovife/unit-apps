@@ -39,7 +39,7 @@ const Kotak = ({ judul, children, warna = 'border-slate-200' }) => (
  * Pengajuan (drop minggu depan) tidak disentuh. Data dari
  * kasir.rekap.pratinjau_kunci; angka kas dari baris Rekap 1 (`baris`).
  */
-const DialogKunci = ({ baris, onClosed }) => {
+const DialogKunci = ({ baris, onClosed, onBukaDrop = null }) => {
   useModeRibuan();
   const [isi, setIsi] = useState(null);
   const [galat, setGalat] = useState(null);
@@ -155,9 +155,24 @@ const DialogKunci = ({ baris, onClosed }) => {
                   <div className="mb-1 font-medium text-rose-800">
                     {isi.drop_gantung.length} drop hari ini belum sukses → digagalkan:
                   </div>
-                  {isi.drop_gantung.map((l) => (
-                    <Baris key={l.id} label={`${l.nama ?? '—'} (${l.status})`} nilai={rb(l.nominal)} />
-                  ))}
+                  {isi.drop_gantung.map((l) =>
+                    onBukaDrop ? (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => onBukaDrop(baris)}
+                        title="Buka buku drop hari ini untuk DROP / GAGAL / Tundaan dulu"
+                        className="block w-full text-left rounded hover:bg-rose-100"
+                      >
+                        <Baris label={<span className="underline decoration-dotted">{`${l.nama ?? '—'} (${l.status})`}</span>} nilai={rb(l.nominal)} />
+                      </button>
+                    ) : (
+                      <Baris key={l.id} label={`${l.nama ?? '—'} (${l.status})`} nilai={rb(l.nominal)} />
+                    ),
+                  )}
+                  {onBukaDrop && (
+                    <div className="mt-1 text-xs text-rose-700">Klik nama untuk membereskannya dulu di buku drop.</div>
+                  )}
                 </>
               ) : (
                 <div className="text-slate-600">Tidak ada drop menggantung.</div>

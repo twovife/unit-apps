@@ -203,7 +203,15 @@ const RekapContent = ({
               // Alur baru: Kunci; kantor lama: TTD kasir (dialog & aturan otomatis sama).
               onKunci={setBarisKunci}
             />
-            <DialogKunci baris={barisKunci} onClosed={() => setBarisKunci(null)} />
+            <DialogKunci
+              baris={barisKunci}
+              onClosed={() => setBarisKunci(null)}
+              // Drop menggantung bisa dibereskan dulu di buku drop hari itu.
+              onBukaDrop={(r) => {
+                setBarisKunci(null);
+                bukaDrop(r);
+              }}
+            />
             {/* Global: awal bulan s/d tanggal filter, per kelompok. */}
             <h2 className="mt-6 mb-2 text-base font-semibold text-slate-900">
               Global — 1 s/d {dayjs(server_filter.tanggal).format('DD MMMM YYYY')}
