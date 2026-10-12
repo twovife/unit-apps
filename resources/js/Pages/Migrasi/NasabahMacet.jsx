@@ -11,16 +11,23 @@ const rp = (n) => (n === null || n === undefined ? '—' : new Intl.NumberFormat
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const PILIH = 'h-8 px-2 text-sm border rounded-md border-input bg-background';
 
-const Kartu = ({ judul, utama, nada = 'text-slate-900' }) => (
+const nadaZ = (z) => (z < 0 ? 'text-red-600' : z > 0 ? 'text-violet-700' : 'text-slate-900');
+
+const Kartu = ({ judul, utama, nada = 'text-slate-900', children }) => (
   <div className="p-3 bg-white border rounded-lg border-slate-200">
     <div className="text-xs font-medium tracking-wide uppercase text-slate-500">{judul}</div>
     <div className={`mt-1 text-xl font-semibold tabular-nums ${nada}`}>{rp(utama)}</div>
+    {children}
   </div>
 );
 
 /** Isian penyesuaian satu pinjaman: sisa saldo seharusnya + jenis + catatan. */
-const FormSesuai = ({ loan, jenis, wajib }) => {
-  const [sisa, setSisa] = useState('');
+const FormSesuai = ({ loan, jenis, wajib, onKetik }) => {
+  const [sisa, setSisaAsli] = useState('');
+  const setSisa = (v) => {
+    setSisaAsli(v);
+    onKetik(v);
+  };
   const [pilihan, setPilihan] = useState(jenis[0]);
   const [catatan, setCatatan] = useState('');
   const [proses, setProses] = useState(false);
@@ -78,6 +85,12 @@ const NasabahMacet = ({ datas = [], ringkasan, jenis = [], wajib_persetujuan = [
   const ganti = (kunci, nilai) =>
     router.get(route('migrasi.nasabah_macet'), { kelompok: f.kelompok, hari: f.hari, [kunci]: nilai });
 
+  // Pratinjau: sisa saldo yang sedang diketik (belum disimpan) per pinjaman.
+  // Selisihnya dengan saldo sekarang menggeser ML data real, jadi Z ikut bergeser.
+  const [ketik, setKetik] = useState({});
+  const geser = datas.reduce((t, d) => (ketik[d.id] ? t + (Number(ketik[d.id]) - d.saldo_kini) : t), 0);
+  const zSesudah = ringkasan?.z == null ? null : ringkasan.z - geser;
+
   return (
     <Authenticated>
       <Head title="Nasabah Macet" />
@@ -133,8 +146,16 @@ const NasabahMacet = ({ datas = [], ringkasan, jenis = [], wajib_persetujuan = [
           <Kartu
             judul="Z (bucket − data real)"
             utama={ringkasan?.z}
-            nada={ringkasan?.z < 0 ? 'text-red-600' : ringkasan?.z > 0 ? 'text-violet-700' : 'text-slate-900'}
-          />
+            nada={nadaZ(ringkasan?.z)}
+          >
+            {geser !== 0 && zSesudah !== null && (
+              <div className="pt-2 mt-2 text-sm border-t border-slate-100">
+                <span className="text-slate-500">Sesudah isian ({geser > 0 ? '+' : ''}{rp(geser)}): </span>
+                <span className={`font-semibold tabular-nums ${nadaZ(zSesudah)}`}>{rp(zSesudah)}</span>
+                {zSesudah === 0 && <span className="ml-1 text-emerald-700">pas</span>}
+              </div>
+            )}
+          </Kartu>
         </div>
 
         <div className="overflow-x-auto bg-white border rounded-lg">
@@ -183,7 +204,12 @@ const NasabahMacet = ({ datas = [], ringkasan, jenis = [], wajib_persetujuan = [
                       </div>
                     ))}
                     {d.boleh ? (
-                      <FormSesuai loan={d} jenis={jenis} wajib={wajib_persetujuan} />
+                      <FormSesuai
+                        loan={d}
+                        jenis={jenis}
+                        wajib={wajib_persetujuan}
+                        onKetik={(v) => setKetik((k) => ({ ...k, [d.id]: v }))}
+                      />
                     ) : (
                       <div className="text-xs text-slate-500">
                         Drop sesudah {dayjs(f.batas_penyesuaian).format('DD MMM YYYY')} — betulkan lewat input angsuran.
