@@ -227,8 +227,24 @@ class TransactionDailyRecapController extends Controller
     if (!AppHelper::bolehAksesKelompok($grouping)) {
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
     }
+    $nama = ['kasbon' => 'Kasbon', 'transport' => 'Transport', 'setoran_tunai' => 'SU Lapangan', 'setoran_transfer' => 'Setor transfer', 'setoran_katrol' => 'Katrolan'];
+
+    // Kantor belum migrasi (mas 2026-10-12): Rekap 1 hanya kasbon & transport,
+    // ditulis ke tabel lama (daily_recaps) seperti dialog lama rekap_post type 1.
     if (!$this->sudahMigrasi($grouping->id, $val['date'])) {
-      return redirect()->back()->withErrors('Setoran hanya untuk kantor yang sudah migrasi.');
+      if (!in_array($val['kolom'], ['kasbon', 'transport'], true)) {
+        return redirect()->back()->withErrors('Setoran hanya untuk kantor yang sudah migrasi.');
+      }
+      $recap = TransactionDailyRecap::firstOrNew([
+        'transaction_loan_officer_grouping_id' => $grouping->id,
+        'date' => Carbon::parse($val['date'])->toDateString(),
+      ]);
+      if ($recap->daily_kasir_approval) {
+        return redirect()->back()->withErrors('Hari ini sudah di-ACC kasir.');
+      }
+      $recap->fill([$val['kolom'] => (int) ($val['nilai'] ?? 0)])->save();
+
+      return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
     }
 
     $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
@@ -241,8 +257,6 @@ class TransactionDailyRecapController extends Controller
 
     // Bawaan 0 untuk semua isian (keputusan mas 2026-10-09): kosong = 0.
     $closing->update([$val['kolom'] => (int) ($val['nilai'] ?? 0)]);
-
-    $nama = ['kasbon' => 'Kasbon', 'transport' => 'Transport', 'setoran_tunai' => 'SU Lapangan', 'setoran_transfer' => 'Setor transfer', 'setoran_katrol' => 'Katrolan'];
 
     return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
   }

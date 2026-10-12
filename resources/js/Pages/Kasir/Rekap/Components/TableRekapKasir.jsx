@@ -56,6 +56,10 @@ const WARNA_KOLOM = {
 // Angka bawaan setoran yang belum diisi kasir: storting hari itu per cara
 // bayar. Tampil abu-abu miring; dibekukan saat kunci kasir.
 const BAWAAN = { su_lapangan: 'storting_cash', setoran_transfer: 'storting_transfer', setoran_katrol: 'storting_katrol' };
+// Kolom yang hanya ada di alur baru; kantor belum migrasi tidak menampilkannya.
+const KHUSUS_MIGRASI = ['sisa_uang', 'su_lapangan', 'setoran_transfer', 'setoran_katrol', 'selisih_uang'];
+// Isian yang tersedia untuk kantor belum migrasi.
+const ISI_LAMA = ['kasbon', 'transport'];
 const KOLOM_ISI = {
   kasbon: 'kasbon',
   transport: 'transport',
@@ -143,10 +147,16 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
     storting: [onKlikStorting, 'Buka buku angsuran, tanggal ini disorot'],
     drop: [onKlikDrop, 'Buka buku drop, tanggal ini disorot'],
   };
-  // Sel isian aktif: kantor alur baru, baris harian, belum dikunci kasir.
-  const bisaIsiSu = (r) =>
+  // Kantor belum migrasi (mas 2026-10-12): kolom setoran tidak ada, kasir
+  // hanya mengisi kasbon & transport (disimpan ke tabel lama).
+  const migrasi = !!server_filter?.migrasi;
+  const KOLOM_TAMPIL = migrasi ? KOLOM : KOLOM.filter(([k]) => !KHUSUS_MIGRASI.includes(k));
+  // Sel isian aktif: baris harian, belum dikunci / di-ACC kasir.
+  const bisaIsi = (r, k) =>
     !bacaSaja &&
-    server_filter?.migrasi && r.type == 'daily' && !r.status_approve_kasir && auth?.permissions?.includes('can-approve');
+    !!KOLOM_ISI[k] &&
+    (migrasi || ISI_LAMA.includes(k)) &&
+    r.type == 'daily' && !r.status_approve_kasir && auth?.permissions?.includes('can-approve');
   const total = Object.fromEntries(
     KOLOM.map(([k]) => [k, datas.reduce((a, r) => a + (Number(r[k]) || 0), 0)]),
   );
@@ -170,7 +180,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
             <th className={`sticky left-0 z-20 px-3 py-2 text-left ${WARNA.biru.kepala}`}>
               {datas.length && datas.every((r) => r.type != 'daily') ? 'Tanggal' : 'Kelompok'}
             </th>
-            {KOLOM.map(([k, label]) => (
+            {KOLOM_TAMPIL.map(([k, label]) => (
               <th
                 key={k}
                 className={`px-3 py-2 font-medium text-right whitespace-nowrap ${WARNA_KOLOM[k]?.kepala ?? ''}`}
@@ -184,7 +194,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
         <tbody>
           {datas.length === 0 && (
             <tr>
-              <td colSpan={KOLOM.length + 1 + (onKunci ? 1 : 0)} className="py-6 text-center text-slate-500">
+              <td colSpan={KOLOM_TAMPIL.length + 1 + (onKunci ? 1 : 0)} className="py-6 text-center text-slate-500">
                 Belum ada data.
               </td>
             </tr>
@@ -208,12 +218,12 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   r.kelompok
                 )}
               </td>
-              {KOLOM.map(([k, , kelas, bertanda]) => (
+              {KOLOM_TAMPIL.map(([k, , kelas, bertanda]) => (
                 <td
                   key={k}
-                  className={`${KOLOM_ISI[k] && bisaIsiSu(r) ? 'p-0' : 'px-3 py-1.5'} text-right ${WARNA_KOLOM[k]?.sel ?? ''} ${kelas ?? ''}`}
+                  className={`${bisaIsi(r, k) ? 'p-0' : 'px-3 py-1.5'} text-right ${WARNA_KOLOM[k]?.sel ?? ''} ${kelas ?? ''}`}
                 >
-                  {KOLOM_ISI[k] && bisaIsiSu(r) ? (
+                  {bisaIsi(r, k) ? (
                     <IsianSel r={r} k={k} kolom={KOLOM_ISI[k]} kuning={!!WARNA_KOLOM[k]} />
                   ) : KLIK[k]?.[0] ? (
                     <button
@@ -261,7 +271,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
           <tfoot className="font-bold border-t-2 bg-slate-100 text-slate-900">
             <tr>
               <td className={`sticky left-0 px-3 py-2 text-left ${WARNA.biru.total}`}>Total</td>
-              {KOLOM.map(([k, , , bertanda]) => (
+              {KOLOM_TAMPIL.map(([k, , , bertanda]) => (
                 <td key={k} className={`px-3 py-2 text-right ${WARNA_KOLOM[k]?.total ?? ''}`}>
                   <Angka n={total[k]} bertanda={bertanda} />
                 </td>
