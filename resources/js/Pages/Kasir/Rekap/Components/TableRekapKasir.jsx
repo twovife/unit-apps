@@ -165,12 +165,13 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
   // hanya mengisi kasbon & transport (disimpan ke tabel lama).
   const migrasi = !!server_filter?.migrasi;
   const KOLOM_TAMPIL = migrasi ? KOLOM : KOLOM.filter(([k]) => !KHUSUS_MIGRASI.includes(k));
-  // Sel isian aktif: baris harian, belum dikunci / di-ACC kasir.
+  // Sel isian aktif: baris harian. Alur baru: sampai dikunci kasir. Kantor
+  // lama: TTD kasir hanya tanda tangan, kasbon & transport tetap bisa diedit.
   const bisaIsi = (r, k) =>
     !bacaSaja &&
     !!KOLOM_ISI[k] &&
-    (migrasi || ISI_LAMA.includes(k)) &&
-    r.type == 'daily' && !r.status_approve_kasir && auth?.permissions?.includes('can-approve');
+    (migrasi ? !r.status_approve_kasir : ISI_LAMA.includes(k)) &&
+    r.type == 'daily' && auth?.permissions?.includes('can-approve');
   const total = Object.fromEntries(
     KOLOM.map(([k]) => [k, datas.reduce((a, r) => a + (Number(r[k]) || 0), 0)]),
   );

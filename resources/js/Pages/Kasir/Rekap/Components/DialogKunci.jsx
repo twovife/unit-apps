@@ -102,7 +102,7 @@ const DialogKunci = ({ baris, onClosed, onBukaDrop = null }) => {
             {migrasi ? 'Kunci' : 'TTD Kasir'} Kelompok {baris?.kelompok} — {baris ? dayjs(baris.tanggal).format('dddd, DD MMMM YYYY') : ''}
           </DialogTitle>
           <DialogDescription>
-            {migrasi ? 'Sesudah dikunci, transaksi hari ini tidak bisa diubah.' : 'Sesudah ditandatangani, kasbon & transport hari ini tidak bisa diubah.'}{' '}
+            {migrasi ? 'Sesudah dikunci, transaksi hari ini tidak bisa diubah.' : 'Tanda tangan kasir; kasbon & transport masih bisa dikoreksi sesudahnya.'}{' '}
             <SatuanAngka />
           </DialogDescription>
         </DialogHeader>

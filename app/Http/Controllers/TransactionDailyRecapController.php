@@ -245,9 +245,8 @@ class TransactionDailyRecapController extends Controller
         'transaction_loan_officer_grouping_id' => $grouping->id,
         'date' => Carbon::parse($val['date'])->toDateString(),
       ]);
-      if ($recap->daily_kasir_approval) {
-        return redirect()->back()->withErrors('Hari ini sudah di-ACC kasir.');
-      }
+      // TTD kasir kantor lama hanya tanda tangan, bukan kunci: kasbon &
+      // transport tetap boleh dikoreksi sesudahnya (mas 2026-10-12).
       $recap->fill([$val['kolom'] => (int) ($val['nilai'] ?? 0)])->save();
 
       return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
