@@ -81,7 +81,12 @@ trait RekapTrait
     } else {
       $daily_recap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
         ->whereIn('date', $semuaTanggal)->get()
-        ->each(fn($r) => $r->cek_km = (bool) $r->daily_kepala_approval)
+        // Bukan each(fn => ...): arrow fn mengembalikan nilai assignment, dan
+        // each() BERHENTI begitu callback mengembalikan false - baris pertama
+        // yang belum di-ACC KM membuat semua baris sesudahnya tanpa cek_km.
+        ->each(function ($r) {
+          $r->cek_km = (bool) $r->daily_kepala_approval;
+        })
         ->groupBy(fn($r) => Carbon::parse($r->date)->toDateString());
     }
 
