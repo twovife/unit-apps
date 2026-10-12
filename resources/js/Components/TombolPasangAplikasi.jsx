@@ -12,7 +12,8 @@ const iOS = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
  * itu (iPhone Safari, dll.): petunjuk manual. Hilang kalau sudah dibuka
  * sebagai aplikasi terpasang.
  */
-export default function TombolPasangAplikasi() {
+// className: gaya tambahan dari pemanggil (mis. kartu kaca login di HP).
+export default function TombolPasangAplikasi({ className = '' }) {
   const [, segarkan] = useState(0);
   const [petunjuk, setPetunjuk] = useState(false);
   useEffect(() => dengar(() => segarkan((n) => n + 1)), []);
@@ -25,7 +26,7 @@ export default function TombolPasangAplikasi() {
 
   return (
     <>
-      <Button size="sm" variant="outline" className="h-8 gap-1 px-2" onClick={klik}>
+      <Button size="sm" variant="outline" className={`h-8 gap-1 px-2 ${className}`} onClick={klik}>
         <Download className="w-4 h-4" aria-hidden="true" />
         <span className="text-xs">Install</span>
       </Button>

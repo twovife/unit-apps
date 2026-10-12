@@ -138,7 +138,7 @@ export default function Login({ status }) {
 
           <div className="flex items-center justify-between pt-4 mt-5 text-xs border-t border-white/20 text-white/60 lg:border-slate-200 lg:text-slate-400">
             <span>© {new Date().getFullYear()} UBMI DIGITAL</span>
-            <TombolPasangAplikasi />
+            <TombolPasangAplikasi className="text-white border-white/40 bg-white/15 hover:bg-white/25 hover:text-white lg:text-slate-900 lg:border-input lg:bg-background lg:hover:bg-accent lg:hover:text-accent-foreground" />
           </div>
         </div>
       </div>
