@@ -7,7 +7,7 @@ import BadgeStatus from '@/Components/shadcn/BadgeStatus';
 import Action from './Action';
 import { Button } from '@/shadcn/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
-import { angka, useModeRibuan } from '@/lib/modeAngka';
+import { angka, modeRibuan, useModeRibuan } from '@/lib/modeAngka';
 import SatuanAngka from '@/Components/SatuanAngka';
 
 // Angka dalam ribuan: 650000 -> "650", 1300000 -> "1.300", 35500 -> "35,5".
@@ -72,7 +72,10 @@ const FILTER = [
 // Dua baris per nasabah, satu template kolom untuk semua baris -> angka sejajar:
 //   no.anggota | drop | nama   | ANGS (melebar 2 kolom, besar)
 //   (TG)       |      | alamat | pinj | sisa   (kecil, abu)
-const KOLOM = 'grid grid-cols-[2.2rem_2.4rem_1fr_3.2rem_3.2rem] gap-x-1 tabular-nums';
+// Rupiah penuh (saklar 000) butuh kolom angka lebih lebar, kalau tidak puluhan
+// juta saling menumpuk.
+const kolom = () =>
+  `grid ${modeRibuan() ? 'grid-cols-[2.2rem_2.4rem_1fr_3.2rem_3.2rem]' : 'grid-cols-[2.2rem_2.4rem_1fr_4.6rem_4.6rem]'} gap-x-1 tabular-nums`;
 const ANGS = 'col-span-2 text-right pr-1';
 const KECIL = 'text-[11px] text-gray-500';
 
@@ -148,7 +151,7 @@ const AngsuranTableMobile = ({ datas }) => {
           <span className="px-1 text-gray-500 bg-white border rounded">belum</span>
         </div>
 
-        <div className={`${KOLOM} px-2 py-1 text-gray-500 border-t`}>
+        <div className={`${kolom()} px-2 py-1 text-gray-500 border-t`}>
           {/* No & Drop di tengah (dua baris); Nasabah satu label saja. */}
           <div className={`${KECIL} row-span-2 self-center text-center`}>No</div>
           <div className="self-center row-span-2 text-center">Drop</div>
@@ -172,7 +175,7 @@ const AngsuranTableMobile = ({ datas }) => {
               key={r.id}
               type="button"
               onClick={() => (r.drop_baru ? setDropBaru(r) : buka(r.id))}
-              className={`${KOLOM} w-full px-2 py-1.5 text-left border-b active:brightness-95 ${warnaBaris(r)}`}
+              className={`${kolom()} w-full px-2 py-1.5 text-left border-b active:brightness-95 ${warnaBaris(r)}`}
             >
               <NoAnggota r={r} />
               <div className="text-center text-gray-500">{dayjs(r.tanggal_drop).format('DD-MM')}</div>
@@ -240,7 +243,7 @@ const AngsuranTableMobile = ({ datas }) => {
 // sisa ML tidak berguna dibaca).
 const Jumlah = ({ label, rows, total = false, ml = false }) => (
   <div
-    className={`${KOLOM} px-2 py-1.5 font-bold ${
+    className={`${kolom()} px-2 py-1.5 font-bold ${
       total ? 'sticky bottom-0 z-10 mt-4 bg-gray-900 text-white' : 'bg-emerald-100 text-emerald-950 border-t-2 border-emerald-500'
     }`}
   >
