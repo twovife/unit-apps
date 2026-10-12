@@ -36,16 +36,16 @@ const GRUP = [
   { judul: '', kolom: [['selisih_uang', '-/+', 'font-bold', true]] },
 ];
 const KOLOM = GRUP.flatMap((g) => g.kolom);
-// Warna blok kolom di kepala & total: Kasbon s/d Tunai kuning, Sisa Uang
-// hijau, -/+ merah, sisanya biru.
-// Isi tabel per kelompok netral putih / abu selang-seling (mas 2026-10-12:
-// blok warna terlalu mencolok); warna tinggal di kepala kolom & baris total.
+// Warna blok kolom hanya di baris total: Kasbon s/d Tunai kuning, Sisa Uang
+// hijau, -/+ merah, sisanya biru. Isi & kepala tabel netral (mas 2026-10-12:
+// blok warna terlalu mencolok).
 const NETRAL = 'bg-white group-even:bg-slate-50 group-hover:bg-sky-50';
+const KEPALA = 'bg-slate-100 text-slate-700';
 export const WARNA = {
-  kuning: { sel: NETRAL, kepala: 'bg-amber-200 text-amber-900', total: 'bg-amber-200' },
-  hijau: { sel: NETRAL, kepala: 'bg-emerald-200 text-emerald-900', total: 'bg-emerald-200' },
-  merah: { sel: NETRAL, kepala: 'bg-rose-200 text-rose-900', total: 'bg-rose-200' },
-  biru: { sel: NETRAL, kepala: 'bg-sky-200 text-sky-900', total: 'bg-sky-200' },
+  kuning: { sel: NETRAL, kepala: KEPALA, total: 'bg-amber-200' },
+  hijau: { sel: NETRAL, kepala: KEPALA, total: 'bg-emerald-200' },
+  merah: { sel: NETRAL, kepala: KEPALA, total: 'bg-rose-200' },
+  biru: { sel: NETRAL, kepala: KEPALA, total: 'bg-sky-200' },
 };
 const WARNA_KOLOM = {
   // Bawaan biru untuk kolom yang tidak disebut di bawah.
