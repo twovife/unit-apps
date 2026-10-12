@@ -70,6 +70,8 @@ class HandleInertiaRequests extends Middleware
       },
       'flash' => [
         'message' => fn() => $request->session()->get('message'),
+        // Peringatan yang harus dibaca (dialog di tengah, ditutup manual).
+        'peringatan' => fn() => $request->session()->get('peringatan'),
         'timestamp' => fn() => Carbon::now(),
       ],
       'printUrl' => [

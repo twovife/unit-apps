@@ -18,8 +18,10 @@ export default function Authenticated({ header, children, loading = false }) {
       {Object.keys(errors).length > 0 && (
         <SweetAlert type="error" message={errors[0]} keys={flash} />
       )}
-      {flash.message && (
-        <SweetAlert type="success" message={flash.message} keys={flash} />
+      {flash.peringatan ? (
+        <SweetAlert type="warning" message={flash.peringatan} keys={flash} />
+      ) : (
+        flash.message && <SweetAlert type="success" message={flash.message} keys={flash} />
       )}
       <Loading show={loading} />
 

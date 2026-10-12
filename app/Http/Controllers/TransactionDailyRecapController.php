@@ -246,10 +246,19 @@ class TransactionDailyRecapController extends Controller
         'date' => Carbon::parse($val['date'])->toDateString(),
       ]);
       // TTD kasir kantor lama hanya tanda tangan, bukan kunci: kasbon &
-      // transport tetap boleh dikoreksi sesudahnya (mas 2026-10-12).
-      $recap->fill([$val['kolom'] => (int) ($val['nilai'] ?? 0)])->save();
+      // transport tetap boleh dikoreksi, tapi TTD-nya batal dan kasir harus
+      // checklist ulang (mas 2026-10-12).
+      $nilai = (int) ($val['nilai'] ?? 0);
+      $batalTtd = $recap->daily_kasir_approval && (int) $recap->{$val['kolom']} !== $nilai;
+      $recap->fill([$val['kolom'] => $nilai]);
+      if ($batalTtd) {
+        $recap->fill(['daily_kasir_approval' => null, 'daily_kasir_approval_user' => null]);
+      }
+      $recap->save();
 
-      return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
+      return $batalTtd
+        ? redirect()->back()->with('peringatan', $nama[$val['kolom']] . ' diubah — TTD kasir dibatalkan, mohon checklist (TTD) kembali.')
+        : redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
     }
 
     $closing = \App\Models\TransactionDailyClosing::firstOrCreate([
