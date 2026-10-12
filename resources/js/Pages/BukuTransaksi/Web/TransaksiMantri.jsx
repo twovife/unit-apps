@@ -258,8 +258,13 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
       {/* Menu ACC KM (rencana drop, cek KM, kunci kasir) - tepat di atas tabel, berlabel juga di HP. */}
       <div className="flex justify-end mb-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => setRencanaShow(true)}>
-          <ClipboardList className="h-3.5 w-3.5" />
+        {/* Tombol utama halaman ini - menonjol (isi hijau, teks putih), sama gaya dengan Buku Storting. */}
+        <Button
+          type="button"
+          onClick={() => setRencanaShow(true)}
+          className="gap-1.5 font-semibold text-white shadow-sm bg-emerald-600 hover:bg-emerald-700"
+        >
+          <ClipboardList className="w-4 h-4" />
           <span className="whitespace-nowrap">ACC KM</span>
         </Button>
       </div>
