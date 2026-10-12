@@ -3,7 +3,7 @@ import FilterBar from '@/Components/FilterBar';
 import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import TableRekap from './Components/TableRekap';
@@ -68,6 +68,11 @@ const RekapContent = ({
   };
   // jenis: 'storting' -> buku angsuran bulanan, 'harian' -> buku angsuran hari itu, 'drop' -> buku drop,
   // 'acc' -> drawer ACC KM.
+  // Kantor belum migrasi: tanda tangan kasir (daily_recaps.daily_kasir_approval).
+  const ttdKasir = (r) => {
+    if (!window.confirm(`Tanda tangan kasir kelompok ${r.kelompok}, ${dayjs(r.tanggal).format('DD-MM-YYYY')}?`)) return;
+    router.post(route('kasir.rekap.ttd_kasir_lama'), { id: r.id, date: r.tanggal }, { preserveScroll: true });
+  };
   const bukaBuku = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'storting' });
   const bukaDrop = (r) => setBukuTarget({ kelompok: r.kelompok, tanggal: r.tanggal, jenis: 'drop' });
 
@@ -200,8 +205,9 @@ const RekapContent = ({
               datas={datas}
               onKlikStorting={bukaBuku}
               onKlikDrop={bukaDrop}
-              // Kunci hanya kantor alur baru.
+              // Kunci hanya kantor alur baru; kantor lama cukup tanda tangan kasir.
               onKunci={server_filter.migrasi ? setBarisKunci : null}
+              onTtd={server_filter.migrasi ? null : ttdKasir}
             />
             <DialogKunci baris={barisKunci} onClosed={() => setBarisKunci(null)} />
             {/* Global: awal bulan s/d tanggal filter, per kelompok. */}

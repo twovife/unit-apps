@@ -159,6 +159,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/', "rekap_post")->name('rekap_post');
         // Setoran tunai (SU Lapangan) / transfer dari sel Rekap 1, alur baru.
         Route::post('/su-lapangan', "simpan_su_lapangan")->name('simpan_su_lapangan');
+        // Tanda tangan kasir kantor belum migrasi (daily_recaps), pengganti Kunci.
+        Route::post('/ttd-kasir', "ttd_kasir_lama")->name('ttd_kasir_lama');
         // Dialog Kunci di Rekap 1 (alur baru): pratinjau JSON + kunci.
         Route::get('/pratinjau-kunci', "pratinjau_kunci")->name('pratinjau_kunci');
         Route::post('/kunci-hari', "kunci_hari")->name('kunci_hari');

@@ -261,6 +261,49 @@ class TransactionDailyRecapController extends Controller
     return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
   }
 
+  /**
+   * Tanda tangan kasir kantor BELUM migrasi (mas 2026-10-12): mengisi
+   * daily_kasir_approval di daily_recaps, sama seperti dialog lama rekap_post
+   * type 2, tanpa kunci alur baru. Syarat: KM sudah ACC hari itu.
+   */
+  public function ttd_kasir_lama(Request $request)
+  {
+    if (!auth()->user()->hasPermissionTo('can-approve')) {
+      return redirect()->back()->withErrors('Tanda tangan diisi kasir / KM / pimpinan.');
+    }
+
+    $val = $request->validate([
+      'id' => ['required', 'integer'],
+      'date' => ['required', 'date', 'before_or_equal:today'],
+    ]);
+
+    $grouping = TransactionLoanOfficerGrouping::find($val['id']);
+    if (!AppHelper::bolehAksesKelompok($grouping)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+    if ($this->sudahMigrasi($grouping->id, $val['date'])) {
+      return redirect()->back()->withErrors('Kantor ini sudah migrasi — pakai tombol Kunci.');
+    }
+
+    $recap = TransactionDailyRecap::firstOrNew([
+      'transaction_loan_officer_grouping_id' => $grouping->id,
+      'date' => Carbon::parse($val['date'])->toDateString(),
+    ]);
+    if (!$recap->daily_kepala_approval) {
+      return redirect()->back()->withErrors('Belum di-ACC KM (Buku Transaksi → ACC KM).');
+    }
+    if ($recap->daily_kasir_approval) {
+      return redirect()->back()->withErrors('Hari ini sudah ditandatangani kasir.');
+    }
+
+    $recap->fill([
+      'daily_kasir_approval' => Carbon::now(),
+      'daily_kasir_approval_user' => auth()->user()->employee->id,
+    ])->save();
+
+    return redirect()->back()->with('message', 'Ditandatangani kasir.');
+  }
+
   public function ceklist_kepala(Request $request)
   {
     // GERBANG alur baru: kantor migrasi Ceklist Kepala lewat ACC KM (ceklist_kepala_baru)

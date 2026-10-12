@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
-import { Lock, PanelRightOpen } from 'lucide-react';
+import { Check, Lock, PanelRightOpen, PenLine } from 'lucide-react';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
@@ -140,7 +140,7 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
   );
 };
 
-const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null }) => {
+const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null, onTtd = null }) => {
   const { auth, server_filter } = usePage().props;
   // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
   const KLIK = {
@@ -189,12 +189,13 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
               </th>
             ))}
             {onKunci && <th className="px-3 py-2 font-medium text-center">Kunci</th>}
+            {onTtd && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">TTD Kasir</th>}
           </tr>
         </thead>
         <tbody>
           {datas.length === 0 && (
             <tr>
-              <td colSpan={KOLOM_TAMPIL.length + 1 + (onKunci ? 1 : 0)} className="py-6 text-center text-slate-500">
+              <td colSpan={KOLOM_TAMPIL.length + 1 + (onKunci || onTtd ? 1 : 0)} className="py-6 text-center text-slate-500">
                 Belum ada data.
               </td>
             </tr>
@@ -264,6 +265,31 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   )}
                 </td>
               )}
+              {/* Kantor belum migrasi: tanda tangan kasir saja (daily_recaps), tanpa kunci. */}
+              {onTtd && (
+                <td className="px-2 py-1 text-center">
+                  {r.type != 'daily' ? null : r.status_approve_kasir ? (
+                    <span
+                      title="Sudah ditandatangani kasir"
+                      className="inline-flex items-center justify-center gap-1 h-7 px-2 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-800"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      TTD
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!auth?.permissions?.includes('can-approve') || !r.status_approve_kepala}
+                      title={r.status_approve_kepala ? 'Tanda tangan kasir hari ini' : 'Belum di-ACC KM'}
+                      onClick={() => onTtd(r)}
+                      className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-white rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40"
+                    >
+                      <PenLine className="w-3.5 h-3.5" />
+                      TTD
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -276,7 +302,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   <Angka n={total[k]} bertanda={bertanda} />
                 </td>
               ))}
-              {onKunci && <td />}
+              {(onKunci || onTtd) && <td />}
             </tr>
           </tfoot>
         )}
