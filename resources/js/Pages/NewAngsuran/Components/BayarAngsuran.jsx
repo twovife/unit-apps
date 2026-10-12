@@ -170,10 +170,13 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
                 onChange={(e) => setData('transaction_date', e.target.value)}
                 hariTagih={triggeredPinjaman?.hari}
                 min={awalBulan.format('YYYY-MM-DD')}
-                max={batasAkhir.format('YYYY-MM-DD')}
+                // Paling jauh HARI INI, bukan akhir bulan buku: buku bulan lalu
+                // tetap bisa dipakai menginput angsuran bulan berjalan.
+                max={dayjs().format('YYYY-MM-DD')}
               />
               <small className="block mt-1 text-[11px] text-muted-foreground">
-                Pilih tanggal tagih di bulan buku ini (paling jauh hari ini).
+                Pilih tanggal tagih mulai bulan buku ini sampai hari ini. Angsuran di luar bulan buku tampil di buku
+                bulan tanggalnya.
               </small>
             </>
           ) : (
