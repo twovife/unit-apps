@@ -40,6 +40,7 @@ import {
   ShieldCheck,
   Smartphone,
   UserRound,
+  UserPlus,
   Users,
   UserX,
 } from 'lucide-react';
@@ -272,6 +273,23 @@ export default function AppSidebar({ ...props }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {auth?.permissions?.includes('input-lamaran') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={route().current('administrasi.lamaran.index')}
+                    tooltip="Lamaran Kerja"
+                  >
+                    <Link
+                      href={route('administrasi.lamaran.index')}
+                      className="flex items-center gap-2.5 font-medium"
+                    >
+                      <UserPlus className="size-4" />
+                      <span>Lamaran Kerja</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
 
             {/* Submenu: Persiapan Migrasi Agregasi - khusus superuser (mas 2026-10-10). */}
