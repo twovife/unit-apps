@@ -25,4 +25,11 @@ return [
 
     'bulan_migrasi' => env('AGREGASI_BULAN_MIGRASI'),
 
+    /*
+    | Jam paling awal kunci / TTD kasir untuk HARI INI (WIB, zona app.timezone
+    | Asia/Jakarta - tidak bergantung zona jam server). Hari yang sudah lewat
+    | bebas jam berapa pun. Ubah lewat AGREGASI_JAM_KUNCI di .env, mis. 11:00.
+    */
+    'jam_kunci' => env('AGREGASI_JAM_KUNCI', '11:00'),
+
 ];

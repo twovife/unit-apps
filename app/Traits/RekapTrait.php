@@ -445,6 +445,8 @@ trait RekapTrait
         'branch_id' => $branch_id,
         // Kantor alur baru: SU Lapangan bisa diisi kasir di Rekap 1.
         'migrasi' => $alurBaru,
+        // Kunci / TTD hari ini baru boleh mulai jam ini (WIB); dibaca tombol Kunci.
+        'jam_kunci' => config('agregasi.jam_kunci'),
         // Hari dibuka ulang yang belum dikunci lagi (menahan rantai kunci).
         'hari_terbuka' => $alurBaru ? \App\Helpers\Gembok::hariTerbuka($branch_id) : [],
       ]

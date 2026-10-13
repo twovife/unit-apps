@@ -190,7 +190,19 @@ class TransactionDailyRecapController extends Controller
    */
   public function kunci_hari(Request $request)
   {
-    $val = $request->validate(['id' => ['required', 'integer'], 'date' => ['required', 'date', 'before_or_equal:today']]);
+    $val = $request->validate(
+      ['id' => ['required', 'integer'], 'date' => ['required', 'date', 'before_or_equal:today']],
+      ['date.before_or_equal' => 'Hari yang belum tiba tidak bisa dikunci.']
+    );
+    // Kunci / TTD kasir hanya kasir & pimpinan (mas 2026-10-13); superuser untuk dukungan.
+    if (!auth()->user()->hasAnyRole(['kasir', 'pimpinan', 'superuser'])) {
+      return redirect()->back()->withErrors('Kunci / TTD kasir hanya untuk kasir dan pimpinan.');
+    }
+    // Hari ini baru bisa dikunci mulai jam_kunci WIB (config agregasi).
+    $jam = (string) config('agregasi.jam_kunci', '11:00');
+    if (Carbon::parse($val['date'])->isToday() && Carbon::now()->lt(Carbon::today()->setTimeFromTimeString($jam))) {
+      return redirect()->back()->withErrors("Hari ini baru bisa dikunci mulai jam {$jam} WIB.");
+    }
     $grouping = TransactionLoanOfficerGrouping::findOrFail($val['id']);
     if (!AppHelper::bolehAksesKelompok($grouping)) {
       return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);

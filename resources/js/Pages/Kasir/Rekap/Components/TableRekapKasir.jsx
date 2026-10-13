@@ -155,6 +155,13 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
 const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null }) => {
   const { auth, server_filter } = usePage().props;
   const hariIni = dayjs().format('YYYY-MM-DD');
+  // Kunci / TTD kasir: hanya kasir & pimpinan (+ superuser); hari ini mulai jam_kunci WIB.
+  // Server memeriksa ulang dengan jam server (zona Asia/Jakarta).
+  const bolehKunci = ['kasir', 'pimpinan', 'superuser'].some((x) => auth?.roles?.includes(x));
+  const kunciBelumJam = (r) =>
+    !!server_filter?.jam_kunci &&
+    dayjs(r.tanggal).format('YYYY-MM-DD') === hariIni &&
+    dayjs().format('HH:mm') < server_filter.jam_kunci;
   const belum = (r) => !!r.tanggal && dayjs(r.tanggal).format('YYYY-MM-DD') > hariIni;
   // Angka yang bisa diklik -> drawer buku-nya, tanggal ini disorot.
   const KLIK = {
@@ -267,7 +274,14 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   ) : (
                     <button
                       type="button"
-                      disabled={!auth?.permissions?.includes('can-approve')}
+                      disabled={!bolehKunci || kunciBelumJam(r)}
+                      title={
+                        !bolehKunci
+                          ? 'Hanya kasir dan pimpinan'
+                          : kunciBelumJam(r)
+                            ? `Hari ini baru bisa dikunci mulai jam ${server_filter?.jam_kunci} WIB`
+                            : undefined
+                      }
                       onClick={() => onKunci(r)}
                       className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-white rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40"
                     >
