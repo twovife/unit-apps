@@ -95,6 +95,8 @@ Route::middleware('auth')->group(function () {
   Route::prefix('administrasi')->name('administrasi.')->group(function () {
     Route::controller(EmployeeController::class)->prefix('manpower')->name('manpower.')->group(function () {
       Route::get('/', "index")->name('index');
+      // Unggah foto profil karyawan (kasir / superuser), disimpan di MinIO avatars/.
+      Route::post('/{employee}/avatar', "uploadAvatar")->name('avatar');
     });
     // Lamaran Kerja: catat pelamar & dokumen untuk cabang aktif; terima / tolak di app_laravel.
     Route::controller(\App\Http\Controllers\LamaranKerjaController::class)->prefix('lamaran')->name('lamaran.')->group(function () {

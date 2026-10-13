@@ -108,6 +108,48 @@ class EmployeeController extends Controller
   }
 
   /**
+   * Unggah foto profil (avatar) karyawan: kasir & superuser, karyawan di cabang
+   * yang boleh diakses. Disimpan di MinIO folder avatars/ (disk s3) - tempat
+   * yang sama dengan unggahan app_laravel - lalu foto lama dihapus.
+   * Beda dengan pas foto berkas lamaran kerja (menyusul).
+   */
+  public function uploadAvatar(Request $request, Employee $employee)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Unggah foto khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+
+    $request->validate(
+      ['avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048']],
+      ['avatar.max' => 'Ukuran foto maksimal 2MB.', 'avatar.image' => 'File harus berupa foto.']
+    );
+
+    try {
+      $path = $request->file('avatar')->store('avatars', 's3');
+    } catch (\Throwable $e) {
+      \Illuminate\Support\Facades\Log::error('Unggah avatar gagal: ' . $e->getMessage(), ['employee' => $employee->id]);
+      $path = false;
+    }
+    if (!$path) {
+      return back()->withErrors('Gagal menyimpan foto ke server penyimpanan.');
+    }
+
+    $lama = $employee->getAttribute('avatar');
+    $employee->forceFill(['avatar' => $path])->save();
+
+    if ($lama) {
+      try {
+        \Illuminate\Support\Facades\Storage::disk('s3')->delete($lama);
+      } catch (\Throwable $e) {
+        // Foto lama gagal dihapus tidak boleh menggagalkan penggantian.
+      }
+    }
+
+    return back()->with('message', 'Foto profil diperbarui.');
+  }
+
+  /**
    * Display the specified resource.
    */
   public function show(Employee $employee)

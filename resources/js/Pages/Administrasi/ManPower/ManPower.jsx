@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Input } from '@/shadcn/ui/input';
-import { MapPin, Search, Users } from 'lucide-react';
+import { Camera, MapPin, Search, Users } from 'lucide-react';
+import { Button } from '@/shadcn/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
 /**
@@ -55,10 +56,57 @@ const Baris = ({ label, children }) => (
   </div>
 );
 
-/** Detail satu karyawan (unggah foto profil menyusul). */
-const DetailKaryawan = ({ d, onClosed, superuser }) => {
+// Foto HP bisa 4-8 MB: kecilkan dulu di browser (sisi terpanjang 800px, JPEG)
+// supaya muat batas 2 MB server dan cepat diunggah.
+const kecilkan = (file) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const skala = Math.min(1, 800 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * skala);
+      c.height = Math.round(img.height * skala);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => resolve(b ? new File([b], 'avatar.jpg', { type: 'image/jpeg' }) : file), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+
+/** Detail satu karyawan + unggah foto profil / avatar (kasir & superuser). */
+const DetailKaryawan = ({ d, onClosed, superuser, bolehUnggah }) => {
+  const input = useRef(null);
+  const [proses, setProses] = useState(false);
+  const [galat, setGalat] = useState(null);
+  useEffect(() => setGalat(null), [d?.id]);
+
+  const unggah = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !d) return;
+    setGalat(null);
+    setProses(true);
+    const kecil = await kecilkan(file);
+    router.post(
+      route('administrasi.manpower.avatar', d.id),
+      { avatar: kecil },
+      {
+        forceFormData: true,
+        preserveScroll: true,
+        preserveState: true,
+        onError: (err) => setGalat(err.avatar ?? Object.values(err)[0] ?? 'Gagal mengunggah foto.'),
+        onFinish: () => setProses(false),
+      },
+    );
+  };
+
   return (
-    <Dialog open={!!d} onOpenChange={(o) => !o && onClosed()}>
+    <Dialog open={!!d} onOpenChange={(o) => !o && !proses && onClosed()}>
       <DialogContent className="max-w-md">
         {d && (
           <>
@@ -69,6 +117,17 @@ const DetailKaryawan = ({ d, onClosed, superuser }) => {
                 {d.employment} <Status aktif={d.isActive} />
               </DialogDescription>
             </DialogHeader>
+
+            {bolehUnggah && (
+              <div className="flex flex-col items-center gap-1">
+                <input ref={input} type="file" accept="image/*" className="hidden" onChange={unggah} />
+                <Button size="sm" variant="outline" disabled={proses} onClick={() => input.current?.click()} className="gap-1.5">
+                  <Camera className="w-4 h-4" />
+                  {proses ? 'Mengunggah…' : d.avatar ? 'Ganti foto profil' : 'Unggah foto profil'}
+                </Button>
+                {galat && <span className="text-xs text-red-600">{galat}</span>}
+              </div>
+            )}
 
             <div className="mt-2">
               <Baris label="NIK">{d.identity_id || '–'}</Baris>
@@ -144,7 +203,12 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
   return (
     <div className="space-y-4">
       <Head title={title} />
-      <DetailKaryawan d={pilih} onClosed={() => setPilihId(null)} superuser={superuser} />
+      <DetailKaryawan
+        d={pilih}
+        onClosed={() => setPilihId(null)}
+        superuser={superuser}
+        bolehUnggah={superuser || auth?.roles?.includes('kasir')}
+      />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
