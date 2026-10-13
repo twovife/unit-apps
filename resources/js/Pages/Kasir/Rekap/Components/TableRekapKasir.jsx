@@ -258,12 +258,9 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
               {onKunci && (
                 <td className="px-2 py-1 text-center">
                   {r.type != 'daily' ? null : r.status_approve_kasir ? (
-                    // Kuning = dikunci sebelum KM mengecek (ACC KM otomatis).
                     <span
-                      title={`${migrasi ? 'Terkunci' : 'Ditandatangani kasir'}${r.kepala_otomatis ? ' — ACC KM otomatis (belum dicek KM)' : ''}`}
-                      className={`inline-flex items-center justify-center w-7 h-7 rounded-md ${
-                        r.kepala_otomatis ? 'bg-amber-200 text-amber-900 ring-1 ring-amber-400' : 'bg-slate-100 text-slate-600'
-                      }`}
+                      title={migrasi ? 'Terkunci' : 'Ditandatangani kasir'}
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-100 text-slate-600"
                     >
                       {migrasi ? <Lock className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                     </span>
@@ -280,16 +277,17 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                   )}
                 </td>
               )}
-              {/* ACC KM: centang = sudah (kuning = otomatis saat kunci/TTD), silang = belum. */}
+              {/* ACC KM: centang = KM sudah mengecek; silang = belum, termasuk ACC
+                  otomatis saat kunci / TTD kasir (alurnya tetap, tampilannya silang). */}
               {onKunci && (
                 <td className="px-2 py-1 text-center">
-                  {r.type != 'daily' ? null : r.status_approve_kepala ? (
-                    <Check
-                      className={`inline w-4 h-4 ${r.kepala_otomatis ? 'text-amber-500' : 'text-emerald-600'}`}
-                      aria-label={r.kepala_otomatis ? 'ACC KM otomatis' : 'Sudah ACC KM'}
-                    />
+                  {r.type != 'daily' ? null : r.status_approve_kepala && !r.kepala_otomatis ? (
+                    <Check className="inline w-4 h-4 text-emerald-600" aria-label="Sudah ACC KM" />
                   ) : (
-                    <X className="inline w-4 h-4 text-rose-500" aria-label="Belum ACC KM" />
+                    <X
+                      className="inline w-4 h-4 text-rose-500"
+                      aria-label={r.kepala_otomatis ? 'Belum dicek KM (ACC otomatis saat kunci / TTD)' : 'Belum ACC KM'}
+                    />
                   )}
                 </td>
               )}

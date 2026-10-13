@@ -48,17 +48,18 @@ export const KOLOM_HARIAN = [
 
 // Belum dicek: silang + tombol ke tempat ngeceknya (href = pindah halaman,
 // onClick = drawer).
-// otomatis: ACC KM dijalankan saat kunci kasir (belum dicek KM) -> kuning.
+// otomatis: ACC KM dijalankan sistem saat kunci / TTD kasir, KM belum
+// mengecek -> tetap tampil silang (mas 2026-10-13); alurnya tidak berubah.
 export const Cek = ({ ok, href, onClick, otomatis = false }) => (
   <div className="flex items-center justify-center gap-1.5">
-    {ok ? (
-      <CheckCircle
-        className={`w-4 h-4 ${otomatis ? 'text-amber-500' : 'text-green-500'}`}
-        aria-label={otomatis ? 'ACC KM otomatis saat kunci (belum dicek KM)' : 'Sudah dicek'}
-      />
+    {ok && !otomatis ? (
+      <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek" />
     ) : (
       <>
-        <XCircle className="w-4 h-4 text-red-500" />
+        <XCircle
+          className="w-4 h-4 text-red-500"
+          aria-label={otomatis ? 'Belum dicek KM (ACC otomatis saat kunci / TTD kasir)' : 'Belum dicek'}
+        />
         {onClick ? (
           <button
             type="button"

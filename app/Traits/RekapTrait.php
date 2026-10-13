@@ -15,6 +15,20 @@ use Illuminate\Http\Request;
 trait RekapTrait
 {
   // $hanyaKelompok: Rekap Mantri cukup satu kelompok, bukan seluruh cabang.
+  /**
+   * Kantor lama: ACC KM otomatis saat TTD kasir ditandai dengan waktu ACC KM
+   * = waktu TTD persis (TransactionDailyRecapController::ttdLama). Baris alur
+   * baru (objek dari daily_closings, kolomnya boolean) tidak pernah cocok.
+   */
+  private static function accKmOtomatisLama($r): bool
+  {
+    if (!$r || !($r instanceof TransactionDailyRecap) || !$r->daily_kepala_approval || !$r->daily_kasir_approval) {
+      return false;
+    }
+
+    return (string) $r->daily_kepala_approval === (string) $r->daily_kasir_approval;
+  }
+
   public function getRencanaDropKepalaData(Request $request, $hanyaKelompok = null)
   {
     $scope = \App\Helpers\AuthScope::resolve();
@@ -86,6 +100,7 @@ trait RekapTrait
         // yang belum di-ACC KM membuat semua baris sesudahnya tanpa cek_km.
         ->each(function ($r) {
           $r->cek_km = (bool) $r->daily_kepala_approval;
+          $r->km_otomatis = self::accKmOtomatisLama($r);
         })
         ->groupBy(fn($r) => Carbon::parse($r->date)->toDateString());
     }
@@ -136,7 +151,8 @@ trait RekapTrait
         'pasangan' => $p,
         // Ceklist Kepala (ACC KM) hari D sudah? Target pasangan baru final sesudahnya.
         'cek_km' => (bool) ($daily_recap->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $g->id)->first()?->cek_km),
-        'kepala_otomatis' => isset($kmOtomatis[$g->id . '|' . $tanggal]),
+        'kepala_otomatis' => isset($kmOtomatis[$g->id . '|' . $tanggal])
+          || (bool) ($daily_recap->get($tanggal, collect())->where('transaction_loan_officer_grouping_id', $g->id)->first()?->km_otomatis),
       ] + $isi($tanggal, $g->id) + collect($isi($p, $g->id))->mapWithKeys(fn($v, $k) => ["p_$k" => $v])->all());
     })->values();
 
@@ -361,8 +377,7 @@ trait RekapTrait
         // Kantor lama: ACC KM otomatis saat TTD kasir = waktu ACC KM sama persis dengan TTD.
         'kepala_otomatis' => $alurBaru
           ? isset($kmOtomatis[$item->id . '|' . $transaction_date])
-          : ($status_kepala && $status_kasir
-            && (string) $thisDailyRecap->daily_kepala_approval === (string) $thisDailyRecap->daily_kasir_approval),
+          : self::accKmOtomatisLama($thisDailyRecap),
         'status_dayly_approval' => $status_kepala && $status_kasir,
         'transaction_date' => $transaction_date,
 
@@ -935,7 +950,7 @@ trait RekapTrait
             'rekap_status' => $thisDailyRecap ? true : false,
             'status_approve_kepala' => $thisDailyRecap?->daily_kepala_approval ? true : false,
             'status_approve_kasir' => $thisDailyRecap?->daily_kasir_approval ? true : false,
-            'kepala_otomatis' => isset($kmOtomatis[$item->id . '|' . $date]),
+            'kepala_otomatis' => isset($kmOtomatis[$item->id . '|' . $date]) || self::accKmOtomatisLama($thisDailyRecap),
             'status_dayly_approval' => ($thisDailyRecap?->daily_kepala_approval && $thisDailyRecap?->daily_kasir_approval),
 
             'kasbon' => $kasbon,
@@ -1204,7 +1219,7 @@ trait RekapTrait
         'rekap_status' => $thisDailyRecap ? true : false,
         'status_approve_kepala' => $status_kepala,
         'status_approve_kasir' => $status_kasir,
-        'kepala_otomatis' => isset($kmOtomatis[$transactionOffice->id . '|' . $transaction_date]),
+        'kepala_otomatis' => isset($kmOtomatis[$transactionOffice->id . '|' . $transaction_date]) || self::accKmOtomatisLama($thisDailyRecap),
         'status_dayly_approval' => $status_kepala && $status_kasir,
         'transaction_date' => $transaction_date,
 

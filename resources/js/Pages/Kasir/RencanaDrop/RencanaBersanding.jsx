@@ -109,15 +109,15 @@ export const Sisi = ({
                 <td className="px-3 py-1">
                   {!kosong && (
                     <div className="flex items-center justify-center gap-1.5">
-                      {r.cek_km ? (
-                        // Kuning = ACC KM otomatis saat kunci kasir (belum dicek KM).
-                        <CheckCircle
-                          className={`w-4 h-4 ${r.kepala_otomatis ? 'text-amber-500' : 'text-green-500'}`}
-                          aria-label={r.kepala_otomatis ? 'ACC KM otomatis saat kunci (belum dicek KM)' : 'Sudah dicek KM'}
-                        />
+                      {r.cek_km && !r.kepala_otomatis ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek KM" />
                       ) : (
                         <>
-                          <XCircle className="w-4 h-4 text-red-500" />
+                          {/* ACC otomatis saat kunci / TTD kasir tetap silang: KM belum mengecek. */}
+                          <XCircle
+                            className="w-4 h-4 text-red-500"
+                            aria-label={r.kepala_otomatis ? 'Belum dicek KM (ACC otomatis saat kunci / TTD kasir)' : 'Belum dicek KM'}
+                          />
                           {onAcc && (
                           <button
                             type="button"
