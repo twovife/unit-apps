@@ -8,6 +8,7 @@ import { router, usePage } from "@inertiajs/react";
 import { useFilterAngsuran } from "../FilterAngsuran";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useModeRibuan } from '@/lib/modeAngka';
 
 /**
  * Buku angsuran bulanan (desktop Angsuran Lancar & Pinjaman Macet).
@@ -122,6 +123,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
   // digeser. Di HP cuma Nama yang beku (dan lebih sempit); No/Tgl/No Ang ikut
   // tergeser, Nama menempel di kiri begitu terlewati.
   const isMobile = useIsMobile();
+  const ribuan = useModeRibuan();
   const beku = isMobile ? { Nama: "sticky left-0 shadow-[inset_-1px_0_0_#cbd5e1]" } : BEKU;
   const bolehUbah = auth?.permissions?.includes("can-create");
   const [data, setData] = useState([]);
@@ -198,18 +200,19 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
     ["Hari", "w-14"],
     ["Pnj", "w-10"],
     ["X", "w-10"],
-    ["Drop", "w-20 text-right"],
-    ["Pinjaman", "w-20 text-right"],
+    ["Drop", `${ribuan ? "w-20" : "w-24"} text-right`],
+    ["Pinjaman", `${ribuan ? "w-20" : "w-24"} text-right`],
   ];
   const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1;
   // Lebar minimum = jumlah lebar kolom (kelas w-N = N x 4px). Kalau layar
   // lebih lebar, tabel mengisi penuh; kalau tidak muat, tabel tetap selebar
   // ini dan bisa digeser ke samping - kolom tidak pernah dipepetkan.
   const px = (kelas) => Number(/w-(\d+)/.exec(kelas)?.[1] ?? 0) * 4;
-  const LEBAR_BLOK = { sisa: 80, tgl: 56, angs: 80, md: 56 };
+  // Rupiah penuh (saklar 000): jutaan butuh kolom lebih lebar, kalau tidak mepet.
+  const LEBAR_BLOK = ribuan ? { sisa: 80, tgl: 56, angs: 80, md: 56 } : { sisa: 104, tgl: 88, angs: 104, md: 88 };
   // Lebar tiap kolom (px) - dipakai <colgroup> di DUA tabel (header & isi)
   // supaya kolomnya selalu sejajar.
-  const lebarKolom = [...KOLOM_TETAP.map(([, kelas]) => px(kelas)), ...kolomBlok.map((k) => LEBAR_BLOK[k.jenis]), 80];
+  const lebarKolom = [...KOLOM_TETAP.map(([, kelas]) => px(kelas)), ...kolomBlok.map((k) => LEBAR_BLOK[k.jenis]), ribuan ? 80 : 104];
   const lebarMin = lebarKolom.reduce((t, w) => t + w, 0);
   const colgroup = (
     <colgroup>
