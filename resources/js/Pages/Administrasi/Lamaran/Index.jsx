@@ -119,8 +119,29 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
         </DialogHeader>
         <form id="form-lamaran" onSubmit={kirim} className="grid gap-3">
           <div className="grid gap-1">
-            <Label htmlFor="nik">NIK</Label>
-            <Input id="nik" name="nik" inputMode="numeric" maxLength={16} value={data.nik} onChange={(e) => setData('nik', e.target.value.replace(/\D/g, ''))} required />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="nik">NIK</Label>
+              {/* Penghitung digit: NIK 15-16 angka. */}
+              <span
+                className={`text-xs tabular-nums ${
+                  !data.nik ? 'text-slate-400' : data.nik.length < 15 ? 'text-rose-600' : 'text-emerald-700'
+                }`}
+              >
+                {data.nik.length}/16 digit{data.nik && data.nik.length < 15 ? ' (min 15)' : ''}
+              </span>
+            </div>
+            <Input
+              id="nik"
+              name="nik"
+              inputMode="numeric"
+              minLength={15}
+              maxLength={16}
+              pattern="[0-9]{15,16}"
+              title="NIK 15-16 digit angka"
+              value={data.nik}
+              onChange={(e) => setData('nik', e.target.value.replace(/\D/g, '').slice(0, 16))}
+              required
+            />
             <InputError message={errors.nik} />
             <CekNik nik={data.nik} kecuali={edit?.id} onAktif={setNikAktif} />
           </div>
@@ -182,7 +203,7 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
           <Button variant="outline" disabled={processing} onClick={onClosed}>
             Batal
           </Button>
-          <Button type="submit" form="form-lamaran" disabled={processing || nikAktif}>
+          <Button type="submit" form="form-lamaran" disabled={processing || nikAktif || data.nik.length < 15}>
             {processing ? 'Menyimpan…' : 'Simpan'}
           </Button>
         </DialogFooter>
