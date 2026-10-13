@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { Head, usePage } from '@inertiajs/react';
 import { Input } from '@/shadcn/ui/input';
 import { MapPin, Search, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
 /**
  * Data Karyawan satu cabang (cabang aktif dari filter cabang di header).
@@ -16,9 +17,10 @@ const TAB = [
 ];
 
 // Foto profil (link sementara dari server) atau inisial kalau tidak ada / gagal dimuat.
-const Avatar = ({ d, besar = false }) => {
+const Avatar = ({ d, besar = false, ukuran: ukuranProp = null }) => {
   const [gagal, setGagal] = useState(false);
-  const ukuran = besar ? 'w-11 h-11 text-sm' : 'w-9 h-9 text-xs';
+  useEffect(() => setGagal(false), [d.avatar]);
+  const ukuran = ukuranProp ?? (besar ? 'w-11 h-11 text-sm' : 'w-9 h-9 text-xs');
   const inisial = String(d.employee_name ?? '?')
     .trim()
     .split(/\s+/)
@@ -43,6 +45,44 @@ const Avatar = ({ d, besar = false }) => {
     >
       {inisial}
     </span>
+  );
+};
+
+const Baris = ({ label, children }) => (
+  <div className="grid grid-cols-[7rem_1fr] gap-2 py-1.5 border-b border-slate-100 text-sm">
+    <span className="text-slate-500">{label}</span>
+    <span className="min-w-0 text-slate-900 break-words">{children}</span>
+  </div>
+);
+
+/** Detail satu karyawan (unggah foto profil menyusul). */
+const DetailKaryawan = ({ d, onClosed, superuser }) => {
+  return (
+    <Dialog open={!!d} onOpenChange={(o) => !o && onClosed()}>
+      <DialogContent className="max-w-md">
+        {d && (
+          <>
+            <DialogHeader className="items-center text-center">
+              <Avatar d={d} ukuran="w-24 h-24 text-2xl" />
+              <DialogTitle className="mt-2">{d.employee_name}</DialogTitle>
+              <DialogDescription className="flex items-center justify-center gap-2 capitalize">
+                {d.employment} <Status aktif={d.isActive} />
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-2">
+              <Baris label="NIK">{d.identity_id || '–'}</Baris>
+              <Baris label="Akun">
+                <Akun d={d} superuser={superuser} />
+              </Baris>
+              <Baris label="Alamat">{d.address || '–'}</Baris>
+              <Baris label="Tanggal masuk">{tgl(d.hire_date)}</Baris>
+              <Baris label="Tanggal resign">{d.resign_date ? tgl(d.resign_date) : '–'}</Baris>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -80,6 +120,8 @@ const Akun = ({ d, superuser }) =>
 const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
   const { auth } = usePage().props;
   const superuser = auth?.roles?.includes('superuser');
+  const [pilihId, setPilihId] = useState(null);
+  const pilih = datas.find((d) => d.id === pilihId) ?? null;
   const [tab, setTab] = useState('aktif');
   const [cari, setCari] = useState('');
 
@@ -102,6 +144,7 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
   return (
     <div className="space-y-4">
       <Head title={title} />
+      <DetailKaryawan d={pilih} onClosed={() => setPilihId(null)} superuser={superuser} />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -160,7 +203,11 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
             </thead>
             <tbody>
               {tampil.map((d, i) => (
-                <tr key={d.id} className={`border-t align-top even:bg-slate-50 hover:bg-sky-50 ${d.isActive ? '' : 'text-slate-500'}`}>
+                <tr
+                  key={d.id}
+                  onClick={() => setPilihId(d.id)}
+                  className={`border-t align-top cursor-pointer even:bg-slate-50 hover:bg-sky-50 ${d.isActive ? '' : 'text-slate-500'}`}
+                >
                   <td className="px-3 py-2 text-slate-400 tabular-nums">{i + 1}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-3">
@@ -191,7 +238,12 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
       {/* HP: kartu */}
       <div className="space-y-2 md:hidden">
         {tampil.map((d) => (
-          <div key={d.id} className={`p-3 bg-white border rounded-lg ${d.isActive ? '' : 'opacity-70'}`}>
+          <button
+            type="button"
+            key={d.id}
+            onClick={() => setPilihId(d.id)}
+            className={`block w-full p-3 text-left bg-white border rounded-lg active:bg-slate-50 ${d.isActive ? '' : 'opacity-70'}`}
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center min-w-0 gap-3">
                 <Avatar d={d} besar />
@@ -216,7 +268,7 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
               <span>Masuk {tgl(d.hire_date)}</span>
               {d.resign_date && <span>Resign {tgl(d.resign_date)}</span>}
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
