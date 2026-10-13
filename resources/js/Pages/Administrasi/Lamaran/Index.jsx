@@ -249,7 +249,7 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
 
   return (
     <Dialog open={!!l} onOpenChange={(o) => !o && !proses && onClosed()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         {l && (
           <>
             <DialogHeader>
@@ -279,35 +279,55 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
             </div>
 
             <div>
-              <h3 className="mb-1 text-xs font-semibold uppercase text-slate-500">Dokumen</h3>
+              <div className="flex items-baseline justify-between mb-2">
+                <h3 className="text-base font-semibold text-slate-900">Dokumen pelamar</h3>
+                <span className="text-sm font-medium tabular-nums text-slate-600">
+                  {l.dokumen.length}/{jenis.length} lengkap
+                </span>
+              </div>
               <input ref={input} type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={unggah} />
-              <div className="space-y-1">
+              <div className="grid gap-2 sm:grid-cols-2">
                 {jenis.map((j) => {
                   const ada = l.dokumen.find((d) => d.type === j);
                   return (
-                    <div key={j} className="flex items-center justify-between gap-2 px-2 py-1.5 text-sm border rounded-md">
-                      <span className="flex items-center gap-1.5">
-                        <FileText className={`w-4 h-4 ${ada ? 'text-emerald-600' : 'text-slate-300'}`} />
-                        {NAMA_DOK[j] ?? j}
+                    <div
+                      key={j}
+                      className={`flex items-center gap-3 p-3 border-2 rounded-xl ${
+                        ada ? 'border-emerald-300 bg-emerald-50' : 'border-dashed border-slate-300 bg-white'
+                      }`}
+                    >
+                      <span
+                        className={`flex items-center justify-center w-10 h-10 rounded-lg shrink-0 ${
+                          ada ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        <FileText className="w-5 h-5" />
                       </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-slate-900">{NAMA_DOK[j] ?? j}</div>
+                        <div className={`text-xs ${ada ? 'text-emerald-700' : 'text-slate-500'}`}>{ada ? 'Sudah diunggah' : 'Belum ada'}</div>
+                      </div>
                       {ada ? (
-                        <a href={ada.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-sky-700 hover:underline">
+                        <a
+                          href={ada.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center h-9 px-3 text-sm font-semibold text-white rounded-md bg-emerald-600 hover:bg-emerald-700"
+                        >
                           Lihat
                         </a>
                       ) : menunggu ? (
-                        <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" disabled={proses} onClick={() => pilihFile(j)}>
-                          <Upload className="w-3.5 h-3.5" />
+                        <Button className="gap-1.5 h-9" disabled={proses} onClick={() => pilihFile(j)}>
+                          <Upload className="w-4 h-4" />
                           {proses && jenisUnggah === j ? 'Mengunggah…' : 'Unggah'}
                         </Button>
-                      ) : (
-                        <span className="text-xs text-slate-400">belum ada</span>
-                      )}
+                      ) : null}
                     </div>
                   );
                 })}
               </div>
-              <p className="mt-1 text-[11px] text-slate-500">JPEG / PNG / PDF, maks 5MB. Tiap dokumen sekali unggah.</p>
-              {galat && <p className="mt-1 text-xs text-red-600">{galat}</p>}
+              <p className="mt-2 text-xs text-slate-500">Foto (JPEG / PNG) atau PDF, maks 5MB. Tiap dokumen sekali unggah, tidak bisa diganti.</p>
+              {galat && <p className="mt-1 text-sm font-medium text-red-600">{galat}</p>}
             </div>
 
             {menunggu && (
@@ -414,12 +434,23 @@ const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], ref
                   <Status s={l.status} />
                 </div>
                 <div className="mt-2 text-xs text-slate-600">{l.employment ?? 'Jabatan belum diisi'}</div>
-                <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500">
-                  <span>{tgl(l.tanggal_lamaran)}</span>
-                  <span className="flex items-center gap-1">
-                    <Paperclip className="w-3 h-3" />
-                    {l.dokumen.length}/{jenis_dokumen.length} dokumen
-                  </span>
+                <div className="mt-1 text-[11px] text-slate-500">{tgl(l.tanggal_lamaran)}</div>
+                {/* Kelengkapan dokumen: satu cip per jenis, hijau = sudah diunggah. */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {jenis_dokumen.map((j) => {
+                    const ada = l.dokumen.some((d) => d.type === j);
+                    return (
+                      <span
+                        key={j}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md ${
+                          ada ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        <Paperclip className="w-3 h-3" />
+                        {NAMA_DOK[j] ?? j}
+                      </span>
+                    );
+                  })}
                 </div>
               </button>
             ))}
