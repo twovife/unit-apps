@@ -249,7 +249,7 @@ class LamaranKerjaController extends Controller
         $aktif = Employee::with('branch:id,unit')->where('nik', $nik)->whereNull('date_resign')->first();
         if ($aktif) {
             throw ValidationException::withMessages([
-                'nik' => "NIK milik karyawan aktif {$aktif->nama_karyawan} di {$aktif->branch?->unit}.",
+                'nik' => "NIK milik karyawan aktif {$aktif->nama_karyawan} ({$aktif->branch?->unit}) — tidak bisa diinput sebagai pelamar. Mohon hubungi STAF PUSAT / IT.",
             ]);
         }
     }

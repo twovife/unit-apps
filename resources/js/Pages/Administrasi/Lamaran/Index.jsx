@@ -29,8 +29,10 @@ const Status = ({ s }) => {
 };
 
 /** Hasil cek NIK: karyawan aktif (ditolak server), mantan, riwayat lamaran. */
-const CekNik = ({ nik, kecuali }) => {
+const CekNik = ({ nik, kecuali, onAktif }) => {
   const [hasil, setHasil] = useState(null);
+  // Beri tahu form: NIK karyawan aktif -> tombol Simpan dimatikan.
+  useEffect(() => onAktif?.(!!hasil?.aktif), [hasil]);
   useEffect(() => {
     setHasil(null);
     if (!/^\d{15,16}$/.test(nik ?? '')) return;
@@ -51,8 +53,9 @@ const CekNik = ({ nik, kecuali }) => {
   return (
     <div className="space-y-1 text-xs">
       {hasil.aktif && (
-        <div className="p-2 rounded bg-rose-50 text-rose-800">
-          NIK milik karyawan aktif {hasil.aktif.nama} ({hasil.aktif.kantor}) — tidak bisa dicatat sebagai pelamar.
+        <div className="p-2 font-medium rounded bg-rose-50 text-rose-800">
+          NIK milik karyawan aktif {hasil.aktif.nama} ({hasil.aktif.kantor}) — tidak bisa diinput sebagai pelamar. Mohon
+          hubungi STAF PUSAT / IT.
         </div>
       )}
       {hasil.mantan && (
@@ -88,6 +91,7 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
     catatan: '',
   };
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm(kosong);
+  const [nikAktif, setNikAktif] = useState(false);
 
   useEffect(() => {
     clearErrors();
@@ -118,7 +122,7 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
             <Label htmlFor="nik">NIK</Label>
             <Input id="nik" name="nik" inputMode="numeric" maxLength={16} value={data.nik} onChange={(e) => setData('nik', e.target.value.replace(/\D/g, ''))} required />
             <InputError message={errors.nik} />
-            <CekNik nik={data.nik} kecuali={edit?.id} />
+            <CekNik nik={data.nik} kecuali={edit?.id} onAktif={setNikAktif} />
           </div>
           <div className="grid gap-1">
             <Label htmlFor="nama">Nama</Label>
@@ -178,7 +182,7 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
           <Button variant="outline" disabled={processing} onClick={onClosed}>
             Batal
           </Button>
-          <Button type="submit" form="form-lamaran" disabled={processing}>
+          <Button type="submit" form="form-lamaran" disabled={processing || nikAktif}>
             {processing ? 'Menyimpan…' : 'Simpan'}
           </Button>
         </DialogFooter>
