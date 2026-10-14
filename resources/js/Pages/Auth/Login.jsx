@@ -55,7 +55,7 @@ export default function Login({ status }) {
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_50%_0%,#334155,transparent_65%)] lg:bg-[radial-gradient(circle_at_30%_20%,#334155,transparent_60%)]"
         />
-        <img src="/icons/icon-512.png" alt="UBMI" className="relative w-16 h-16 rounded-2xl lg:w-40 lg:h-40" />
+        <img src="/icons/icon-512.png?v=2" alt="UBMI" className="relative w-16 h-16 rounded-2xl lg:w-40 lg:h-40" />
         <div className="relative text-center">
           <h1 className="text-2xl font-extrabold tracking-wide lg:text-4xl">UBMI DIGITAL</h1>
           <p className="mt-1 text-sm text-slate-400 lg:text-base">Aplikasi Pembukuan Kantor</p>
