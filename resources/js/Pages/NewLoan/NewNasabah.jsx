@@ -73,6 +73,8 @@ const NewNasabah = ({
     tanggal_drop: '',
     nama: '',
     alamat: '',
+    // Alamat domisili -> transaction_manage_customers.residential_address (bukan alamat KTP).
+    residential_address: '',
     kelompok: '',
     nomor_anggota: '',
     request_nominal: 0,
@@ -507,7 +509,7 @@ const NewNasabah = ({
                           />
                         </div>
                         <div className="w-full mb-3">
-                          <Label>Alamat</Label>
+                          <Label>Alamat KTP</Label>
                           <Input
                             type="text"
                             disabled
@@ -516,6 +518,21 @@ const NewNasabah = ({
                         </div>
                       </>
                     )}
+                    <div className="w-full mb-3">
+                      <Label>
+                        Alamat domisili{' '}
+                        <span className="font-normal text-gray-500">(opsional - kalau tinggal tidak sesuai KTP)</span>
+                      </Label>
+                      <Input
+                        type="text"
+                        name="residential_address"
+                        maxLength={255}
+                        value={data.residential_address}
+                        onChange={onInputChange}
+                        placeholder="Kosongkan kalau sama dengan alamat KTP"
+                      />
+                      <InputError message={errors.residential_address} />
+                    </div>
                     <div className="w-full mb-3">
                       <Label>
                         Nomor Anggota{' '}

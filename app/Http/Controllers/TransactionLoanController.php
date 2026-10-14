@@ -487,6 +487,9 @@ class TransactionLoanController extends Controller
       'nomor_anggota' => ['nullable', 'regex:/^[0-9]+$/', 'max:20'],
       'nama' => ['required_if:isActiveMember,false'],
       'alamat' => ['required_if:isActiveMember,false'],
+      // Alamat domisili (mas 2026-10-14): ditulis ke manage_customers
+      // (per kelompok/hari), bukan ke alamat identitas TransactionCustomer.
+      'residential_address' => ['nullable', 'string', 'max:255'],
       // Hari libur ditolak SELALU (keputusan mas
       // 2026-10-09: tidak ada transaksi sama sekali di hari libur).
       'request_date' => ['required', 'date', 'before_or_equal:today', new HariKerja('Tanggal pengajuan')],
@@ -526,6 +529,10 @@ class TransactionLoanController extends Controller
       // Nomor anggota melekat ke rekening (kelompok+hari), sama seperti store_pengajuan_lama.
       if ($request->filled('nomor_anggota')) {
         $manage->update(['nomor_anggota' => $request->nomor_anggota]);
+      }
+      // Domisili juga melekat ke rekening; alamat KTP (TransactionCustomer) tidak disentuh.
+      if ($request->filled('residential_address')) {
+        $manage->update(['residential_address' => trim($request->residential_address)]);
       }
 
       // drop_before hanya bermakna untuk topup (punya previous_loan_id), diisi
