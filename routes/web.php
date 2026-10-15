@@ -33,6 +33,12 @@ Route::get('/dashboard/pembayaran', [\App\Http\Controllers\PembayaranKantorContr
 // Dashboard Kasir: halaman kartu pembayaran kantor (bukan di Home).
 Route::get('/dashboard-kasir', [\App\Http\Controllers\PembayaranKantorController::class, 'halaman'])
   ->middleware(['auth'])->name('dashboard.kasir');
+Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorController::class)
+  ->prefix('dashboard-kasir')->name('dashboard.kasir.')->group(function () {
+    Route::post('/iuran', 'bayarIuran')->name('iuran');
+    Route::post('/umrah', 'setorUmrah')->name('umrah');
+    Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah'])->whereNumber('id')->name('bukti');
+  });
 
 Route::middleware('auth')->group(function () {
 
