@@ -27,6 +27,9 @@ Route::get('/', function () {
   // Video panduan pengumuman (MinIO, link sementara) - kosong kalau belum disetel.
   return Inertia::render('Dashboard', ['video' => \App\Helpers\VideoPengumuman::url()]);
 })->middleware(['auth'])->name('home');
+// Ringkasan pembayaran kantor di Home (JSON, per bulan, kantor aktif).
+Route::get('/dashboard/pembayaran', [\App\Http\Controllers\PembayaranKantorController::class, 'ringkasan'])
+  ->middleware(['auth'])->name('dashboard.pembayaran');
 
 Route::middleware('auth')->group(function () {
 
