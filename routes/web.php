@@ -30,6 +30,9 @@ Route::get('/', function () {
 // Ringkasan pembayaran kantor di Home (JSON, per bulan, kantor aktif).
 Route::get('/dashboard/pembayaran', [\App\Http\Controllers\PembayaranKantorController::class, 'ringkasan'])
   ->middleware(['auth'])->name('dashboard.pembayaran');
+// Dashboard Kasir: halaman kartu pembayaran kantor (bukan di Home).
+Route::get('/dashboard-kasir', [\App\Http\Controllers\PembayaranKantorController::class, 'halaman'])
+  ->middleware(['auth'])->name('dashboard.kasir');
 
 Route::middleware('auth')->group(function () {
 

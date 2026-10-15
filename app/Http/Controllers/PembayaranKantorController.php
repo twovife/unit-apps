@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Ringkasan pembayaran kantor di Home (mas 2026-10-15): kartu per jenis untuk
+ * Ringkasan pembayaran kantor di halaman Dashboard Kasir (mas 2026-10-15): kartu per jenis untuk
  * kantor aktif (filter cabang global) dan satu bulan. Baca-saja; input tetap
  * di menu masing-masing. Semua tabel milik app_laravel (DB bersama).
  */
@@ -17,6 +17,14 @@ class PembayaranKantorController extends Controller
 {
     private const TARGET_TABUNGAN = 1000000;
     private const TARGET_BOP = 1500000;
+
+    /** Halaman Dashboard Kasir; angkanya dimuat lewat ringkasan() (JSON). */
+    public function halaman()
+    {
+        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403, 'Dashboard kasir untuk kepala mantri, kasir, dan pimpinan.');
+
+        return \Inertia\Inertia::render('Kasir/Dashboard/Index');
+    }
 
     public function ringkasan(Request $request)
     {

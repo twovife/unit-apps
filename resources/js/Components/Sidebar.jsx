@@ -34,6 +34,7 @@ import {
   HandCoins,
   Home,
   Layers,
+  LayoutDashboard,
   LogOut,
   PlusCircle,
   Search,
@@ -139,6 +140,23 @@ export default function AppSidebar({ ...props }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            {auth?.permissions?.includes('view-all-groups') && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={route().current('dashboard.kasir')}
+                  tooltip="Dashboard Kasir"
+                >
+                  <Link
+                    href={route('dashboard.kasir')}
+                    className="flex items-center gap-2.5 font-medium"
+                  >
+                    <LayoutDashboard className="size-4" />
+                    <span>Dashboard Kasir</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
 
           {/* Submenu Utama Pertama: Mantri Apps (Daftar Rute Mobile Apps) */}

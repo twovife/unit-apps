@@ -5,7 +5,7 @@ import { Link } from '@inertiajs/react';
 import { Banknote, Building2, HandCoins, Landmark, PiggyBank, Plane, Wallet } from 'lucide-react';
 
 /**
- * Ringkasan pembayaran kantor aktif per bulan (Home). Data dari
+ * Ringkasan pembayaran kantor aktif per bulan (halaman Dashboard Kasir). Data dari
  * dashboard.pembayaran (PembayaranKantorController); baca-saja - input di
  * menu masing-masing. Kartu yang menunya ada di route bisa diklik.
  */

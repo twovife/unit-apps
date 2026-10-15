@@ -3,7 +3,6 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import { Megaphone, PlayCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
-import PembayaranKantor from '@/Components/PembayaranKantor';
 
 // Pengumuman pembaruan aplikasi, per bagian. `judul` null = tanpa judul.
 // `penting` = ditampilkan merah. `video` = kunci video panduan (props.video,
@@ -88,13 +87,6 @@ export default function Dashboard(props) {
           </div>
         </section>
       </div>
-
-      {/* Ringkasan pembayaran kantor: KM / kasir / pimpinan ke atas (view-all-groups). */}
-      {props.auth?.permissions?.includes('view-all-groups') && (
-        <div className="mt-6">
-          <PembayaranKantor />
-        </div>
-      )}
 
       <Dialog open={!!putar} onOpenChange={(o) => !o && setPutar(null)}>
         <DialogContent className="max-w-3xl p-3 sm:p-4">
