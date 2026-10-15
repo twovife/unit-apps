@@ -27,6 +27,7 @@ import {
   Book,
   BookOpen,
   Calendar,
+  Car,
   ChevronsUpDown,
   ClipboardCheck,
   FilePenLine,
@@ -36,6 +37,7 @@ import {
   Layers,
   LayoutDashboard,
   LogOut,
+  PiggyBank,
   PlusCircle,
   Search,
   ShieldCheck,
@@ -91,6 +93,8 @@ export default function AppSidebar({ ...props }) {
   // (Transaksi, Angsuran Lancar, Macet) & Rekap Mantri. Peran lain melihat
   // semua kecuali menu superuser (mas 2026-10-10).
   const isMantri = auth?.roles?.includes('mantri') && !isSuperUser;
+  // Iuran 1 Juta, Iuran BOP, SKSW, Aset Kendaraan (mas 2026-10-15).
+  const bolehAdmKantor = ['kasir', 'stafkontrol', 'pusat', 'pimpinan', 'superuser'].some((r) => auth?.roles?.includes(r));
 
   return (
     <Sidebar className="border-r shadow-xs" {...props}>
@@ -307,6 +311,71 @@ export default function AppSidebar({ ...props }) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+              )}
+              {/* Iuran 1 Juta, Iuran BOP, SKSW, Aset: sudah rilis, bukan closed beta lagi (mas 2026-10-15). */}
+              {bolehAdmKantor && (
+              <>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={route().current('tabungan.contributions')}
+                  tooltip="Iuran Tabungan 1 Juta"
+                >
+                  <Link
+                    href={route('tabungan.contributions')}
+                    className="flex items-center gap-2.5 font-medium"
+                  >
+                    <PiggyBank className="size-4" />
+                    <span>Iuran Tabungan 1 Juta</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={route().current('bop.contributions')}
+                  tooltip="Iuran BOP"
+                >
+                  <Link
+                    href={route('bop.contributions')}
+                    className="flex items-center gap-2.5 font-medium"
+                  >
+                    <HandCoins className="size-4" />
+                    <span>Iuran BOP</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={route().current('sksw.unit')}
+                  tooltip="SKSW — Laporan Unit"
+                >
+                  <Link
+                    href={route('sksw.unit')}
+                    className="flex items-center gap-2.5 font-medium"
+                  >
+                    <FileSpreadsheet className="size-4" />
+                    <span>SKSW — Laporan Unit</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={route().current('assets.index')}
+                  tooltip="Aset Kendaraan"
+                >
+                  <Link
+                    href={route('assets.index')}
+                    className="flex items-center gap-2.5 font-medium"
+                  >
+                    <Car className="size-4" />
+                    <span>Aset Kendaraan</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              </>
               )}
             </SidebarMenu>
 

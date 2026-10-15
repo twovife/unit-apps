@@ -47,6 +47,47 @@ Route::middleware('auth')->group(function () {
 
   Route::post('/set-branch', \App\Http\Controllers\SetBranchController::class)->name('set-branch');
 
+  // Iuran 1 Juta, Iuran BOP, SKSW, Aset Kendaraan: hanya 5 peran ini (= menu sidebar,
+  // mas 2026-10-15). Gerbang tulis yang lebih sempit tetap di controller masing-masing.
+  Route::middleware('role:kasir|stafkontrol|pusat|pimpinan|superuser')->group(function () {
+  Route::prefix('tabungan')->name('tabungan.')->controller(\App\Http\Controllers\TbContributionController::class)->group(function () {
+    Route::get('/contributions', 'index')->name('contributions');
+    Route::post('/contributions', 'store')->name('contributions.store');
+    Route::delete('/contributions/{contribution}', 'destroy')->name('contributions.destroy');
+    Route::get('/api/contributions/{branch}/history', 'history')->name('api.contributions.history');
+  });
+
+  Route::prefix('bop')->name('bop.')->controller(\App\Http\Controllers\BopContributionController::class)->group(function () {
+    Route::get('/contributions', 'index')->name('contributions');
+    Route::post('/contributions', 'store')->name('contributions.store');
+    Route::delete('/contributions/{contribution}', 'destroy')->name('contributions.destroy');
+    Route::get('/api/contributions/{branch}/history', 'history')->name('api.contributions.history');
+  });
+
+  Route::controller(\App\Http\Controllers\SkswUnitController::class)->prefix('sksw')->name('sksw.')->group(function () {
+    Route::get('/unit', 'index')->name('unit');
+    Route::get('/{saving}/detail', 'detail')->whereNumber('saving')->name('detail');
+    // Input setoran bulanan SW/SK banyak karyawan (kasir/stafkontrol/pusat/superuser).
+    Route::post('/setoran', 'setoran')->name('setoran');
+    Route::post('/{saving}/transaksi', 'transaksi')->whereNumber('saving')->name('transaksi');
+    Route::post('/{saving}/mutasi', 'mutasi')->whereNumber('saving')->name('mutasi');
+    Route::delete('/transaksi/{transaction}', 'hapus')->whereNumber('transaction')->name('hapus');
+  });
+
+  Route::controller(\App\Http\Controllers\VehicleAssetController::class)->prefix('assets')->name('assets.')->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::post('/', 'store')->name('store');
+    Route::get('/her', 'herList')->name('her');
+    Route::post('/her/{vehicle}/confirm', 'confirmHer')->whereNumber('vehicle')->name('her.confirm');
+    Route::delete('/her/tax/{tax}', 'cancelHer')->whereNumber('tax')->name('her.cancel');
+    Route::get('/{asset}/detail', 'detailJson')->whereNumber('asset')->name('detail');
+    Route::put('/{asset}', 'update')->whereNumber('asset')->name('update');
+    Route::delete('/{asset}', 'destroy')->whereNumber('asset')->name('destroy');
+    Route::post('/{asset}/mutate', 'mutate')->whereNumber('asset')->name('mutate');
+    Route::post('/{asset}/maintenance', 'addMaintenance')->whereNumber('asset')->name('maintenance.store');
+  });
+  });
+
   Route::controller(BatchInputController::class)->name('batch_input.')->prefix('batch-input')->group(function () {
     Route::get('/', 'index')->name('index');
     Route::post('/', 'store')->name('store');
