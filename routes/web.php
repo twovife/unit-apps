@@ -38,6 +38,8 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorCo
     Route::post('/iuran', 'bayarIuran')->name('iuran');
     Route::post('/umrah', 'setorUmrah')->name('umrah');
     Route::post('/modal', 'bayarModal')->name('modal');
+    Route::get('/goro-umrah', 'detailUmrah')->name('goro_umrah');
+    Route::get('/pinjaman-modal', 'detailModal')->name('pinjaman_modal');
     Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah', 'modal'])->whereNumber('id')->name('bukti');
   });
 

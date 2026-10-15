@@ -591,6 +591,7 @@ export default function PembayaranKantor() {
           <Kartu
             judul="Tabungan Goro Umrah"
             ikon={Plane}
+            href={linkKe('dashboard.kasir.goro_umrah')}
             warna="bg-teal-100 text-teal-700"
             tanda={
               k.umrah.kali_bulan_ini > 0 ? (
@@ -618,6 +619,7 @@ export default function PembayaranKantor() {
               key={m.sumber}
               judul={m.judul}
               ikon={Landmark}
+              href={linkKe('dashboard.kasir.pinjaman_modal') && route('dashboard.kasir.pinjaman_modal', { sumber: m.sumber })}
               warna="bg-violet-100 text-violet-700"
               aksi={
                 m.boleh_bayar &&

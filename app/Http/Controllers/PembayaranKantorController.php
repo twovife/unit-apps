@@ -239,6 +239,92 @@ class PembayaranKantorController extends Controller
         return back()->with('message', 'Pembayaran pinjaman modal dicatat (dialokasikan ke pinjaman tertua).');
     }
 
+    /** Halaman detail Tabungan Goro Umrah kantor aktif: rekap per bulan setahun + semua setoran. */
+    public function detailUmrah(Request $request)
+    {
+        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403);
+        $branch = $this->kantor();
+        $tahun = preg_match('/^\d{4}$/', (string) $request->input('tahun')) ? (int) $request->input('tahun') : (int) now()->year;
+
+        $setoran = DB::table('goro_umroh_setoran as s')
+            ->leftJoin('users as u', 'u.id', '=', 's.created_by')
+            ->leftJoin('employees as e', 'e.id', '=', 'u.employee_id')
+            ->where('s.branch_id', $branch->id)->whereYear('s.tanggal', $tahun)
+            ->orderByDesc('s.tanggal')->orderByDesc('s.id')
+            ->get(['s.id', 's.tanggal', 's.amount', 's.notes', 's.bukti_path', DB::raw('COALESCE(e.nama_karyawan, u.username) as oleh')]);
+
+        return \Inertia\Inertia::render('Kasir/Dashboard/GoroUmrah', [
+            'unit' => $branch->unit,
+            'tahun' => $tahun,
+            'tahun_ada' => DB::table('goro_umroh_setoran')->where('branch_id', $branch->id)->selectRaw('DISTINCT YEAR(tanggal) t')->orderByDesc('t')->pluck('t'),
+            'total' => (int) DB::table('goro_umroh_setoran')->where('branch_id', $branch->id)->sum('amount'),
+            'per_bulan' => collect(range(1, 12))->map(fn($b) => [
+                'bulan' => sprintf('%d-%02d', $tahun, $b),
+                'jumlah' => (int) $setoran->filter(fn($x) => (int) Carbon::parse($x->tanggal)->month === $b)->sum('amount'),
+                'kali' => $setoran->filter(fn($x) => (int) Carbon::parse($x->tanggal)->month === $b)->count(),
+            ]),
+            'setoran' => $setoran->map(fn($x) => [
+                'id' => $x->id,
+                'tanggal' => Carbon::parse($x->tanggal)->toDateString(),
+                'nominal' => (int) $x->amount,
+                'catatan' => $x->notes,
+                'oleh' => $x->oleh,
+                'bukti' => $x->bukti_path ? route('dashboard.kasir.bukti', ['umrah', $x->id]) : null,
+            ]),
+        ]);
+    }
+
+    /** Halaman detail Pinjaman Modal kantor aktif per sumber: daftar pinjaman + riwayat angsuran. */
+    public function detailModal(Request $request)
+    {
+        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403);
+        $branch = $this->kantor();
+        $sumber = array_key_exists((string) $request->input('sumber'), self::SUMBER_MODAL) ? (string) $request->input('sumber') : 'pusat';
+
+        $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branch->id)->where('source', $sumber)
+            ->orderByDesc('loan_date')->orderByDesc('id')->get(['id', 'amount', 'loan_date', 'status', 'notes']);
+        $bayar = DB::table('tb_capital_loan_payments as p')
+            ->leftJoin('users as u', 'u.id', '=', 'p.created_by')
+            ->leftJoin('employees as e', 'e.id', '=', 'u.employee_id')
+            ->whereIn('p.tb_capital_loan_id', $pinjaman->pluck('id'))
+            ->orderByDesc('p.payment_date')->orderByDesc('p.id')
+            ->get(['p.id', 'p.tb_capital_loan_id', 'p.amount_principal', 'p.amount_jasa_modal', 'p.payment_date', 'p.notes', 'p.bukti_path', DB::raw('COALESCE(e.nama_karyawan, u.username) as oleh')]);
+        $pokokPer = $bayar->groupBy('tb_capital_loan_id')->map(fn($g) => (int) $g->sum('amount_principal'));
+
+        $daftar = $pinjaman->map(fn($l) => [
+            'id' => $l->id,
+            'tanggal' => Carbon::parse($l->loan_date)->toDateString(),
+            'jumlah' => (int) $l->amount,
+            'dibayar' => $pokokPer[$l->id] ?? 0,
+            'sisa' => max(0, (int) $l->amount - ($pokokPer[$l->id] ?? 0)),
+            'status' => $l->status,
+            'catatan' => $l->notes,
+        ]);
+
+        return \Inertia\Inertia::render('Kasir/Dashboard/PinjamanModal', [
+            'unit' => $branch->unit,
+            'sumber' => $sumber,
+            'sumber_ada' => collect(self::SUMBER_MODAL)->map(fn($judul, $k) => ['kunci' => $k, 'judul' => $judul])->values(),
+            'ringkas' => [
+                'total_pinjaman' => (int) $daftar->sum('jumlah'),
+                'total_pokok' => (int) $bayar->sum('amount_principal'),
+                'total_jasa' => (int) $bayar->sum('amount_jasa_modal'),
+                'sisa' => (int) $daftar->sum('sisa'),
+            ],
+            'pinjaman' => $daftar,
+            'angsuran' => $bayar->map(fn($p) => [
+                'id' => $p->id,
+                'pinjaman_id' => $p->tb_capital_loan_id,
+                'tanggal' => Carbon::parse($p->payment_date)->toDateString(),
+                'pokok' => (int) $p->amount_principal,
+                'jasa' => (int) $p->amount_jasa_modal,
+                'catatan' => $p->notes,
+                'oleh' => $p->oleh,
+                'bukti' => $p->bukti_path ? route('dashboard.kasir.bukti', ['modal', $p->id]) : null,
+            ]),
+        ]);
+    }
+
     /** Foto bukti transfer (tb / bop / umrah / modal) kantor yang boleh diakses. */
     public function bukti(string $modul, int $id)
     {
