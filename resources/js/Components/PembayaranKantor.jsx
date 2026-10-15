@@ -81,6 +81,17 @@ const Tanda = ({ jenis, teks }) => {
   );
 };
 
+/** Tombol kecil "Detail" ke menu asal kartu; tidak tampil kalau menunya belum ada. */
+const TombolDetail = ({ href }) =>
+  href ? (
+    <Link
+      href={href}
+      className="px-2 py-0.5 text-[11px] font-semibold rounded-md shrink-0 text-sky-700 ring-1 ring-sky-300 hover:bg-sky-50"
+    >
+      Detail
+    </Link>
+  ) : null;
+
 const Kartu = ({ judul, ikon: Ikon, warna, href, tanda, aksi, children }) => (
   <div className="flex flex-col h-full p-4 bg-white border shadow-sm rounded-xl">
     <div className="flex items-start justify-between gap-2 mb-3">
@@ -88,13 +99,8 @@ const Kartu = ({ judul, ikon: Ikon, warna, href, tanda, aksi, children }) => (
         <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${warna}`}>
           <Ikon className="w-5 h-5" />
         </span>
-        {href ? (
-          <Link href={href} className="font-semibold truncate text-slate-900 hover:text-sky-700 hover:underline">
-            {judul}
-          </Link>
-        ) : (
-          <h3 className="font-semibold truncate text-slate-900">{judul}</h3>
-        )}
+        <h3 className="font-semibold truncate text-slate-900">{judul}</h3>
+        <TombolDetail href={href} />
       </div>
       {tanda}
     </div>
@@ -563,32 +569,19 @@ export default function PembayaranKantor() {
                     <Plus className="w-4 h-4" /> Bayar iuran
                   </Button>
                 )}
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    ['Detail Tabungan', linkKe('tabungan.contributions')],
-                    ['Detail BOP', linkKe('bop.contributions')],
-                  ].map(([label, href]) =>
-                    href ? (
-                      <Button key={label} asChild size="sm" variant="outline" className="w-full">
-                        <Link href={href}>{label}</Link>
-                      </Button>
-                    ) : (
-                      <Button key={label} size="sm" variant="outline" className="w-full" disabled title="Menu belum tersedia">
-                        {label}
-                      </Button>
-                    ),
-                  )}
-                </div>
               </div>
             }
           >
             {[
-              ['Tabungan 1 Juta', k.tabungan],
-              ['BOP Pusat', k.bop],
-            ].map(([label, d], i) => (
+              ['Tabungan 1 Juta', k.tabungan, linkKe('tabungan.contributions')],
+              ['BOP Pusat', k.bop, linkKe('bop.contributions')],
+            ].map(([label, d, href], i) => (
               <div key={label} className={i > 0 ? 'pt-3 mt-3 border-t' : ''}>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="font-semibold text-slate-800">{label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-800">{label}</span>
+                    <TombolDetail href={href} />
+                  </span>
                   {tandaIuran(d)}
                 </div>
                 <IsiIuran d={d} />
