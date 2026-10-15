@@ -403,12 +403,108 @@ const DialogUmrah = ({ buka, onClosed }) => {
   );
 };
 
+/** Angsuran pinjaman modal satu sumber. Tawan/Sherly: satu nominal, jasa 2% otomatis; Pusat: pokok + jasa. */
+const DialogModal = ({ m, onClosed }) => {
+  const [isi, setIsi] = useState({});
+  const [file, setFile] = useState(null);
+  const [galat, setGalat] = useState({});
+  const [proses, setProses] = useState(false);
+  useEffect(() => {
+    if (!m) return;
+    setIsi({ payment_date: dayjs().format('YYYY-MM-DD'), nominal: '', jasa: '', notes: '' });
+    setFile(null);
+    setGalat({});
+  }, [m?.sumber]);
+  const pusat = m?.sumber === 'pusat';
+  const nominal = Number(isi.nominal) || 0;
+  // Pratinjau pembagian; angka final dihitung ulang di server.
+  const jasa = pusat ? Number(isi.jasa) || 0 : Math.min(m?.jasa_anjuran ?? 0, nominal);
+  const pokok = pusat ? nominal : nominal - jasa;
+  const simpan = async () => {
+    setProses(true);
+    const bukti = await kecilkan(file);
+    router.post(route('dashboard.kasir.modal'), { ...isi, source: m.sumber, bukti }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onError: setGalat,
+      onSuccess: onClosed,
+      onFinish: () => setProses(false),
+    });
+  };
+  const ubah = (k, v) => setIsi((x) => ({ ...x, [k]: v }));
+
+  return (
+    <Dialog open={!!m} onOpenChange={(o) => !o && !proses && onClosed()}>
+      <DialogContent className="max-w-md">
+        {m && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Bayar {m.judul}</DialogTitle>
+              <DialogDescription>
+                Sisa pokok {rp(m.sisa)}. Dialokasikan ke pinjaman tertua lebih dulu.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1">
+                  <Label>{pusat ? 'Angsuran pokok' : 'Nominal transfer'}</Label>
+                  <Input inputMode="numeric" value={isi.nominal ?? ''} onChange={(e) => ubah('nominal', e.target.value.replace(/\D/g, ''))} />
+                  {galat.nominal && <span className="text-xs text-red-600">{galat.nominal}</span>}
+                </div>
+                {pusat ? (
+                  <div className="grid gap-1">
+                    <Label>Jasa modal</Label>
+                    <Input inputMode="numeric" value={isi.jasa ?? ''} onChange={(e) => ubah('jasa', e.target.value.replace(/\D/g, ''))} />
+                  </div>
+                ) : (
+                  <div className="grid gap-1">
+                    <Label>Tanggal bayar</Label>
+                    <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.payment_date ?? ''} onChange={(e) => ubah('payment_date', e.target.value)} />
+                  </div>
+                )}
+              </div>
+              {pusat && (
+                <div className="grid gap-1">
+                  <Label>Tanggal bayar</Label>
+                  <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.payment_date ?? ''} onChange={(e) => ubah('payment_date', e.target.value)} />
+                </div>
+              )}
+              {galat.payment_date && <span className="text-xs text-red-600">{galat.payment_date}</span>}
+              {nominal > 0 && (
+                <div className="p-2 text-sm rounded-md bg-slate-50">
+                  <Baris label={pusat ? 'Jasa modal' : 'Jasa modal (2% sisa)'} nilai={rp(jasa)} />
+                  <Baris label="Masuk ke pokok" nilai={rp(pokok)} tebal />
+                </div>
+              )}
+              <IsiBukti file={file} setFile={setFile} galat={galat.bukti} />
+              <div className="grid gap-1">
+                <Label>Catatan</Label>
+                <Input value={isi.notes ?? ''} onChange={(e) => ubah('notes', e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+              <Button variant="outline" disabled={proses} onClick={onClosed}>
+                Batal
+              </Button>
+              <Button disabled={proses || !file || !nominal} onClick={simpan}>
+                {proses ? 'Menyimpan…' : 'Simpan pembayaran'}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default function PembayaranKantor() {
   const [bulan, setBulan] = useState(dayjs().format('YYYY-MM'));
   const [data, setData] = useState(null);
   const [galat, setGalat] = useState(null);
   const [muatUlang, setMuatUlang] = useState(0);
   const [dialog, setDialog] = useState(null); // 'iuran' | 'umrah'
+  const [modalPilih, setModalPilih] = useState(null); // kartu pinjaman modal yang dibayar
 
   useEffect(() => {
     setGalat(null);
@@ -530,6 +626,15 @@ export default function PembayaranKantor() {
               judul={m.judul}
               ikon={Landmark}
               warna="bg-violet-100 text-violet-700"
+              aksi={
+                m.boleh_bayar &&
+                m.jumlah_aktif > 0 &&
+                !m.terkunci_modal && (
+                  <Button size="sm" className="w-full gap-1" onClick={() => setModalPilih(m)}>
+                    <Plus className="w-4 h-4" /> Bayar angsuran
+                  </Button>
+                )
+              }
               tanda={
                 m.jumlah_aktif === 0 ? (
                   <Tanda jenis="netral" teks="Tidak ada pinjaman" />
@@ -544,6 +649,8 @@ export default function PembayaranKantor() {
               <Baris label="Pinjaman aktif" nilai={`${m.jumlah_aktif} pinjaman`} />
               <Baris label="Pokok dibayar bulan ini" nilai={rp(m.pokok_bulan_ini)} />
               <Baris label="Jasa modal bulan ini" nilai={rp(m.jasa_bulan_ini)} />
+              {m.terkunci_modal && <div className="text-xs font-medium text-slate-500">🔒 Bulan ini sudah dikunci kasir pusat.</div>}
+              <Riwayat isi={m.riwayat} />
             </Kartu>
           ))}
           <Kartu judul="SKSW" ikon={Wallet} warna="bg-emerald-100 text-emerald-700" href={linkKe('sksw.unit')}>
@@ -557,6 +664,13 @@ export default function PembayaranKantor() {
 
       <DialogIuran buka={dialog === 'iuran'} onClosed={tutup} data={data} bulan={bulan} />
       <DialogUmrah buka={dialog === 'umrah'} onClosed={tutup} />
+      <DialogModal
+        m={modalPilih}
+        onClosed={() => {
+          setModalPilih(null);
+          setMuatUlang((n) => n + 1);
+        }}
+      />
     </section>
   );
 }

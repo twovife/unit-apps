@@ -37,7 +37,8 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorCo
   ->prefix('dashboard-kasir')->name('dashboard.kasir.')->group(function () {
     Route::post('/iuran', 'bayarIuran')->name('iuran');
     Route::post('/umrah', 'setorUmrah')->name('umrah');
-    Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah'])->whereNumber('id')->name('bukti');
+    Route::post('/modal', 'bayarModal')->name('modal');
+    Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah', 'modal'])->whereNumber('id')->name('bukti');
   });
 
 Route::middleware('auth')->group(function () {
