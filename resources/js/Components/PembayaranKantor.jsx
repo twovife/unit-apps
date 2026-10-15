@@ -625,8 +625,9 @@ export default function PembayaranKantor() {
                 m.boleh_bayar &&
                 m.jumlah_aktif > 0 &&
                 !m.terkunci_modal && (
-                  <Button size="sm" className="w-full gap-1" onClick={() => setModalPilih(m)}>
-                    <Plus className="w-4 h-4" /> Bayar angsuran
+                  // Dimatikan sementara (mas 2026-10-15): bayar pinjaman modal belum dirilis.
+                  <Button size="sm" className="w-full gap-1" disabled title="Belum dibuka">
+                    <Plus className="w-4 h-4" /> Bayar angsuran (belum dibuka)
                   </Button>
                 )
               }
