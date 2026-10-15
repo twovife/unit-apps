@@ -77,14 +77,15 @@ trait PinjamanTrait
     // harian diketuk, angka drop/storting hari itu sudah masuk laporan,
     // sehingga mengubah pinjaman di belakangnya membuat laporan tidak cocok.
     if ($migrasi) {
+      // Hari terkunci = dikunci kasir (ACC KM saja belum mengunci; mas 2026-10-15).
       $approvedRecapDates = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
-        ->where(fn($q) => $q->whereNotNull('kasir_lock_at')->orWhereNotNull('kepala_approval_at'))
+        ->whereNotNull('kasir_lock_at')
         ->pluck('date')
         ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
         ->flip();
     } else {
       $approvedRecapDates = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)
-        ->whereNotNull('daily_kepala_approval')
+        ->whereNotNull('daily_kasir_approval')
         ->pluck('date')
         ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
         ->flip();

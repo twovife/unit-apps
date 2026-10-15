@@ -470,9 +470,8 @@ class AppHelper
    *  - mantri     : boleh hanya jika drop_date ATAU request_date pinjaman itu
    *                 adalah HARI INI. Selain itu ditolak, tanpa pengecualian.
    *  - can-approve (kasir, pimpinan, kepala-mantri, pengawas, stafkontrol,
-   *                 superuser): boleh selama rekap harian tanggal drop BELUM
-   *                 di-ACC kepala (transaction_daily_recaps.daily_kepala_approval
-   *                 masih null). Begitu terkunci, TIDAK ADA pengecualian
+   *                 superuser): boleh selama hari drop BELUM dikunci kasir
+   *                 (lihat tanggalTerkunci). Begitu terkunci, TIDAK ADA pengecualian
    *                 (termasuk superuser - beda dengan Reset Pinjaman).
    *  - lainnya    : ditolak.
    */
@@ -495,8 +494,8 @@ class AppHelper
   }
 
   /**
-   * Hari drop pinjaman sudah dikunci: dikunci kasir / di-ACC kepala di
-   * gembok baru (transaction_daily_closings), atau rekap lama di-ACC kepala.
+   * Hari drop pinjaman sudah dikunci kasir: kasir_lock_at di gembok baru
+   * (transaction_daily_closings), atau TTD kasir di rekap lama.
    */
   public static function hariDropTerkunci(\App\Models\TransactionLoan $loan): bool
   {
@@ -530,10 +529,10 @@ class AppHelper
     $hari = fn($q) => $q->where('transaction_loan_officer_grouping_id', $groupingId)
       ->whereDate('date', Carbon::parse($tanggal)->toDateString());
 
-    return \App\Models\TransactionDailyClosing::where($hari)
-      ->where(fn($q) => $q->whereNotNull('kasir_lock_at')->orWhereNotNull('kepala_approval_at'))
-      ->exists()
-      || \App\Models\TransactionDailyRecap::where($hari)->whereNotNull('daily_kepala_approval')->exists();
+    // Terkunci hanya sesudah KASIR mengunci / TTD (mas 2026-10-15). ACC KM /
+    // pimpinan belum mengunci: mantri masih boleh input di hari itu.
+    return \App\Models\TransactionDailyClosing::where($hari)->whereNotNull('kasir_lock_at')->exists()
+      || \App\Models\TransactionDailyRecap::where($hari)->whereNotNull('daily_kasir_approval')->exists();
   }
 
   /**
