@@ -155,10 +155,11 @@ class PembayaranKantorController extends Controller
 
     /**
      * Angsuran pinjaman modal satu sumber, = app_laravel
-     * TabunganController::storeCapitalLoanPayment: tawan/sherly satu nominal,
-     * jasa modal otomatis 2% dari total sisa pokok (dihitung di server), sisanya
-     * pokok; dialokasikan FIFO ke pinjaman aktif tertua, semua jasa ke pinjaman
-     * pertama; lunas -> status paid. Sumber pusat hanya bendahara (kasirpusat).
+     * TabunganController::storeCapitalLoanPayment: tawan/sherly satu nominal;
+     * jasa modal 2% dari sisa pokok TIAP pinjaman yang sudah masuk bulan ke-5
+     * (lihat jasaPinjaman), dibagi FIFO ke pinjaman tertua dan dibatasi
+     * nominal; sisa nominal jadi pokok, FIFO juga. Pusat: jasa diisi manual,
+     * dicatat di pinjaman tertua. Lunas -> status paid. Sumber pusat hanya bendahara (kasirpusat).
      * Kunci bulanan modal berlaku untuk semua kantor (branch_id null).
      */
     public function bayarModal(Request $request)
@@ -181,7 +182,7 @@ class PembayaranKantorController extends Controller
         }
 
         $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branch->id)->where('source', $data['source'])
-            ->where('status', 'active')->orderBy('loan_date')->orderBy('id')->get(['id', 'amount']);
+            ->where('status', 'active')->orderBy('loan_date')->orderBy('id')->get(['id', 'amount', 'loan_date']);
         $dibayar = DB::table('tb_capital_loan_payments')->whereIn('tb_capital_loan_id', $pinjaman->pluck('id'))
             ->groupBy('tb_capital_loan_id')->selectRaw('tb_capital_loan_id, SUM(amount_principal) pokok')->pluck('pokok', 'tb_capital_loan_id');
         $sisa = fn($l) => (int) $l->amount - (int) ($dibayar[$l->id] ?? 0);
@@ -190,14 +191,22 @@ class PembayaranKantorController extends Controller
             throw ValidationException::withMessages(['nominal' => 'Tidak ada pinjaman modal aktif untuk sumber ini.']);
         }
 
+        $jasaPer = []; // id pinjaman => jasa modal
         if ($data['source'] === 'pusat') {
             // Pusat: pokok & jasa diisi terpisah (nominal = pokok).
             $pokok = (int) $data['nominal'];
-            $jasa = (int) ($data['jasa'] ?? 0);
+            if ((int) ($data['jasa'] ?? 0) > 0) {
+                $jasaPer[$pinjaman->first()->id] = (int) $data['jasa'];
+            }
         } else {
-            $nominal = (int) $data['nominal'];
-            $jasa = min((int) round($totalSisa * 0.02), $nominal);
-            $pokok = $nominal - $jasa;
+            $pokok = (int) $data['nominal'];
+            foreach ($pinjaman as $l) {
+                $j = min(self::jasaPinjaman($l->loan_date, $sisa($l), $data['payment_date']), $pokok);
+                if ($j > 0) {
+                    $jasaPer[$l->id] = $j;
+                    $pokok -= $j;
+                }
+            }
         }
         if ($pokok > $totalSisa) {
             throw ValidationException::withMessages(['nominal' => 'Angsuran pokok melebihi total sisa hutang (Rp ' . number_format($totalSisa, 0, ',', '.') . ').']);
@@ -206,17 +215,18 @@ class PembayaranKantorController extends Controller
         // Diunggah sesudah semua validasi lolos supaya tidak ada file yatim.
         $bukti = Unggahan::simpan($request->file('bukti'), 'modal-bukti', 'bukti');
 
-        DB::transaction(function () use ($pinjaman, $sisa, $pokok, $jasa, $data, $bukti) {
+        DB::transaction(function () use ($pinjaman, $sisa, $pokok, $jasaPer, $data, $bukti) {
             foreach ($pinjaman as $l) {
-                if ($pokok <= 0 && $jasa <= 0) {
-                    break;
-                }
                 $sisaIni = $sisa($l);
                 if ($sisaIni <= 0) {
                     DB::table('tb_capital_loans')->where('id', $l->id)->update(['status' => 'paid', 'updated_at' => now()]);
                     continue;
                 }
                 $bayarPokok = min($pokok, $sisaIni);
+                $jasa = $jasaPer[$l->id] ?? 0;
+                if ($bayarPokok <= 0 && $jasa <= 0) {
+                    continue;
+                }
                 DB::table('tb_capital_loan_payments')->insert([
                     'tb_capital_loan_id' => $l->id,
                     'amount_principal' => $bayarPokok,
@@ -229,7 +239,6 @@ class PembayaranKantorController extends Controller
                     'updated_at' => now(),
                 ]);
                 $pokok -= $bayarPokok;
-                $jasa = 0; // jasa modal habis di pinjaman pertama
                 if ($sisaIni - $bayarPokok <= 0) {
                     DB::table('tb_capital_loans')->where('id', $l->id)->update(['status' => 'paid', 'updated_at' => now()]);
                 }
@@ -476,6 +485,20 @@ class PembayaranKantorController extends Controller
         ];
     }
 
+    /**
+     * Jasa modal satu pinjaman tawan/sherly = app_laravel TbCapitalLoan::anjuranJasaModal:
+     * 2% dari sisa pokok pinjaman itu, mulai bulan kalender ke-5 (bulan cair = bulan
+     * ke-1, jadi selisih bulan kalender >= 4; bukan hitungan 30 hari).
+     */
+    private static function jasaPinjaman($tanggalPinjam, int $sisa, $tanggalBayar): int
+    {
+        $cair = Carbon::parse($tanggalPinjam);
+        $bayar = Carbon::parse($tanggalBayar);
+        $selisih = ($bayar->year * 12 + $bayar->month) - ($cair->year * 12 + $cair->month);
+
+        return $selisih >= 4 ? (int) round($sisa * 0.02) : 0;
+    }
+
     /** Pinjaman modal kantor per sumber dana (tb_capital_loans), baca-saja. */
     private function modal(int $branchId, string $sumber, string $awal, string $akhir): array
     {
@@ -484,7 +507,8 @@ class PembayaranKantorController extends Controller
         $pinjaman = DB::table('tb_capital_loans as l')
             ->leftJoinSub($bayar, 'p', 'p.tb_capital_loan_id', '=', 'l.id')
             ->where('l.branch_id', $branchId)->where('l.source', $sumber)->where('l.loan_date', '<=', $akhir)
-            ->get(['l.amount', DB::raw('COALESCE(p.pokok, 0) as pokok')]);
+            ->orderBy('l.loan_date')->orderBy('l.id')
+            ->get(['l.amount', 'l.loan_date', DB::raw('COALESCE(p.pokok, 0) as pokok')]);
         $aktif = $pinjaman->filter(fn($l) => (int) $l->amount > (int) $l->pokok);
         $bulanIni = DB::table('tb_capital_loan_payments as p')
             ->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
@@ -497,8 +521,12 @@ class PembayaranKantorController extends Controller
         return [
             'jumlah_aktif' => $aktif->count(),
             'sisa' => $sisa,
-            // Anjuran jasa 2% dari sisa (tawan/sherly), sama dengan hitungan server saat bayar.
-            'jasa_anjuran' => $sumber === 'pusat' ? null : (int) round($sisa * 0.02),
+            // Pinjaman aktif tertua dulu: dialog bayar menghitung jasa per pinjaman
+            // menurut tanggal bayar (server menghitung ulang saat simpan).
+            'pinjaman' => $aktif->values()->map(fn($l) => [
+                'tanggal' => Carbon::parse($l->loan_date)->toDateString(),
+                'sisa' => (int) $l->amount - (int) $l->pokok,
+            ]),
             'boleh_bayar' => $this->bolehBayarModal($branchId, $sumber),
             'terkunci_modal' => DB::table('contribution_locks')->where('module', 'modal')->whereNull('branch_id')->where('period', substr($awal, 0, 7))->exists(),
             'riwayat' => DB::table('tb_capital_loan_payments as p')

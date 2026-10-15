@@ -409,7 +409,7 @@ const DialogUmrah = ({ buka, onClosed }) => {
   );
 };
 
-/** Angsuran pinjaman modal satu sumber. Tawan/Sherly: satu nominal, jasa 2% otomatis; Pusat: pokok + jasa. */
+/** Angsuran pinjaman modal satu sumber. Tawan/Sherly: satu nominal, jasa 2% per pinjaman mulai bulan ke-5; Pusat: pokok + jasa. */
 const DialogModal = ({ m, onClosed }) => {
   const [isi, setIsi] = useState({});
   const [file, setFile] = useState(null);
@@ -424,7 +424,20 @@ const DialogModal = ({ m, onClosed }) => {
   const pusat = m?.sumber === 'pusat';
   const nominal = Number(isi.nominal) || 0;
   // Pratinjau pembagian; angka final dihitung ulang di server.
-  const jasa = pusat ? Number(isi.jasa) || 0 : Math.min(m?.jasa_anjuran ?? 0, nominal);
+  // Tawan/Sherly = PembayaranKantorController::jasaPinjaman: 2% sisa tiap pinjaman
+  // yang selisih bulan kalendernya >= 4, dibagi ke pinjaman tertua, dibatasi nominal.
+  let sisaNominal = nominal;
+  const rincian = pusat
+    ? []
+    : (m?.pinjaman ?? []).map((p) => {
+        const cair = dayjs(p.tanggal);
+        const bayar = dayjs(isi.payment_date);
+        const kena = bayar.year() * 12 + bayar.month() - (cair.year() * 12 + cair.month()) >= 4;
+        const j = Math.min(kena ? Math.round(p.sisa * 0.02) : 0, sisaNominal);
+        sisaNominal -= j;
+        return { ...p, jasa: j };
+      });
+  const jasa = pusat ? Number(isi.jasa) || 0 : rincian.reduce((t, p) => t + p.jasa, 0);
   const pokok = pusat ? nominal : nominal - jasa;
   const simpan = async () => {
     setProses(true);
@@ -479,7 +492,10 @@ const DialogModal = ({ m, onClosed }) => {
               {galat.payment_date && <span className="text-xs text-red-600">{galat.payment_date}</span>}
               {nominal > 0 && (
                 <div className="p-2 text-sm rounded-md bg-slate-50">
-                  <Baris label={pusat ? 'Jasa modal' : 'Jasa modal (2% sisa)'} nilai={rp(jasa)} />
+                  <Baris label={pusat ? 'Jasa modal' : 'Jasa modal (2% sisa, mulai bulan ke-5)'} nilai={rp(jasa)} />
+                  {rincian.filter((p) => p.jasa > 0).map((p) => (
+                    <Baris key={p.tanggal + p.sisa} label={`· pinjaman ${dayjs(p.tanggal).format('DD MMM YY')}`} nilai={rp(p.jasa)} />
+                  ))}
                   <Baris label="Masuk ke pokok" nilai={rp(pokok)} tebal />
                 </div>
               )}
@@ -625,9 +641,8 @@ export default function PembayaranKantor() {
                 m.boleh_bayar &&
                 m.jumlah_aktif > 0 &&
                 !m.terkunci_modal && (
-                  // Dimatikan sementara (mas 2026-10-15): bayar pinjaman modal belum dirilis.
-                  <Button size="sm" className="w-full gap-1" disabled title="Belum dibuka">
-                    <Plus className="w-4 h-4" /> Bayar angsuran (belum dibuka)
+                  <Button size="sm" className="w-full gap-1" onClick={() => setModalPilih(m)}>
+                    <Plus className="w-4 h-4" /> Bayar angsuran
                   </Button>
                 )
               }
