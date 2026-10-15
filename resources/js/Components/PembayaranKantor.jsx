@@ -7,7 +7,6 @@ import {
   Building2,
   CheckCircle2,
   ClipboardCheck,
-  HandCoins,
   Landmark,
   PiggyBank,
   Plane,
@@ -456,37 +455,49 @@ export default function PembayaranKantor() {
 
       {k && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {/* Tabungan 1 Juta + BOP satu kartu: satu tombol bayar (gabungan), dua link detail. */}
           <Kartu
-            judul="Tabungan 1 Juta"
+            judul="Iuran Bulanan"
             ikon={PiggyBank}
             warna="bg-pink-100 text-pink-700"
-            href={linkKe('tabungan.contributions')}
-            tanda={tandaIuran(k.tabungan)}
             aksi={
-              bayar && (
-                <Button size="sm" className="w-full gap-1" onClick={() => setDialog('iuran')}>
-                  <Plus className="w-4 h-4" /> Bayar iuran
-                </Button>
-              )
+              <div className="grid gap-2">
+                {bayar && (
+                  <Button size="sm" className="w-full gap-1" onClick={() => setDialog('iuran')}>
+                    <Plus className="w-4 h-4" /> Bayar iuran
+                  </Button>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    ['Detail Tabungan', linkKe('tabungan.contributions')],
+                    ['Detail BOP', linkKe('bop.contributions')],
+                  ].map(([label, href]) =>
+                    href ? (
+                      <Button key={label} asChild size="sm" variant="outline" className="w-full">
+                        <Link href={href}>{label}</Link>
+                      </Button>
+                    ) : (
+                      <Button key={label} size="sm" variant="outline" className="w-full" disabled title="Menu belum tersedia">
+                        {label}
+                      </Button>
+                    ),
+                  )}
+                </div>
+              </div>
             }
           >
-            <IsiIuran d={k.tabungan} />
-          </Kartu>
-          <Kartu
-            judul="BOP Pusat"
-            ikon={HandCoins}
-            warna="bg-sky-100 text-sky-700"
-            href={linkKe('bop.contributions')}
-            tanda={tandaIuran(k.bop)}
-            aksi={
-              bayar && (
-                <Button size="sm" className="w-full gap-1" onClick={() => setDialog('iuran')}>
-                  <Plus className="w-4 h-4" /> Bayar iuran
-                </Button>
-              )
-            }
-          >
-            <IsiIuran d={k.bop} />
+            {[
+              ['Tabungan 1 Juta', k.tabungan],
+              ['BOP Pusat', k.bop],
+            ].map(([label, d], i) => (
+              <div key={label} className={i > 0 ? 'pt-3 mt-3 border-t' : ''}>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="font-semibold text-slate-800">{label}</span>
+                  {tandaIuran(d)}
+                </div>
+                <IsiIuran d={d} />
+              </div>
+            ))}
           </Kartu>
           <Kartu
             judul="Tabungan Goro Umrah"
