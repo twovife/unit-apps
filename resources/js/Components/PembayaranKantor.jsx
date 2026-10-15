@@ -64,6 +64,10 @@ const kecilkan = (file) =>
         img.src = url;
       });
 
+// Isian angka: tampil berpemisah ribuan (1.250.000), disimpan sebagai digit saja.
+const ribu = (v) => (v === '' || v == null ? '' : Number(v).toLocaleString('id-ID'));
+const MAKS_BUKTI = 2 * 1024 * 1024; // = Unggahan::MAKS_KB
+
 /** Tanda besar di pojok kartu. */
 const Tanda = ({ jenis, teks }) => {
   const gaya = {
@@ -205,15 +209,23 @@ const Tugas = ({ t }) => {
 /** Isian bukti transfer (wajib), dengan pratinjau nama file. */
 const IsiBukti = ({ file, setFile, galat }) => {
   const ref = useRef(null);
+  const [pesan, setPesan] = useState('');
+  // Foto selalu dikecilkan sebelum dikirim (kecilkan); PDF tidak bisa, jadi dicek di sini.
+  const pilih = (f) => {
+    const besar = f && f.type === 'application/pdf' && f.size > MAKS_BUKTI;
+    setPesan(besar ? 'PDF maksimal 2MB. Kirim sebagai foto saja.' : '');
+    setFile(besar ? null : f ?? null);
+    if (ref.current) ref.current.value = '';
+  };
   return (
     <div className="grid gap-1">
-      <Label>Foto bukti transfer (wajib)</Label>
-      <input ref={ref} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+      <Label>Foto bukti transfer (wajib, maks 2MB)</Label>
+      <input ref={ref} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => pilih(e.target.files?.[0])} />
       <Button type="button" variant="outline" className="justify-start gap-2" onClick={() => ref.current?.click()}>
         <Receipt className="w-4 h-4" />
         {file ? file.name : 'Pilih foto / PDF bukti'}
       </Button>
-      {galat && <span className="text-xs text-red-600">{galat}</span>}
+      {(pesan || galat) && <span className="text-xs text-red-600">{pesan || galat}</span>}
     </div>
   );
 };
@@ -291,7 +303,7 @@ const DialogIuran = ({ buka, onClosed, data, bulan }) => {
                   <Input
                     className="mt-2"
                     inputMode="numeric"
-                    value={isi[`${kunci}_amount`]}
+                    value={ribu(isi[`${kunci}_amount`])}
                     onChange={(e) => ubah(`${kunci}_amount`, e.target.value.replace(/\D/g, ''))}
                     placeholder="Nominal"
                   />
@@ -307,22 +319,7 @@ const DialogIuran = ({ buka, onClosed, data, bulan }) => {
                 <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.payment_date ?? ''} onChange={(e) => ubah('payment_date', e.target.value)} />
                 {galat.payment_date && <span className="text-xs text-red-600">{galat.payment_date}</span>}
               </div>
-              <div className="grid gap-1">
-                <Label>Rekening tujuan</Label>
-                <select
-                  className="h-9 px-2 text-sm border rounded-md border-input bg-background"
-                  value={isi.rekening_id ?? ''}
-                  onChange={(e) => ubah('rekening_id', e.target.value)}
-                >
-                  <option value="">—</option>
-                  {(data.rekening ?? []).map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.nomor} · {r.atas_nama}
-                    </option>
-                  ))}
-                </select>
-                {galat.rekening_id && <span className="text-xs text-red-600">{galat.rekening_id}</span>}
-              </div>
+              <PilihRekening daftar={data.rekening} nilai={isi.rekening_id} ubah={(v) => ubah('rekening_id', v)} galat={galat.rekening_id} />
             </div>
             <IsiBukti file={file} setFile={setFile} galat={galat.bukti} />
             <div className="grid gap-1">
@@ -345,14 +342,34 @@ const DialogIuran = ({ buka, onClosed, data, bulan }) => {
 };
 
 /** Setoran Tabungan Goro Umrah. */
-const DialogUmrah = ({ buka, onClosed }) => {
+/** Pilihan rekening tujuan transfer (tabel rekening_tujuan), dipakai semua dialog bayar. */
+const PilihRekening = ({ daftar, nilai, ubah, galat }) => (
+  <div className="grid gap-1">
+    <Label>Rekening tujuan</Label>
+    <select
+      className="h-9 px-2 text-sm border rounded-md border-input bg-background"
+      value={nilai ?? ''}
+      onChange={(e) => ubah(e.target.value)}
+    >
+      <option value="">—</option>
+      {(daftar ?? []).map((r) => (
+        <option key={r.id} value={r.id}>
+          {r.nomor} · {r.atas_nama}
+        </option>
+      ))}
+    </select>
+    {galat && <span className="text-xs text-red-600">{galat}</span>}
+  </div>
+);
+
+const DialogUmrah = ({ buka, onClosed, rekening }) => {
   const [isi, setIsi] = useState({});
   const [file, setFile] = useState(null);
   const [galat, setGalat] = useState({});
   const [proses, setProses] = useState(false);
   useEffect(() => {
     if (!buka) return;
-    setIsi({ tanggal: dayjs().format('YYYY-MM-DD'), amount: '', notes: '' });
+    setIsi({ tanggal: dayjs().format('YYYY-MM-DD'), amount: '', rekening_id: rekening?.[0]?.id ?? '', notes: '' });
     setFile(null);
     setGalat({});
   }, [buka]);
@@ -386,10 +403,11 @@ const DialogUmrah = ({ buka, onClosed }) => {
             </div>
             <div className="grid gap-1">
               <Label>Nominal</Label>
-              <Input inputMode="numeric" value={isi.amount ?? ''} onChange={(e) => ubah('amount', e.target.value.replace(/\D/g, ''))} />
+              <Input inputMode="numeric" value={ribu(isi.amount)} onChange={(e) => ubah('amount', e.target.value.replace(/\D/g, ''))} />
               {galat.amount && <span className="text-xs text-red-600">{galat.amount}</span>}
             </div>
           </div>
+          <PilihRekening daftar={rekening} nilai={isi.rekening_id} ubah={(v) => ubah('rekening_id', v)} galat={galat.rekening_id} />
           <IsiBukti file={file} setFile={setFile} galat={galat.bukti} />
           <div className="grid gap-1">
             <Label>Catatan</Label>
@@ -400,7 +418,7 @@ const DialogUmrah = ({ buka, onClosed }) => {
           <Button variant="outline" disabled={proses} onClick={onClosed}>
             Batal
           </Button>
-          <Button disabled={proses || !file || !isi.amount} onClick={simpan}>
+          <Button disabled={proses || !file || !isi.amount || !isi.rekening_id} onClick={simpan}>
             {proses ? 'Menyimpan…' : 'Simpan setoran'}
           </Button>
         </DialogFooter>
@@ -410,21 +428,21 @@ const DialogUmrah = ({ buka, onClosed }) => {
 };
 
 /** Angsuran pinjaman modal satu sumber. Tawan/Sherly: satu nominal, jasa 2% per pinjaman mulai bulan ke-5; Pusat: pokok + jasa. */
-const DialogModal = ({ m, onClosed }) => {
+const DialogModal = ({ m, onClosed, rekening }) => {
   const [isi, setIsi] = useState({});
   const [file, setFile] = useState(null);
   const [galat, setGalat] = useState({});
   const [proses, setProses] = useState(false);
   useEffect(() => {
     if (!m) return;
-    setIsi({ payment_date: dayjs().format('YYYY-MM-DD'), nominal: '', jasa: '', notes: '' });
+    setIsi({ payment_date: dayjs().format('YYYY-MM-DD'), nominal: '', jasa: '', rekening_id: rekening?.[0]?.id ?? '', notes: '' });
     setFile(null);
     setGalat({});
   }, [m?.sumber]);
   const pusat = m?.sumber === 'pusat';
   const nominal = Number(isi.nominal) || 0;
   // Pratinjau pembagian; angka final dihitung ulang di server.
-  // Tawan/Sherly = PembayaranKantorController::jasaPinjaman: 2% sisa tiap pinjaman
+  // Tawan/Sherly = PembayaranKantorController::jasaPinjaman: 2% sisa (bulat ke atas ribuan) tiap pinjaman
   // yang selisih bulan kalendernya >= 4, dibagi ke pinjaman tertua, dibatasi nominal.
   let sisaNominal = nominal;
   const rincian = pusat
@@ -433,7 +451,8 @@ const DialogModal = ({ m, onClosed }) => {
         const cair = dayjs(p.tanggal);
         const bayar = dayjs(isi.payment_date);
         const kena = bayar.year() * 12 + bayar.month() - (cair.year() * 12 + cair.month()) >= 4;
-        const j = Math.min(kena ? Math.round(p.sisa * 0.02) : 0, sisaNominal);
+        // Dibulatkan ke atas ke ribuan, = jasaPinjaman di server.
+        const j = Math.min(kena && p.sisa > 0 ? Math.ceil((p.sisa * 2) / 100000) * 1000 : 0, sisaNominal);
         sisaNominal -= j;
         return { ...p, jasa: j };
       });
@@ -468,13 +487,13 @@ const DialogModal = ({ m, onClosed }) => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1">
                   <Label>{pusat ? 'Angsuran pokok' : 'Nominal transfer'}</Label>
-                  <Input inputMode="numeric" value={isi.nominal ?? ''} onChange={(e) => ubah('nominal', e.target.value.replace(/\D/g, ''))} />
+                  <Input inputMode="numeric" value={ribu(isi.nominal)} onChange={(e) => ubah('nominal', e.target.value.replace(/\D/g, ''))} />
                   {galat.nominal && <span className="text-xs text-red-600">{galat.nominal}</span>}
                 </div>
                 {pusat ? (
                   <div className="grid gap-1">
                     <Label>Jasa modal</Label>
-                    <Input inputMode="numeric" value={isi.jasa ?? ''} onChange={(e) => ubah('jasa', e.target.value.replace(/\D/g, ''))} />
+                    <Input inputMode="numeric" value={ribu(isi.jasa)} onChange={(e) => ubah('jasa', e.target.value.replace(/\D/g, ''))} />
                   </div>
                 ) : (
                   <div className="grid gap-1">
@@ -499,6 +518,7 @@ const DialogModal = ({ m, onClosed }) => {
                   <Baris label="Masuk ke pokok" nilai={rp(pokok)} tebal />
                 </div>
               )}
+              <PilihRekening daftar={rekening} nilai={isi.rekening_id} ubah={(v) => ubah('rekening_id', v)} galat={galat.rekening_id} />
               <IsiBukti file={file} setFile={setFile} galat={galat.bukti} />
               <div className="grid gap-1">
                 <Label>Catatan</Label>
@@ -509,7 +529,7 @@ const DialogModal = ({ m, onClosed }) => {
               <Button variant="outline" disabled={proses} onClick={onClosed}>
                 Batal
               </Button>
-              <Button disabled={proses || !file || !nominal} onClick={simpan}>
+              <Button disabled={proses || !file || !nominal || !isi.rekening_id} onClick={simpan}>
                 {proses ? 'Menyimpan…' : 'Simpan pembayaran'}
               </Button>
             </DialogFooter>
@@ -659,7 +679,18 @@ export default function PembayaranKantor() {
               <Baris label="Sisa pokok" nilai={rp(m.sisa)} tebal />
               <Baris label="Pinjaman aktif" nilai={`${m.jumlah_aktif} pinjaman`} />
               <Baris label="Pokok dibayar bulan ini" nilai={rp(m.pokok_bulan_ini)} />
-              <Baris label="Jasa modal bulan ini" nilai={rp(m.jasa_bulan_ini)} />
+              {m.jasa_wajib !== null && (
+                <Baris
+                  label="Jasa wajib bulan ini"
+                  nilai={
+                    <span className={m.jasa_bulan_ini >= m.jasa_wajib ? 'text-emerald-600' : 'text-red-600'}>
+                      {rp(m.jasa_wajib)}
+                    </span>
+                  }
+                  tebal
+                />
+              )}
+              <Baris label="Jasa modal dibayar bulan ini" nilai={rp(m.jasa_bulan_ini)} />
               {m.terkunci_modal && <div className="text-xs font-medium text-slate-500">🔒 Bulan ini sudah dikunci kasir pusat.</div>}
               <Riwayat isi={m.riwayat} />
             </Kartu>
@@ -674,9 +705,10 @@ export default function PembayaranKantor() {
       )}
 
       <DialogIuran buka={dialog === 'iuran'} onClosed={tutup} data={data} bulan={bulan} />
-      <DialogUmrah buka={dialog === 'umrah'} onClosed={tutup} />
+      <DialogUmrah buka={dialog === 'umrah'} onClosed={tutup} rekening={data?.rekening} />
       <DialogModal
         m={modalPilih}
+        rekening={data?.rekening}
         onClosed={() => {
           setModalPilih(null);
           setMuatUlang((n) => n + 1);

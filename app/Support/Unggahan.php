@@ -24,7 +24,7 @@ use Illuminate\Validation\ValidationException;
 class Unggahan
 {
     public const DISK = 's3';
-    public const MAKS_KB = 5120;
+    public const MAKS_KB = 2048; // 2 MB (mas 2026-10-15); foto sudah dikecilkan browser
     public const ATURAN = ['file', 'mimetypes:image/jpeg,image/png,image/webp,application/pdf', 'max:' . self::MAKS_KB];
 
     private const EKSTENSI = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'application/pdf' => 'pdf'];
@@ -35,7 +35,7 @@ class Unggahan
         return [
             "{$field}.required" => 'Foto bukti transfer wajib diunggah.',
             "{$field}.mimetypes" => 'File harus berupa foto (JPG/PNG) atau PDF.',
-            "{$field}.max" => 'Ukuran file maksimal 5MB.',
+            "{$field}.max" => 'Ukuran file maksimal 2MB.',
             "{$field}.uploaded" => 'File gagal terunggah, coba lagi.',
         ];
     }

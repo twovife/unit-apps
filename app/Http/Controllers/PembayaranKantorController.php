@@ -130,9 +130,10 @@ class PembayaranKantorController extends Controller
         $data = $request->validate([
             'tanggal' => ['required', 'date', 'before_or_equal:today'],
             'amount' => ['required', 'integer', 'min:1'],
+            'rekening_id' => ['required', 'exists:rekening_tujuan,id,deleted_at,NULL'],
             'notes' => ['nullable', 'string', 'max:255'],
             'bukti' => array_merge(['required'], Unggahan::ATURAN),
-        ], ['tanggal.before_or_equal' => 'Tanggal setor tidak boleh di masa depan.'] + Unggahan::pesan('bukti'));
+        ], ['tanggal.before_or_equal' => 'Tanggal setor tidak boleh di masa depan.', 'rekening_id.required' => 'Pilih rekening tujuan.'] + Unggahan::pesan('bukti'));
 
         $this->pastikanTerbuka('goro', $branch->id, substr((string) $data['tanggal'], 0, 7));
         $file = $request->file('bukti');
@@ -142,6 +143,7 @@ class PembayaranKantorController extends Controller
             'branch_id' => $branch->id,
             'tanggal' => $data['tanggal'],
             'amount' => (int) $data['amount'],
+            'rekening_id' => (int) $data['rekening_id'],
             'notes' => $data['notes'] ?? null,
             'bukti_path' => $path,
             'bukti_name' => $file->getClientOriginalName(),
@@ -170,9 +172,10 @@ class PembayaranKantorController extends Controller
             'nominal' => ['required', 'integer', 'min:1'],
             'jasa' => ['nullable', 'integer', 'min:0'],
             'payment_date' => ['required', 'date', 'before_or_equal:today'],
+            'rekening_id' => ['required', 'exists:rekening_tujuan,id,deleted_at,NULL'],
             'notes' => ['nullable', 'string', 'max:255'],
             'bukti' => array_merge(['required'], Unggahan::ATURAN),
-        ], ['payment_date.before_or_equal' => 'Tanggal bayar tidak boleh di masa depan.'] + Unggahan::pesan('bukti'));
+        ], ['payment_date.before_or_equal' => 'Tanggal bayar tidak boleh di masa depan.', 'rekening_id.required' => 'Pilih rekening tujuan.'] + Unggahan::pesan('bukti'));
         abort_unless($this->bolehBayarModal($branch->id, $data['source']), 403,
             $data['source'] === 'pusat' ? 'Pinjaman modal sumber Pusat hanya dicatat Bendahara.' : 'Input pembayaran untuk kasir, staf kontrol, pusat, dan superuser.');
 
@@ -232,6 +235,7 @@ class PembayaranKantorController extends Controller
                     'amount_principal' => $bayarPokok,
                     'amount_jasa_modal' => $jasa,
                     'payment_date' => $data['payment_date'],
+                    'rekening_id' => (int) $data['rekening_id'],
                     'notes' => $data['notes'] ?? null,
                     'created_by' => auth()->id(),
                     'bukti_path' => $bukti,
@@ -488,7 +492,9 @@ class PembayaranKantorController extends Controller
     /**
      * Jasa modal satu pinjaman tawan/sherly = app_laravel TbCapitalLoan::anjuranJasaModal:
      * 2% dari sisa pokok pinjaman itu, mulai bulan kalender ke-5 (bulan cair = bulan
-     * ke-1, jadi selisih bulan kalender >= 4; bukan hitungan 30 hari).
+     * ke-1, jadi selisih bulan kalender >= 4; bukan hitungan 30 hari). Dibulatkan KE
+     * ATAS ke ribuan (mas 2026-10-15): 1.400.432 -> 1.401.000. Hitungan bulat (tanpa
+     * float): 2% x sisa / 1000 = sisa x 2 / 100000.
      */
     private static function jasaPinjaman($tanggalPinjam, int $sisa, $tanggalBayar): int
     {
@@ -496,19 +502,20 @@ class PembayaranKantorController extends Controller
         $bayar = Carbon::parse($tanggalBayar);
         $selisih = ($bayar->year * 12 + $bayar->month) - ($cair->year * 12 + $cair->month);
 
-        return $selisih >= 4 ? (int) round($sisa * 0.02) : 0;
+        return $selisih >= 4 && $sisa > 0 ? intdiv($sisa * 2 + 99999, 100000) * 1000 : 0;
     }
 
     /** Pinjaman modal kantor per sumber dana (tb_capital_loans), baca-saja. */
     private function modal(int $branchId, string $sumber, string $awal, string $akhir): array
     {
         $bayar = DB::table('tb_capital_loan_payments')->where('payment_date', '<=', $akhir)
-            ->groupBy('tb_capital_loan_id')->selectRaw('tb_capital_loan_id, SUM(amount_principal) pokok');
+            ->groupBy('tb_capital_loan_id')
+            ->selectRaw('tb_capital_loan_id, SUM(amount_principal) pokok, SUM(CASE WHEN payment_date < ? THEN amount_principal ELSE 0 END) pokok_awal', [$awal]);
         $pinjaman = DB::table('tb_capital_loans as l')
             ->leftJoinSub($bayar, 'p', 'p.tb_capital_loan_id', '=', 'l.id')
             ->where('l.branch_id', $branchId)->where('l.source', $sumber)->where('l.loan_date', '<=', $akhir)
             ->orderBy('l.loan_date')->orderBy('l.id')
-            ->get(['l.amount', 'l.loan_date', DB::raw('COALESCE(p.pokok, 0) as pokok')]);
+            ->get(['l.amount', 'l.loan_date', DB::raw('COALESCE(p.pokok, 0) as pokok'), DB::raw('COALESCE(p.pokok_awal, 0) as pokok_awal')]);
         $aktif = $pinjaman->filter(fn($l) => (int) $l->amount > (int) $l->pokok);
         $bulanIni = DB::table('tb_capital_loan_payments as p')
             ->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
@@ -517,6 +524,10 @@ class PembayaranKantorController extends Controller
             ->first();
 
         $sisa = (int) $aktif->sum(fn($l) => (int) $l->amount - (int) $l->pokok);
+        // Jasa yang wajib dibayar bulan ini: 2% sisa pokok AWAL bulan tiap pinjaman yang
+        // sudah masuk bulan ke-5 (pinjaman yang lunas di bulan ini tetap kena).
+        $jasaWajib = $sumber === 'pusat' ? null : (int) $pinjaman
+            ->sum(fn($l) => self::jasaPinjaman($l->loan_date, max(0, (int) $l->amount - (int) $l->pokok_awal), $awal));
 
         return [
             'jumlah_aktif' => $aktif->count(),
@@ -542,6 +553,7 @@ class PembayaranKantorController extends Controller
                 ]),
             'pokok_bulan_ini' => (int) $bulanIni->pokok,
             'jasa_bulan_ini' => (int) $bulanIni->jasa,
+            'jasa_wajib' => $jasaWajib,
             'sudah_bayar' => (int) $bulanIni->pokok + (int) $bulanIni->jasa > 0,
             'terakhir' => $bulanIni->terakhir ? Carbon::parse($bulanIni->terakhir)->toDateString() : null,
         ];
