@@ -3,11 +3,11 @@ import { Head } from '@inertiajs/react';
 import PembayaranKantor from '@/Components/PembayaranKantor';
 
 /** Dashboard Kasir: kartu pembayaran kantor aktif per bulan (PembayaranKantorController). */
-export default function DashboardKasir() {
+export default function DashboardKasir({ videos }) {
   return (
     <AuthenticatedLayout header="Dashboard Kasir">
       <Head title="Dashboard Kasir" />
-      <PembayaranKantor />
+      <PembayaranKantor videos={videos} />
     </AuthenticatedLayout>
   );
 }

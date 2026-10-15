@@ -9,6 +9,7 @@ import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import InputError from '@/Components/InputError';
 import { FileText, Paperclip, Pencil, Plus, Search, Trash2, Upload, UserPlus } from 'lucide-react';
+import VideoTutorialButton from '@/Components/VideoTutorialButton';
 
 /**
  * Lamaran Kerja (cabang aktif): catat pelamar + unggah dokumen. Edit & hapus
@@ -347,7 +348,7 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
   );
 };
 
-const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], referensi = [], jenis_dokumen = [] }) => {
+const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], referensi = [], jenis_dokumen = [], video }) => {
   const [cari, setCari] = useState('');
   const [form, setForm] = useState({ buka: false, edit: null });
   // Simpan id: sesudah unggah / edit data dimuat ulang.
@@ -384,9 +385,12 @@ const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], ref
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
-              <UserPlus className="w-5 h-5 text-slate-500" /> Lamaran Kerja
-            </h1>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
+                <UserPlus className="w-5 h-5 text-slate-500" /> Lamaran Kerja
+              </h1>
+              <VideoTutorialButton videos={video} title="Panduan Lamaran Kerja" />
+            </div>
             <p className="text-sm text-slate-500">{unit} · diputuskan HRD di aplikasi pusat.</p>
           </div>
           <div className="flex items-center w-full gap-2 sm:w-auto">

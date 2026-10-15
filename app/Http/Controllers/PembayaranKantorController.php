@@ -30,7 +30,9 @@ class PembayaranKantorController extends Controller
     {
         abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403, 'Dashboard kasir untuk kepala mantri, kasir, dan pimpinan.');
 
-        return \Inertia\Inertia::render('Kasir/Dashboard/Index');
+        return \Inertia\Inertia::render('Kasir/Dashboard/Index', [
+            'videos' => \App\Helpers\VideoTutorial::url(['iuran', 'pinjamanmodal', 'sksw', 'tabungangoro']),
+        ]);
     }
 
     public function ringkasan(Request $request)

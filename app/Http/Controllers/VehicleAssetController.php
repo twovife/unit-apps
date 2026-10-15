@@ -79,6 +79,7 @@ class VehicleAssetController extends Controller
                 'status' => $validated['status'] ?? '',
             ],
             'canEditVehicleRegistration' => $this->canEditVehicleRegistration($request),
+            'video' => \App\Helpers\VideoTutorial::url('cekaset')['cekaset'] ?? null,
         ]);
     }
 

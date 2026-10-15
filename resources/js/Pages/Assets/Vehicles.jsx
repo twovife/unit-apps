@@ -11,6 +11,7 @@ import { Input } from '@/shadcn/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import VehicleAssetDetail from '@/Components/Assets/VehicleAssetDetail';
 import VehicleAssetForm from '@/Components/Assets/VehicleAssetForm';
+import VideoTutorialButton from '@/Components/VideoTutorialButton';
 
 const statusLabels = {
   aktif: 'Aktif',
@@ -50,7 +51,7 @@ function SummaryCard({ title, value, icon: Icon, description }) {
   );
 }
 
-export default function Vehicles({ branch, assets, branches, summary, filters, canEditVehicleRegistration }) {
+export default function Vehicles({ branch, assets, branches, summary, filters, canEditVehicleRegistration, video }) {
   const [search, setSearch] = useState(filters.search ?? '');
   const [status, setStatus] = useState(filters.status ?? '');
   const [detail, setDetail] = useState(null);
@@ -96,6 +97,7 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
             {branch.unit}
           </Badge>
           <div className="flex flex-wrap gap-2">
+            <VideoTutorialButton videos={video} title="Panduan Aset Kendaraan" />
             <Button asChild variant="outline">
               <Link href={route('assets.her')}><Calendar className="mr-2 size-4" />Pajak Kendaraan</Link>
             </Button>

@@ -31,6 +31,7 @@ class MobileAppsMantriController extends Controller
   public function angsuran(Request $request)
   {
     $data = $this->getLoanMantri($request, true);
+    $data['video_tutorials'] = \App\Helpers\VideoTutorial::url(['pelunasan', 'input_angsuran']);
     return Inertia::render("MobileApps/Angsuran/Index", $data);
   }
 

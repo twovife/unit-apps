@@ -19,6 +19,7 @@ import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
+import VideoTutorialButton from '@/Components/VideoTutorialButton';
 
 /**
  * Dashboard Kasir: tugas kasir hari ini + kartu pembayaran kantor aktif per
@@ -540,7 +541,7 @@ const DialogModal = ({ m, onClosed, rekening }) => {
   );
 };
 
-export default function PembayaranKantor() {
+export default function PembayaranKantor({ videos = {} }) {
   const [bulan, setBulan] = useState(dayjs().format('YYYY-MM'));
   const [data, setData] = useState(null);
   const [galat, setGalat] = useState(null);
@@ -570,10 +571,13 @@ export default function PembayaranKantor() {
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-            <Building2 className="w-5 h-5 text-slate-500" />
-            Dashboard Kasir {data?.unit ? `— ${data.unit}` : ''}
-          </h2>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+              <Building2 className="w-5 h-5 text-slate-500" />
+              Dashboard Kasir {data?.unit ? `— ${data.unit}` : ''}
+            </h2>
+            <VideoTutorialButton videos={videos} buttonText="Video Panduan" />
+          </div>
           <p className="text-sm text-slate-500">Tugas hari ini dan pembayaran kantor aktif per bulan.</p>
         </div>
         <input

@@ -76,6 +76,7 @@ class LamaranKerjaController extends Controller
             'jabatan' => Employment::orderBy('jabatan')->get(['id', 'jabatan']),
             'referensi' => Employee::where('branch_id', $branchId)->whereNull('date_resign')->orderBy('nama_karyawan')->get(['id', 'nama_karyawan']),
             'jenis_dokumen' => JobApplication::DOC_TYPES,
+            'video' => \App\Helpers\VideoTutorial::url('lamaran')['lamaran'] ?? null,
         ]);
     }
 

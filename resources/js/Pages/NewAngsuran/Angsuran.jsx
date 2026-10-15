@@ -13,6 +13,7 @@ import AngsuranTableMobile from './Components/AngsuranTableMobile';
 import { Input } from '@/shadcn/ui/input';
 import BukuStortingMobile from './Components/BukuStortingMobile';
 import SatuanAngka from '@/Components/SatuanAngka';
+import VideoTutorialButton from '@/Components/VideoTutorialButton';
 
 /**
  * Filter HP & desktop sama-sama `FilterBar` (chip instan, tanpa tombol
@@ -28,6 +29,7 @@ const Angsuran = ({
   localState,
   type = 'desktop',
   judul = 'Angsuran Lancar',
+  videoTutorials,
 }) => {
   const { server_filter } = usePage().props;
   const [stortingBuka, setStortingBuka] = useState(
@@ -54,9 +56,14 @@ const Angsuran = ({
       {/* Satu tata letak untuk HP & desktop: filter chip instan (FilterBar),
           tanpa tombol submit. HP = buku harian (pilih tanggal), desktop =
           buku bulanan (pilih hari tagih + bulan). */}
-      <div className="flex items-center justify-between gap-3 mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{judul}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight">{judul}</h1>
+            {videoTutorials && (
+              <VideoTutorialButton videos={videoTutorials} buttonText="Video Panduan" />
+            )}
+          </div>
           {type === 'desktop' && (
             <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih. <SatuanAngka /></p>
           )}
