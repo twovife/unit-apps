@@ -16,6 +16,17 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 # 2026-10-16
 
+## SKSW: Buka Rekening SKSW untuk Pegawai Baru di SKSW Unit
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Models/Employee.php` | `savingData()` | Model `Employee` | `savings` (`BACA`) | Menambahkan relasi `hasOne(Saving::class, 'employee_id')` untuk mendeteksi status kepemilikan rekening SKSW pegawai aktif di unit-apps (menggunakan nama `savingData` agar tidak bentrok dengan method bawaan Eloquent `Model::saving()`). |
+| `app/Http/Controllers/SkswUnitController.php` | `index()`, `reportForBranch()`, `bukaRekening()` | `sksw.unit` (`GET /sksw/unit`), `sksw.buka-rekening` (`POST /sksw/buka-rekening`) | `employees` (`BACA`), `savings` (`BACA` / `TULIS`), `saving_transactions` (`TULIS`), `saving_batches` (`BACA` / `TULIS`) | 1. Mendeteksi pegawai aktif (`date_resign IS NULL`) di kantor cabang aktif yang belum memiliki rekening di `savings` dan mengirimkannya sebagai prop `unregisteredEmployees`.<br>2. Menyertakan seluruh rekening kantor cabang aktif (`$currentBranchSavingIds`) pada perhitungan `reportForBranch()`, sehingga rekening yang baru dibuat langsung tampil di laporan SKSW Unit & modal setoran tanpa harus menunggu adanya transaksi.<br>3. Menambahkan method `bukaRekening()` dengan otorisasi role (`kasir`, `stafkontrol`, `pusat`, `superuser`), pembuatan record rekening baru di tabel `savings`, auto-create batch periode jika belum ada, serta pencatatan saldo awal (SW/SK) opsional jika diisi. |
+| `routes/web.php` | Route `sksw.buka-rekening` | `POST /sksw/buka-rekening` | — | Mendaftarkan route endpoint buka rekening SKSW pegawai baru. |
+| `resources/js/Pages/Sksw/Unit.jsx` | `SkswUnit()`, `DialogBukaRekening()`, `DialogSetoran()` | `sksw.unit` (`/sksw/unit`), `sksw.buka-rekening` (`POST /sksw/buka-rekening`) | `savings` (`TULIS`) | 1. Menambahkan tombol **"Buka Rekening Pegawai"** di samping tombol "Input setoran" lengkap dengan badge indikator jumlah pegawai aktif yang belum terdaftar.<br>2. Menampilkan banner informatif jika terdapat pegawai yang belum memiliki rekening SKSW di cabang aktif.<br>3. Menyediakan modal dialog `DialogBukaRekening` dengan form pemilihan pegawai belum terdaftar, tanggal pendaftaran, nomor rekening opsional, serta input saldo awal SW & SK (dengan format pemisah ribuan).<br>4. Mempersempit kolom sticky nama karyawan di tabel laporan (`w-36 min-w-36 sm:w-56 sm:min-w-56`) agar saat dibuka di layar HP kolom angka di sebelahnya tetap terlihat jelas, serta merapikan lebar input nominal di modal setoran (`w-28 sm:w-36`). |
+
+---
+
 ## SKSW: Modal Input Masukan SKSW (Default SW 200rb, Separator Ribuan + Shortcut 'K', Checklist, & Total Terpisah)
 
 | Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |

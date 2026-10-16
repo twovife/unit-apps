@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Helpers\AuthScope;
 use App\Models\Branch;
+use App\Models\Employee;
 use App\Models\Saving;
 use App\Models\SavingBatch;
 use App\Models\SavingTransaction;
@@ -32,6 +33,25 @@ class SkswUnitController extends Controller
         $period = $validated['period'] ?? Carbon::now()->format('Y-m');
         $data = $branch ? $this->reportForBranch($branch->id, $period) : [];
 
+        $unregisteredEmployees = $branch
+            ? Employee::query()
+                ->where('branch_id', $branch->id)
+                ->whereNull('date_resign')
+                ->whereDoesntHave('savingData')
+                ->with('employment:id,jabatan')
+                ->orderBy('nama_karyawan')
+                ->get(['id', 'nama_karyawan', 'branch_id', 'employment_id', 'hire_date', 'nik'])
+                ->map(fn ($e) => [
+                    'id' => $e->id,
+                    'nama_karyawan' => $e->nama_karyawan,
+                    'jabatan' => $e->employment?->jabatan,
+                    'hire_date' => $e->hire_date ? Carbon::parse($e->hire_date)->format('d/m/Y') : null,
+                    'nik' => $e->nik,
+                ])
+                ->values()
+                ->all()
+            : [];
+
         return Inertia::render('Sksw/Unit', [
             'branch' => $branch ? [
                 'id' => $branch->id,
@@ -43,6 +63,7 @@ class SkswUnitController extends Controller
                 ? SavingBatch::query()->where('branch_id', $branch->id)->where('period', $period)->first(['id', 'status', 'period'])
                 : null,
             'data' => $data,
+            'unregisteredEmployees' => $unregisteredEmployees,
         ]);
     }
 
@@ -363,7 +384,14 @@ class SkswUnitController extends Controller
                 ->all();
         }
 
-        $savingIds = array_values(array_unique(array_merge($activeSavingIds, $openingSavingIds)));
+        $currentBranchSavingIds = Saving::query()
+            ->where('branch_id', $branchId)
+            ->whereHas('employee', fn ($query) => $query->whereNull('date_resign'))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $savingIds = array_values(array_unique(array_merge($activeSavingIds, $openingSavingIds, $currentBranchSavingIds)));
 
         if ($savingIds === []) {
             return [];
@@ -521,6 +549,53 @@ class SkswUnitController extends Controller
     private function bisaHapus(SavingTransaction $tx, $user): bool
     {
         return $this->bolehInput() && $tx->voided_at === null && $tx->batch_id !== null && $tx->batch?->status === 'open';
+    }
+
+    public function bukaRekening(Request $request)
+    {
+        abort_unless($this->bolehInput(), 403, 'Pendaftaran rekening SKSW hanya untuk kasir, staf kontrol, pusat, dan superuser.');
+
+        $scope = AuthScope::resolve();
+        $branchId = (int) $scope->branch_id;
+        $this->authorizeBranch($branchId);
+
+        $validated = $request->validate([
+            'employee_id' => ['required', 'integer', 'exists:employees,id'],
+            'tgl_daftar' => ['required', 'date', 'before_or_equal:today'],
+            'nomor_rekening' => ['nullable', 'string', 'max:50', 'unique:savings,nomor_rekening'],
+        ], [
+            'employee_id.required' => 'Pilih pegawai yang akan didaftarkan.',
+            'employee_id.exists' => 'Pegawai tidak ditemukan.',
+            'tgl_daftar.required' => 'Tanggal pendaftaran wajib diisi.',
+            'tgl_daftar.before_or_equal' => 'Tanggal pendaftaran tidak boleh di masa depan.',
+            'nomor_rekening.unique' => 'Nomor rekening ini sudah digunakan.',
+        ]);
+
+        $employee = Employee::query()->findOrFail($validated['employee_id']);
+
+        if ($employee->date_resign !== null) {
+            throw ValidationException::withMessages(['employee_id' => 'Pegawai yang sudah resign tidak dapat didaftarkan rekening SKSW baru.']);
+        }
+
+        if ((int) $employee->branch_id !== $branchId) {
+            throw ValidationException::withMessages(['employee_id' => 'Pegawai ini bukan anggota kantor aktif.']);
+        }
+
+        if (Saving::where('employee_id', $employee->id)->exists()) {
+            throw ValidationException::withMessages(['employee_id' => 'Pegawai ini sudah memiliki rekening SKSW.']);
+        }
+
+        Saving::create([
+            'employee_id' => $employee->id,
+            'branch_id' => $branchId,
+            'nomor_rekening' => $validated['nomor_rekening'] ?: null,
+            'tgl_daftar' => $validated['tgl_daftar'],
+        ]);
+
+        $period = Carbon::parse($validated['tgl_daftar'])->format('Y-m');
+        SavingBatch::firstOrCreate(['branch_id' => $branchId, 'period' => $period], ['status' => 'open']);
+
+        return back()->with('message', "Rekening SKSW untuk {$employee->nama_karyawan} berhasil didaftarkan.");
     }
 
     private function authorizeBranch(int $branchId): void

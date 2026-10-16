@@ -60,4 +60,9 @@ class Employee extends Model
   {
     return $this->hasMany(EmployeeDocument::class);
   }
+
+  public function savingData()
+  {
+    return $this->hasOne(Saving::class, 'employee_id');
+  }
 }

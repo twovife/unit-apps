@@ -69,6 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/{saving}/detail', 'detail')->whereNumber('saving')->name('detail');
     // Input setoran bulanan SW/SK banyak karyawan (kasir/stafkontrol/pusat/superuser).
     Route::post('/setoran', 'setoran')->name('setoran');
+    Route::post('/buka-rekening', 'bukaRekening')->name('buka-rekening');
     Route::post('/{saving}/transaksi', 'transaksi')->whereNumber('saving')->name('transaksi');
     Route::post('/{saving}/mutasi', 'mutasi')->whereNumber('saving')->name('mutasi');
     Route::delete('/transaksi/{transaction}', 'hapus')->whereNumber('transaction')->name('hapus');
