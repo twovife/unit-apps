@@ -38,6 +38,7 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorCo
     Route::post('/iuran', 'bayarIuran')->name('iuran');
     Route::post('/umrah', 'setorUmrah')->name('umrah');
     Route::post('/modal', 'bayarModal')->name('modal');
+    Route::delete('/umrah/{id}', 'destroyUmrah')->whereNumber('id')->name('umrah.destroy');
     Route::get('/goro-umrah', 'detailUmrah')->name('goro_umrah');
     Route::get('/pinjaman-modal', 'detailModal')->name('pinjaman_modal');
     Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah', 'modal'])->whereNumber('id')->name('bukti');
@@ -237,6 +238,7 @@ Route::middleware('auth')->group(function () {
         // Dialog Kunci di Rekap 1 (alur baru): pratinjau JSON + kunci.
         Route::get('/pratinjau-kunci', "pratinjau_kunci")->name('pratinjau_kunci');
         Route::post('/kunci-hari', "kunci_hari")->name('kunci_hari');
+        Route::post('/buka-kunci', "buka_kunci")->name('buka_kunci');
         Route::post('/ceklist-kepala', "ceklist_kepala")->name('ceklist_kepala');
         Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
         // JSON detail per kelompok untuk drawer di Rekap 1 (tabel Global).

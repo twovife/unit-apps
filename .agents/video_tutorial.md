@@ -13,6 +13,7 @@ Seluruh video tutorial disimpan di object storage MinIO (bucket: `ubmi-bucket`, 
 | `tutorial/iuran.mp4` | `D:\nota tf\iuran.mp4` | ~19.9 MB | Iuran Tabungan 1 Juta & BOP Cabang |
 | `tutorial/pinjamanmodal.mp4` | `D:\nota tf\pinjamanmodal.mp4` | ~23.3 MB | Pembayaran Pokok & Jasa Pinjaman Modal |
 | `tutorial/sksw.mp4` | `D:\nota tf\sksw.mp4` | ~21.2 MB | Laporan, Setoran & Mutasi SKSW Unit |
+| `tutorial/sksw_karyawan_baru.mp4` | `D:\nota tf\input sksw karyawan baru.mp4` | ~22.9 MB | Panduan Input SKSW Karyawan Baru |
 | `tutorial/tabungangoro.mp4` | `D:\nota tf\tabungangoro.mp4` | ~11.7 MB | Setoran Tabungan Goro Umrah & Bukti Transfer |
 | `tutorial/cekaset.mp4` | `D:\nota tf\cekaset.mp4` | ~20.6 MB | Registri Aset Kendaraan, Servis & Pajak/STNK |
 | `tutorial/lamaran.mp4` | `D:\nota tf\lamaran.mp4` | ~23.7 MB | Pencatatan Lamaran Kerja & Upload Dokumen |
@@ -74,6 +75,15 @@ Seluruh video tutorial disimpan di object storage MinIO (bucket: `ubmi-bucket`, 
 - **Daftar Video**:
   1. `pelunasan`: Pengajuan Nasabah Lama Lewat Menu Angsuran (`pengumuman/pelunasan.mp4`)
   2. `input_angsuran`: Perubahan Tampilan Menu Angsuran (`pengumuman/input-angsuran.mp4`)
+
+### E. SKSW Unit (`/sksw/unit`)
+- **Controller**: `SkswUnitController@index`
+- **Route**: `sksw.unit.index`
+- **View**: `resources/js/Pages/Sksw/Unit.jsx`
+- **Penempatan**: Di toolbar filter/pencarian atas sebelah tombol drawer input.
+- **Daftar Video**:
+  1. `sksw`: Panduan SKSW — Laporan & Setoran Unit
+  2. `sksw_karyawan_baru`: Panduan Input SKSW Karyawan Baru
 
 ---
 

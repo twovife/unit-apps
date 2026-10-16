@@ -223,6 +223,58 @@ class TransactionDailyRecapController extends Controller
   }
 
   /**
+   * Buka kunci kelompok di Rekap 1.
+   * Khusus superuser atau user dengan izin can-edit.
+   */
+  public function buka_kunci(Request $request)
+  {
+    $val = $request->validate([
+      'id' => ['required', 'integer'],
+      'date' => ['required', 'date'],
+      'alasan' => ['required', 'string', 'min:5'],
+    ], [
+      'alasan.required' => 'Alasan membuka kunci wajib diisi.',
+      'alasan.min' => 'Alasan terlalu pendek — tulis minimal 5 karakter.',
+    ]);
+
+    if (!\App\Helpers\Gembok::bolehBuka(auth()->user())) {
+      return redirect()->back()->withErrors('Buka kunci hanya untuk superuser atau user ber-izin can-edit.');
+    }
+
+    $grouping = TransactionLoanOfficerGrouping::findOrFail($val['id']);
+    if (!AppHelper::bolehAksesKelompok($grouping)) {
+      return redirect()->back()->withErrors(AppHelper::PESAN_BUKAN_WILAYAH);
+    }
+
+    $date = Carbon::parse($val['date'])->toDateString();
+
+    if ($this->sudahMigrasi($grouping->id, $date)) {
+      $closing = \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $grouping->id)
+        ->whereDate('date', $date)
+        ->first();
+
+      if (!$closing || !$closing->terkunci()) {
+        return redirect()->back()->withErrors('Hari ini memang belum terkunci.');
+      }
+
+      return app(ClosingHarianController::class)->buka($request, $closing);
+    }
+
+    $recap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $grouping->id)
+      ->whereDate('date', $date)
+      ->first();
+
+    if ($recap) {
+      $recap->update([
+        'daily_kasir_approval' => null,
+        'daily_kasir_approval_user' => null,
+      ]);
+    }
+
+    return redirect()->back()->with('message', 'Kunci berhasil dibuka.');
+  }
+
+  /**
    * Setoran mantri dari sel Rekap 1 -> daily_closings: SU Lapangan
    * (setoran_tunai, uang yang dibawa pulang mantri) atau setoran_transfer.
    * Kantor alur baru, hari yang belum dikunci. Kosong = belum dicatat (null),

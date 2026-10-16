@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Helpers\AuthScope;
 use App\Models\Branch;
+use App\Models\ContributionLock;
+use App\Models\OpsBopContribution;
 use App\Models\TbContribution;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class TbContributionController extends Controller
@@ -116,6 +119,7 @@ class TbContributionController extends Controller
         ]);
 
         $this->authorizeContributionWrite((int) $validated['branch_id']);
+        ContributionLock::pastikanTerbuka('tb', (int) $validated['branch_id'], $validated['period']);
 
         $branch = Branch::findOrFail($validated['branch_id']);
         $openingDate = $branch->opening_date
@@ -158,15 +162,20 @@ class TbContributionController extends Controller
                     : null,
             ]);
 
+        $latest = $contributions->first();
+        $isLocked = $latest ? ContributionLock::terkunci('tb', $branch->id, $latest['period']) : false;
+
         return response()->json([
             'contributions' => $contributions,
-            'can_delete' => $this->canManageBranch($branch->id),
+            'can_delete' => $this->canManageBranch($branch->id) && !$isLocked,
         ]);
     }
 
     public function destroy(TbContribution $contribution)
     {
         $this->authorizeContributionWrite((int) $contribution->branch_id);
+
+        ContributionLock::pastikanTerbuka('tb', (int) $contribution->branch_id, (string) $contribution->period);
 
         $latest = TbContribution::query()
             ->where('branch_id', $contribution->branch_id)
@@ -177,7 +186,16 @@ class TbContributionController extends Controller
 
         abort_unless($latest->is($contribution), 422, 'Hanya transaksi iuran terakhir kantor ini yang boleh dihapus.');
 
+        $bukti = $contribution->bukti_path;
         $contribution->delete();
+
+        if ($bukti) {
+            $masihDipakai = TbContribution::where('bukti_path', $bukti)->exists()
+                || OpsBopContribution::where('bukti_path', $bukti)->exists();
+            if (!$masihDipakai) {
+                Storage::disk('s3')->delete($bukti);
+            }
+        }
 
         return back()->with('message', 'Transaksi iuran berhasil dihapus.');
     }
@@ -204,7 +222,17 @@ class TbContributionController extends Controller
             return true;
         }
 
-        return $this->canManageZone() && in_array($branchId, $this->zoneBranchIds());
+        if ($this->canManageZone() && in_array($branchId, $this->zoneBranchIds())) {
+            return true;
+        }
+
+        $user = $this->authenticatedUser();
+        if ($user && $user->hasRole('kasir')) {
+            $allowed = Branch::getAllowedBranchIds($user);
+            return $allowed === null || in_array($branchId, $allowed);
+        }
+
+        return false;
     }
 
     private function canManageAll(): bool

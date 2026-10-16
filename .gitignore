@@ -28,3 +28,8 @@ runtime/
 
 # Worktree lokal Claude Code - jangan ikut repo (bikin checkout CI gagal)
 .claude/worktrees/
+
+public/build/
+bootstrap/ssr/
+graphify-out/
+.claude/settings.local.json

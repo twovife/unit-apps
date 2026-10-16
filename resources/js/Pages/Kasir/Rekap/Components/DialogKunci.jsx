@@ -99,10 +99,10 @@ const DialogKunci = ({ baris, onClosed, onBukaDrop = null }) => {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {migrasi ? 'Kunci' : 'TTD Kasir'} Kelompok {baris?.kelompok} — {baris ? dayjs(baris.tanggal).format('dddd, DD MMMM YYYY') : ''}
+            Kunci Kelompok {baris?.kelompok} — {baris ? dayjs(baris.tanggal).format('dddd, DD MMMM YYYY') : ''}
           </DialogTitle>
           <DialogDescription>
-            {migrasi ? 'Sesudah dikunci, transaksi hari ini tidak bisa diubah.' : 'Tanda tangan kasir. Kasbon & transport masih bisa dikoreksi, tapi TTD batal dan harus diulang.'}{' '}
+            Sesudah dikunci, transaksi hari ini tidak bisa diubah.{' '}
             <SatuanAngka />
           </DialogDescription>
         </DialogHeader>
@@ -221,8 +221,8 @@ const DialogKunci = ({ baris, onClosed, onBukaDrop = null }) => {
             Batal
           </Button>
           <Button disabled={!bisa || proses} onClick={kunci}>
-            {migrasi ? <Lock className="w-4 h-4" /> : <PenLine className="w-4 h-4" />}
-            {proses ? 'Memproses…' : migrasi ? 'Ya, kunci' : 'Ya, tanda tangan'}
+            <Lock className="w-4 h-4" />
+            {proses ? 'Memproses…' : 'Ya, kunci'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { router, usePage } from '@inertiajs/react';
-import { Check, Lock, PanelRightOpen, PenLine, X } from 'lucide-react';
+import { Check, Lock, LockOpen, PanelRightOpen, X } from 'lucide-react';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
+import { Button } from '@/shadcn/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
 // Rekap 1 (dan Rekap per Mantri): angka dalam ribuan. Urutan kolom mengikuti
 // buku kasir: kasbon s/d tunai, titipan 9%, SU Lapangan, Sisa Uang,
@@ -155,6 +157,33 @@ const IsianSel = ({ r, k, kolom, kuning = false }) => {
 const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, onKlikStorting = null, onKlikDrop = null, onKunci = null }) => {
   const { auth, server_filter } = usePage().props;
   const hariIni = dayjs().format('YYYY-MM-DD');
+
+  const [barisBukaKunci, setBarisBukaKunci] = useState(null);
+  const [alasanBuka, setAlasanBuka] = useState('');
+  const [prosesBuka, setProsesBuka] = useState(false);
+
+  // Superuser / can-edit yang boleh membuka kunci rekap
+  const bolehBukaKunci = Boolean(
+    auth?.roles?.includes('superuser') || auth?.permissions?.includes('can-edit')
+  );
+
+  const handleBukaKunci = () => {
+    if (!barisBukaKunci || alasanBuka.trim().length < 5) return;
+    router.post(
+      route('kasir.rekap.buka_kunci'),
+      { id: barisBukaKunci.id, date: barisBukaKunci.tanggal, alasan: alasanBuka.trim() },
+      {
+        preserveScroll: true,
+        onStart: () => setProsesBuka(true),
+        onFinish: () => setProsesBuka(false),
+        onSuccess: () => {
+          setBarisBukaKunci(null);
+          setAlasanBuka('');
+        },
+      }
+    );
+  };
+
   // Kunci / TTD kasir: hanya kasir & pimpinan (+ superuser); hari ini mulai jam_kunci WIB.
   // Server memeriksa ulang dengan jam server (zona Asia/Jakarta).
   const bolehKunci = ['kasir', 'pimpinan', 'superuser'].some((x) => auth?.roles?.includes(x));
@@ -210,7 +239,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                 {label}
               </th>
             ))}
-            {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">{migrasi ? 'Kunci' : 'TTD Kasir'}</th>}
+            {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">Kunci</th>}
             {onKunci && <th className="px-3 py-2 font-medium text-center whitespace-nowrap">ACC KM</th>}
           </tr>
         </thead>
@@ -265,12 +294,28 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
               {onKunci && (
                 <td className="px-2 py-1 text-center">
                   {r.type != 'daily' ? null : r.status_approve_kasir ? (
-                    <span
-                      title={migrasi ? 'Terkunci' : 'Ditandatangani kasir'}
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-100 text-slate-600"
-                    >
-                      {migrasi ? <Lock className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-                    </span>
+                    bolehBukaKunci ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBarisBukaKunci(r);
+                          setAlasanBuka('');
+                        }}
+                        title="Terkunci — Klik untuk Buka Kunci (Superuser)"
+                        className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-md cursor-pointer transition-colors"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Terkunci</span>
+                      </button>
+                    ) : (
+                      <span
+                        title="Terkunci"
+                        className="inline-flex items-center gap-1 h-7 px-2 text-xs font-medium text-slate-600 bg-slate-100 rounded-md"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Terkunci</span>
+                      </span>
+                    )
                   ) : (
                     <button
                       type="button"
@@ -283,10 +328,10 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                             : undefined
                       }
                       onClick={() => onKunci(r)}
-                      className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-white rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40"
+                      className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-white rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
                     >
-                      {migrasi ? <Lock className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
-                      {migrasi ? 'Kunci' : 'TTD'}
+                      <LockOpen className="w-3.5 h-3.5" />
+                      Kunci
                     </button>
                   )}
                 </td>
@@ -324,6 +369,68 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
         )}
       </table>
     </div>
+
+    {/* Dialog Buka Kunci untuk Superuser */}
+    <Dialog open={!!barisBukaKunci} onOpenChange={(o) => !o && !prosesBuka && setBarisBukaKunci(null)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-rose-700">
+            <LockOpen className="w-5 h-5 text-rose-600" />
+            Buka Kunci Rekap
+          </DialogTitle>
+          <DialogDescription>
+            Buka kunci Rekap 1 untuk kelompok{' '}
+            <strong className="text-slate-900">{barisBukaKunci?.kelompok}</strong> tanggal{' '}
+            <strong className="text-slate-900">
+              {barisBukaKunci?.tanggal ? dayjs(barisBukaKunci.tanggal).format('dddd, DD MMMM YYYY') : ''}
+            </strong>.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-2 space-y-3">
+          <div className="p-3 text-xs border rounded-lg border-amber-200 bg-amber-50 text-amber-900">
+            Setelah kunci dibuka, isian setoran/kasbon dan status transaksi kelompok ini dapat diubah kembali.
+          </div>
+          <div>
+            <label className="block mb-1 text-xs font-medium text-slate-700">
+              Alasan Buka Kunci <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              rows={3}
+              value={alasanBuka}
+              onChange={(e) => setAlasanBuka(e.target.value)}
+              placeholder="Tuliskan alasan mengapa kunci dibuka (min. 5 karakter)..."
+              className="w-full px-3 py-2 text-sm border rounded-md border-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            />
+            {alasanBuka.length > 0 && alasanBuka.trim().length < 5 && (
+              <p className="mt-1 text-xs text-rose-500">Alasan minimal 5 karakter.</p>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={prosesBuka}
+            onClick={() => {
+              setBarisBukaKunci(null);
+              setAlasanBuka('');
+            }}
+          >
+            Batal
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={prosesBuka || alasanBuka.trim().length < 5}
+            onClick={handleBukaKunci}
+          >
+            {prosesBuka ? 'Membuka...' : 'Buka Kunci'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 };

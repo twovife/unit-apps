@@ -38,6 +38,7 @@ import {
   LayoutDashboard,
   LogOut,
   PiggyBank,
+  Plane,
   PlusCircle,
   Search,
   ShieldCheck,
@@ -357,6 +358,21 @@ export default function AppSidebar({ ...props }) {
                   >
                     <FileSpreadsheet className="size-4" />
                     <span>SKSW — Laporan Unit</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={route().current('dashboard.kasir.goro_umrah')}
+                  tooltip="Tabungan Goro Umrah"
+                >
+                  <Link
+                    href={route('dashboard.kasir.goro_umrah')}
+                    className="flex items-center gap-2.5 font-medium"
+                  >
+                    <Plane className="size-4" />
+                    <span>Tabungan Goro Umrah</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

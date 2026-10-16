@@ -16,6 +16,55 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 # 2026-10-16
 
+## Hak Hapus Role Kasir Sebelum Dikunci Staf Kontrol (Tabungan 1 Juta, BOP, SKSW, Goro Umrah) & Menu Sidebar Tabungan Goro Umrah
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Models/ContributionLock.php` | `terkunci()`, `bulanTerkunci()`, `pastikanTerbuka()` | — | `contribution_locks` (`BACA`) | Membuat model `ContributionLock` di `unit-apps` (selaras dengan `app_laravel`) untuk memvalidasi status penguncian bulanan oleh staf kontrol/pusat pada modul `tb`, `bop`, `goro`, dan `modal`. |
+| `resources/js/Components/Sidebar.jsx` | `SidebarContent()` | Menu `Administrasi Cabang` | — | Menambahkan tautan menu **Tabungan Goro Umrah** (`route('dashboard.kasir.goro_umrah')`) dengan ikon `Plane` di bawah navigasi Administrasi Cabang (di dalam pengecekan `bolehAdmKantor`). |
+| `app/Http/Controllers/TbContributionController.php` | `store()`, `history()`, `destroy()`, `canManageBranch()` | `tabungan.contributions.store`, `tabungan.api.contributions.history`, `tabungan.contributions.destroy` | `tb_contributions` (`BACA`, `TULIS`), `contribution_locks` (`BACA`), `ops_bop_contributions` (`BACA`) | 1. Memperbolehkan role `kasir` untuk mengelola/menghapus iuran kantor yang boleh diaksesnya.<br>2. Pada `history()`, properti `can_delete` bernilai `true` untuk kasir selama transaksi terakhir belum dikunci oleh staf kontrol di tabel `contribution_locks` (`module = 'tb'`).<br>3. Pada `destroy()`, menambahkan validasi `ContributionLock::pastikanTerbuka('tb', ...)` dan menghapus file bukti transfer yatim dari storage MinIO/S3 jika tidak lagi digunakan. |
+| `app/Http/Controllers/BopContributionController.php` | `store()`, `history()`, `destroy()`, `canManageBranch()` | `bop.contributions.store`, `bop.api.contributions.history`, `bop.contributions.destroy` | `ops_bop_contributions` (`BACA`, `TULIS`), `contribution_locks` (`BACA`), `tb_contributions` (`BACA`) | 1. Memperbolehkan role `kasir` untuk mengelola/menghapus iuran BOP kantor yang boleh diaksesnya.<br>2. Pada `history()`, properti `can_delete` bernilai `true` untuk kasir selama transaksi terakhir belum dikunci di `contribution_locks` (`module = 'bop'`).<br>3. Pada `destroy()`, memvalidasi `ContributionLock::pastikanTerbuka('bop', ...)` dan menghapus berkas bukti transfer yatim. |
+| `routes/web.php` | `dashboard.kasir.umrah.destroy` | `DELETE /dashboard-kasir/umrah/{id}` | — | Mendaftarkan route penghapusan setoran Goro Umrah (`PembayaranKantorController@destroyUmrah`). |
+| `app/Http/Controllers/PembayaranKantorController.php` | `destroyUmrah()`, `detailUmrah()` | `dashboard.kasir.goro_umrah`, `dashboard.kasir.umrah.destroy` | `goro_umroh_setoran` (`BACA`, `TULIS`), `contribution_locks` (`BACA`) | 1. Menambahkan method `destroyUmrah()` dengan pengecekan izin kantor (`bolehBayar`), verifikasi status kunci staf kontrol (`pastikanTerbuka('goro', ...)`), penghapusan file bukti transfer dari MinIO/S3, dan penghapusan data dari `goro_umroh_setoran`.<br>2. Pada `detailUmrah()`, menyertakan flag `can_delete` per baris setoran (bernilai `true` jika belum dikunci oleh staf kontrol) dan prop `can_manage`. |
+| `resources/js/Pages/Kasir/Dashboard/GoroUmrah.jsx` | `GoroUmrah()`, `handleDelete()` | `dashboard.kasir.goro_umrah` | — | Menambahkan kolom **Aksi** dengan tombol **Hapus** (ikon `Trash2`), badge status **Terkunci** jika bulan sudah dikunci staf kontrol, serta modal konfirmasi Shadcn `Dialog` untuk proses hapus permanen. |
+| `app/Http/Controllers/SkswUnitController.php` | `bisaHapus()` | `sksw.hapus` (`DELETE /sksw/transaksi/{transaction}`), `sksw.detail` (`GET /sksw/{saving}/detail`) | `saving_transactions` (`BACA`, `TULIS`), `saving_batches` (`BACA`) | Memperbaiki `bisaHapus()` agar role `kasir` dapat menghapus transaksi selama batch berstatus `open` atau belum dikunci staf kontrol (termasuk data di mana `batch_id` dicari berdasarkan periode dan cabang). |
+
+*Sengaja tidak diubah*:
+- Struktur tabel database bersama `ubmi_db` tidak diubah sama sekali; memanfaatkan tabel `contribution_locks` dan `saving_batches` yang sudah ada dari `app_laravel`.
+- Kebijakan penguncian staf kontrol tetap mengikat: jika staf kontrol sudah mengunci bulan tersebut, kasir tetap dilarang menambah maupun menghapus transaksi.
+
+---
+
+## Dashboard Kasir: Penataan Ulang Halaman Tabungan Goro Umrah Menjadi Format Tabel Bersih (Selaras dengan Iuran Tabungan 1 Juta)
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/PembayaranKantorController.php` | `detailUmrah()` | `dashboard.kasir.goro_umrah` (`GET /dashboard-kasir/goro-umrah`) | `goro_umroh_setoran` (`BACA`), `branches` (`BACA`) | Mengubah query agar secara default mengeluarkan seluruh data riwayat setoran kantor aktif tanpa dibatasi per tahun (`whereYear` hanya aktif jika user memilih filter tahun tertentu) dan mengirimkan prop `wilayah`, `total`, serta `total_tampil`. |
+| `resources/js/Pages/Kasir/Dashboard/GoroUmrah.jsx` | `GoroUmrah()` | `dashboard.kasir.goro_umrah` (`GET /dashboard-kasir/goro-umrah`) | — | Menghapus grid 12 kotak-kotak bulanan dan menampilkan seluruh riwayat transaksi setoran ke dalam format tabel bersih selaras dengan Tabungan 1 Juta (`OfficeContributionPage`), dengan nomor urut transaksi, format tanggal lengkap, nominal tebal, catatan, petugas pencatat, link bukti transfer, dan filter tahun opsional (default: "Semua Tahun"). |
+
+---
+
+## Rekap 1 & SKSW: Integrasi Video Panduan SKSW Karyawan Baru, Peringatan Sebelum Kunci Rekap 1, Perubahan TTD Menjadi Kunci (Ikon Gembok Buka/Tutup), dan Fitur Buka Kunci Superuser
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Helpers/VideoTutorial.php` | `BERKAS`, `JUDUL` | Semua controller pemanggil `VideoTutorial::url()` | — | Menambahkan berkas `tutorial/sksw_karyawan_baru.mp4` di MinIO dan judul `'sksw_karyawan_baru' => 'Panduan Input SKSW Karyawan Baru'`. |
+| `resources/js/Components/VideoTutorialButton.jsx` | `METADATA` | Semua komponen pemanggil `VideoTutorialButton` | — | Menambahkan konfigurasi metadata (judul dan deskripsi) untuk kunci video `sksw_karyawan_baru`. |
+| `app/Http/Controllers/SkswUnitController.php` | `index()` | `sksw.unit` (`GET /sksw/unit`) | — | Mengirimkan presigned URL video tutorial `sksw` dan `sksw_karyawan_baru` via prop `videos`. |
+| `resources/js/Pages/Sksw/Unit.jsx` | `SkswUnit()` | `sksw.unit` (`GET /sksw/unit`) | — | Menampilkan tombol dialog `VideoTutorialButton` ("Video Panduan") di toolbar atas halaman SKSW Unit. |
+| `app/Http/Controllers/PembayaranKantorController.php` | `halaman()` | `dashboard.kasir` (`GET /dashboard-kasir`) | — | Menambahkan video `sksw_karyawan_baru` ke daftar video dashboard kasir. |
+| `routes/web.php` | `kasir.rekap.buka_kunci` | `POST /kasir/rekap/buka-kunci` | — | Menambahkan endpoint route `buka_kunci` pada grup `kasir.rekap.`. |
+| `app/Http/Controllers/TransactionDailyRecapController.php` | `buka_kunci()` | `kasir.rekap.buka_kunci` (`POST /kasir/rekap/buka-kunci`) | `daily_closings` (`TULIS`), `gembok_audit` (`TULIS`), `transaction_daily_recaps` (`TULIS`) | Menangani pembukaan kunci Rekap 1 oleh superuser (memeriksa `Gembok::bolehBuka`, membuka status approve kasir/storing/drop baik alur migrasi via `ClosingHarianController@buka` maupun legacy recap). |
+| `resources/js/Pages/Kasir/Rekap/RekapContent.jsx` | `RekapContent()` | `kasir.rekap.rekap_satu` (`GET /kasir/rekap/rekap-satu`) | — | Menambahkan banner peringatan di bawah `REKAP 1`: *"Setelah KASIR / STAF Kunci di menu ini, Kelompok yang Terkunci sudah tidak bisa mengganti Drop Maupun Storting lagi, Cek Terlebih Dahulu Sebelum Mengunci Rekap 1"*. |
+| `resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx` | `TableRekapKasir()`, `handleBukaKunci()` | `kasir.rekap.rekap_satu` (`GET /kasir/rekap/rekap-satu`) | — | 1. Mengubah nama kolom tabel dari TTD Kasir menjadi **Kunci**.<br>2. Mengubah ikon dan teks tombol aksi: saat belum terkunci menggunakan **gembok buka (`LockOpen`)** dengan teks **Kunci**; saat sudah terkunci menggunakan **gembok tutup (`Lock`)** bertuliskan **Terkunci**.<br>3. Superuser dapat mengklik tombol **Terkunci** untuk membuka modal Dialog **Buka Kunci Rekap** (dengan validasi alasan minimal 5 karakter) yang mengirim request ke endpoint `kasir.rekap.buka_kunci`. |
+| `resources/js/Pages/Kasir/Rekap/Components/DialogKunci.jsx` | `DialogKunci()` | `kasir.rekap.kunci_hari` | — | Menstandarkan seluruh istilah TTD menjadi **Kunci** (judul dialog & tombol konfirmasi "Ya, kunci"). |
+
+*Sengaja tidak diubah*:
+- Logika otorisasi peran kasir dan aturan jam kunci di backend/frontend tetap dipertahankan; fitur buka kunci dikhususkan untuk `superuser` (`Gembok::bolehBuka`).
+- Skema database tidak berubah, memanfaatkan tabel `daily_closings`, `gembok_audit`, dan kolom `status_approve_kasir`.
+
+---
+
 ## SKSW Unit: Penyesuaian Label Tabungan SKSW & Simpanan Sukarela, Tombol Input Transaksi, serta Dialog Alasan Mutasi Kantor
 
 | Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |

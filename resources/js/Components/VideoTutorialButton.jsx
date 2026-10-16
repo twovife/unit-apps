@@ -25,6 +25,11 @@ const METADATA = {
     singkat: 'SKSW Unit',
     deskripsi: 'Panduan pengecekan mutasi, transaksi aktif, dan laporan saldo SKSW karyawan.',
   },
+  sksw_karyawan_baru: {
+    judul: 'Buka Tabungan SKSW Pegawai Baru',
+    singkat: 'SKSW Pegawai Baru',
+    deskripsi: 'Panduan pendaftaran tabungan SKSW baru untuk pegawai aktif di kantor cabang.',
+  },
   tabungangoro: {
     judul: 'Setoran Tabungan Goro Umrah',
     singkat: 'Tabungan Goro',

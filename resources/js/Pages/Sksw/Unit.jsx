@@ -8,6 +8,7 @@ import { Input } from '@/shadcn/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import Checkbox from '@/Components/Checkbox';
+import VideoTutorialButton from '@/Components/VideoTutorialButton';
 import SavingDetailDrawer from './Components/SavingDetailDrawer';
 
 const rupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
@@ -437,7 +438,7 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
   );
 }
 
-export default function SkswUnit({ branch, period, batch, data = [], unregisteredEmployees = [] }) {
+export default function SkswUnit({ branch, period, batch, data = [], unregisteredEmployees = [], videos = {} }) {
   const [search, setSearch] = useState('');
   const [selectedSaving, setSelectedSaving] = useState(null);
   const [inputBuka, setInputBuka] = useState(false);
@@ -479,7 +480,8 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
               {batch?.status === 'locked' && <Badge variant="secondary" className="ml-2 gap-1"><Lock className="size-3" /> Batch terkunci</Badge>}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <VideoTutorialButton videos={videos} buttonText="Video Panduan" />
             <label className="sr-only" htmlFor="sksw-period">Periode laporan</label>
             <Input id="sksw-period" type="month" value={period} onChange={(event) => changePeriod(event.target.value)} className="w-44" />
             {branch && bolehInput && (

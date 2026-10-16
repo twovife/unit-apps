@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Head, usePage } from '@inertiajs/react';
-import { FilterIcon, PlusCircle } from 'lucide-react';
+import { AlertCircle, FilterIcon, PlusCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import TableRekap from './Components/TableRekap';
 import TableRekapKasir from './Components/TableRekapKasir';
@@ -162,6 +162,14 @@ const RekapContent = ({
           </>
         )}
       </div>
+      {show == 'rekapkasir' && (
+        <div className="flex items-start gap-2.5 p-3 mb-3 text-xs border rounded-lg border-amber-200 bg-amber-50 text-amber-900 shadow-2xs">
+          <AlertCircle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
+          <div className="leading-relaxed">
+            <span className="font-semibold text-amber-950">Perhatian:</span> Setelah KASIR / STAF Kunci di menu ini, Kelompok yang Terkunci sudah tidak bisa mengganti Drop Maupun Storting lagi, Cek Terlebih Dahulu Sebelum Mengunci Rekap 1
+          </div>
+        </div>
+      )}
       {(show == 'rekapkasir' || show == 'rekap2') && <BannerHariTerbuka hari={server_filter.hari_terbuka} />}
       {(show == 'rekapkasir' || show == 'rekap2') && (
         <div className="mb-3">

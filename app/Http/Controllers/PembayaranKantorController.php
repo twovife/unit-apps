@@ -31,7 +31,7 @@ class PembayaranKantorController extends Controller
         abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403, 'Dashboard kasir untuk kepala mantri, kasir, dan pimpinan.');
 
         return \Inertia\Inertia::render('Kasir/Dashboard/Index', [
-            'videos' => \App\Helpers\VideoTutorial::url(['iuran', 'pinjamanmodal', 'sksw', 'tabungangoro']),
+            'videos' => \App\Helpers\VideoTutorial::url(['iuran', 'pinjamanmodal', 'sksw', 'sksw_karyawan_baru', 'tabungangoro']),
         ]);
     }
 
@@ -157,6 +157,27 @@ class PembayaranKantorController extends Controller
         return back()->with('message', 'Setoran tabungan goro umrah dicatat.');
     }
 
+    /** Hapus setoran Tabungan Goro Umrah sebelum dikunci staf kontrol. */
+    public function destroyUmrah(Request $request, int $id)
+    {
+        $setoran = DB::table('goro_umroh_setoran')->where('id', $id)->first();
+        abort_unless($setoran, 404, 'Data setoran tidak ditemukan.');
+
+        abort_unless($this->bolehBayar((int) $setoran->branch_id), 403, 'Anda tidak memiliki hak akses untuk menghapus setoran kantor ini.');
+
+        $periode = substr((string) $setoran->tanggal, 0, 7);
+        $this->pastikanTerbuka('goro', (int) $setoran->branch_id, $periode);
+
+        $bukti = $setoran->bukti_path;
+        DB::table('goro_umroh_setoran')->where('id', $id)->delete();
+
+        if ($bukti) {
+            Storage::disk(Unggahan::DISK)->delete($bukti);
+        }
+
+        return back()->with('message', 'Setoran tabungan goro umrah berhasil dihapus.');
+    }
+
     /**
      * Angsuran pinjaman modal satu sumber, = app_laravel
      * TabunganController::storeCapitalLoanPayment: tawan/sherly satu nominal;
@@ -259,25 +280,45 @@ class PembayaranKantorController extends Controller
     {
         abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403);
         $branch = $this->kantor();
-        $tahun = preg_match('/^\d{4}$/', (string) $request->input('tahun')) ? (int) $request->input('tahun') : (int) now()->year;
+        $tahun = $request->input('tahun');
+        $tahunFilter = preg_match('/^\d{4}$/', (string) $tahun) ? (int) $tahun : null;
 
-        $setoran = DB::table('goro_umroh_setoran as s')
+        $query = DB::table('goro_umroh_setoran as s')
             ->leftJoin('users as u', 'u.id', '=', 's.created_by')
             ->leftJoin('employees as e', 'e.id', '=', 'u.employee_id')
-            ->where('s.branch_id', $branch->id)->whereYear('s.tanggal', $tahun)
-            ->orderByDesc('s.tanggal')->orderByDesc('s.id')
+            ->where('s.branch_id', $branch->id);
+
+        if ($tahunFilter) {
+            $query->whereYear('s.tanggal', $tahunFilter);
+        }
+
+        $setoran = $query
+            ->orderByDesc('s.tanggal')
+            ->orderByDesc('s.id')
             ->get(['s.id', 's.tanggal', 's.amount', 's.notes', 's.bukti_path', DB::raw('COALESCE(e.nama_karyawan, u.username) as oleh')]);
+
+        $tahunAda = DB::table('goro_umroh_setoran')
+            ->where('branch_id', $branch->id)
+            ->selectRaw('DISTINCT YEAR(tanggal) t')
+            ->orderByDesc('t')
+            ->pluck('t');
+
+        $totalAkumulasi = (int) DB::table('goro_umroh_setoran')->where('branch_id', $branch->id)->sum('amount');
+        $bulanTerkunci = DB::table('contribution_locks')
+            ->where('module', 'goro')
+            ->where('branch_id', $branch->id)
+            ->pluck('period')
+            ->all();
+        $bolehHapus = $this->bolehBayar($branch->id);
 
         return \Inertia\Inertia::render('Kasir/Dashboard/GoroUmrah', [
             'unit' => $branch->unit,
-            'tahun' => $tahun,
-            'tahun_ada' => DB::table('goro_umroh_setoran')->where('branch_id', $branch->id)->selectRaw('DISTINCT YEAR(tanggal) t')->orderByDesc('t')->pluck('t'),
-            'total' => (int) DB::table('goro_umroh_setoran')->where('branch_id', $branch->id)->sum('amount'),
-            'per_bulan' => collect(range(1, 12))->map(fn($b) => [
-                'bulan' => sprintf('%d-%02d', $tahun, $b),
-                'jumlah' => (int) $setoran->filter(fn($x) => (int) Carbon::parse($x->tanggal)->month === $b)->sum('amount'),
-                'kali' => $setoran->filter(fn($x) => (int) Carbon::parse($x->tanggal)->month === $b)->count(),
-            ]),
+            'wilayah' => $branch->wilayah,
+            'tahun' => $tahunFilter ? (string) $tahunFilter : 'semua',
+            'tahun_ada' => $tahunAda,
+            'total' => $totalAkumulasi,
+            'total_tampil' => (int) $setoran->sum('amount'),
+            'can_manage' => $bolehHapus,
             'setoran' => $setoran->map(fn($x) => [
                 'id' => $x->id,
                 'tanggal' => Carbon::parse($x->tanggal)->toDateString(),
@@ -285,6 +326,7 @@ class PembayaranKantorController extends Controller
                 'catatan' => $x->notes,
                 'oleh' => $x->oleh,
                 'bukti' => $x->bukti_path ? route('dashboard.kasir.bukti', ['umrah', $x->id]) : null,
+                'can_delete' => $bolehHapus && !in_array(substr((string) $x->tanggal, 0, 7), $bulanTerkunci),
             ]),
         ]);
     }

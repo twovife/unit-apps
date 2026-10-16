@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Helpers\AuthScope;
 use App\Models\Branch;
+use App\Models\ContributionLock;
 use App\Models\OpsBopContribution;
+use App\Models\TbContribution;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class BopContributionController extends Controller
@@ -119,6 +122,7 @@ class BopContributionController extends Controller
         ]);
 
         $this->authorizeContributionWrite((int) $validated['branch_id']);
+        ContributionLock::pastikanTerbuka('bop', (int) $validated['branch_id'], $validated['period']);
 
         $branch = Branch::findOrFail($validated['branch_id']);
         abort_unless($branch->isactive, 422, 'Iuran BOP hanya dapat dicatat untuk kantor aktif.');
@@ -158,15 +162,20 @@ class BopContributionController extends Controller
                     : null,
             ]);
 
+        $latest = $contributions->first();
+        $isLocked = $latest ? ContributionLock::terkunci('bop', $branch->id, $latest['period']) : false;
+
         return response()->json([
             'contributions' => $contributions,
-            'can_delete' => $this->canManageBranch($branch->id),
+            'can_delete' => $this->canManageBranch($branch->id) && !$isLocked,
         ]);
     }
 
     public function destroy(OpsBopContribution $contribution)
     {
         $this->authorizeContributionWrite((int) $contribution->branch_id);
+
+        ContributionLock::pastikanTerbuka('bop', (int) $contribution->branch_id, (string) $contribution->period);
 
         $latest = OpsBopContribution::query()
             ->where('branch_id', $contribution->branch_id)
@@ -177,7 +186,16 @@ class BopContributionController extends Controller
 
         abort_unless($latest->is($contribution), 422, 'Hanya transaksi BOP terakhir kantor ini yang boleh dihapus.');
 
+        $bukti = $contribution->bukti_path;
         $contribution->delete();
+
+        if ($bukti) {
+            $masihDipakai = TbContribution::where('bukti_path', $bukti)->exists()
+                || OpsBopContribution::where('bukti_path', $bukti)->exists();
+            if (!$masihDipakai) {
+                Storage::disk('s3')->delete($bukti);
+            }
+        }
 
         return back()->with('message', 'Iuran BOP berhasil dihapus.');
     }
@@ -206,17 +224,38 @@ class BopContributionController extends Controller
 
         $zoneBranchIds = Branch::getAllowedBranchIds($this->authenticatedUser()) ?? [];
 
-        return $this->canManageZone() && in_array($branchId, $zoneBranchIds);
+        if ($this->canManageZone() && in_array($branchId, $zoneBranchIds)) {
+            return true;
+        }
+
+        $user = $this->authenticatedUser();
+        if ($user && $user->hasRole('kasir')) {
+            $allowed = Branch::getAllowedBranchIds($user);
+            return $allowed === null || in_array($branchId, $allowed);
+        }
+
+        return false;
     }
 
     private function canManageAll(): bool
     {
-        return $this->authenticatedUser()?->hasPermissionTo('create-contributions-all') ?? false;
+        $user = $this->authenticatedUser();
+
+        return $user !== null && (
+            $user->hasPermissionTo('create-contributions-all') ||
+            $user->hasRole('superuser') ||
+            $user->hasRole('pusat')
+        );
     }
 
     private function canManageZone(): bool
     {
-        return $this->authenticatedUser()?->hasPermissionTo('create-contributions-zone') ?? false;
+        $user = $this->authenticatedUser();
+
+        return $user !== null && (
+            $user->hasPermissionTo('create-contributions-zone') ||
+            $user->hasRole('stafkontrol')
+        );
     }
 
     private function authenticatedUser(): ?User
