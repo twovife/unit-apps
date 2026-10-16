@@ -14,6 +14,87 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 ---
 
+# 2026-10-16
+
+## Urutan Nasabah Angsuran (Tanggal Drop -> Nasabah Lama/Pelunasan -> No Anggota -> Nasabah Baru -> No Anggota)
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Traits/PinjamanTrait.php` | `getLoanMantri()`, `getLoan()` | `mobile_apps.angsuran`, `pinjaman.index_pinjaman` | `transaction_loans` (`BACA`), `transaction_manage_customers` (`BACA`) | Menghitung riwayat pinjaman sukses per manage customer (`pinjaman_ke`), flag `dari_pelunasan`, `is_nasabah_lama`, serta sorting collection di backend |
+| `resources/js/Pages/NewAngsuran/Components/AngsuranTableMobile.jsx` | `urut()` | `mobile_apps.angsuran` | — | Mengurutkan baris nasabah HP: tanggal drop -> nasabah lama / pelunasan -> nomor anggota numerik -> nasabah baru -> nomor anggota numerik -> nama A-Z |
+| `resources/js/Pages/NewAngsuran/Components/AngsuranTable.jsx` | `urutBaris()` | `pinjaman.index_pinjaman` | — | Menyelaraskan urutan baris nasabah desktop dengan urutan mobile (tanggal drop -> nasabah lama / pelunasan -> no anggota -> baru -> no anggota) |
+
+**Sengaja tidak diubah:** tidak mengubah struktur database atau query insert/update, hanya penambahan kalkulasi `pinjaman_ke` dan perbandingan comparator urutan.
+
+---
+
+## Integrasi Video Tutorial MinIO Storage di Web
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Helpers/VideoTutorial.php` (**BARU**) | `url()` | Helper presigned temporary URL MinIO | — | Menghasilkan link presigned sementara untuk 6 video tutorial di MinIO `ubmi-bucket/tutorial/` |
+| `resources/js/Components/VideoTutorialButton.jsx` (**BARU**) | `VideoTutorialButton` | Komponen popup video | — | Tombol dan dialog modal pemutar video responsif, mendukung playlist tabs multi-video dan single video |
+| `app/Http/Controllers/PembayaranKantorController.php` | `halaman()` | `dashboard.kasir` | — | Mengirimkan presigned URL video `iuran`, `pinjamanmodal`, `sksw`, `tabungangoro` ke halaman Dashboard Kasir |
+| `resources/js/Pages/Kasir/Dashboard/Index.jsx` & `PembayaranKantor.jsx` | `DashboardKasir()`, `PembayaranKantor()` | `dashboard.kasir` | — | Menampilkan tombol icon video panduan di sebelah judul hero Dashboard Kasir dengan 4 pilihan video |
+| `app/Http/Controllers/VehicleAssetController.php` | `index()` | `assets.index` | — | Mengirimkan presigned URL video `cekaset` ke halaman Aset Kendaraan |
+| `resources/js/Pages/Assets/Vehicles.jsx` | `Vehicles()` | `assets.index` | — | Memasang tombol Video Panduan di header Registri Kendaraan |
+| `app/Http/Controllers/LamaranKerjaController.php` | `index()` | `administrasi.lamaran.index` | — | Mengirimkan presigned URL video `lamaran` ke halaman Lamaran Kerja |
+| `app/Http/Controllers/MobileAppsMantriController.php` | `angsuran()` | `mobile_apps.angsuran` | — | Mengirimkan presigned URL video `pelunasan` dan `input_angsuran` ke halaman Angsuran Lancar |
+| `resources/js/Pages/MobileApps/Angsuran/Index.jsx` & `NewAngsuran/Angsuran.jsx` | `Index()`, `Angsuran()` | `mobile_apps.angsuran` | — | Memasang tombol Video Panduan di samping judul Angsuran Lancar dengan 2 pilihan video |
+| `.agents/video_tutorial.md` (**BARU**) | Dokumentasi modul | — | — | Dokumentasi alur, berkas MinIO, dan penempatan antarmuka |
+
+**Sengaja tidak diubah:** tidak ada perubahan tabel/skema database bersama (`ubmi_db`). Video disimpan di MinIO dan diakses via presigned URL yang aman.
+
+---
+
+# 2026-10-10
+
+## A. Iuran Tabungan 1 Juta dan Iuran BOP per kantor
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/TbContributionController.php` (**BARU**) | `index()`, `store()`, `history()`, `destroy()` + helper otorisasi | `tabungan.contributions*` | `branches`, `employee_zones`, `employees`, `users` — BACA · `tb_contributions` — BACA/TULIS | Menambahkan rekap dan riwayat untuk kantor aktif dari `AuthScope` saja, pembayaran, serta hapus transaksi terakhir. Input/hapus dibatasi `create-contributions-all`/pusat/superuser atau `create-contributions-zone`/stafkontrol sesuai zona |
+| `app/Models/TbContribution.php` (**BARU**) | relasi `branch()`, `creator()` | `TbContributionController` | `branches`, `users` — BACA · `tb_contributions` | Model consumer untuk tabel bersama yang dikelola `app_laravel` |
+| `routes/web.php` | — | GET/POST/DELETE `/tabungan/contributions`, GET `/tabungan/api/contributions/{branch}/history` | — | Semua route di dalam middleware `auth` |
+| `resources/js/Components/Sidebar.jsx` | `AppSidebar()` | menu `tabungan.contributions` | — | Menambah menu Iuran Tabungan 1 Juta untuk akses administrasi cabang |
+| `resources/js/Pages/Tabungan/Contributions.jsx` (**BARU**) | halaman iuran | route `tabungan.*` | — | Mengikuti layout/sidebar unit-apps dan GlobalBranchFilter; hanya menampilkan kantor aktif, ringkasan kantor itu, riwayat, input, dan hapus transaksi terakhir |
+| `app/Http/Controllers/BopContributionController.php` (**BARU**) | `index()`, `store()`, `history()`, `destroy()` + helper otorisasi | `bop.contributions*` | `branches`, `employee_zones`, `employees`, `users` — BACA · `ops_bop_contributions` — BACA/TULIS | Menambahkan Iuran BOP per kantor aktif, mengikuti izin `create-contributions-all`/`create-contributions-zone`, masa tenggang, target Rp1.500.000, dan hapus transaksi terakhir |
+| `app/Models/OpsBopContribution.php` (**BARU**) | relasi `branch()`, `creator()` | `BopContributionController` | `branches`, `users` — BACA · `ops_bop_contributions` | Model consumer tabel BOP bersama yang dikelola `app_laravel` |
+| `routes/web.php` | — | GET/POST/DELETE `/bop/contributions`, GET `/bop/api/contributions/{branch}/history` | — | Route BOP berada di grup `auth` |
+| `resources/js/Components/Tabungan/OfficeContributionPage.jsx` (**BARU**) | halaman reusable | route `tabungan.*`, `bop.*` | — | Menyatukan layout unit-apps, kantor aktif global, ringkasan dan riwayat, input serta penghapusan untuk kedua jenis iuran |
+| `resources/js/Pages/Tabungan/{Contributions,BopContributions}.jsx` | konfigurasi halaman reusable | `tabungan.contributions*`, `bop.contributions*` | — | Memasang target Rp1.000.000 untuk Tabungan dan Rp1.500.000 untuk BOP |
+| `resources/js/Components/Sidebar.jsx` | `AppSidebar()` | menu `tabungan.contributions`, `bop.contributions` | — | Menempatkan kedua menu langsung di grup Administrasi Cabang, tepat di bawah Data Karyawan |
+
+**Sengaja tidak diubah:** skema/migrasi kedua tabel kontribusi dan data awal tetap dikelola dari `app_laravel`; tidak ada migration/seeder atau perubahan ke menu pinjaman BOP/Tabungan. UI hanya membaca kantor aktif dari filter global; izin menambah/menghapus tetap diperiksa server sesuai permission masing-masing modul.
+
+## B. SKSW — Laporan Unit per karyawan
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/SkswUnitController.php` (**BARU**) | `index()`, `detail()`, `reportForBranch()`, `authorizeBranch()` | `sksw.unit`, `sksw.detail` | `branches`, `saving_batches`, `saving_monthly_snapshots`, `saving_transactions`, `savings`, `employees`, `employments`, `users` — BACA | Laporan per karyawan terkunci ke kantor aktif dari `AuthScope`; saldo awal memakai snapshot bila batch sebelumnya terkunci, transaksi aktif difilter per kantor, dan detail hanya membaca histori kantor tersebut |
+| `app/Models/{Saving,SavingBatch,SavingTransaction}.php` (**BARU**) | Relasi SKSW, cast tanggal/nominal, scope transaksi aktif | `SkswUnitController` | `savings`, `saving_batches`, `saving_transactions` — BACA | Model consumer lokal minimal untuk tabel SKSW bersama yang dikelola `app_laravel` |
+| `routes/web.php` | — | GET `/sksw/unit`, GET `/sksw/{saving}/detail` | — | Keduanya berada di middleware `auth`; tidak ada endpoint tulis |
+| `resources/js/Pages/Sksw/Unit.jsx` (**BARU**) | halaman, pencarian, ganti periode, detail baca-saja | `sksw.unit`, `sksw.detail` | — | Template responsif dengan rekap kantor, breakdown per karyawan, total, dan drawer riwayat transaksi/rekap bulanan |
+| `resources/js/Components/Sidebar.jsx` | `AppSidebar()` | menu `sksw.unit` | — | Menambah SKSW — Laporan Unit di Administrasi Cabang setelah menu kontribusi |
+| `.agents/skills/peta-aplikasi/references/01_routing_map.md`, `04_frontend_map.md`, `.agents/sksw_laporan_unit.md` | dokumentasi alur dan batas data | `SkswUnitController`, `sksw.*` | tabel SKSW — BACA saja | Mencatat sumber data, scope, dan batas implementasi |
+
+**Sengaja tidak diubah:** tidak ada input cepat, mutasi, void transaksi, lock/unlock batch, migration, atau seeder. Permintaan saat ini hanya laporan unit sesuai filter kantor aktif dengan rincian karyawan; seluruh endpoint SKSW baru bersifat baca-saja.
+
+## C. Registri dan pengelolaan Aset Kendaraan per kantor aktif
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/VehicleAssetController.php` (**BARU**) | `index()`, `herList()`, `detailJson()`, `store()`, `update()`, `destroy()`, `mutate()`, `addMaintenance()`, `confirmHer()`, `cancelHer()` + scope/validasi/helper plat | `assets.*` | `branches`, `inv_categories` — BACA · `inv_assets`, `inv_vehicles`, `inv_locations`, `inv_maintenance_logs`, `inv_vehicle_taxes` — BACA/TULIS · `users` — BACA (`created_by`) | Registri, detail, form aset, penempatan awal/mutasi, catatan servis, jadwal/pembayaran pajak dan pembatalan pajak; seluruh baca/tulis dan detail dicek ulang terhadap kantor aktif, mutasi dibatasi daftar kantor yang diizinkan |
+| `app/Models/{InvAsset,InvCategory,InvLocation,InvVehicle,InvMaintenanceLog,InvVehicleTax}.php` (**BARU**) | relasi aset/kategori/lokasi/kendaraan/servis/pajak, cast tanggal/nominal, aturan siklus pajak dan pembatalan | `VehicleAssetController` | `inv_assets`, `inv_categories`, `inv_locations`, `inv_vehicles`, `inv_maintenance_logs`, `inv_vehicle_taxes` — BACA/TULIS | Model consumer lokal untuk tabel aset bersama; tidak mengubah skema yang tetap dikelola `app_laravel` |
+| `routes/web.php` | — | GET/POST `/assets`, GET `/assets/her`, POST `/assets/her/{vehicle}/confirm`, DELETE `/assets/her/tax/{tax}`, GET `/assets/{asset}/detail`, PUT/DELETE `/assets/{asset}`, POST `/assets/{asset}/mutate`, POST `/assets/{asset}/maintenance` | — | Semua halaman dan operasi aset berada di middleware `auth`; controller tetap melakukan scope aktif server-side |
+| `routes/web.php` | — | GET/POST `/assets`, GET `/assets/her`, POST `/assets/her/{vehicle}/confirm`, DELETE `/assets/her/tax/{tax}`, GET `/assets/{asset}/detail`, PUT/DELETE `/assets/{asset}`, POST `/assets/{asset}/mutate`, POST `/assets/{asset}/maintenance` | — | Semua route dalam middleware `auth`; controller tetap melakukan scope aktif server-side |
+| `resources/js/Pages/Assets/{Vehicles,VehicleTaxes}.jsx` (**BARU**) | registri, filter, ringkasan, daftar pajak, konfirmasi pembayaran, paginasi | `assets.*` | — | UI unit-apps untuk semua alur kendaraan; filter kantor tidak dapat ditentukan melalui parameter browser |
+| `resources/js/Components/Assets/{VehicleAssetForm,VehicleAssetDetail}.jsx` (**BARU**) | form tambah/ubah, drawer detail, riwayat pajak, mutasi, catatan servis, hapus/batal pajak | `assets.*` | — | Operasi ditampilkan dari halaman unit-apps; detail diambil on-demand setelah server memvalidasi kantor aktif |
+| `resources/js/Components/Sidebar.jsx` | `AppSidebar()` | menu `assets.index` | — | Menambahkan Aset Kendaraan di Administrasi Cabang |
+| `.agents/asset_kendaraan.md`, referensi peta routing/frontend/skema | dokumentasi alur dan tabel | `VehicleAssetController`, `assets.*` | tabel aset — BACA/TULIS | Mendokumentasikan source data, transaksi pajak, aksi aset, tabel tulis, dan jaminan kantor aktif |
+
+**Sengaja tidak diubah:** URL sumber `/assets?branch_id=91` hanya dipakai sebagai referensi UI; parameter `branch_id` dari browser tidak dipakai untuk memilih kantor. Tidak ada migration/seeder atau perubahan kode di `app_laravel`; definisi dan pemilik skema tetap aplikasi pusat. Delete aset memakai cascade FK live untuk kendaraan, lokasi, servis, dan pajak; aksi meminta konfirmasi eksplisit di UI.
+
 # 2026-08-02
 
 ## A. Pembersihan nama permission + `auth.roles`

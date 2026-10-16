@@ -54,13 +54,36 @@ const warnaAngka = (r) => {
   return 'text-emerald-600';
 };
 
-// Urutan dalam grup: tanggal drop -> yang punya nomor anggota dulu (kecil ke
-// besar, angka dibanding sebagai angka) -> yang belum punya nomor: nama A-Z.
-const urut = (a, b) =>
-  String(a.tanggal_drop).localeCompare(String(b.tanggal_drop)) ||
-  !a.nomor_anggota - !b.nomor_anggota ||
-  String(a.nomor_anggota ?? '').localeCompare(String(b.nomor_anggota ?? ''), 'id', { numeric: true }) ||
-  String(a.nama).localeCompare(String(b.nama), 'id');
+// Urutan nasabah:
+// 1. Tanggal drop
+// 2. Nasabah lama dulu / pelunasan
+// 3. Urutkan per nomor anggota (punya nomor anggota duluan, urut numerik kecil ke besar)
+// 4. Nasabah baru
+// 5. Urutkan per nomor anggota (punya nomor anggota duluan, urut numerik kecil ke besar)
+// Seri pemutus: nama A-Z.
+const urut = (a, b) => {
+  const cmpDrop = String(a.tanggal_drop ?? '').localeCompare(String(b.tanggal_drop ?? ''));
+  if (cmpDrop !== 0) return cmpDrop;
+
+  const isLamaA = Boolean(a.is_nasabah_lama || a.dari_pelunasan || (a.pinjaman_ke > 1));
+  const isLamaB = Boolean(b.is_nasabah_lama || b.dari_pelunasan || (b.pinjaman_ke > 1));
+  if (isLamaA !== isLamaB) {
+    return isLamaA ? -1 : 1;
+  }
+
+  const punyaNoA = Boolean(a.nomor_anggota);
+  const punyaNoB = Boolean(b.nomor_anggota);
+  if (punyaNoA !== punyaNoB) {
+    return punyaNoA ? -1 : 1;
+  }
+
+  if (punyaNoA && punyaNoB) {
+    const cmpNo = String(a.nomor_anggota).localeCompare(String(b.nomor_anggota), 'id', { numeric: true });
+    if (cmpNo !== 0) return cmpNo;
+  }
+
+  return String(a.nama ?? '').localeCompare(String(b.nama ?? ''), 'id');
+};
 
 const FILTER = [
   ['semua', 'Semua'],

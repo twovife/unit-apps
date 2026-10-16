@@ -33,16 +33,37 @@ const Angka = ({ v, kelas = "" }) => (
 );
 
 /**
- * Urutan baris dalam grup: tanggal drop; lalu yang punya nomor anggota di
- * atas; di tanggal yang sama nasabah lama (pinjaman ke-2 dst / pelunasan)
- * di atas nasabah baru; lalu nomor anggota kecil ke besar; lalu nama.
+ * Urutan baris dalam grup:
+ * 1. Tanggal drop
+ * 2. Nasabah lama dulu / pelunasan
+ * 3. Urutkan per nomor anggota (punya nomor anggota duluan, urut numerik)
+ * 4. Nasabah baru
+ * 5. Urutkan per nomor anggota
+ * Seri pemutus: nama A-Z.
  */
-const urutBaris = (a, b) =>
-  String(a.tanggal_drop).localeCompare(String(b.tanggal_drop)) ||
-  Number(!a.nomor_anggota) - Number(!b.nomor_anggota) ||
-  Number(a.pinjaman_ke <= 1) - Number(b.pinjaman_ke <= 1) ||
-  String(a.nomor_anggota ?? "").localeCompare(String(b.nomor_anggota ?? ""), undefined, { numeric: true }) ||
-  String(a.nama ?? "").localeCompare(String(b.nama ?? ""));
+const urutBaris = (a, b) => {
+  const cmpDrop = String(a.tanggal_drop ?? '').localeCompare(String(b.tanggal_drop ?? ''));
+  if (cmpDrop !== 0) return cmpDrop;
+
+  const isLamaA = Boolean(a.is_nasabah_lama || a.dari_pelunasan || (a.pinjaman_ke > 1));
+  const isLamaB = Boolean(b.is_nasabah_lama || b.dari_pelunasan || (b.pinjaman_ke > 1));
+  if (isLamaA !== isLamaB) {
+    return isLamaA ? -1 : 1;
+  }
+
+  const punyaNoA = Boolean(a.nomor_anggota);
+  const punyaNoB = Boolean(b.nomor_anggota);
+  if (punyaNoA !== punyaNoB) {
+    return punyaNoA ? -1 : 1;
+  }
+
+  if (punyaNoA && punyaNoB) {
+    const cmpNo = String(a.nomor_anggota).localeCompare(String(b.nomor_anggota), 'id', { numeric: true });
+    if (cmpNo !== 0) return cmpNo;
+  }
+
+  return String(a.nama ?? '').localeCompare(String(b.nama ?? ''), 'id');
+};
 
 /**
  * Sel nomor anggota yang bisa diisi langsung: klik -> ketik -> Enter / klik

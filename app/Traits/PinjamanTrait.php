@@ -476,6 +476,8 @@ trait PinjamanTrait
         $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
         $saldo = $saldoF8[$item->id]['saldo'];
 
+        $countPinjaman = $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count();
+
         $data = [
           'tanggal_drop' => $item->drop_date,
           'nama' => $item->customer->nama,
@@ -488,7 +490,9 @@ trait PinjamanTrait
           'lunas' => $saldo <= 0,
           // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
           'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
-          'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
+          'pinjaman_ke' => $countPinjaman,
+          'dari_pelunasan' => (bool) $item->previous_loan_id,
+          'is_nasabah_lama' => (bool) $item->previous_loan_id || ($countPinjaman > 1),
           'drop' => $item->nominal_drop,
           'pinjaman' => $item->pinjaman,
           'hari' => $item->hari,
@@ -549,6 +553,8 @@ trait PinjamanTrait
           $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
           $saldo = $saldoF8[$item->id]['saldo'];
 
+          $countPinjaman = $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count();
+
           $data = [
             'tanggal_drop' => $item->drop_date,
             'nama' => $item->customer->nama,
@@ -560,7 +566,9 @@ trait PinjamanTrait
             'lunas' => $saldo <= 0,
             // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
             'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
-            'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),
+            'pinjaman_ke' => $countPinjaman,
+            'dari_pelunasan' => (bool) $item->previous_loan_id,
+            'is_nasabah_lama' => (bool) $item->previous_loan_id || ($countPinjaman > 1),
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
@@ -812,16 +820,63 @@ trait PinjamanTrait
         || $l->white_off?->transaction_date == $tanggalSeleksi)->values();
     }
 
+    // Ambil riwayat pinjaman sukses per manage customer untuk menentukan pinjaman_ke & nasabah lama
+    $manageCustomerIds = $loan->collapse()->pluck('transaction_manage_customer_id')
+      ->merge($loanMl->pluck('transaction_manage_customer_id'))
+      ->unique()->filter()->values();
+
+    $pinjamanCounts = TransactionLoan::whereIn('transaction_manage_customer_id', $manageCustomerIds)
+      ->where('status', 'success')
+      ->select('id', 'transaction_manage_customer_id', 'drop_date')
+      ->get()
+      ->groupBy('transaction_manage_customer_id');
+
+    // Pengurutan nasabah:
+    // 1. Tanggal drop
+    // 2. Nasabah lama dulu / pelunasan
+    // 3. Urut per nomor anggota (punya no anggota duluan, urut numerik kecil ke besar)
+    // 4. Nasabah baru
+    // 5. Urut per nomor anggota
+    // Seri pemutus: nama A-Z.
+    $sortRows = function ($collection) {
+      return $collection->sort(function ($a, $b) {
+        $cmpDrop = strcmp($a['tanggal_drop'] ?? '', $b['tanggal_drop'] ?? '');
+        if ($cmpDrop !== 0) return $cmpDrop;
+
+        $isLamaA = !empty($a['is_nasabah_lama']) || !empty($a['dari_pelunasan']) || (($a['pinjaman_ke'] ?? 0) > 1);
+        $isLamaB = !empty($b['is_nasabah_lama']) || !empty($b['dari_pelunasan']) || (($b['pinjaman_ke'] ?? 0) > 1);
+        if ($isLamaA !== $isLamaB) {
+          return $isLamaA ? -1 : 1;
+        }
+
+        $hasNoA = !empty($a['nomor_anggota']);
+        $hasNoB = !empty($b['nomor_anggota']);
+        if ($hasNoA !== $hasNoB) {
+          return $hasNoA ? -1 : 1;
+        }
+        if ($hasNoA && $hasNoB) {
+          $cmpNo = strnatcasecmp((string) $a['nomor_anggota'], (string) $b['nomor_anggota']);
+          if ($cmpNo !== 0) return $cmpNo;
+        }
+
+        return strcasecmp((string) ($a['nama'] ?? ''), (string) ($b['nama'] ?? ''));
+      })->values();
+    };
+
     $dataMlGenerate = [
       'month' => "ML",
       'type' => "ml",
       'type2' => "ML",
       'date' => Carbon::parse($begin_transaction)->subMonthNoOverflow(1)->format('Y-m-d'),
-      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8) {
+      'data' => $sortRows($loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $pinjamanCounts) {
         $pemutihan = $item->white_off ? $item->white_off->nominal : 0;
 
         $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
         $saldo = $saldoF8[$item->id]['saldo'];
+
+        $history = $pinjamanCounts->get($item->transaction_manage_customer_id, collect());
+        $countPinjaman = $history->filter(fn($h) => $h->drop_date <= $item->drop_date)->count();
+        $isLama = (bool) $item->previous_loan_id || $countPinjaman > 1;
 
         $data = [
           'tanggal_drop' => $item->drop_date,
@@ -830,6 +885,9 @@ trait PinjamanTrait
           'nomor_anggota' => $item->manage_customer->nomor_anggota,
           'keluar_target' => self::keluarTarget($item, $tanggalSeleksi),
           'drop_baru' => $item->drop_date == $tanggalSeleksi,
+          'pinjaman_ke' => $countPinjaman,
+          'dari_pelunasan' => (bool) $item->previous_loan_id,
+          'is_nasabah_lama' => $isLama,
 
           'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
@@ -867,21 +925,25 @@ trait PinjamanTrait
         }
 
         return $data;
-      })->sortBy('nama')->sortBy('tanggal_drop')->values(),
+      })),
     ];
     // dd($dataMlGenerate);
 
-    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView, $saldoF8) {
+    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView, $saldoF8, $pinjamanCounts, $sortRows) {
       return [
         'month' => Carbon::parse($key)->format('FY'),
         'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
-        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8) {
+        'data' => $sortRows($item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $pinjamanCounts) {
           $pemutihan = $item->white_off ? $item->white_off->nominal : 0;
 
           $pemutihan_this_month = $item->white_off ? (Carbon::parse($item->white_off->transaction_date)->format('Y-m') == $transaction_date->format('Y-m') ? $item->white_off->nominal : 0) : 0;
           $saldo = $saldoF8[$item->id]['saldo'];
+
+          $history = $pinjamanCounts->get($item->transaction_manage_customer_id, collect());
+          $countPinjaman = $history->filter(fn($h) => $h->drop_date <= $item->drop_date)->count();
+          $isLama = (bool) $item->previous_loan_id || $countPinjaman > 1;
 
           $data = [
             'tanggal_drop' => $item->drop_date,
@@ -890,6 +952,9 @@ trait PinjamanTrait
             'nomor_anggota' => $item->manage_customer->nomor_anggota,
             'keluar_target' => self::keluarTarget($item, $tanggalSeleksi),
             'drop_baru' => $item->drop_date == $tanggalSeleksi,
+            'pinjaman_ke' => $countPinjaman,
+            'dari_pelunasan' => (bool) $item->previous_loan_id,
+            'is_nasabah_lama' => $isLama,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
@@ -927,7 +992,7 @@ trait PinjamanTrait
           }
 
           return $data;
-        })->sortBy('nama')->sortBy('tanggal_drop')->values(),
+        })),
       ];
     })->values();
 
