@@ -15,7 +15,10 @@
 - Halaman menggunakan format `.jsx` di `resources/js/Pages/` (huruf besar P).
 - Komponen di `resources/js/Components/` (huruf besar C).
 - **Development (hot reload)**: Jalankan `docker compose up -d vite` untuk menyalakan Vite dev server (container `unit-vite`, port `5174`). Selama container ini aktif, edit `.jsx` langsung ter-refresh di browser (HMR) tanpa perlu build manual — sama seperti setup `app_laravel`.
-- **Build produksi/final**: Setelah selesai coding (atau saat container `unit-vite` mati), tetap **WAJIB jalankan** `npm run build` dari host agar aset statis di `public/build` ter-update.
+- **Aturan Build & Deploy Staging (PENTING)**:
+  - **JANGAN** build (`npm run build`) dan **JANGAN** push tag staging ke git saat masih dalam tahap development/coding.
+  - Cukup lakukan perubahan di kode lokal dan biarkan hot reload bekerja.
+  - **HANYA** lakukan build atau push tag staging (`git tag ... && git push origin ...`) jika user secara eksplisit memberikan instruksi seperti *"tolong push staging"*.
 
 ## Koneksi dengan app_laravel
 - Shared database: `ubmi_db` (MariaDB)

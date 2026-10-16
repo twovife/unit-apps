@@ -16,6 +16,16 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 # 2026-10-16
 
+## Halaman Login: Layout Responsif (Desktop Split Kiri-Kanan, Mobile Bottom Sheet Card)
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Pages/Auth/Login.jsx` | `Login()` | `login` | — | Di desktop (`lg:`): layout split kiri-kanan 50:50 (branding logo besar di panel kiri, floating card form login di panel kanan). Di mobile (`< lg`): layout vertikal dengan branding mandiri di atas dan bottom sheet card melengkung `rounded-t-[2.8rem]` yang tinggi dan proporsional di bawah |
+
+**Sengaja tidak diubah:** alur autentikasi dan logika submit form login tetap sama, hanya perbaikan UI responsif.
+
+---
+
 ## Urutan Nasabah Angsuran (Tanggal Drop -> Nasabah Lama/Pelunasan -> No Anggota -> Nasabah Baru -> No Anggota)
 
 | Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |

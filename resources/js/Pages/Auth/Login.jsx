@@ -6,14 +6,7 @@ import { Label } from '@/shadcn/ui/label';
 import { Button } from '@/shadcn/ui/button';
 import Loading from '@/Components/Loading';
 import TombolPasangAplikasi from '@/Components/TombolPasangAplikasi';
-import { Eye, EyeOff, Info, Lock, LogIn, User } from 'lucide-react';
-
-/**
- * Halaman login: panel merek di kiri pada desktop, di atas pada HP (latar
- * putih, awan merah di bagian atas); formulir di kanan/bawah. `status` = pesan dari server (mis. sesi
- * habis, akun nonaktif) -> kotak info di atas formulir.
- */
-const KACA = 'text-base md:text-base bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 lg:border-input';
+import { Eye, EyeOff, Info, Lock, LogIn, Sparkles, User } from 'lucide-react';
 
 export default function Login({ status }) {
   const { data, setData, post, processing, errors, reset } = useForm({
@@ -30,67 +23,79 @@ export default function Login({ status }) {
   };
 
   return (
-    // HP: awan merah di 60% atas, sisanya putih - logo & nama di atas, kartu kaca di bawahnya.
-    // min-h-dvh (bukan 100vh): di HP 100vh lebih tinggi dari layar yang
-    // terlihat (bilah alamat), itu yang membuat halaman bisa digulir.
-    // Desktop (lg): dibelah dua - panel merek kiri, formulir kanan di latar abu.
-    <div className="relative flex flex-col overflow-hidden min-h-dvh bg-white lg:flex-row">
-      <Head title="Masuk" />
+    <div className="relative flex flex-col justify-between min-h-dvh bg-white text-slate-800 antialiased overflow-x-hidden selection:bg-red-600 selection:text-white lg:flex-row lg:items-stretch">
+      <Head title="Masuk · UBMI DIGITAL" />
       <Loading show={processing} />
 
-      {/* HP: awan merah (gradasi + bola kabur) hanya di 60% atas, memudar ke
-          putih; kartu kaca separuh di atasnya (glassmorphism). */}
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 overflow-hidden pointer-events-none h-[60%] lg:hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-800 via-red-600/70 to-white" />
-        <div className="absolute rounded-full -left-16 -top-10 w-72 h-72 bg-red-600/50 blur-3xl" />
-        <div className="absolute rounded-full -right-16 top-1/4 w-64 h-64 bg-rose-500/40 blur-3xl" />
-        <div className="absolute rounded-full left-1/4 top-1/2 w-56 h-56 bg-orange-500/25 blur-3xl" />
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-white" />
+      {/* SISI KIRI (Desktop) / ATAS (Mobile): Branding Area */}
+      <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-10 pb-6 text-center sm:pt-14 sm:pb-8 lg:w-1/2 lg:min-h-dvh lg:p-14 lg:border-r lg:border-slate-100">
+        {/* Logo UBM Mandiri */}
+        <img
+          src="/icons/logo-ubm.webp?v=3"
+          alt="Logo UBM"
+          className="w-auto h-24 sm:h-28 lg:h-36 object-contain drop-shadow-xs transition-transform duration-300 hover:scale-105"
+        />
+
+        {/* Nama Brand */}
+        <h1 className="mt-3.5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl lg:mt-5">
+          UBMI <span className="text-red-600">DIGITAL</span>
+        </h1>
+        <p className="mt-1 text-xs font-semibold tracking-wider uppercase text-slate-400 sm:text-sm lg:text-base lg:mt-2">
+          Aplikasi Pembukuan &amp; Transaksi Cabang
+        </p>
       </div>
 
-      {/* Panel merek */}
-      <div className="relative flex flex-col items-center justify-center gap-2 px-6 pt-8 pb-5 text-white lg:text-slate-900 lg:w-1/2 lg:min-h-dvh lg:gap-5">
-        <img src="/icons/logo-ubm.webp?v=3" alt="UBM" className="relative w-auto h-24 drop-shadow-lg lg:h-44" />
-        <div className="relative text-center">
-          <h1 className="text-2xl font-extrabold tracking-wide lg:text-4xl">UBMI DIGITAL</h1>
-          <p className="mt-1 text-sm text-white/80 lg:text-slate-500 lg:text-base">Aplikasi Pembukuan Kantor</p>
-        </div>
-      </div>
-
-      {/* Formulir */}
-      <div className="flex flex-col items-center flex-1 px-4 pb-4 lg:justify-center lg:bg-slate-50 lg:pb-0">
-        {/* HP: kartu kaca terang; desktop: kartu putih biasa. */}
-        <div
-          className="relative w-full max-w-sm p-5 border shadow-2xl rounded-2xl sm:p-6 text-slate-900 bg-white/70 border-white backdrop-blur-xl
-            lg:bg-white lg:border-slate-200 lg:shadow-sm lg:backdrop-blur-none [&_label]:text-base"
-        >
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold sm:text-2xl">Masuk</h2>
-            <p className="text-base text-slate-500">Gunakan username &amp; password akun Anda.</p>
+      {/* SISI KANAN (Desktop) / BAWAH (Mobile): Card Formulir Masuk */}
+      <div className="relative z-10 w-full max-w-lg mx-auto sm:px-4 sm:pb-8 lg:w-1/2 lg:max-w-none lg:mx-0 lg:p-12 lg:flex lg:flex-col lg:items-center lg:justify-center lg:bg-slate-50/50">
+        <div className="w-full min-h-[62vh] sm:min-h-0 flex flex-col justify-between p-8 sm:p-10 bg-white border-t sm:border border-slate-100 shadow-[0_-15px_45px_rgba(15,23,42,0.07)] sm:shadow-2xl rounded-t-[2.8rem] sm:rounded-3xl lg:max-w-md lg:rounded-3xl lg:border lg:shadow-xl lg:shadow-slate-200/50 lg:min-h-0">
+          {/* Header Card */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-red-50 text-red-600">
+                <Sparkles className="w-3.5 h-3.5" />
+              </span>
+              <span className="text-xs font-bold tracking-wider uppercase text-slate-400">
+                Portal Masuk
+              </span>
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Welcome To <span className="text-red-600">UBMI DIGITAL</span>
+            </h2>
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+              Silakan masukkan username &amp; password akun tugas Anda.
+            </p>
           </div>
 
           {status && (
-            <div className="flex gap-2 p-3 mb-4 text-sm border rounded-lg text-amber-800 bg-amber-50 border-amber-200">
-              <Info className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+            <div className="flex items-start gap-2.5 p-3 mb-5 text-sm border rounded-2xl text-amber-900 bg-amber-50 border-amber-200">
+              <Info className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
               <span>{status}</span>
             </div>
           )}
 
-          <form className="grid gap-4" onSubmit={submit}>
-            <div className="grid gap-1.5">
-              <Label htmlFor="username">Username</Label>
-              <div className="relative">
-                <User className="absolute w-5 h-5 -translate-y-1/2 left-3 top-1/2 text-slate-400" aria-hidden="true" />
+          <form className="space-y-4" onSubmit={submit}>
+            {/* Input Username */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="username"
+                className="text-xs font-bold tracking-wide uppercase text-slate-600"
+              >
+                Username
+              </Label>
+              <div className="relative group">
+                <div className="absolute -translate-y-1/2 pointer-events-none left-4 top-1/2 text-slate-400 group-focus-within:text-red-600 transition-colors">
+                  <User className="w-5 h-5" aria-hidden="true" />
+                </div>
                 <Input
                   id="username"
                   name="username"
                   type="text"
-                  placeholder="username"
+                  placeholder="Masukkan username"
                   required
                   autoComplete="username"
                   autoCapitalize="none"
                   autoFocus
-                  className={`h-12 pl-10 ${KACA}`}
+                  className="h-12 pl-12 pr-4 text-sm font-medium bg-slate-50/70 hover:bg-slate-100/60 focus:bg-white border-slate-200/90 focus:border-red-600 focus:ring-4 focus:ring-red-600/15 rounded-2xl transition duration-200 text-slate-900 placeholder:text-slate-400"
                   value={data.username}
                   onChange={(e) => setData('username', e.target.value)}
                 />
@@ -98,24 +103,33 @@ export default function Login({ status }) {
               <InputError message={errors.username} />
             </div>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute w-5 h-5 -translate-y-1/2 left-3 top-1/2 text-slate-400" aria-hidden="true" />
+            {/* Input Password */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="password"
+                className="text-xs font-bold tracking-wide uppercase text-slate-600"
+              >
+                Password
+              </Label>
+              <div className="relative group">
+                <div className="absolute -translate-y-1/2 pointer-events-none left-4 top-1/2 text-slate-400 group-focus-within:text-red-600 transition-colors">
+                  <Lock className="w-5 h-5" aria-hidden="true" />
+                </div>
                 <Input
                   id="password"
                   name="password"
                   type={lihat ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
-                  className={`h-12 pl-10 pr-11 ${KACA}`}
+                  placeholder="••••••••••••"
+                  className="h-12 pl-12 pr-12 text-sm font-medium bg-slate-50/70 hover:bg-slate-100/60 focus:bg-white border-slate-200/90 focus:border-red-600 focus:ring-4 focus:ring-red-600/15 rounded-2xl transition duration-200 text-slate-900 placeholder:text-slate-400"
                   value={data.password}
                   onChange={(e) => setData('password', e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => setLihat((v) => !v)}
-                  className="absolute p-1 -translate-y-1/2 rounded right-2 top-1/2 text-slate-400 hover:text-slate-700"
+                  className="absolute p-2 -translate-y-1/2 transition-colors rounded-xl right-2 top-1/2 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                   aria-label={lihat ? 'Sembunyikan password' : 'Tampilkan password'}
                 >
                   {lihat ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -124,13 +138,21 @@ export default function Login({ status }) {
               <InputError message={errors.password} />
             </div>
 
-            <Button type="submit" disabled={processing} className="w-full gap-2 h-12 text-base bg-primary text-primary-foreground hover:bg-primary/90">
-              <LogIn className="w-5 h-5" aria-hidden="true" />
-              Masuk
-            </Button>
+            {/* Tombol Masuk */}
+            <div className="pt-2">
+              <Button
+                type="submit"
+                disabled={processing}
+                className="w-full h-12 text-sm font-bold text-white transition-all duration-200 rounded-full shadow-lg bg-red-600 hover:bg-red-700 active:bg-red-800 shadow-red-600/25 active:scale-[0.98] cursor-pointer"
+              >
+                <LogIn className="w-4 h-4 mr-1.5" aria-hidden="true" />
+                <span>{processing ? 'Memproses...' : 'Masuk ke Aplikasi'}</span>
+              </Button>
+            </div>
           </form>
 
-          <div className="flex items-center justify-between pt-4 mt-5 text-xs border-t border-slate-200 text-slate-400">
+          {/* Footer Card */}
+          <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-100 text-xs text-slate-400">
             <span>© {new Date().getFullYear()} UBMI DIGITAL</span>
             <TombolPasangAplikasi />
           </div>
