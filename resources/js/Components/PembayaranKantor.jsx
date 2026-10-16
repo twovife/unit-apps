@@ -314,14 +314,12 @@ const DialogIuran = ({ buka, onClosed, data, bulan }) => {
                 )}
               </div>
             ))}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1">
-                <Label>Tanggal bayar</Label>
-                <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.payment_date ?? ''} onChange={(e) => ubah('payment_date', e.target.value)} />
-                {galat.payment_date && <span className="text-xs text-red-600">{galat.payment_date}</span>}
-              </div>
-              <PilihRekening daftar={data.rekening} nilai={isi.rekening_id} ubah={(v) => ubah('rekening_id', v)} galat={galat.rekening_id} />
+            <div className="grid gap-1">
+              <Label>Tanggal bayar</Label>
+              <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.payment_date ?? ''} onChange={(e) => ubah('payment_date', e.target.value)} />
+              {galat.payment_date && <span className="text-xs text-red-600">{galat.payment_date}</span>}
             </div>
+            <PilihRekening daftar={data.rekening} nilai={isi.rekening_id} ubah={(v) => ubah('rekening_id', v)} galat={galat.rekening_id} />
             <IsiBukti file={file} setFile={setFile} galat={galat.bukti} />
             <div className="grid gap-1">
               <Label>Catatan</Label>
@@ -344,24 +342,40 @@ const DialogIuran = ({ buka, onClosed, data, bulan }) => {
 
 /** Setoran Tabungan Goro Umrah. */
 /** Pilihan rekening tujuan transfer (tabel rekening_tujuan), dipakai semua dialog bayar. */
-const PilihRekening = ({ daftar, nilai, ubah, galat }) => (
-  <div className="grid gap-1">
-    <Label>Rekening tujuan</Label>
-    <select
-      className="h-9 px-2 text-sm border rounded-md border-input bg-background"
-      value={nilai ?? ''}
-      onChange={(e) => ubah(e.target.value)}
-    >
-      <option value="">—</option>
-      {(daftar ?? []).map((r) => (
-        <option key={r.id} value={r.id}>
-          {r.nomor} · {r.atas_nama}
-        </option>
-      ))}
-    </select>
-    {galat && <span className="text-xs text-red-600">{galat}</span>}
-  </div>
-);
+const PilihRekening = ({ daftar = [], nilai, ubah, galat }) => {
+  const terpilih = (daftar ?? []).find((r) => String(r.id) === String(nilai));
+  return (
+    <div className="grid gap-1.5 w-full">
+      <Label>Rekening tujuan</Label>
+      <select
+        className="w-full h-9 px-3 text-sm border rounded-md border-input bg-background truncate focus:outline-none focus:ring-1 focus:ring-slate-900"
+        value={nilai ?? ''}
+        onChange={(e) => ubah(e.target.value)}
+      >
+        <option value="">— Pilih Rekening Tujuan —</option>
+        {(daftar ?? []).map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.nomor} · {r.atas_nama}
+          </option>
+        ))}
+      </select>
+      {terpilih && (
+        <div className="rounded-lg bg-slate-50 border border-slate-200/90 p-2.5 text-xs space-y-1">
+          <div className="flex items-center justify-between font-semibold text-slate-900">
+            <span className="tabular-nums">{terpilih.nomor}</span>
+            <span className="text-[11px] font-normal text-slate-500">a.n. {terpilih.atas_nama}</span>
+          </div>
+          {terpilih.keterangan && (
+            <div className="pt-1 border-t border-slate-200/60 text-slate-600 break-words leading-relaxed text-[11px]">
+              <span className="font-medium text-slate-500">Keterangan:</span> {terpilih.keterangan}
+            </div>
+          )}
+        </div>
+      )}
+      {galat && <span className="text-xs text-red-600">{galat}</span>}
+    </div>
+  );
+};
 
 const DialogUmrah = ({ buka, onClosed, rekening }) => {
   const [isi, setIsi] = useState({});

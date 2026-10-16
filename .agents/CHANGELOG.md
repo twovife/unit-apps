@@ -16,6 +16,23 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 # 2026-10-16
 
+## Dashboard Kasir: Perbaikan Tampilan Rekening Tujuan & Keterangan Row Terpisah
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Components/PembayaranKantor.jsx` | `DialogIuran()`, `PilihRekening()` | `dashboard.kasir` (`/dashboard-kasir`) | `rekening_tujuan` (`BACA`) | 1. Memisahkan baris *Tanggal bayar* dan *Rekening tujuan* pada modal bayar iuran menjadi row masing-masing (bukan lagi `grid-cols-2`), sehingga pilihan rekening memiliki lebar penuh dan tidak meluap (*over*) keluar dialog.<br>2. Menambahkan card rincian rekening terpilih di bawah select dengan format row tersendiri: nomor rekening, atas nama, dan keterangan rekening yang `break-words` untuk mengakomodasi keterangan panjang tanpa merusak tata letak dialog. |
+
+---
+
+## Administrasi: Menu Lamaran Kerja di Sidebar untuk Kasir & Pimpinan
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Components/Sidebar.jsx` | `AppSidebar()` | Sidebar Navigasi (`Administrasi Cabang`) | — | Membuka visibilitas menu **Lamaran Kerja** (`/administrasi/lamaran`) di grup *Administrasi Cabang* untuk role `kasir`, `pimpinan`, `stafkontrol`, `pusat`, dan `superuser` (menggunakan `bolehAdmKantor || auth?.permissions?.includes('input-lamaran')`), sehingga tidak lagi hanya bergantung pada pemeriksaan string permission. |
+| `app/Http/Controllers/LamaranKerjaController.php` | `pastikanBoleh()` | `administrasi.lamaran.*` (`/administrasi/lamaran`) | — | Memastikan otorisasi di backend controller mengizinkan role `kasir`, `pimpinan`, `stafkontrol`, `pusat`, `superuser`, `pengawas` maupun pengguna dengan permission `input-lamaran`. |
+
+---
+
 ## SKSW: Buka Rekening SKSW untuk Pegawai Baru di SKSW Unit
 
 | Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |

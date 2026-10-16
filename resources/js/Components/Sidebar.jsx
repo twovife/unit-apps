@@ -295,7 +295,7 @@ export default function AppSidebar({ ...props }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {auth?.permissions?.includes('input-lamaran') && (
+              {(bolehAdmKantor || auth?.permissions?.includes('input-lamaran')) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild

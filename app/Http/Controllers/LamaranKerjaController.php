@@ -219,7 +219,12 @@ class LamaranKerjaController extends Controller
 
     private function pastikanBoleh(): void
     {
-        abort_unless(auth()->user()?->can('input-lamaran'), 403, 'Anda tidak punya hak mencatat lamaran.');
+        $user = auth()->user();
+        abort_unless(
+            $user && ($user->can('input-lamaran') || $user->hasAnyRole(['kasir', 'pimpinan', 'stafkontrol', 'pusat', 'superuser', 'pengawas'])),
+            403,
+            'Anda tidak punya hak mencatat lamaran.'
+        );
     }
 
     /** Cabang aktif (filter cabang global), dan harus cabang yang boleh diakses. */
