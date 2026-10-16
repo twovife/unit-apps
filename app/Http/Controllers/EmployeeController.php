@@ -32,7 +32,11 @@ class EmployeeController extends Controller
     // dd($scope->branch_id);
 
 
-    $employee = Employee::with('username.rolelist', 'employment')->where('branch_id', $branch_id)
+    $employee = Employee::with([
+      'username.rolelist',
+      'employment',
+      'documents' => fn($q) => $q->where('is_old', false)->orderBy('created_at', 'desc'),
+    ])->where('branch_id', $branch_id)
       ->select('id', 'branch_id', 'nik', 'nama_karyawan', 'alamat', 'hire_date', 'area', 'janis_jaminan', 'date_resign', 'resign_status', 'resign_reson', 'employment_id', 'avatar')
       ->orderBy('date_resign')
       ->orderBy('employment_id')
@@ -40,9 +44,7 @@ class EmployeeController extends Controller
       ->get();
 
 
-    // Foto profil: diunggah lewat app_laravel ke MinIO (disk s3, folder
-    // avatars/). Di sini cukup link sementara lewat s3_publik; MinIO belum
-    // disetel / gagal -> null, layar jatuh ke inisial nama.
+    // Foto profil & dokumen: disimpan di MinIO (disk s3). Di sini link sementara lewat s3_publik.
     $disk = null;
     if (config('filesystems.disks.s3_publik.bucket')) {
       try {
@@ -83,6 +85,17 @@ class EmployeeController extends Controller
         'isActive' => $item->date_resign ? false : true,
         'resign_date' => $item->date_resign,
         'hire_date' => $item->hire_date,
+        'documents' => $item->documents->map(function ($doc) use ($foto) {
+          $tglUpdate = $doc->updated_at ?? $doc->created_at;
+          return [
+            'id' => $doc->id,
+            'type' => $doc->type,
+            'file_path' => $doc->file_path,
+            'url' => $foto($doc->file_path),
+            'updated_at' => $tglUpdate ? $tglUpdate->format('d M Y H:i') : null,
+            'human_updated' => $tglUpdate ? $tglUpdate->diffForHumans() : null,
+          ];
+        })->values(),
       ];
     });
 
@@ -147,6 +160,123 @@ class EmployeeController extends Controller
     }
 
     return back()->with('message', 'Foto profil diperbarui.');
+  }
+
+  /**
+   * Hapus foto profil karyawan (khusus kasir / superuser cabang).
+   */
+  public function deleteAvatar(Employee $employee)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Hapus foto khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+
+    $lama = $employee->getAttribute('avatar');
+    $employee->forceFill(['avatar' => null])->save();
+
+    if ($lama) {
+      try {
+        \Illuminate\Support\Facades\Storage::disk('s3')->delete($lama);
+      } catch (\Throwable $e) {
+        // Foto lama gagal dihapus tidak boleh menggagalkan proses reset.
+      }
+    }
+
+    return back()->with('message', 'Foto profil berhasil dihapus.');
+  }
+
+  /**
+   * Unggah dokumen berkas digital karyawan (KTP, KK, SKCK, Ijazah, Lamaran Kerja, Pasfoto).
+   */
+  public function uploadDocument(Request $request, Employee $employee)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Unggah dokumen khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+
+    $request->validate([
+      'type' => ['required', 'string', 'in:ktp,kk,skck,ijazah,lamaran_kerja,pasfoto'],
+      'file' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:5120'],
+    ], [
+      'file.mimes' => 'File harus berupa foto (JPEG, PNG) atau dokumen PDF.',
+      'file.max' => 'Ukuran file maksimal 5MB.',
+    ]);
+
+    try {
+      $path = $request->file('file')->store('documents/' . $employee->id, 's3');
+    } catch (\Throwable $e) {
+      \Illuminate\Support\Facades\Log::error('Unggah dokumen karyawan gagal: ' . $e->getMessage(), ['employee' => $employee->id]);
+      $path = false;
+    }
+
+    if (!$path) {
+      return back()->withErrors('Gagal menyimpan file ke server penyimpanan.');
+    }
+
+    // Dokumen aktif jenis ini digantikan yang baru
+    $existing = $employee->documents()->where('type', $request->type)->where('is_old', false)->first();
+    if ($existing) {
+      if ($existing->file_path) {
+        try {
+          \Illuminate\Support\Facades\Storage::disk('s3')->delete($existing->file_path);
+        } catch (\Throwable $e) {}
+      }
+      $existing->delete();
+    }
+
+    \App\Models\EmployeeDocument::create([
+      'employee_id' => $employee->id,
+      'type' => $request->type,
+      'file_path' => $path,
+      'is_old' => false,
+    ]);
+
+    return back()->with('message', 'Dokumen berhasil diunggah.');
+  }
+
+  /**
+   * Hapus dokumen berkas digital karyawan.
+   */
+  public function deleteDocument(Employee $employee, \App\Models\EmployeeDocument $document)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Hapus dokumen khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+    abort_unless((int) $document->employee_id === (int) $employee->id, 404);
+
+    if ($document->file_path) {
+      try {
+        \Illuminate\Support\Facades\Storage::disk('s3')->delete($document->file_path);
+      } catch (\Throwable $e) {}
+    }
+
+    $document->delete();
+
+    return back()->with('message', 'Dokumen berhasil dihapus.');
+  }
+
+  /**
+   * Tampilkan dokumen digital karyawan secara inline di tab baru.
+   */
+  public function showDocument(Employee $employee, \App\Models\EmployeeDocument $document)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasPermissionTo('view-all-groups') || $user->hasAnyRole(['kasir', 'superuser']), 403, 'Akses ditolak.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+    abort_unless((int) $document->employee_id === (int) $employee->id, 404);
+
+    $disk = \Illuminate\Support\Facades\Storage::disk('s3');
+    abort_unless($document->file_path && $disk->exists($document->file_path), 404, 'File tidak ditemukan di server penyimpanan.');
+
+    return response($disk->get($document->file_path), 200, [
+      'Content-Type' => $disk->mimeType($document->file_path) ?: 'application/octet-stream',
+      'Content-Disposition' => 'inline; filename="' . addslashes(basename($document->file_path)) . '"',
+      'Cache-Control' => 'private, max-age=86400',
+    ]);
   }
 
   /**

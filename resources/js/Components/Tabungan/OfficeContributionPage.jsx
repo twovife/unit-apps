@@ -16,12 +16,6 @@ import { Label } from '@/shadcn/ui/label';
 
 const rupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 
-const localDate = () => {
-  const date = new Date();
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  return date.toISOString().slice(0, 10);
-};
-
 const dateLabel = (value) =>
   value ? new Date(`${value}T00:00:00`).toLocaleDateString('id-ID') : '—';
 
@@ -54,19 +48,12 @@ export default function OfficeContributionPage({
   title,
   routePrefix,
   historyRouteName,
-  storeRouteName,
   destroyRouteName,
-  targetAmount,
 }) {
   const { errors = {} } = usePage().props;
   const branch = datas[0] ?? null;
   const branchId = branch?.branch_id ?? null;
   const [history, setHistory] = useState({ loading: true, contributions: [], can_delete: false, error: null });
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(rupiah(targetAmount));
-  const [paymentDate, setPaymentDate] = useState(localDate);
-  const [paymentNotes, setPaymentNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -108,37 +95,6 @@ export default function OfficeContributionPage({
     return () => controller.abort();
   }, [branchId, historyRouteName, historyVersion]);
 
-  const openPayment = () => {
-    if (!branch) return;
-    setPaymentAmount(rupiah(branch.status === 'kurang' ? targetAmount - branch.amount_paid : targetAmount));
-    setPaymentDate(localDate());
-    setPaymentNotes('');
-    setPaymentOpen(true);
-  };
-
-  const submitPayment = (event) => {
-    event.preventDefault();
-    if (!branch) return;
-
-    setSubmitting(true);
-    router.post(
-      route(storeRouteName),
-      {
-        branch_id: branch.branch_id,
-        period,
-        amount: Number(paymentAmount.replace(/\D/g, '')),
-        payment_date: paymentDate,
-        notes: paymentNotes,
-      },
-      {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => setPaymentOpen(false),
-        onFinish: () => setSubmitting(false),
-      },
-    );
-  };
-
   const deleteContribution = () => {
     if (!confirmDeleteId) return;
 
@@ -155,7 +111,7 @@ export default function OfficeContributionPage({
     <AuthenticatedLayout header={title}>
       <Head title={title} />
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{title}</h1>
@@ -215,11 +171,6 @@ export default function OfficeContributionPage({
                 <strong className="text-sm tabular-nums">Rp {rupiah(branch.amount_paid)}</strong>
                 <strong className="text-sm tabular-nums">Rp {rupiah(branch.total_akumulasi)}</strong>
               </div>
-              {branch.isactive && branch.can_add && !branch.is_grace_period && (
-                <Button type="button" onClick={openPayment} className="shrink-0">
-                  {branch.status === 'belum' || branch.status === 'kurang' ? 'Input Iuran' : 'Tambah Iuran'}
-                </Button>
-              )}
             </section>
 
             <section className="overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-zinc-950">
@@ -243,36 +194,42 @@ export default function OfficeContributionPage({
               ) : history.contributions.length === 0 ? (
                 <p className="px-4 py-10 text-center text-sm text-muted-foreground">Belum ada riwayat iuran untuk kantor ini.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-160 text-sm">
-                    <thead className="border-b bg-zinc-50 text-xs text-zinc-500 dark:bg-zinc-900/60 dark:text-zinc-400">
+                <div className="max-h-[520px] overflow-x-auto overflow-y-auto">
+                  <table className="w-full min-w-[580px] text-sm">
+                    <thead className="sticky top-0 z-10 border-b bg-slate-50 text-xs font-semibold text-slate-600 dark:bg-zinc-900 dark:text-zinc-400">
                       <tr>
-                        <th className="px-4 py-3 text-left font-medium">Periode</th>
-                        <th className="px-4 py-3 text-left font-medium">Tanggal bayar</th>
-                        <th className="px-4 py-3 text-right font-medium">Nominal</th>
-                        <th className="px-4 py-3 text-left font-medium">Keterangan</th>
-                        <th className="px-4 py-3 text-left font-medium">Dicatat oleh</th>
-                        {history.can_delete && <th className="px-4 py-3 text-right font-medium">Aksi</th>}
+                        <th className="w-12 px-3 py-2.5 text-center font-semibold">No</th>
+                        <th className="px-3.5 py-2.5 text-left font-semibold">Periode</th>
+                        <th className="px-3.5 py-2.5 text-left font-semibold">Tanggal bayar</th>
+                        <th className="px-3.5 py-2.5 text-right font-semibold">Nominal</th>
+                        <th className="px-3.5 py-2.5 text-left font-semibold">Keterangan</th>
+                        <th className="px-3.5 py-2.5 text-left font-semibold">Dicatat oleh</th>
+                        {history.can_delete && <th className="w-16 px-3 py-2.5 text-right font-semibold">Aksi</th>}
                       </tr>
                     </thead>
-                    <tbody className="divide-y dark:divide-zinc-800">
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                       {history.contributions.map((item, index) => (
-                        <tr key={item.id} className="hover:bg-zinc-50/70 dark:hover:bg-zinc-900/40">
-                          <td className="px-4 py-3 font-medium">{periodLabel(item.period)}</td>
-                          <td className="px-4 py-3">{dateLabel(item.payment_date)}</td>
-                          <td className="px-4 py-3 text-right font-semibold tabular-nums">Rp {rupiah(item.amount)}</td>
-                          <td className="max-w-48 truncate px-4 py-3 text-zinc-600 dark:text-zinc-300" title={item.notes ?? ''}>
+                        <tr key={item.id} className="odd:bg-white even:bg-slate-50/70 hover:bg-amber-50/50 transition-colors">
+                          <td className="w-12 px-3 py-2.5 text-center text-xs font-medium text-muted-foreground tabular-nums">
+                            {index + 1}
+                          </td>
+                          <td className="px-3.5 py-2.5 font-medium">{periodLabel(item.period)}</td>
+                          <td className="px-3.5 py-2.5 text-slate-700 dark:text-zinc-300">{dateLabel(item.payment_date)}</td>
+                          <td className="px-3.5 py-2.5 text-right font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                            Rp {rupiah(item.amount)}
+                          </td>
+                          <td className="max-w-44 truncate px-3.5 py-2.5 text-zinc-600 dark:text-zinc-300" title={item.notes ?? ''}>
                             {item.notes || '—'}
                           </td>
-                          <td className="px-4 py-3 text-zinc-600 dark:text-zinc-300">{item.kasir || '—'}</td>
+                          <td className="px-3.5 py-2.5 text-zinc-600 dark:text-zinc-300">{item.kasir || '—'}</td>
                           {history.can_delete && (
-                            <td className="px-4 py-3 text-right">
+                            <td className="w-16 px-3 py-2.5 text-right">
                               {index === 0 && (
                                 <Button
                                   type="button"
                                   size="icon"
                                   variant="ghost"
-                                  className="h-8 w-8 text-rose-600 hover:text-rose-700"
+                                  className="h-7 w-7 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                                   aria-label="Hapus transaksi iuran terakhir"
                                   onClick={() => setConfirmDeleteId(item.id)}
                                 >
@@ -291,56 +248,6 @@ export default function OfficeContributionPage({
           </>
         )}
       </div>
-
-      <Dialog open={paymentOpen} onOpenChange={(open) => !submitting && setPaymentOpen(open)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Input {title}</DialogTitle>
-            <DialogDescription>
-              Kantor: <strong>{branch?.unit}</strong> · Periode: <strong>{periodLabel(period)}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submitPayment} className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor={`${routePrefix}-payment-date`}>Tanggal pembayaran</Label>
-              <Input
-                id={`${routePrefix}-payment-date`}
-                type="date"
-                value={paymentDate}
-                onChange={(event) => setPaymentDate(event.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${routePrefix}-payment-amount`}>Nominal (Rp)</Label>
-              <Input
-                id={`${routePrefix}-payment-amount`}
-                inputMode="numeric"
-                value={paymentAmount}
-                onChange={(event) => setPaymentAmount(rupiah(event.target.value.replace(/\D/g, '')))}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${routePrefix}-payment-notes`}>Keterangan (opsional)</Label>
-              <Input
-                id={`${routePrefix}-payment-notes`}
-                value={paymentNotes}
-                onChange={(event) => setPaymentNotes(event.target.value)}
-                placeholder="Contoh: titipan kasir"
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" disabled={submitting} onClick={() => setPaymentOpen(false)}>
-                Batal
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? 'Menyimpan…' : 'Simpan pembayaran'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={confirmDeleteId !== null} onOpenChange={(open) => !open && !deleting && setConfirmDeleteId(null)}>
         <DialogContent className="max-w-sm">

@@ -107,7 +107,7 @@ export default function AppSidebar({ ...props }) {
               className="hover:bg-transparent"
             >
               <div className="flex items-center gap-3">
-                <img src="/icons/icon-sidebar.webp?v=1" alt="UBMI" className="rounded-lg shadow-sm size-9" />
+                <img src="/icons/logo-ubm.webp?v=3" alt="UBMI" className="object-contain size-9 drop-shadow-xs" />
                 <div className="grid flex-1 text-sm leading-tight text-left">
                   <span className="font-bold tracking-tight truncate text-slate-900">
                     UBMI DIGITAL

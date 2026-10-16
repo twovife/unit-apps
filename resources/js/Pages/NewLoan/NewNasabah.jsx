@@ -231,6 +231,8 @@ const NewNasabah = ({
         ...prevData,
         nik: data.return_nik,
         isActiveMember: !!data.data,
+        nama: data.data?.nama ?? '',
+        alamat: data.data?.alamat ?? '',
       }));
 
       if (data.data) {
@@ -474,64 +476,54 @@ const NewNasabah = ({
                     </div>
 
                     {!data.isActiveMember ? (
-                      <>
-                        <div className="w-full mb-3">
-                          <Label>Nama</Label>
-                          <Input
-                            type="text"
-                            name="nama"
-                            value={data.nama}
-                            onChange={onInputChange}
-                            required={true}
-                          />
-                          <InputError message={errors.nama} />
-                        </div>
-                        <div className="w-full mb-3">
-                          <Label>Alamat</Label>
-                          <Input
-                            type="text"
-                            name="alamat"
-                            value={data.alamat}
-                            onChange={onInputChange}
-                            required={true}
-                          />
-                          <InputError message={errors.alamat} />
-                        </div>
-                      </>
+                      <div className="w-full mb-3">
+                        <Label>Nama</Label>
+                        <Input
+                          type="text"
+                          name="nama"
+                          value={data.nama}
+                          onChange={onInputChange}
+                          required={true}
+                          placeholder="Masukkan nama nasabah"
+                        />
+                        <InputError message={errors.nama} />
+                      </div>
                     ) : (
-                      <>
-                        <div className="w-full mb-3">
-                          <Label>Nama</Label>
-                          <Input
-                            type="text"
-                            disabled
-                            value={customerData.nama ?? ''}
-                          />
-                        </div>
-                        <div className="w-full mb-3">
-                          <Label>Alamat KTP</Label>
-                          <Input
-                            type="text"
-                            disabled
-                            value={customerData.alamat ?? ''}
-                          />
-                        </div>
-                      </>
+                      <div className="w-full mb-3">
+                        <Label>Nama</Label>
+                        <Input
+                          type="text"
+                          disabled
+                          value={customerData.nama ?? data.nama ?? ''}
+                        />
+                      </div>
                     )}
+
+                    {/* 1 Kolom Alamat Saja (Nasabah Baru & Nasabah Lama) */}
                     <div className="w-full mb-3">
                       <Label>
-                        Alamat domisili{' '}
-                        <span className="font-normal text-gray-500">(opsional - kalau tinggal tidak sesuai KTP)</span>
+                        Alamat
+                        {data.isActiveMember && (
+                          <span className="ml-1 text-xs font-normal text-gray-500">
+                            (dapat ditimpa / diubah)
+                          </span>
+                        )}
                       </Label>
                       <Input
                         type="text"
-                        name="residential_address"
+                        name="alamat"
                         maxLength={255}
-                        value={data.residential_address}
+                        value={data.alamat}
                         onChange={onInputChange}
-                        placeholder="Kosongkan kalau sama dengan alamat KTP"
+                        required={!data.isActiveMember}
+                        placeholder="Masukkan alamat nasabah"
                       />
-                      <InputError message={errors.residential_address} />
+                      <InputError message={errors.alamat} />
+                      {data.isActiveMember && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Jika alamat diubah, perubahan hanya akan disimpan untuk rekening kelompok ini.
+                        </p>
+                      )}
                     </div>
                     <div className="w-full mb-3">
                       <Label>

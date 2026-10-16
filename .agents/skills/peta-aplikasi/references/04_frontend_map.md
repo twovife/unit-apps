@@ -75,6 +75,15 @@ Satu-satunya aksi tulis: `Rekap/Components/Action.jsx` → POST `kasir.rekap.rek
 ### Admin Panel — `Pages/AdminPanel/`
 `Index.jsx` (225, `useForm` → `adminpanel.role_assign`), `MonitoringStaff.jsx` (110, Accordion), `Components/{Permission, Role, AssignRoles, MaintenerWorker}.jsx`.
 
+### Iuran Tabungan — `Pages/Tabungan/`
+`Pages/Tabungan/{Contributions,BopContributions}.jsx` memakai `Components/Tabungan/OfficeContributionPage.jsx` — layout/sidebar unit-apps dan ringkasan + riwayat kantor aktif dari GlobalBranchFilter; input pembayaran dan hapus transaksi terakhir. Alur dan tabel: [`.agents/tabungan_iuran.md`](../../../tabungan_iuran.md), [`.agents/bop_iuran.md`](../../../bop_iuran.md).
+
+### SKSW — `Pages/Sksw/`
+`Pages/Sksw/Unit.jsx` menampilkan laporan bulanan baca-saja untuk kantor aktif, dengan filter periode/pencarian dan tabel rincian per karyawan. Klik nama karyawan membuka drawer axios GET `sksw.detail` berisi transaksi terpaginasikan dan rekap bulanan kantor tersebut. Tidak ada input cepat, mutasi, atau aksi void. Alur dan tabel: [`.agents/sksw_laporan_unit.md`](../../../sksw_laporan_unit.md).
+
+### Registri Aset Kendaraan — `Pages/Assets/`
+`Pages/Assets/Vehicles.jsx` menampilkan daftar, ringkasan kantor, filter nama/kode/plat dan status, serta paginasi untuk route `assets.index`. `VehicleAssetForm.jsx` menyediakan tambah/ubah kendaraan; `VehicleAssetDetail.jsx` menyediakan detail, riwayat penempatan/pajak/servis, mutasi, catatan servis, hapus, dan pembatalan pajak. `VehicleTaxes.jsx` menampilkan jadwal kantor aktif dan pembayaran pajak dengan riwayat HER. Kantor tidak bisa dipilih via URL; backend selalu memakai kantor aktif global. Alur dan tabel: [`.agents/asset_kendaraan.md`](../../../asset_kendaraan.md).
+
 ### Batch Input — `Pages/Administrasi/BatchInput/`
 `Index.jsx` (508) — **satu-satunya halaman dengan parsing CSV** (`papaparse`) dan alur axios dua tahap (`validateData` → `store`). `EditableRow.jsx` untuk edit sel.
 ⚠️ `branchId` default hardcode `'78'`, `selectedHari` default `'SENIN'`.

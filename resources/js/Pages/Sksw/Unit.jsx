@@ -7,6 +7,7 @@ import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
+import Checkbox from '@/Components/Checkbox';
 import SavingDetailDrawer from './Components/SavingDetailDrawer';
 
 const rupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
@@ -33,6 +34,45 @@ const columns = [
   ['sk_kredit_resign', 'Resign/MD SK'],
 ];
 
+/** Input angka berpemisah ribuan (titik) dengan shortcut 'k' / 'K' (+000). */
+function InputRupiah({ value, onChange, disabled, placeholder = '0', className = '' }) {
+  const displayValue = value === '' || value === null || value === undefined ? '' : new Intl.NumberFormat('id-ID').format(Number(value) || 0);
+
+  const handleKeyDown = (e) => {
+    if (disabled) return;
+    if (e.key === 'k' || e.key === 'K') {
+      e.preventDefault();
+      const current = typeof value === 'number' ? value : parseInt(String(value || '').replace(/\D/g, ''), 10) || 0;
+      if (current > 0) {
+        onChange(current * 1000);
+      }
+    }
+  };
+
+  const handleChange = (e) => {
+    const raw = e.target.value;
+    if (/[kK]/.test(raw)) {
+      const numPart = parseInt(raw.replace(/\D/g, ''), 10) || 0;
+      onChange(numPart * 1000);
+      return;
+    }
+    const clean = raw.replace(/\D/g, '');
+    onChange(clean === '' ? '' : parseInt(clean, 10));
+  };
+
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      disabled={disabled}
+      placeholder={placeholder}
+      value={displayValue}
+      onKeyDown={handleKeyDown}
+      onChange={handleChange}
+      className={className}
+    />
+  );
+}
 
 /** Input setoran bulanan SW/SK banyak karyawan sekaligus (sksw.setoran). */
 function DialogSetoran({ open, onClose, rows, period }) {
@@ -40,21 +80,63 @@ function DialogSetoran({ open, onClose, rows, period }) {
   const akhirPeriode = new Date(Number(period.slice(0, 4)), Number(period.slice(5, 7)), 0).toLocaleDateString('sv');
   const [tanggal, setTanggal] = useState(hariIni);
   const [isi, setIsi] = useState({});
+  const [checked, setChecked] = useState({});
   const [galat, setGalat] = useState(null);
   const [proses, setProses] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setTanggal(akhirPeriode < hariIni ? akhirPeriode : hariIni);
-    setIsi({});
+    const initialIsi = {};
+    const initialChecked = {};
+    rows.forEach((r) => {
+      const swSudah = Number(r.sw_setoran) > 0;
+      const skSudah = Number(r.sk_setoran) > 0;
+      initialIsi[r.saving_id] = {
+        sw: swSudah ? '' : 200000,
+        sk: 0,
+      };
+      initialChecked[r.saving_id] = true;
+    });
+    setIsi(initialIsi);
+    setChecked(initialChecked);
     setGalat(null);
-  }, [open, period]);
+  }, [open, period, rows]);
 
-  const ubah = (id, k, v) => setIsi((x) => ({ ...x, [id]: { ...(x[id] ?? {}), [k]: v.replace(/\D/g, '') } }));
-  const items = Object.entries(isi)
-    .map(([saving_id, v]) => ({ saving_id: Number(saving_id), sw: Number(v.sw) || 0, sk: Number(v.sk) || 0 }))
-    .filter((v) => v.sw > 0 || v.sk > 0);
-  const total = items.reduce((a, v) => a + v.sw + v.sk, 0);
+  const ubah = (id, k, v) => setIsi((x) => ({ ...x, [id]: { ...(x[id] ?? {}), [k]: v } }));
+
+  const toggleCheck = (id) => {
+    setChecked((x) => ({ ...x, [id]: !x[id] }));
+  };
+
+  const allChecked = rows.length > 0 && rows.every((r) => checked[r.saving_id]);
+
+  const toggleAll = () => {
+    const nextState = !allChecked;
+    const nextChecked = {};
+    rows.forEach((r) => {
+      nextChecked[r.saving_id] = nextState;
+    });
+    setChecked(nextChecked);
+  };
+
+  const items = useMemo(() => {
+    return rows
+      .filter((r) => checked[r.saving_id])
+      .map((r) => {
+        const v = isi[r.saving_id] ?? {};
+        return {
+          saving_id: Number(r.saving_id),
+          sw: Number(v.sw) || 0,
+          sk: Number(v.sk) || 0,
+        };
+      })
+      .filter((v) => v.sw > 0 || v.sk > 0);
+  }, [rows, checked, isi]);
+
+  const totalSw = useMemo(() => items.reduce((a, v) => a + v.sw, 0), [items]);
+  const totalSk = useMemo(() => items.reduce((a, v) => a + v.sk, 0), [items]);
+  const totalSemua = totalSw + totalSk;
 
   const simpan = () => {
     setProses(true);
@@ -70,60 +152,116 @@ function DialogSetoran({ open, onClose, rows, period }) {
     <Dialog open={open} onOpenChange={(o) => !o && !proses && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Input setoran SKSW</DialogTitle>
-          <DialogDescription>
-            Setoran bulanan (sekali per bulan per jenis). Kosongkan karyawan yang tidak setor. Isian mati = setoran bulan ini sudah ada.
+          <DialogTitle className="text-lg font-bold">INPUT MASUKAN SKSW</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            ( menu intuk input pemasukan saja ) hilangkan centang untuk yang tidak setor
           </DialogDescription>
         </DialogHeader>
-        <div className="flex items-end gap-3">
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
           <div className="grid gap-1">
-            <label className="text-sm font-medium" htmlFor="tgl-setoran">Tanggal setoran</label>
-            <Input id="tgl-setoran" type="date" max={hariIni} value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="w-44" />
+            <label className="text-xs font-semibold text-slate-700" htmlFor="tgl-setoran">
+              Tanggal setoran
+            </label>
+            <Input
+              id="tgl-setoran"
+              type="date"
+              max={hariIni}
+              value={tanggal}
+              onChange={(e) => setTanggal(e.target.value)}
+              className="w-40 h-8 text-xs bg-white"
+            />
           </div>
-          <div className="ml-auto text-sm text-right">
-            <div className="text-muted-foreground">{items.length} karyawan</div>
-            <div className="font-semibold tabular-nums">Rp {rupiah(total)}</div>
+
+          <div className="flex flex-wrap items-center sm:justify-end gap-2 text-xs">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-emerald-200 shadow-2xs">
+              <span className="text-slate-500 font-medium">Total SW:</span>
+              <strong className="text-emerald-700 tabular-nums">Rp {rupiah(totalSw)}</strong>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-sky-200 shadow-2xs">
+              <span className="text-slate-500 font-medium">Total SK:</span>
+              <strong className="text-sky-700 tabular-nums">Rp {rupiah(totalSk)}</strong>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 text-white shadow-2xs">
+              <span className="text-slate-300">Total:</span>
+              <strong className="tabular-nums">Rp {rupiah(totalSemua)}</strong>
+              <span className="text-[11px] text-slate-300">({items.length} setor)</span>
+            </div>
           </div>
         </div>
+
         <div className="overflow-x-auto border rounded-md">
           <table className="w-full text-sm">
-            <thead className="bg-muted/60">
+            <thead className="bg-muted/70 text-xs font-semibold">
               <tr>
-                <th className="px-2 py-1.5 text-left font-medium">Karyawan</th>
-                <th className="px-2 py-1.5 text-right font-medium">SW</th>
-                <th className="px-2 py-1.5 text-right font-medium">SK</th>
+                <th className="w-10 px-3 py-2 text-center">
+                  <Checkbox
+                    checked={allChecked}
+                    onChange={toggleAll}
+                    title="Centang / Hapus Semua Centang"
+                  />
+                </th>
+                <th className="px-2 py-2 text-left font-medium">Karyawan</th>
+                <th className="px-2 py-2 text-right font-medium w-36">SW</th>
+                <th className="px-2 py-2 text-right font-medium w-36">SK</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.saving_id} className="border-t">
-                  <td className="px-2 py-1">
-                    <div className="font-medium">{r.employee.nama_karyawan}</div>
-                    <div className="text-[11px] text-muted-foreground">{[r.employee.jabatan, r.nomor_rekening].filter(Boolean).join(' · ')}</div>
-                  </td>
-                  {['sw', 'sk'].map((k) => {
-                    const sudah = Number(r[`${k}_setoran`]) > 0;
-                    return (
-                      <td key={k} className="w-36 px-2 py-1">
-                        <Input
-                          inputMode="numeric"
-                          disabled={sudah}
-                          placeholder={sudah ? `sudah ${rupiah(r[`${k}_setoran`])}` : '0'}
-                          value={isi[r.saving_id]?.[k] ?? ''}
-                          onChange={(e) => ubah(r.saving_id, k, e.target.value)}
-                          className="text-right h-8 tabular-nums"
-                        />
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+              {rows.map((r) => {
+                const swSudah = Number(r.sw_setoran) > 0;
+                const skSudah = Number(r.sk_setoran) > 0;
+                const isChecked = !!checked[r.saving_id];
+
+                return (
+                  <tr
+                    key={r.saving_id}
+                    className={`border-t transition-colors ${
+                      !isChecked ? 'bg-slate-50/70 opacity-60' : 'hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <td className="w-10 px-3 py-1.5 text-center">
+                      <Checkbox
+                        checked={isChecked}
+                        onChange={() => toggleCheck(r.saving_id)}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="font-medium text-slate-900">{r.employee.nama_karyawan}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {[r.employee.jabatan, r.nomor_rekening].filter(Boolean).join(' · ')}
+                      </div>
+                    </td>
+                    <td className="w-36 px-2 py-1.5">
+                      <InputRupiah
+                        disabled={swSudah || !isChecked}
+                        placeholder={swSudah ? `sudah ${rupiah(r.sw_setoran)}` : '0'}
+                        value={isi[r.saving_id]?.sw ?? ''}
+                        onChange={(v) => ubah(r.saving_id, 'sw', v)}
+                        className="text-right h-8 tabular-nums text-xs"
+                      />
+                    </td>
+                    <td className="w-36 px-2 py-1.5">
+                      <InputRupiah
+                        disabled={skSudah || !isChecked}
+                        placeholder={skSudah ? `sudah ${rupiah(r.sk_setoran)}` : '0'}
+                        value={isi[r.saving_id]?.sk ?? ''}
+                        onChange={(v) => ubah(r.saving_id, 'sk', v)}
+                        className="text-right h-8 tabular-nums text-xs"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+
         {galat && <div className="p-2 text-sm rounded-md bg-red-50 text-red-700">{galat}</div>}
+
         <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
-          <Button variant="outline" disabled={proses} onClick={onClose}>Batal</Button>
+          <Button variant="outline" disabled={proses} onClick={onClose}>
+            Batal
+          </Button>
           <Button disabled={proses || items.length === 0} onClick={simpan}>
             {proses ? 'Menyimpan…' : `Simpan ${items.length} setoran`}
           </Button>
@@ -194,50 +332,135 @@ export default function SkswUnit({ branch, period, batch, data = [] }) {
             Tidak ada kantor aktif yang dapat diakses. Pilih kantor melalui filter cabang global.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-md border bg-card">
+          <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-card shadow-xs">
             <div className="overflow-x-auto">
-              <Table className="min-w-[1900px] text-xs">
+              <Table className="min-w-[1900px] text-xs border-collapse">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead rowSpan={2} className="sticky left-0 z-20 min-w-64 bg-background">Karyawan / rekening</TableHead>
-                    <TableHead colSpan={2} className="text-center">Saldo awal</TableHead>
-                    <TableHead colSpan={2} className="text-center text-emerald-700">Total debit</TableHead>
-                    <TableHead colSpan={2} className="text-center text-rose-700">Total kredit</TableHead>
-                    <TableHead colSpan={3} className="text-center">Saldo akhir</TableHead>
-                    <TableHead colSpan={4} className="text-center text-emerald-700">Breakdown debit</TableHead>
-                    <TableHead colSpan={6} className="text-center text-rose-700">Breakdown kredit</TableHead>
+                  <TableRow className="border-b border-slate-200 text-slate-800">
+                    <TableHead rowSpan={2} className="sticky left-0 z-20 min-w-64 bg-slate-100 font-bold border-r border-slate-200 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                      Karyawan / Rekening
+                    </TableHead>
+                    <TableHead colSpan={2} className="text-center font-bold bg-slate-100/90 text-slate-800 border-r border-slate-200">
+                      Saldo Awal
+                    </TableHead>
+                    <TableHead colSpan={2} className="text-center font-bold bg-emerald-100/90 text-emerald-950 border-r border-emerald-200">
+                      Total Debit
+                    </TableHead>
+                    <TableHead colSpan={2} className="text-center font-bold bg-rose-100/90 text-rose-950 border-r border-rose-200">
+                      Total Kredit
+                    </TableHead>
+                    <TableHead colSpan={3} className="text-center font-bold bg-sky-100/95 text-sky-950 border-r border-sky-200">
+                      Saldo Akhir
+                    </TableHead>
+                    <TableHead colSpan={4} className="text-center font-semibold bg-emerald-50 text-emerald-900 border-r border-emerald-100">
+                      Breakdown Debit
+                    </TableHead>
+                    <TableHead colSpan={6} className="text-center font-semibold bg-rose-50 text-rose-900 border-r border-rose-100">
+                      Breakdown Kredit
+                    </TableHead>
                   </TableRow>
                   <TableRow>
-                    {columns.map(([key, label]) => <TableHead key={key} className="min-w-28 text-right">{label}</TableHead>)}
+                    {columns.map(([key, label]) => {
+                      let colHdr = 'bg-slate-100/80 text-slate-700 border-b border-slate-200';
+                      if (['sw_debit', 'sk_debit'].includes(key)) {
+                        colHdr = 'bg-emerald-100/70 text-emerald-950 font-semibold border-b border-emerald-200';
+                      } else if (['sw_kredit', 'sk_kredit'].includes(key)) {
+                        colHdr = 'bg-rose-100/70 text-rose-950 font-semibold border-b border-rose-200';
+                      } else if (key === 'saldo_global') {
+                        colHdr = 'bg-sky-200/90 text-sky-950 font-bold border-b border-sky-300';
+                      } else if (['saldo_sw', 'saldo_sk'].includes(key)) {
+                        colHdr = 'bg-sky-100/80 text-sky-950 font-semibold border-b border-sky-200';
+                      } else if (['sw_setoran', 'sk_setoran', 'sw_debit_mutasi', 'sk_debit_mutasi'].includes(key)) {
+                        colHdr = 'bg-emerald-50/90 text-emerald-900 border-b border-emerald-100';
+                      } else if (['sw_pengambilan', 'sk_pengambilan', 'sw_kredit_mutasi', 'sk_kredit_mutasi', 'sw_kredit_resign', 'sk_kredit_resign'].includes(key)) {
+                        colHdr = 'bg-rose-50/90 text-rose-900 border-b border-rose-100';
+                      }
+                      return (
+                        <TableHead key={key} className={`min-w-28 text-right px-3 py-2 text-[11px] whitespace-nowrap ${colHdr}`}>
+                          {label}
+                        </TableHead>
+                      );
+                    })}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredData.length ? filteredData.map((row, index) => (
-                    <TableRow key={row.saving_id} className={!row.is_active ? 'bg-red-50/60 text-muted-foreground' : ''}>
-                      <TableCell className="sticky left-0 z-10 bg-background">
-                        <button type="button" className="text-left hover:underline" onClick={() => setSelectedSaving(row)}>
-                          <span className="mr-1 text-muted-foreground">{index + 1}.</span>
-                          <span className="font-medium">{row.employee.nama_karyawan}</span>
-                          <span className="block pl-5 text-[11px] text-muted-foreground">
+                    <TableRow
+                      key={row.saving_id}
+                      className={`group transition-colors ${
+                        !row.is_active
+                          ? 'bg-red-50/70 hover:bg-red-100/70 text-slate-600'
+                          : 'odd:bg-white even:bg-slate-50/80 hover:bg-amber-50/70'
+                      }`}
+                    >
+                      <TableCell
+                        className={`sticky left-0 z-10 border-r border-slate-200/90 px-3 py-2.5 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)] ${
+                          !row.is_active
+                            ? 'bg-red-50/95 group-hover:bg-red-100'
+                            : 'bg-white group-odd:bg-white group-even:bg-slate-50 group-hover:bg-amber-50'
+                        }`}
+                      >
+                        <button type="button" className="text-left group/btn hover:underline cursor-pointer block w-full" onClick={() => setSelectedSaving(row)}>
+                          <span className="mr-1.5 font-mono text-slate-400">{index + 1}.</span>
+                          <span className="font-semibold text-slate-900 group-hover/btn:text-red-600 transition-colors">{row.employee.nama_karyawan}</span>
+                          <span className="block pl-5 text-[11px] text-slate-500 mt-0.5">
                             {[row.employee.jabatan, row.employee.area ? `Area ${row.employee.area}` : null, row.nomor_rekening].filter(Boolean).join(' · ')}
-                            {row.employee.date_resign && <span className="ml-1 font-semibold text-red-600">RESIGN</span>}
+                            {row.employee.date_resign && <span className="ml-1.5 px-1 py-0.2 rounded text-[10px] font-bold bg-red-100 text-red-700">RESIGN</span>}
                           </span>
                         </button>
                       </TableCell>
                       {columns.map(([key]) => {
                         const value = key === 'saldo_global' ? row.saldo_sw + row.saldo_sk : row[key];
-                        return <TableCell key={key} className="text-right tabular-nums">{rupiah(value)}</TableCell>;
+                        const num = Number(value) || 0;
+                        let cellClass = 'text-slate-800 font-medium';
+                        if (num === 0) {
+                          cellClass = 'text-slate-400 font-normal';
+                        } else if (['sw_debit', 'sk_debit'].includes(key)) {
+                          cellClass = 'text-emerald-700 font-semibold bg-emerald-50/30';
+                        } else if (['sw_kredit', 'sk_kredit'].includes(key)) {
+                          cellClass = 'text-rose-700 font-semibold bg-rose-50/30';
+                        } else if (key === 'saldo_global') {
+                          cellClass = 'text-sky-950 font-bold bg-sky-100/60';
+                        } else if (['saldo_sw', 'saldo_sk'].includes(key)) {
+                          cellClass = 'text-sky-900 font-semibold bg-sky-50/40';
+                        } else if (['sw_setoran', 'sk_setoran', 'sw_debit_mutasi', 'sk_debit_mutasi'].includes(key)) {
+                          cellClass = 'text-emerald-700 font-medium';
+                        } else if (['sw_pengambilan', 'sk_pengambilan', 'sw_kredit_mutasi', 'sk_kredit_mutasi', 'sw_kredit_resign', 'sk_kredit_resign'].includes(key)) {
+                          cellClass = 'text-rose-700 font-medium';
+                        }
+                        return (
+                          <TableCell key={key} className={`text-right tabular-nums px-3 py-2 whitespace-nowrap ${cellClass}`}>
+                            {rupiah(value)}
+                          </TableCell>
+                        );
                       })}
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">
-                      {search ? 'Tidak ada karyawan yang cocok dengan pencarian.' : 'Tidak ada data karyawan atau transaksi pada periode ini.'}
-                    </TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={20} className="h-24 text-center text-muted-foreground">
+                        {search ? 'Tidak ada karyawan yang cocok dengan pencarian.' : 'Tidak ada data karyawan atau transaksi pada periode ini.'}
+                      </TableCell>
+                    </TableRow>
                   )}
                   {data.length > 0 && (
-                    <TableRow className="bg-muted/70 font-bold">
-                      <TableCell className="sticky left-0 z-10 bg-muted/70">TOTAL</TableCell>
-                      {columns.map(([key]) => <TableCell key={key} className="text-right tabular-nums">{rupiah(totals[key])}</TableCell>)}
+                    <TableRow className="bg-slate-200/90 font-bold border-t-2 border-slate-300">
+                      <TableCell className="sticky left-0 z-10 bg-slate-200 border-r border-slate-300 font-extrabold text-slate-900 px-3 py-2.5 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                        TOTAL KANTOR
+                      </TableCell>
+                      {columns.map(([key]) => {
+                        const isGlobal = key === 'saldo_global';
+                        const isDebit = ['sw_debit', 'sk_debit'].includes(key);
+                        const isKredit = ['sw_kredit', 'sk_kredit'].includes(key);
+                        let totalExtra = 'text-slate-900 font-bold';
+                        if (isGlobal) totalExtra = 'bg-sky-200 text-sky-950 font-extrabold';
+                        else if (isDebit) totalExtra = 'text-emerald-900 font-bold bg-emerald-100/60';
+                        else if (isKredit) totalExtra = 'text-rose-900 font-bold bg-rose-100/60';
+                        return (
+                          <TableCell key={key} className={`text-right tabular-nums px-3 py-2 whitespace-nowrap ${totalExtra}`}>
+                            {rupiah(totals[key])}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   )}
                 </TableBody>

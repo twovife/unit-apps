@@ -16,6 +16,80 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 # 2026-10-16
 
+## SKSW: Modal Input Masukan SKSW (Default SW 200rb, Separator Ribuan + Shortcut 'K', Checklist, & Total Terpisah)
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Pages/Sksw/Unit.jsx` | `DialogSetoran()`, `InputRupiah()` | `sksw.unit` (`/sksw/unit`), `sksw.setoran` (`POST /sksw/setoran`) | `savings` (`BACA`), `saving_transactions` (`TULIS`) | 1. Mengubah judul modal menjadi **INPUT MASUKAN SKSW** dan subjudul: `( menu intuk input pemasukan saja ) hilangkan centang untuk yang tidak setor`.<br>2. Nilai SW default terisi **200.000** untuk karyawan yang belum setor.<br>3. Menambahkan kolom checklist per karyawan (default checked), serta master checkbox di header; hanya baris yang dicentang yang dikirim ke backend.<br>4. Memisahkan tampilan akumulasi di kanan atas: **Total SW** sendiri dan **Total SK** sendiri, serta total gabungan.<br>5. Input nominal menggunakan komponen `InputRupiah` berpemisah ribuan otomatis (titik) dengan dukungan shortcut tombol/ketikan **'K' / 'k'** untuk auto-tambah ribuan (`* 1000` / `000`). |
+
+---
+
+## Aset Kendaraan: Bayar Pajak Langsung di Drawer & Posisi Tombol Hapus/Edit di Bawah
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/VehicleAssetController.php` | `detailJson()` | `assets.detail` (`GET /assets/{asset}/detail`) | `inv_vehicles` (`BACA`), `inv_vehicle_taxes` (`BACA`) | Menyertakan payload `tax_info` (jatuh tempo, jenis pajak 1/5 tahunan, periode, tunggakan) untuk detail kendaraan |
+| `resources/js/Components/Assets/VehicleAssetDetail.jsx` | `VehicleAssetDetail()` | Drawer detail kendaraan (`/assets`) | — | Menggantikan link navigasi "Buka jadwal / pembayaran" dengan tombol dan modal **Bayar Pajak (Konfirmasi Pembayaran Pajak)** langsung di dalam drawer (saat ini tombol diset `disabled` sementara sesuai permintaan). Memindahkan tombol aksi **Hapus Kendaraan** dan **Ubah Kendaraan** dari samping tombol close header ke bagian bawah (SheetFooter), sehingga header tetap bersih dan tidak bertumpukan |
+
+---
+
+## Aset Kendaraan: Role Kasir Hanya Bisa Edit (Tidak Bisa Hapus)
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/VehicleAssetController.php` | `destroy()` | `assets.destroy` (`DELETE /assets/{asset}`) | `inv_assets` (`TULIS`) | Menambahkan pengaman otorisasi di backend: menolak request delete dari role `kasir` dengan status `403 Forbidden` |
+| `resources/js/Components/Assets/VehicleAssetDetail.jsx` | `VehicleAssetDetail()` | Modal detail kendaraan (`/assets`) | — | Menyembunyikan tombol "Hapus" kendaraan untuk pengguna dengan role `kasir`, sehingga kasir hanya dapat melihat tombol "Ubah" (edit) |
+
+**Sengaja tidak diubah:** Role lain (seperti `superuser`, `pusat`, `stafkontrol`, dll.) tetap dapat menghapus kendaraan sesuai hak aksesnya.
+
+---
+
+## Iuran Tabungan & BOP: Penyesuaian Lebar & Tinggi Tabel Riwayat, Hapus Tombol Input, Tambah Nomor Urut
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Components/Tabungan/OfficeContributionPage.jsx` | `OfficeContributionPage()` | `tabungan.contributions` (`/tabungan/contributions`), `bop.contributions` (`/bop/contributions`) | — | Menyesuaikan lebar container (`max-w-4xl`), membatasi ketinggian tabel dengan scroll vertikal dan sticky header (`max-h-[520px]`), membuang tombol dan modal input iuran, serta menambahkan kolom nomor urut (`No`) dan zebra-striping pada tabel riwayat |
+
+**Sengaja tidak diubah:** Endpoint API riwayat iuran (`history`) dan fitur hapus transaksi iuran terakhir (`can_delete`) tetap dipertahankan.
+
+---
+
+## Laporan SKSW Unit: Pewarnaan Kolom Bertema & Zebra-Striping (Odd/Even)
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Pages/Sksw/Unit.jsx` | `SkswUnit()` | `sksw.unit` (`/sksw/unit`) | — | Menerapkan pewarnaan header bertema (Saldo Awal: Slate, Debit: Emerald, Kredit: Rose, Saldo Akhir: Sky) serta zebra-striping odd/even (`odd:bg-white even:bg-slate-50/80 hover:bg-amber-50/70`). Menyinkronkan sticky left cell (`group-odd:bg-white group-even:bg-slate-50`) agar tidak tembus saat horizontal scroll, memberi highlight nilai debit/kredit/saldo akhir, serta memperjelas row Total Kantor di bagian bawah |
+
+**Sengaja tidak diubah:** Logika kalkulasi backend, drawer detail transaksi per staf, filter tanggal/pencarian, dan dialog setoran massal tetap berjalan seperti semula tanpa perubahan logic.
+
+---
+
+## Form Pengajuan Pinjaman (NewNasabah): Alamat 1 Kolom Saja & Aturan Simpan 2 Tabel vs Grouping
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Pages/NewLoan/NewNasabah.jsx` | `NewNasabah()`, `onNikSubmit()` | `transaction.nasabah_buku_transaksi`, `transaction.store` | — | Menyederhanakan form pengajuan: menghapus field terpisah `Alamat domisili` dan menggabungkannya menjadi **1 kolom input Alamat saja**. Untuk nasabah baru: input alamat wajib diisi. Untuk nasabah lama: otomatis terisi alamat yang ada dan dapat ditimpa/diubah |
+| `app/Http/Controllers/TransactionLoanController.php` | `nasabah_buku_transaksi()`, `store()` | `transaction.nasabah_buku_transaksi`, `transaction.store` | `transaction_customers` (`BACA`, `TULIS`), `transaction_manage_customers` (`BACA`, `TULIS`) | Pada `nasabah_buku_transaksi`: memprioritaskan domisili terakhir di cabang aktif (fallback ke alamat KTP). Pada `store`: jika nasabah baru, alamat otomatis disimpan ke 2 tabel (`transaction_customers.alamat` dan `transaction_manage_customers.residential_address`); jika nasabah lama dan alamat diubah/ditimpa, HANYA disimpan ke tabel `transaction_manage_customers.residential_address` (customer grouping tok) tanpa menyentuh tabel master `transaction_customers` |
+| `.agents/pengajuan_single_alamat.md` (**BARU**) | Dokumentasi alur | — | — | Dokumentasi alur dan logika penyimpanan 1 kolom alamat |
+
+---
+
+## Logo Sidebar, Avatar Cropper & Hapus Avatar, Berkas Dokumen Digital (Last Update), dan Redesain Tabel Manpower
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Components/Sidebar.jsx` | `Sidebar()` | Komponen navigasi | — | Mengganti logo berlatar hitam (`icon-sidebar.webp`) dengan logo merah bersih (`logo-ubm.webp?v=3`) tanpa background kotak hitam |
+| `app/Models/EmployeeDocument.php` (**BARU**) | Model Eloquent | Model berkas digital karyawan | `employee_documents` (`BACA`, `TULIS`) | Model untuk mengelola berkas digital karyawan di database bersama |
+| `app/Models/Employee.php` | `documents()` | Relasi satu ke banyak | `employee_documents` (`BACA`) | Relasi `hasMany(EmployeeDocument::class)` |
+| `routes/web.php` | Rute avatar & dokumen | `administrasi.manpower.avatar.delete`, `administrasi.manpower.documents.show`, `administrasi.manpower.documents.upload`, `administrasi.manpower.documents.destroy` | — | Menambahkan endpoint DELETE avatar profil, serta GET, POST, DELETE untuk berkas digital karyawan |
+| `app/Http/Controllers/EmployeeController.php` | `index()`, `deleteAvatar()`, `uploadDocument()`, `deleteDocument()`, `showDocument()` | `administrasi.manpower.*` | `employees` (`BACA`, `TULIS`), `employee_documents` (`BACA`, `TULIS`) | Memuat dokumen aktif beserta presigned URL dan timestamps, menghapus foto profil, mengunggah/mengganti dokumen ke MinIO `documents/{id}`, menghapus berkas, dan menyajikan berkas digital inline di tab peramban |
+| `resources/js/Pages/Administrasi/ManPower/ManPower.jsx` | `DocumentUploaderRow`, `DetailKaryawan`, `ModalCropAvatar`, `ModalLihatFoto`, `ManPower` | `administrasi.manpower.index` | `employees` (`BACA`), `employee_documents` (`BACA`) | Mengubah interaksi tabel: klik nama/baris membuka dialog detail komprehensif. Di dalam dialog tersedia: tombol ganti/upload foto profil (canvas cropper modal), hapus foto profil, preview foto besar, serta tab berkas digital (6 jenis dokumen seperti di `app_laravel`) dengan status, tombol lihat/ganti/hapus berkas, dan keterangan waktu terakhir diperbarui (**last update**) |
+| `.agents/manpower_avatar_and_table.md` (**BARU**) | Dokumentasi alur | — | — | Dokumentasi alur kerja cropper avatar, dokumen digital, endpoint, dan skema tabel |
+
+**Sengaja tidak diubah:** skema tabel database `employees` dan `employee_documents` tidak diubah; tab status filter `Aktif`, `Resign`, `Semua` tetap dipertahankan.
+
+---
+
 ## Halaman Login: Layout Responsif (Desktop Split Kiri-Kanan, Mobile Bottom Sheet Card)
 
 | Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |

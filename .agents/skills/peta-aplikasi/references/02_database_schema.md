@@ -253,3 +253,23 @@ docker exec laravel-db mysql -ularavel -psecret -N ubmi_db -e \
   "SELECT r.name, GROUP_CONCAT(p.name ORDER BY p.name) FROM role_has_permissions rp
    JOIN roles r ON r.id=rp.role_id JOIN permissions p ON p.id=rp.permission_id GROUP BY r.name;"
 ```
+
+## 6. Registri kendaraan (tabel bersama, dimiliki `app_laravel`)
+
+`VehicleAssetController` mengunci baca/tulis kendaraan pada lokasi terkininya di kantor aktif (`AuthScope::resolve()`); input `branch_id` dari URL tidak digunakan. Route mutasi menulis hanya di dalam scope aset kantor aktif, dan kantor tujuan mutasi harus termasuk `Branch::getAllowedBranchIds(user)`.
+
+```
+inv_categories       id, name
+inv_assets           id, category_id, asset_code, name, purchase_date, purchase_cost, status, description
+inv_vehicles         id, asset_id, plat_nomor, plat_prefix, nama_stnk, tanggal_stnk,
+                     tanggal_pajak_tahunan, bpkb_location
+inv_locations        id, asset_id, branch_id, before_branch_id, pengguna, assigned_date, notes
+branches             id, unit, wilayah, type
+```
+
+Relasi: `inv_assets.category_id → inv_categories.id`; `inv_vehicles.asset_id → inv_assets.id`; lokasi terakhir aset dipilih menurut ID terbesar pada `inv_locations`, lalu `branch_id → branches.id`. `inv_vehicle_taxes.vehicle_id → inv_vehicles.id` memiliki unique `(vehicle_id, periode)`; `inv_maintenance_logs.asset_id → inv_assets.id`.
+
+- BACA: seluruh tabel di atas; detail membatasi `inv_locations` ke kantor yang user boleh lihat.
+- TULIS: `inv_assets`, `inv_vehicles` (buat/ubah/hapus kendaraan); `inv_locations` (penempatan/mutasi); `inv_maintenance_logs` (catatan servis); `inv_vehicle_taxes` (konfirmasi/batal pajak); `users.id` dibaca untuk `created_by`.
+- Hapus aset menggunakan cascade FK live untuk `inv_vehicles`, `inv_locations`, dan `inv_maintenance_logs`; pajak cascade melalui kendaraan.
+- Indeks live tersedia pada `inv_assets.category_id`, `inv_locations.asset_id`, `inv_locations.branch_id`, dan `inv_vehicles.asset_id`. Query daftar/jadwal dipaginasi.

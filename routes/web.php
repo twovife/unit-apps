@@ -153,6 +153,12 @@ Route::middleware('auth')->group(function () {
       Route::get('/', "index")->name('index');
       // Unggah foto profil karyawan (kasir / superuser), disimpan di MinIO avatars/.
       Route::post('/{employee}/avatar', "uploadAvatar")->name('avatar');
+      // Hapus foto profil karyawan (kembali ke inisial nama).
+      Route::delete('/{employee}/avatar', "deleteAvatar")->name('avatar.delete');
+      // Dokumen karyawan (KTP, KK, SKCK, Ijazah, Lamaran Kerja, Pasfoto)
+      Route::get('/{employee}/documents/{document}', "showDocument")->name('documents.show');
+      Route::post('/{employee}/documents', "uploadDocument")->name('documents.upload');
+      Route::delete('/{employee}/documents/{document}', "deleteDocument")->name('documents.destroy');
     });
     // Lamaran Kerja: catat pelamar & dokumen untuk cabang aktif; terima / tolak di app_laravel.
     Route::controller(\App\Http\Controllers\LamaranKerjaController::class)->prefix('lamaran')->name('lamaran.')->group(function () {

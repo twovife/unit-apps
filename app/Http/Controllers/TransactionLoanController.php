@@ -312,11 +312,18 @@ class TransactionLoanController extends Controller
       return strtotime((string) ($b['pinjaman'] ?? '')) <=> strtotime((string) ($a['pinjaman'] ?? '')); // drop terbaru dulu
     };
 
+    // Prioritaskan domisili nasabah terakhir di cabang aktif (jika ada), fallback ke alamat KTP
+    $manageCabang = $nasabah?->manage_customer
+      ->where('branch_id', $activeBranchId)
+      ->whereNotNull('residential_address')
+      ->first();
+    $alamatTampil = $manageCabang?->residential_address ?: $nasabah?->alamat;
+
     $data = $nasabah ?
       [
         'nik' => $nasabah->nik,
         'nama' => $nasabah->nama,
-        'alamat' => $nasabah->alamat,
+        'alamat' => $alamatTampil,
         'history_branch' => $mapingBranch->filter(function ($item) use ($activeBranchId) {
           return $item['branch_id'] === $activeBranchId;
         })->sortBy('kelompok')->values(),
@@ -530,9 +537,14 @@ class TransactionLoanController extends Controller
       if ($request->filled('nomor_anggota')) {
         $manage->update(['nomor_anggota' => $request->nomor_anggota]);
       }
-      // Domisili juga melekat ke rekening; alamat KTP (TransactionCustomer) tidak disentuh.
-      if ($request->filled('residential_address')) {
-        $manage->update(['residential_address' => trim($request->residential_address)]);
+      // 1 Kolom Alamat:
+      // - Nasabah baru: firstOrCreate di atas otomatis menyimpan alamat ke tabel `transaction_customers.alamat`.
+      //   Kemudian di sini otomatis disimpan juga ke tabel `transaction_manage_customers.residential_address` (2 tabel terisi).
+      // - Nasabah lama: jika alamat diubah/ditimpa, HANYA disimpan ke `transaction_manage_customers.residential_address` (customer grouping tok).
+      //   Tabel master `transaction_customers.alamat` tidak disentuh / tidak diubah.
+      $alamatInput = trim((string) ($request->input('alamat') ?: $request->input('residential_address')));
+      if ($alamatInput !== '') {
+        $manage->update(['residential_address' => $alamatInput]);
       }
 
       // drop_before hanya bermakna untuk topup (punya previous_loan_id), diisi

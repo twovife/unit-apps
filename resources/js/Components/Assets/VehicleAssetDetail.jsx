@@ -1,12 +1,12 @@
-import { router, useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { Loader2, MapPin, Pencil, Trash2, Wrench } from 'lucide-react';
+import { CheckCircle2, Loader2, MapPin, Pencil, Trash2, Wrench } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 
 const rupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value) || 0)}`;
@@ -37,6 +37,8 @@ function Modal({ title, description, children, onClose }) {
 }
 
 export default function VehicleAssetDetail({ assetId, assetName, branches, onClose, onEdit }) {
+  const { auth } = usePage().props;
+  const canDelete = !auth?.roles?.includes('kasir');
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +57,14 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     cost: '',
     odometer: '',
     description: '',
+  });
+  const taxForm = useForm({
+    cost: '',
+    denda: '',
+    paid_date: new Date().toISOString().slice(0, 10),
+    plat_nomor: '',
+    notes: '',
+    sampai_periode: '',
   });
 
   const load = () => {
@@ -116,6 +126,37 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     });
   };
 
+  const openTaxPayment = () => {
+    if (!asset?.vehicle) return;
+    const info = payload?.tax_info;
+    const defaultPeriode = info?.sampai_periode
+      ?? (asset.vehicle.tanggal_pajak_tahunan ? new Date(asset.vehicle.tanggal_pajak_tahunan).getFullYear() : new Date().getFullYear());
+    taxForm.setData({
+      cost: '',
+      denda: '',
+      paid_date: new Date().toISOString().slice(0, 10),
+      plat_nomor: '',
+      notes: '',
+      sampai_periode: String(defaultPeriode),
+    });
+    taxForm.clearErrors();
+    setModal('tax');
+  };
+
+  const submitTaxPayment = (event) => {
+    event.preventDefault();
+    if (!asset?.vehicle?.id) return;
+    taxForm.post(route('assets.her.confirm', asset.vehicle.id), {
+      preserveScroll: true,
+      onSuccess: () => {
+        setModal('');
+        taxForm.reset();
+        refresh();
+        toast.success('Pembayaran pajak berhasil dicatat.');
+      },
+    });
+  };
+
   const deleteAsset = () => {
     if (!window.confirm(`Hapus kendaraan ${asset?.name}? Riwayat pajak, mutasi, dan servis ikut terhapus.`)) return;
     setConfirmingDelete(true);
@@ -143,19 +184,9 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     <>
       <Sheet open={!!assetId} onOpenChange={(open) => !open && onClose()}>
         <SheetContent side="right" className="flex h-full w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <SheetHeader className="border-b px-5 py-4 pr-12 text-left">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <SheetTitle>{asset?.name ?? assetName ?? 'Detail Kendaraan'}</SheetTitle>
-                <SheetDescription>{asset?.asset_code ?? (loading ? 'Memuat...' : '')} · {asset?.vehicle?.plat_nomor ?? ''}</SheetDescription>
-              </div>
-              {asset && (
-                <div className="flex gap-2">
-                  {onEdit && <Button size="sm" variant="outline" onClick={() => onEdit(asset)}><Pencil className="mr-1 size-4" />Ubah</Button>}
-                  <Button size="sm" variant="destructive" onClick={deleteAsset} disabled={confirmingDelete}><Trash2 className="mr-1 size-4" />Hapus</Button>
-                </div>
-              )}
-            </div>
+          <SheetHeader className="border-b px-5 py-4 pr-14 text-left">
+            <SheetTitle>{asset?.name ?? assetName ?? 'Detail Kendaraan'}</SheetTitle>
+            <SheetDescription>{asset?.asset_code ?? (loading ? 'Memuat...' : '')} · {asset?.vehicle?.plat_nomor ?? ''}</SheetDescription>
           </SheetHeader>
           {loading && <div className="p-6 text-sm text-muted-foreground"><Loader2 className="mr-2 inline size-4 animate-spin" />Memuat detail kendaraan...</div>}
           {error && <p role="alert" className="m-5 rounded border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
@@ -202,8 +233,23 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                 </TabsContent>
                 <TabsContent value="taxes" className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold">Akumulasi biaya pajak: {rupiah(taxTotal)}</p>
-                    <Button asChild size="sm" variant="outline"><a href={route('assets.her')}>Buka jadwal / pembayaran</a></Button>
+                    <div>
+                      <p className="text-sm font-semibold">Akumulasi biaya pajak: {rupiah(taxTotal)}</p>
+                      {payload?.tax_info && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          Jatuh tempo: <strong className="text-foreground">{formatDate(payload.tax_info.tanggal_pajak_tahunan)}</strong> · {payload.tax_info.jenis_pajak}
+                          {payload.tax_info.tertunggak > 0 && (
+                            <span className="ml-1.5 font-semibold text-rose-600">(Tertunggak {payload.tax_info.tertunggak} tahun)</span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    {asset.vehicle && (
+                      <Button size="sm" onClick={openTaxPayment} disabled>
+                        <CheckCircle2 className="mr-1 size-4" />
+                        Bayar Pajak
+                      </Button>
+                    )}
                   </div>
                   <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
@@ -252,6 +298,28 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
               </Tabs>
             </div>
           )}
+
+          {!loading && asset && (
+            <SheetFooter className="mt-auto flex flex-row items-center justify-between border-t bg-slate-50/70 px-5 py-3 sm:justify-between dark:bg-zinc-900/60">
+              <div>
+                {canDelete && (
+                  <Button size="sm" variant="destructive" onClick={deleteAsset} disabled={confirmingDelete}>
+                    <Trash2 className="mr-1.5 size-4" />Hapus Kendaraan
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={onClose}>
+                  Tutup
+                </Button>
+                {onEdit && (
+                  <Button size="sm" variant="default" onClick={() => onEdit(asset)}>
+                    <Pencil className="mr-1.5 size-4" />Ubah Kendaraan
+                  </Button>
+                )}
+              </div>
+            </SheetFooter>
+          )}
         </SheetContent>
       </Sheet>
 
@@ -284,6 +352,111 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
             <label className="block space-y-1 text-sm">Odometer (km)<Input inputMode="numeric" value={maintenance.data.odometer} onChange={(event) => maintenance.setData('odometer', event.target.value.replace(/\D/g, ''))} /></label>
             <label className="block space-y-1 text-sm">Keterangan<textarea className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={maintenance.data.description} onChange={(event) => maintenance.setData('description', event.target.value)} required /></label>
             <Button type="submit" disabled={maintenance.processing} className="w-full">{maintenance.processing ? 'Menyimpan...' : 'Simpan catatan servis'}</Button>
+          </form>
+        </Modal>
+      )}
+
+      {modal === 'tax' && asset && asset.vehicle && (
+        <Modal title="Konfirmasi Pembayaran Pajak" description={`${asset.name} · ${asset.vehicle.plat_nomor}`} onClose={() => setModal('')}>
+          <form onSubmit={submitTaxPayment} className="space-y-3 p-4">
+            <div className="space-y-1 rounded-md border bg-muted/30 p-3 text-sm">
+              <p>Kendaraan: <strong>{asset.name} ({asset.vehicle.plat_nomor})</strong></p>
+              {payload?.tax_info && (
+                <>
+                  <p>Jenis: <strong>{payload.tax_info.jenis_pajak} (tahun ke-{payload.tax_info.tahun_ke})</strong></p>
+                  <p>Jatuh tempo: <strong>{formatDate(payload.tax_info.tanggal_pajak_tahunan)}</strong></p>
+                  <p>
+                    Periode: <strong>{payload.tax_info.periode}{Number(taxForm.data.sampai_periode) > payload.tax_info.periode ? ` – ${taxForm.data.sampai_periode}` : ''}</strong>
+                  </p>
+                  {payload.tax_info.tertunggak > 0 && (
+                    <p className="mt-1 text-xs text-amber-700">Tunggakan akan dicatat per tahun; nominal biaya dan denda masuk ke periode terakhir.</p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {payload?.tax_info?.tertunggak > 10 && (
+              <p className="rounded border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                Tanggal jatuh tempo tidak wajar (tertunggak lebih dari 10 tahun). Silakan koreksi tanggal lewat tombol Ubah Kendaraan.
+              </p>
+            )}
+
+            <label className="block space-y-1 text-sm">
+              Bayar sampai periode
+              <Input
+                type="number"
+                min={payload?.tax_info?.periode ?? 2000}
+                max={new Date().getFullYear() + 1}
+                value={taxForm.data.sampai_periode}
+                onChange={(event) => taxForm.setData('sampai_periode', event.target.value)}
+                required
+              />
+              {taxForm.errors.sampai_periode && <span className="text-xs text-destructive">{taxForm.errors.sampai_periode}</span>}
+            </label>
+
+            <label className="block space-y-1 text-sm">
+              Biaya pajak (Rp)
+              <Input
+                inputMode="numeric"
+                value={taxForm.data.cost ? new Intl.NumberFormat('id-ID').format(taxForm.data.cost) : ''}
+                onChange={(event) => taxForm.setData('cost', event.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+                required
+              />
+              {taxForm.errors.cost && <span className="text-xs text-destructive">{taxForm.errors.cost}</span>}
+            </label>
+
+            <label className="block space-y-1 text-sm">
+              Denda (Rp, opsional)
+              <Input
+                inputMode="numeric"
+                value={taxForm.data.denda ? new Intl.NumberFormat('id-ID').format(taxForm.data.denda) : ''}
+                onChange={(event) => taxForm.setData('denda', event.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+              />
+              {taxForm.errors.denda && <span className="text-xs text-destructive">{taxForm.errors.denda}</span>}
+            </label>
+
+            <label className="block space-y-1 text-sm">
+              Tanggal pembayaran
+              <Input
+                type="date"
+                value={taxForm.data.paid_date}
+                onChange={(event) => taxForm.setData('paid_date', event.target.value)}
+                required
+              />
+              {taxForm.errors.paid_date && <span className="text-xs text-destructive">{taxForm.errors.paid_date}</span>}
+            </label>
+
+            {payload?.tax_info?.is_5_tahunan && (
+              <label className="block space-y-1 text-sm">
+                Plat baru (jika ganti plat)
+                <Input
+                  value={taxForm.data.plat_nomor}
+                  onChange={(event) => taxForm.setData('plat_nomor', event.target.value.toUpperCase())}
+                  placeholder={asset.vehicle.plat_nomor}
+                />
+                {taxForm.errors.plat_nomor && <span className="text-xs text-destructive">{taxForm.errors.plat_nomor}</span>}
+              </label>
+            )}
+
+            <label className="block space-y-1 text-sm">
+              Catatan (opsional)
+              <Input
+                value={taxForm.data.notes}
+                onChange={(event) => taxForm.setData('notes', event.target.value)}
+                placeholder="Keterangan pembayaran pajak..."
+              />
+              {taxForm.errors.notes && <span className="text-xs text-destructive">{taxForm.errors.notes}</span>}
+            </label>
+
+            <Button
+              type="submit"
+              disabled={taxForm.processing || (payload?.tax_info?.tertunggak > 10)}
+              className="w-full"
+            >
+              {taxForm.processing ? 'Menyimpan...' : 'Konfirmasi Pembayaran Pajak'}
+            </Button>
           </form>
         </Modal>
       )}

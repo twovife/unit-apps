@@ -2,6 +2,30 @@
 
 Semua yang di bawah ini ditulis tangan di proyek ini. Method boilerplate resource (`create/show/edit/update/destroy` yang kosong), method Auth scaffolding bawaan Breeze, dan relasi Eloquent standar **tidak** dimasukkan.
 
+## 0. `app/Http/Controllers/TbContributionController.php` — Iuran Tabungan 1 Juta
+
+| Fungsi | Isi |
+|---|---|
+| `index()` | Rekap bulanan untuk kantor aktif dari `AuthScope::resolve()` setelah validasi branch scope; menyiapkan status masa tenggang dan izin input |
+| `store()` | Validasi permission/zona dan masa tenggang sebelum menulis `tb_contributions` |
+| `history()` | JSON riwayat kantor setelah cek branch scope |
+| `destroy()` | Menghapus hanya transaksi terbaru kantor setelah cek permission/zona |
+| `authorizeBranchRead()`, `authorizeContributionWrite()`, `canManageBranch()`, `canManageAll()`, `canManageZone()`, `zoneBranchIds()` | Scope baca/tulis untuk iuran |
+
+Model `App\Models\TbContribution` memakai tabel bersama `tb_contributions`; skema dikelola `app_laravel`. Detail: [`.agents/tabungan_iuran.md`](../../../tabungan_iuran.md).
+
+## 0.1 `app/Http/Controllers/BopContributionController.php` — Iuran BOP
+
+| Fungsi | Isi |
+|---|---|
+| `index()` | Ringkasan kantor aktif dari `AuthScope::resolve()`; rekap periode dan akumulasi `ops_bop_contributions` |
+| `store()` | Validasi izin semua kantor/zona dan masa tenggang sebelum menyimpan setoran BOP |
+| `history()` | JSON riwayat kantor setelah validasi branch scope |
+| `destroy()` | Menghapus hanya transaksi BOP terakhir kantor setelah cek permission/zona |
+| `authorizeBranchRead()`, `authorizeContributionWrite()`, `canManageBranch()`, `canManageAll()`, `canManageZone()`, `authenticatedUser()` | Scope baca/tulis dan permission BOP |
+
+Model `App\Models\OpsBopContribution` memakai tabel bersama `ops_bop_contributions`; skema dikelola `app_laravel`. Detail: [`.agents/bop_iuran.md`](../../../bop_iuran.md).
+
 ---
 
 ## 1. `app/Helpers/AppHelper.php` (398 baris) — 25 static method

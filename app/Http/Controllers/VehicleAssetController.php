@@ -160,9 +160,30 @@ class VehicleAssetController extends Controller
             'currentLocation.branch:id,unit,wilayah',
         ]);
 
+        $taxInfo = null;
+        if ($asset->vehicle && $asset->vehicle->tanggal_pajak_tahunan) {
+            $v = $asset->vehicle;
+            $due = $v->tanggal_pajak_tahunan;
+            $currentYear = (int) now()->year;
+            $sampai = max($due->year, $currentYear);
+            $taxInfo = [
+                'vehicle_id' => $v->id,
+                'tanggal_pajak_tahunan' => $due->toDateString(),
+                'tanggal_stnk' => $v->tanggal_stnk?->toDateString(),
+                'jenis_pajak' => $v->labelJenisPajak(),
+                'is_5_tahunan' => $v->isPajak5Tahunan(),
+                'tahun_ke' => $v->pajakTahunKe(),
+                'periode' => $due->year,
+                'sampai_periode' => $sampai,
+                'tertunggak' => max(0, $sampai - $due->year),
+                'is_paid' => $due->year > $currentYear,
+            ];
+        }
+
         return response()->json([
             'asset' => $asset,
             'branches' => $this->allowedBranches(),
+            'tax_info' => $taxInfo,
         ]);
     }
 
@@ -228,6 +249,7 @@ class VehicleAssetController extends Controller
 
     public function destroy(Request $request, InvAsset $asset)
     {
+        abort_if($request->user()?->hasRole('kasir'), 403, 'Role kasir tidak memiliki izin untuk menghapus kendaraan.');
         $this->assertAssetInActiveBranch($request, $asset);
         $branchId = $this->activeBranchId();
         DB::transaction(function () use ($asset, $branchId) {

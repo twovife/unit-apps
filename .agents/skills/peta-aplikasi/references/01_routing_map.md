@@ -42,6 +42,49 @@ LoginRequest->authenticate()            (rate-limit + attempt; field: username)
 
 **`SetBranchController`** — validasi `branch_id` `required|integer|exists:branches,id`, cek `Branch::getAllowedBranchIds($user)`; lolos → `Session::put("active_branch_id_{$user->id}")` + `back()->with('message')`; gagal → `back()->withErrors('Anda tidak memiliki akses ke cabang tersebut.')`.
 
+### B1. Iuran Tabungan 1 Juta — prefix `/tabungan`, name `tabungan.*`
+Controller: **`TbContributionController`**. Detail flow, otorisasi, dan skema bersama: [`.agents/tabungan_iuran.md`](../../../tabungan_iuran.md).
+
+| Method | URI | Name | Handler | View / Response |
+|---|---|---|---|---|
+| GET | `/tabungan/contributions` | `tabungan.contributions` | `index` | `Tabungan/Contributions` — kantor aktif dari GlobalBranchFilter |
+| POST | `/tabungan/contributions` | `tabungan.contributions.store` | `store` | Catat iuran, lalu redirect |
+| DELETE | `/tabungan/contributions/{contribution}` | `tabungan.contributions.destroy` | `destroy` | Hapus hanya transaksi terakhir kantor |
+| GET | `/tabungan/api/contributions/{branch}/history` | `tabungan.api.contributions.history` | `history` | JSON riwayat kantor |
+
+### B2. Iuran BOP — prefix `/bop`, name `bop.*`
+Controller: **`BopContributionController`**. Pola UI sama dengan Iuran Tabungan, target nominal Rp1.500.000. Detail: [`.agents/bop_iuran.md`](../../../bop_iuran.md).
+
+| Method | URI | Name | Handler | View / Response |
+|---|---|---|---|---|
+| GET | `/bop/contributions` | `bop.contributions` | `index` | `Tabungan/BopContributions` — kantor aktif dari GlobalBranchFilter |
+| POST | `/bop/contributions` | `bop.contributions.store` | `store` | Catat setoran BOP |
+| DELETE | `/bop/contributions/{contribution}` | `bop.contributions.destroy` | `destroy` | Hapus hanya transaksi terakhir kantor |
+| GET | `/bop/api/contributions/{branch}/history` | `bop.api.contributions.history` | `history` | JSON riwayat kantor |
+
+### B3. SKSW — Laporan Unit — prefix `/sksw`, name `sksw.*`
+Controller: **`SkswUnitController`**. Laporan baca-saja selalu dibatasi ke kantor aktif yang tervalidasi terhadap daftar kantor user. Rincian lengkap: [`.agents/sksw_laporan_unit.md`](../../../sksw_laporan_unit.md).
+
+| Method | URI | Name | Handler | View / Response |
+|---|---|---|---|---|
+| GET | `/sksw/unit` | `sksw.unit` | `index` | `Sksw/Unit` — laporan kantor aktif, filter periode |
+| GET | `/sksw/{saving}/detail` | `sksw.detail` | `detail` | JSON detail baca-saja, histori transaksi dipaginasi dan dibatasi pada kantor aktif |
+
+### B4. Aset Kendaraan — `assets.index`
+Controller: **`VehicleAssetController`**. Registri serta pengelolaan kendaraan operasional dibatasi ke kantor aktif dari `AuthScope::resolve()`; query `branch_id` dari browser diabaikan. Mutasi lokasi tujuan juga divalidasi terhadap daftar kantor yang diizinkan user. Detail alur dan tabel: [`.agents/asset_kendaraan.md`](../../../asset_kendaraan.md).
+
+| Method | URI | Name | Handler | View / Response |
+|---|---|---|---|---|
+| GET | `/assets` | `assets.index` | `index` | `Assets/Vehicles` — ringkasan dan daftar kendaraan kantor aktif, filter pencarian/status, paginasi |
+| POST | `/assets` | `assets.store` | `store` | Tambah kendaraan dan lokasi awal di kantor aktif |
+| GET | `/assets/her` | `assets.her` | `herList` | `Assets/VehicleTaxes` — jadwal jatuh tempo kantor aktif |
+| POST | `/assets/her/{vehicle}/confirm` | `assets.her.confirm` | `confirmHer` | Catat pembayaran pajak; per periode, termasuk tunggakan dan HER 5 tahunan |
+| DELETE | `/assets/her/tax/{tax}` | `assets.her.cancel` | `cancelHer` | Batalkan pembayaran terakhir atau hapus baris pajak warisan |
+| GET | `/assets/{asset}/detail` | `assets.detail` | `detailJson` | JSON detail terotorisasi: riwayat lokasi, pajak, dan servis |
+| PUT/DELETE | `/assets/{asset}` | `assets.update`, `assets.destroy` | `update`, `destroy` | Ubah atau hapus aset kendaraan pada kantor aktif |
+| POST | `/assets/{asset}/mutate` | `assets.mutate` | `mutate` | Catat lokasi/PIC baru; kantor tujuan harus diizinkan user |
+| POST | `/assets/{asset}/maintenance` | `assets.maintenance.store` | `addMaintenance` | Tambah catatan servis kendaraan |
+
 ---
 
 ## C. BUKU TRANSAKSI — prefix `/bukutransaksi`, name `transaction.*`
