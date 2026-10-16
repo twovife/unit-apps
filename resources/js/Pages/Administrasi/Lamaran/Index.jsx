@@ -8,14 +8,74 @@ import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import InputError from '@/Components/InputError';
-import { FileText, Paperclip, Pencil, Plus, Search, Trash2, Upload, UserPlus } from 'lucide-react';
+import { ExternalLink, Eye, FileText, Paperclip, Pencil, Plus, Search, Trash2, Upload, User, UserPlus } from 'lucide-react';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
 
 /**
  * Lamaran Kerja (cabang aktif): catat pelamar + unggah dokumen. Edit & hapus
  * selama masih menunggu; terima / tolak oleh HRD di app_laravel.
  */
-const NAMA_DOK = { lamaran_kerja: 'Surat lamaran', ijazah: 'Ijazah', ktp: 'KTP', kk: 'KK', skck: 'SKCK' };
+const NAMA_DOK = {
+  pasfoto: 'Pas Foto',
+  ktp: 'SCAN KTP',
+  kk: 'SCAN KK',
+  ijazah: 'SCAN IJAZAH',
+  skck: 'SKCK',
+  lamaran_kerja: 'Surat lamaran',
+};
+
+/**
+ * Kompresi gambar langsung di browser peramban sebelum dikirim ke server.
+ * Foto HP beresolusi tinggi (3MB - 15MB) dikecilkan menjadi JPEG terkompresi (~300KB - 700KB)
+ * dengan dimensi maksimal 1920px dan kualitas 0.82. PDF dikirim apa adanya.
+ */
+const kompresGambar = (file) =>
+  new Promise((resolve) => {
+    if (!file || !file.type?.startsWith('image/') || file.type === 'image/gif') {
+      return resolve(file);
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX_DIM = 1920;
+      let { width, height } = img;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(file);
+
+      // Background putih jika sumber gambar adalah PNG/transparan
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return resolve(file);
+          const namaFile = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+          resolve(new File([blob], namaFile, { type: 'image/jpeg', lastModified: Date.now() }));
+        },
+        'image/jpeg',
+        0.82
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
 const TAB = [
   ['menunggu', 'Menunggu'],
   ['selesai', 'Selesai'],
@@ -80,7 +140,7 @@ const CekNik = ({ nik, kecuali, onAktif }) => {
 };
 
 /** Form catat / edit lamaran. */
-const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
+const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi, referensi_luar = ['Pak Hertawan'] }) => {
   const kosong = {
     nama: '',
     nik: '',
@@ -89,6 +149,7 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
     tanggal_lamaran: dayjs().format('YYYY-MM-DD'),
     employment_id: '',
     referensi_employee_id: '',
+    referensi_luar: '',
     catatan: '',
   };
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm(kosong);
@@ -98,11 +159,39 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
     clearErrors();
     if (!buka) return;
     if (edit) {
-      setData(Object.fromEntries(Object.keys(kosong).map((k) => [k, edit[k] ?? ''])));
+      setData({
+        nama: edit.nama ?? '',
+        nik: edit.nik ?? '',
+        no_hp: edit.no_hp ?? '',
+        alamat: edit.alamat ?? '',
+        tanggal_lamaran: edit.tanggal_lamaran ?? dayjs().format('YYYY-MM-DD'),
+        employment_id: edit.employment_id ?? '',
+        referensi_employee_id: edit.referensi_employee_id ? String(edit.referensi_employee_id) : '',
+        referensi_luar: edit.referensi_luar ?? '',
+        catatan: edit.catatan ?? '',
+      });
     } else {
       reset();
     }
   }, [buka, edit?.id]);
+
+  const nilaiReferensi = data.referensi_luar
+    ? `luar:${data.referensi_luar}`
+    : data.referensi_employee_id
+    ? String(data.referensi_employee_id)
+    : '';
+
+  const gantiReferensi = (e) => {
+    const val = e.target.value;
+    if (!val) {
+      setData((d) => ({ ...d, referensi_employee_id: '', referensi_luar: '' }));
+    } else if (val.startsWith('luar:')) {
+      const namaLuar = val.replace(/^luar:/, '');
+      setData((d) => ({ ...d, referensi_employee_id: '', referensi_luar: namaLuar }));
+    } else {
+      setData((d) => ({ ...d, referensi_employee_id: val, referensi_luar: '' }));
+    }
+  };
 
   const kirim = (e) => {
     e.preventDefault();
@@ -182,16 +271,21 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
               <InputError message={errors.employment_id} />
             </div>
             <div className="grid gap-1">
-              <Label htmlFor="referensi_employee_id">Referensi</Label>
-              <select id="referensi_employee_id" name="referensi_employee_id" className={PILIH} value={data.referensi_employee_id} onChange={ubah}>
-                <option value="">—</option>
+              <Label htmlFor="referensi">Referensi</Label>
+              <select id="referensi" name="referensi" className={PILIH} value={nilaiReferensi} onChange={gantiReferensi}>
+                <option value="">— Tidak ada —</option>
+                {referensi_luar.map((nama) => (
+                  <option key={nama} value={`luar:${nama}`}>
+                    {nama}
+                  </option>
+                ))}
                 {referensi.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.nama_karyawan}
                   </option>
                 ))}
               </select>
-              <InputError message={errors.referensi_employee_id} />
+              <InputError message={errors.referensi_employee_id ?? errors.referensi_luar} />
             </div>
           </div>
           <div className="grid gap-1">
@@ -213,12 +307,58 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi }) => {
   );
 };
 
+/** Modal Viewer Dokumen: preview gambar atau PDF langsung di dalam aplikasi */
+const ModalLihatDokumen = ({ data, onTutup }) => {
+  if (!data) return null;
+  const isPdf = data.url?.toLowerCase().includes('.pdf') || data.type === 'pdf';
+  return (
+    <Dialog open={!!data} onOpenChange={(o) => !o && onTutup()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-4 bg-white border-slate-200 rounded-2xl shadow-2xl">
+        <DialogHeader className="pb-2 text-left border-b border-slate-100 shrink-0">
+          <DialogTitle className="flex items-center justify-between text-base font-semibold text-slate-900">
+            <span>{data.judul}</span>
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Dokumen pelamar · {data.namaPelamar}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-auto flex items-center justify-center p-2 min-h-[300px]">
+          {isPdf ? (
+            <iframe src={data.url} className="w-full h-[60vh] rounded-lg border border-slate-200" title={data.judul} />
+          ) : (
+            <img
+              src={data.url}
+              alt={data.judul}
+              className="max-h-[65vh] w-auto max-w-full rounded-xl object-contain shadow-sm border border-slate-100"
+            />
+          )}
+        </div>
+        <DialogFooter className="flex-row items-center justify-between gap-2 pt-2 border-t border-slate-100 shrink-0 sm:justify-between">
+          <a
+            href={data.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-md transition-colors"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> Buka di tab baru
+          </a>
+          <Button variant="outline" size="sm" onClick={onTutup}>
+            Tutup
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 /** Detail satu lamaran: data, dokumen (unggah sekali per jenis), edit & hapus selama menunggu. */
 const Detail = ({ l, jenis, onClosed, onEdit }) => {
   const input = useRef(null);
   const [jenisUnggah, setJenisUnggah] = useState(null);
   const [proses, setProses] = useState(false);
+  const [statusTeks, setStatusTeks] = useState(null);
   const [galat, setGalat] = useState(null);
+  const [previewDokumen, setPreviewDokumen] = useState(null);
   const menunggu = l?.status === 'menunggu';
 
   const pilihFile = (j) => {
@@ -226,22 +366,56 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
     setGalat(null);
     input.current?.click();
   };
-  const unggah = (e) => {
-    const file = e.target.files?.[0];
+  const unggah = async (e) => {
+    const fileMentah = e.target.files?.[0];
     e.target.value = '';
-    if (!file || !jenisUnggah) return;
+    if (!fileMentah || !jenisUnggah) return;
+
+    setGalat(null);
     setProses(true);
-    router.post(
-      route('administrasi.lamaran.unggah_dokumen', l.id),
-      { type: jenisUnggah, file },
-      {
-        forceFormData: true,
-        preserveScroll: true,
-        preserveState: true,
-        onError: (err) => setGalat(err.file ?? err.type ?? Object.values(err)[0] ?? 'Gagal mengunggah.'),
-        onFinish: () => setProses(false),
+    setStatusTeks('Mengompresi…');
+
+    try {
+      const file = await kompresGambar(fileMentah);
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('Ukuran file melebihi 10MB.');
+      }
+      setStatusTeks('Mengunggah…');
+      router.post(
+        route('administrasi.lamaran.unggah_dokumen', l.id),
+        { type: jenisUnggah, file },
+        {
+          forceFormData: true,
+          preserveScroll: true,
+          preserveState: true,
+          onError: (err) => setGalat(err.file ?? err.type ?? Object.values(err)[0] ?? 'Gagal mengunggah.'),
+          onFinish: () => {
+            setProses(false);
+            setStatusTeks(null);
+          },
+        },
+      );
+    } catch (err) {
+      setGalat(err instanceof Error ? err.message : 'Gagal memproses file.');
+      setProses(false);
+      setStatusTeks(null);
+    }
+  };
+  const hapusBerkas = (j, doc) => {
+    const label = NAMA_DOK[j] ?? j;
+    if (!window.confirm(`Hapus dokumen ${label} milik ${l.nama}?`)) return;
+    setProses(true);
+    setStatusTeks('Menghapus…');
+    setGalat(null);
+    router.delete(route('administrasi.lamaran.hapus_dokumen', [l.id, doc.id]), {
+      preserveScroll: true,
+      preserveState: true,
+      onError: (err) => setGalat(Object.values(err)[0] ?? 'Gagal menghapus dokumen.'),
+      onFinish: () => {
+        setProses(false);
+        setStatusTeks(null);
       },
-    );
+    });
   };
   const hapus = () => {
     if (!window.confirm(`Hapus lamaran ${l.nama}? Dokumennya ikut terhapus.`)) return;
@@ -249,106 +423,138 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
   };
 
   return (
-    <Dialog open={!!l} onOpenChange={(o) => !o && !proses && onClosed()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        {l && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {l.nama} <Status s={l.status} />
-              </DialogTitle>
-              <DialogDescription>
-                NIK {l.nik} · melamar {tgl(l.tanggal_lamaran)}
-              </DialogDescription>
-            </DialogHeader>
+    <>
+      <ModalLihatDokumen data={previewDokumen} onTutup={() => setPreviewDokumen(null)} />
+      <Dialog open={!!l} onOpenChange={(o) => !o && !proses && onClosed()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {l && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {l.nama} <Status s={l.status} />
+                </DialogTitle>
+                <DialogDescription>
+                  NIK {l.nik} · melamar {tgl(l.tanggal_lamaran)}
+                </DialogDescription>
+              </DialogHeader>
 
-            <div className="text-sm divide-y divide-slate-100">
-              {[
-                ['No HP', l.no_hp],
-                ['Alamat', l.alamat],
-                ['Jabatan', l.employment],
-                ['Referensi', l.referensi],
-                ['Catatan', l.catatan],
-                ['Diinput oleh', l.diinput_oleh],
-                ...(l.status === 'ditolak' ? [['Alasan ditolak', l.alasan_tolak]] : []),
-              ].map(([k, v]) => (
-                <div key={k} className="grid grid-cols-[7rem_1fr] gap-2 py-1.5">
-                  <span className="text-slate-500">{k}</span>
-                  <span className="break-words text-slate-900">{v || '–'}</span>
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <div className="flex items-baseline justify-between mb-2">
-                <h3 className="text-base font-semibold text-slate-900">Dokumen pelamar</h3>
-                <span className="text-sm font-medium tabular-nums text-slate-600">
-                  {l.dokumen.length}/{jenis.length} lengkap
-                </span>
+              <div className="text-sm divide-y divide-slate-100">
+                {[
+                  ['No HP', l.no_hp],
+                  ['Alamat', l.alamat],
+                  ['Jabatan', l.employment],
+                  ['Referensi', l.referensi],
+                  ['Catatan', l.catatan],
+                  ['Diinput oleh', l.diinput_oleh],
+                  ...(l.status === 'ditolak' ? [['Alasan ditolak', l.alasan_tolak]] : []),
+                ].map(([k, v]) => (
+                  <div key={k} className="grid grid-cols-[7rem_1fr] gap-2 py-1.5">
+                    <span className="text-slate-500">{k}</span>
+                    <span className="break-words text-slate-900">{v || '–'}</span>
+                  </div>
+                ))}
               </div>
-              <input ref={input} type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={unggah} />
-              <div className="grid gap-2 sm:grid-cols-2">
-                {jenis.map((j) => {
-                  const ada = l.dokumen.find((d) => d.type === j);
-                  return (
-                    <div
-                      key={j}
-                      className={`flex items-center gap-3 p-3 border-2 rounded-xl ${
-                        ada ? 'border-emerald-300 bg-emerald-50' : 'border-dashed border-slate-300 bg-white'
-                      }`}
-                    >
-                      <span
-                        className={`flex items-center justify-center w-10 h-10 rounded-lg shrink-0 ${
-                          ada ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'
+
+              <div>
+                <div className="flex items-baseline justify-between mb-2">
+                  <h3 className="text-base font-semibold text-slate-900">Dokumen pelamar</h3>
+                  <span className="text-sm font-medium tabular-nums text-slate-600">
+                    {l.dokumen.length}/{jenis.length} lengkap
+                  </span>
+                </div>
+                <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={unggah} />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {jenis.map((j) => {
+                    const ada = l.dokumen.find((d) => d.type === j);
+                    const label = NAMA_DOK[j] ?? j;
+                    return (
+                      <div
+                        key={j}
+                        className={`flex items-center gap-3 p-3 border-2 rounded-xl transition-colors ${
+                          ada ? 'border-emerald-300 bg-emerald-50/70' : 'border-dashed border-slate-300 bg-white'
                         }`}
                       >
-                        <FileText className="w-5 h-5" />
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-slate-900">{NAMA_DOK[j] ?? j}</div>
-                        <div className={`text-xs ${ada ? 'text-emerald-700' : 'text-slate-500'}`}>{ada ? 'Sudah diunggah' : 'Belum ada'}</div>
-                      </div>
-                      {ada ? (
-                        <a
-                          href={ada.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center h-9 px-3 text-sm font-semibold text-white rounded-md bg-emerald-600 hover:bg-emerald-700"
+                        <span
+                          className={`flex items-center justify-center w-10 h-10 rounded-lg shrink-0 ${
+                            ada ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-400'
+                          }`}
                         >
-                          Lihat
-                        </a>
-                      ) : menunggu ? (
-                        <Button className="gap-1.5 h-9" disabled={proses} onClick={() => pilihFile(j)}>
-                          <Upload className="w-4 h-4" />
-                          {proses && jenisUnggah === j ? 'Mengunggah…' : 'Unggah'}
-                        </Button>
-                      ) : null}
-                    </div>
-                  );
-                })}
+                          {j === 'pasfoto' ? <User className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold truncate text-slate-900">{label}</div>
+                          <div className={`text-xs ${ada ? 'text-emerald-700 font-medium' : 'text-slate-500'}`}>{ada ? 'Sudah diunggah' : 'Belum ada'}</div>
+                        </div>
+                        {ada ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setPreviewDokumen({
+                                  url: ada.url,
+                                  judul: label,
+                                  namaPelamar: l.nama,
+                                  type: j,
+                                })
+                              }
+                              className="gap-1 h-8 px-2.5 text-xs font-semibold text-emerald-800 border-emerald-300 bg-white hover:bg-emerald-100/70"
+                              title={`Lihat ${label}`}
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Lihat</span>
+                            </Button>
+                            {menunggu && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={proses}
+                                onClick={() => hapusBerkas(j, ada)}
+                                className="gap-1 h-8 px-2 text-xs font-medium text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                                title={`Hapus ${label}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Hapus</span>
+                              </Button>
+                            )}
+                          </div>
+                        ) : menunggu ? (
+                          <Button className="gap-1.5 h-8 px-3 text-xs" disabled={proses} onClick={() => pilihFile(j)}>
+                            <Upload className="w-3.5 h-3.5" />
+                            {proses && jenisUnggah === j ? statusTeks || 'Memproses…' : 'Unggah'}
+                          </Button>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Foto (JPEG / PNG) otomatis dikompresi di browser, atau PDF (maks 10MB). Dokumen dapat dilihat dan dihapus selama status masih menunggu keputusan HRD.
+                </p>
+                {galat && <p className="mt-1 text-sm font-medium text-red-600">{galat}</p>}
               </div>
-              <p className="mt-2 text-xs text-slate-500">Foto (JPEG / PNG) atau PDF, maks 5MB. Tiap dokumen sekali unggah, tidak bisa diganti.</p>
-              {galat && <p className="mt-1 text-sm font-medium text-red-600">{galat}</p>}
-            </div>
 
-            {menunggu && (
-              <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
-                <Button variant="outline" className="gap-1 text-rose-700 border-rose-300 hover:bg-rose-50" onClick={hapus}>
-                  <Trash2 className="w-4 h-4" /> Hapus
-                </Button>
-                <Button variant="outline" className="gap-1" onClick={() => onEdit(l)}>
-                  <Pencil className="w-4 h-4" /> Edit
-                </Button>
-              </DialogFooter>
-            )}
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+              {menunggu && (
+                <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+                  <Button variant="outline" className="gap-1 text-rose-700 border-rose-300 hover:bg-rose-50" onClick={hapus}>
+                    <Trash2 className="w-4 h-4" /> Hapus
+                  </Button>
+                  <Button variant="outline" className="gap-1" onClick={() => onEdit(l)}>
+                    <Pencil className="w-4 h-4" /> Edit
+                  </Button>
+                </DialogFooter>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
-const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], referensi = [], jenis_dokumen = [], video }) => {
+const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], referensi = [], referensi_luar = ['Pak Hertawan'], jenis_dokumen = [], video }) => {
   const [cari, setCari] = useState('');
   const [form, setForm] = useState({ buka: false, edit: null });
   // Simpan id: sesudah unggah / edit data dimuat ulang.
@@ -371,6 +577,7 @@ const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], ref
         onClosed={() => setForm({ buka: false, edit: null })}
         jabatan={jabatan}
         referensi={referensi}
+        referensi_luar={referensi_luar}
       />
       <Detail
         l={pilih}

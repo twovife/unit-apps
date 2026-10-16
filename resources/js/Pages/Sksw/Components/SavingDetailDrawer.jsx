@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowRightLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowRightLeft, FilePenLine, Loader2, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
@@ -11,9 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 
 /**
- * Drawer detail rekening SKSW, disalin dari app_laravel
+ * Drawer detail tabungan SKSW, disalin dari app_laravel
  * resources/js/pages/sksw/components/saving-detail-drawer.tsx + saving-actions.tsx:
- * saldo, transaksi per bulan (hapus), rekap bulanan, Tambah Transaksi
+ * saldo, transaksi per bulan (hapus), rekap bulanan, Input Transaksi
  * (setoran / penarikan / pencairan resign) dan Mutasi Kantor.
  * Data: sksw.detail (JSON); aksi: sksw.transaksi / sksw.mutasi / sksw.hapus.
  */
@@ -78,13 +78,13 @@ function TambahTransaksi({ saving, onSelesai }) {
   return (
     <>
       <Button size="sm" onClick={() => setBuka(true)}>
-        <Plus className="w-4 h-4 mr-1.5" /> Tambah Transaksi
+        <FilePenLine className="w-4 h-4 mr-1.5" /> Input Transaksi
       </Button>
       <Dialog open={buka} onOpenChange={(o) => !o && !proses && setBuka(false)}>
         <DialogContent className="sm:max-w-md">
           <form onSubmit={simpan}>
             <DialogHeader>
-              <DialogTitle>Tambah Transaksi</DialogTitle>
+              <DialogTitle>Input Transaksi</DialogTitle>
               <DialogDescription>
                 Input transaksi SW atau SK untuk <strong>{saving.employee.nama_karyawan}</strong>.
               </DialogDescription>
@@ -95,7 +95,7 @@ function TambahTransaksi({ saving, onSelesai }) {
                   <Label>Jenis</Label>
                   <select className={PILIH} value={isi.jenis} onChange={(e) => ubah('jenis', e.target.value)}>
                     <option value="SW">SW — Simpanan Wajib</option>
-                    <option value="SK">SK — Simpanan Khusus</option>
+                    <option value="SK">SK — Simpanan Sukarela</option>
                   </select>
                 </div>
                 <div>
@@ -150,21 +150,34 @@ function TambahTransaksi({ saving, onSelesai }) {
 
 function MutasiKantor({ saving, onSelesai }) {
   const [buka, setBuka] = useState(false);
+  const [bukaAlasan, setBukaAlasan] = useState(false);
   const [isi, setIsi] = useState({});
   const [galat, setGalat] = useState({});
   const [proses, setProses] = useState(false);
   const tujuan = saving.employee.branch;
-  // Karyawan masih di kantor rekening: belum ada yang perlu dipindah.
-  const belumDimutasi = !tujuan || tujuan.id === saving.branch?.id;
+  const kantorSama = !tujuan || tujuan.id === saving.branch?.id;
+  const saldoKosong = (Number(saving.saldo_sw) || 0) <= 0 && (Number(saving.saldo_sk) || 0) <= 0;
+  const isResign = !!saving.employee?.date_resign;
+  const tidakBisaMutasi = kantorSama || saldoKosong || isResign;
+
   useEffect(() => {
     if (buka) {
       setIsi({ transaction_date: hariIni(), note: '' });
       setGalat({});
     }
   }, [buka]);
+
   const simpan = (e) => {
     e.preventDefault();
     kirim('post', route('sksw.mutasi', saving.id), isi, { onSelesai: () => { setBuka(false); onSelesai(); }, setGalat, setProses });
+  };
+
+  const handleKlikMutasi = () => {
+    if (tidakBisaMutasi) {
+      setBukaAlasan(true);
+    } else {
+      setBuka(true);
+    }
   };
 
   return (
@@ -172,12 +185,86 @@ function MutasiKantor({ saving, onSelesai }) {
       <Button
         size="sm"
         variant="secondary"
-        disabled={belumDimutasi}
-        title={belumDimutasi ? 'Karyawan belum dimutasi; mutasikan dulu di menu Karyawan' : undefined}
-        onClick={() => setBuka(true)}
+        onClick={handleKlikMutasi}
       >
         <ArrowRightLeft className="w-4 h-4 mr-1.5" /> Mutasi Kantor
       </Button>
+
+      {/* Modal Penjelasan Alasan Tidak Bisa Dimutasi */}
+      <Dialog open={bukaAlasan} onOpenChange={setBukaAlasan}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 shrink-0 text-amber-600">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-semibold text-slate-900">
+                  Mutasi Kantor Belum Dapat Dilakukan
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  {saving.employee.nama_karyawan}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-2 space-y-3 text-xs">
+            <div className="p-3 border rounded-lg bg-amber-50/80 border-amber-200 text-amber-950 space-y-1.5">
+              {kantorSama ? (
+                <>
+                  <p className="font-semibold text-amber-900">
+                    Karyawan masih bertugas di kantor yang sama
+                  </p>
+                  <p className="text-slate-600">
+                    Sistem mendeteksi bahwa cabang aktif karyawan saat ini masih sama dengan cabang tabungan SKSW:
+                  </p>
+                  <ul className="pl-4 list-disc space-y-0.5 text-slate-700">
+                    <li>Kantor Tabungan SKSW: <strong>{saving.branch?.unit ?? '-'}</strong></li>
+                    <li>Kantor Karyawan Saat Ini: <strong>{tujuan?.unit ?? saving.branch?.unit ?? '-'}</strong></li>
+                  </ul>
+                  <p className="text-slate-600 pt-1">
+                    Mutasi tabungan SKSW hanya dapat dilakukan apabila karyawan telah dipindahtugaskan ke kantor cabang lain.
+                  </p>
+                </>
+              ) : saldoKosong ? (
+                <>
+                  <p className="font-semibold text-amber-900">Saldo SW & SK Kosong (Rp 0)</p>
+                  <p className="text-slate-600">
+                    Tabungan karyawan ini tidak memiliki saldo (SW: Rp 0, SK: Rp 0), sehingga tidak ada saldo yang perlu dimutasikan ke kantor baru.
+                  </p>
+                </>
+              ) : isResign ? (
+                <>
+                  <p className="font-semibold text-amber-900">Karyawan Sudah Resign</p>
+                  <p className="text-slate-600">
+                    Karyawan telah resign pada tanggal {tglPendek(saving.employee.date_resign)}. Untuk pencairan simpanan karyawan resign, silakan gunakan menu <strong>Input Transaksi</strong> dengan tipe <strong>KRMD — Pencairan Resign</strong>.
+                  </p>
+                </>
+              ) : null}
+            </div>
+
+            {kantorSama && (
+              <div className="p-3 border rounded-lg bg-slate-50 border-slate-200 text-slate-600 space-y-1.5">
+                <p className="font-medium text-slate-800">Langkah penyelesaian:</p>
+                <ol className="pl-4 list-decimal space-y-1 text-slate-600">
+                  <li>Buka menu <strong>SDM / Karyawan</strong> terlebih dahulu.</li>
+                  <li>Lakukan mutasi penempatan karyawan ke kantor cabang baru.</li>
+                  <li>Setelah kantor cabang karyawan berhasil diperbarui, kembali ke tabungan SKSW ini untuk memproses mutasi saldo.</li>
+                </ol>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" onClick={() => setBukaAlasan(false)}>
+              Mengerti
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Form Mutasi Kantor */}
       <Dialog open={buka} onOpenChange={(o) => !o && !proses && setBuka(false)}>
         <DialogContent className="sm:max-w-md">
           <form onSubmit={simpan}>
@@ -304,13 +391,13 @@ export default function SavingDetailDrawer({ savingId, employeeName, onClose }) 
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <SheetTitle className="flex flex-wrap items-center gap-2 text-sm">
-                {saving?.employee.nama_karyawan ?? employeeName ?? 'Detail Rekening'}
+                {saving?.employee.nama_karyawan ?? employeeName ?? 'Detail Tabungan SKSW'}
                 {saving?.employee.date_resign && (
                   <span className="rounded-sm bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">RESIGN</span>
                 )}
               </SheetTitle>
               <SheetDescription>
-                {tampil ? [saving.branch?.unit, saving.employee.jabatan, saving.nomor_rekening].filter(Boolean).join(' · ') : 'Memuat data rekening...'}
+                {tampil ? [saving.branch?.unit, saving.employee.jabatan, saving.nomor_rekening ? `No. SKSW: ${saving.nomor_rekening}` : null].filter(Boolean).join(' · ') : 'Memuat data tabungan SKSW...'}
               </SheetDescription>
             </div>
             {tampil && detail.boleh_input && (

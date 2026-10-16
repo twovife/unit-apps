@@ -170,6 +170,7 @@ Route::middleware('auth')->group(function () {
       Route::delete('/{lamaran}', 'destroy')->name('destroy');
       Route::post('/{lamaran}/dokumen', 'unggahDokumen')->name('unggah_dokumen');
       Route::get('/{lamaran}/dokumen/{dokumen}', 'lihatDokumen')->name('dokumen');
+      Route::delete('/{lamaran}/dokumen/{dokumen}', 'hapusDokumen')->name('hapus_dokumen');
     });
   });
 

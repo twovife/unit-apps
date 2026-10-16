@@ -16,10 +16,13 @@ class JobApplication extends Model
     public const DITOLAK = 'ditolak';
 
     /** Sama dengan app_laravel JobApplication::DOC_TYPES (disalin ke employee_documents saat diterima). */
-    public const DOC_TYPES = ['lamaran_kerja', 'ijazah', 'ktp', 'kk', 'skck'];
+    public const DOC_TYPES = ['lamaran_kerja', 'ijazah', 'ktp', 'kk', 'skck', 'pasfoto'];
+
+    /** Pemberi referensi di luar daftar karyawan; sama dengan app_laravel */
+    public const REFERENSI_LUAR = ['Pak Hertawan'];
 
     protected $fillable = [
-        'nama', 'nik', 'no_hp', 'alamat', 'tanggal_lamaran', 'employment_id', 'referensi_employee_id',
+        'nama', 'nik', 'no_hp', 'alamat', 'tanggal_lamaran', 'employment_id', 'referensi_employee_id', 'referensi_luar',
         'branch_input_id', 'penempatan_branch_id', 'catatan', 'status', 'created_by',
     ];
 

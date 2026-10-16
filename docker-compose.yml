@@ -11,6 +11,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/docker-php-custom.ini
     networks:
       - app_laravel_laravel-network
       # MinIO lokal (container minio_storage, host "miniostorage") - disk s3.

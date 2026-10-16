@@ -16,6 +16,47 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 # 2026-10-16
 
+## SKSW Unit: Penyesuaian Label Tabungan SKSW & Simpanan Sukarela, Tombol Input Transaksi, serta Dialog Alasan Mutasi Kantor
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Pages/Sksw/Components/SavingDetailDrawer.jsx` | `TambahTransaksi()`, `MutasiKantor()`, `SavingDetailDrawer()` | `sksw.unit` (`GET /sksw/unit`), `sksw.detail` (`GET /sksw/{saving}/detail`) | — | 1. Mengubah opsi jenis SK pada select input transaksi dari **Simpanan Khusus** menjadi **SK — Simpanan Sukarela**.<br>2. Mengganti tombol drawer **+ Tambah Transaksi** menjadi **Input Transaksi** dengan ikon `FilePenLine` (bukan ikon `+`).<br>3. Tombol **Mutasi Kantor** tidak lagi didisable permanen. Saat diklik ketika mutasi belum memungkinkan (karyawan masih di kantor yang sama, saldo Rp 0, atau resign), sistem menampilkan **Modal Dialog Alasan** berbasis Shadcn `Dialog` (bukan dialog/alert browser element bawaan) yang merinci status cabang karyawan, saldo, serta langkah solusi mutasi di menu SDM/Karyawan.<br>4. Menstandarkan istilah teks rekening menjadi **Tabungan SKSW** / **No. SKSW**. |
+| `resources/js/Pages/Sksw/Unit.jsx` | `DialogBukaRekening()`, `SkswUnit()` | `sksw.unit` (`GET /sksw/unit`), `sksw.buka-rekening` (`POST /sksw/buka-rekening`) | — | 1. Mengubah tombol **Buka Rekening Pegawai** menjadi **Buka Tabungan SKSW** (baik di header toolbar maupun pada banner informasi pegawai aktif yang belum terdaftar).<br>2. Mengubah judul dan tombol modal menjadi **Buka Tabungan SKSW**, label **No. Tabungan SKSW (Opsional)**, dan pesan status.<br>3. Menyesuaikan kolom header tabel menjadi **Karyawan / SKSW** dan placeholder pencarian menjadi **Cari karyawan / SKSW**. |
+
+*Sengaja tidak diubah*:
+- Logic backend di `SkswUnitController.php` tidak diubah karena validasi backend sudah memadai dan selaras dengan aturan bisnis mutasi serta transaksi SKSW.
+- Endpoint dan skema tabel `savings`, `saving_transactions`, dan `saving_batches` tidak diubah karena dipakai bersama dengan `app_laravel`.
+
+---
+
+## Administrasi Lamaran Kerja: Referensi Pihak Luar (Pak Hertawan) di Posisi Teratas Select List
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Models/JobApplication.php` | `JobApplication` model | — | `job_applications` (`BACA` / `TULIS`) | Menambahkan konstanta `JobApplication::REFERENSI_LUAR = ['Pak Hertawan']` dan kolom `referensi_luar` ke dalam `$fillable` (selaras dengan `app_laravel`). |
+| `app/Http/Controllers/LamaranKerjaController.php` | `index()`, `validasi()` | `administrasi.lamaran.*` (`/administrasi/lamaran`) | `job_applications` (`BACA` / `TULIS`) | 1. Memetakan `referensi_luar` dan memprioritaskan label referensi (`$a->referensi_luar ?: $a->referensi?->nama_karyawan`) pada daftar lamaran serta mengirimkan prop `referensi_luar`.<br>2. Menambahkan validasi `referensi_luar` (in `REFERENSI_LUAR`) dan logika mutually exclusive dengan `referensi_employee_id` (jika pihak luar dipilih, `referensi_employee_id = null`). |
+| `resources/js/Pages/Administrasi/Lamaran/Index.jsx` | `FormLamaran()`, `Index()` | `administrasi.lamaran.*` (`/administrasi/lamaran`) | `job_applications` (`TULIS`) | Menempatkan opsi **Pak Hertawan** pada urutan paling atas di select list referensi (di bawah pilihan kosong `— Tidak ada —`), diikuti daftar karyawan cabang. Mengatur state form agar saat Pak Hertawan dipilih, terkirim sebagai `referensi_luar = 'Pak Hertawan'`. |
+
+*Sengaja tidak diubah*:
+- Struktur kolom tabel `job_applications` sudah memiliki kolom `referensi_luar` bawaan dari migrasi `app_laravel`.
+
+---
+
+## Administrasi Lamaran Kerja: Fix 413 Upload, Kompresi Gambar Browser, Fitur Lihat & Hapus Dokumen, serta Penyesuaian Label (Scan & Pas Foto)
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `docker/nginx/default.conf` | `server` config | Semua route via Nginx (`unit-web`) | — | `client_max_body_size 64M;` diaktifkan dan worker Nginx di-reload pada container `unit-web` untuk menyelesaikan error HTTP 413 (Request Entity Too Large). |
+| `docker-compose.yml` | `unit-app-service.volumes` | PHP container (`unit-app`) | — | Menambahkan bind mount `./docker/php.ini:/usr/local/etc/php/conf.d/docker-php-custom.ini` sehingga limit `upload_max_filesize = 256M` dan `post_max_size = 256M` berlaku permanen di PHP-FPM. |
+| `app/Http/Controllers/LamaranKerjaController.php` | `unggahDokumen()` | `administrasi.lamaran.unggah_dokumen` (`POST /administrasi/lamaran/{lamaran}/dokumen`) | `job_applications` (`BACA`), `job_application_documents` (`BACA` / `TULIS`) | 1. Menaikkan batas validasi file dari 5MB menjadi 10MB (`max:10240`) untuk mencegah penolakan dokumen PDF berukuran besar.<br>2. Menjadikan unggah dokumen lebih toleran: jika jenis dokumen sudah pernah diunggah saat status masih `menunggu`, berkas lama di MinIO dihapus dan record dokumen diperbarui dengan berkas baru (tidak melempar error validasi kaku). |
+| `resources/js/Pages/Administrasi/Lamaran/Index.jsx` | `kompresGambar()`, `ModalLihatDokumen()`, `Detail()`, `Index()` | `administrasi.lamaran.*` (`/administrasi/lamaran`) | `job_application_documents` (`TULIS`) | 1. **Kompresi Browser Native**: Menambahkan fungsi canvas `kompresGambar()` sebelum upload. Foto kamera HP (3MB - 15MB) otomatis dikecilkan ke resolusi maksimal 1920px dengan JPEG quality 0.82 (~300KB - 700KB) secara instan di peramban.<br>2. **Show / Hapus Dokumen**: Setiap dokumen terunggah pada status `menunggu` kini memiliki tombol **Lihat** (modal viewer langsung di halaman + opsi buka di tab baru) dan tombol **Hapus** (konfirmasi + hapus berkas via route `administrasi.lamaran.hapus_dokumen`).<br>3. **Penyesuaian Label & Pas Foto**: Mengubah label dokumen menjadi `SCAN KTP`, `SCAN IJAZAH`, `SCAN KK`, dan menambahkan `Pas Foto` (`pasfoto`) dengan ikon `User` khusus. |
+
+*Sengaja tidak diubah*:
+- Tabel database bersama `job_applications` dan `job_application_documents` tidak diubah skemanya karena dipakai bersama dengan `app_laravel`.
+- Status lamaran di luar `menunggu` (diterima / ditolak) tetap terkunci dan hanya dapat dilihat (read-only), sesuai aturan bisnis HRD pusat di `app_laravel`.
+
+---
+
 ## Dashboard Kasir: Perbaikan Tampilan Rekening Tujuan & Keterangan Row Terpisah
 
 | Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |

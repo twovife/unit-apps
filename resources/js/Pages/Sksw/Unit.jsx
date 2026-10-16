@@ -330,17 +330,17 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="size-5 text-emerald-600" />
-            Buka Rekening SKSW Pegawai
+            Buka Tabungan SKSW
           </DialogTitle>
           <DialogDescription>
-            Daftarkan rekening SKSW baru untuk pegawai aktif di {branch?.unit ?? 'kantor ini'}.
+            Daftarkan tabungan SKSW baru untuk pegawai aktif di {branch?.unit ?? 'kantor ini'}.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {unregisteredEmployees.length === 0 ? (
             <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
-              Semua pegawai aktif di kantor ini sudah memiliki rekening SKSW.
+              Semua pegawai aktif di kantor ini sudah memiliki tabungan SKSW.
             </div>
           ) : (
             <>
@@ -375,7 +375,7 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">No. Rekening (Opsional)</label>
+                  <label className="text-xs font-semibold text-slate-700">No. Tabungan SKSW (Opsional)</label>
                   <Input
                     type="text"
                     placeholder="Auto / Kosongkan"
@@ -429,7 +429,7 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
             onClick={simpan}
             className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            {proses ? 'Membuka Rekening…' : 'Buka Rekening'}
+            {proses ? 'Membuka Tabungan…' : 'Buka Tabungan SKSW'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -490,7 +490,7 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
                   onClick={() => setBukaRekeningBuka(true)}
                 >
                   <UserPlus className="size-4 text-emerald-600" />
-                  Buka Rekening Pegawai
+                  Buka Tabungan SKSW
                   {unregisteredEmployees.length > 0 && (
                     <span className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
                       {unregisteredEmployees.length}
@@ -504,7 +504,7 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
             )}
             <div className="relative">
               <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari karyawan/rekening" className="w-56 pl-8" />
+              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari karyawan / SKSW" className="w-56 pl-8" />
             </div>
           </div>
         </div>
@@ -514,7 +514,7 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
             <div className="flex items-center gap-2">
               <UserPlus className="size-4 text-emerald-600 shrink-0" />
               <span>
-                Ada <strong>{unregisteredEmployees.length} pegawai aktif</strong> di kantor ini yang belum memiliki rekening SKSW.
+                Ada <strong>{unregisteredEmployees.length} pegawai aktif</strong> di kantor ini yang belum memiliki tabungan SKSW.
               </span>
             </div>
             <Button
@@ -522,7 +522,7 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
               className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 h-7 text-xs"
               onClick={() => setBukaRekeningBuka(true)}
             >
-              <UserPlus className="size-3.5" /> Buka Rekening
+              <UserPlus className="size-3.5" /> Buka Tabungan SKSW
             </Button>
           </div>
         )}
@@ -538,7 +538,7 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
                 <TableHeader>
                   <TableRow className="border-b border-slate-200 text-slate-800">
                     <TableHead rowSpan={2} className="sticky left-0 z-20 w-36 min-w-36 sm:w-56 sm:min-w-56 bg-slate-100 font-bold border-r border-slate-200 px-2 py-2 sm:px-3 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
-                      Karyawan / Rekening
+                      Karyawan / SKSW
                     </TableHead>
                     <TableHead colSpan={2} className="text-center font-bold bg-slate-100/90 text-slate-800 border-r border-slate-200">
                       Saldo Awal

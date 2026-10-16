@@ -48,7 +48,8 @@ class LamaranKerjaController extends Controller
                 'employment_id' => $a->employment_id,
                 'employment' => $a->employment?->jabatan,
                 'referensi_employee_id' => $a->referensi_employee_id,
-                'referensi' => $a->referensi?->nama_karyawan,
+                'referensi_luar' => $a->referensi_luar,
+                'referensi' => $a->referensi_luar ?: $a->referensi?->nama_karyawan,
                 'catatan' => $a->catatan,
                 'status' => $a->status,
                 'alasan_tolak' => $a->alasan_tolak,
@@ -75,6 +76,7 @@ class LamaranKerjaController extends Controller
             'unit' => Branch::whereKey($branchId)->value('unit'),
             'jabatan' => Employment::orderBy('jabatan')->get(['id', 'jabatan']),
             'referensi' => Employee::where('branch_id', $branchId)->whereNull('date_resign')->orderBy('nama_karyawan')->get(['id', 'nama_karyawan']),
+            'referensi_luar' => JobApplication::REFERENSI_LUAR,
             'jenis_dokumen' => JobApplication::DOC_TYPES,
             'video' => \App\Helpers\VideoTutorial::url('lamaran')['lamaran'] ?? null,
         ]);
@@ -159,15 +161,13 @@ class LamaranKerjaController extends Controller
 
         $val = $request->validate([
             'type' => ['required', Rule::in(JobApplication::DOC_TYPES)],
-            'file' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:5120'],
+            'file' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:10240'],
         ], [
             'file.mimes' => 'File harus berupa gambar (JPEG, PNG) atau PDF.',
-            'file.max' => 'Ukuran file maksimal 5MB.',
+            'file.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
-        if ($lamaran->documents()->where('type', $val['type'])->exists()) {
-            throw ValidationException::withMessages(['type' => 'Dokumen ini sudah diunggah dan tidak bisa diganti.']);
-        }
+        $lama = $lamaran->documents()->where('type', $val['type'])->first();
 
         try {
             $path = $request->file('file')->store("documents/applicants/{$lamaran->id}", self::DISK);
@@ -179,7 +179,18 @@ class LamaranKerjaController extends Controller
             return back()->withErrors('Gagal menyimpan file ke server penyimpanan.');
         }
 
-        $lamaran->documents()->create(['type' => $val['type'], 'file_path' => $path]);
+        if ($lama) {
+            if ($lama->file_path) {
+                try {
+                    Storage::disk(self::DISK)->delete($lama->file_path);
+                } catch (\Throwable $e) {
+                    Log::warning('File dokumen lama gagal dihapus saat ditimpa: ' . $e->getMessage());
+                }
+            }
+            $lama->update(['file_path' => $path]);
+        } else {
+            $lamaran->documents()->create(['type' => $val['type'], 'file_path' => $path]);
+        }
 
         return back()->with('message', 'Dokumen diunggah.');
     }
@@ -200,21 +211,55 @@ class LamaranKerjaController extends Controller
         ]);
     }
 
+    /** Hapus satu dokumen lamaran (hanya jika masih menunggu keputusan). */
+    public function hapusDokumen(JobApplication $lamaran, JobApplicationDocument $dokumen)
+    {
+        $this->pastikanMilikCabang($lamaran);
+        $this->pastikanMenunggu($lamaran);
+        abort_unless((int) $dokumen->application_id === (int) $lamaran->id, 404);
+
+        $filePath = $dokumen->file_path;
+        $dokumen->delete();
+
+        if ($filePath) {
+            try {
+                Storage::disk(self::DISK)->delete($filePath);
+            } catch (\Throwable $e) {
+                Log::warning('File dokumen lamaran gagal dihapus: ' . $e->getMessage(), ['path' => $filePath]);
+            }
+        }
+
+        return back()->with('message', 'Dokumen berhasil dihapus.');
+    }
+
     private function validasi(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'nama' => ['required', 'string', 'max:100'],
             'nik' => ['required', 'digits_between:15,16'],
             'no_hp' => ['nullable', 'string', 'max:20'],
             'alamat' => ['required', 'string', 'max:255'],
             'tanggal_lamaran' => ['required', 'date', 'before_or_equal:today'],
             'employment_id' => ['nullable', 'exists:employments,id'],
-            'referensi_employee_id' => ['nullable', 'exists:employees,id'],
+            'referensi_employee_id' => ['nullable'],
+            'referensi_luar' => ['nullable', Rule::in(JobApplication::REFERENSI_LUAR)],
             'catatan' => ['nullable', 'string', 'max:1000'],
         ], [
             'nik.digits_between' => 'NIK 15-16 digit angka.',
             'tanggal_lamaran.before_or_equal' => 'Tanggal lamaran tidak boleh di masa depan.',
         ]);
+
+        if (!empty($data['referensi_luar'])) {
+            $data['referensi_employee_id'] = null;
+        } elseif (!empty($data['referensi_employee_id'])) {
+            $request->validate(['referensi_employee_id' => ['exists:employees,id']]);
+            $data['referensi_luar'] = null;
+        } else {
+            $data['referensi_employee_id'] = null;
+            $data['referensi_luar'] = null;
+        }
+
+        return $data;
     }
 
     private function pastikanBoleh(): void
