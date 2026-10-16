@@ -1,6 +1,6 @@
 name: deploy
 
-# Staging   : push tag v*      → build image lalu deploy ke mv2.ubmidigital.com
+# Staging   : push tag v*      → build image lalu deploy ke stagingmantriapps.usberdigital.com
 #             git tag v1.4.0 && git push origin v1.4.0
 # Production: push tag prod-v* → pakai image yang SUDAH dites di staging, tanpa build ulang
 #             git tag prod-v1.4.0 && git push origin prod-v1.4.0   (deploy image v1.4.0)

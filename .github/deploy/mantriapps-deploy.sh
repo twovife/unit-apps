@@ -15,7 +15,7 @@ read -r TUJUAN TAG <<< "${SSH_ORIGINAL_COMMAND:-$*}"
 IMAGE=ghcr.io/twovife/mantriapps
 
 case "${TUJUAN:-}" in
-    staging)    APP_DIR=/srv/apps/staging/mantriappsv2 ;;   # mv2.ubmidigital.com
+    staging)    APP_DIR=/srv/apps/staging/mantriappsv2 ;;   # stagingmantriapps.usberdigital.com
     production) APP_DIR=/srv/apps/production/muv ;;          # muv.ubmidigital.com
     *) echo "Tujuan tidak valid: '${TUJUAN:-}' (staging / production)" >&2; exit 1 ;;
 esac
