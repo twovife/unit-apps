@@ -14,7 +14,43 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 ---
 
+# 2026-10-17
+
+## Registri Kendaraan (/assets): Pengeluaran Seluruh Kendaraan Kantor Aktif Tanpa Paginasi, Opsi Status "Dijual", & Peningkatan Notifikasi/Feedback Error Form Edit
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/VehicleAssetController.php` | `index()`, `validateAsset()`, `guardRegistrationDates()`, `canEditVehicleRegistration()`, `assertUniquePlate()` | `assets.index` (`GET /assets`), `assets.store` (`POST /assets`), `assets.update` (`PUT /assets/{asset}`), `assets.her.confirm` (`POST /assets/her/{vehicle}/confirm`) | `inv_assets` (`BACA` / `TULIS`), `inv_vehicles` (`BACA`), `inv_locations` (`BACA`), `branches` (`BACA`) | 1. Mengubah query aset kendaraan dari `paginate(25)` menjadi `get()` sehingga semua data kendaraan di kantor aktif langsung keluar sekaligus tanpa batasan paginasi.<br>2. Menambahkan `dijual` ke validasi status filter dan form.<br>3. Menambahkan kamus `$messages` bahasa Indonesia di `validateAsset()`.<br>4. Memisahkan error pada `guardRegistrationDates()` per kolom yang diubah: jika plat nomor diubah oleh kasir, error diarahkan langsung ke key `plat_nomor` dengan pesan: *"Plat nomor terkunci untuk Kasir. Perubahan nomor plat hanya dapat dilakukan saat konfirmasi pembayaran Pajak 5 Tahunan (Ganti Plat) di menu Pajak Kendaraan, atau melalui hak akses Superuser."*<br>5. Pada `assertUniquePlate()`, jika nomor plat duplikat, pesan error kini merinci aset dan kantor penempatan: *"Nomor plat '{plat}' sudah terdaftar pada aset {nama} ({kode}) di kantor {unit}."* |
+| `resources/js/Pages/Assets/Vehicles.jsx` | `Vehicles()` | `assets.index` (`GET /assets`) | — | Menampilkan seluruh data kendaraan kantor aktif tanpa paginasi serta menambahkan badge status `dijual`. |
+| `resources/js/Components/Assets/VehicleAssetForm.jsx` | `VehicleAssetForm()`, `Field()`, `submit()` | `assets.store`, `assets.update` | — | 1. Menambahkan catatan status terkunci di bawah input Plat Nomor, STNK, dan Pajak khusus untuk role Kasir.<br>2. Menambahkan banner alert, highlight border merah, asterisk required, dan toast notifikasi detail saat error validasi. |
+| `resources/js/Pages/Assets/VehicleTaxes.jsx` | `submitPayment()` | `assets.her.confirm` | — | Menambahkan toast notifikasi error/sukses pada form konfirmasi pembayaran pajak jika terjadi error validasi (misal plat nomor baru duplikat). |
+
+---
+
+## Lamaran Kerja (/administrasi/lamaran): Penyesuaian Label "Track Record dan Catatan" & Penambahan Petunjuk Format
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Pages/Administrasi/Lamaran/Index.jsx` | `FormLamaran()`, `Detail()` | `administrasi.lamaran.index` (`GET /administrasi/lamaran`), `administrasi.lamaran.store`, `administrasi.lamaran.update` | — | 1. Mengubah label form Catatan menjadi **Track Record dan Catatan** dengan textarea 4 baris dan placeholder contoh format.<br>2. Menambahkan kotak panduan note di bawah textarea dengan format Track record & catatan lengkap (Koperasi bangun jaya, Kasir Alfamart, dll.) serta tombol praktis "Gunakan format contoh" saat field kosong.<br>3. Menyesuaikan label di modal Detail menjadi **Track Record & Catatan** dengan style `whitespace-pre-wrap` agar catatan baris per baris tampil teratur dan rapi. |
+
+*Sengaja tidak diubah*:
+- Kolom tabel `catatan` pada tabel `job_applications` dan method controller tetap sama sehingga tidak memerlukan perubahan migrasi skema database bersama `ubmi_db`.
+
+---
+
 # 2026-10-16
+
+## Registri Kendaraan (/assets): Penambahan Fitur Edit Pemakai / PIC Kendaraan
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `resources/js/Components/Assets/VehicleAssetForm.jsx` | `VehicleAssetForm()`, `useEffect()`, render form | `assets.index` (`GET /assets`), `assets.update` (`PUT /assets/{asset}`) | — | 1. Mengisi state awal field `pengguna` saat modal edit dibuka dari data penempatan aktif aset (`asset?.current_location?.pengguna ?? asset?.locations?.[0]?.pengguna ?? ''`).<br>2. Menampilkan field select **Pemakai / PIC** di form edit menggunakan selectlist `PIC_OPTIONS` yang sama persis dengan form tambah baru (`Pimpinan`, `Wakil Pimpinan`, `Kepala Mantri`, `Kepala Mantri 1-3`, `Mantri 1-10`, `Kasir`, `Pusat`, `Pengawas`), plus opsi custom jika data lama memiliki nilai di luar daftar standar. |
+| `app/Http/Controllers/VehicleAssetController.php` | `validateAsset()`, `update()` | `assets.update` (`PUT /assets/{asset}`) | `inv_locations` (`BACA`, `TULIS`), `inv_assets` (`BACA`, `TULIS`), `inv_vehicles` (`BACA`, `TULIS`) | 1. Memvalidasi field `pengguna` (`required|string|max:255`) pada method `update()`.<br>2. Memperbarui kolom `pengguna` pada record lokasi aktif (`currentLocation`) dari aset kendaraan tersebut di tabel `inv_locations`. Jika belum ada, otomatis membuat record penempatan awal. |
+
+*Sengaja tidak diubah*:
+- Form mutasi kendaraan (`mutate`) di `VehicleAssetDetail.jsx` sengaja dibiarkan terpisah untuk alur mutasi antar kantor cabang atau pencatatan riwayat perpindahan formal. Perubahan di form `VehicleAssetForm` ditujukan khusus untuk koreksi/update pemakai kendaraan aktif pada kantor berjalan.
+
+---
 
 ## Hak Hapus Role Kasir Sebelum Dikunci Staf Kontrol (Tabungan 1 Juta, BOP, SKSW, Goro Umrah) & Menu Sidebar Tabungan Goro Umrah
 

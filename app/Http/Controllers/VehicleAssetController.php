@@ -23,7 +23,7 @@ class VehicleAssetController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', 'in:aktif,rusak,hilang,dihapus'],
+            'status' => ['nullable', 'in:aktif,rusak,hilang,dijual,dihapus'],
         ]);
         $branchId = $this->activeBranchId();
         $branch = Branch::query()->findOrFail($branchId, ['id', 'unit', 'wilayah']);
@@ -58,11 +58,7 @@ class VehicleAssetController extends Controller
                 });
             })
             ->orderBy('name')
-            ->paginate(25)
-            ->appends(array_filter([
-                'search' => $validated['search'] ?? null,
-                'status' => $validated['status'] ?? null,
-            ], fn ($value) => $value !== null && $value !== ''));
+            ->get();
 
         return Inertia::render('Assets/Vehicles', [
             'branch' => $branch,
@@ -242,6 +238,22 @@ class VehicleAssetController extends Controller
                 'description' => $validated['description'] ?? null,
             ]);
             $this->saveVehicleDetails($lockedAsset, $validated);
+
+            $currentLocation = $lockedAsset->currentLocation()->lockForUpdate()->first();
+            if ($currentLocation) {
+                $currentLocation->update([
+                    'pengguna' => $validated['pengguna'],
+                ]);
+            } else {
+                InvLocation::query()->create([
+                    'asset_id' => $lockedAsset->id,
+                    'branch_id' => $branchId,
+                    'before_branch_id' => null,
+                    'pengguna' => $validated['pengguna'],
+                    'assigned_date' => $validated['purchase_date'],
+                    'notes' => 'Penempatan Awal',
+                ]);
+            }
         });
 
         return back()->with('success', 'Data kendaraan berhasil diperbarui.');
@@ -542,19 +554,37 @@ class VehicleAssetController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'purchase_date' => ['required', 'date'],
             'purchase_cost' => ['required', 'integer', 'min:0'],
-            'status' => ['required', 'in:aktif,rusak,hilang,dihapus'],
+            'status' => ['required', 'in:aktif,rusak,hilang,dijual,dihapus'],
             'description' => ['nullable', 'string', 'max:5000'],
             'plat_nomor' => ['required', 'string', 'max:50'],
             'nama_stnk' => ['required', 'string', 'max:255'],
             'tanggal_stnk' => ['required', 'date'],
             'tanggal_pajak_tahunan' => ['required', 'date'],
             'bpkb_location' => ['required', 'in:pusat,cabang,leasing,lainnya'],
+            'pengguna' => ['required', 'string', 'max:255'],
         ];
         if ($creating) {
-            $rules['pengguna'] = ['required', 'string', 'max:255'];
             $rules['notes'] = ['nullable', 'string', 'max:255'];
         }
-        $validated = $request->validate($rules);
+
+        $messages = [
+            'name.required' => 'Nama kendaraan wajib diisi.',
+            'purchase_date.required' => 'Tanggal perolehan/pembelian wajib diisi.',
+            'purchase_cost.required' => 'Harga perolehan wajib diisi.',
+            'purchase_cost.integer' => 'Harga perolehan harus berupa angka.',
+            'purchase_cost.min' => 'Harga perolehan minimal 0.',
+            'status.required' => 'Status kendaraan wajib dipilih.',
+            'status.in' => 'Status kendaraan tidak valid.',
+            'plat_nomor.required' => 'Plat nomor wajib diisi.',
+            'nama_stnk.required' => 'Nama di STNK wajib diisi.',
+            'tanggal_stnk.required' => 'Masa berlaku STNK (5 tahunan) wajib diisi.',
+            'tanggal_pajak_tahunan.required' => 'Jatuh tempo pajak tahunan wajib diisi.',
+            'bpkb_location.required' => 'Posisi fisik BPKB wajib dipilih.',
+            'bpkb_location.in' => 'Posisi fisik BPKB tidak valid.',
+            'pengguna.required' => 'Pemakai / PIC kendaraan wajib dipilih.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
         $validated['plat_nomor'] = $this->normalizePlate($validated['plat_nomor']);
 
         return $validated;
@@ -582,33 +612,62 @@ class VehicleAssetController extends Controller
             return;
         }
 
-        $registrationChanged = $this->normalizePlate($vehicle->plat_nomor) !== $validated['plat_nomor']
-            || ! $vehicle->tanggal_stnk->isSameDay(Carbon::parse($validated['tanggal_stnk']))
-            || ! $vehicle->tanggal_pajak_tahunan->isSameDay(Carbon::parse($validated['tanggal_pajak_tahunan']));
-        if (! $registrationChanged || $this->canEditVehicleRegistration($request)) {
+        $currentPlate = $this->normalizePlate($vehicle->plat_nomor);
+        $newPlate = $this->normalizePlate($validated['plat_nomor']);
+        $plateChanged = $currentPlate !== $newPlate;
+        $stnkChanged = ! $vehicle->tanggal_stnk->isSameDay(Carbon::parse($validated['tanggal_stnk']));
+        $pajakChanged = ! $vehicle->tanggal_pajak_tahunan->isSameDay(Carbon::parse($validated['tanggal_pajak_tahunan']));
+
+        if (! ($plateChanged || $stnkChanged || $pajakChanged) || $this->canEditVehicleRegistration($request)) {
             return;
         }
 
-        abort(403, 'Plat nomor, tanggal STNK, dan jatuh tempo pajak hanya dapat berubah melalui konfirmasi pajak.');
+        $errors = [];
+        if ($plateChanged) {
+            $errors['plat_nomor'] = 'Plat nomor terkunci untuk Kasir. Perubahan nomor plat hanya dapat dilakukan saat konfirmasi pembayaran Pajak 5 Tahunan (Ganti Plat) di menu Pajak Kendaraan, atau melalui hak akses Superuser.';
+        }
+        if ($stnkChanged) {
+            $errors['tanggal_stnk'] = 'Masa berlaku STNK terkunci untuk Kasir. Pembaharuan STNK dilakukan otomatis saat konfirmasi Pajak 5 Tahunan atau melalui hak akses Superuser.';
+        }
+        if ($pajakChanged) {
+            $errors['tanggal_pajak_tahunan'] = 'Jatuh tempo pajak tahunan terkunci untuk Kasir. Pembaharuan tanggal pajak dilakukan otomatis melalui konfirmasi Pajak Kendaraan atau melalui hak akses Superuser.';
+        }
+
+        throw ValidationException::withMessages($errors);
     }
 
     private function canEditVehicleRegistration(Request $request): bool
     {
-        return $request->user()?->getAllPermissions()->contains('name', 'edit-vehicle-stnk-data') ?? false;
+        $user = $request->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasRole('superuser')
+            || $user->getAllPermissions()->contains('name', 'edit-vehicle-stnk-data');
     }
 
     private function assertUniquePlate(string $plate, ?int $assetId = null, ?int $vehicleId = null): void
     {
-        $query = InvVehicle::query()->whereRaw("REPLACE(plat_nomor, ' ', '') = ?", [str_replace(' ', '', $plate)]);
+        $query = InvVehicle::query()
+            ->with(['asset.currentLocation.branch'])
+            ->whereRaw("REPLACE(plat_nomor, ' ', '') = ?", [str_replace(' ', '', $plate)]);
+
         if ($assetId !== null) {
             $query->where('asset_id', '!=', $assetId);
         }
         if ($vehicleId !== null) {
             $query->where('id', '!=', $vehicleId);
         }
-        if ($query->exists()) {
+
+        $existing = $query->first();
+        if ($existing) {
+            $namaAset = $existing->asset?->name ?? 'Kendaraan';
+            $kodeAset = $existing->asset?->asset_code ? " ({$existing->asset->asset_code})" : '';
+            $unitCabang = $existing->asset?->currentLocation?->branch?->unit ?? 'kantor lain';
+
             throw ValidationException::withMessages([
-                'plat_nomor' => 'Nomor plat kendaraan ini sudah terdaftar.',
+                'plat_nomor' => "Nomor plat '{$plate}' sudah terdaftar pada aset {$namaAset}{$kodeAset} di kantor {$unitCabang}.",
             ]);
         }
     }

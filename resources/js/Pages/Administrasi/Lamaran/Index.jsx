@@ -288,10 +288,46 @@ const FormLamaran = ({ buka, edit, onClosed, jabatan, referensi, referensi_luar 
               <InputError message={errors.referensi_employee_id ?? errors.referensi_luar} />
             </div>
           </div>
-          <div className="grid gap-1">
-            <Label htmlFor="catatan">Catatan</Label>
-            <textarea id="catatan" name="catatan" rows={2} className="px-3 py-2 text-sm border rounded-md border-input" value={data.catatan} onChange={ubah} />
+          <div className="grid gap-1.5">
+            <Label htmlFor="catatan">Track Record dan Catatan</Label>
+            <textarea
+              id="catatan"
+              name="catatan"
+              rows={4}
+              placeholder="* Koperasi bangun jaya&#10;* Kasir Alfamart&#10;* Sebelumnya tidak pernah masuk di UB&#10;* Interview pak Jono pimpinan&#10;* Recommend dari pimpinan diterima&#10;* Perantara pak dilan mantri 1&#10;* Calon mantri unit Krian 10 klp 2"
+              className="px-3 py-2 text-sm border rounded-md border-input focus:outline-none focus:ring-2 focus:ring-slate-900"
+              value={data.catatan}
+              onChange={ubah}
+            />
             <InputError message={errors.catatan} />
+            <div className="p-3 mt-0.5 text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-semibold text-slate-900">Format Track record &amp; catatan</span>
+                {!data.catatan && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setData(
+                        'catatan',
+                        `* Koperasi bangun jaya\n* Kasir Alfamart\n* Sebelumnya tidak pernah masuk di UB\n* Interview pak Jono pimpinan\n* Recommend dari pimpinan diterima\n* Perantara pak dilan mantri 1\n* Calon mantri unit Krian 10 klp 2`
+                      )
+                    }
+                    className="text-[11px] font-medium text-sky-600 hover:text-sky-800 hover:underline"
+                  >
+                    Gunakan format contoh
+                  </button>
+                )}
+              </div>
+              <ul className="space-y-0.5 text-slate-600 font-mono text-[11px] leading-relaxed">
+                <li>* Koperasi bangun jaya</li>
+                <li>* Kasir Alfamart</li>
+                <li>* Sebelumnya tidak pernah masuk di UB</li>
+                <li>* Interview pak Jono pimpinan</li>
+                <li>* Recommend dari pimpinan diterima</li>
+                <li>* Perantara pak dilan mantri 1</li>
+                <li>* Calon mantri unit Krian 10 klp 2</li>
+              </ul>
+            </div>
           </div>
         </form>
         <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
@@ -444,13 +480,13 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
                   ['Alamat', l.alamat],
                   ['Jabatan', l.employment],
                   ['Referensi', l.referensi],
-                  ['Catatan', l.catatan],
+                  ['Track Record & Catatan', l.catatan],
                   ['Diinput oleh', l.diinput_oleh],
                   ...(l.status === 'ditolak' ? [['Alasan ditolak', l.alasan_tolak]] : []),
                 ].map(([k, v]) => (
-                  <div key={k} className="grid grid-cols-[7rem_1fr] gap-2 py-1.5">
+                  <div key={k} className="grid grid-cols-[10.5rem_1fr] gap-2 py-1.5">
                     <span className="text-slate-500">{k}</span>
-                    <span className="break-words text-slate-900">{v || '–'}</span>
+                    <span className="break-words whitespace-pre-wrap text-slate-900">{v || '–'}</span>
                   </div>
                 ))}
               </div>

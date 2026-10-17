@@ -17,6 +17,7 @@ const statusLabels = {
   aktif: 'Aktif',
   rusak: 'Rusak',
   hilang: 'Hilang',
+  dijual: 'Dijual',
   dihapus: 'Dihapus',
 };
 
@@ -24,6 +25,7 @@ const statusStyles = {
   aktif: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   rusak: 'border-amber-200 bg-amber-50 text-amber-700',
   hilang: 'border-rose-200 bg-rose-50 text-rose-700',
+  dijual: 'border-blue-200 bg-blue-50 text-blue-700',
   dihapus: 'border-slate-200 bg-slate-100 text-slate-600',
 };
 
@@ -57,6 +59,7 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
   const [detail, setDetail] = useState(null);
   const [editAsset, setEditAsset] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
+  const assetList = Array.isArray(assets) ? assets : (assets?.data ?? []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -162,9 +165,9 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assets.data.length ? assets.data.map((asset, index) => (
+                  {assetList.length ? assetList.map((asset, index) => (
                     <TableRow key={asset.id}>
-                      <TableCell>{assets.from + index}</TableCell>
+                      <TableCell>{index + 1}</TableCell>
                       <TableCell className="whitespace-nowrap font-mono text-xs">{asset.asset_code}</TableCell>
                       <TableCell className="whitespace-nowrap font-semibold">
                         {asset.vehicle?.plat_nomor ? (
@@ -209,26 +212,10 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
 
             <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <span>
-                {assets.total > 0
-                  ? `Menampilkan ${assets.from}–${assets.to} dari ${assets.total} kendaraan`
+                {assetList.length > 0
+                  ? `Menampilkan seluruh ${assetList.length} kendaraan di kantor aktif`
                   : 'Tidak ada data untuk ditampilkan'}
               </span>
-              {assets.last_page > 1 && (
-                <div className="flex flex-wrap gap-1">
-                  {assets.links.map((link, index) => (
-                    <Button
-                      key={`${index}-${link.label}`}
-                      type="button"
-                      size="sm"
-                      variant={link.active ? 'default' : 'outline'}
-                      disabled={!link.url}
-                      onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                    >
-                      {link.label.replace(/&laquo;/g, '«').replace(/&raquo;/g, '»')}
-                    </Button>
-                  ))}
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

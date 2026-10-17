@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, CalendarDays, CheckCircle2, CircleAlert, MapPin, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import VehicleAssetDetail from '@/Components/Assets/VehicleAssetDetail';
 import { Badge } from '@/shadcn/ui/badge';
@@ -63,8 +64,17 @@ export default function VehicleTaxes({ branch, vehicles, branches, period: initi
     form.post(route('assets.her.confirm', payment.id), {
       preserveScroll: true,
       onSuccess: () => {
+        toast.success('Pembayaran pajak kendaraan berhasil dikonfirmasi.');
         setPayment(null);
         form.reset();
+      },
+      onError: (errors) => {
+        const list = Object.values(errors);
+        if (list.length > 0) {
+          toast.error(list[0], {
+            description: list.length > 1 ? `Terdapat ${list.length} data yang perlu diperbaiki.` : undefined,
+          });
+        }
       },
     });
   };
