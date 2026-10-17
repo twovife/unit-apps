@@ -5,7 +5,7 @@ import React from 'react';
 
 const Index = ({ datas, ...props }) => {
   return (
-    <Authenticated header={<Head>Buku Transaksi</Head>}>
+    <Authenticated header={<Head>Rencana Drop</Head>}>
       <Content
         urlLink={route('kasir.rekap.rencana_drop')}
         localState={'kasir_rekap_rencana_drop'}

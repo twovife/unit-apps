@@ -24,12 +24,12 @@ class MoveAreaSeeder extends Seeder
 
       // AMBIL LOAN IDS SEKALI, AMAN
       $loanIdsArea1 = TransactionLoan::where('transaction_loan_officer_grouping_id', $area1)
-        ->where('hari', 'rabu')
+        // ->where('hari', 'jumat')
         ->pluck('id')
         ->toArray();
 
       $loanIdsArea2 = TransactionLoan::where('transaction_loan_officer_grouping_id', $area2)
-        ->where('hari', 'rabu')
+        // ->where('hari', 'jumat')
         ->pluck('id')
         ->toArray();
 
@@ -42,8 +42,6 @@ class MoveAreaSeeder extends Seeder
       $instIdsArea2 = TransactionLoanInstalment::whereIn('transaction_loan_id', $loanIdsArea2)
         ->pluck('id')
         ->toArray();
-
-
 
       Log::channel('swaplog')->info("BEFORE", [
         'loans_area1' => $loanIdsArea1,

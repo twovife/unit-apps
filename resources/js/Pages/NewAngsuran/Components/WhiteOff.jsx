@@ -3,17 +3,38 @@ import { useForm } from '@inertiajs/react';
 import React from 'react';
 import dayjs from 'dayjs';
 import { Input } from '@/shadcn/ui/input';
+import TanggalKerja from '@/Components/shadcn/TanggalKerja';
+import useHariLibur from '@/Hooks/useHariLibur';
 import { Label } from '@/shadcn/ui/label';
 import InputError from '@/Components/InputError';
 import CurrencyInput from 'react-currency-input-field';
 import { Button } from '@/shadcn/ui/button';
 
-const WhiteOff = ({ triggeredId, nominalWhiteOff }) => {
+const HARI_KE_ANGKA = {
+  minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6,
+};
+
+const WhiteOff = ({ triggeredId, nominalWhiteOff, hari = null }) => {
+  const { mundurKeHariKerja, siap: kalenderSiap } = useHariLibur();
+  const hariAngka = hari ? (HARI_KE_ANGKA[String(hari).toLowerCase()] ?? null) : null;
+
   const { data, setData, post, processing, errors } = useForm({
     id: triggeredId || '',
     transaction_date: dayjs().format('YYYY-MM-DD'),
     nominal: nominalWhiteOff || 0,
   });
+
+  // Bawaannya hari ini, yang belum tentu hari tagih pinjaman ini dan belum
+  // tentu hari kerja. Server menolak keduanya, jadi bawaannya dibetulkan
+  // begitu kalendernya siap: mundur ke hari tagih terakhir yang bekerja.
+  React.useEffect(() => {
+    if (hariAngka === null) return;
+
+    let calon = dayjs();
+    while (calon.day() !== hariAngka) calon = calon.subtract(1, 'day');
+
+    setData('transaction_date', mundurKeHariKerja(calon.format('YYYY-MM-DD')));
+  }, [hariAngka, kalenderSiap]);
 
   const onHandleCurencyChange = (value) => {
     setData('nominal', value);
@@ -32,13 +53,13 @@ const WhiteOff = ({ triggeredId, nominalWhiteOff }) => {
         <Loading show={processing} />
         <div className="mb-3">
           <Label htmlFor="transaction_date">Tanggal Pemutihan</Label>
-          <Input
-            type="date"
-            id="transaction_date"
+          <TanggalKerja
+            name="transaction_date"
+            hariTagih={hariAngka}
             value={data.transaction_date}
             onChange={(e) => setData('transaction_date', e.target.value)}
           />
-          {errors.field1 && <InputError>{errors.field1}</InputError>}
+          <InputError message={errors.transaction_date} className="mt-1" />
         </div>
         <div className="mb-3">
           <Label htmlFor="field2">Nominal</Label>

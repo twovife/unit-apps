@@ -1,48 +1,39 @@
-import { useEffect, useState } from 'react';
-import ApplicationLogo from '@/Components/ApplicationLogo';
-import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import { Link, usePage } from '@inertiajs/react';
-import { Transition } from '@headlessui/react';
+import { usePage } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Navbar from '@/Components/Navbar';
 import SweetAlert from '@/Components/SweetAlert';
 import Loading from '@/Components/Loading';
+import { SidebarProvider, SidebarInset } from '@/shadcn/ui/sidebar';
+
+// Tiap halaman Inertia memasang layout ini ulang, jadi SidebarProvider mulai
+// dari awal. Posisi terakhir (dicatat shadcn di cookie sidebar:state) dibaca
+// lagi supaya sidebar yang dilipat tetap terlipat sesudah pindah halaman.
+const sidebarTerbuka = () => !/(?:^|;\s*)sidebar:state=false/.test(document.cookie);
 
 export default function Authenticated({ header, children, loading = false }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-  // const [showingNavigationDropdown, setShowingNavigationDropdown] =
-  //     useState(false);
   const { errors, flash, auth } = usePage().props;
 
   return (
-    <div className="relative">
+    <SidebarProvider defaultOpen={sidebarTerbuka()}>
       {Object.keys(errors).length > 0 && (
         <SweetAlert type="error" message={errors[0]} keys={flash} />
       )}
-      {flash.message && (
-        <SweetAlert type="success" message={flash.message} keys={flash} />
+      {flash.peringatan ? (
+        <SweetAlert type="warning" message={flash.peringatan} keys={flash} />
+      ) : (
+        flash.message && <SweetAlert type="success" message={flash.message} keys={flash} />
       )}
       <Loading show={loading} />
-      <Navbar
-        isOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-        auth={auth}
-        header={header}
-      />
-      <Sidebar isOpen={isSidebarOpen} />
-      <div
-        className={`px-4 py-6 transition-all ease-in-out  duration-300 h-auto bg-white min-h-[calc(100vh-4rem)]  ${
-          isSidebarOpen ? 'ml-64' : 'ml-0'
-        }`}
-      >
-        <main>{children}</main>
-      </div>
-    </div>
+
+      <Sidebar />
+      {/* min-w-0: tanpa ini isi yang lebar (tabel) melebarkan seluruh halaman,
+          jadi gulir samping terjadi di halaman, bukan di dalam tabelnya. */}
+      <SidebarInset className="min-w-0">
+        <Navbar auth={auth} header={header} />
+        <main className="flex-1 px-4 py-6 md:px-6 bg-white min-h-[calc(100vh-3.5rem)]">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

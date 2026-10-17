@@ -2,17 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\AppHelper;
-use App\Models\Loan;
-use App\Models\TransactionLoan;
-use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionSirculation;
 use App\Models\User;
-use App\Models\VIsBalanceLoanWithDailyReport;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -24,7 +20,7 @@ class AdminController extends Controller
   {
     $role = Role::with('permissions', 'users')->get();
     $user = User::with('rolelist')->get();
-    $maintenen_workers = User::permission('maintenance worker')->with('branch', 'employee')->get();
+    $maintenen_workers = User::permission('can-edit')->with('branch', 'employee')->get();
     // dd($maintenen_workers);
 
     $permission = Permission::all();
@@ -35,46 +31,6 @@ class AdminController extends Controller
       'maintenen_workers' => $maintenen_workers
     ]);
   }
-  public function monitoring_staff()
-  {
-    $transaction_loan_officer_grouping_id = TransactionLoanOfficerGrouping::whereHas('branch', function ($item) {
-      $item->where('wilayah', 1);
-    })->pluck('id');
-    $angsuran = TransactionLoan::with('branch', 'loan_officer_grouping')->whereIn('transaction_loan_officer_grouping_id', $transaction_loan_officer_grouping_id)
-      ->select('id', 'transaction_loan_officer_grouping_id', 'drop_date', 'hari')
-      ->get();
-
-    $mapingAngsuran = $angsuran->groupBy('branch.id')->map(function ($items) {
-      return [
-        'branch' => $items->first()->branch->unit,
-        'days' => $items->groupBy('hari')->map(function ($dailyItems) {
-          return [
-            'hari' => AppHelper::getNumbDays($dailyItems->first()->hari),
-            'day' => $dailyItems->first()->hari,
-            'data' =>   $dailyItems->groupBy('transaction_loan_officer_grouping_id')->map(function ($kelompokItems) {
-              return [
-                'kelompok' => $kelompokItems->first()->loan_officer_grouping->kelompok,
-                'data' => $kelompokItems->groupBy(function ($item) {
-                  return Carbon::parse($item->drop_date)->format('Y-m');
-                })->map(function ($monthlyItems) {
-                  return [
-                    'month' => Carbon::parse($monthlyItems->first()->drop_date)->format('Y-m'),
-                    'count' => $monthlyItems->count('id')
-                  ];
-                })->values()
-              ];
-            })->values()
-          ];
-        })->values()->sortBy('hari')->values()
-      ];
-    })->sortBy('branch')->values();
-    // dd($mapingAngsuran->first());
-    return Inertia::render('AdminPanel/MonitoringStaff', [
-      'datas' => $mapingAngsuran,
-
-    ]);
-  }
-
   public function post_permission(Request $request)
   {
     $request->validate([
@@ -148,10 +104,28 @@ class AdminController extends Controller
       ]);
 
       DB::commit();
+
+      // Pendaftaran OTOMATIS ke alur agregasi baru sesudah tutup buku dicabut
+      // 2026-10-04: migrasi dilakukan manual per kantor dari layar Kesiapan
+      // Migrasi sesudah bucket dicek.
     } catch (Exception $e) {
       DB::rollBack();
-      ddd($e);
-      return redirect()->back()->withErrors('Sirkulasi Awal Error');
+
+      // `ddd($e)` dihapus 2026-08-12. Dump-and-die membuat baris `withErrors`
+      // di bawah ini TIDAK PERNAH tercapai: user yang gagal menutup buku cuma
+      // melihat layar dump (atau respons rusak kalau APP_DEBUG=false) dan tidak
+      // pernah tahu sebabnya. Alur ini jadi gerbang migrasi ke agregasi baru —
+      // kegagalan diam-diam di sini berarti kantornya tidak punya baris
+      // sirkulasi, dan tidak ada yang tahu kenapa.
+      Log::error('sirkulasiAwal gagal: ' . $e->getMessage(), [
+        'grouping_id' => $request->transaction_loan_officer_grouping_id,
+        'hari' => $request->hari,
+        'month' => $request->month,
+        'user_id' => auth()->id(),
+        'line' => $e->getLine(),
+      ]);
+
+      return redirect()->back()->withErrors('Sirkulasi Awal gagal: ' . $e->getMessage());
     }
     return redirect()->back()->with('message', 'Sirkulasi Awal Successfully');
   }
@@ -162,14 +136,14 @@ class AdminController extends Controller
     if ($request->type == 1) {
       try {
         $user = User::find($userid);
-        $user->givePermissionTo('maintenance worker');
+        $user->givePermissionTo('can-edit');
       } catch (Exception $e) {
         return redirect()->back()->withErrors('User Assigned Error');
       }
     } else {
       try {
         $user = User::find($userid);
-        $user->revokePermissionTo('maintenance worker');
+        $user->revokePermissionTo('can-edit');
       } catch (Exception $e) {
         return redirect()->back()->withErrors('User Assigned Error');
       }
@@ -177,13 +151,4 @@ class AdminController extends Controller
     return redirect()->back()->with('message', 'User Assigned Successfully');
   }
 
-  public function loan_balancing(Request $request)
-  {
-    $transactions = TransactionLoan::select('id', 'drop_date', 'hari')->get();
-
-    $inBalanceDay = $transactions->filter(function ($transaction) {
-      return AppHelper::dateName($transaction->drop_date) !== $transaction->hari;
-    })->count();
-    dd($inBalanceDay);
-  }
 }

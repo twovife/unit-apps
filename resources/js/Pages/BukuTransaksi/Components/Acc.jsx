@@ -1,12 +1,13 @@
 import Loading from '@/Components/Loading';
-import NoEditOverlay from '@/Components/NoEditOverlay';
-import useFrontEndPermission from '@/Hooks/useFrontEndPermission';
-import { Badge } from '@/shadcn/ui/badge';
-import { Button } from '@/shadcn/ui/button';
+import AppBadge from '@/Components/shadcn/AppBadge';
+import AppButton from '@/Components/shadcn/AppButton';
+import { varianStatus } from '@/Components/shadcn/statusVariants';
+import Tundaan from './Tundaan';
 import { Label } from '@/shadcn/ui/label';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import CurrencyInput from 'react-currency-input-field';
+import dayjs from 'dayjs';
 
 const Acc = ({ id, acc, onClosed, triggeredData }) => {
   const { data, setData, put, errors, processing, reset, transform } = useForm({
@@ -15,7 +16,22 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
     drop: '',
   });
 
-  const { isMantri, isCreator } = useFrontEndPermission();
+  // Dulu memakai useFrontEndPermission() yang memeriksa nama permission lama
+  // ('can create', 'area') dan sudah tidak ada di tabel `permissions`, sehingga
+  // isCreator selalu false -> NoEditOverlay menutupi seluruh kartu ACC/DROP
+  // untuk SEMUA user. 'can-approve' adalah hak yang benar untuk ACC/Tolak:
+  // dimiliki kasir, pimpinan, kepala-mantri, pengawas, superuser - dan tidak
+  // dimiliki mantri, persis seperti maksud pengecekan lama.
+  const { auth } = usePage().props;
+  // acc/tolak = persetujuan: can-approve (kasir, staf kontrol, KM ke atas).
+  const canApprove = auth?.permissions?.includes('can-approve');
+  const status = triggeredData?.status;
+  // success/gagal = realisasi drop: can-create (mantri/pembuat yang nge-drop).
+  const canCreate = auth?.permissions?.includes('can-create');
+  // Drop / Gagal / Tundaan baru bisa di hari drop-nya (server juga menolak);
+  // sebelum itu cuma ACC / Tolak - pengajuan minggu depan tidak ter-drop
+  // karena salah klik.
+  const belumHariDrop = triggeredData?.tanggal_drop && String(triggeredData.tanggal_drop).slice(0, 10) > dayjs().format('YYYY-MM-DD');
 
   useEffect(() => {
     setData((prevData) => ({
@@ -35,6 +51,8 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
       status: status,
     }));
     put(route('transaction.action_buku_transaksi', id), {
+      // Jangan lompat ke atas daftar sesudah simpan.
+      preserveScroll: true,
       onSuccess: () => {
         reset();
         onClosed();
@@ -43,18 +61,13 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
   };
 
   return (
-    <form className="w-full" onSubmit={(e) => e.preventDefault()}>
-      {!isCreator && (
-        <NoEditOverlay value="User Tidak Dapat Digunakan Untuk Mengedit" />
-      )}
+    <form className="relative w-full" onSubmit={(e) => e.preventDefault()}>
       <Loading show={processing} />
 
       <div className="mb-3">
-        {triggeredData?.status === 'open' ? (
+        {/* open: ACC / Tolak. tolak: bisa dibalik jadi ACC. */}
+        {(status === 'open' || status === 'tolak') && (
           <>
-            {isMantri && (
-              <NoEditOverlay value="Tunggu Pimpinan Acc Terlebih Dahulu" />
-            )}
             <Label htmlFor="approved_nominal">Nominal ACC</Label>
             <CurrencyInput
               className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -63,33 +76,47 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
               prefix="Rp. "
               min={1}
               required
+              disabled={!canApprove}
               onValueChange={onHandleCurencyChange}
               value={data.approved_nominal}
               placeholder={'Inputkan angka tanpa sparator'}
             />
+            {/* Tanpa hak ACC: kontrol tetap TAMPIL tapi mati, ditemani alasan.
+                Dulu ditutup NoEditOverlay - overlay menutup seluruh kartu induk
+                sehingga elemen lain yang sebenarnya boleh dipakai ikut mati. */}
+            {!canApprove && (
+              <p className="mt-2 text-xs font-medium text-amber-600">
+                Tunggu Pimpinan / KM meng-ACC terlebih dahulu.
+              </p>
+            )}
             <div className="flex items-center justify-end gap-3 mt-2">
-              <Button variant="green" onClick={() => accPinjaman('acc')}>
-                ACC
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => accPinjaman('tolak')}
+              <AppButton
+                variant="submission"
+                size="sm"
+                disabled={!canApprove}
+                onClick={() => accPinjaman('acc')}
               >
-                Tolak
-              </Button>
+                ACC
+              </AppButton>
+              {status === 'open' && (
+                <AppButton
+                  variant="danger"
+                  size="sm"
+                  disabled={!canApprove}
+                  onClick={() => accPinjaman('tolak')}
+                >
+                  Tolak
+                </AppButton>
+              )}
             </div>
           </>
-        ) : (
-          <Badge size={'lg'} variant={'green'}>
-            Status Pengajuan = {triggeredData?.status}, Pada Tanggal
-            {triggeredData?.check_date}
-          </Badge>
         )}
       </div>
 
-      {triggeredData?.status !== 'open' && (
+      {status !== 'open' && status !== 'tolak' && (
         <div className="mb-3">
-          {triggeredData?.status === 'acc' ? (
+          {/* acc: drop / gagal. gagal: bisa dibalik jadi drop. */}
+          {(status === 'acc' || status === 'gagal') && (
             <>
               <Label htmlFor="drop" className="whitespace-normal">
                 Drop Jadi
@@ -101,27 +128,73 @@ const Acc = ({ id, acc, onClosed, triggeredData }) => {
                 prefix="Rp. "
                 min={1}
                 required
+                disabled={!canCreate}
                 onValueChange={onHandleCurencyChange}
                 value={data.drop}
                 placeholder={'Inputkan angka tanpa sparator'}
               />
-              <div className="flex items-center justify-end gap-3 mt-2">
-                <Button variant="green" onClick={() => accPinjaman('success')}>
-                  DROP
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => accPinjaman('gagal')}
+              {!canCreate && (
+                <p className="mt-2 text-xs font-medium text-amber-600">
+                  Anda tidak punya akses untuk menutup pencairan (drop).
+                </p>
+              )}
+              {belumHariDrop && (
+                <p className="mt-2 text-xs font-medium text-amber-600">
+                  Belum hari drop ({dayjs(triggeredData.tanggal_drop).format('DD-MM-YYYY')}). DROP / GAGAL / Tundaan aktif di hari
+                  drop-nya; sekarang hanya ACC / Tolak.
+                </p>
+              )}
+              <div className="flex flex-wrap items-center justify-end gap-3 mt-2">
+                {status === 'acc' && canApprove && !belumHariDrop && (
+                  <Tundaan
+                    id={id}
+                    dropDateLama={triggeredData?.tanggal_drop}
+                    onClosed={onClosed}
+                  />
+                )}
+                <AppButton
+                  variant="submission"
+                  size="sm"
+                  disabled={!canCreate || belumHariDrop}
+                  title={belumHariDrop ? 'Belum hari drop' : undefined}
+                  onClick={() => accPinjaman('success')}
                 >
-                  GAGAL
-                </Button>
+                  DROP
+                </AppButton>
+                {status === 'acc' && (
+                  <AppButton
+                    variant="danger"
+                    size="sm"
+                    disabled={!canCreate || belumHariDrop}
+                    onClick={() => accPinjaman('gagal')}
+                  >
+                    GAGAL
+                  </AppButton>
+                )}
+                {/* ACC dibatalkan, hanya oleh karyawan yang meng-ACC (acc -> tolak). */}
+                {status === 'acc' && canApprove && Number(triggeredData?.user_check) === Number(auth?.user?.employee?.id) && (
+                  <AppButton variant="danger" size="sm" onClick={() => accPinjaman('tolak')}>
+                    Ubah Tolak
+                  </AppButton>
+                )}
               </div>
             </>
-          ) : (
-            <Badge size={'lg'} variant={'green'}>
-              Status Pengajuan = {triggeredData?.status}, Tanggal
-              {triggeredData?.check_date}
-            </Badge>
+          )}
+
+          {/* Drop dibatalkan (success -> gagal). Server menolak kalau sudah ada
+              angsuran, sudah jadi dasar pengajuan lain, atau hari terkunci.
+              Hari drop sudah terkunci / di-ACC KM (recap_approved) -> tombol
+              disembunyikan; can-edit / superuser tetap melihatnya (server
+              mengirim recap_approved=false, kunci dibuka otomatis). */}
+          {status === 'success' && canCreate && !triggeredData?.recap_approved && (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Hanya bisa selama belum ada angsuran dan hari drop belum dikunci.
+              </p>
+              <AppButton variant="danger" size="sm" onClick={() => accPinjaman('gagal')}>
+                Ubah Gagal
+              </AppButton>
+            </div>
           )}
         </div>
       )}

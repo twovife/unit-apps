@@ -7,15 +7,17 @@ const SweetAlert = ({ type, message, keys }) => {
 
   useEffect(() => {
     const alertInstance = MySwal.fire({
-      position: 'top-end',
+      // warning: dialog di tengah yang harus ditutup sendiri, bukan toast 2 detik.
+      position: type === 'warning' ? 'center' : 'top-end',
       icon: type,
       title:
         message ||
         (type === 'error'
           ? 'Terjadi Kesalahan Silahkan hub IT.'
           : 'Anda Telah Melakukan Perubahan'),
-      showConfirmButton: false,
-      timer: 2000,
+      showConfirmButton: type === 'warning',
+      confirmButtonText: 'Mengerti',
+      timer: type === 'warning' ? undefined : 2000,
     });
   }, [type, message, keys]);
 

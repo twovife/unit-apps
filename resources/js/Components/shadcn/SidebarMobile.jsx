@@ -20,6 +20,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import PengajuanLink from '@/Components/PengajuanLink';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 
 const SidebarMobile = ({ isOpen, setIsOpen }) => {
@@ -37,7 +38,7 @@ const SidebarMobile = ({ isOpen, setIsOpen }) => {
               <div className="flex flex-wrap items-center justify-around gap-6">
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
-                    <Link href={route('mobile_apps.index')}>
+                    <Link href={route('home')}>
                       <Home className="h-7 w-7" />
                     </Link>
                   </Button>
@@ -46,16 +47,16 @@ const SidebarMobile = ({ isOpen, setIsOpen }) => {
 
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
-                    <Link href={route('mobile_apps.create')}>
+                    <PengajuanLink>
                       <MagnifyingGlassIcon className="h-7 w-7" />
-                    </Link>
+                    </PengajuanLink>
                   </Button>
                   <div>Pengajuan</div>
                 </div>
 
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
-                    <Link href={route('mobile_apps.transaksi')}>
+                    <Link href={route('transaction.index_buku_transaksi')}>
                       <Layers className="h-7 w-7" />
                     </Link>
                     {/* MANTRI DROP PAGE */}
@@ -73,7 +74,7 @@ const SidebarMobile = ({ isOpen, setIsOpen }) => {
                 </div>
                 <div className="text-center">
                   <Button size="icon2xl" variant="outline" asChild>
-                    <Link href={route('mobile_apps.macet')}>
+                    <Link href={route('pinjaman.index_pinjaman_macet')}>
                       <UserX className="h-7 w-7" />
                     </Link>
                   </Button>

@@ -1,13 +1,15 @@
 import './bootstrap';
 import '../css/app.css';
 import dayjs from './dayJsConfig';
+import './backTutupOverlay';
+import './lib/pasangAplikasi';
 import { createRoot } from 'react-dom/client';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
-const appName =
-  window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
+// Nama tetap, tidak ikut APP_NAME di .env (masih 'Laravel' di beberapa server).
+const appName = 'UBMI DIGITAL';
 
 createInertiaApp({
   title: (title) => `${title} - ${appName}`,

@@ -1,4 +1,5 @@
 import useOptionGenerator from '@/Hooks/useOptionGenerator';
+import PilihBulan from '@/Components/shadcn/PilihBulan';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { router, useForm, usePage } from '@inertiajs/react';
@@ -191,14 +192,7 @@ const SearchComponent = ({
         {searchMonth && (
           <div className="w-full">
             <Label>{labelMonth}</Label>
-            <Input
-              className="w-full"
-              type="month"
-              name="month"
-              value={data.month}
-              onChange={onSearchChange}
-              placeholder="Name of your project"
-            />
+            <PilihBulan className="w-full" name="month" value={data.month} onChange={onSearchChange} />
           </div>
         )}
         {searchKelompok && (

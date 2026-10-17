@@ -37,6 +37,31 @@ class HandleInertiaRequests extends Middleware
       'auth' => [
         'user' =>  $request->user() ? $request->user()->load('employee', 'employee.branch') : $request->user(),
         'permissions' =>  $request->user() ? $request->user()->getAllPermissions()->pluck('name') : [],
+        // Daftar role dibagikan terpisah dari permission. Sebelumnya frontend
+        // hanya menerima `permissions`, sehingga cek seperti
+        // permissions.includes('superuser') / ('unit mantri') selalu false -
+        // 'superuser' dan 'mantri' itu ROLE, bukan permission.
+        'roles' =>  $request->user() ? $request->user()->getRoleNames() : [],
+        // Bisa create pengajuan di cabang aktif? Dipakai menu untuk disable
+        // tombol "Pengajuan" bagi user tanpa kelompok di cabang ini.
+        'can_create' => fn() => $request->user() ? \App\Helpers\AppHelper::canCreateLoan() : false,
+        'global_filter' => function () use ($request) {
+            if (!$request->user()) return null;
+            $scope = \App\Helpers\AuthScope::resolve();
+            $branches = [];
+            if ($scope->allowed_branches === null) {
+                $branches = \App\Models\Branch::select('id', 'unit', 'type', 'wilayah')->get();
+            } elseif (!empty($scope->allowed_branches)) {
+                $branches = \App\Models\Branch::select('id', 'unit', 'type', 'wilayah')
+                            ->whereIn('id', $scope->allowed_branches)->get();
+            }
+            return [
+                'active_branch_id' => $scope->branch_id,
+                'active_wilayah' => $scope->wilayah,
+                'active_kelompok' => $scope->kelompok,
+                'allowed_branches' => $branches,
+            ];
+        }
       ],
       'ziggy' => function () use ($request) {
         return array_merge((new Ziggy)->toArray(), [
@@ -45,6 +70,8 @@ class HandleInertiaRequests extends Middleware
       },
       'flash' => [
         'message' => fn() => $request->session()->get('message'),
+        // Peringatan yang harus dibaca (dialog di tengah, ditutup manual).
+        'peringatan' => fn() => $request->session()->get('peringatan'),
         'timestamp' => fn() => Carbon::now(),
       ],
       'printUrl' => [

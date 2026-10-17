@@ -50,11 +50,11 @@ class AuthenticatedSessionController extends Controller
 
 
 
-    if ($authUser->hasPermissionTo('area')) {
-      return redirect()->route('mobile_apps.index');
-    }
+    // Semua role (termasuk mantri) selalu ke Home sesudah login (mas 2026-10-11),
+    // bukan ke halaman terakhir yang sempat dibuka sebelum sesi habis (intended).
+    $request->session()->forget('url.intended');
 
-    return redirect()->intended(RouteServiceProvider::HOME);
+    return redirect(RouteServiceProvider::HOME);
   }
 
   /**

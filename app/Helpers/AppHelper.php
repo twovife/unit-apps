@@ -15,7 +15,33 @@ use Illuminate\Support\Facades\Auth;
 class AppHelper
 {
 
+  // Bisa create pengajuan? Cermin resolusi cabang/kelompok di store: butuh
+  // grouping yang bisa diselesaikan di CABANG AKTIF.
+  //  - view-all-groups: cukup ada grouping mana pun di cabang aktif (bisa pilih
+  //    kelompok lewat selector).
+  //  - selain itu: grouping(cabang aktif, employee->area) harus ada. area 0/null
+  //    (mis. pusat) -> tidak ada grouping -> tidak bisa create.
+  public static function canCreateLoan(?\App\Models\User $user = null): bool
+  {
+    $user = $user ?: auth()->user();
+    if (!$user || !$user->employee) {
+      return false;
+    }
 
+    // Harus punya izin fitur DAN feasible (ada grouping di cabang aktif).
+    if (!$user->can('can-create')) {
+      return false;
+    }
+
+    $branchId = \App\Helpers\AuthScope::getActiveBranchId();
+    $query = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId);
+
+    if ($user->can('view-all-groups')) {
+      return $query->exists();
+    }
+
+    return $query->where('kelompok', $user->employee->area)->exists();
+  }
 
   // 2
   private static function generateUnknownNik($request)
@@ -43,28 +69,22 @@ class AppHelper
   public static function getMantri($officerGrouping)
   {
 
-    if (auth()->user()->hasAnyPermission(['unit pimpinan', 'unit mantri', 'unit km'])) {
-      return auth()->user()->employee->id;
+    // Aturan seragam atribusi user_mantri (dan user_drop):
+    //  c. kalau yang login sendiri mantri/KM/pimpinan -> atas nama dia.
+    //  a. selain itu, cari mantri AKTIF (date_resign null) di kelompok itu.
+    //  b. kalau lebih dari satu, ambil yang TERBARU (id terbesar).
+    //  Tak ada -> NULL. Sengaja TIDAK jatuh ke mantri resign atau ke user login,
+    //  supaya kolom mantri jujur kosong saat kelompok memang tanpa mantri aktif.
+    $user = auth()->user();
+    if ($user && $user->hasAnyRole(['mantri', 'kepala-mantri', 'pimpinan'])) {
+      return $user->employee?->id;
     }
-    $get_mantri = Employee::where('branch_id', $officerGrouping->branch_id)
+
+    return Employee::where('branch_id', $officerGrouping->branch_id)
       ->where('area', $officerGrouping->kelompok)
+      ->whereNull('date_resign')
       ->orderBy('id', 'desc')
-      ->get();
-
-    // Coba temukan mantri yang aktif (tidak resign)
-    $mantri = $get_mantri->whereNull('date_resign')->first()?->id;
-
-    // Jika tidak ada mantri aktif yang ditemukan, ambil mantri pertama dari daftar
-    if (!$mantri) {
-      $mantri = $get_mantri->first()?->id;
-    }
-
-    // Jika daftar mantri kosong, gunakan ID employee dari user yang sedang login
-    if (!$mantri) {
-      $mantri = auth()->user()->employee->id;
-    }
-
-    return $mantri;
+      ->value('id');
   }
 
   public static function getMantriNoauth($officerGrouping, $idpimpinan)
@@ -84,6 +104,18 @@ class AppHelper
   public static function dateName($date)
   {
     return strtolower(Carbon::parse($date)->locale('id')->dayName);
+  }
+
+  /**
+   * Hari tagih buku yang dibuka: pilihan user, atau hari ini. Minggu tidak
+   * punya buku tagih, jadi diarahkan ke Sabtu (buku terakhir) - tanpa ini
+   * layar dibuka hari Minggu tampil kosong.
+   */
+  public static function hariTagih(?string $hari = null): string
+  {
+    $hari = strtolower($hari ?: self::dateName(Carbon::now()));
+
+    return $hari === 'minggu' ? 'sabtu' : $hari;
   }
 
 
@@ -220,13 +252,22 @@ class AppHelper
   {
     $today = Carbon::today()->dayOfWeek;
     $reqday = self::getNumbDays($req_day);
-    // dd($reqday);
-    $prevDay = Carbon::parse(Carbon::today())->previous($reqday)->format('Y-m-d');
-    if ($today == $reqday) {
-      return Carbon::today()->format('Y-m-d');
+
+    // Hari tagih terakhir untuk $req_day: hari ini kalau kebetulan hari tagih,
+    // kalau tidak mundur ke kejadian sebelumnya.
+    $tanggal = ($today == $reqday)
+      ? Carbon::today()
+      : Carbon::parse(Carbon::today())->previous($reqday);
+
+    // Mundur terus selama jatuh di hari libur. Dulu fungsi ini mundur SATU
+    // langkah tanpa peduli libur: kelompok Senin dibuka Selasa 18 Agu menunjuk
+    // 17 Agu (Kemerdekaan, 0 tarikan) sehingga seluruh nasabah tampak nunggak.
+    // Dibatasi 8 minggu supaya tak berputar tanpa henti.
+    for ($i = 0; $i < 8 && !\App\Models\WorkDay::hariKerja($tanggal); $i++) {
+      $tanggal = $tanggal->copy()->subWeek();
     }
 
-    return $prevDay;
+    return $tanggal->format('Y-m-d');
   }
 
   public static function generateStatusAngsuran($tanggal_drop, $request_date): Int
@@ -301,90 +342,95 @@ class AppHelper
 
   public static function user_permission(): string
   {
-    $previledge = auth()->user()->hasPermissionTo('unit') ? 'unit'
-      : (auth()->user()->hasPermissionTo('area') ? 'mantri'
-        : (auth()->user()->hasPermissionTo('wilayah') ? 'wilayah'
-          : "pusat"));
-    return $previledge;
+    // Cukup gunakan Role pertama yang dimiliki user
+    $roles = auth()->user()->getRoleNames();
+    return $roles->first() ?? 'mantri';
   }
 
   public static function branch_permission($authorized, $branch_id)
   {
-    $result = collect([
+    // Backward compatibility shim untuk UI lama
+    return collect([
       'canShowGroupingBranch' => false,
-      'canShowBranch' => false,
-      'canShowKelompok' => false,
-      'canCreate' => false,
-      'branches' => collect()
+      'canShowBranch' => false, // Global filter digunakan, matikan lokal
+      'canShowKelompok' => $authorized->hasPermissionTo('view-all-groups'),
+      'canCreate' => $authorized->hasPermissionTo('can-create'),
+      'branches' => collect() // Dikosongkan karena menggunakan Global Selector
     ]);
-
-    if ($authorized->hasPermissionTo('unit_pengawas')) {
-      $result['canShowGroupingBranch'] = false;
-      $result['canShowBranch'] = true;
-      $result['canShowKelompok'] = true;
-      $result['canCreate'] = auth()->user()->branch->id == $branch_id ? true : false;
-
-      $employmentPermission = EmploymentPermission::where('employee_id', $authorized->employee->id)->pluck('branch_id');
-      $result['branches'] = Branch::whereIn('id', $employmentPermission)->get();
-      return $result;
-    }
-
-    if ($authorized->hasPermissionTo('can show branch')) {
-      $result['canShowGroupingBranch'] = true;
-      $result['canShowBranch'] = false;
-      $result['canShowKelompok'] = true;
-      $result['canCreate'] = false;
-      if ($authorized->hasPermissionTo('staffkontrol4')) {
-        $result['branches'] = Branch::where('wilayah', 4)->get();
-      } else {
-        $result['branches'] = Branch::all();
-      }
-      return $result;
-    } else {
-      $result['canShowGroupingBranch'] = false;
-      $result['canShowBranch'] = false;
-      $result['canShowKelompok'] = $authorized->can('can show kelompok') ?? false;
-      $result['canCreate'] = true;
-      $result['branches'] = Branch::where('id', $authorized->employee->branch_id)->get();
-      return $result;
-    }
   }
 
   public static function user_authorized($authorized)
   {
-    if ($authorized->hasPermissionTo('unit_pengawas')) {
-      $employmentPermission = EmploymentPermission::where('employee_id', $authorized->employee->id)->pluck('id');
-      return Branch::whereIn('id', $employmentPermission)->get();
-    }
-    if ($authorized->hasPermissionTo('can show branch')) {
-      if ($authorized->hasPermissionTo('staffkontrol4')) {
-        $result['branches'] = Branch::where('wilayah', 4)->get();
-      } else {
-        $result['branches'] = Branch::all();
-      }
-    } else {
-      return Branch::where('id', $authorized->employee->branch_id)->get();
-    }
+    // Global filter digunakan, data branches dihandle oleh Middleware
+    return collect();
   }
   public static function get_closed_date($date)
   {
 
-    if (auth()->user()->hasPermissionTo('pusat apps')) {
+    if (auth()->user()->hasRole('superuser') || auth()->user()->hasRole('stafkontrol')) {
       return null;
     }
 
-    if (auth()->user()->hasPermissionTo('maintenance worker')) {
+    if (auth()->user()->hasPermissionTo('can-edit')) {
       return null;
     }
 
-    if (auth()->user()->hasPermissionTo('unit apps')) {
+    if (auth()->user()->hasAnyRole(['kasir', 'pimpinan', 'kepala-mantri', 'pengawas'])) {
       $closedUnitTransaction = Carbon::parse($date)->copy()->subMonth(1)->startOfMonth()->format('Y-m-d');
       return $closedUnitTransaction;
     }
-    if (auth()->user()->hasPermissionTo('mantri apps')) {
+    if (auth()->user()->hasRole('mantri')) {
       return $date;
     }
     return $date;
+  }
+
+  /**
+   * Boleh menyentuh pinjaman ini? Kantor pinjaman harus ada di daftar kantor
+   * user (Branch::getAllowedBranchIds, null = semua kantor). User tanpa
+   * 'view-all-groups' (mantri) juga dibatasi ke kelompoknya sendiri.
+   *
+   * Sengaja TIDAK memakai kantor aktif di sesi: pengawas yang membuka dua tab
+   * beda kantor tetap boleh menyimpan di tab yang lama - datanya diambil dari
+   * pinjaman, bukan dari sesi.
+   */
+  public static function bolehAksesPinjaman(?\App\Models\TransactionLoan $loan): bool
+  {
+    return self::bolehAksesKelompok($loan?->loan_officer_grouping);
+  }
+
+  /**
+   * Kelompok ini milik kantor yang boleh diakses user, dan (tanpa
+   * view-all-groups) kelompoknya sendiri. Dipakai semua endpoint yang menerima
+   * id kelompok / baris closing dari browser.
+   */
+  public static function bolehAksesKelompok(?\App\Models\TransactionLoanOfficerGrouping $grouping): bool
+  {
+    $user = auth()->user();
+    if (!$user || !$grouping) {
+      return false;
+    }
+
+    $kantor = Branch::getAllowedBranchIds($user);
+    if ($kantor !== null && !in_array($grouping->branch_id, $kantor)) {
+      return false;
+    }
+
+    return $user->hasPermissionTo('view-all-groups') || (int) $grouping->kelompok === (int) $user->employee?->area;
+  }
+
+  public const PESAN_BUKAN_WILAYAH = 'Pinjaman ini bukan kantor / kelompok Anda.';
+
+  /**
+   * Pesan untuk user saat tulisan gagal. Penolakan trigger kunci kasir
+   * (SQLSTATE 45000) membawa kalimat yang memang untuk user, jadi diteruskan;
+   * selain itu pesan umum.
+   */
+  public static function pesanGagal(\Throwable $e, string $umum): string
+  {
+    return $e instanceof \Illuminate\Database\QueryException && $e->getCode() === '45000'
+      ? ($e->errorInfo[2] ?? $umum)
+      : $umum;
   }
 
   public static function havePermissionByDate($date)
@@ -392,21 +438,180 @@ class AppHelper
     $date = Carbon::parse($date);
     $now = Carbon::now();
 
-    if (auth()->user()->hasPermissionTo('area')) {
+    // can-edit / superuser (koreksi): tanpa batas tanggal & peran - hari
+    // terkunci dibuka otomatis, data beku tetap ditolak trigger.
+    if (\App\Helpers\Gembok::bolehBuka(auth()->user())) {
+      return ["status" => true];
+    }
+
+    if (auth()->user()->hasRole('mantri')) {
       if ($date->lt($now->subDays(2))) {
-        return ["status" => false, 'message' => 'Tanggal Sudah Lewat 2 Hari, Hubungi Pimpinan Untuk Merubah']; // Tanggal lebih dari 2 hari yang lalu
+        return ["status" => false, 'message' => 'Tanggal Sudah Lewat 2 Hari, Hubungi Pimpinan Untuk Merubah'];
       }
       return ["status" => true];
     }
 
-    if (auth()->user()->hasPermissionTo('unit')) {
+    if (auth()->user()->hasAnyRole(['kasir', 'pimpinan', 'kepala-mantri', 'pengawas'])) {
       if ($date->lt($now->subMonthsNoOverflow(2))) {
-        return ["status" => true]; // Tanggal lebih dari 2 hari yang lalu
+        return ["status" => true];
       }
       return ["status" => true];
     }
 
-    return ["status" => false, 'message' => 'User Tidak Punya Akses Merubah Data']; // Tanggal lebih dari 2 hari yang lalu
+    return ["status" => false, 'message' => 'User Tidak Punya Akses Merubah Data'];
+  }
+
+  /**
+   * Gerbang khusus HAPUS PINJAMAN (destroy_loan). Sengaja dipisah dari
+   * havePermissionByDate() - aturan tanggal 2 hari & bug "selalu true" di
+   * sana tidak relevan untuk hapus, dan havePermissionByDate masih dipakai
+   * destroy_angsuran/updateEverything jadi tidak boleh diubah di sini.
+   *
+   *  - mantri     : boleh hanya jika drop_date ATAU request_date pinjaman itu
+   *                 adalah HARI INI. Selain itu ditolak, tanpa pengecualian.
+   *  - can-approve (kasir, pimpinan, kepala-mantri, pengawas, stafkontrol,
+   *                 superuser): boleh selama hari drop BELUM dikunci kasir
+   *                 (lihat tanggalTerkunci). Begitu terkunci, TIDAK ADA pengecualian
+   *                 (termasuk superuser - beda dengan Reset Pinjaman).
+   *  - lainnya    : ditolak.
+   */
+  /**
+   * true = pinjaman ini sudah dijadikan dasar pengajuan lain yang masih
+   * aktif (top-up lewat previous_loan_id ATAU Tundaan lewat
+   * postponed_loan_id, status open/acc/success). Dipakai `canDeleteLoan()`
+   * dan gerbang Reset Pinjaman di `updateEverything()` - keduanya harus
+   * memblokir tanpa pengecualian role apa pun, sama seperti gerbang
+   * tampilan di RemoveLoan.jsx/ChangeDetail.jsx.
+   */
+  public static function sudahDiajukanPengganti(\App\Models\TransactionLoan $transactionLoan): bool
+  {
+    return \App\Models\TransactionLoan::where(function ($q) use ($transactionLoan) {
+      $q->where('previous_loan_id', $transactionLoan->id)
+        ->orWhere('postponed_loan_id', $transactionLoan->id);
+    })
+      ->whereIn('status', ['open', 'acc', 'success'])
+      ->exists();
+  }
+
+  /**
+   * Hari drop pinjaman sudah dikunci kasir: kasir_lock_at di gembok baru
+   * (transaction_daily_closings), atau TTD kasir di rekap lama.
+   */
+  public static function hariDropTerkunci(\App\Models\TransactionLoan $loan): bool
+  {
+    return self::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, $loan->drop_date);
+  }
+
+  /**
+   * Tanggal sebelum migrasi kantor kelompok ini = beku (data patokan migrasi).
+   * Pasangan aplikasi untuk trigger beku di DB (2026_10_10_100000).
+   */
+  public static function tanggalBeku($groupingId, $tanggal): bool
+  {
+    $branchId = \App\Models\TransactionLoanOfficerGrouping::whereKey($groupingId)->value('branch_id');
+    $mulai = \App\Helpers\AgregasiScope::tanggalMulai($branchId);
+
+    return $mulai !== null && Carbon::parse($tanggal)->startOfDay()->lt(Carbon::parse($mulai)->startOfDay());
+  }
+
+  /** Tanggal ini di kelompok ini sudah dikunci (aturan sama dengan hariDropTerkunci). */
+  public static function tanggalTerkunci($groupingId, $tanggal): bool
+  {
+    if (self::tanggalBeku($groupingId, $tanggal)) {
+      return true;
+    }
+    // can-edit / superuser boleh mengoreksi hari terkunci - kuncinya dibuka
+    // otomatis saat perubahan ditulis (Gembok::bukaOtomatis).
+    if (\App\Helpers\Gembok::bolehBuka(auth()->user())) {
+      return false;
+    }
+
+    $hari = fn($q) => $q->where('transaction_loan_officer_grouping_id', $groupingId)
+      ->whereDate('date', Carbon::parse($tanggal)->toDateString());
+
+    // Terkunci hanya sesudah KASIR mengunci / TTD (mas 2026-10-15). ACC KM /
+    // pimpinan belum mengunci: mantri masih boleh input di hari itu.
+    return \App\Models\TransactionDailyClosing::where($hari)->whereNotNull('kasir_lock_at')->exists()
+      || \App\Models\TransactionDailyRecap::where($hari)->whereNotNull('daily_kasir_approval')->exists();
+  }
+
+  /**
+   * Kantor BELUM migrasi (mas 2026-10-10): selain superuser, kasir, pusat &
+   * can-edit, hapus angsuran / drop hanya untuk tanggal 7 hari terakhir
+   * (hari ini - 6 s/d hari ini). Kantor migrasi dijaga gembok harian.
+   *
+   * @return string|null  pesan penolakan; null = boleh
+   */
+  public static function tolakHapusLewatSeminggu($groupingId, $tanggal, string $apa): ?string
+  {
+    $user = auth()->user();
+    if (!$tanggal || $user->hasAnyRole(['superuser', 'kasir', 'pusat']) || $user->hasPermissionTo('can-edit')) {
+      return null;
+    }
+    $branchId = \App\Models\TransactionLoanOfficerGrouping::whereKey($groupingId)->value('branch_id');
+    if (\App\Helpers\AgregasiScope::sudahMigrasi($branchId)) {
+      return null;
+    }
+    $batas = Carbon::today()->subDays(6);
+
+    return Carbon::parse($tanggal)->startOfDay()->lt($batas)
+      ? "Hapus {$apa} hanya untuk 7 hari terakhir (sejak " . $batas->locale('id')->isoFormat('D MMM Y') . '). Hubungi kasir / pusat.'
+      : null;
+  }
+
+  public static function canDeleteLoan(\App\Models\TransactionLoan $transactionLoan): array
+  {
+    $user = auth()->user();
+
+    if ($pesan = self::tolakHapusLewatSeminggu($transactionLoan->transaction_loan_officer_grouping_id, $transactionLoan->drop_date, 'drop')) {
+      return ["status" => false, 'message' => $pesan];
+    }
+
+    if (self::sudahDiajukanPengganti($transactionLoan)) {
+      return ["status" => false, 'message' => 'Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa dihapus.'];
+    }
+
+    // Hari drop sudah dikunci: tidak ada yang boleh menghapus, semua peran.
+    if (self::hariDropTerkunci($transactionLoan)) {
+      return ["status" => false, 'message' => 'Hari drop pinjaman ini sudah dikunci, pinjaman tidak bisa dihapus.'];
+    }
+
+    // can-edit / superuser (koreksi): boleh menghapus pinjaman apa pun yang
+    // lolos pagar di atas, termasuk akun mantri ber-can-edit. Hari drop yang
+    // terkunci (kantor migrasi) dibuka otomatis saat dihapus; data beku tetap
+    // ditolak (hariDropTerkunci di atas).
+    if (\App\Helpers\Gembok::bolehBuka($user)) {
+      return ["status" => true];
+    }
+
+    if ($user->hasRole('mantri')) {
+      $today = Carbon::now()->format('Y-m-d');
+      $dropDate = $transactionLoan->drop_date ? Carbon::parse($transactionLoan->drop_date)->format('Y-m-d') : null;
+      $requestDate = $transactionLoan->request_date ? Carbon::parse($transactionLoan->request_date)->format('Y-m-d') : null;
+
+      // Sudah di-ACC KM: keputusan KM, mantri tidak bisa membatalkannya.
+      if ($transactionLoan->status === 'acc') {
+        return ["status" => false, 'message' => 'Pengajuan sudah di-ACC oleh KM, hanya KM yang bisa menghapus.'];
+      }
+
+      if ($dropDate === $today || $requestDate === $today) {
+        return ["status" => true];
+      }
+
+      // Pengajuan (minggu depan) yang belum di-ACC KM masih milik mantri:
+      // boleh dihapus selama statusnya open dan tanggal drop belum lewat.
+      if ($transactionLoan->status === 'open' && $dropDate >= $today) {
+        return ["status" => true];
+      }
+
+      return ["status" => false, 'message' => 'Mantri hanya bisa menghapus pinjaman hari ini, atau pengajuan yang belum di-ACC KM. Hubungi KM / Pimpinan untuk yang lain.'];
+    }
+
+    if ($user->hasPermissionTo('can-approve')) {
+      return ["status" => true];
+    }
+
+    return ["status" => false, 'message' => 'Anda tidak mempunyai akses menghapus pinjaman.'];
   }
 
   public static function havePermissionByPermission($params)
