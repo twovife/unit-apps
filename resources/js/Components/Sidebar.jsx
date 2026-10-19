@@ -96,6 +96,8 @@ export default function AppSidebar({ ...props }) {
   const isMantri = auth?.roles?.includes('mantri') && !isSuperUser;
   // Iuran 1 Juta, Iuran BOP, SKSW, Aset Kendaraan (mas 2026-10-15).
   const bolehAdmKantor = ['kasir', 'stafkontrol', 'pusat', 'pimpinan', 'superuser'].some((r) => auth?.roles?.includes(r));
+  // Aset Kendaraan: + pengawas (mas 2026-10-19), = route assets.*.
+  const bolehAset = bolehAdmKantor || auth?.roles?.includes('pengawas');
 
   return (
     <Sidebar className="border-r shadow-xs" {...props}>
@@ -376,6 +378,9 @@ export default function AppSidebar({ ...props }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              </>
+              )}
+              {bolehAset && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -391,7 +396,6 @@ export default function AppSidebar({ ...props }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              </>
               )}
             </SidebarMenu>
 

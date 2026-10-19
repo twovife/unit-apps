@@ -40,6 +40,11 @@ const METADATA = {
     singkat: 'Aset Kendaraan',
     deskripsi: 'Panduan registri kendaraan, pencatatan servis, dan siklus perpanjangan STNK/pajak.',
   },
+  cek_pajak: {
+    judul: 'Cara Cek Pajak Kendaraan',
+    singkat: 'Cek Pajak',
+    deskripsi: 'Panduan melihat jatuh tempo pajak tahunan / STNK dan riwayat pembayaran pajak kendaraan.',
+  },
   lamaran: {
     judul: 'Pencatatan Lamaran Kerja',
     singkat: 'Lamaran Kerja',

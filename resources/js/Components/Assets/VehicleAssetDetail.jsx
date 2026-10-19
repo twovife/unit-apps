@@ -15,9 +15,10 @@ const formatDate = (value) => value
   : '—';
 const toDateInput = (value) => value ? String(value).slice(0, 10) : '';
 
+// Sama dengan VehicleAssetForm; kosong = Cadangan.
 const PIC_OPTIONS = [
-  'Pimpinan', 'Wakil Pimpinan', 'Kepala Mantri', 'Kepala Mantri 1', 'Kepala Mantri 2', 'Kepala Mantri 3',
-  ...Array.from({ length: 10 }, (_, index) => `Mantri ${index + 1}`), 'Kasir', 'Pusat', 'Pengawas',
+  'Pusat', 'Pengawas', 'Pimpinan', 'Wakil Pimpinan', 'Kepala Mantri', 'Kepala Mantri 1', 'Kepala Mantri 2', 'Kepala Mantri 3',
+  'Kasir', 'Staf', ...Array.from({ length: 10 }, (_, index) => `Mantri ${index + 1}`),
 ];
 
 function Field({ label, children }) {
@@ -36,9 +37,10 @@ function Modal({ title, description, children, onClose }) {
   );
 }
 
-export default function VehicleAssetDetail({ assetId, assetName, branches, onClose, onEdit }) {
+export default function VehicleAssetDetail({ assetId, assetName, branches, onClose, onEdit, bolehKelola = false }) {
   const { auth } = usePage().props;
   const canDelete = !auth?.roles?.includes('kasir');
+  const canInputTax = auth?.roles?.includes('superuser') || auth?.permissions?.includes('input-vehicles-tax');
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -192,18 +194,6 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
           {error && <p role="alert" className="m-5 rounded border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
           {!loading && asset && (
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-              <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2">
-                <Field label="Status">{asset.status}</Field>
-                <Field label="Lokasi sekarang">{currentLocation ? `${currentLocation.branch?.unit ?? '—'} (${currentLocation.pengguna})` : 'Belum ditempatkan'}</Field>
-                <Field label="Tanggal perolehan">{formatDate(asset.purchase_date)}</Field>
-                <Field label="Harga perolehan">{rupiah(asset.purchase_cost)}</Field>
-                <Field label="Total pajak + denda">{rupiah(taxTotal)}</Field>
-                <Field label="Total servis">{rupiah(maintenanceTotal)}</Field>
-                <Field label="Nama di STNK">{asset.vehicle?.nama_stnk ?? '—'}</Field>
-                <Field label="Posisi BPKB"><span className="capitalize">{asset.vehicle?.bpkb_location ?? '—'}</span></Field>
-                {asset.description && <div className="sm:col-span-2"><Field label="Spesifikasi / catatan">{asset.description}</Field></div>}
-              </div>
-
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="h-auto flex-wrap justify-start">
                   <TabsTrigger value="placements">Penempatan ({locations.length})</TabsTrigger>
@@ -219,7 +209,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                       notes: '',
                     });
                     setModal('mutate');
-                  }}><MapPin className="mr-2 size-4" />Mutasi / Pindah Kantor</Button>
+                  }} disabled={!bolehKelola} title={bolehKelola ? undefined : 'Bukan untuk kepala mantri / mantri'}><MapPin className="mr-2 size-4" />Mutasi / Pindah Kantor</Button>
                   <div className="space-y-3">
                     {locations.map((location) => (
                       <div key={location.id} className="rounded-md border p-3">
@@ -245,7 +235,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                       )}
                     </div>
                     {asset.vehicle && (
-                      <Button size="sm" onClick={openTaxPayment} disabled>
+                      <Button size="sm" onClick={openTaxPayment} disabled={!canInputTax} title={canInputTax ? undefined : 'Butuh izin input-vehicles-tax'}>
                         <CheckCircle2 className="mr-1 size-4" />
                         Bayar Pajak
                       </Button>
@@ -268,7 +258,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                             </td>
                             <td className="px-3 py-2 text-right">
                               {(!tax.pajak_before || tax.id === latestCancelableTaxId) && (
-                                <Button size="sm" variant="ghost" className="text-destructive" disabled={cancelingTaxId !== null} onClick={() => cancelTax(tax)}>
+                                <Button size="sm" variant="ghost" className="text-destructive" disabled={!canInputTax || cancelingTaxId !== null} title={canInputTax ? undefined : 'Butuh izin input-vehicles-tax'} onClick={() => cancelTax(tax)}>
                                   {cancelingTaxId === tax.id ? 'Memproses...' : tax.pajak_before ? 'Batalkan' : 'Hapus'}
                                 </Button>
                               )}
@@ -282,7 +272,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                 <TabsContent value="maintenance" className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold">Akumulasi servis: {rupiah(maintenanceTotal)}</p>
-                    <Button size="sm" onClick={() => setModal('maintenance')}><Wrench className="mr-1 size-4" />Catat servis</Button>
+                    <Button size="sm" onClick={() => setModal('maintenance')} disabled={!bolehKelola} title={bolehKelola ? undefined : 'Bukan untuk kepala mantri / mantri'}><Wrench className="mr-1 size-4" />Catat servis</Button>
                   </div>
                   <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
@@ -296,6 +286,18 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                   </div>
                 </TabsContent>
               </Tabs>
+
+              <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2">
+                <Field label="Status">{asset.status}</Field>
+                <Field label="Lokasi sekarang">{currentLocation ? `${currentLocation.branch?.unit ?? '—'} (${currentLocation.pengguna})` : 'Belum ditempatkan'}</Field>
+                <Field label="Tanggal perolehan">{formatDate(asset.purchase_date)}</Field>
+                <Field label="Harga perolehan">{rupiah(asset.purchase_cost)}</Field>
+                <Field label="Total pajak + denda">{rupiah(taxTotal)}</Field>
+                <Field label="Total servis">{rupiah(maintenanceTotal)}</Field>
+                <Field label="Nama di STNK">{asset.vehicle?.nama_stnk ?? '—'}</Field>
+                <Field label="Posisi BPKB"><span className="capitalize">{asset.vehicle?.bpkb_location ?? '—'}</span></Field>
+                {asset.description && <div className="sm:col-span-2"><Field label="Spesifikasi / catatan">{asset.description}</Field></div>}
+              </div>
             </div>
           )}
 
@@ -312,8 +314,8 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                 <Button size="sm" variant="outline" onClick={onClose}>
                   Tutup
                 </Button>
-                {onEdit && (
-                  <Button size="sm" variant="default" onClick={() => onEdit(asset)}>
+                {onEdit !== undefined && (
+                  <Button size="sm" variant="default" disabled={!onEdit} title={onEdit ? undefined : 'Butuh izin edit-vehicle-stnk-data'} onClick={() => onEdit?.(asset)}>
                     <Pencil className="mr-1.5 size-4" />Ubah Kendaraan
                   </Button>
                 )}
@@ -333,8 +335,8 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
               {mutate.errors.branch_id && <span className="text-xs text-destructive">{mutate.errors.branch_id}</span>}
             </label>
             <label className="block space-y-1 text-sm">Pemakai / PIC
-              <select className="h-10 w-full rounded-md border bg-background px-3" value={mutate.data.pengguna} onChange={(event) => mutate.setData('pengguna', event.target.value)} required>
-                <option value="">Pilih PIC</option>{PIC_OPTIONS.map((pic) => <option key={pic} value={pic}>{pic}</option>)}
+              <select className="h-10 w-full rounded-md border bg-background px-3" value={mutate.data.pengguna} onChange={(event) => mutate.setData('pengguna', event.target.value)}>
+                <option value="">— Kosong (Cadangan) —</option>{PIC_OPTIONS.map((pic) => <option key={pic} value={pic}>{pic}</option>)}
               </select>
               {mutate.errors.pengguna && <span className="text-xs text-destructive">{mutate.errors.pengguna}</span>}
             </label>

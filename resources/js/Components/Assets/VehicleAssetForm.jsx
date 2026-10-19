@@ -6,18 +6,21 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 
+// Urutan = urutan tabel aset (VehicleAssetController::urutanPemakai). Kosong = Cadangan.
 const PIC_OPTIONS = [
+  'Pusat',
+  'Pengawas',
   'Pimpinan',
   'Wakil Pimpinan',
   'Kepala Mantri',
   'Kepala Mantri 1',
   'Kepala Mantri 2',
   'Kepala Mantri 3',
-  ...Array.from({ length: 10 }, (_, index) => `Mantri ${index + 1}`),
   'Kasir',
-  'Pusat',
-  'Pengawas',
+  'Staf',
+  ...Array.from({ length: 10 }, (_, index) => `Mantri ${index + 1}`),
 ];
+const CADANGAN = ['', '-', 'Cadangan'];
 
 const BPKB_OPTIONS = [
   ['pusat', 'Kantor Pusat'],
@@ -68,7 +71,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
       purchase_cost: asset ? String(asset.purchase_cost) : '',
       status: asset?.status ?? 'aktif',
       description: asset?.description ?? '',
-      pengguna: currentPengguna,
+      pengguna: CADANGAN.includes(currentPengguna) ? '' : currentPengguna,
       notes: '',
       plat_nomor: asset?.vehicle?.plat_nomor ?? '',
       nama_stnk: asset?.vehicle?.nama_stnk ?? '',
@@ -180,16 +183,15 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   required
                 />
               </Field>
-              <Field label="Pemakai / PIC" error={form.errors.pengguna} required>
+              <Field label="Pemakai / PIC (kosong = Cadangan)" error={form.errors.pengguna}>
                 <select
                   className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${
                     form.errors.pengguna ? 'border-destructive ring-1 ring-destructive' : ''
                   }`}
                   value={form.data.pengguna}
                   onChange={(event) => form.setData('pengguna', event.target.value)}
-                  required
                 >
-                  <option value="">Pilih PIC</option>
+                  <option value="">— Kosong (Cadangan) —</option>
                   {PIC_OPTIONS.map((pic) => (
                     <option key={pic} value={pic}>
                       {pic}

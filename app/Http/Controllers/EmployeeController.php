@@ -269,14 +269,7 @@ class EmployeeController extends Controller
     abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
     abort_unless((int) $document->employee_id === (int) $employee->id, 404);
 
-    $disk = \Illuminate\Support\Facades\Storage::disk('s3');
-    abort_unless($document->file_path && $disk->exists($document->file_path), 404, 'File tidak ditemukan di server penyimpanan.');
-
-    return response($disk->get($document->file_path), 200, [
-      'Content-Type' => $disk->mimeType($document->file_path) ?: 'application/octet-stream',
-      'Content-Disposition' => 'inline; filename="' . addslashes(basename($document->file_path)) . '"',
-      'Cache-Control' => 'private, max-age=86400',
-    ]);
+    return \App\Support\Unggahan::tampilkan($document->file_path);
   }
 
   /**

@@ -17,6 +17,7 @@ class VideoTutorial
     /** Kunci video => path berkas di bucket MinIO */
     public const BERKAS = [
         'cekaset' => 'tutorial/cekaset.mp4',
+        'cek_pajak' => 'tutorial/cek_pajak.mp4',
         'iuran' => 'tutorial/iuran.mp4',
         'lamaran' => 'tutorial/lamaran.mp4',
         'pinjamanmodal' => 'tutorial/pinjamanmodal.mp4',
@@ -30,6 +31,7 @@ class VideoTutorial
     /** Kunci video => judul tampilan */
     public const JUDUL = [
         'cekaset' => 'Panduan Aset Kendaraan',
+        'cek_pajak' => 'Cara Cek Pajak Kendaraan',
         'iuran' => 'Panduan Iuran Bulanan (Tabungan & BOP)',
         'lamaran' => 'Panduan Lamaran Kerja',
         'pinjamanmodal' => 'Panduan Pembayaran Pinjaman Modal',

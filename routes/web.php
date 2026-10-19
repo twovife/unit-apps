@@ -76,6 +76,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/transaksi/{transaction}', 'hapus')->whereNumber('transaction')->name('hapus');
   });
 
+  });
+  // Aset Kendaraan: + pengawas (mas 2026-10-19). Edit = edit-vehicle-stnk-data,
+  // mutasi & servis = peran di VehicleAssetController::bolehKelola.
+  Route::middleware('role:kasir|stafkontrol|pusat|pimpinan|pengawas|superuser')->group(function () {
   Route::controller(\App\Http\Controllers\VehicleAssetController::class)->prefix('assets')->name('assets.')->group(function () {
     Route::get('/', 'index')->name('index');
     Route::post('/', 'store')->name('store');
@@ -83,6 +87,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/her/{vehicle}/confirm', 'confirmHer')->whereNumber('vehicle')->name('her.confirm');
     Route::delete('/her/tax/{tax}', 'cancelHer')->whereNumber('tax')->name('her.cancel');
     Route::get('/{asset}/detail', 'detailJson')->whereNumber('asset')->name('detail');
+    Route::get('/{asset}/edit-data', 'editJson')->whereNumber('asset')->name('edit_data');
     Route::put('/{asset}', 'update')->whereNumber('asset')->name('update');
     Route::delete('/{asset}', 'destroy')->whereNumber('asset')->name('destroy');
     Route::post('/{asset}/mutate', 'mutate')->whereNumber('asset')->name('mutate');

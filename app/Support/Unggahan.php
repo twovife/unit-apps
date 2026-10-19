@@ -67,6 +67,28 @@ class Unggahan
         return $path;
     }
 
+    /**
+     * Tampilkan file dari MinIO inline (bukti, dokumen karyawan, dokumen lamaran).
+     * Sengaja TANPA exists()/mimeType(): kredensial S3 di VPS tidak punya izin list,
+     * jadi HEAD untuk file yang tidak ada dilempar 403 (exception -> halaman 500),
+     * bukan false. Cukup satu GET; gagal / kosong = 404. Jenis file dibaca dari isi.
+     */
+    public static function tampilkan(?string $path, string $pesan404 = 'File tidak ditemukan di server penyimpanan.', string $disk = self::DISK): \Illuminate\Http\Response
+    {
+        try {
+            $isi = $path ? Storage::disk($disk)->get($path) : null;
+        } catch (\Throwable $e) {
+            $isi = null;
+        }
+        abort_if($isi === null || $isi === '', 404, $pesan404);
+
+        return response($isi, 200, [
+            'Content-Type' => (new \finfo(FILEINFO_MIME_TYPE))->buffer($isi) ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="' . addslashes(basename($path)) . '"',
+            'Cache-Control' => 'private, max-age=86400',
+        ]);
+    }
+
     private static function periksaPdf(string $isi, string $field): void
     {
         if (!str_starts_with($isi, '%PDF-')) {

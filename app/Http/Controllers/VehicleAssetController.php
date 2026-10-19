@@ -19,12 +19,14 @@ use Inertia\Inertia;
 
 class VehicleAssetController extends Controller
 {
+    /** Pemakai / PIC kosong = kendaraan cadangan (kolom inv_locations.pengguna NOT NULL). */
+    public const CADANGAN = 'Cadangan';
+
+    // Menu pajak (lihat, bayar, batalkan): superuser atau permission input-vehicles-tax (per user).
+    private const PAJAK_TUTUP = 'Menu pajak kendaraan butuh izin input-vehicles-tax.';
+
     public function index(Request $request)
     {
-        $validated = $request->validate([
-            'search' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', 'in:aktif,rusak,hilang,dijual,dihapus'],
-        ]);
         $branchId = $this->activeBranchId();
         $branch = Branch::query()->findOrFail($branchId, ['id', 'unit', 'wilayah']);
         $officeAssets = $this->vehicleAssetsAt($branchId);
@@ -43,22 +45,16 @@ class VehicleAssetController extends Controller
                 'vehicle:id,asset_id,plat_nomor,tanggal_stnk,tanggal_pajak_tahunan',
                 'currentLocation.branch:id,unit,wilayah',
             ])
-            ->when($validated['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->when($validated['search'] ?? null, function ($query, $search) {
-                $search = trim($search);
-                $plateSearch = str_replace(' ', '', $search);
-
-                $query->where(function ($filter) use ($search, $plateSearch) {
-                    $filter->where('name', 'like', "%{$search}%")
-                        ->orWhere('asset_code', 'like', "%{$search}%")
-                        ->orWhereHas('vehicle', fn ($vehicle) => $vehicle->whereRaw(
-                            "REPLACE(plat_nomor, ' ', '') LIKE ?",
-                            ["%{$plateSearch}%"],
-                        ));
-                });
-            })
-            ->orderBy('name')
-            ->get();
+            // Satu kantor tidak banyak kendaraan: semua dikirim, cari & filter status di browser.
+            ->get()
+            // Urutan (mas 2026-10-19): aktif dulu menurut pemakai (Pusat, Pengawas,
+            // Pimpinan, KM, Kasir, Staf, Mantri 1-10, lain-lain, Cadangan), lalu nonaktif.
+            ->sortBy(fn (InvAsset $a) => [
+                $a->status === 'aktif' ? 0 : 1,
+                ...self::urutanPemakai($a->currentLocation?->pengguna),
+                $a->name,
+            ])
+            ->values();
 
         return Inertia::render('Assets/Vehicles', [
             'branch' => $branch,
@@ -70,17 +66,37 @@ class VehicleAssetController extends Controller
                 'problematic' => (int) ($summary->problematic ?? 0),
                 'purchase_value' => (int) ($summary->purchase_value ?? 0),
             ],
-            'filters' => [
-                'search' => $validated['search'] ?? '',
-                'status' => $validated['status'] ?? '',
-            ],
             'canEditVehicleRegistration' => $this->canEditVehicleRegistration($request),
-            'video' => \App\Helpers\VideoTutorial::url('cekaset')['cekaset'] ?? null,
+            'canInputTax' => $this->canInputTax($request),
+            'bolehKelola' => $this->bolehKelola($request),
+            'video' => \App\Helpers\VideoTutorial::url(['cekaset', 'cek_pajak']),
         ]);
+    }
+
+    /** [peringkat, nomor] pemakai untuk urutan tabel; Mantri diurut menurut nomornya. */
+    private static function urutanPemakai(?string $pengguna): array
+    {
+        $p = strtolower(trim((string) $pengguna));
+        if ($p === '' || $p === '-' || $p === strtolower(self::CADANGAN)) {
+            return [9, 0];
+        }
+        if (preg_match('/^mantri\s*(\d+)$/', $p, $m)) {
+            return [7, (int) $m[1]];
+        }
+        foreach (['pusat' => 0, 'pengawas' => 1, 'wakil pimpinan' => 3, 'pimpinan' => 2, 'kepala mantri' => 4, 'kasir' => 5, 'staf' => 6] as $awal => $peringkat) {
+            if (str_starts_with($p, $awal)) {
+                preg_match('/(\d+)$/', $p, $m);
+
+                return [$peringkat, (int) ($m[1] ?? 0)];
+            }
+        }
+
+        return [8, 0];
     }
 
     public function herList(Request $request)
     {
+        abort_unless($this->canInputTax($request), 403, self::PAJAK_TUTUP);
         $validated = $request->validate([
             'bulan' => ['nullable', 'date_format:Y-m'],
         ]);
@@ -136,6 +152,14 @@ class VehicleAssetController extends Controller
             'period' => $period,
             'branches' => $this->allowedBranches(),
         ]);
+    }
+
+    /** Data form Edit: khusus edit-vehicle-stnk-data / superuser (drawer detail tetap untuk semua). */
+    public function editJson(Request $request, InvAsset $asset)
+    {
+        abort_unless($this->canEditVehicleRegistration($request), 403, 'Ubah kendaraan butuh izin edit-vehicle-stnk-data.');
+
+        return $this->detailJson($request, $asset);
     }
 
     public function detailJson(Request $request, InvAsset $asset)
@@ -207,7 +231,7 @@ class VehicleAssetController extends Controller
                 'asset_id' => $asset->id,
                 'branch_id' => $branchId,
                 'before_branch_id' => null,
-                'pengguna' => $validated['pengguna'],
+                'pengguna' => $validated['pengguna'] ?: self::CADANGAN,
                 'assigned_date' => $validated['purchase_date'],
                 'notes' => $validated['notes'] ?? 'Penempatan Awal',
             ]);
@@ -220,6 +244,8 @@ class VehicleAssetController extends Controller
 
     public function update(Request $request, InvAsset $asset)
     {
+        // Ubah kendaraan hanya pemegang edit-vehicle-stnk-data / superuser (mas 2026-10-19).
+        abort_unless($this->canEditVehicleRegistration($request), 403, 'Ubah kendaraan butuh izin edit-vehicle-stnk-data.');
         $this->assertAssetInActiveBranch($request, $asset);
         $validated = $this->validateAsset($request);
         $this->guardRegistrationDates($request, $asset, $validated);
@@ -242,14 +268,14 @@ class VehicleAssetController extends Controller
             $currentLocation = $lockedAsset->currentLocation()->lockForUpdate()->first();
             if ($currentLocation) {
                 $currentLocation->update([
-                    'pengguna' => $validated['pengguna'],
+                    'pengguna' => $validated['pengguna'] ?: self::CADANGAN,
                 ]);
             } else {
                 InvLocation::query()->create([
                     'asset_id' => $lockedAsset->id,
                     'branch_id' => $branchId,
                     'before_branch_id' => null,
-                    'pengguna' => $validated['pengguna'],
+                    'pengguna' => $validated['pengguna'] ?: self::CADANGAN,
                     'assigned_date' => $validated['purchase_date'],
                     'notes' => 'Penempatan Awal',
                 ]);
@@ -275,10 +301,11 @@ class VehicleAssetController extends Controller
 
     public function mutate(Request $request, InvAsset $asset)
     {
+        abort_unless($this->bolehKelola($request), 403, 'Mutasi kendaraan bukan untuk kepala mantri / mantri.');
         $this->assertAssetInActiveBranch($request, $asset);
         $validated = $request->validate([
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'pengguna' => ['required', 'string', 'max:255'],
+            'pengguna' => ['nullable', 'string', 'max:255'],
             'assigned_date' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
@@ -291,7 +318,7 @@ class VehicleAssetController extends Controller
             abort_unless((int) $currentLocation->branch_id === $activeBranchId, 404);
 
             if ((int) $currentLocation->branch_id === (int) $validated['branch_id']
-                && $currentLocation->pengguna === $validated['pengguna']) {
+                && $currentLocation->pengguna === ($validated['pengguna'] ?: self::CADANGAN)) {
                 throw ValidationException::withMessages([
                     'branch_id' => 'Kantor dan pemakai kendaraan sudah sama dengan penempatan saat ini.',
                 ]);
@@ -301,7 +328,7 @@ class VehicleAssetController extends Controller
                 'asset_id' => $lockedAsset->id,
                 'branch_id' => $validated['branch_id'],
                 'before_branch_id' => $currentLocation->branch_id,
-                'pengguna' => $validated['pengguna'],
+                'pengguna' => $validated['pengguna'] ?: self::CADANGAN,
                 'assigned_date' => $validated['assigned_date'],
                 'notes' => $validated['notes'],
             ]);
@@ -312,6 +339,7 @@ class VehicleAssetController extends Controller
 
     public function addMaintenance(Request $request, InvAsset $asset)
     {
+        abort_unless($this->bolehKelola($request), 403, 'Catat servis bukan untuk kepala mantri / mantri.');
         $this->assertAssetInActiveBranch($request, $asset);
         $validated = $request->validate([
             'maintenance_date' => ['required', 'date'],
@@ -338,6 +366,7 @@ class VehicleAssetController extends Controller
 
     public function confirmHer(Request $request, InvVehicle $vehicle)
     {
+        abort_unless($this->canInputTax($request), 403, self::PAJAK_TUTUP);
         $asset = $vehicle->asset()->firstOrFail();
         $this->assertAssetInActiveBranch($request, $asset);
         $branchId = $this->activeBranchId();
@@ -437,6 +466,7 @@ class VehicleAssetController extends Controller
 
     public function cancelHer(Request $request, InvVehicleTax $tax)
     {
+        abort_unless($this->canInputTax($request), 403, self::PAJAK_TUTUP);
         $tax->loadMissing('vehicle.asset');
         $asset = $tax->vehicle?->asset;
         abort_if(! $asset, 404);
@@ -561,7 +591,7 @@ class VehicleAssetController extends Controller
             'tanggal_stnk' => ['required', 'date'],
             'tanggal_pajak_tahunan' => ['required', 'date'],
             'bpkb_location' => ['required', 'in:pusat,cabang,leasing,lainnya'],
-            'pengguna' => ['required', 'string', 'max:255'],
+            'pengguna' => ['nullable', 'string', 'max:255'],
         ];
         if ($creating) {
             $rules['notes'] = ['nullable', 'string', 'max:255'];
@@ -581,7 +611,6 @@ class VehicleAssetController extends Controller
             'tanggal_pajak_tahunan.required' => 'Jatuh tempo pajak tahunan wajib diisi.',
             'bpkb_location.required' => 'Posisi fisik BPKB wajib dipilih.',
             'bpkb_location.in' => 'Posisi fisik BPKB tidak valid.',
-            'pengguna.required' => 'Pemakai / PIC kendaraan wajib dipilih.',
         ];
 
         $validated = $request->validate($rules, $messages);
@@ -634,6 +663,23 @@ class VehicleAssetController extends Controller
         }
 
         throw ValidationException::withMessages($errors);
+    }
+
+    /** Mutasi & catat servis: semua peran kantor kecuali kepala mantri / mantri (mas 2026-10-19). */
+    private function bolehKelola(Request $request): bool
+    {
+        return (bool) $request->user()?->hasAnyRole(['superuser', 'pengawas', 'pimpinan', 'kasir', 'stafkontrol', 'pusat']);
+    }
+
+    private function canInputTax(Request $request): bool
+    {
+        $user = $request->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasRole('superuser')
+            || $user->getAllPermissions()->contains('name', 'input-vehicles-tax');
     }
 
     private function canEditVehicleRegistration(Request $request): bool

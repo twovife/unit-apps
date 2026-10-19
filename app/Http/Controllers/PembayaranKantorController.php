@@ -394,14 +394,7 @@ class PembayaranKantorController extends Controller
         $boleh = Branch::getAllowedBranchIds(auth()->user());
         abort_unless($boleh === null || in_array((int) $baris->branch_id, $boleh), 403, 'Anda tidak memiliki akses ke kantor ini.');
 
-        $disk = Storage::disk(Unggahan::DISK);
-        abort_unless($baris->bukti_path && $disk->exists($baris->bukti_path), 404, 'File bukti tidak ditemukan.');
-
-        return response($disk->get($baris->bukti_path), 200, [
-            'Content-Type' => $disk->mimeType($baris->bukti_path) ?: 'application/octet-stream',
-            'Content-Disposition' => 'inline; filename="' . addslashes(basename($baris->bukti_path)) . '"',
-            'Cache-Control' => 'private, max-age=86400',
-        ]);
+        return Unggahan::tampilkan($baris->bukti_path, 'File bukti tidak ditemukan.');
     }
 
     // ------------------------------------------------------------------

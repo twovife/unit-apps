@@ -201,14 +201,7 @@ class LamaranKerjaController extends Controller
         $this->pastikanMilikCabang($lamaran);
         abort_unless((int) $dokumen->application_id === (int) $lamaran->id, 404);
 
-        $disk = Storage::disk(self::DISK);
-        abort_unless($dokumen->file_path && $disk->exists($dokumen->file_path), 404, 'File tidak ditemukan di server penyimpanan.');
-
-        return response($disk->get($dokumen->file_path), 200, [
-            'Content-Type' => $disk->mimeType($dokumen->file_path) ?: 'application/octet-stream',
-            'Content-Disposition' => 'inline; filename="' . addslashes(basename($dokumen->file_path)) . '"',
-            'Cache-Control' => 'private, max-age=86400',
-        ]);
+        return \App\Support\Unggahan::tampilkan($dokumen->file_path, 'File tidak ditemukan di server penyimpanan.', self::DISK);
     }
 
     /** Hapus satu dokumen lamaran (hanya jika masih menunggu keputusan). */

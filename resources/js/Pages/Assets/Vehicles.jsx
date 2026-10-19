@@ -1,7 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
-import { Calendar, Car, CircleAlert, MapPin, Pencil, Plus, Search, Wallet } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Calendar, Car, CircleAlert, Eye, Pencil, Plus, Search, Wallet } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Badge } from '@/shadcn/ui/badge';
@@ -29,6 +29,9 @@ const statusStyles = {
   dihapus: 'border-slate-200 bg-slate-100 text-slate-600',
 };
 
+// PIC kosong / '-' / 'Cadangan' = kendaraan cadangan.
+const isCadangan = (pengguna) => !pengguna || pengguna === '-' || pengguna === 'Cadangan';
+
 const rupiah = (amount) => new Intl.NumberFormat('id-ID').format(Number(amount) || 0);
 
 const formatDate = (value) => {
@@ -53,13 +56,29 @@ function SummaryCard({ title, value, icon: Icon, description }) {
   );
 }
 
-export default function Vehicles({ branch, assets, branches, summary, filters, canEditVehicleRegistration, video }) {
-  const [search, setSearch] = useState(filters.search ?? '');
-  const [status, setStatus] = useState(filters.status ?? '');
+export default function Vehicles({ branch, assets, branches, summary, canEditVehicleRegistration, canInputTax, bolehKelola, video }) {
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
   const [detail, setDetail] = useState(null);
   const [editAsset, setEditAsset] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
-  const assetList = Array.isArray(assets) ? assets : (assets?.data ?? []);
+  const semua = Array.isArray(assets) ? assets : (assets?.data ?? []);
+  // Satu kantor = sedikit kendaraan: cari & filter status langsung di browser, tanpa tombol.
+  const assetList = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const qPlat = q.replace(/\s/g, '');
+    return semua.filter((a) => (!status || a.status === status) && (!q
+      || a.name?.toLowerCase().includes(q)
+      || a.asset_code?.toLowerCase().includes(q)
+      || a.current_location?.pengguna?.toLowerCase().includes(q)
+      || a.vehicle?.plat_nomor?.toLowerCase().replace(/\s/g, '').includes(qPlat)));
+  }, [semua, search, status]);
+  const bukaEdit = (id) => {
+    if (!canEditVehicleRegistration) return;
+    axios.get(route('assets.edit_data', id))
+      .then(({ data }) => { setEditAsset(data.asset); setFormOpen(true); })
+      .catch(() => toast.error('Gagal memuat data kendaraan.'));
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -67,24 +86,8 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
     if (!editId) return;
     params.delete('edit');
     window.history.replaceState({}, '', params.size ? `${window.location.pathname}?${params}` : window.location.pathname);
-    axios.get(route('assets.detail', editId))
-      .then(({ data }) => { setEditAsset(data.asset); setFormOpen(true); })
-      .catch(() => toast.error('Gagal memuat data kendaraan.'));
+    bukaEdit(editId);
   }, []);
-
-  const applyFilters = (event) => {
-    event.preventDefault();
-    router.get(route('assets.index'), {
-      search: search.trim() || undefined,
-      status: status || undefined,
-    }, { preserveState: true, preserveScroll: true, replace: true });
-  };
-
-  const resetFilters = () => {
-    setSearch('');
-    setStatus('');
-    router.get(route('assets.index'), {}, { preserveState: true, preserveScroll: true, replace: true });
-  };
 
   return (
     <AuthenticatedLayout>
@@ -95,15 +98,13 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
             <h1 className="text-2xl font-bold tracking-tight">Registri Kendaraan</h1>
             <p className="mt-1 text-sm text-muted-foreground">Daftar kendaraan operasional pada kantor aktif.</p>
           </div>
-          <Badge variant="outline" className="w-fit gap-1.5 px-3 py-1.5 text-sm">
-            <MapPin className="size-4" />
-            {branch.unit}
-          </Badge>
           <div className="flex flex-wrap gap-2">
-            <VideoTutorialButton videos={video} title="Panduan Aset Kendaraan" />
-            <Button asChild variant="outline">
-              <Link href={route('assets.her')}><Calendar className="mr-2 size-4" />Pajak Kendaraan</Link>
-            </Button>
+            <VideoTutorialButton videos={video} />
+            {canInputTax && (
+              <Button asChild variant="outline">
+                <Link href={route('assets.her')}><Calendar className="mr-2 size-4" />Pajak Kendaraan</Link>
+              </Button>
+            )}
             <Button onClick={() => { setEditAsset(null); setFormOpen(true); }}>
               <Plus className="mr-2 size-4" />Kendaraan Baru
             </Button>
@@ -122,7 +123,7 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
             <CardTitle className="text-base">Daftar kendaraan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={applyFilters} className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -144,15 +145,14 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
-              <Button type="submit">Terapkan</Button>
-              <Button type="button" variant="outline" onClick={resetFilters}>Reset</Button>
-            </form>
+            </div>
 
             <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">No.</TableHead>
+                    <TableHead className="w-14 text-center">Edit</TableHead>
                     <TableHead>Kode Aset</TableHead>
                     <TableHead>Plat Nomor</TableHead>
                     <TableHead>Nama Aset</TableHead>
@@ -161,42 +161,61 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
                     <TableHead>Pajak Tahunan</TableHead>
                     <TableHead>STNK (5 Th)</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {assetList.length ? assetList.map((asset, index) => (
-                    <TableRow key={asset.id}>
+                    <TableRow key={asset.id} className={asset.status === 'aktif' ? '' : 'bg-slate-50 text-muted-foreground'}>
                       <TableCell>{index + 1}</TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          disabled={!canEditVehicleRegistration}
+                          title={canEditVehicleRegistration ? 'Ubah kendaraan' : 'Butuh izin edit-vehicle-stnk-data'}
+                          onClick={() => bukaEdit(asset.id)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      </TableCell>
                       <TableCell className="whitespace-nowrap font-mono text-xs">{asset.asset_code}</TableCell>
-                      <TableCell className="whitespace-nowrap font-semibold">
+                      <TableCell className="whitespace-nowrap">
                         {asset.vehicle?.plat_nomor ? (
-                          <button type="button" className="font-mono text-primary hover:underline" onClick={() => setDetail({ id: asset.id, name: asset.name })}>
+                          <button
+                            type="button"
+                            title="Lihat detail kendaraan"
+                            className="inline-flex items-center gap-1.5 font-mono font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                            onClick={() => setDetail({ id: asset.id, name: asset.name })}
+                          >
                             {asset.vehicle.plat_nomor}
+                            <Eye className="size-3.5" />
                           </button>
                         ) : '—'}
                       </TableCell>
                       <TableCell className="min-w-40">{asset.name}</TableCell>
                       <TableCell className="min-w-36">
                         <div>{asset.current_location?.branch?.unit ?? branch.unit}</div>
-                        <div className="text-xs text-muted-foreground">{asset.current_location?.pengguna ?? '—'}</div>
+                        {isCadangan(asset.current_location?.pengguna) ? (
+                          <Badge variant="outline" className="mt-0.5 border-violet-200 bg-violet-50 text-violet-700">Cadangan</Badge>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">{asset.current_location.pengguna}</div>
+                        )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums">Rp {rupiah(asset.purchase_cost)}</TableCell>
                       <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_pajak_tahunan)}</TableCell>
                       <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_stnk)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusStyles[asset.status] ?? ''}>
-                          {statusLabels[asset.status] ?? asset.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button type="button" size="icon" variant="ghost" title="Ubah kendaraan" onClick={() => {
-                          axios.get(route('assets.detail', asset.id))
-                            .then(({ data }) => { setEditAsset(data.asset); setFormOpen(true); })
-                            .catch(() => toast.error('Gagal memuat data kendaraan.'));
-                        }}>
-                          <Pencil className="size-4" />
-                        </Button>
+                      <TableCell className="whitespace-nowrap">
+                        {asset.status === 'aktif' ? (
+                          <Badge variant="outline" className={statusStyles.aktif}>Aktif</Badge>
+                        ) : (
+                          <div className="flex flex-col items-start gap-0.5">
+                            <Badge variant="outline" className="border-slate-300 bg-slate-100 text-slate-600">Nonaktif</Badge>
+                            <span className={`text-xs font-medium ${(statusStyles[asset.status] ?? '').split(' ').find((c) => c.startsWith('text-')) ?? ''}`}>
+                              {statusLabels[asset.status] ?? asset.status}
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   )) : (
@@ -225,7 +244,8 @@ export default function Vehicles({ branch, assets, branches, summary, filters, c
         assetName={detail?.name}
         branches={branches}
         onClose={() => setDetail(null)}
-        onEdit={(asset) => { setDetail(null); setEditAsset(asset); setFormOpen(true); }}
+        onEdit={canEditVehicleRegistration ? (asset) => { setDetail(null); setEditAsset(asset); setFormOpen(true); } : null}
+        bolehKelola={bolehKelola}
       />
       <VehicleAssetForm
         open={formOpen}
