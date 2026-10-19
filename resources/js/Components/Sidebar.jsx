@@ -90,13 +90,14 @@ export default function AppSidebar({ ...props }) {
   }, []);
 
   const isSuperUser = auth?.roles?.includes('superuser');
-  // Mantri hanya melihat: Input Mantri (Pengajuan, Drop, Angsuran, ML), Buku
-  // (Transaksi, Angsuran Lancar, Macet) & Rekap Mantri. Peran lain melihat
-  // semua kecuali menu superuser (mas 2026-10-10).
-  const isMantri = auth?.roles?.includes('mantri') && !isSuperUser;
-  // Iuran 1 Juta, Iuran BOP, SKSW, Aset Kendaraan (mas 2026-10-15).
-  // + pengawas (mas 2026-10-19), = AppHelper::PERAN_ADM_KANTOR & route role:.
-  const bolehAdmKantor = ['kasir', 'stafkontrol', 'pusat', 'pimpinan', 'pengawas', 'superuser'].some((r) => auth?.roles?.includes(r));
+  // Hak menu dihitung di server (AppHelper::boleh* -> auth.menu), sama dengan gerbang
+  // route/controller (mas 2026-10-19):
+  //  - mantri: Input Mantri, Buku Angsuran Lancar & Macet, Rekap Mantri.
+  //  - KM: + Rekap 1/2, Rencana Drop, Fastcreate, Data Karyawan.
+  //  - kasir/pimpinan/pusat/stafkontrol/pengawas/superuser: semua.
+  const menu = auth?.menu ?? {};
+  const isMantri = !menu.rekapPenuh;
+  const bolehAdmKantor = !!menu.admKantor;
   const bolehAset = bolehAdmKantor;
 
   return (
@@ -147,8 +148,7 @@ export default function AppSidebar({ ...props }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {/* = AppHelper::bolehAdmKantor: view-all-groups ATAU 6 peran administrasi kantor. */}
-            {(bolehAdmKantor || auth?.permissions?.includes('view-all-groups')) && (
+            {bolehAdmKantor && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -203,12 +203,6 @@ export default function AppSidebar({ ...props }) {
           icon={Book}
           title={'Buku'}
           items={[
-            {
-              id: 1,
-              title: 'Buku Transaksi (ACC KM)',
-              link: route('transaction.index_buku_transaksi'),
-              active: route().current('transaction.index_buku_transaksi'),
-            },
             {
               id: 2,
               title: 'Buku Angsuran Lancar',
@@ -299,7 +293,7 @@ export default function AppSidebar({ ...props }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {(bolehAdmKantor || auth?.permissions?.includes('input-lamaran')) && (
+              {menu.lamaran && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild

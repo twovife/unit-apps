@@ -111,36 +111,6 @@ class BopContributionController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'period' => ['required', 'date_format:Y-m'],
-            'amount' => ['required', 'integer', 'min:1'],
-            'payment_date' => ['required', 'date'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        $this->authorizeContributionWrite((int) $validated['branch_id']);
-        ContributionLock::pastikanTerbuka('bop', (int) $validated['branch_id'], $validated['period']);
-
-        $branch = Branch::findOrFail($validated['branch_id']);
-        abort_unless($branch->isactive, 422, 'Iuran BOP hanya dapat dicatat untuk kantor aktif.');
-
-        if ($branch->opening_date && Carbon::parse($branch->opening_date)->diffInMonths(Carbon::now()) < 3) {
-            return back()->withErrors([
-                'amount' => 'Kantor ini masih dalam masa tenggang (umur <= 3 bulan) dan belum wajib membayar iuran BOP.',
-            ]);
-        }
-
-        OpsBopContribution::create([
-            ...$validated,
-            'created_by' => Auth::id(),
-        ]);
-
-        return back()->with('message', 'Pembayaran iuran BOP berhasil dicatat.');
-    }
-
     public function history(Branch $branch)
     {
         $this->authorizeBranchRead($branch->id);

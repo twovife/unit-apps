@@ -186,7 +186,8 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
 
   // Kunci / TTD kasir: hanya kasir & pimpinan (+ superuser); hari ini mulai jam_kunci WIB.
   // Server memeriksa ulang dengan jam server (zona Asia/Jakarta).
-  const bolehKunci = ['kasir', 'pimpinan', 'superuser'].some((x) => auth?.roles?.includes(x));
+  // = AppHelper::bolehKunciRekap: superuser atau permission lock-rekap.
+  const bolehKunci = !!auth?.menu?.kunciRekap;
   const kunciBelumJam = (r) =>
     !!server_filter?.jam_kunci &&
     dayjs(r.tanggal).format('YYYY-MM-DD') === hariIni &&
@@ -322,7 +323,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                       disabled={!bolehKunci || kunciBelumJam(r)}
                       title={
                         !bolehKunci
-                          ? 'Hanya kasir dan pimpinan'
+                          ? 'Butuh izin lock-rekap'
                           : kunciBelumJam(r)
                             ? `Hari ini baru bisa dikunci mulai jam ${server_filter?.jam_kunci} WIB`
                             : undefined

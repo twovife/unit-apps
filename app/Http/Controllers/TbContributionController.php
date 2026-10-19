@@ -108,39 +108,6 @@ class TbContributionController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'period' => ['required', 'date_format:Y-m'],
-            'amount' => ['required', 'integer', 'min:1'],
-            'payment_date' => ['required', 'date'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        $this->authorizeContributionWrite((int) $validated['branch_id']);
-        ContributionLock::pastikanTerbuka('tb', (int) $validated['branch_id'], $validated['period']);
-
-        $branch = Branch::findOrFail($validated['branch_id']);
-        $openingDate = $branch->opening_date
-            ? Carbon::parse($branch->opening_date)
-            : Carbon::parse('2026-01-01');
-        $periodDate = Carbon::parse($validated['period'] . '-01');
-
-        if ($periodDate->lt($openingDate) || $openingDate->diffInMonths($periodDate) < 3) {
-            return back()->withErrors([
-                'amount' => 'Kantor ini masih dalam masa tenggang (umur <= 3 bulan) dan belum wajib membayar iuran.',
-            ]);
-        }
-
-        TbContribution::create([
-            ...$validated,
-            'created_by' => Auth::id(),
-        ]);
-
-        return back()->with('message', 'Pembayaran iuran berhasil dicatat.');
-    }
-
     public function history(Branch $branch)
     {
         $this->authorizeBranchRead($branch->id);

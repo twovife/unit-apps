@@ -7,7 +7,6 @@ export default function BopContributions(props) {
       title="Iuran BOP"
       routePrefix="bop"
       historyRouteName="bop.api.contributions.history"
-      storeRouteName="bop.contributions.store"
       destroyRouteName="bop.contributions.destroy"
       targetAmount={1500000}
     />

@@ -194,9 +194,9 @@ class TransactionDailyRecapController extends Controller
       ['id' => ['required', 'integer'], 'date' => ['required', 'date', 'before_or_equal:today']],
       ['date.before_or_equal' => 'Hari yang belum tiba tidak bisa dikunci.']
     );
-    // Kunci / TTD kasir hanya kasir & pimpinan (mas 2026-10-13); superuser untuk dukungan.
-    if (!auth()->user()->hasAnyRole(['kasir', 'pimpinan', 'superuser'])) {
-      return redirect()->back()->withErrors('Kunci / TTD kasir hanya untuk kasir dan pimpinan.');
+    // Kunci / TTD: superuser atau permission lock-rekap (mas 2026-10-19).
+    if (!AppHelper::bolehKunciRekap(auth()->user())) {
+      return redirect()->back()->withErrors('Kunci / TTD butuh izin lock-rekap.');
     }
     // Hari ini baru bisa dikunci mulai jam_kunci WIB (config agregasi).
     $jam = (string) config('agregasi.jam_kunci', '11:00');
@@ -264,14 +264,22 @@ class TransactionDailyRecapController extends Controller
       ->whereDate('date', $date)
       ->first();
 
-    if ($recap) {
-      $recap->update([
-        'daily_kasir_approval' => null,
-        'daily_kasir_approval_user' => null,
-      ]);
+    if (!$recap?->daily_kasir_approval) {
+      return redirect()->back()->withErrors('Hari ini memang belum di-TTD kasir.');
     }
 
-    return redirect()->back()->with('message', 'Kunci berhasil dibuka.');
+    // Flow lama (mas 2026-10-19): ACC KM OTOMATIS yang dibuat ttdLama (jam KM = jam
+    // kasir, KM belum pernah cek) ikut dikosongkan, supaya TTD ulang menghitung ulang
+    // drop/storting & target minggu depan. ACC KM asli dibiarkan. Tanpa log.
+    $kmOtomatis = $recap->daily_kepala_approval
+      && (string) $recap->daily_kepala_approval === (string) $recap->daily_kasir_approval;
+
+    $recap->update([
+      'daily_kasir_approval' => null,
+      'daily_kasir_approval_user' => null,
+    ] + ($kmOtomatis ? ['daily_kepala_approval' => null, 'daily_kepala_approval_user' => null] : []));
+
+    return redirect()->back()->with('message', 'Kunci berhasil dibuka.' . ($kmOtomatis ? ' ACC KM otomatis ikut dibatalkan; TTD ulang akan menghitung ulang target.' : ''));
   }
 
   /**

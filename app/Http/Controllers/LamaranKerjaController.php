@@ -259,7 +259,7 @@ class LamaranKerjaController extends Controller
     {
         $user = auth()->user();
         abort_unless(
-            $user && ($user->can('input-lamaran') || $user->hasAnyRole(['kasir', 'pimpinan', 'stafkontrol', 'pusat', 'superuser', 'pengawas'])),
+            \App\Helpers\AppHelper::bolehLamaran($user),
             403,
             'Anda tidak punya hak mencatat lamaran.'
         );

@@ -227,6 +227,10 @@ trait PinjamanTrait
 
       $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $dibuka, $migrasi) {
         $thisDailyRecap = $daily_recap->get($tanggal, collect())->first(); //stored as database
+        // Flow lama: ACC KM otomatis dari TTD kasir (jam KM = jam kasir) = KM belum cek,
+        // tetap tampil belum ACC (X) di layar KM (mas 2026-10-19).
+        $kmAsli = (bool) $thisDailyRecap?->daily_kepala_approval
+          && ($migrasi || (string) $thisDailyRecap->daily_kepala_approval !== (string) $thisDailyRecap->daily_kasir_approval);
         $thisData = $pengajuan->get($tanggal, collect()); //summary of drop
         // Drop = pinjaman yang benar-benar cair (success) - sama dengan angka
         // yang dikunci & dasar target (HitungAgregat::drop).
@@ -269,12 +273,12 @@ trait PinjamanTrait
 
           'rencana' => $thisData->where('drop_langsung', 'lama')->sum('acc'),
 
-          'is_approved' => $thisDailyRecap?->daily_kepala_approval ? true : false,
+          'is_approved' => $kmAsli,
           'is_kasir' => $thisDailyRecap?->daily_kasir_approval ? true : false,
           'at_approved' => $thisDailyRecap?->daily_kepala_approval,
           'at_kasir' => $thisDailyRecap?->daily_kasir_approval,
-          'is_closed' => $thisDailyRecap?->daily_kepala_approval ? true : false,
-          'button_color' => $thisDailyRecap?->daily_kepala_approval ? ($thisDailyRecap?->daily_kasir_approval ? 'success' : 'baru') : 'open',
+          'is_closed' => $kmAsli,
+          'button_color' => $kmAsli ? ($thisDailyRecap?->daily_kasir_approval ? 'success' : 'baru') : 'open',
         ];
       })->sortByDesc('tanggal')->values();
     }

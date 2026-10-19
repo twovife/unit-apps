@@ -7,7 +7,6 @@ export default function Contributions(props) {
       title="Iuran Tabungan 1 Juta"
       routePrefix="tabungan"
       historyRouteName="tabungan.api.contributions.history"
-      storeRouteName="tabungan.contributions.store"
       destroyRouteName="tabungan.contributions.destroy"
       targetAmount={1000000}
     />

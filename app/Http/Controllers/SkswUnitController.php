@@ -549,21 +549,9 @@ class SkswUnitController extends Controller
     /** = app_laravel SavingTransaction::canBeVoidedBy, tanpa jalur bypass. */
     private function bisaHapus(SavingTransaction $tx, $user): bool
     {
-        if (!$this->bolehInput() || $tx->voided_at !== null) {
-            return false;
-        }
-
-        $batch = $tx->batch;
-        if (!$batch && $tx->transaction_date) {
-            $period = Carbon::parse($tx->transaction_date)->format('Y-m');
-            $batch = SavingBatch::where('branch_id', $tx->branch_id)->where('period', $period)->first();
-        }
-
-        if ($batch) {
-            return $batch->status === 'open';
-        }
-
-        return true;
+        // = app_laravel canBeVoidedBy tanpa bypass: data legacy (batch_id null) tidak bisa
+        // di-void dari unit-apps; bypass-sksw-lock hanya lewat app_laravel (mas 2026-10-19).
+        return $this->bolehInput() && $tx->voided_at === null && $tx->batch_id !== null && $tx->batch?->status === 'open';
     }
 
     public function bukaRekening(Request $request)

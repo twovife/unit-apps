@@ -45,6 +45,13 @@ class HandleInertiaRequests extends Middleware
         // Bisa create pengajuan di cabang aktif? Dipakai menu untuk disable
         // tombol "Pengajuan" bagi user tanpa kelompok di cabang ini.
         'can_create' => fn() => $request->user() ? \App\Helpers\AppHelper::canCreateLoan() : false,
+        // Hak menu per peran (AppHelper::boleh*), dibaca Sidebar & tombol Kunci.
+        'menu' => fn() => [
+          'admKantor' => \App\Helpers\AppHelper::bolehAdmKantor($request->user()),
+          'rekapPenuh' => \App\Helpers\AppHelper::bolehRekapPenuh($request->user()),
+          'lamaran' => \App\Helpers\AppHelper::bolehLamaran($request->user()),
+          'kunciRekap' => \App\Helpers\AppHelper::bolehKunciRekap($request->user()),
+        ],
         'global_filter' => function () use ($request) {
             if (!$request->user()) return null;
             $scope = \App\Helpers\AuthScope::resolve();

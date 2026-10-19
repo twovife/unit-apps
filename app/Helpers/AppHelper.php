@@ -14,13 +14,39 @@ use Illuminate\Support\Facades\Auth;
 
 class AppHelper
 {
-  /** Peran menu Administrasi Cabang (Data Karyawan s/d Aset; mas 2026-10-19). */
+  /*
+   * Hak menu per peran (mas 2026-10-19). Sidebar membaca auth.menu (HandleInertiaRequests)
+   * yang dihitung dari fungsi-fungsi di bawah, dan gerbang server memakai fungsi yang
+   * sama - tampilan dan server tidak bisa beda aturan.
+   *  - mantri       : Input Mantri, Buku Angsuran Lancar, Buku Macet, Rekap Mantri.
+   *  - kepala-mantri: + Rekap 1/2, Rencana Drop, Fastcreate, Data Karyawan.
+   *  - 6 peran kantor: semua menu (+ Administrasi Cabang, Dashboard Kasir).
+   */
   public const PERAN_ADM_KANTOR = ['kasir', 'stafkontrol', 'pusat', 'superuser', 'pimpinan', 'pengawas'];
+  public const PERAN_REKAP_PENUH = [...self::PERAN_ADM_KANTOR, 'kepala-mantri'];
 
-  /** Boleh buka halaman Administrasi Cabang: view-all-groups (KM dsb.) ATAU salah satu peran di atas. */
+  /** Administrasi Cabang (kecuali Data Karyawan) + Dashboard Kasir: hanya 6 peran kantor. */
   public static function bolehAdmKantor($user): bool
   {
-    return $user && ($user->hasPermissionTo('view-all-groups') || $user->hasAnyRole(self::PERAN_ADM_KANTOR));
+    return $user && $user->hasAnyRole(self::PERAN_ADM_KANTOR);
+  }
+
+  /** Rekap 1/2, Rencana Drop, Fastcreate, Data Karyawan: semua kecuali mantri. */
+  public static function bolehRekapPenuh($user): bool
+  {
+    return $user && $user->hasAnyRole(self::PERAN_REKAP_PENUH);
+  }
+
+  /** Lamaran Kerja: 6 peran kantor, atau siapa pun yang diberi permission input-lamaran. */
+  public static function bolehLamaran($user): bool
+  {
+    return $user && (self::bolehAdmKantor($user) || $user->can('input-lamaran'));
+  }
+
+  /** Kunci / TTD Rekap 1: superuser atau permission lock-rekap (bukan cek peran lagi). */
+  public static function bolehKunciRekap($user): bool
+  {
+    return $user && ($user->hasRole('superuser') || $user->can('lock-rekap'));
   }
 
   // Bisa create pengajuan? Cermin resolusi cabang/kelompok di store: butuh

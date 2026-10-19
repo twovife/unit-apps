@@ -53,14 +53,12 @@ Route::middleware('auth')->group(function () {
   Route::middleware('role:kasir|stafkontrol|pusat|pimpinan|pengawas|superuser')->group(function () {
   Route::prefix('tabungan')->name('tabungan.')->controller(\App\Http\Controllers\TbContributionController::class)->group(function () {
     Route::get('/contributions', 'index')->name('contributions');
-    Route::post('/contributions', 'store')->name('contributions.store');
     Route::delete('/contributions/{contribution}', 'destroy')->name('contributions.destroy');
     Route::get('/api/contributions/{branch}/history', 'history')->name('api.contributions.history');
   });
 
   Route::prefix('bop')->name('bop.')->controller(\App\Http\Controllers\BopContributionController::class)->group(function () {
     Route::get('/contributions', 'index')->name('contributions');
-    Route::post('/contributions', 'store')->name('contributions.store');
     Route::delete('/contributions/{contribution}', 'destroy')->name('contributions.destroy');
     Route::get('/api/contributions/{branch}/history', 'history')->name('api.contributions.history');
   });
@@ -109,7 +107,7 @@ Route::middleware('auth')->group(function () {
   // berlaku ke route yang sudah terlanjur terdaftar). Alias 'role' didaftarkan di
   // app/Http/Kernel.php.
   Route::prefix('bukutransaksi')->name('transaction.')
-    ->middleware('role:superuser|pimpinan|kasir|mantri|kepala-mantri|pengawas|stafkontrol')
+    ->middleware('role:superuser|pusat|pimpinan|kasir|mantri|kepala-mantri|pengawas|stafkontrol')
     ->group(function () {
     Route::controller(TransactionLoanController::class)->group(function () {
       Route::get('/', "index_buku_transaksi")->name('index_buku_transaksi');
@@ -237,20 +235,23 @@ Route::middleware('auth')->group(function () {
   Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::controller(TransactionDailyRecapController::class)->group(function () {
       Route::prefix('rekap')->name('rekap.')->group(function () {
-        Route::post('/', "rekap_post")->name('rekap_post');
-        // Setoran tunai (SU Lapangan) / transfer dari sel Rekap 1, alur baru.
-        Route::post('/su-lapangan', "simpan_su_lapangan")->name('simpan_su_lapangan');
-        // Dialog Kunci di Rekap 1 (alur baru): pratinjau JSON + kunci.
-        Route::get('/pratinjau-kunci', "pratinjau_kunci")->name('pratinjau_kunci');
-        Route::post('/kunci-hari', "kunci_hari")->name('kunci_hari');
-        Route::post('/buka-kunci', "buka_kunci")->name('buka_kunci');
-        Route::post('/ceklist-kepala', "ceklist_kepala")->name('ceklist_kepala');
         Route::get('/permantri', "rekap_permantri")->name('rekap_permantri');
-        // JSON detail per kelompok untuk drawer di Rekap 1 (tabel Global).
-        Route::get('/permantri-json', "rekap_permantri_json")->name('rekap_permantri_json');
-        Route::get('/rencana', "rencana_drop")->name('rencana_drop');
-        Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');
-        Route::get('/rekap-dua', "rekap_dua")->name('rekap_dua');
+        // Selain Rekap Mantri: bukan untuk mantri (AppHelper::PERAN_REKAP_PENUH; mas 2026-10-19).
+        Route::middleware('role:superuser|pusat|stafkontrol|pimpinan|kasir|pengawas|kepala-mantri')->group(function () {
+          Route::post('/', "rekap_post")->name('rekap_post');
+          // Setoran tunai (SU Lapangan) / transfer dari sel Rekap 1, alur baru.
+          Route::post('/su-lapangan', "simpan_su_lapangan")->name('simpan_su_lapangan');
+          // Dialog Kunci di Rekap 1 (alur baru): pratinjau JSON + kunci.
+          Route::get('/pratinjau-kunci', "pratinjau_kunci")->name('pratinjau_kunci');
+          Route::post('/kunci-hari', "kunci_hari")->name('kunci_hari');
+          Route::post('/buka-kunci', "buka_kunci")->name('buka_kunci');
+          Route::post('/ceklist-kepala', "ceklist_kepala")->name('ceklist_kepala');
+          // JSON detail per kelompok untuk drawer di Rekap 1 (tabel Global).
+          Route::get('/permantri-json', "rekap_permantri_json")->name('rekap_permantri_json');
+          Route::get('/rencana', "rencana_drop")->name('rencana_drop');
+          Route::get('/rekap-satu', "rekap_satu")->name('rekap_satu');
+          Route::get('/rekap-dua', "rekap_dua")->name('rekap_dua');
+        });
       });
     });
   });

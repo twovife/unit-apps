@@ -49,6 +49,7 @@ class TransactionLoanController extends Controller
   // 1
   public function fastcreatev2(Request $request)
   {
+    abort_unless(AppHelper::bolehRekapPenuh(auth()->user()), 403, 'Fastcreate bukan untuk mantri.');
 
 
     return Inertia::render('BukuTransaksi/Web/FastCreateV2');
@@ -57,6 +58,7 @@ class TransactionLoanController extends Controller
 
   public function inputmacet(Request $request)
   {
+    abort_unless(AppHelper::bolehRekapPenuh(auth()->user()), 403, 'Input macet bukan untuk mantri.');
 
 
     return Inertia::render('BukuTransaksi/Web/InputMacet');
@@ -597,6 +599,7 @@ class TransactionLoanController extends Controller
   // store for batch Transksi
   public function store_buku_transaksi_batch(Request $request)
   {
+    abort_unless(AppHelper::bolehRekapPenuh(auth()->user()), 403, 'Fastcreate bukan untuk mantri.');
     // dd($request->all());
     if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
