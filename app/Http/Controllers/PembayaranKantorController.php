@@ -28,7 +28,7 @@ class PembayaranKantorController extends Controller
     /** Halaman Dashboard Kasir; angkanya dimuat lewat ringkasan() (JSON). */
     public function halaman()
     {
-        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403, 'Dashboard kasir untuk kepala mantri, kasir, dan pimpinan.');
+        abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403, 'Dashboard kasir untuk kepala mantri, kasir, dan pimpinan.');
 
         return \Inertia\Inertia::render('Kasir/Dashboard/Index', [
             'videos' => \App\Helpers\VideoTutorial::url(['iuran', 'pinjamanmodal', 'sksw', 'sksw_karyawan_baru', 'tabungangoro']),
@@ -37,7 +37,7 @@ class PembayaranKantorController extends Controller
 
     public function ringkasan(Request $request)
     {
-        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403);
+        abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403);
         $branch = $this->kantor();
         $bulan = $this->bulan($request->input('bulan'));
         $awal = $bulan->copy()->startOfMonth()->toDateString();
@@ -278,7 +278,7 @@ class PembayaranKantorController extends Controller
     /** Halaman detail Tabungan Goro Umrah kantor aktif: rekap per bulan setahun + semua setoran. */
     public function detailUmrah(Request $request)
     {
-        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403);
+        abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403);
         $branch = $this->kantor();
         $tahun = $request->input('tahun');
         $tahunFilter = preg_match('/^\d{4}$/', (string) $tahun) ? (int) $tahun : null;
@@ -334,7 +334,7 @@ class PembayaranKantorController extends Controller
     /** Halaman detail Pinjaman Modal kantor aktif per sumber: daftar pinjaman + riwayat angsuran. */
     public function detailModal(Request $request)
     {
-        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403);
+        abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403);
         $branch = $this->kantor();
         $sumber = array_key_exists((string) $request->input('sumber'), self::SUMBER_MODAL) ? (string) $request->input('sumber') : 'pusat';
 
@@ -385,7 +385,7 @@ class PembayaranKantorController extends Controller
     /** Foto bukti transfer (tb / bop / umrah / modal) kantor yang boleh diakses. */
     public function bukti(string $modul, int $id)
     {
-        abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403);
+        abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403);
         $tabel = ['tb' => 'tb_contributions', 'bop' => 'ops_bop_contributions', 'umrah' => 'goro_umroh_setoran', 'modal' => 'tb_capital_loan_payments'][$modul] ?? abort(404);
         $baris = DB::table($tabel)->find($id) ?? abort(404);
         if ($modul === 'modal') {

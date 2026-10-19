@@ -95,9 +95,9 @@ export default function AppSidebar({ ...props }) {
   // semua kecuali menu superuser (mas 2026-10-10).
   const isMantri = auth?.roles?.includes('mantri') && !isSuperUser;
   // Iuran 1 Juta, Iuran BOP, SKSW, Aset Kendaraan (mas 2026-10-15).
-  const bolehAdmKantor = ['kasir', 'stafkontrol', 'pusat', 'pimpinan', 'superuser'].some((r) => auth?.roles?.includes(r));
-  // Aset Kendaraan: + pengawas (mas 2026-10-19), = route assets.*.
-  const bolehAset = bolehAdmKantor || auth?.roles?.includes('pengawas');
+  // + pengawas (mas 2026-10-19), = AppHelper::PERAN_ADM_KANTOR & route role:.
+  const bolehAdmKantor = ['kasir', 'stafkontrol', 'pusat', 'pimpinan', 'pengawas', 'superuser'].some((r) => auth?.roles?.includes(r));
+  const bolehAset = bolehAdmKantor;
 
   return (
     <Sidebar className="border-r shadow-xs" {...props}>
@@ -147,7 +147,8 @@ export default function AppSidebar({ ...props }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {auth?.permissions?.includes('view-all-groups') && (
+            {/* = AppHelper::bolehAdmKantor: view-all-groups ATAU 6 peran administrasi kantor. */}
+            {(bolehAdmKantor || auth?.permissions?.includes('view-all-groups')) && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild

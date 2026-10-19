@@ -19,7 +19,7 @@ class EmployeeController extends Controller
     // Data karyawan (NIK, alamat) hanya untuk KM / kasir / pimpinan ke atas,
     // dan hanya cabang yang boleh diakses user - ?branch_id dari URL dulu
     // dipakai mentah, jadi siapa pun bisa membaca karyawan cabang mana pun.
-    abort_unless(auth()->user()->hasPermissionTo('view-all-groups'), 403, 'Data karyawan untuk kepala mantri, kasir, dan pimpinan.');
+    abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403, 'Data karyawan untuk kepala mantri, kasir, dan pimpinan.');
     $scope = \App\Helpers\AuthScope::resolve();
     $boleh = Branch::getAllowedBranchIds(auth()->user());
     $branch_id = $request->filled('branch_id') && ($boleh === null || in_array((int) $request->branch_id, $boleh))
@@ -264,7 +264,7 @@ class EmployeeController extends Controller
   public function showDocument(Employee $employee, \App\Models\EmployeeDocument $document)
   {
     $user = auth()->user();
-    abort_unless($user->hasPermissionTo('view-all-groups') || $user->hasAnyRole(['kasir', 'superuser']), 403, 'Akses ditolak.');
+    abort_unless(\App\Helpers\AppHelper::bolehAdmKantor($user), 403, 'Akses ditolak.');
     $boleh = Branch::getAllowedBranchIds($user);
     abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
     abort_unless((int) $document->employee_id === (int) $employee->id, 404);

@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
 
   // Iuran 1 Juta, Iuran BOP, SKSW, Aset Kendaraan: hanya 5 peran ini (= menu sidebar,
   // mas 2026-10-15). Gerbang tulis yang lebih sempit tetap di controller masing-masing.
-  Route::middleware('role:kasir|stafkontrol|pusat|pimpinan|superuser')->group(function () {
+  Route::middleware('role:kasir|stafkontrol|pusat|pimpinan|pengawas|superuser')->group(function () {
   Route::prefix('tabungan')->name('tabungan.')->controller(\App\Http\Controllers\TbContributionController::class)->group(function () {
     Route::get('/contributions', 'index')->name('contributions');
     Route::post('/contributions', 'store')->name('contributions.store');

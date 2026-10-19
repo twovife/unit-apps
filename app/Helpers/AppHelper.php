@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\Auth;
 
 class AppHelper
 {
+  /** Peran menu Administrasi Cabang (Data Karyawan s/d Aset; mas 2026-10-19). */
+  public const PERAN_ADM_KANTOR = ['kasir', 'stafkontrol', 'pusat', 'superuser', 'pimpinan', 'pengawas'];
+
+  /** Boleh buka halaman Administrasi Cabang: view-all-groups (KM dsb.) ATAU salah satu peran di atas. */
+  public static function bolehAdmKantor($user): bool
+  {
+    return $user && ($user->hasPermissionTo('view-all-groups') || $user->hasAnyRole(self::PERAN_ADM_KANTOR));
+  }
 
   // Bisa create pengajuan? Cermin resolusi cabang/kelompok di store: butuh
   // grouping yang bisa diselesaikan di CABANG AKTIF.
