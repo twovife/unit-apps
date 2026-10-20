@@ -42,7 +42,11 @@ class KoreksiTarget
     /** @throws \RuntimeException pesan untuk user */
     public static function simpan(int $groupingId, string $tanggal, ?int $target, ?int $keluar, string $alasan, int $employeeId): array
     {
-        return DB::transaction(fn() => self::jalankan($groupingId, $tanggal, $target, $keluar, true, $alasan, $employeeId));
+        // Rantai dihitung di sini; hook updating lama di TransactionDailyRecap (ikut
+        // menjalar lewat target_on) dimatikan supaya tidak dobel / berputar.
+        return DB::transaction(fn() => TransactionDailyRecap::withoutEvents(
+            fn() => self::jalankan($groupingId, $tanggal, $target, $keluar, true, $alasan, $employeeId)
+        ));
     }
 
     private static function jalankan(int $groupingId, string $tanggal, ?int $target, ?int $keluar, bool $tulis, string $alasan = '', int $employeeId = 0): array
