@@ -243,25 +243,18 @@ class TransactionLoanController extends Controller
         return redirect()->back()->withErrors('Baris ini sudah dikunci kasir.');
       }
 
-      // Koreksi target hari D: angka tulis tangan menggantikan hasil rantai,
-      // ditandai 'koreksi' supaya ACC minggu lalu / cron tidak menimpanya.
-      if ($request->filled('target_koreksi') && (int) $request->target_koreksi !== (int) $closing->target) {
-        $lama = (int) $closing->target;
-        $closing->update(['target' => (int) $request->target_koreksi, 'target_source' => 'koreksi']);
-        \App\Models\TransactionLockHistory::create([
-          'transaction_daily_closing_id' => $closing->id,
-          'transaction_loan_officer_grouping_id' => $groupingId,
-          'tanggal' => $date,
-          'aksi' => \App\Models\TransactionLockHistory::AKSI_TARGET,
-          'user_id' => $user->employee->id,
-          'alasan' => sprintf('Target %s -> %s. %s', number_format($lama, 0, ',', '.'),
-            number_format((int) $request->target_koreksi, 0, ',', '.'), $request->alasan_koreksi),
-        ]);
-      }
+      $targetLama = (int) $closing->target;
+      $keluarLama = (int) $closing->keluar;
+      $sudahAcc = $closing->kepala_approval_at !== null;
 
       // Simpan keluar + tanda cek kepala + target minggu depan - logika yang
       // sama dipakai ACC otomatis saat kunci kasir (CeklistKepala).
       $depanDikoreksi = \App\Helpers\CeklistKepala::simpan($closing, (int) $request->keluar, $user->employee->id);
+
+      // Target / keluar diubah di form ACC: koreksi + menjalar ke tanggal sesudahnya.
+      \App\Helpers\KoreksiTarget::sesudahAcc($groupingId, $date, $targetLama,
+        $request->filled('target_koreksi') ? (int) $request->target_koreksi : $targetLama,
+        $keluarLama, (int) $request->keluar, $request->alasan_koreksi, (int) $user->employee->id, $sudahAcc);
 
       DB::commit();
     } catch (\Illuminate\Database\QueryException $e) {

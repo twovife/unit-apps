@@ -80,9 +80,12 @@ class KoreksiTarget
 
         $perubahan = [['tanggal' => $d->toDateString(), 'lama' => $targetLama, 'baru' => $targetBaru]];
         if ($tulis) {
-            $awal->update(['target' => $targetBaru, 'keluar' => $keluarBaru] + ($migrasi
+            // Tanda koreksi (putus dari ACC minggu lalu) hanya kalau TARGET-nya yang
+            // diubah; ubah keluar saja tetap ikut rantai biasa.
+            $tanda = $targetBaru === $targetLama ? [] : ($migrasi
                 ? ['target_source' => 'koreksi']
-                : ['target_on' => $d->toDateString()]));
+                : ['target_on' => $d->toDateString()]);
+            $awal->update(['target' => $targetBaru, 'keluar' => $keluarBaru] + $tanda);
         }
 
         // Menjalar ke depan sampai baris terakhir yang ada.
@@ -122,6 +125,27 @@ class KoreksiTarget
         }
 
         return ['migrasi' => $migrasi, 'perubahan' => $perubahan, 'keluar_lama' => $keluarLama];
+    }
+
+    /**
+     * Dipanggil sesudah ACC KM (dua alur): target hari D diubah di form -> koreksi +
+     * menjalar; keluar diubah pada hari yang SUDAH pernah di-ACC (ACC ulang) ->
+     * menjalar ulang bila bulan berjalan. ACC pertama biasa -> diam (D+7 sudah
+     * ditulis CeklistKepala / ACC lama).
+     *
+     * @throws \RuntimeException target diubah di luar bulan berjalan, dsb.
+     */
+    public static function sesudahAcc(int $groupingId, string $tanggal, int $targetLama, int $targetBaru, int $keluarLama, int $keluarBaru, ?string $alasan, int $employeeId, bool $sudahAcc): void
+    {
+        $targetBerubah = $targetBaru !== $targetLama;
+        $keluarBerubah = $sudahAcc && $keluarBaru !== $keluarLama;
+        if (!$targetBerubah && !($keluarBerubah && Carbon::parse($tanggal)->isSameMonth(Carbon::now()))) {
+            return;
+        }
+        if ($targetBerubah && strlen(trim((string) $alasan)) < 5) {
+            throw new \RuntimeException('Target diubah: alasan koreksi wajib diisi (min. 5 huruf).');
+        }
+        self::simpan($groupingId, $tanggal, $targetBaru, $keluarBaru, (string) ($alasan ?: 'Keluar diubah saat ACC KM.'), $employeeId);
     }
 
     /** Alur lama: target tanggal ini dikoreksi tangan (target_on = tanggalnya sendiri) - jangan ditimpa ACC minggu lalu. */

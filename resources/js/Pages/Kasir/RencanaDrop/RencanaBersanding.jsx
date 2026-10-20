@@ -68,7 +68,7 @@ export const Sisi = ({
     </div>
     <div className="overflow-x-auto">
       <table className="w-full text-xs tabular-nums">
-        <thead className={WARNA_KEPALA.biru}>
+        <thead className="bg-slate-100 text-slate-700">
           <tr className="h-8">
             <th className="px-3 py-1.5 font-medium text-left">{kepalaPertama}</th>
             {kolom.map(([k, label]) => (
@@ -232,7 +232,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KIRI}
                 kosong={kosong}
                 klik={klik}
-                warna={dayjs(item.tanggal).day() === 1 ? WARNA_KEPALA.merah : WARNA_KEPALA.biru}
+                warna={WARNA_KEPALA.biru}
                 kolomKm
                 onAcc={onAcc}
               />
@@ -243,7 +243,7 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
                 kolom={KANAN}
                 kosong={kosong}
                 klik={klik}
-                warna={WARNA_KEPALA.hijau}
+                warna="bg-slate-200 text-slate-800"
                 // Target minggu depan dibanding target hari ini.
                 banding={{ p_target: 'target' }}
               />

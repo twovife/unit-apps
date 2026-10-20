@@ -2,11 +2,11 @@ import Loading from '@/Components/Loading';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
-import { useForm, usePage } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
-import KoreksiTarget from './KoreksiTarget';
+import axios from 'axios';
 
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const KELAS_INPUT =
@@ -49,7 +49,7 @@ const Approval = ({
   // Dipanggil sesudah ACC tersimpan (mis. menutup drawer ACC KM pembungkusnya).
   onSukses = null,
 }) => {
-  const { data, setData, post, reset, errors, processing } = useForm({
+  const { data, setData, post, reset, errors, processing, transform } = useForm({
     id: '',
     date: '',
     masuk: '',
@@ -68,11 +68,16 @@ const Approval = ({
     target_koreksi: '',
     alasan_koreksi: '',
   });
-  // Koreksi target / keluar lewat dialog (KoreksiTarget): bulan berjalan, sudah lewat,
-  // walau hari itu sudah di-ACC / dikunci. can-approve selain stafkontrol.
-  const [koreksiBuka, setKoreksiBuka] = useState(false);
+  // Target & keluar diubah langsung di form ACC (dua alur, mas 2026-10-20). Target
+  // berubah -> koreksi + menjalar ke tanggal sesudahnya (KoreksiTarget, server).
+  // can-approve selain stafkontrol; selain itu target hanya baca.
   const { auth: authKoreksi } = usePage().props;
   const bolehKoreksi = authKoreksi?.permissions?.includes('can-approve') && !authKoreksi?.roles?.includes('stafkontrol');
+  const [pratinjau, setPratinjau] = useState(null);
+  // Target baru bisa diketik sesudah klik "Edit" (cegah ubah tak sengaja).
+  const [ubahTarget, setUbahTarget] = useState(false);
+  useEffect(() => setUbahTarget(false), [show, triggeredDate]);
+  const [galatKoreksi, setGalatKoreksi] = useState('');
   const [triggeredData, setTriggeredData] = useState([]);
 
   const [transaksiOpenHariIni, setTransaksiOpenHariIni] = useState([]);
@@ -262,11 +267,30 @@ const Approval = ({
 
   const onSubmitForm = (e) => {
     e.preventDefault();
+    const opsi = {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        reset();
+        onClosed();
+        onSukses?.();
+      },
+    };
+
+    // Hari sudah dikunci / TTD kasir: tidak di-ACC ulang, cukup koreksi target & keluar.
+    if (terkunci) {
+      router.post(route('transaction.koreksi_target'), {
+        id: data.id, date: dayjs(data.date).format('YYYY-MM-DD'),
+        target: Number(data.target) || 0, keluar: Number(data.keluar) || 0, alasan: data.alasan_koreksi,
+      }, opsi);
+      return;
+    }
 
     const url = migrasi
       ? route('transaction.ceklist_kepala_baru')
       : route('kasir.rekap.ceklist_kepala');
 
+    transform((d) => ({ ...d, target_koreksi: targetBerubah ? Number(d.target) || 0 : '' }));
     post(url, {
       // Jangan lompat ke atas daftar / ganti tab / minggu sesudah simpan.
       preserveScroll: true,
@@ -278,6 +302,36 @@ const Approval = ({
       },
     });
   };
+
+  const terkunci = !!triggeredData?.is_kasir;
+  const targetBerubah = (Number(data.target) || 0) !== (Number(triggeredData?.target) || 0);
+  const keluarBerubah = (Number(data.keluar) || 0) !== (Number(triggeredData?.keluar) || 0);
+  const perluAlasan = targetBerubah || (terkunci && keluarBerubah);
+  // Rantai dihitung ulang server: target berubah, atau keluar berubah pada hari yang
+  // sudah pernah di-ACC / dikunci (ACC pertama biasa cukup menulis minggu depan).
+  const menjalar = targetBerubah || ((terkunci || !!triggeredData?.at_approved) && keluarBerubah);
+
+  // Pratinjau rantai (server) tiap target / keluar berubah - hanya kalau ada perubahan.
+  useEffect(() => {
+    setGalatKoreksi('');
+    if (!show || !triggeredData?.grouping_id || !menjalar) {
+      setPratinjau(null);
+      return undefined;
+    }
+    const t = setTimeout(() => {
+      axios
+        .get(route('transaction.koreksi_target_pratinjau'), {
+          params: { id: triggeredData.grouping_id, date: dayjs(triggeredData.tanggal).format('YYYY-MM-DD'),
+            target: Number(data.target) || 0, keluar: Number(data.keluar) || 0 },
+        })
+        .then(({ data: h }) => setPratinjau(h.perubahan))
+        .catch((er) => {
+          setPratinjau(null);
+          if (targetBerubah || terkunci) setGalatKoreksi(er.response?.data?.message ?? '');
+        });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [show, data.target, data.keluar, triggeredData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const targetDasar = data.target;
   const targetMingguDepan = (parseInt(targetDasar) || 0) + ((parseInt(data.masuk) || 0) - (parseInt(data.keluar) || 0));
@@ -307,14 +361,6 @@ const Approval = ({
                 <Angka label="Rencana" nilai={triggeredData.rencana} />
               </div>
 
-              {bolehKoreksi &&
-                triggeredData.grouping_id &&
-                dayjs(triggeredData.tanggal).isSame(dayjs(), 'month') &&
-                !dayjs(triggeredData.tanggal).isAfter(dayjs(), 'day') && (
-                  <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setKoreksiBuka(true)}>
-                    Koreksi target / keluar
-                  </Button>
-                )}
 
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="p-3 border rounded-lg border-emerald-200">
@@ -354,27 +400,32 @@ const Approval = ({
             <form onSubmit={onSubmitForm} className="space-y-5">
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-900">Hari ini</h3>
-                {/* Target hari ini: tampil (hanya baca) di dua alur. Ubah lewat tombol
-                    "Koreksi target / keluar" di atas. Alur lama tanpa target sama sekali
-                    -> KM mengisinya di sini (target pertama). */}
-                {!migrasi && !triggeredData?.target ? (
-                  <label className="block text-sm">
-                    Target
-                    <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} prefix="Rp " required
-                      onValueChange={onHandleCurencyChange} value={data.target} />
-                  </label>
-                ) : (
-                  <label className="block text-sm">
-                    Target
+                {/* Target hari ini: hanya baca; klik "Edit" (can-approve selain stafkontrol)
+                    untuk mengubah - berubah -> alasan wajib, tanggal sesudahnya ikut dihitung
+                    ulang. Alur lama tanpa target sama sekali -> langsung diisi (target pertama). */}
+                <div className="text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>Target</span>
+                    {bolehKoreksi && !ubahTarget && (migrasi || triggeredData?.target) ? (
+                      <button type="button" className="text-xs font-semibold text-blue-600 underline" onClick={() => setUbahTarget(true)}>
+                        Edit
+                      </button>
+                    ) : null}
+                  </div>
+                  {(bolehKoreksi && ubahTarget) || (!migrasi && !triggeredData?.target) ? (
+                    <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} allowNegativeValue={false}
+                      prefix="Rp " required onValueChange={onHandleCurencyChange} value={data.target} />
+                  ) : (
                     <CurrencyInput className={`${KELAS_INPUT} ${KELAS_BEKU}`} name="target" disabled prefix="Rp "
                       value={data.target ?? 0} />
-                  </label>
-                )}
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block text-sm">
                     Masuk
-                    <CurrencyInput className={KELAS_INPUT} name="masuk" allowDecimals={false} allowNegativeValue={false}
-                      prefix="Rp " required onValueChange={onHandleCurencyChange} value={data.masuk} />
+                    {/* Masuk ikut drop - tidak diketik. */}
+                    <CurrencyInput className={`${KELAS_INPUT} ${KELAS_BEKU}`} name="masuk" disabled prefix="Rp "
+                      value={data.masuk ?? 0} />
                   </label>
                   <label className="block text-sm">
                     Keluar
@@ -382,6 +433,24 @@ const Approval = ({
                       prefix="Rp " required onValueChange={onHandleCurencyChange} value={data.keluar} />
                   </label>
                 </div>
+                {perluAlasan && (
+                  <Input name="alasan_koreksi" required placeholder="Alasan ubah target / keluar (wajib)"
+                    onChange={onInputChange} value={data.alasan_koreksi ?? ''} />
+                )}
+                {galatKoreksi && <small className="block text-red-600">{galatKoreksi}</small>}
+                {pratinjau && pratinjau.length > 1 && (
+                  <div className="p-2 text-xs border rounded-md bg-amber-50 border-amber-200">
+                    <div className="mb-1 font-semibold text-amber-800">Target tanggal sesudahnya ikut berubah</div>
+                    <div className="max-h-40 space-y-0.5 overflow-y-auto tabular-nums">
+                      {pratinjau.slice(1).filter((p) => p.lama !== p.baru).map((p) => (
+                        <div key={p.tanggal} className="flex justify-between gap-2">
+                          <span>{dayjs(p.tanggal).format('DD MMM')}</span>
+                          <span>{rp(p.lama)} → <b>{rp(p.baru)}</b></span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
 
               <section className="space-y-3">
@@ -423,12 +492,11 @@ const Approval = ({
               </label>
 
               <Button type="submit" className="w-full" disabled={processing}>
-                Simpan ACC KM
+                {terkunci ? 'Simpan koreksi (hari sudah dikunci kasir)' : 'Simpan ACC KM'}
               </Button>
             </form>
           )}
         </div>
-        <KoreksiTarget baris={koreksiBuka ? triggeredData : null} onClosed={() => setKoreksiBuka(false)} />
       </SheetContent>
     </Sheet>
   );

@@ -170,7 +170,8 @@ const RekapContent = ({
           </div>
         </div>
       )}
-      {(show == 'rekapkasir' || show == 'rekap2') && <BannerHariTerbuka hari={server_filter.hari_terbuka} />}
+      {/* Keterangan hari dibuka ulang cukup di Rekap 1 (mas 2026-10-20). */}
+      {show == 'rekapkasir' && <BannerHariTerbuka hari={server_filter.hari_terbuka} />}
       {(show == 'rekapkasir' || show == 'rekap2') && (
         <div className="mb-3">
           <FilterBar

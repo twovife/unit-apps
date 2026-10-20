@@ -491,6 +491,9 @@ class TransactionDailyRecapController extends Controller
       $sumAllInstalment = TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $request->id)->where('transaction_date', $request->date)->sum('nominal');
 
       $check_thisDay = TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->date]);
+      $targetLama = (int) $check_thisDay->target;
+      $keluarLama = (int) $check_thisDay->keluar;
+      $sudahAcc = $check_thisDay->daily_kepala_approval !== null;
       $check_thisDay->update([
         'drop' => $sumAllDrop,
         'storting' => $sumAllInstalment,
@@ -513,7 +516,16 @@ class TransactionDailyRecapController extends Controller
 
 
 
+      // Target / keluar diubah di form ACC: koreksi + menjalar (KoreksiTarget).
+      \App\Helpers\KoreksiTarget::sesudahAcc((int) $request->id, Carbon::parse($request->date)->toDateString(), $targetLama,
+        $request->filled('target_koreksi') ? (int) $request->target_koreksi : $targetLama,
+        $keluarLama, (int) $request->keluar, $request->alasan_koreksi, (int) auth()->user()->employee->id, $sudahAcc);
+
       DB::commit();
+    } catch (\RuntimeException $e) {
+      // Pesan untuk user dari KoreksiTarget (mis. target diubah di luar bulan berjalan).
+      DB::rollBack();
+      return redirect()->back()->withErrors($e->getMessage());
     } catch (Exception $e) {
       DB::rollBack();
       return redirect()->back()->withError('Data Gagal Diperbarui, Refresh / Hub IT');

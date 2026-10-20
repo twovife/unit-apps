@@ -129,14 +129,6 @@ const Rencana = ({ datas, dataTransaksi, onStorting, onAccSelesai = null, sorot 
                           {server_filter?.migrasi && item.is_kasir ? '🔒 ACC' : 'ACC'}
                         </BargeStatus>
                       )}
-                      {item.dibuka_at && (
-                        <span
-                          title={item.dibuka_alasan ?? ''}
-                          className="rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800"
-                        >
-                          dibuka ulang {dayjs(item.dibuka_at).format('DD MMM YYYY')}
-                        </span>
-                      )}
                     </div>
                   )}
                 </TableCell>
