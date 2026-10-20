@@ -281,7 +281,7 @@ const Approval = ({
     if (terkunci) {
       router.post(route('transaction.koreksi_target'), {
         id: data.id, date: dayjs(data.date).format('YYYY-MM-DD'),
-        target: Number(data.target) || 0, keluar: Number(data.keluar) || 0, alasan: data.alasan_koreksi,
+        target: Number(data.target) || 0, keluar: Number(data.keluar) || 0,
       }, opsi);
       return;
     }
@@ -306,7 +306,6 @@ const Approval = ({
   const terkunci = !!triggeredData?.is_kasir;
   const targetBerubah = (Number(data.target) || 0) !== (Number(triggeredData?.target) || 0);
   const keluarBerubah = (Number(data.keluar) || 0) !== (Number(triggeredData?.keluar) || 0);
-  const perluAlasan = targetBerubah || (terkunci && keluarBerubah);
   // Rantai dihitung ulang server: target berubah, atau keluar berubah pada hari yang
   // sudah pernah di-ACC / dikunci (ACC pertama biasa cukup menulis minggu depan).
   const menjalar = targetBerubah || ((terkunci || !!triggeredData?.at_approved) && keluarBerubah);
@@ -401,7 +400,7 @@ const Approval = ({
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-900">Hari ini</h3>
                 {/* Target hari ini: hanya baca; klik "Edit" (can-approve selain stafkontrol)
-                    untuk mengubah - berubah -> alasan wajib, tanggal sesudahnya ikut dihitung
+                    untuk mengubah - berubah -> tanggal sesudahnya ikut dihitung
                     ulang. Alur lama tanpa target sama sekali -> langsung diisi (target pertama). */}
                 <div className="text-sm">
                   <div className="flex items-center justify-between">
@@ -433,10 +432,6 @@ const Approval = ({
                       prefix="Rp " required onValueChange={onHandleCurencyChange} value={data.keluar} />
                   </label>
                 </div>
-                {perluAlasan && (
-                  <Input name="alasan_koreksi" required placeholder="Alasan ubah target / keluar (wajib)"
-                    onChange={onInputChange} value={data.alasan_koreksi ?? ''} />
-                )}
                 {galatKoreksi && <small className="block text-red-600">{galatKoreksi}</small>}
                 {pratinjau && pratinjau.length > 1 && (
                   <div className="p-2 text-xs border rounded-md bg-amber-50 border-amber-200">

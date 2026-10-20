@@ -169,13 +169,9 @@ class TransactionLoanController extends Controller
   public function koreksi_target(Request $request)
   {
     $val = $this->validasiKoreksiTarget($request);
-    $request->validate(['alasan' => ['required', 'string', 'min:5', 'max:500']], [
-      'alasan.required' => 'Alasan koreksi wajib diisi.',
-      'alasan.min' => 'Alasan koreksi terlalu pendek.',
-    ]);
     try {
       $hasil = \App\Helpers\KoreksiTarget::simpan((int) $val['id'], $val['date'], $val['target'] ?? null, $val['keluar'] ?? null,
-        $request->alasan, (int) auth()->user()->employee->id);
+        'Diubah dari form ACC KM (hari terkunci).', (int) auth()->user()->employee->id);
     } catch (\RuntimeException $e) {
       return redirect()->back()->withErrors($e->getMessage());
     }
@@ -196,11 +192,9 @@ class TransactionLoanController extends Controller
       'keluar' => ['required', 'integer', 'min:0'],
       // Koreksi target hari ini (opsional): memutus rantai di tanggal ini.
       'target_koreksi' => ['nullable', 'integer', 'min:0'],
-      'alasan_koreksi' => ['nullable', 'required_with:target_koreksi', 'string', 'min:5', 'max:500'],
+      'alasan_koreksi' => ['nullable', 'string', 'max:500'],
     ], [
       'date.before_or_equal' => 'Belum harinya — Ceklist Kepala baru bisa pada hari itu atau sesudahnya.',
-      'alasan_koreksi.required_with' => 'Alasan koreksi target wajib diisi.',
-      'alasan_koreksi.min' => 'Alasan koreksi target terlalu pendek.',
     ]);
 
     $groupingId = (int) $request->id;

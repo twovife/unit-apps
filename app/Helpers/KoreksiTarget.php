@@ -142,10 +142,8 @@ class KoreksiTarget
         if (!$targetBerubah && !($keluarBerubah && Carbon::parse($tanggal)->isSameMonth(Carbon::now()))) {
             return;
         }
-        if ($targetBerubah && strlen(trim((string) $alasan)) < 5) {
-            throw new \RuntimeException('Target diubah: alasan koreksi wajib diisi (min. 5 huruf).');
-        }
-        self::simpan($groupingId, $tanggal, $targetBaru, $keluarBaru, (string) ($alasan ?: 'Keluar diubah saat ACC KM.'), $employeeId);
+        // Tanpa alasan (mas 2026-10-20): ubah target langsung dari form ACC.
+        self::simpan($groupingId, $tanggal, $targetBaru, $keluarBaru, (string) ($alasan ?: 'Diubah dari form ACC KM.'), $employeeId);
     }
 
     /** Alur lama: target tanggal ini dikoreksi tangan (target_on = tanggalnya sendiri) - jangan ditimpa ACC minggu lalu. */
