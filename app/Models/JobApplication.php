@@ -27,7 +27,7 @@ class JobApplication extends Model
     ];
 
     protected $casts = [
-        'tanggal_lamaran' => 'date',
+        'tanggal_lamaran' => 'date:Y-m-d',
         'decided_at' => 'datetime',
     ];
 

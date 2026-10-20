@@ -56,8 +56,8 @@ class TransactionDailyClosing extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'target_on' => 'date',
+        'date' => 'date:Y-m-d',
+        'target_on' => 'date:Y-m-d',
         'kepala_approval_at' => 'datetime',
         'kasir_lock_at' => 'datetime',
         'setoran_tunai' => 'integer',

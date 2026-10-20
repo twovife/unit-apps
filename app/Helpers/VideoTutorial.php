@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,6 +43,83 @@ class VideoTutorial
         'input_angsuran' => 'Perubahan Tampilan Menu Angsuran',
     ];
 
+    /** Menu yang punya tombol video => nama di pilihan Tambah Video */
+    public const MENU = [
+        'aset' => 'Aset Kendaraan',
+        'lamaran' => 'Lamaran Kerja',
+        'sksw' => 'SKSW Unit',
+        'angsuran' => 'Angsuran',
+        'kasir' => 'Dashboard Kasir',
+        'home' => 'Home',
+        'pengajuan' => 'Input Pengajuan',
+        'buku_transaksi' => 'Buku Transaksi',
+        'fastcreate' => 'Fastcreate',
+        'input_macet' => 'Input Macet',
+        'macet' => 'Pinjaman Macet',
+        'cari_angsuran' => 'Cari Angsuran',
+        'rekap_satu' => 'Rekap 1',
+        'rekap_dua' => 'Rekap 2',
+        'rencana_drop' => 'Rencana Drop',
+        'rekap_permantri' => 'Rekap Per Mantri',
+        'manpower' => 'Manpower',
+        'tabungan' => 'Iuran 1 Juta',
+        'bop' => 'Iuran BOP',
+        'goro_umrah' => 'Tabungan Goro Umrah',
+        'pinjaman_modal' => 'Pinjaman Modal',
+    ];
+
+    /**
+     * Video tambahan superuser untuk satu menu (baris tutorial_videos ber-menu).
+     *
+     * @return array<int,array{key:string,judul:string,deskripsi:?string,url:string}>
+     */
+    public static function menu(string $menu): array
+    {
+        try {
+            $disk = Storage::disk('s3_publik');
+
+            return DB::table('tutorial_videos')->where('menu', $menu)->whereNotNull('path')
+                ->orderBy('id')->get()
+                ->map(fn($r) => [
+                    'key' => $r->kunci,
+                    'judul' => $r->judul ?: 'Video Panduan',
+                    'deskripsi' => $r->deskripsi,
+                    'url' => $disk->temporaryUrl($r->path, now()->addHours(3)),
+                ])->all();
+        } catch (\Throwable $e) {
+            Log::warning('Video panduan menu tidak bisa dimuat: ' . $e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * Berkas per kunci: bawaan kode ditimpa tabel tutorial_videos (superuser).
+     * path NULL di tabel = video disembunyikan. Tabel belum ada = bawaan saja.
+     *
+     * @param array<string,string> $dasar
+     * @return array<string,string>
+     */
+    public static function berkas(array $dasar = self::BERKAS): array
+    {
+        try {
+            foreach (DB::table('tutorial_videos')->get() as $r) {
+                if (!array_key_exists($r->kunci, $dasar)) {
+                    continue;
+                }
+                if ($r->path) {
+                    $dasar[$r->kunci] = $r->path;
+                } else {
+                    unset($dasar[$r->kunci]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // ponytail: tabel belum dimigrasi -> pakai bawaan kode.
+        }
+
+        return $dasar;
+    }
+
     /**
      * Mengambil daftar link sementara (presigned URL) untuk video yang diminta.
      *
@@ -56,7 +134,7 @@ class VideoTutorial
 
         try {
             $disk = Storage::disk('s3_publik');
-            $berkas = self::BERKAS;
+            $berkas = self::berkas();
 
             if ($kunci !== null) {
                 $daftarKunci = (array) $kunci;

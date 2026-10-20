@@ -19,8 +19,8 @@ class InvVehicle extends Model
     ];
 
     protected $casts = [
-        'tanggal_stnk' => 'date',
-        'tanggal_pajak_tahunan' => 'date',
+        'tanggal_stnk' => 'date:Y-m-d',
+        'tanggal_pajak_tahunan' => 'date:Y-m-d',
     ];
 
     public function asset(): BelongsTo

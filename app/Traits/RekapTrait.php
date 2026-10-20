@@ -1024,7 +1024,7 @@ trait RekapTrait
     $dateOfMb = $transaction_date->copy()->subMonth(4);
     $dateOfCm = $transaction_date->copy()->subMonth(3);
 
-    $transactionOffice = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+    $transactionOffice = AppHelper::kelompokAktif($branch_id, $kelompok);
 
     // GERBANG alur baru (lihat getDataRekapDua/getRekapDuaData): kantor migrasi
     // ambil kasbon/transport/tunai + status kunci dari daily_closings, dan saldo

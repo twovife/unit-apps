@@ -32,7 +32,7 @@ class WorkDay extends Model
     protected $fillable = ['date', 'is_libur', 'keterangan', 'dibuat_oleh'];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
         'is_libur' => 'boolean',
     ];
 

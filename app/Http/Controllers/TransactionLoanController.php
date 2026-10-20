@@ -135,6 +135,54 @@ class TransactionLoanController extends Controller
   //   target(D+7) = target(D) + drop(D)*0,13 - keluar
   // EVENT, bukan hook rekursif; drop satu sumber (HitungAgregat). Menimpa nilai
   // 'auto' (verifikasi manusia mengalahkan placeholder cron).
+  /**
+   * Koreksi target / keluar hari D (bulan berjalan), menjalar ke tanggal sesudahnya
+   * (AppHelper\KoreksiTarget). Boleh walau hari D sudah dikunci kasir. can-approve
+   * selain stafkontrol, kelompok di wilayahnya. GET = pratinjau, POST = simpan.
+   */
+  private function validasiKoreksiTarget(Request $request): array
+  {
+    $user = auth()->user();
+    abort_unless($user->hasPermissionTo('can-approve') && !$user->hasRole('stafkontrol'), 403, 'Koreksi target butuh izin can-approve.');
+    $val = $request->validate([
+      'id' => ['required', 'integer'],
+      'date' => ['required', 'date'],
+      'target' => ['nullable', 'integer', 'min:0'],
+      'keluar' => ['nullable', 'integer', 'min:0'],
+    ]);
+    $grouping = TransactionLoanOfficerGrouping::findOrFail($val['id']);
+    abort_unless(AppHelper::bolehAksesKelompok($grouping), 403, AppHelper::PESAN_BUKAN_WILAYAH);
+
+    return $val;
+  }
+
+  public function koreksi_target_pratinjau(Request $request)
+  {
+    $val = $this->validasiKoreksiTarget($request);
+    try {
+      return response()->json(\App\Helpers\KoreksiTarget::pratinjau((int) $val['id'], $val['date'], $val['target'] ?? null, $val['keluar'] ?? null));
+    } catch (\RuntimeException $e) {
+      return response()->json(['message' => $e->getMessage()], 422);
+    }
+  }
+
+  public function koreksi_target(Request $request)
+  {
+    $val = $this->validasiKoreksiTarget($request);
+    $request->validate(['alasan' => ['required', 'string', 'min:5', 'max:500']], [
+      'alasan.required' => 'Alasan koreksi wajib diisi.',
+      'alasan.min' => 'Alasan koreksi terlalu pendek.',
+    ]);
+    try {
+      $hasil = \App\Helpers\KoreksiTarget::simpan((int) $val['id'], $val['date'], $val['target'] ?? null, $val['keluar'] ?? null,
+        $request->alasan, (int) auth()->user()->employee->id);
+    } catch (\RuntimeException $e) {
+      return redirect()->back()->withErrors($e->getMessage());
+    }
+
+    return redirect()->back()->with('message', 'Target dikoreksi; ' . (count($hasil['perubahan']) - 1) . ' tanggal sesudahnya ikut dihitung ulang.');
+  }
+
   public function ceklist_kepala_baru(Request $request)
   {
     $user = auth()->user();

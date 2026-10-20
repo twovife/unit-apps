@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CheckCircle2, Loader2, MapPin, Pencil, Trash2, Wrench } from 'lucide-react';
@@ -51,11 +52,11 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
   const mutate = useForm({
     branch_id: '',
     pengguna: '',
-    assigned_date: new Date().toISOString().slice(0, 10),
+    assigned_date: dayjs().format('YYYY-MM-DD'),
     notes: '',
   });
   const maintenance = useForm({
-    maintenance_date: new Date().toISOString().slice(0, 10),
+    maintenance_date: dayjs().format('YYYY-MM-DD'),
     cost: '',
     odometer: '',
     description: '',
@@ -63,7 +64,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
   const taxForm = useForm({
     cost: '',
     denda: '',
-    paid_date: new Date().toISOString().slice(0, 10),
+    paid_date: dayjs().format('YYYY-MM-DD'),
     plat_nomor: '',
     notes: '',
     sampai_periode: '',
@@ -136,7 +137,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     taxForm.setData({
       cost: '',
       denda: '',
-      paid_date: new Date().toISOString().slice(0, 10),
+      paid_date: dayjs().format('YYYY-MM-DD'),
       plat_nomor: '',
       notes: '',
       sampai_periode: String(defaultPeriode),
@@ -205,7 +206,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                     mutate.setData({
                       branch_id: String(currentLocation?.branch_id ?? ''),
                       pengguna: '',
-                      assigned_date: new Date().toISOString().slice(0, 10),
+                      assigned_date: dayjs().format('YYYY-MM-DD'),
                       notes: '',
                     });
                     setModal('mutate');

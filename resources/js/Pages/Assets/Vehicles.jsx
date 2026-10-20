@@ -99,7 +99,7 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
             <p className="mt-1 text-sm text-muted-foreground">Daftar kendaraan operasional pada kantor aktif.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <VideoTutorialButton videos={video} />
+            <VideoTutorialButton videos={video} menu="aset" />
             {canInputTax && (
               <Button asChild variant="outline">
                 <Link href={route('assets.her')}><Calendar className="mr-2 size-4" />Pajak Kendaraan</Link>

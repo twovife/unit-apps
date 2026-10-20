@@ -16,7 +16,7 @@ class InvMaintenanceLog extends Model
     ];
 
     protected $casts = [
-        'maintenance_date' => 'date',
+        'maintenance_date' => 'date:Y-m-d',
         'cost' => 'integer',
         'odometer' => 'integer',
     ];

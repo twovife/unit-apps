@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, CalendarDays, CheckCircle2, CircleAlert, MapPin, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -32,9 +33,9 @@ export default function VehicleTaxes({ branch, vehicles, branches, period: initi
   const [detail, setDetail] = useState(null);
   const [payment, setPayment] = useState(null);
   const [period, setPeriod] = useState(initialPeriod);
-  const form = useForm({ cost: '', denda: '', paid_date: new Date().toISOString().slice(0, 10), plat_nomor: '', notes: '', sampai_periode: '' });
+  const form = useForm({ cost: '', denda: '', paid_date: dayjs().format('YYYY-MM-DD'), plat_nomor: '', notes: '', sampai_periode: '' });
   const paidOnPage = vehicles.data.filter((vehicle) => vehicle.is_paid).length;
-  const overdueOnPage = vehicles.data.filter((vehicle) => !vehicle.is_paid && vehicle.tanggal_pajak_tahunan < new Date().toISOString().slice(0, 10)).length;
+  const overdueOnPage = vehicles.data.filter((vehicle) => !vehicle.is_paid && vehicle.tanggal_pajak_tahunan < dayjs().format('YYYY-MM-DD')).length;
   const monthLabel = useMemo(() => {
     const [year, month] = period.split('-').map(Number);
     return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
@@ -50,7 +51,7 @@ export default function VehicleTaxes({ branch, vehicles, branches, period: initi
     form.setData({
       cost: '',
       denda: '',
-      paid_date: new Date().toISOString().slice(0, 10),
+      paid_date: dayjs().format('YYYY-MM-DD'),
       plat_nomor: '',
       notes: '',
       sampai_periode: String(vehicle.sampai_periode),
@@ -117,7 +118,7 @@ export default function VehicleTaxes({ branch, vehicles, branches, period: initi
                       <TableCell><button type="button" className="font-mono font-semibold text-primary hover:underline" onClick={() => setDetail({ id: vehicle.asset_id, name: vehicle.name })}>{vehicle.plat_nomor}</button></TableCell>
                       <TableCell><div className="font-medium">{vehicle.name}</div><div className="text-xs text-muted-foreground">STNK {formatDate(vehicle.tanggal_stnk)} · {vehicle.nama_stnk}</div></TableCell>
                       <TableCell><div>{vehicle.jenis_pajak}</div>{vehicle.tertunggak > 0 && <div className="text-xs text-amber-700">Tunggakan {vehicle.tertunggak} tahun</div>}</TableCell>
-                      <TableCell className={vehicle.tanggal_pajak_tahunan < new Date().toISOString().slice(0, 10) && !vehicle.is_paid ? 'font-semibold text-rose-600' : ''}>{formatDate(vehicle.tanggal_pajak_tahunan)}</TableCell>
+                      <TableCell className={vehicle.tanggal_pajak_tahunan < dayjs().format('YYYY-MM-DD') && !vehicle.is_paid ? 'font-semibold text-rose-600' : ''}>{formatDate(vehicle.tanggal_pajak_tahunan)}</TableCell>
                       <TableCell>{vehicle.pengguna}</TableCell>
                       <TableCell>
                         {vehicle.is_paid

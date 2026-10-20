@@ -70,7 +70,7 @@ class TransactionSaldoAdjustment extends Model
     ];
 
     protected $casts = [
-        'berlaku_bulan' => 'date',
+        'berlaku_bulan' => 'date:Y-m-d',
         'approved_at' => 'datetime',
         'nominal' => 'integer',
     ];

@@ -17,7 +17,7 @@ class InvLocation extends Model
     ];
 
     protected $casts = [
-        'assigned_date' => 'date',
+        'assigned_date' => 'date:Y-m-d',
     ];
 
     public function asset(): BelongsTo

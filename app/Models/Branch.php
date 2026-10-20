@@ -18,7 +18,7 @@ class Branch extends Model
         // `opening_date` SENGAJA tidak ikut di-cast: tidak dipakai di mana pun
         // di unit-apps, dan menambahkannya mengubah bentuk serialisasi JSON
         // tanpa ada yang meminta.
-        'mulai_pendataan_baru' => 'date',
+        'mulai_pendataan_baru' => 'date:Y-m-d',
     ];
 
     /**

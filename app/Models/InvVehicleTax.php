@@ -27,12 +27,12 @@ class InvVehicleTax extends Model
     ];
 
     protected $casts = [
-        'due_date' => 'date',
-        'paid_date' => 'date',
-        'stnk_before' => 'date',
-        'stnk_after' => 'date',
-        'pajak_before' => 'date',
-        'pajak_after' => 'date',
+        'due_date' => 'date:Y-m-d',
+        'paid_date' => 'date:Y-m-d',
+        'stnk_before' => 'date:Y-m-d',
+        'stnk_after' => 'date:Y-m-d',
+        'pajak_before' => 'date:Y-m-d',
+        'pajak_after' => 'date:Y-m-d',
         'periode' => 'integer',
         'tahun_ke' => 'integer',
         'cost' => 'integer',

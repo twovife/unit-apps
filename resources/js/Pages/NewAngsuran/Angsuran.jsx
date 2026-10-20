@@ -60,9 +60,7 @@ const Angsuran = ({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight">{judul}</h1>
-            {videoTutorials && (
-              <VideoTutorialButton videos={videoTutorials} buttonText="Video Panduan" />
-            )}
+            <VideoTutorialButton videos={videoTutorials} menu="angsuran" buttonText="Video Panduan" />
           </div>
           {type === 'desktop' && (
             <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih. <SatuanAngka /></p>

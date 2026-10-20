@@ -481,7 +481,7 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <VideoTutorialButton videos={videos} buttonText="Video Panduan" />
+            <VideoTutorialButton videos={videos} menu="sksw" buttonText="Video Panduan" />
             <label className="sr-only" htmlFor="sksw-period">Periode laporan</label>
             <Input id="sksw-period" type="month" value={period} onChange={(event) => changePeriod(event.target.value)} className="w-44" />
             {branch && bolehInput && (

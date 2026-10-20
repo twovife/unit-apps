@@ -632,7 +632,7 @@ const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], ref
               <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
                 <UserPlus className="w-5 h-5 text-slate-500" /> Lamaran Kerja
               </h1>
-              <VideoTutorialButton videos={video} title="Panduan Lamaran Kerja" />
+              <VideoTutorialButton videos={video} menu="lamaran" title="Panduan Lamaran Kerja" />
             </div>
             <p className="text-sm text-slate-500">{unit} · diputuskan HRD di aplikasi pusat.</p>
           </div>

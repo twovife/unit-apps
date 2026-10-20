@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { PlayCircle, Video, Film } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { PlayCircle, Video, Film, Plus, Trash2 } from 'lucide-react';
+import TambahVideo from '@/Components/TambahVideo';
 import { Button } from '@/shadcn/ui/button';
 import {
   Dialog,
@@ -69,6 +71,8 @@ const METADATA = {
  * @param {Object} props
  * @param {Record<string, string>|string} props.videos Map { key: url } atau URL string tunggal
  * @param {string} [props.defaultKey] Kunci video awal yang aktif jika multi-video
+ * @param {string} [props.menu] Kode menu (VideoTutorial::MENU): memuat video tambahan menu itu
+ *   dan memberi superuser tombol Tambah / Hapus Video.
  * @param {string} [props.title] Judul khusus (jika single video)
  * @param {string} [props.buttonText] Teks tombol (opsional, default: "Video Panduan")
  * @param {string} [props.className] Class ekstra untuk tombol
@@ -76,6 +80,7 @@ const METADATA = {
  */
 export default function VideoTutorialButton({
   videos,
+  menu,
   defaultKey,
   title,
   buttonText = 'Video Panduan',
@@ -83,10 +88,41 @@ export default function VideoTutorialButton({
   variant = 'outline',
 }) {
   const [buka, setBuka] = useState(false);
+  const [tambahBuka, setTambahBuka] = useState(false);
+  const [extra, setExtra] = useState([]);
+  const [boleh, setBoleh] = useState(false);
+
+  // Video tambahan superuser untuk menu ini (+ hak kelola).
+  const muat = useCallback(() => {
+    if (!menu) return;
+    axios.get(route('video_tutorial.menu', menu))
+      .then(({ data }) => {
+        setExtra(data.videos);
+        setBoleh(data.boleh_kelola);
+      })
+      .catch(() => {});
+  }, [menu]);
+  useEffect(muat, [muat]);
+
+  const hapusExtra = (v) => {
+    if (!confirm(`Hapus video "${v.judul}"?`)) return;
+    axios.delete(route('video_tutorial.destroy', v.key)).then(() => {
+      setBuka(false);
+      muat();
+    });
+  };
 
   // Normalisasi video list
   const daftarVideo = useMemo(() => {
-    if (!videos) return [];
+    const tambahan = extra.map((v) => ({
+      key: v.key,
+      url: v.url,
+      judul: v.judul,
+      singkat: v.judul,
+      deskripsi: v.deskripsi,
+      tambahan: true,
+    }));
+    if (!videos) return tambahan;
     if (typeof videos === 'string') {
       return [
         {
@@ -96,10 +132,11 @@ export default function VideoTutorialButton({
           singkat: title || 'Video',
           deskripsi: 'Panduan pengoperasian fitur aplikasi.',
         },
+        ...tambahan,
       ];
     }
 
-    return Object.entries(videos)
+    return [...Object.entries(videos)
       .filter(([_, url]) => Boolean(url))
       .map(([k, url]) => {
         const meta = METADATA[k] || {
@@ -112,8 +149,8 @@ export default function VideoTutorialButton({
           url,
           ...meta,
         };
-      });
-  }, [videos, title]);
+      }), ...tambahan];
+  }, [videos, title, extra]);
 
   const [aktifKey, setAktifKey] = useState(() => {
     if (defaultKey && daftarVideo.some((v) => v.key === defaultKey)) {
@@ -124,7 +161,15 @@ export default function VideoTutorialButton({
 
   // Jika tidak ada URL video yang aktif / valid, sembunyikan tombol
   if (daftarVideo.length === 0) {
-    return null;
+    if (!boleh) return null;
+    return (
+      <>
+        <Button type="button" variant="outline" size="sm" onClick={() => setTambahBuka(true)} className="inline-flex items-center gap-1.5">
+          <Plus className="w-4 h-4" /> Tambah Video
+        </Button>
+        <TambahVideo open={tambahBuka} onOpenChange={setTambahBuka} menu={menu} onSelesai={muat} />
+      </>
+    );
   }
 
   const videoAktif = daftarVideo.find((v) => v.key === aktifKey) || daftarVideo[0];
@@ -195,6 +240,19 @@ export default function VideoTutorialButton({
             </div>
           )}
 
+          {boleh && (
+            <div className="flex flex-wrap justify-end gap-2 mt-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setTambahBuka(true)}>
+                <Plus className="w-4 h-4 mr-1" /> Tambah Video
+              </Button>
+              {videoAktif?.tambahan && (
+                <Button type="button" variant="destructive" size="sm" onClick={() => hapusExtra(videoAktif)}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Hapus Video Ini
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Pemutar Video */}
           <div className="mt-3 overflow-hidden rounded-xl bg-black border border-slate-800 shadow-md">
             {videoAktif?.url ? (
@@ -217,6 +275,7 @@ export default function VideoTutorialButton({
           </div>
         </DialogContent>
       </Dialog>
+      {boleh && <TambahVideo open={tambahBuka} onOpenChange={setTambahBuka} menu={menu} onSelesai={muat} />}
     </>
   );
 }

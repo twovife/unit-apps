@@ -455,18 +455,12 @@ export default function AppSidebar({ ...props }) {
         {isSuperUser && (
           <SidebarGroup className="pt-2">
             <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Pengaturan Admin
+              Super User
             </SidebarGroupLabel>
             <SidebarSubMenuSection
               icon={ShieldCheck}
-              title="Admin Panel"
+              title="Pengaturan"
               items={[
-                {
-                  id: 1,
-                  title: 'Panel Utama',
-                  link: route('adminpanel.index'),
-                  active: route().current('adminpanel.index'),
-                },
                 {
                   id: 4,
                   title: 'Kalender Kerja',
@@ -478,6 +472,12 @@ export default function AppSidebar({ ...props }) {
                   title: 'Mutasi Nasabah',
                   link: route('mutasi_nasabah.index'),
                   active: route().current('mutasi_nasabah.index'),
+                },
+                {
+                  id: 6,
+                  title: 'Video Panduan',
+                  link: route('video_tutorial.index'),
+                  active: route().current('video_tutorial.index'),
                 },
               ]}
             />

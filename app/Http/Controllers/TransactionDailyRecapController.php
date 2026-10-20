@@ -434,12 +434,15 @@ class TransactionDailyRecapController extends Controller
           ]);
 
           $tanggalDepan = \App\Helpers\TargetMingguan::tanggalDepan($date);
-          if ($tanggalDepan) {
-            TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $grouping->id, 'date' => $tanggalDepan])
-              ->update([
-                'target' => \App\Helpers\TargetMingguan::hitung((int) $recap->target, $drop, $keluar),
-                'target_on' => $date,
-              ]);
+          $depan = $tanggalDepan
+            ? TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $grouping->id, 'date' => $tanggalDepan])
+            : null;
+          // Target minggu depan yang sudah dikoreksi tangan tidak ditimpa (KoreksiTarget).
+          if ($depan && !\App\Helpers\KoreksiTarget::recapDikoreksi($depan)) {
+            $depan->update([
+              'target' => \App\Helpers\TargetMingguan::hitung((int) $recap->target, $drop, $keluar),
+              'target_on' => $date,
+            ]);
           }
           $accOtomatis = true;
         }
@@ -498,10 +501,13 @@ class TransactionDailyRecapController extends Controller
 
 
       $fillTragetMingguDepan = TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $request->id, 'date' => $request->tanggal_rencana_minggu_depan]);
-      $fillTragetMingguDepan->update([
-        'target' => $request->target_minggu_depan,
-        'target_on' =>  $request->date,
-      ]);
+      // Target minggu depan yang sudah dikoreksi tangan tidak ditimpa (KoreksiTarget).
+      if (!\App\Helpers\KoreksiTarget::recapDikoreksi($fillTragetMingguDepan)) {
+        $fillTragetMingguDepan->update([
+          'target' => $request->target_minggu_depan,
+          'target_on' =>  $request->date,
+        ]);
+      }
 
 
 

@@ -122,6 +122,9 @@ Route::middleware('auth')->group(function () {
       // Cek #1 pimpinan alur BARU (daily_closings): verifikasi drop/storting +
       // materialisasi target minggu depan (manual). Otorisasi dicek controller.
       Route::post('/ceklist-kepala-baru', "ceklist_kepala_baru")->name('ceklist_kepala_baru');
+      // Koreksi target / keluar (bulan berjalan), menjalar ke depan. Otorisasi di controller.
+      Route::get('/koreksi-target', "koreksi_target_pratinjau")->name('koreksi_target_pratinjau');
+      Route::post('/koreksi-target', "koreksi_target")->name('koreksi_target');
       Route::post('/nik', "nasabah_buku_transaksi")->name('nasabah_buku_transaksi');
       Route::post('/', "store_buku_transaksi")->name('store_buku_transaksi');
       Route::get('/fastcreate', "fastcreatev2")->name('fastcreate');
@@ -287,18 +290,17 @@ Route::middleware('auth')->group(function () {
       Route::post('/', 'simpan')->name('simpan');
     });
 
-  // Panel admin: superuser saja. Tanpa gerbang ini user login mana pun bisa
-  // memberi dirinya role (user-assign) atau izin buka kunci can-edit
-  // (giveMaintenerWorker).
-  Route::controller(AdminController::class)->prefix('admin-panel')->name('adminpanel.')
-    ->middleware('role:superuser')->group(function () {
-    Route::get('/', "index")->name('index');
+  // Video panduan: ganti / hapus (superuser, dicek di controller).
+  Route::controller(\App\Http\Controllers\VideoTutorialController::class)
+    ->prefix('video-panduan')->name('video_tutorial.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::get('/menu/{menu}', 'menu')->name('menu');
+      Route::post('/tambah', 'tambah')->name('tambah');
+      Route::post('/{kunci}', 'store')->name('store');
+      Route::delete('/{kunci}', 'destroy')->name('destroy');
+    });
 
-    Route::post('/', "post_permission")->name('post_permission');
-    Route::post('/role-assign', "role_assign")->name('role_assign');
-    Route::post('/user-assign', "user_assign")->name('user_assign');
-    Route::post('/giveMaintenerWorker', "giveMaintenerWorker")->name('giveMaintenerWorker');
-  });
+  // Panel admin (role / permission / can-edit) dihapus 2026-10-19: diatur di app_laravel.
   // Tutup buku dari Approval Akhir (kasir/kepala) - di luar gerbang superuser.
   Route::post('/admin-panel/sirkulasiAwal', [AdminController::class, 'sirkulasiAwal'])->name('adminpanel.sirkulasiAwal');
 

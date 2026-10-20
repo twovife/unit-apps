@@ -31,7 +31,7 @@ class VideoPengumuman
         try {
             $disk = Storage::disk('s3_publik');
 
-            return collect(self::BERKAS)
+            return collect(VideoTutorial::berkas(self::BERKAS))
                 ->map(fn($berkas) => $disk->temporaryUrl($berkas, now()->addHours(3)))
                 ->all();
         } catch (\Throwable $e) {

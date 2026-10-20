@@ -51,7 +51,7 @@ class TransactionMonthlyClosing extends Model
     ];
 
     protected $casts = [
-        'periode' => 'date',
+        'periode' => 'date:Y-m-d',
         'kepala_approval_at' => 'datetime',
         'kasir_lock_at' => 'datetime',
         'serah_terima_at' => 'datetime',

@@ -43,7 +43,7 @@ class SavingTransaction extends Model
     ];
 
     protected $casts = [
-        'transaction_date' => 'date',
+        'transaction_date' => 'date:Y-m-d',
         'voided_at' => 'datetime',
         'debit' => 'integer',
         'kredit' => 'integer',

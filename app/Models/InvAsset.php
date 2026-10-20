@@ -19,7 +19,7 @@ class InvAsset extends Model
     ];
 
     protected $casts = [
-        'purchase_date' => 'date',
+        'purchase_date' => 'date:Y-m-d',
         'purchase_cost' => 'integer',
     ];
 

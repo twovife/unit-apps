@@ -33,7 +33,7 @@ trait PinjamanTrait
 
     $hari = AppHelper::hariTagih($request->hari);
 
-    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+    $groupingId = AppHelper::kelompokAktif($branch_id, $kelompok);
 
     // GERBANG alur baru: status kunci/approve & rekap harian dibaca dari
     // daily_closings untuk kantor migrasi. Belum-migrasi -> jalur lama, IDENTIK.
@@ -339,7 +339,7 @@ trait PinjamanTrait
 
 
 
-    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+    $groupingId = AppHelper::kelompokAktif($branch_id, $kelompok);
 
 
     $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
@@ -709,7 +709,7 @@ trait PinjamanTrait
 
 
 
-    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+    $groupingId = AppHelper::kelompokAktif($branch_id, $kelompok);
 
     // Koleksi harian ikut hari EFEKTIF: mutasi yang berlaku pada bulan tanggal
     // terpilih memindahkan nasabah ke hari/kelompok barunya. Mayoritas tetap
@@ -1188,7 +1188,7 @@ trait PinjamanTrait
 
     $hari = AppHelper::hariTagih($request->hari);
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
-    $groupingId = TransactionLoanOfficerGrouping::where('branch_id', $branch_id)->where('kelompok', $kelompok)->first();
+    $groupingId = AppHelper::kelompokAktif($branch_id, $kelompok);
     $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()?->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
 
     // Macet ikut hari EFEKTIF (lihat getLoanMantri): nasabah yang dipindah

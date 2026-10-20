@@ -26,8 +26,8 @@ class TransactionLoanMutation extends Model
     ];
 
     protected $casts = [
-        'berlaku_bulan' => 'date',
-        'berlaku_sampai' => 'date',
+        'berlaku_bulan' => 'date:Y-m-d',
+        'berlaku_sampai' => 'date:Y-m-d',
     ];
 
     public function loan()

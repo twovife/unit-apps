@@ -6,6 +6,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
+import KoreksiTarget from './KoreksiTarget';
 
 const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const KELAS_INPUT =
@@ -68,6 +69,11 @@ const Approval = ({
     alasan_koreksi: '',
   });
   const [editTarget, setEditTarget] = useState(false);
+  // Koreksi target / keluar lewat dialog (KoreksiTarget): bulan berjalan, sudah lewat,
+  // walau hari itu sudah di-ACC / dikunci. can-approve selain stafkontrol.
+  const [koreksiBuka, setKoreksiBuka] = useState(false);
+  const { auth: authKoreksi } = usePage().props;
+  const bolehKoreksi = authKoreksi?.permissions?.includes('can-approve') && !authKoreksi?.roles?.includes('stafkontrol');
   const [triggeredData, setTriggeredData] = useState([]);
 
   const [transaksiOpenHariIni, setTransaksiOpenHariIni] = useState([]);
@@ -303,6 +309,15 @@ const Approval = ({
                 <Angka label="Rencana" nilai={triggeredData.rencana} />
               </div>
 
+              {bolehKoreksi &&
+                triggeredData.grouping_id &&
+                dayjs(triggeredData.tanggal).isSame(dayjs(), 'month') &&
+                !dayjs(triggeredData.tanggal).isAfter(dayjs(), 'day') && (
+                  <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setKoreksiBuka(true)}>
+                    Koreksi target / keluar
+                  </Button>
+                )}
+
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="p-3 border rounded-lg border-emerald-200">
                   <div className="mb-1 text-xs font-semibold uppercase text-emerald-700">Drop hari ini</div>
@@ -441,6 +456,7 @@ const Approval = ({
             </form>
           )}
         </div>
+        <KoreksiTarget baris={koreksiBuka ? triggeredData : null} onClosed={() => setKoreksiBuka(false)} />
       </SheetContent>
     </Sheet>
   );

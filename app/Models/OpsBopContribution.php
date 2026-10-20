@@ -19,7 +19,7 @@ class OpsBopContribution extends Model
     ];
 
     protected $casts = [
-        'payment_date' => 'date',
+        'payment_date' => 'date:Y-m-d',
         'amount' => 'integer',
     ];
 

@@ -590,7 +590,7 @@ export default function PembayaranKantor({ videos = {} }) {
               <Building2 className="w-5 h-5 text-slate-500" />
               Dashboard Kasir {data?.unit ? `— ${data.unit}` : ''}
             </h2>
-            <VideoTutorialButton videos={videos} buttonText="Video Panduan" />
+            <VideoTutorialButton videos={videos} menu="kasir" buttonText="Video Panduan" />
           </div>
           <p className="text-sm text-slate-500">Tugas hari ini dan pembayaran kantor aktif per bulan.</p>
         </div>

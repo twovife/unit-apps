@@ -16,7 +16,7 @@ class Saving extends Model
     ];
 
     protected $casts = [
-        'tgl_daftar' => 'date',
+        'tgl_daftar' => 'date:Y-m-d',
     ];
 
     public function employee(): BelongsTo

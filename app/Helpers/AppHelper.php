@@ -25,6 +25,27 @@ class AppHelper
   public const PERAN_ADM_KANTOR = ['kasir', 'stafkontrol', 'pusat', 'superuser', 'pimpinan', 'pengawas'];
   public const PERAN_REKAP_PENUH = [...self::PERAN_ADM_KANTOR, 'kepala-mantri'];
 
+  /**
+   * Kelompok aktif (branch + kelompok dari AuthScope) - pengganti ...->first() lalu ->id
+   * yang crash 500 ("Attempt to read property id on null") kalau kelompoknya tidak ada:
+   * mantri dengan area 0/kosong, atau kantor yang belum punya kelompok sama sekali.
+   * Sekarang berhenti dengan pesan yang jelas (403).
+   */
+  public static function kelompokAktif($branchId, $kelompok): \App\Models\TransactionLoanOfficerGrouping
+  {
+    $grouping = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)->where('kelompok', $kelompok)->first();
+    if ($grouping) {
+      return $grouping;
+    }
+
+    $unit = \App\Models\Branch::whereKey($branchId)->value('unit') ?? 'aktif';
+    $user = auth()->user();
+    $pesan = $user && !$user->hasPermissionTo('view-all-groups')
+      ? "Akun Anda belum punya kelompok di kantor {$unit} (area " . ($user->employee?->area ?? 'kosong') . '). Hubungi kasir / IT untuk mengisi area mantri.'
+      : "Kantor {$unit} belum punya kelompok" . ($kelompok ? " {$kelompok}" : '') . '. Pilih kantor lain.';
+    abort(403, $pesan);
+  }
+
   /** Administrasi Cabang (kecuali Data Karyawan) + Dashboard Kasir: hanya 6 peran kantor. */
   public static function bolehAdmKantor($user): bool
   {
