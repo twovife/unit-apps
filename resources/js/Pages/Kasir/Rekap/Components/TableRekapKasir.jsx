@@ -174,6 +174,7 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
       { id: barisBukaKunci.id, date: barisBukaKunci.tanggal, alasan: alasanBuka.trim() },
       {
         preserveScroll: true,
+        preserveState: true,
         onStart: () => setProsesBuka(true),
         onFinish: () => setProsesBuka(false),
         onSuccess: () => {

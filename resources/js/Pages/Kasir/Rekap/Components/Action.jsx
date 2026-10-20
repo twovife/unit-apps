@@ -95,6 +95,8 @@ const Action = ({ show = false, onClosed, triggeredData, type }) => {
   const onSubmitForm = (e) => {
     e.preventDefault();
     post(route('kasir.rekap.rekap_post'), {
+      preserveScroll: true,
+      preserveState: true,
       onSuccess: () => {
         reset();
         onClosed();

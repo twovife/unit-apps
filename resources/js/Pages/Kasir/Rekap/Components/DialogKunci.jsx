@@ -83,6 +83,7 @@ const DialogKunci = ({ baris, onClosed, onBukaDrop = null }) => {
       { id: baris.id, date: baris.tanggal },
       {
         preserveScroll: true,
+        preserveState: true,
         onStart: () => setProses(true),
         onFinish: () => setProses(false),
         onSuccess: () => onClosed(),

@@ -182,7 +182,9 @@ const RencanaBersanding = ({ data, klik, onAcc }) => {
     return (lewat[lewat.length - 1] ?? minggu[0])?.senin ?? null;
   };
   const [pilih, setPilih] = useState(mingguAwal);
-  useEffect(() => setPilih(mingguAwal()), [minggu]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Data dimuat ulang (mis. sesudah ACC KM / kunci): minggu yang sedang dibuka tetap,
+  // hanya kembali ke bawaan kalau minggu itu tidak ada lagi (ganti bulan / kantor).
+  useEffect(() => setPilih((p) => (minggu.some((m) => m.senin === p) ? p : mingguAwal())), [minggu]); // eslint-disable-line react-hooks/exhaustive-deps
   const aktif = minggu.find((m) => m.senin === pilih) ?? minggu[0];
 
   if (!aktif) return <div className="py-6 text-sm text-center text-slate-500">Belum ada data.</div>;

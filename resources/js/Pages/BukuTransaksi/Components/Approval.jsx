@@ -68,7 +68,6 @@ const Approval = ({
     target_koreksi: '',
     alasan_koreksi: '',
   });
-  const [editTarget, setEditTarget] = useState(false);
   // Koreksi target / keluar lewat dialog (KoreksiTarget): bulan berjalan, sudah lewat,
   // walau hari itu sudah di-ACC / dikunci. can-approve selain stafkontrol.
   const [koreksiBuka, setKoreksiBuka] = useState(false);
@@ -255,7 +254,6 @@ const Approval = ({
   const closedModal = () => {
     onClosed();
     reset();
-    setEditTarget(false);
     setErorRequest(false);
   };
 
@@ -270,18 +268,18 @@ const Approval = ({
       : route('kasir.rekap.ceklist_kepala');
 
     post(url, {
-      // Jangan lompat ke atas daftar sesudah simpan.
+      // Jangan lompat ke atas daftar / ganti tab / minggu sesudah simpan.
       preserveScroll: true,
+      preserveState: true,
       onSuccess: () => {
         reset();
-        setEditTarget(false);
         onClosed();
         onSukses?.();
       },
     });
   };
 
-  const targetDasar = editTarget ? data.target_koreksi : data.target;
+  const targetDasar = data.target;
   const targetMingguDepan = (parseInt(targetDasar) || 0) + ((parseInt(data.masuk) || 0) - (parseInt(data.keluar) || 0));
   const adaTertunda = transaksiOpenHariIni.length > 0 || transaksiOpenMingguDepan.length > 0;
 
@@ -356,47 +354,21 @@ const Approval = ({
             <form onSubmit={onSubmitForm} className="space-y-5">
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-900">Hari ini</h3>
-                {migrasi ? (
-                  <div className="text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Target</span>
-                      {!editTarget && (
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-blue-600 underline"
-                          onClick={() => {
-                            setEditTarget(true);
-                            setData('target_koreksi', data.target);
-                          }}
-                        >
-                          Edit
-                        </button>
-                      )}
-                    </div>
-                    {editTarget ? (
-                      <>
-                        <CurrencyInput className={KELAS_INPUT} name="target_koreksi" allowDecimals={false}
-                          allowNegativeValue={false} prefix="Rp " required onValueChange={onHandleCurencyChange}
-                          value={data.target_koreksi} />
-                        <Input className="mt-2" name="alasan_koreksi" required placeholder="Alasan koreksi target"
-                          onChange={onInputChange} value={data.alasan_koreksi} />
-                        <small className="text-amber-700">
-                          Target dikoreksi memutus rantai: target tanggal ini tidak lagi ditimpa hasil ACC minggu lalu.
-                        </small>
-                      </>
-                    ) : (
-                      <CurrencyInput className={`${KELAS_INPUT} ${KELAS_BEKU}`} name="target" disabled prefix="Rp "
-                        value={data.target ?? 0} />
-                    )}
-                  </div>
+                {/* Target hari ini: tampil (hanya baca) di dua alur. Ubah lewat tombol
+                    "Koreksi target / keluar" di atas. Alur lama tanpa target sama sekali
+                    -> KM mengisinya di sini (target pertama). */}
+                {!migrasi && !triggeredData?.target ? (
+                  <label className="block text-sm">
+                    Target
+                    <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} prefix="Rp " required
+                      onValueChange={onHandleCurencyChange} value={data.target} />
+                  </label>
                 ) : (
-                  !triggeredData?.target && (
-                    <label className="block text-sm">
-                      Target
-                      <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} prefix="Rp " required
-                        onValueChange={onHandleCurencyChange} value={data.target} />
-                    </label>
-                  )
+                  <label className="block text-sm">
+                    Target
+                    <CurrencyInput className={`${KELAS_INPUT} ${KELAS_BEKU}`} name="target" disabled prefix="Rp "
+                      value={data.target ?? 0} />
+                  </label>
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block text-sm">
