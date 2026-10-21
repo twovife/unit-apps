@@ -15,7 +15,10 @@ const Angka = ({ label, nilai, tebal = false }) => (
 );
 
 export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, pinjaman = [], angsuran = [] }) {
+  // Tab buku = drawer app_laravel: Semua | Pusat | Hertawan | Sherly | Modal Awal.
   const judul = sumber_ada.find((x) => x.kunci === sumber)?.judul ?? 'Pinjaman Modal';
+  const ke = (q) => router.get(route('dashboard.kasir.pinjaman_modal'), { sumber, ...q }, { preserveScroll: true });
+  const lintasBuku = sumber === 'semua' || sumber === 'modal_awal';
 
   return (
     <AuthenticatedLayout header="Pinjaman Modal">
@@ -35,7 +38,7 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
             <button
               key={x.kunci}
               type="button"
-              onClick={() => router.get(route('dashboard.kasir.pinjaman_modal'), { sumber: x.kunci }, { preserveScroll: true })}
+              onClick={() => ke({ sumber: x.kunci })}
               className={`px-3 py-1.5 text-sm font-medium rounded-md ${
                 x.kunci === sumber ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
               }`}
@@ -45,11 +48,15 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
           ))}
         </div>
 
+
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <Angka label="Total pinjaman" nilai={ringkas.total_pinjaman} />
           <Angka label="Pokok dibayar" nilai={ringkas.total_pokok} />
           <Angka label="Jasa modal dibayar" nilai={ringkas.total_jasa} />
           <Angka label="Sisa pokok" nilai={ringkas.sisa} tebal />
+          {ringkas.jasa_wajib !== null && ringkas.jasa_wajib !== undefined && (
+            <Angka label="Jasa wajib bulan ini" nilai={ringkas.jasa_wajib} />
+          )}
         </div>
 
         <section>
@@ -59,9 +66,11 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="px-3 py-2 font-medium text-left">Tanggal</th>
+                  {lintasBuku && <th className="px-3 py-2 font-medium text-left">Sumber / jenis</th>}
                   <th className="px-3 py-2 font-medium text-right">Pinjaman</th>
                   <th className="px-3 py-2 font-medium text-right">Pokok dibayar</th>
                   <th className="px-3 py-2 font-medium text-right">Sisa</th>
+                  <th className="px-3 py-2 font-medium text-right">Jasa wajib bulan ini</th>
                   <th className="px-3 py-2 font-medium text-center">Status</th>
                   <th className="px-3 py-2 font-medium text-left">Catatan</th>
                 </tr>
@@ -69,17 +78,31 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
               <tbody>
                 {pinjaman.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-slate-500">
-                      Kantor ini tidak punya pinjaman dari sumber ini.
+                    <td colSpan={lintasBuku ? 8 : 7} className="py-6 text-center text-slate-500">
+                      Kantor ini tidak punya pinjaman di buku ini.
                     </td>
                   </tr>
                 )}
                 {pinjaman.map((l) => (
                   <tr key={l.id} className="border-t even:bg-slate-50">
                     <td className="px-3 py-2 whitespace-nowrap">{tgl(l.tanggal)}</td>
+                    {lintasBuku && (
+                      <td className="px-3 py-2 text-xs whitespace-nowrap text-slate-600">
+                        {l.sumber.replace('Pinjaman Modal ', '')} · {l.jenis}
+                      </td>
+                    )}
                     <td className="px-3 py-2 text-right tabular-nums">{rp(l.jumlah)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{rp(l.dibayar)}</td>
                     <td className="px-3 py-2 font-semibold text-right tabular-nums">{rp(l.sisa)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {l.jasa_berlaku ? (
+                        rp(l.jasa_wajib)
+                      ) : l.wajib_mulai && l.sisa > 0 ? (
+                        <span className="text-xs text-amber-600">tempo s/d {dayjs(`${l.wajib_mulai}-01`).subtract(1, 'month').format('MMM YY')}</span>
+                      ) : (
+                        '–'
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-center">
                       <span
                         className={`px-2 py-0.5 text-xs font-semibold rounded-full ${

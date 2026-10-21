@@ -264,7 +264,20 @@ const AngsuranTableMobile = ({ datas }) => {
 // garis atas hijau, beda jelas dari baris nasabah. Total: bar gelap yang
 // menempel di dasar layar. ML: hanya angsuran hari ini (jumlah pinjaman &
 // sisa ML tidak berguna dibaca).
-const Jumlah = ({ label, rows, total = false, ml = false }) => (
+const Jumlah = ({ label, rows, total = false, ml = false }) =>
+  total && ml ? (
+    // Total halaman ML: jumlah angsuran hari ini + jumlah sisa ML (saldo, tanpa minus).
+    <div className="sticky bottom-0 z-10 px-3 py-2 mt-4 space-y-1 font-bold text-white bg-gray-900">
+      <div className="flex items-center justify-between">
+        <span>JUMLAH ANGSURAN</span>
+        <span className="text-base text-green-300">{rb(jumlah(rows, 'angs_today'))}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span>JUMLAH SALDO ML</span>
+        <span className="text-base">{rb(rows.reduce((t, r) => t + Math.max(Number(r.saldo) || 0, 0), 0))}</span>
+      </div>
+    </div>
+  ) : (
   <div
     className={`${kolom()} px-2 py-1.5 font-bold ${
       total ? 'sticky bottom-0 z-10 mt-4 bg-gray-900 text-white' : 'bg-emerald-100 text-emerald-950 border-t-2 border-emerald-500'
@@ -282,7 +295,7 @@ const Jumlah = ({ label, rows, total = false, ml = false }) => (
       </>
     )}
   </div>
-);
+  );
 
 // Nomor anggota: dilingkari kalau sudah keluar target, "TG" di bawahnya kalau masih target.
 const NoAnggota = ({ r }) => (

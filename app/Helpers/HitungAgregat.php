@@ -299,6 +299,8 @@ class HitungAgregat
             ->where('l.drop_date', '<=', $asOf)
             ->whereNotNull('l.hari')
             ->whereRaw("$saldo > 0")
+            // Sama dengan PenyesuaianSaldo::saldoBanyak(): lunas fosil = saldo 0.
+            ->whereRaw('NOT (l.pay_off_date IS NOT NULL AND l.pay_off_date < ? AND l.pay_off_date <= ?)', [AgregasiScope::BATAS_FOSIL_LUNAS, $asOf])
             ->groupBy(DB::raw($gEfektif), DB::raw($hariEfektif), DB::raw($ember))
             ->get([
                 DB::raw("$gEfektif AS g"),

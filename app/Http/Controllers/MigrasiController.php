@@ -167,6 +167,8 @@ class MigrasiController extends Controller
             ->whereRaw('LOWER(hari) = ?', [$hari])
             ->where('status', 'success')
             ->where('drop_date', '<', $batasMl->toDateString())
+            // Sama dengan Pinjaman Macet: yang sudah ditutup (pay_off_date) sebelum bulan acuan tidak ikut.
+            ->where(fn($q) => $q->whereNull('pay_off_date')->orWhere('pay_off_date', '>=', $periode->toDateString()))
             ->orderBy('drop_date')
             ->get();
         $ids = $loans->pluck('id')->all();

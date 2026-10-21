@@ -91,7 +91,7 @@ class PenyesuaianSaldo
             ->leftJoinSub($jumlah('transaction_white_offs'), 'w', 'w.transaction_loan_id', '=', 'l.id')
             ->leftJoinSub($efek, 'a', 'a.transaction_loan_id', '=', 'l.id')
             ->whereIn('l.id', $loanIds)
-            ->get(['l.id', 'l.pinjaman', 'i.n AS angsuran', 'w.n AS pemutihan', 'a.n AS efek']);
+            ->get(['l.id', 'l.pinjaman', 'l.pay_off_date', 'i.n AS angsuran', 'w.n AS pemutihan', 'a.n AS efek']);
 
         $out = [];
         foreach ($rows as $r) {
@@ -102,6 +102,10 @@ class PenyesuaianSaldo
                 'efek' => (int) $r->efek,
             ];
             $s['saldo'] = $s['pinjaman'] - $s['angsuran'] - $s['pemutihan'] + $s['efek'];
+            // Lunas fosil (lihat AgregasiScope::BATAS_FOSIL_LUNAS): sama dengan HitungAgregat::portofolio().
+            if ($r->pay_off_date && $r->pay_off_date < AgregasiScope::BATAS_FOSIL_LUNAS && (!$tanggal || $r->pay_off_date <= $tanggal)) {
+                $s['saldo'] = 0;
+            }
             $out[(int) $r->id] = $s;
         }
 

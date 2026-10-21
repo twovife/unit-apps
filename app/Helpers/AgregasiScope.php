@@ -108,6 +108,14 @@ class AgregasiScope
     public const RENCANA_MULAI = '2026-10-01';
 
     /**
+     * Pinjaman yang pay_off_date-nya SEBELUM tanggal ini dianggap lunas (saldo 0)
+     * walau angsurannya kurang: data fosil (sistem lama menutup pinjaman tanpa
+     * semua baris angsuran). Sesudahnya saldo apa adanya, supaya penutupan
+     * yang keliru tetap kelihatan sebagai anomali.
+     */
+    public const BATAS_FOSIL_LUNAS = '2026-09-01';
+
+    /**
      * Bulan acuan penyesuaian saldo: bulan migrasi kantor, atau RENCANA_MULAI
      * kalau belum migrasi. Penyesuaian adalah fitur sistem baru yang dipakai
      * SEBELUM dan sesudah migrasi (supaya saldo awal sudah benar saat migrasi),

@@ -442,41 +442,42 @@ const DialogUmrah = ({ buka, onClosed, rekening }) => {
   );
 };
 
-/** Angsuran pinjaman modal satu sumber. Tawan/Sherly: satu nominal, jasa 2% per pinjaman mulai bulan ke-5; Pusat: pokok + jasa. */
+/** Jasa wajib bulan ini: merah kalau masih harus dibayar, hijau kalau sudah lunas. */
+const JasaWajib = ({ nilai }) => <span className={nilai > 0 ? 'font-semibold text-red-600' : 'text-emerald-600'}>{rp(nilai)}</span>;
+
+/** Angsuran pinjaman modal: satu nominal untuk semua pinjaman kantor. Pembagiannya dari server (JasaModal::alokasi), sama dengan yang disimpan. */
 const DialogModal = ({ m, onClosed, rekening }) => {
   const [isi, setIsi] = useState({});
   const [file, setFile] = useState(null);
   const [galat, setGalat] = useState({});
   const [proses, setProses] = useState(false);
+  const [bagi, setBagi] = useState(null);
   useEffect(() => {
     if (!m) return;
-    setIsi({ payment_date: dayjs().format('YYYY-MM-DD'), nominal: '', jasa: '', rekening_id: rekening?.[0]?.id ?? '', notes: '' });
+    setIsi({ payment_date: dayjs().format('YYYY-MM-DD'), nominal: '', rekening_id: rekening?.[0]?.id ?? '', notes: '' });
     setFile(null);
     setGalat({});
-  }, [m?.sumber]);
-  const pusat = m?.sumber === 'pusat';
+    setBagi(null);
+  }, [m]);
   const nominal = Number(isi.nominal) || 0;
-  // Pratinjau pembagian; angka final dihitung ulang di server.
-  // Tawan/Sherly = PembayaranKantorController::jasaPinjaman: 2% sisa (bulat ke atas ribuan) tiap pinjaman
-  // yang selisih bulan kalendernya >= 4, dibagi ke pinjaman tertua, dibatasi nominal.
-  let sisaNominal = nominal;
-  const rincian = pusat
-    ? []
-    : (m?.pinjaman ?? []).map((p) => {
-        const cair = dayjs(p.tanggal);
-        const bayar = dayjs(isi.payment_date);
-        const kena = bayar.year() * 12 + bayar.month() - (cair.year() * 12 + cair.month()) >= 4;
-        // Dibulatkan ke atas ke ribuan, = jasaPinjaman di server.
-        const j = Math.min(kena && p.sisa > 0 ? Math.ceil((p.sisa * 2) / 100000) * 1000 : 0, sisaNominal);
-        sisaNominal -= j;
-        return { ...p, jasa: j };
-      });
-  const jasa = pusat ? Number(isi.jasa) || 0 : rincian.reduce((t, p) => t + p.jasa, 0);
-  const pokok = pusat ? nominal : nominal - jasa;
+  useEffect(() => {
+    if (!m || !nominal || !isi.payment_date) return setBagi(null);
+    const c = new AbortController();
+    const t = setTimeout(() => {
+      axios
+        .get(route('dashboard.kasir.modal.pratinjau'), { params: { nominal, payment_date: isi.payment_date }, signal: c.signal })
+        .then(({ data }) => setBagi(data))
+        .catch(() => {});
+    }, 300);
+    return () => {
+      clearTimeout(t);
+      c.abort();
+    };
+  }, [m, nominal, isi.payment_date]);
   const simpan = async () => {
     setProses(true);
     const bukti = await kecilkan(file);
-    router.post(route('dashboard.kasir.modal'), { ...isi, source: m.sumber, bukti }, {
+    router.post(route('dashboard.kasir.modal'), { ...isi, bukti }, {
       forceFormData: true,
       preserveScroll: true,
       preserveState: true,
@@ -493,44 +494,38 @@ const DialogModal = ({ m, onClosed, rekening }) => {
         {m && (
           <>
             <DialogHeader>
-              <DialogTitle>Bayar {m.judul}</DialogTitle>
+              <DialogTitle>Bayar Pinjaman Modal</DialogTitle>
               <DialogDescription>
-                Sisa pokok {rp(m.sisa)}. Dialokasikan ke pinjaman tertua lebih dulu.
+                Jasa wajib {rp(m.jasa_wajib ?? 0)}, sisa pokok {rp(m.sisa)}. Urutan: jasa Modal Awal, jasa pinjaman lain, pokok Modal Awal, pokok
+                pinjaman lain; lebihnya ke pinjaman yang masih tempo.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1">
-                  <Label>{pusat ? 'Angsuran pokok' : 'Nominal transfer'}</Label>
+                  <Label>Nominal transfer</Label>
                   <Input inputMode="numeric" value={ribu(isi.nominal)} onChange={(e) => ubah('nominal', e.target.value.replace(/\D/g, ''))} />
                   {galat.nominal && <span className="text-xs text-red-600">{galat.nominal}</span>}
                 </div>
-                {pusat ? (
-                  <div className="grid gap-1">
-                    <Label>Jasa modal</Label>
-                    <Input inputMode="numeric" value={ribu(isi.jasa)} onChange={(e) => ubah('jasa', e.target.value.replace(/\D/g, ''))} />
-                  </div>
-                ) : (
-                  <div className="grid gap-1">
-                    <Label>Tanggal bayar</Label>
-                    <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.payment_date ?? ''} onChange={(e) => ubah('payment_date', e.target.value)} />
-                  </div>
-                )}
-              </div>
-              {pusat && (
                 <div className="grid gap-1">
                   <Label>Tanggal bayar</Label>
                   <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.payment_date ?? ''} onChange={(e) => ubah('payment_date', e.target.value)} />
                 </div>
-              )}
+              </div>
               {galat.payment_date && <span className="text-xs text-red-600">{galat.payment_date}</span>}
-              {nominal > 0 && (
+              {nominal > 0 && bagi && (
                 <div className="p-2 text-sm rounded-md bg-slate-50">
-                  <Baris label={pusat ? 'Jasa modal' : 'Jasa modal (2% sisa, mulai bulan ke-5)'} nilai={rp(jasa)} />
-                  {rincian.filter((p) => p.jasa > 0).map((p) => (
-                    <Baris key={p.tanggal + p.sisa} label={`· pinjaman ${dayjs(p.tanggal).format('DD MMM YY')}`} nilai={rp(p.jasa)} />
+                  {bagi.rincian.map((p) => (
+                    <div key={p.id} className="py-1 border-b last:border-0">
+                      <div className="font-medium text-slate-700">
+                        {p.label}
+                        {p.tempo && <span className="ml-1 text-xs text-amber-600">(tempo)</span>}
+                      </div>
+                      {p.jasa > 0 && <Baris label="· Jasa 2%" nilai={rp(p.jasa)} />}
+                      {p.pokok > 0 && <Baris label="· Pokok" nilai={rp(p.pokok)} />}
+                    </div>
                   ))}
-                  <Baris label="Masuk ke pokok" nilai={rp(pokok)} tebal />
+                  {bagi.lebih > 0 && <div className="pt-1 text-xs font-medium text-red-600">Lebih {rp(bagi.lebih)} dari total sisa pokok + jasa.</div>}
                 </div>
               )}
               <PilihRekening daftar={rekening} nilai={isi.rekening_id} ubah={(v) => ubah('rekening_id', v)} galat={galat.rekening_id} />
@@ -544,7 +539,7 @@ const DialogModal = ({ m, onClosed, rekening }) => {
               <Button variant="outline" disabled={proses} onClick={onClosed}>
                 Batal
               </Button>
-              <Button disabled={proses || !file || !nominal || !isi.rekening_id} onClick={simpan}>
+              <Button disabled={proses || !file || !nominal || !isi.rekening_id || bagi?.lebih > 0} onClick={simpan}>
                 {proses ? 'Menyimpan…' : 'Simpan pembayaran'}
               </Button>
             </DialogFooter>
@@ -668,53 +663,58 @@ export default function PembayaranKantor({ videos = {} }) {
             {k.umrah.terkunci && <div className="text-xs font-medium text-slate-500">🔒 Bulan ini sudah dikunci pusat.</div>}
             <Riwayat isi={k.umrah.riwayat} />
           </Kartu>
-          {k.modal.map((m) => (
+          {/* Satu kartu Pinjaman Modal (mas 2026-10-21 revisi): per buku sisa + jasa 2% wajib bulan ini;
+              pinjaman yang masih tempo 3 bulan belum wajib apa-apa. Satu tombol Bayar. */}
+          {(({ modal: m }) => (
             <Kartu
-              key={m.sumber}
-              judul={m.judul}
+              judul="Pinjaman Modal"
               ikon={Landmark}
-              href={linkKe('dashboard.kasir.pinjaman_modal') && route('dashboard.kasir.pinjaman_modal', { sumber: m.sumber })}
+              href={linkKe('dashboard.kasir.pinjaman_modal')}
               warna="bg-violet-100 text-violet-700"
               aksi={
                 m.boleh_bayar &&
                 m.jumlah_aktif > 0 &&
                 !m.terkunci_modal && (
-                  // Dimatikan sementara (mas 2026-10-21): bayar pinjaman modal tawan / pusat / sherly
-                  // ditutup; server juga menolak (PembayaranKantorController::MODAL_TUTUP).
-                  <Button size="sm" className="w-full gap-1" disabled title="Belum dibuka">
-                    <Plus className="w-4 h-4" /> Bayar angsuran (belum dibuka)
+                  <Button size="sm" className="w-full gap-1" onClick={() => setModalPilih(m)}>
+                    <Plus className="w-4 h-4" /> Bayar angsuran
                   </Button>
                 )
               }
               tanda={
                 m.jumlah_aktif === 0 ? (
                   <Tanda jenis="netral" teks="Tidak ada pinjaman" />
-                ) : m.sudah_bayar ? (
-                  <Tanda jenis="sudah" teks={`Sudah bayar ${m.terakhir ? dayjs(m.terakhir).format('DD MMM') : ''}`} />
+                ) : m.terakhir ? (
+                  <Tanda jenis="sudah" teks={`Sudah bayar ${dayjs(m.terakhir).format('DD MMM')}`} />
                 ) : (
                   <Tanda jenis="belum" teks="Belum bayar" />
                 )
               }
             >
-              <Baris label="Sisa pokok" nilai={rp(m.sisa)} tebal />
-              <Baris label="Pinjaman aktif" nilai={`${m.jumlah_aktif} pinjaman`} />
-              <Baris label="Pokok dibayar bulan ini" nilai={rp(m.pokok_bulan_ini)} />
+              {m.buku.map((b, i) => (
+                <div key={b.kunci} className={i > 0 ? 'pt-2 mt-2 border-t' : ''}>
+                  <Baris label={`Sisa ${b.judul}`} nilai={rp(b.sisa)} tebal />
+                  {b.kunci === 'pusat' ? (
+                    <Baris label="Jasa" nilai={<span className="text-slate-500">tidak ada</span>} />
+                  ) : (
+                    b.jasa_wajib !== null && <Baris label="Jasa 2% bulan ini" nilai={<JasaWajib nilai={b.jasa_wajib} />} />
+                  )}
+                  {b.tempo_sampai && (
+                    <div className="text-xs text-amber-600">Ada pinjaman masih tempo, wajib mulai {dayjs(`${b.tempo_sampai}-01`).format('MMM YYYY')}.</div>
+                  )}
+                </div>
+              ))}
               {m.jasa_wajib !== null && (
-                <Baris
-                  label="Jasa wajib bulan ini"
-                  nilai={
-                    <span className={m.jasa_bulan_ini >= m.jasa_wajib ? 'text-emerald-600' : 'text-red-600'}>
-                      {rp(m.jasa_wajib)}
-                    </span>
-                  }
-                  tebal
-                />
+                <div className="flex items-center justify-between gap-2 px-2 py-1.5 mt-2 text-sm rounded-md bg-violet-50">
+                  <span className="font-semibold text-violet-900">Total jasa wajib bulan ini</span>
+                  <JasaWajib nilai={m.jasa_wajib} />
+                </div>
               )}
-              <Baris label="Jasa modal dibayar bulan ini" nilai={rp(m.jasa_bulan_ini)} />
+              <Baris label="Total sisa pokok" nilai={rp(m.sisa)} tebal />
+              <Baris label="Dibayar bulan ini (pokok / jasa)" nilai={`${rp(m.pokok_bulan_ini)} / ${rp(m.jasa_bulan_ini)}`} />
               {m.terkunci_modal && <div className="text-xs font-medium text-slate-500">🔒 Bulan ini sudah dikunci kasir pusat.</div>}
               <Riwayat isi={m.riwayat} />
             </Kartu>
-          ))}
+          ))(k)}
           <Kartu judul="SKSW" ikon={Wallet} warna="bg-emerald-100 text-emerald-700" href={linkKe('sksw.unit')}>
             <Baris label="Saldo SW" nilai={rp(k.sksw.saldo_sw)} tebal />
             <Baris label="Saldo SK" nilai={rp(k.sksw.saldo_sk)} tebal />

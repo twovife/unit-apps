@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthScope;
+use App\Helpers\JasaModal;
 use App\Models\Branch;
 use App\Support\Unggahan;
 use Carbon\Carbon;
@@ -24,6 +25,8 @@ class PembayaranKantorController extends Controller
     private const TARGET_TABUNGAN = 1000000;
     private const TARGET_BOP = 1500000;
     private const SUMBER_MODAL = ['pusat' => 'Pinjaman Modal Pusat', 'tawan' => 'Pinjaman Modal Hertawan', 'sherly' => 'Pinjaman Modal Sherly'];
+    /** Buku pinjaman modal (= app_laravel, mas 2026-10-21): tiap sumber TANPA modal awal + buku Modal Awal sendiri. */
+    private const BUKU_MODAL = self::SUMBER_MODAL + [JasaModal::MODAL_AWAL => 'Modal Awal'];
 
     /** Halaman Dashboard Kasir; angkanya dimuat lewat ringkasan() (JSON). */
     public function halaman()
@@ -53,7 +56,7 @@ class PembayaranKantorController extends Controller
             'kartu' => [
                 'tabungan' => $this->iuran('tb_contributions', 'tb', $branch, $bulan, self::TARGET_TABUNGAN, $this->tenggangTb($branch, $periode)),
                 'bop' => $this->iuran('ops_bop_contributions', 'bop', $branch, $bulan, self::TARGET_BOP, $this->tenggangBop($branch)),
-                'modal' => collect(self::SUMBER_MODAL)->map(fn($judul, $sumber) => ['sumber' => $sumber, 'judul' => $judul] + $this->modal($branch->id, $sumber, $awal, $akhir))->values(),
+                'modal' => $this->modal($branch->id, $awal, $akhir),
                 'sksw' => $this->sksw($branch->id, $awal, $akhir),
                 'umrah' => $this->umrah($branch->id, $awal, $akhir, $periode),
             ],
@@ -179,89 +182,50 @@ class PembayaranKantorController extends Controller
     }
 
     /**
-     * Angsuran pinjaman modal satu sumber, = app_laravel
-     * TabunganController::storeCapitalLoanPayment: tawan/sherly satu nominal;
-     * jasa modal 2% dari sisa pokok TIAP pinjaman yang sudah masuk bulan ke-5
-     * (lihat jasaPinjaman), dibagi FIFO ke pinjaman tertua dan dibatasi
-     * nominal; sisa nominal jadi pokok, FIFO juga. Pusat: jasa diisi manual,
-     * dicatat di pinjaman tertua. Lunas -> status paid. Sumber pusat hanya bendahara (kasirpusat).
-     * Kunci bulanan modal berlaku untuk semua kantor (branch_id null).
+     * Angsuran pinjaman modal: SATU nominal untuk semua pinjaman aktif kantor (mas 2026-10-21,
+     * revisi): dibagi JasaModal::alokasi (jasa wajib Modal Awal, jasa wajib lain, pokok Modal
+     * Awal, pokok lain lewat tempo, lebihnya ke pinjaman tempo). Satu input = satu `slip` (uuid);
+     * stafkontrol memindah / meng-0-kan bagiannya lewat re-split slip di app_laravel. Status ikut
+     * sisa (active/paid). Tabel tunggakan jasa TIDAK ditulis - dibangun ulang app_laravel.
+     * Pinjaman sumber Pusat hanya ikut kalau penginput bendahara (kasirpusat).
      */
-    // ponytail: bayar pinjaman modal ditutup sementara (mas 2026-10-21) untuk semua sumber;
-    // buka lagi = hapus abort ini + kembalikan tombol di PembayaranKantor.jsx.
-    private const MODAL_TUTUP = 'Pembayaran pinjaman modal sementara ditutup.';
-
     public function bayarModal(Request $request)
     {
-        abort(403, self::MODAL_TUTUP);
         $branch = $this->kantor();
+        abort_unless($this->bolehBayar($branch->id), 403, 'Input pembayaran untuk kasir, staf kontrol, pusat, dan superuser.');
         $data = $request->validate([
-            'source' => ['required', 'in:' . implode(',', array_keys(self::SUMBER_MODAL))],
             'nominal' => ['required', 'integer', 'min:1'],
-            'jasa' => ['nullable', 'integer', 'min:0'],
             'payment_date' => ['required', 'date', 'before_or_equal:today'],
             'rekening_id' => ['required', 'exists:rekening_tujuan,id,deleted_at,NULL'],
             'notes' => ['nullable', 'string', 'max:255'],
             'bukti' => array_merge(['required'], Unggahan::ATURAN),
         ], ['payment_date.before_or_equal' => 'Tanggal bayar tidak boleh di masa depan.', 'rekening_id.required' => 'Pilih rekening tujuan.'] + Unggahan::pesan('bukti'));
-        abort_unless($this->bolehBayarModal($branch->id, $data['source']), 403,
-            $data['source'] === 'pusat' ? 'Pinjaman modal sumber Pusat hanya dicatat Bendahara.' : 'Input pembayaran untuk kasir, staf kontrol, pusat, dan superuser.');
 
         $periode = substr((string) $data['payment_date'], 0, 7);
         if (DB::table('contribution_locks')->where('module', 'modal')->whereNull('branch_id')->where('period', $periode)->exists()) {
             throw ValidationException::withMessages(['nominal' => "Pinjaman modal bulan {$periode} sudah dikunci kasir pusat."]);
         }
 
-        $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branch->id)->where('source', $data['source'])
-            ->where('status', 'active')->orderBy('loan_date')->orderBy('id')->get(['id', 'amount', 'loan_date']);
-        $dibayar = DB::table('tb_capital_loan_payments')->whereIn('tb_capital_loan_id', $pinjaman->pluck('id'))
-            ->groupBy('tb_capital_loan_id')->selectRaw('tb_capital_loan_id, SUM(amount_principal) pokok')->pluck('pokok', 'tb_capital_loan_id');
-        $sisa = fn($l) => (int) $l->amount - (int) ($dibayar[$l->id] ?? 0);
-        $totalSisa = (int) $pinjaman->sum($sisa);
-        if ($pinjaman->isEmpty() || $totalSisa <= 0) {
-            throw ValidationException::withMessages(['nominal' => 'Tidak ada pinjaman modal aktif untuk sumber ini.']);
+        [$pinjaman, $info, $hasil] = $this->bagiModal($branch->id, (int) $data['nominal'], $data['payment_date']);
+        if ($pinjaman->isEmpty()) {
+            throw ValidationException::withMessages(['nominal' => 'Tidak ada pinjaman modal aktif.']);
         }
-
-        $jasaPer = []; // id pinjaman => jasa modal
-        if ($data['source'] === 'pusat') {
-            // Pusat: pokok & jasa diisi terpisah (nominal = pokok).
-            $pokok = (int) $data['nominal'];
-            if ((int) ($data['jasa'] ?? 0) > 0) {
-                $jasaPer[$pinjaman->first()->id] = (int) $data['jasa'];
-            }
-        } else {
-            $pokok = (int) $data['nominal'];
-            foreach ($pinjaman as $l) {
-                $j = min(self::jasaPinjaman($l->loan_date, $sisa($l), $data['payment_date']), $pokok);
-                if ($j > 0) {
-                    $jasaPer[$l->id] = $j;
-                    $pokok -= $j;
-                }
-            }
-        }
-        if ($pokok > $totalSisa) {
-            throw ValidationException::withMessages(['nominal' => 'Angsuran pokok melebihi total sisa hutang (Rp ' . number_format($totalSisa, 0, ',', '.') . ').']);
+        if ($hasil['lebih'] > 0) {
+            $maks = (int) $data['nominal'] - $hasil['lebih'];
+            throw ValidationException::withMessages(['nominal' => 'Nominal melebihi total sisa pokok + jasa (maks Rp ' . number_format($maks, 0, ',', '.') . ').']);
         }
 
         // Diunggah sesudah semua validasi lolos supaya tidak ada file yatim.
         $bukti = Unggahan::simpan($request->file('bukti'), 'modal-bukti', 'bukti');
+        $slip = (string) \Illuminate\Support\Str::uuid();
 
-        DB::transaction(function () use ($pinjaman, $sisa, $pokok, $jasaPer, $data, $bukti) {
-            foreach ($pinjaman as $l) {
-                $sisaIni = $sisa($l);
-                if ($sisaIni <= 0) {
-                    DB::table('tb_capital_loans')->where('id', $l->id)->update(['status' => 'paid', 'updated_at' => now()]);
-                    continue;
-                }
-                $bayarPokok = min($pokok, $sisaIni);
-                $jasa = $jasaPer[$l->id] ?? 0;
-                if ($bayarPokok <= 0 && $jasa <= 0) {
-                    continue;
-                }
+        DB::transaction(function () use ($info, $hasil, $data, $bukti, $slip) {
+            foreach ($hasil['bagian'] as $id => $b) {
                 DB::table('tb_capital_loan_payments')->insert([
-                    'tb_capital_loan_id' => $l->id,
-                    'amount_principal' => $bayarPokok,
-                    'amount_jasa_modal' => $jasa,
+                    'tb_capital_loan_id' => $id,
+                    'slip' => $slip,
+                    'amount_principal' => $b['pokok'],
+                    'amount_jasa_modal' => $b['jasa'],
                     'payment_date' => $data['payment_date'],
                     'rekening_id' => (int) $data['rekening_id'],
                     'notes' => $data['notes'] ?? null,
@@ -270,14 +234,48 @@ class PembayaranKantorController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $pokok -= $bayarPokok;
-                if ($sisaIni - $bayarPokok <= 0) {
-                    DB::table('tb_capital_loans')->where('id', $l->id)->update(['status' => 'paid', 'updated_at' => now()]);
-                }
+                DB::table('tb_capital_loans')->where('id', $id)
+                    ->update(['status' => $info[$id]['sisa'] - $b['pokok'] > 0 ? 'active' : 'paid', 'updated_at' => now()]);
             }
         });
 
-        return back()->with('message', 'Pembayaran pinjaman modal dicatat (dialokasikan ke pinjaman tertua).');
+        return back()->with('message', 'Pembayaran pinjaman modal dicatat. Pembagiannya bisa dipindah staf kontrol.');
+    }
+
+    /** Pratinjau pembagian satu nominal (JSON) - angka yang sama dengan yang disimpan bayarModal. */
+    public function pratinjauModal(Request $request)
+    {
+        $branch = $this->kantor();
+        abort_unless($this->bolehBayar($branch->id), 403);
+        $data = $request->validate(['nominal' => ['required', 'integer', 'min:0'], 'payment_date' => ['required', 'date']]);
+        [$pinjaman, $info, $hasil] = $this->bagiModal($branch->id, (int) $data['nominal'], $data['payment_date']);
+
+        return response()->json([
+            'rincian' => $pinjaman->filter(fn($l) => isset($hasil['bagian'][$l->id]))->values()->map(fn($l) => [
+                'id' => $l->id,
+                'label' => $this->labelPinjaman($l),
+                'tempo' => $info[$l->id]['tempo'],
+            ] + $hasil['bagian'][$l->id]),
+            'lebih' => $hasil['lebih'],
+        ]);
+    }
+
+    /** @return array{0:\Illuminate\Support\Collection,1:array,2:array} pinjaman aktif, info JasaModal, alokasi */
+    private function bagiModal(int $branchId, int $nominal, string $tanggal): array
+    {
+        $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branchId)->where('status', 'active')
+            ->where('loan_date', '<=', $tanggal)
+            ->when(!auth()->user()->can('kasirpusat'), fn($q) => $q->where('source', '!=', 'pusat'))
+            ->orderBy('loan_date')->orderBy('id')->get(['id', 'amount', 'loan_date', 'source', 'jenis']);
+        $info = JasaModal::perPinjaman($pinjaman, $tanggal, $tanggal);
+
+        return [$pinjaman, $info, JasaModal::alokasi($pinjaman, $info, $nominal)];
+    }
+
+    private function labelPinjaman(object $l): string
+    {
+        return ($l->jenis === JasaModal::MODAL_AWAL ? 'Modal Awal' : self::BUKU_MODAL[$l->source] ?? $l->source)
+            . ' ' . Carbon::parse($l->loan_date)->locale('id')->isoFormat('D MMM YY');
     }
 
     /** Halaman detail Tabungan Goro Umrah kantor aktif: rekap per bulan setahun + semua setoran. */
@@ -341,10 +339,15 @@ class PembayaranKantorController extends Controller
     {
         abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403);
         $branch = $this->kantor();
-        $sumber = array_key_exists((string) $request->input('sumber'), self::SUMBER_MODAL) ? (string) $request->input('sumber') : 'pusat';
+        // Tab buku (= drawer app_laravel, mas 2026-10-21): Semua | Pusat | Hertawan | Sherly |
+        // Modal Awal. Modal Awal hanya di bukunya sendiri, tidak di buku sumbernya.
+        $buku = (string) $request->input('sumber');
+        $buku = $buku === 'semua' || array_key_exists($buku, self::BUKU_MODAL) ? $buku : 'semua';
 
-        $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branch->id)->where('source', $sumber)
-            ->orderByDesc('loan_date')->orderByDesc('id')->get(['id', 'amount', 'loan_date', 'status', 'notes']);
+        $q = DB::table('tb_capital_loans')->where('branch_id', $branch->id);
+        $pinjaman = ($buku === 'semua' ? $q : $this->pinjamanBuku($q, $buku))
+            ->orderByDesc('loan_date')->orderByDesc('id')->get(['id', 'amount', 'loan_date', 'status', 'notes', 'source', 'jenis']);
+        $info = JasaModal::perPinjaman($pinjaman, now());
         $bayar = DB::table('tb_capital_loan_payments as p')
             ->leftJoin('users as u', 'u.id', '=', 'p.created_by')
             ->leftJoin('employees as e', 'e.id', '=', 'u.employee_id')
@@ -361,17 +364,24 @@ class PembayaranKantorController extends Controller
             'sisa' => max(0, (int) $l->amount - ($pokokPer[$l->id] ?? 0)),
             'status' => $l->status,
             'catatan' => $l->notes,
+            'jasa_wajib' => $info[$l->id]['wajib'], // bulan berjalan; Pusat selalu 0
+            // Belum bulan ke-4 / Pusat (dan belum ada jasa dibayar bulan ini) -> jasa tidak ditampilkan.
+            'jasa_berlaku' => $info[$l->id]['seharusnya'] > 0 || $info[$l->id]['dibayar'] > 0,
+            'wajib_mulai' => $info[$l->id]['tempo'] ? JasaModal::wajibMulai($l->loan_date) : null,
+            'sumber' => self::SUMBER_MODAL[$l->source] ?? $l->source,
+            'jenis' => JasaModal::LABEL[$l->jenis] ?? $l->jenis,
         ]);
 
         return \Inertia\Inertia::render('Kasir/Dashboard/PinjamanModal', [
             'unit' => $branch->unit,
-            'sumber' => $sumber,
-            'sumber_ada' => collect(self::SUMBER_MODAL)->map(fn($judul, $k) => ['kunci' => $k, 'judul' => $judul])->values(),
+            'sumber' => $buku,
+            'sumber_ada' => collect(['semua' => 'Semua'] + self::BUKU_MODAL)->map(fn($judul, $k) => ['kunci' => $k, 'judul' => $judul])->values(),
             'ringkas' => [
                 'total_pinjaman' => (int) $daftar->sum('jumlah'),
                 'total_pokok' => (int) $bayar->sum('amount_principal'),
                 'total_jasa' => (int) $bayar->sum('amount_jasa_modal'),
                 'sisa' => (int) $daftar->sum('sisa'),
+                'jasa_wajib' => $daftar->contains('jasa_berlaku', true) ? (int) $daftar->sum('jasa_wajib') : null,
             ],
             'pinjaman' => $daftar,
             'angsuran' => $bayar->map(fn($p) => [
@@ -428,16 +438,6 @@ class PembayaranKantorController extends Controller
         $boleh = Branch::getAllowedBranchIds($user);
 
         return $boleh === null || in_array($branchId, $boleh);
-    }
-
-    /** Pinjaman modal: tawan/sherly ikut bolehBayar; pusat hanya bendahara (kasirpusat), = app_laravel. */
-    private function bolehBayarModal(int $branchId, string $sumber): bool
-    {
-        if ($sumber === 'pusat') {
-            return (bool) auth()->user()->can('kasirpusat') && $this->bolehBayar($branchId);
-        }
-
-        return $this->bolehBayar($branchId);
     }
 
     private function terkunci(string $modul, int $branchId, string $periode): bool
@@ -531,73 +531,68 @@ class PembayaranKantorController extends Controller
         ];
     }
 
-    /**
-     * Jasa modal satu pinjaman tawan/sherly = app_laravel TbCapitalLoan::anjuranJasaModal:
-     * 2% dari sisa pokok pinjaman itu, mulai bulan kalender ke-5 (bulan cair = bulan
-     * ke-1, jadi selisih bulan kalender >= 4; bukan hitungan 30 hari). Dibulatkan KE
-     * ATAS ke ribuan (mas 2026-10-15): 1.400.432 -> 1.401.000. Hitungan bulat (tanpa
-     * float): 2% x sisa / 1000 = sisa x 2 / 100000.
-     */
-    private static function jasaPinjaman($tanggalPinjam, int $sisa, $tanggalBayar): int
-    {
-        $cair = Carbon::parse($tanggalPinjam);
-        $bayar = Carbon::parse($tanggalBayar);
-        $selisih = ($bayar->year * 12 + $bayar->month) - ($cair->year * 12 + $cair->month);
 
-        return $selisih >= 4 && $sisa > 0 ? intdiv($sisa * 2 + 99999, 100000) * 1000 : 0;
+    /** Pinjaman modal satu buku: sumber pusat/tawan/sherly TANPA modal awal, atau buku Modal Awal (semua sumber). */
+    private function pinjamanBuku($query, string $buku)
+    {
+        return $buku === JasaModal::MODAL_AWAL
+            ? $query->where('jenis', JasaModal::MODAL_AWAL)
+            : $query->where('source', $buku)->where('jenis', '!=', JasaModal::MODAL_AWAL);
     }
 
-    /** Pinjaman modal kantor per sumber dana (tb_capital_loans), baca-saja. */
-    private function modal(int $branchId, string $sumber, string $awal, string $akhir): array
+    /**
+     * Kartu Pinjaman Modal (satu kartu, mas 2026-10-21 revisi): per buku (Modal Awal, Hertawan,
+     * Sherly, Pusat) sisa pokok + jasa 2% wajib bulan ini (null = belum ada yang lewat tempo /
+     * Pusat) + bulan wajib pinjaman yang masih tempo; total jasa wajib & sisa; satu tombol Bayar.
+     */
+    private function modal(int $branchId, string $awal, string $akhir): array
     {
-        $bayar = DB::table('tb_capital_loan_payments')->where('payment_date', '<=', $akhir)
-            ->groupBy('tb_capital_loan_id')
-            ->selectRaw('tb_capital_loan_id, SUM(amount_principal) pokok, SUM(CASE WHEN payment_date < ? THEN amount_principal ELSE 0 END) pokok_awal', [$awal]);
-        $pinjaman = DB::table('tb_capital_loans as l')
-            ->leftJoinSub($bayar, 'p', 'p.tb_capital_loan_id', '=', 'l.id')
-            ->where('l.branch_id', $branchId)->where('l.source', $sumber)->where('l.loan_date', '<=', $akhir)
-            ->orderBy('l.loan_date')->orderBy('l.id')
-            ->get(['l.amount', 'l.loan_date', DB::raw('COALESCE(p.pokok, 0) as pokok'), DB::raw('COALESCE(p.pokok_awal, 0) as pokok_awal')]);
-        $aktif = $pinjaman->filter(fn($l) => (int) $l->amount > (int) $l->pokok);
-        $bulanIni = DB::table('tb_capital_loan_payments as p')
-            ->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
-            ->where('l.branch_id', $branchId)->where('l.source', $sumber)->whereBetween('p.payment_date', [$awal, $akhir])
-            ->selectRaw('COALESCE(SUM(p.amount_principal),0) pokok, COALESCE(SUM(p.amount_jasa_modal),0) jasa, MAX(p.payment_date) terakhir')
-            ->first();
+        $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branchId)->where('loan_date', '<=', $akhir)
+            ->orderBy('loan_date')->orderBy('id')->get(['id', 'amount', 'loan_date', 'source', 'jenis']);
+        $info = JasaModal::perPinjaman($pinjaman, $awal, $akhir);
+        $aktif = $pinjaman->filter(fn($l) => $info[$l->id]['sisa'] > 0);
+        $jasaAda = fn($l) => $info[$l->id]['seharusnya'] > 0 || $info[$l->id]['dibayar'] > 0;
 
-        $sisa = (int) $aktif->sum(fn($l) => (int) $l->amount - (int) $l->pokok);
-        // Jasa yang wajib dibayar bulan ini: 2% sisa pokok AWAL bulan tiap pinjaman yang
-        // sudah masuk bulan ke-5 (pinjaman yang lunas di bulan ini tetap kena).
-        $jasaWajib = $sumber === 'pusat' ? null : (int) $pinjaman
-            ->sum(fn($l) => self::jasaPinjaman($l->loan_date, max(0, (int) $l->amount - (int) $l->pokok_awal), $awal));
+        $urut = array_replace(array_flip([JasaModal::MODAL_AWAL, 'tawan', 'sherly', 'pusat']), self::BUKU_MODAL);
+        $buku = collect($urut)->map(function ($judul, $kunci) use ($pinjaman, $aktif, $info, $jasaAda) {
+            $isi = $pinjaman->filter(fn($l) => $kunci === JasaModal::MODAL_AWAL ? $l->jenis === JasaModal::MODAL_AWAL
+                : $l->source === $kunci && $l->jenis !== JasaModal::MODAL_AWAL);
+            $isiAktif = $aktif->intersectByKeys($isi);
+            $tempo = $isiAktif->filter(fn($l) => $info[$l->id]['tempo']);
+
+            return [
+                'kunci' => $kunci,
+                'judul' => $kunci === JasaModal::MODAL_AWAL ? $judul : str_replace('Pinjaman Modal', 'Pinjaman', $judul),
+                'jumlah_aktif' => $isiAktif->count(),
+                'sisa' => (int) $isiAktif->sum(fn($l) => $info[$l->id]['sisa']),
+                'jasa_wajib' => $kunci !== 'pusat' && $isi->contains($jasaAda) ? (int) $isi->sum(fn($l) => $info[$l->id]['wajib']) : null,
+                'tempo_sampai' => $tempo->isEmpty() ? null : JasaModal::wajibMulai($tempo->max('loan_date')),
+            ];
+        })->filter(fn($b) => $b['jumlah_aktif'] > 0 || $b['jasa_wajib'] !== null)->values();
+
+        $bulanIni = DB::table('tb_capital_loan_payments as p')->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
+            ->where('l.branch_id', $branchId)->whereBetween('p.payment_date', [$awal, $akhir]);
 
         return [
+            'buku' => $buku,
             'jumlah_aktif' => $aktif->count(),
-            'sisa' => $sisa,
-            // Pinjaman aktif tertua dulu: dialog bayar menghitung jasa per pinjaman
-            // menurut tanggal bayar (server menghitung ulang saat simpan).
-            'pinjaman' => $aktif->values()->map(fn($l) => [
-                'tanggal' => Carbon::parse($l->loan_date)->toDateString(),
-                'sisa' => (int) $l->amount - (int) $l->pokok,
-            ]),
-            'boleh_bayar' => $this->bolehBayarModal($branchId, $sumber),
+            'sisa' => (int) $aktif->sum(fn($l) => $info[$l->id]['sisa']),
+            'jasa_wajib' => $pinjaman->contains($jasaAda) ? (int) $pinjaman->sum(fn($l) => $info[$l->id]['wajib']) : null,
+            'pokok_bulan_ini' => (int) (clone $bulanIni)->sum('p.amount_principal'),
+            'jasa_bulan_ini' => (int) (clone $bulanIni)->sum('p.amount_jasa_modal'),
+            'terakhir' => ($t = (clone $bulanIni)->max('p.payment_date')) ? Carbon::parse($t)->toDateString() : null,
+            'boleh_bayar' => $this->bolehBayar($branchId),
             'terkunci_modal' => DB::table('contribution_locks')->where('module', 'modal')->whereNull('branch_id')->where('period', substr($awal, 0, 7))->exists(),
-            'riwayat' => DB::table('tb_capital_loan_payments as p')
-                ->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
-                ->where('l.branch_id', $branchId)->where('l.source', $sumber)->whereBetween('p.payment_date', [$awal, $akhir])
-                ->orderByDesc('p.payment_date')->orderByDesc('p.id')->limit(3)
-                ->get(['p.id', 'p.amount_principal', 'p.amount_jasa_modal', 'p.payment_date', 'p.bukti_path'])
+            // Satu baris per slip (satu input kasir), bukti dari baris pertamanya.
+            'riwayat' => (clone $bulanIni)->groupByRaw('COALESCE(p.slip, p.id)')
+                ->selectRaw('MIN(p.id) id, SUM(p.amount_principal + p.amount_jasa_modal) nominal, MAX(p.payment_date) tanggal, MAX(p.bukti_path) bukti_path')
+                ->orderByDesc('tanggal')->orderByDesc('id')->limit(3)->get()
                 ->map(fn($r) => [
                     'id' => $r->id,
-                    'nominal' => (int) $r->amount_principal + (int) $r->amount_jasa_modal,
-                    'tanggal' => Carbon::parse($r->payment_date)->toDateString(),
+                    'nominal' => (int) $r->nominal,
+                    'tanggal' => Carbon::parse($r->tanggal)->toDateString(),
                     'bukti' => $r->bukti_path ? route('dashboard.kasir.bukti', ['modal', $r->id]) : null,
                 ]),
-            'pokok_bulan_ini' => (int) $bulanIni->pokok,
-            'jasa_bulan_ini' => (int) $bulanIni->jasa,
-            'jasa_wajib' => $jasaWajib,
-            'sudah_bayar' => (int) $bulanIni->pokok + (int) $bulanIni->jasa > 0,
-            'terakhir' => $bulanIni->terakhir ? Carbon::parse($bulanIni->terakhir)->toDateString() : null,
         ];
     }
 
