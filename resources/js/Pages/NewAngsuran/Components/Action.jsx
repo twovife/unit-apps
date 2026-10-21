@@ -23,7 +23,7 @@ import StatusPinjaman from '@/Components/shadcn/StatusPinjaman';
 import BayarAngsuran from './BayarAngsuran';
 import JenisNasabah from './JenisNasabah';
 import DeleteAngsuran from './DeleteAngsuran';
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useFilterAngsuran } from '../FilterAngsuran';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
@@ -155,6 +155,23 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                     // Sudah lunas: tidak ada lagi yang diinput, form diganti kartu.
                     <div className="flex flex-col items-center gap-1 px-4 py-6 text-center border border-green-200 rounded-lg bg-green-50">
                       <div className="text-base font-semibold text-green-800">Angsuran sudah lunas</div>
+                      {customerData.pelunasan_oleh && (
+                        <div className="w-full p-2 mt-2 text-xs font-semibold text-red-700 border border-red-200 rounded-md bg-red-50">
+                          NASABAH PELUNASAN — HAPUS DROP PELUNASAN UNTUK MENGHAPUS ANGSURAN PELUNASAN.
+                          <div className="mt-1">
+                            <Link
+                              href={route('transaction.index_buku_transaksi', {
+                                kelompok: customerData.pelunasan_oleh.kelompok,
+                                hari: customerData.pelunasan_oleh.hari,
+                                month: String(customerData.pelunasan_oleh.drop_date ?? '').slice(0, 7) || undefined,
+                              })}
+                              className="font-medium text-blue-600 underline"
+                            >
+                              Ke Buku Transaksi (drop {customerData.pelunasan_oleh.drop_date})
+                            </Link>
+                          </div>
+                        </div>
+                      )}
                       {customerData.pay_off_date && (
                         <div className="text-xs text-green-700">
                           Lunas pada{' '}

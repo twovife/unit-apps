@@ -1295,6 +1295,12 @@ class TransactionLoanController extends Controller
         ->whereIn('status', ['open', 'acc'])
         ->latest('id')
         ->first(['id', 'drop_date', 'status']),
+      // Lunas karena drop pelunasan (pinjaman pengganti sukses): modal menampilkan
+      // peringatan + link ke Buku Transaksi tempat drop pelunasan dihapus.
+      'pelunasan_oleh' => ($p = TransactionLoan::where('previous_loan_id', $loan->id)->where('status', 'success')
+        ->with('loan_officer_grouping:id,kelompok')->latest('id')->first(['id', 'drop_date', 'hari', 'transaction_loan_officer_grouping_id']))
+        ? ['drop_date' => Carbon::parse($p->drop_date)->toDateString(), 'hari' => $p->hari, 'kelompok' => $p->loan_officer_grouping?->kelompok]
+        : null,
       // Kartu "Hapus Pinjaman" di modal Angsuran: hanya untuk can-edit /
       // superuser (koreksi). null = kartu tidak ditampilkan.
       'hapus_pinjaman' => \App\Helpers\Gembok::bolehBuka(auth()->user()) ? AppHelper::canDeleteLoan($loan) + [
@@ -1375,6 +1381,7 @@ class TransactionLoanController extends Controller
         'nominal_drop' => $penggantiLoan->nominal_drop,
         'request_nominal' => $penggantiLoan->request_nominal,
         'kelompok' => $penggantiLoan->loan_officer_grouping?->kelompok,
+        'hari' => $penggantiLoan->hari, // link ke Buku Transaksi (hari buku pengajuan itu)
         // Tombol "Batalkan pengajuan" (open/acc): boleh tidaknya ikut aturan hapus pinjaman.
         'batal' => in_array($penggantiLoan->status, ['open', 'acc'], true)
           ? AppHelper::canDeleteLoan($penggantiLoan)

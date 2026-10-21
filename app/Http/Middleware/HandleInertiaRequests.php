@@ -57,9 +57,9 @@ class HandleInertiaRequests extends Middleware
             $scope = \App\Helpers\AuthScope::resolve();
             $branches = [];
             if ($scope->allowed_branches === null) {
-                $branches = \App\Models\Branch::select('id', 'unit', 'type', 'wilayah')->get();
+                $branches = \App\Models\Branch::select('id', 'unit', 'type', 'wilayah', 'isactive')->get();
             } elseif (!empty($scope->allowed_branches)) {
-                $branches = \App\Models\Branch::select('id', 'unit', 'type', 'wilayah')
+                $branches = \App\Models\Branch::select('id', 'unit', 'type', 'wilayah', 'isactive')
                             ->whereIn('id', $scope->allowed_branches)->get();
             }
             return [

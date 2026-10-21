@@ -18,6 +18,9 @@ import {
     PopoverTrigger,
 } from "@/shadcn/ui/popover";
 
+// Kantor tutup = branches.isactive 0 / false.
+const tutup = (b) => b && (b.isactive === 0 || b.isactive === false || b.isactive === '0');
+
 export default function GlobalBranchFilter({ compact = false }) {
     const { auth } = usePage().props;
     const globalFilter = auth.global_filter;
@@ -53,7 +56,7 @@ export default function GlobalBranchFilter({ compact = false }) {
                 >
                     <span className="truncate">
                         {activeBranch
-                            ? `${activeBranch.unit} ${activeBranch.type ? `(${activeBranch.type})` : ''}`
+                            ? `${activeBranch.unit} ${activeBranch.type ? `(${activeBranch.type})` : ''}${tutup(activeBranch) ? ' (TUTUP)' : ''}`
                             : "Pilih cabang..."}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -80,6 +83,7 @@ export default function GlobalBranchFilter({ compact = false }) {
                                         )}
                                     />
                                     {branch.unit} {branch.type ? `(${branch.type})` : ''}
+                                    {tutup(branch) && <span className="ml-1 text-[10px] font-semibold text-red-600">(TUTUP)</span>}
                                 </CommandItem>
                             ))}
                         </CommandGroup>

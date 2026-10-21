@@ -164,8 +164,10 @@ export default function VideoTutorialButton({
     if (!boleh) return null;
     return (
       <>
-        <Button type="button" variant="outline" size="sm" onClick={() => setTambahBuka(true)} className="inline-flex items-center gap-1.5">
-          <Plus className="w-4 h-4" /> Tambah Video
+        {/* HP: cukup ikon + (navbar sempit); layar lebar: + Tambah Video. */}
+        <Button type="button" variant="outline" size="sm" onClick={() => setTambahBuka(true)} className="inline-flex items-center gap-1.5" title="Tambah Video">
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Tambah Video</span>
         </Button>
         <TambahVideo open={tambahBuka} onOpenChange={setTambahBuka} menu={menu} onSelesai={muat} />
       </>
@@ -195,7 +197,7 @@ export default function VideoTutorialButton({
         title="Buka Video Tutorial"
       >
         <PlayCircle className="w-4 h-4 text-sky-600 shrink-0" />
-        <span>{buttonText}</span>
+        <span className="hidden sm:inline">{buttonText}</span>
       </Button>
 
       <Dialog open={buka} onOpenChange={setBuka}>

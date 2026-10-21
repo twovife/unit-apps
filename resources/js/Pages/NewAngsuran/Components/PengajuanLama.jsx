@@ -3,7 +3,7 @@ import Loading from '@/Components/Loading';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
-import { router, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
@@ -161,17 +161,22 @@ const PengajuanLama = ({ isActive, triggeredId, triggeredPinjaman }) => {
               />
             </div>
           </div>
-          <a
-            href={route('pinjaman.index_pinjaman', {
-              date: existingPengajuan.tanggal_drop,
+          {existingPengajuan.status === 'success' && (
+            <div className="p-2 text-xs font-semibold text-red-700 border border-red-200 rounded-md bg-red-50">
+              NASABAH PELUNASAN — HAPUS DROP PELUNASAN UNTUK MENGHAPUS ANGSURAN PELUNASAN.
+            </div>
+          )}
+          {/* Buku Transaksi (drop) di bulan + hari + kelompok pengajuan itu - tab yang sama. */}
+          <Link
+            href={route('transaction.index_buku_transaksi', {
               kelompok: existingPengajuan.kelompok,
+              hari: existingPengajuan.hari ?? triggeredPinjaman?.hari,
+              month: String(existingPengajuan.tanggal_drop ?? '').slice(0, 7) || undefined,
             })}
-            target="_blank"
-            rel="noreferrer"
             className="inline-block text-blue-500 underline"
           >
-            Lihat Drop Hari Itu
-          </a>
+            Lihat di Buku Transaksi
+          </Link>
           {existingPengajuan.batal && (
             <div className="pt-2 mt-2 border-t">
               {existingPengajuan.batal.status ? (

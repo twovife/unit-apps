@@ -187,8 +187,13 @@ class PembayaranKantorController extends Controller
      * dicatat di pinjaman tertua. Lunas -> status paid. Sumber pusat hanya bendahara (kasirpusat).
      * Kunci bulanan modal berlaku untuk semua kantor (branch_id null).
      */
+    // ponytail: bayar pinjaman modal ditutup sementara (mas 2026-10-21) untuk semua sumber;
+    // buka lagi = hapus abort ini + kembalikan tombol di PembayaranKantor.jsx.
+    private const MODAL_TUTUP = 'Pembayaran pinjaman modal sementara ditutup.';
+
     public function bayarModal(Request $request)
     {
+        abort(403, self::MODAL_TUTUP);
         $branch = $this->kantor();
         $data = $request->validate([
             'source' => ['required', 'in:' . implode(',', array_keys(self::SUMBER_MODAL))],
