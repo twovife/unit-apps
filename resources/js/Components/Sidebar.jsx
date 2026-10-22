@@ -49,6 +49,7 @@ import {
   UserX,
 } from 'lucide-react';
 import GlobalBranchFilter from './GlobalBranchFilter';
+import TombolPasangAplikasi from './TombolPasangAplikasi';
 
 const SidebarSubMenuSection = ({ icon: Icon, title, items }) => {
   return (
@@ -214,6 +215,12 @@ export default function AppSidebar({ ...props }) {
               title: 'Buku Macet',
               link: route('pinjaman.index_pinjaman_macet'),
               active: route().current('pinjaman.index_pinjaman_macet'),
+            },
+            {
+              id: 4,
+              title: 'Daftar Nasabah',
+              link: route('pinjaman.daftar_nasabah'),
+              active: route().current('pinjaman.daftar_nasabah'),
             },
           ]}
         />
@@ -487,6 +494,7 @@ export default function AppSidebar({ ...props }) {
 
       {/* Footer User Profile Card */}
       <SidebarFooter className="p-2 border-t">
+        <TombolPasangAplikasi className="w-full" />
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>

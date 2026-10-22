@@ -210,6 +210,8 @@ trait PinjamanTrait
             // Timestamp (bukan bool): at_approved/at_kasir butuh nilainya.
             'daily_kepala_approval' => $r->kepala_approval_at,
             'daily_kasir_approval' => $r->kasir_lock_at,
+            'daily_kepala_approval_user' => $r->kepala_approval_user,
+            'daily_kasir_approval_user' => $r->kasir_lock_user,
           ])->groupBy('date');
       } else {
         $daily_recap = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId->id)->whereIn('date', $datesMatchDay)->get()->groupBy('date');
@@ -225,7 +227,12 @@ trait PinjamanTrait
           ->keyBy('transaction_daily_closing_id')
         : collect();
 
-      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $dibuka, $migrasi) {
+      // Nama yang ACC KM / TTD kasir (ditampilkan di form ACC KM).
+      $namaPegawai = \App\Models\Employee::whereIn('id', $daily_recap->flatten()
+        ->flatMap(fn($r) => [$r->daily_kepala_approval_user, $r->daily_kasir_approval_user])->filter()->unique())
+        ->pluck('nama_karyawan', 'id');
+
+      $buku_rencana_drop = $datesMatchDay->map(function ($tanggal) use ($pengajuan, $daily_recap, $instalment, $groupingId, $dibuka, $migrasi, $namaPegawai) {
         $thisDailyRecap = $daily_recap->get($tanggal, collect())->first(); //stored as database
         // Flow lama: ACC KM otomatis dari TTD kasir (jam KM = jam kasir) = KM belum cek,
         // tetap tampil belum ACC (X) di layar KM (mas 2026-10-19).
@@ -277,6 +284,8 @@ trait PinjamanTrait
           'is_kasir' => $thisDailyRecap?->daily_kasir_approval ? true : false,
           'at_approved' => $thisDailyRecap?->daily_kepala_approval,
           'at_kasir' => $thisDailyRecap?->daily_kasir_approval,
+          'oleh_acc' => $namaPegawai->get($thisDailyRecap?->daily_kepala_approval_user ?? 0),
+          'oleh_kasir' => $namaPegawai->get($thisDailyRecap?->daily_kasir_approval_user ?? 0),
           'is_closed' => $kmAsli,
           'button_color' => $kmAsli ? ($thisDailyRecap?->daily_kasir_approval ? 'success' : 'baru') : 'open',
         ];

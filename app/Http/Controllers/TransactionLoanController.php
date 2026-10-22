@@ -169,14 +169,35 @@ class TransactionLoanController extends Controller
   public function koreksi_target(Request $request)
   {
     $val = $this->validasiKoreksiTarget($request);
+    $employeeId = (int) auth()->user()->employee->id;
+
+    // Alur lama, hari yang ACC KM-nya otomatis dari TTD kasir (jam KM = jam kasir): simpan
+    // dari form = KM sudah cek, jadi ACC KM ditulis ulang atas nama KM (tombol jadi hijau).
+    // Tanpa ini form hari terkunci hanya mengoreksi target dan tombol merah selamanya.
+    $grouping = TransactionLoanOfficerGrouping::find($val['id']);
+    $recap = \App\Helpers\AgregasiScope::sudahMigrasi($grouping->branch_id) ? null
+      : \App\Models\TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $grouping->id)->whereDate('date', $val['date'])->first();
+    $accKm = $recap?->daily_kepala_approval && (string) $recap->daily_kepala_approval === (string) $recap->daily_kasir_approval;
+    $berubah = !$recap || (int) ($val['target'] ?? $recap->target) !== (int) $recap->target
+      || (int) ($val['keluar'] ?? $recap->keluar) !== (int) $recap->keluar;
+
     try {
-      $hasil = \App\Helpers\KoreksiTarget::simpan((int) $val['id'], $val['date'], $val['target'] ?? null, $val['keluar'] ?? null,
-        'Diubah dari form ACC KM (hari terkunci).', (int) auth()->user()->employee->id);
+      $hasil = $berubah ? \App\Helpers\KoreksiTarget::simpan((int) $val['id'], $val['date'], $val['target'] ?? null, $val['keluar'] ?? null,
+        'Diubah dari form ACC KM (hari terkunci).', $employeeId) : null;
     } catch (\RuntimeException $e) {
       return redirect()->back()->withErrors($e->getMessage());
     }
+    if ($accKm) {
+      \App\Models\TransactionDailyRecap::withoutEvents(fn() => $recap->update([
+        'daily_kepala_approval' => Carbon::now(),
+        'daily_kepala_approval_user' => $employeeId,
+      ]));
+    }
 
-    return redirect()->back()->with('message', 'Target dikoreksi; ' . (count($hasil['perubahan']) - 1) . ' tanggal sesudahnya ikut dihitung ulang.');
+    return redirect()->back()->with('message', implode(' ', array_filter([
+      $accKm ? 'ACC KM dicatat.' : null,
+      $hasil ? 'Target dikoreksi; ' . (count($hasil['perubahan']) - 1) . ' tanggal sesudahnya ikut dihitung ulang.' : null,
+    ])) ?: 'Tidak ada perubahan.');
   }
 
   public function ceklist_kepala_baru(Request $request)
@@ -1192,6 +1213,78 @@ class TransactionLoanController extends Controller
     // Input Macet dimatikan untuk kantor migrasi (mas 2026-10-12, menu baru menyusul).
     $data['input_macet_mati'] = \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId());
     return Inertia::render("WebView/Angsuran/SearchByDate", $data);
+  }
+
+  /**
+   * Daftar Nasabah (mas 2026-10-22): nasabah yang di-drop pada satu bulan di kelompok
+   * aktif (filter global), dengan pinjaman dan saldo SEKARANG (F8,
+   * PenyesuaianSaldo::saldoBanyak). Lunas = punya pay_off_date (walau angsurannya
+   * kurang - ditutup sistem lama, mas 2026-10-22) atau saldo <= 0. Tanggal lunas =
+   * pay_off_date, kalau kosong tanggal angsuran / pemutihan terakhir.
+   */
+  public function daftar_nasabah(Request $request)
+  {
+    $scope = \App\Helpers\AuthScope::resolve();
+    $grouping = AppHelper::kelompokAktif($scope->branch_id, $scope->kelompok);
+    $bulan = Carbon::parse(preg_match('/^\d{4}-\d{2}$/', (string) $request->month) ? $request->month . '-01' : 'first day of this month');
+    // Per hari tagih seperti /pinjaman (bawaan hari ini); tanggal tutup untuk dialog Pay.
+    $hari = AppHelper::hariTagih($request->hari);
+    $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
+    $tutup = AppHelper::get_closed_date($hariIni ? Carbon::now()->format('Y-m-d') : Carbon::now()->previous(AppHelper::getNumbDays($hari))->format('Y-m-d'));
+
+    $loans = DB::table('transaction_loans as l')
+      ->join('transaction_manage_customers as m', 'm.id', '=', 'l.transaction_manage_customer_id')
+      ->join('transaction_customers as c', 'c.id', '=', 'm.transaction_customer_id')
+      ->where('l.transaction_loan_officer_grouping_id', $grouping->id)
+      ->where('l.status', 'success')
+      ->where('l.hari', $hari)
+      ->whereBetween('l.drop_date', [$bulan->copy()->startOfMonth()->toDateString(), $bulan->copy()->endOfMonth()->toDateString()])
+      ->orderBy('l.drop_date')->orderBy('c.nama')
+      ->get(['l.id', 'l.drop_date', 'l.hari', 'l.nominal_drop', 'l.pinjaman', 'l.pay_off_date', 'c.nama', 'c.nik', 'm.nomor_anggota',
+        DB::raw('COALESCE(NULLIF(m.residential_address, ""), c.alamat) AS alamat')]);
+    $ids = $loans->pluck('id')->all();
+    $saldo = \App\Helpers\PenyesuaianSaldo::saldoBanyak($ids);
+    $bayarTerakhir = DB::query()->fromSub(
+      DB::table('transaction_loan_instalments')->whereIn('transaction_loan_id', $ids)->select('transaction_loan_id', 'transaction_date')
+        ->unionAll(DB::table('transaction_white_offs')->whereIn('transaction_loan_id', $ids)->select('transaction_loan_id', 'transaction_date')),
+      'b'
+    )->groupBy('transaction_loan_id')->selectRaw('transaction_loan_id, MAX(transaction_date) t')->pluck('t', 'transaction_loan_id');
+
+    $daftar = $loans->map(fn($l) => [
+      'id' => $l->id,
+      'tanggal' => Carbon::parse($l->drop_date)->toDateString(),
+      'hari' => $l->hari,
+      'nama' => $l->nama,
+      'nik' => $l->nik,
+      'nomor_anggota' => $l->nomor_anggota,
+      'alamat' => $l->alamat,
+      'drop' => (int) $l->nominal_drop,
+      'pinjaman' => (int) $l->pinjaman,
+      'saldo' => $l->pay_off_date ? 0 : max(0, $saldo[$l->id]['saldo'] ?? 0),
+      'lunas' => $l->pay_off_date || ($saldo[$l->id]['saldo'] ?? 0) <= 0,
+      'tanggal_lunas' => ($t = $l->pay_off_date ?? $bayarTerakhir[$l->id] ?? null) ? Carbon::parse($t)->toDateString() : null,
+    ]);
+
+    return Inertia::render('Pinjaman/DaftarNasabah', [
+      'server_filter' => [
+        'closed_transaction' => $tutup,
+        'month' => $bulan->format('Y-m'),
+        'hari' => $hari,
+        'kelompok' => $grouping->kelompok,
+        'branch_id' => $scope->branch_id,
+        'wilayah' => $scope->wilayah,
+        'userAuthorized' => AppHelper::branch_permission($scope->user, $scope->branch_id),
+      ],
+      'unit' => \App\Models\Branch::whereKey($scope->branch_id)->value('unit'),
+      'nasabah' => $daftar,
+      'ringkas' => [
+        'jumlah' => $daftar->count(),
+        'lunas' => $daftar->where('lunas', true)->count(),
+        'drop' => (int) $daftar->sum('drop'),
+        'pinjaman' => (int) $daftar->sum('pinjaman'),
+        'saldo' => (int) $daftar->sum('saldo'),
+      ],
+    ]);
   }
 
   public function index_pinjaman_macet(Request $request)

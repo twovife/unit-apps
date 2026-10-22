@@ -53,7 +53,18 @@ export const KOLOM_HARIAN = [
 export const Cek = ({ ok, href, onClick, otomatis = false }) => (
   <div className="flex items-center justify-center gap-1.5">
     {ok && !otomatis ? (
-      <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek" />
+      // Sudah dicek tetap bisa diklik (buka form ACC lagi / koreksi).
+      onClick ? (
+        <button type="button" onClick={onClick} title="Sudah dicek. Klik untuk buka lagi." className="rounded-full hover:ring-2 hover:ring-green-300">
+          <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek" />
+        </button>
+      ) : href ? (
+        <Link href={href} title="Sudah dicek. Klik untuk buka lagi." className="rounded-full hover:ring-2 hover:ring-green-300">
+          <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek" />
+        </Link>
+      ) : (
+        <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek" />
+      )
     ) : (
       <>
         <XCircle

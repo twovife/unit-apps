@@ -144,6 +144,7 @@ Route::middleware('auth')->group(function () {
       Route::get('/buku-json', "buku_angsuran_json")->name('buku_angsuran_json');
       Route::get('/drop_date', "index_pinjaman_search")->name('index_pinjaman_search');
       Route::get('/pinjaman-macet', "index_pinjaman_macet")->name('index_pinjaman_macet');
+      Route::get('/daftar-nasabah', "daftar_nasabah")->name('daftar_nasabah');
       Route::get('/actionloan/{transactionLoan}', "get_loan_pinjaman")->name('get_loan_pinjaman');
       Route::get('/checkpengajuan/{transactionLoan}', "checkpengajuan")->name('checkpengajuan');
       Route::post('/actionloan/{transactionLoan}', "bayar_pinjaman")->name('bayar_pinjaman');

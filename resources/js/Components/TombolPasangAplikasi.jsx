@@ -5,9 +5,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { dengar, pasang, sudahTerpasang } from '@/lib/pasangAplikasi';
 
 const iOS = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+// Safari Mac: tanpa dialog pasang; lewat menu File (Safari 17+).
+const safariMac = () => /macintosh/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent) && !/chrome|crios|edg|firefox/i.test(navigator.userAgent);
+// Browser di dalam aplikasi (WhatsApp, IG, FB, Line, TikTok): tidak bisa pasang sama sekali.
+const dalamAplikasi = () => /FBAN|FBAV|Instagram|WhatsApp|Line\/|musical_ly|; wv\)/i.test(navigator.userAgent);
 
 /**
- * Tombol "Install" di header: pasang UBMI DIGITAL sebagai ikon di layar HP.
+ * Tombol "Install" di sidebar (atas nama user) dan halaman login: pasang UBMI DIGITAL sebagai ikon di layar HP.
  * Chrome/Edge Android & desktop: dialog pasang bawaan. Browser tanpa dialog
  * itu (iPhone Safari, dll.): petunjuk manual. Hilang kalau sudah dibuka
  * sebagai aplikasi terpasang.
@@ -36,7 +40,18 @@ export default function TombolPasangAplikasi({ className = '' }) {
           <DialogHeader>
             <DialogTitle>Install UBMI DIGITAL</DialogTitle>
             <DialogDescription asChild>
-              {iOS() ? (
+              {dalamAplikasi() ? (
+                <ol className="pl-4 space-y-1 text-sm list-decimal">
+                  <li>Halaman ini dibuka di dalam aplikasi (WhatsApp / Instagram / Facebook), yang tidak bisa memasang aplikasi.</li>
+                  <li>Ketuk menu <b>⋮</b> atau <b>…</b>, pilih <b>Buka di browser</b> / <b>Buka di Chrome</b> / <b>Buka di Safari</b>.</li>
+                  <li>Di browser, ketuk tombol <b>Install</b> lagi.</li>
+                </ol>
+              ) : safariMac() ? (
+                <ol className="pl-4 space-y-1 text-sm list-decimal">
+                  <li>Di Safari, klik menu <b>File</b> di bar atas.</li>
+                  <li>Pilih <b>Tambahkan ke Dock</b>, lalu <b>Tambah</b>.</li>
+                </ol>
+              ) : iOS() ? (
                 <ol className="pl-4 space-y-1 text-sm list-decimal">
                   <li>Buka halaman ini di <b>Safari</b>.</li>
                   <li>Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas).</li>

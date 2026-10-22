@@ -110,7 +110,14 @@ export const Sisi = ({
                   {!kosong && (
                     <div className="flex items-center justify-center gap-1.5">
                       {r.cek_km && !r.kepala_otomatis ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek KM" />
+                        onAcc ? (
+                          // Sudah dicek tetap bisa diklik (buka form ACC lagi / koreksi).
+                          <button type="button" onClick={() => onAcc(r)} title="Sudah dicek KM. Klik untuk buka lagi." className="rounded-full hover:ring-2 hover:ring-green-300">
+                            <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek KM" />
+                          </button>
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-green-500" aria-label="Sudah dicek KM" />
+                        )
                       ) : (
                         <>
                           {/* ACC otomatis saat kunci / TTD kasir tetap silang: KM belum mengecek. */}

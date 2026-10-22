@@ -346,6 +346,27 @@ const Approval = ({
             {triggeredData?.tanggal ? dayjs(triggeredData.tanggal).format('dddd, DD MMMM YYYY') : ''} — cek transaksi
             hari ini &amp; isi rencana minggu depan.
           </SheetDescription>
+          {/* Siapa yang ACC KM / TTD kasir. ACC otomatis (jam = TTD kasir) = KM belum cek. */}
+          {(triggeredData?.at_approved || triggeredData?.at_kasir) && (
+            <div className="space-y-0.5 text-xs text-slate-600">
+              {triggeredData.at_approved && (
+                <div>
+                  ACC KM:{' '}
+                  {triggeredData.is_approved ? (
+                    <b className="text-emerald-700">{triggeredData.oleh_acc ?? '-'}</b>
+                  ) : (
+                    <b className="text-red-600">otomatis saat TTD kasir (belum dicek KM)</b>
+                  )}{' '}
+                  · {dayjs(triggeredData.at_approved).format('DD MMM YYYY HH:mm')}
+                </div>
+              )}
+              {triggeredData.at_kasir && (
+                <div>
+                  TTD kasir: <b>{triggeredData.oleh_kasir ?? '-'}</b> · {dayjs(triggeredData.at_kasir).format('DD MMM YYYY HH:mm')}
+                </div>
+              )}
+            </div>
+          )}
         </SheetHeader>
 
         <div className="px-5 py-4 space-y-5">
@@ -487,7 +508,8 @@ const Approval = ({
               </label>
 
               <Button type="submit" className="w-full" disabled={processing}>
-                {terkunci ? 'Simpan koreksi (hari sudah dikunci kasir)' : 'Simpan ACC KM'}
+                {/* is_approved false di hari terkunci = ACC KM otomatis dari TTD kasir: simpan = ACC KM. */}
+                {terkunci && triggeredData?.is_approved ? 'Simpan koreksi (hari sudah dikunci kasir)' : terkunci ? 'Simpan ACC KM (hari sudah dikunci kasir)' : 'Simpan ACC KM'}
               </Button>
             </form>
           )}

@@ -1,7 +1,6 @@
 import React from 'react';
 import { SidebarTrigger } from '@/shadcn/ui/sidebar';
 import GlobalBranchFilter from './GlobalBranchFilter';
-import TombolPasangAplikasi from './TombolPasangAplikasi';
 import SaklarRibuan from './SaklarRibuan';
 import VideoTutorialButton from './VideoTutorialButton';
 
@@ -35,7 +34,6 @@ const Navbar = ({ header }) => {
         <span className="font-semibold text-slate-800 text-sm hidden sm:inline-block">
           UBMI DIGITAL
         </span>
-        <TombolPasangAplikasi />
         <SaklarRibuan />
       </div>
       <div className="flex flex-1 items-center justify-end gap-4">
