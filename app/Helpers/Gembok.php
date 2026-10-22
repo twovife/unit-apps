@@ -182,6 +182,52 @@ class Gembok
 
         if ($baris) {
             self::buka($baris, $user, 'Dibuka otomatis: ' . $alasan);
+            return;
+        }
+
+        // Alur lama (mas 2026-10-22): kunci = TTD kasir di daily_recaps, tanpa trigger DB.
+        // Dulu tetap terkunci sementara angkanya berubah -> rekap tertinggal. Sekarang
+        // dibuka: TTD kasir dihapus, ACC KM otomatis (jam = TTD) ikut; ACC KM asli
+        // dibiarkan. Rekap disegarkan sesudah perubahan tertulis (segarkanSesudahTulis).
+        $tgl = \Carbon\Carbon::parse($tanggal)->toDateString();
+        $rekap = \App\Models\TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId)
+            ->whereDate('date', $tgl)->whereNotNull('daily_kasir_approval')->first();
+        if (!$rekap) {
+            return;
+        }
+        $kmOtomatis = (string) $rekap->daily_kepala_approval === (string) $rekap->daily_kasir_approval;
+        \App\Models\TransactionDailyRecap::withoutEvents(fn() => $rekap->update([
+            'daily_kasir_approval' => null,
+            'daily_kasir_approval_user' => null,
+        ] + ($kmOtomatis ? ['daily_kepala_approval' => null, 'daily_kepala_approval_user' => null] : [])));
+        self::$segarkan["$groupingId|$tgl"] = true;
+        \Illuminate\Support\Facades\Log::info('Kunci alur lama dibuka otomatis', [
+            'rekap_id' => $rekap->id, 'oleh' => $user->employee->id, 'alasan' => $alasan, 'acc_km_otomatis_dihapus' => $kmOtomatis,
+        ]);
+    }
+
+    /** Tanggal alur lama yang dibuka otomatis di permintaan ini, menunggu disegarkan. */
+    private static array $segarkan = [];
+
+    /**
+     * Dipanggil event model SESUDAH pinjaman / angsuran tertulis: kalau tanggal itu baru
+     * dibuka otomatis (alur lama), drop & storting rekapnya disegarkan
+     * (KoreksiTarget::segarkanRekapLama). Target minggu depan lewat ACC KM ulang.
+     */
+    public static function segarkanSesudahTulis($groupingId, $tanggal): void
+    {
+        if (!$groupingId || !$tanggal) {
+            return;
+        }
+        $kunci = $groupingId . '|' . \Carbon\Carbon::parse($tanggal)->toDateString();
+        if (!isset(self::$segarkan[$kunci])) {
+            return;
+        }
+        unset(self::$segarkan[$kunci]);
+        $rekap = \App\Models\TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $groupingId)
+            ->whereDate('date', \Carbon\Carbon::parse($tanggal)->toDateString())->first();
+        if ($rekap) {
+            KoreksiTarget::segarkanRekapLama($rekap);
         }
     }
 
@@ -220,6 +266,46 @@ class Gembok
             'alasan' => $buka->get($b->id)?->alasan,
             'dibuka_at' => $buka->get($b->id)?->created_at?->toDateTimeString(),
         ])->values()->all();
+    }
+
+    /** Alur lama: mulai tanggal ini hari yang belum dikunci kasir diperingatkan di Rekap 1. */
+    public const MULAI_CEK_KUNCI_LAMA = '2026-10-01';
+
+    /**
+     * Alur lama (mas 2026-10-22): hari kerja sejak MULAI_CEK_KUNCI_LAMA s/d kemarin yang
+     * ada transaksinya (drop sukses / angsuran) atau baris rekapnya, tapi belum di-TTD kasir.
+     * Bentuk sama dengan hariTerbuka() (dipakai banner yang sama).
+     */
+    public static function belumDikunciLama($branchId): array
+    {
+        $grup = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('kelompok', 'id');
+        $kemarin = \Carbon\Carbon::yesterday()->toDateString();
+        if ($grup->isEmpty() || $kemarin < self::MULAI_CEK_KUNCI_LAMA) {
+            return [];
+        }
+        $ids = $grup->keys();
+        $rentang = [self::MULAI_CEK_KUNCI_LAMA, $kemarin];
+
+        $ada = DB::table('transaction_loan_instalments')->whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereBetween('transaction_date', $rentang)->distinct()
+            ->select('transaction_loan_officer_grouping_id as g', 'transaction_date as d')
+            ->union(DB::table('transaction_loans')->whereIn('transaction_loan_officer_grouping_id', $ids)
+                ->where('status', 'success')->whereBetween('drop_date', $rentang)->distinct()
+                ->select('transaction_loan_officer_grouping_id as g', 'drop_date as d'))
+            ->union(DB::table('transaction_daily_recaps')->whereIn('transaction_loan_officer_grouping_id', $ids)
+                ->whereBetween('date', $rentang)->select('transaction_loan_officer_grouping_id as g', 'date as d'))
+            ->get();
+        $terkunci = DB::table('transaction_daily_recaps')->whereIn('transaction_loan_officer_grouping_id', $ids)
+            ->whereBetween('date', $rentang)->whereNotNull('daily_kasir_approval')
+            ->get(['transaction_loan_officer_grouping_id as g', 'date as d'])
+            ->mapWithKeys(fn($x) => [$x->g . '|' . \Carbon\Carbon::parse($x->d)->toDateString() => true]);
+
+        return $ada->map(fn($x) => ['g' => $x->g, 'd' => \Carbon\Carbon::parse($x->d)->toDateString()])
+            ->unique(fn($x) => $x['g'] . '|' . $x['d'])
+            ->reject(fn($x) => isset($terkunci[$x['g'] . '|' . $x['d']]) || !\App\Models\WorkDay::hariKerja($x['d']))
+            ->sortBy(fn($x) => $x['d'] . '|' . str_pad((string) $grup[$x['g']], 3, '0', STR_PAD_LEFT))
+            ->map(fn($x) => ['kelompok' => (int) $grup[$x['g']], 'tanggal' => $x['d'], 'alasan' => null, 'dibuka_at' => null])
+            ->values()->all();
     }
 
     public static function bolehBuka($user): bool

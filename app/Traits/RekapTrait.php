@@ -448,7 +448,9 @@ trait RekapTrait
         // Kunci / TTD hari ini baru boleh mulai jam ini (WIB); dibaca tombol Kunci.
         'jam_kunci' => config('agregasi.jam_kunci'),
         // Hari dibuka ulang yang belum dikunci lagi (menahan rantai kunci).
-        'hari_terbuka' => $alurBaru ? \App\Helpers\Gembok::hariTerbuka($branch_id) : [],
+        // Alur lama: hari sejak Oktober yang belum di-TTD kasir (mas 2026-10-22).
+        'hari_terbuka' => $alurBaru ? \App\Helpers\Gembok::hariTerbuka($branch_id) : \App\Helpers\Gembok::belumDikunciLama($branch_id),
+        'hari_terbuka_jenis' => $alurBaru ? 'dibuka' : 'belum',
       ]
     ];
   }

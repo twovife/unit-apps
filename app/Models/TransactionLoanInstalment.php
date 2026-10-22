@@ -53,6 +53,15 @@ class TransactionLoanInstalment extends Model
       self::bukaKunci($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date, 'hapus angsuran #' . $angsuran->id, $angsuran->nominal);
     });
 
+    // Alur lama: tanggal yang barusan dibuka otomatis -> rekapnya disegarkan sesudah tertulis.
+    $segarkan = function (self $angsuran) {
+      \App\Helpers\Gembok::segarkanSesudahTulis($angsuran->getOriginal('transaction_loan_officer_grouping_id'), $angsuran->getOriginal('transaction_date'));
+      \App\Helpers\Gembok::segarkanSesudahTulis($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date);
+    };
+    static::created($segarkan);
+    static::updated($segarkan);
+    static::deleted($segarkan);
+
     // F1: angsuran masuk/keluar -> status lunas induk dihitung ulang penuh dari
     // sumber (TransactionLoan::hitungUlangPelunasan). Di created/deleted, bukan
     // creating/deleting, supaya baris ini sudah / tidak lagi ikut terjumlah.

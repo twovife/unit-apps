@@ -78,6 +78,14 @@ class TransactionLoan extends Model
     static::deleting(function (self $loan) {
       \App\Helpers\Gembok::bukaOtomatis($loan->transaction_loan_officer_grouping_id, $loan->drop_date, 'hapus pinjaman #' . $loan->id);
     });
+    // Alur lama: tanggal yang barusan dibuka otomatis -> rekapnya disegarkan sesudah tertulis.
+    $segarkan = function (self $loan) {
+      \App\Helpers\Gembok::segarkanSesudahTulis($loan->getOriginal('transaction_loan_officer_grouping_id'), $loan->getOriginal('drop_date'));
+      \App\Helpers\Gembok::segarkanSesudahTulis($loan->transaction_loan_officer_grouping_id, $loan->drop_date);
+    };
+    static::created($segarkan);
+    static::updated($segarkan);
+    static::deleted($segarkan);
 
     /**
      * SIKLUS rekening pada DROP baru (BUKAN topup — topup ditangani hook
