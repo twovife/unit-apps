@@ -1277,13 +1277,6 @@ class TransactionLoanController extends Controller
       ],
       'unit' => \App\Models\Branch::whereKey($scope->branch_id)->value('unit'),
       'nasabah' => $daftar,
-      'ringkas' => [
-        'jumlah' => $daftar->count(),
-        'lunas' => $daftar->where('lunas', true)->count(),
-        'drop' => (int) $daftar->sum('drop'),
-        'pinjaman' => (int) $daftar->sum('pinjaman'),
-        'saldo' => (int) $daftar->sum('saldo'),
-      ],
     ]);
   }
 

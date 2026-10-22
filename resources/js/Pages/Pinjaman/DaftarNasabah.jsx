@@ -7,7 +7,7 @@ import Action from '@/Pages/NewAngsuran/Components/Action';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import { Head, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import { FilterIcon } from 'lucide-react';
@@ -24,7 +24,7 @@ const Angka = ({ v, kelas = '' }) => (
   </TableCell>
 );
 
-export default function DaftarNasabah({ server_filter, unit, nasabah = [], ringkas }) {
+export default function DaftarNasabah({ server_filter, unit, nasabah = [] }) {
   const [cari, setCari] = useState('');
   const [bayarId, setBayarId] = useState(null);
   const urlLink = route('pinjaman.daftar_nasabah');
@@ -73,21 +73,7 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [], ringk
         <FilterBar urlLink={urlLink} storageKey="daftar_nasabah" showHari showMonth showKelompok={auth.canShowKelompok} extraParams={unitParams} />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
-          <span>
-            Nasabah <b className="text-slate-900">{ringkas.jumlah}</b> ({ringkas.lunas} lunas)
-          </span>
-          <span>
-            Drop <b className="text-slate-900"><FormatNumbering ribuan value={ringkas.drop} /></b>
-          </span>
-          <span>
-            Pinjaman <b className="text-slate-900"><FormatNumbering ribuan value={ringkas.pinjaman} /></b>
-          </span>
-          <span>
-            Saldo <b className="text-slate-900"><FormatNumbering ribuan value={ringkas.saldo} /></b>
-          </span>
-        </div>
+      <div className="flex justify-end mb-2">
         <Input
           type="search"
           value={cari}
@@ -97,7 +83,8 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [], ringk
         />
       </div>
 
-      <div className="overflow-x-auto bg-white border rounded-lg">
+      {/* Desktop tanpa kotak gulir sendiri supaya footer total sticky ke layar; HP tetap geser samping. */}
+      <div className="overflow-x-auto bg-white border rounded-lg lg:overflow-visible">
         <Table className="text-sm">
           <TableHeader>
             <TableRow className="bg-slate-100">
@@ -149,6 +136,20 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [], ringk
               </TableRow>
             )}
           </TableBody>
+          {/* Total baris yang tampil (ikut pencarian), menempel di dasar layar. */}
+          {tampil.length > 0 && (
+            <TableFooter className="sticky bottom-0 z-10">
+              <TableRow className="font-bold text-white bg-gray-900 hover:bg-gray-900">
+                <TableCell colSpan={6} className="px-2 py-2">
+                  JUMLAH {tampil.length} nasabah ({tampil.filter((n) => n.lunas).length} lunas)
+                </TableCell>
+                <Angka v={tampil.reduce((t, n) => t + n.drop, 0)} />
+                <Angka v={tampil.reduce((t, n) => t + n.pinjaman, 0)} />
+                <Angka v={tampil.reduce((t, n) => t + n.saldo, 0)} kelas="text-green-300" />
+                <TableCell />
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </div>
 
@@ -158,7 +159,7 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [], ringk
         triggeredId={bayarId}
         onClosed={() => {
           setBayarId(null);
-          router.reload({ only: ['nasabah', 'ringkas'] }); // saldo ikut terbarui sesudah bayar
+          router.reload({ only: ['nasabah'] }); // saldo ikut terbarui sesudah bayar
         }}
       />
     </AuthenticatedLayout>
