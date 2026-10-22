@@ -181,11 +181,18 @@ class TransactionLoanController extends Controller
     $berubah = !$recap || (int) ($val['target'] ?? $recap->target) !== (int) $recap->target
       || (int) ($val['keluar'] ?? $recap->keluar) !== (int) $recap->keluar;
 
+    // ACC ulang hari terkunci (alur lama, mas 2026-10-22): drop yang diinput sesudah ACC ikut
+    // masuk (hanya naik). Target diubah -> menjalar (KoreksiTarget, target + masuk - keluar);
+    // tidak diubah tapi drop naik -> cukup target minggu depan (ACC per tanggal).
+    $dropNaik = $recap ? \App\Helpers\KoreksiTarget::segarkanRekapLama($recap) : false;
     try {
       $hasil = $berubah ? \App\Helpers\KoreksiTarget::simpan((int) $val['id'], $val['date'], $val['target'] ?? null, $val['keluar'] ?? null,
         'Diubah dari form ACC KM (hari terkunci).', $employeeId) : null;
     } catch (\RuntimeException $e) {
       return redirect()->back()->withErrors($e->getMessage());
+    }
+    if (!$hasil && $dropNaik) {
+      \App\Helpers\KoreksiTarget::tulisMingguDepanLama($recap);
     }
     if ($accKm) {
       \App\Models\TransactionDailyRecap::withoutEvents(fn() => $recap->update([
@@ -196,6 +203,7 @@ class TransactionLoanController extends Controller
 
     return redirect()->back()->with('message', implode(' ', array_filter([
       $accKm ? 'ACC KM dicatat.' : null,
+      $dropNaik ? 'Drop rekap diperbarui dari transaksi.' . ($hasil ? '' : ' Target minggu depan dihitung ulang.') : null,
       $hasil ? 'Target dikoreksi; ' . (count($hasil['perubahan']) - 1) . ' tanggal sesudahnya ikut dihitung ulang.' : null,
     ])) ?: 'Tidak ada perubahan.');
   }

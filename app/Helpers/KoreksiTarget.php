@@ -150,6 +150,53 @@ class KoreksiTarget
         self::simpan($groupingId, $tanggal, $targetBaru, $keluarBaru, (string) ($alasan ?: 'Diubah dari form ACC KM.'), $employeeId);
     }
 
+    /**
+     * Alur lama, hari yang sudah di-ACC KM: segarkan angka rekap dari transaksi (mas
+     * 2026-10-22). Storting apa adanya; drop hanya NAIK (rekap lebih besar dibiarkan), masuk
+     * (kolom generated = drop x 13%) ikut. Tanpa event model supaya hook lama tidak
+     * menjalarkan target - target minggu depan ditulis lewat ACC per tanggal.
+     *
+     * @return bool drop berubah
+     */
+    public static function segarkanRekapLama(TransactionDailyRecap $r): bool
+    {
+        $tgl = Carbon::parse($r->date)->toDateString();
+        $g = $r->transaction_loan_officer_grouping_id;
+        $drop = (int) \App\Models\TransactionLoan::where('transaction_loan_officer_grouping_id', $g)
+            ->whereDate('drop_date', $tgl)->where('status', 'success')->sum('nominal_drop');
+        $storting = (int) \App\Models\TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $g)
+            ->whereDate('transaction_date', $tgl)->sum('nominal');
+
+        $ubah = array_filter([
+            'drop' => $drop > (int) $r->drop ? $drop : null,
+            'storting' => $storting !== (int) $r->storting ? $storting : null,
+        ], fn($v) => $v !== null);
+        if ($ubah) {
+            TransactionDailyRecap::withoutEvents(fn() => $r->update($ubah));
+            $r->refresh(); // masuk / tunai = kolom generated
+        }
+
+        return isset($ubah['drop']);
+    }
+
+    /** Alur lama, satu langkah: target D+7 = target + masuk - keluar hari D (kecuali D+7 dikoreksi tangan). Tidak menjalar. */
+    public static function tulisMingguDepanLama(TransactionDailyRecap $r): void
+    {
+        $tgl = Carbon::parse($r->date)->toDateString();
+        $depanTgl = TargetMingguan::tanggalDepan($tgl);
+        if (!$depanTgl) {
+            return;
+        }
+        $depan = TransactionDailyRecap::firstOrCreate(['transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id, 'date' => $depanTgl]);
+        if (self::recapDikoreksi($depan)) {
+            return;
+        }
+        TransactionDailyRecap::withoutEvents(fn() => $depan->update([
+            'target' => TargetMingguan::hitung((int) $r->target, (int) $r->drop, (int) $r->keluar),
+            'target_on' => $tgl,
+        ]));
+    }
+
     /** Alur lama: target tanggal ini dikoreksi tangan (target_on = tanggalnya sendiri) - jangan ditimpa ACC minggu lalu. */
     public static function recapDikoreksi(?TransactionDailyRecap $r): bool
     {

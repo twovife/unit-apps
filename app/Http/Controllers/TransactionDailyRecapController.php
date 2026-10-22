@@ -390,9 +390,10 @@ class TransactionDailyRecapController extends Controller
 
   /**
    * TTD kasir kantor BELUM migrasi (mas 2026-10-12), disamakan dengan Kunci
-   * alur baru: drop hari ini yang menggantung -> gagal; belum di-ACC KM ->
-   * ACC KM otomatis gaya lama (drop/storting/keluar + target minggu depan,
-   * seperti ceklist_kepala); lalu daily_kasir_approval. ACC KM otomatis
+   * alur baru: drop hari ini yang menggantung -> gagal; belum di-ACC KM -> ACC KM
+   * otomatis gaya lama (drop/storting/keluar + target minggu depan); sudah di-ACC
+   * -> drop (hanya naik) & storting disegarkan tanpa menyentuh target minggu depan
+   * (KoreksiTarget::segarkanRekapLama); lalu daily_kasir_approval. ACC KM otomatis
    * ditandai dengan waktu ACC KM = waktu TTD (tampil kuning di Rekap 1).
    */
   private function ttdLama(TransactionLoanOfficerGrouping $grouping, string $date)
@@ -418,7 +419,8 @@ class TransactionDailyRecapController extends Controller
         $gagal = ClosingHarianController::gagalkanDropGantung($wadah, $kasir);
 
         $sekarang = Carbon::now();
-        if (!$recap->daily_kepala_approval) {
+        $accOtomatis = !$recap->daily_kepala_approval;
+        if ($accOtomatis) {
           $drop = (int) TransactionLoan::where('transaction_loan_officer_grouping_id', $grouping->id)
             ->whereDate('drop_date', $date)->where('status', 'success')->sum('nominal_drop');
           $storting = (int) TransactionLoanInstalment::where('transaction_loan_officer_grouping_id', $grouping->id)
@@ -444,7 +446,10 @@ class TransactionDailyRecapController extends Controller
               'target_on' => $date,
             ]);
           }
-          $accOtomatis = true;
+        } else {
+          // Sudah di-ACC KM: drop yang diinput sesudah ACC ikut masuk (hanya naik), storting
+          // apa adanya (mas 2026-10-22). Target minggu depan TIDAK disentuh - lewat ACC per tanggal.
+          \App\Helpers\KoreksiTarget::segarkanRekapLama($recap);
         }
 
         $recap->update([
