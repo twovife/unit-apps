@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
+import { rp } from '@/lib/rupiah';
 
 /**
  * Drawer detail tabungan SKSW, disalin dari app_laravel
@@ -18,7 +19,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
  * Data: sksw.detail (JSON); aksi: sksw.transaksi / sksw.mutasi / sksw.hapus.
  */
 const TX_TYPE_LABEL = { D: 'Setoran', K: 'Pengambilan', DM: 'Mutasi masuk', KM: 'Mutasi keluar', KRMD: 'Resign / MD' };
-const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const angka = (v) => String(v ?? '').replace(/\D/g, '');
 const hariIni = () => new Date().toLocaleDateString('sv');
 const tglPendek = (v) => {

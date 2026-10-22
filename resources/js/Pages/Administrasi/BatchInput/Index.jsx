@@ -1,4 +1,3 @@
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import PilihBulan from '@/Components/shadcn/PilihBulan';
 import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
@@ -358,7 +357,7 @@ const Index = () => {
   };
 
   return (
-    <Authenticated>
+    <>
       <div className="p-6">
         {/* Panel Kontrol Atas */}
         <div className="mb-6 p-4 bg-white rounded-lg shadow-sm border flex flex-wrap items-end gap-4">
@@ -497,7 +496,7 @@ const Index = () => {
           </>
         )}
       </div>
-    </Authenticated>
+    </>
   );
 };
 

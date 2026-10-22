@@ -1,10 +1,9 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import { ArrowLeft, Landmark, Receipt } from 'lucide-react';
+import { rpLengkap as rp } from '@/lib/rupiah';
 
 /** Detail Pinjaman Modal kantor aktif per sumber (baca-saja; bayar dari Dashboard Kasir). */
-const rp = (n) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
 
 const Angka = ({ label, nilai, tebal = false }) => (
@@ -21,7 +20,7 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
   const lintasBuku = sumber === 'semua' || sumber === 'modal_awal';
 
   return (
-    <AuthenticatedLayout header="Pinjaman Modal">
+    <>
       <Head title={judul} />
       <div className="space-y-4">
         <div>
@@ -168,6 +167,6 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
           </div>
         </section>
       </div>
-    </AuthenticatedLayout>
+    </>
   );
 }

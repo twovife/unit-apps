@@ -3,7 +3,6 @@ import axios from 'axios';
 import { Calendar, Car, CircleAlert, Eye, Pencil, Plus, Search, Wallet } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
@@ -12,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import VehicleAssetDetail from '@/Components/Assets/VehicleAssetDetail';
 import VehicleAssetForm from '@/Components/Assets/VehicleAssetForm';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
+import { rp as rupiah } from '@/lib/rupiah';
 
 const statusLabels = {
   aktif: 'Aktif',
@@ -32,7 +32,6 @@ const statusStyles = {
 // PIC kosong / '-' / 'Cadangan' = kendaraan cadangan.
 const isCadangan = (pengguna) => !pengguna || pengguna === '-' || pengguna === 'Cadangan';
 
-const rupiah = (amount) => new Intl.NumberFormat('id-ID').format(Number(amount) || 0);
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -90,7 +89,7 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
   }, []);
 
   return (
-    <AuthenticatedLayout>
+    <>
       <Head title="Registri Kendaraan" />
       <div className="space-y-6 p-4 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -254,6 +253,6 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
         canEditVehicleRegistration={canEditVehicleRegistration}
         onClose={() => setFormOpen(false)}
       />
-    </AuthenticatedLayout>
+    </>
   );
 }

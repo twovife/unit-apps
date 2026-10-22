@@ -11,6 +11,7 @@ import { getLastDateForHari } from '@/lib/utils';
 import useHariLibur from '@/Hooks/useHariLibur';
 import TanggalKerja from '@/Components/shadcn/TanggalKerja';
 import dayjs from 'dayjs';
+import { rp } from '@/lib/rupiah';
 
 const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTertunda = false }) => {
   const [alertPelunasan, setAlertPelunasan] = useState(false);
@@ -148,7 +149,6 @@ const BayarAngsuran = ({ triggeredId, triggeredPinjaman, instalment, pelunasanTe
     !!data.transaction_date &&
     selisihBulan(triggeredData.tanggal_drop, data.transaction_date) >= 3;
 
-  const rp = (v) => (Number(v) || 0).toLocaleString('id-ID');
   // Tombol angka: 65000 -> "65 rb", 35500 -> "35,5 rb" (sama gaya dgn +1 rb).
   const rb = (v) => `${((Number(v) || 0) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} rb`;
 

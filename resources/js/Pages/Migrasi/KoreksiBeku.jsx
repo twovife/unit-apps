@@ -1,4 +1,3 @@
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import React, { useEffect, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
@@ -10,8 +9,8 @@ import { History, Lock } from 'lucide-react';
 import DampakKoreksi from './Components/DampakKoreksi';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 import SatuanAngka from '@/Components/SatuanAngka';
+import { rp } from '@/lib/rupiah';
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
 const EMBER = { month1: 'M1', month2: 'M2', ccm: 'CCM', cm: 'CM', mb: 'MB', ml: 'ML' };
 const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran', pindah: 'Pindah ke pinjaman lain' };
 
@@ -280,7 +279,7 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
   const jumlahKolom = (t) => nasabah.reduce((a, n) => a + (n.angsuran[t] ?? []).reduce((x, i) => x + i.nominal, 0), 0);
 
   return (
-    <Authenticated>
+    <>
       <Head title="Koreksi Data Beku" />
 
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
@@ -477,7 +476,7 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
         pinjaman={buka?.nasabah}
         mulai={kantor.mulai}
       />
-    </Authenticated>
+    </>
   );
 };
 

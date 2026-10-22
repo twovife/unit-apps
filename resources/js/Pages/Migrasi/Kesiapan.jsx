@@ -1,4 +1,3 @@
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import PilihBulan from '@/Components/shadcn/PilihBulan';
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
@@ -6,10 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import dayjs from 'dayjs';
 import ModalMigrasi from './Components/ModalMigrasi';
 import DrawerBukuStorting from '@/Pages/NewAngsuran/Components/DrawerBukuStorting';
+import { rpAtauStrip as rp } from '@/lib/rupiah';
 
 const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
-const rp = (n) => (n === null || n === undefined ? '—' : new Intl.NumberFormat('id-ID').format(n));
 
 const Kartu = ({ judul, utama, bawah, nada = 'netral' }) => (
   <div
@@ -61,7 +60,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
     nilai && router.get(route('migrasi.kesiapan'), { periode: `${nilai}-01` }, { preserveScroll: true });
 
   return (
-    <Authenticated>
+    <>
       <Head title="Kesiapan Migrasi" />
 
       <div className="p-4 space-y-4">
@@ -261,7 +260,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
         </div>
       </div>
       <DrawerBukuStorting target={storting} onClosed={() => setStorting(null)} />
-    </Authenticated>
+    </>
   );
 };
 

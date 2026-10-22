@@ -1,12 +1,11 @@
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shadcn/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
 import { Button } from '@/shadcn/ui/button';
+import { rp } from '@/lib/rupiah';
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const tgl = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** Status satu kantor: sudah migrasi > (belum dihitung) > tidak ada data > siap / belum siap. */
@@ -68,7 +67,7 @@ const Dashboard = ({ wilayah = [], periode }) => {
     router.post(route('set-branch'), { branch_id: id }, { onSuccess: () => router.visit(route('migrasi.kesiapan')) });
 
   return (
-    <Authenticated>
+    <>
       <Head title="Dashboard Migrasi" />
 
       <div className="p-4 space-y-4">
@@ -169,7 +168,7 @@ const Dashboard = ({ wilayah = [], periode }) => {
           })}
         </Accordion>
       </div>
-    </Authenticated>
+    </>
   );
 };
 

@@ -11,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shadcn/ui/dialog';
+import { rp as rupiah } from '@/lib/rupiah';
 
-const rupiah = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
 /**
  * Hapus satu angsuran: tombol "Hapus" (ikon sampah di HP) -> dialog

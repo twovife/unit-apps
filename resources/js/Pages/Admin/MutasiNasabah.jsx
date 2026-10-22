@@ -1,4 +1,3 @@
-import Authenticated from "@/Layouts/AuthenticatedLayout";
 import PilihBulan from '@/Components/shadcn/PilihBulan';
 import React, { useMemo, useState } from "react";
 import { Head, router } from "@inertiajs/react";
@@ -15,9 +14,8 @@ import { Input } from "@/shadcn/ui/input";
 import { Button } from "@/shadcn/ui/button";
 import Checkbox from "@/Components/Checkbox";
 import { ArrowRight } from "lucide-react";
+import { rpAtauStrip as rupiah } from '@/lib/rupiah';
 
-const rupiah = (n) =>
-  n === null || n === undefined ? "—" : new Intl.NumberFormat("id-ID").format(n);
 
 const MutasiNasabah = ({ kelompok = [], hari_opsi = [], riwayat = [], server_filter }) => {
   const bulanDepan = (server_filter?.bulan_depan ?? "").slice(0, 7);
@@ -89,7 +87,7 @@ const MutasiNasabah = ({ kelompok = [], hari_opsi = [], riwayat = [], server_fil
     Number(tujuanKel) === Number(asalKel) && tujuanHari === asalHari;
 
   return (
-    <Authenticated>
+    <>
       <Head title="Mutasi Nasabah" />
 
       <div className="p-4 space-y-4">
@@ -303,7 +301,7 @@ const MutasiNasabah = ({ kelompok = [], hari_opsi = [], riwayat = [], server_fil
           </div>
         </div>
       </div>
-    </Authenticated>
+    </>
   );
 };
 

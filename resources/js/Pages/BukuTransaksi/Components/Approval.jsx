@@ -7,8 +7,8 @@ import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import axios from 'axios';
+import { rp } from '@/lib/rupiah';
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const KELAS_INPUT =
   'flex w-full h-9 px-3 py-1 mt-1 text-sm text-right border rounded-md shadow-xs tabular-nums border-input focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring';
 // Isian yang tidak bisa diubah: latar lebih gelap & tebal supaya jelas beda.

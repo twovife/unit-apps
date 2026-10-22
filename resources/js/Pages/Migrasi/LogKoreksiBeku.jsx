@@ -1,12 +1,11 @@
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import DampakKoreksi from './Components/DampakKoreksi';
+import { rp } from '@/lib/rupiah';
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
 const AKSI = { ubah: 'Ubah nominal', hapus: 'Hapus', tambah: 'Tambah', pindah: 'Pindah pinjaman' };
 const NADA = { ubah: 'bg-sky-100 text-sky-800', hapus: 'bg-red-100 text-red-800', tambah: 'bg-emerald-100 text-emerald-800', pindah: 'bg-amber-100 text-amber-800' };
 
@@ -21,7 +20,7 @@ const Angsuran = ({ a }) =>
 
 /** Log Koreksi Data Beku: kantor aktif (bawaan) atau semua kantor. */
 const LogKoreksiBeku = ({ log, semua, unit }) => (
-  <Authenticated>
+  <>
     <Head title="Log Koreksi Data Beku" />
 
     <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -88,7 +87,7 @@ const LogKoreksiBeku = ({ log, semua, unit }) => (
         ))}
       </div>
     )}
-  </Authenticated>
+  </>
 );
 
 export default LogKoreksiBeku;

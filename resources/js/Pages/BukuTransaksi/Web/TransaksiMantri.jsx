@@ -1,6 +1,5 @@
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import FilterBar from '@/Components/FilterBar';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Head, usePage } from '@inertiajs/react';
 import { ClipboardList, FilterIcon, PlusCircle } from 'lucide-react';
@@ -195,7 +194,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
 
 
   return (
-    <Authenticated header={<Head>Buku Transaksi</Head>}>
+    <>
       <div className="flex flex-row items-center justify-between gap-3 mb-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">
@@ -337,7 +336,7 @@ const TransaksiMantri = ({ datas, buku_rencana }) => {
       </Sheet>
 
       <DrawerAngsuran target={angsuranTarget} onClosed={() => setAngsuranTarget(null)} />
-    </Authenticated>
+    </>
   );
 };
 

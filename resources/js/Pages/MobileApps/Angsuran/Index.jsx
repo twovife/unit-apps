@@ -1,6 +1,5 @@
 import React from 'react';
 
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 
 import { Head } from '@inertiajs/react';
 import Angsuran from '@/Pages/NewAngsuran/Angsuran';

@@ -1,7 +1,6 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { Lock, MapPin, Plus, Search, UserPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
@@ -10,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Checkbox from '@/Components/Checkbox';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
 import SavingDetailDrawer from './Components/SavingDetailDrawer';
+import { rp as rupiah } from '@/lib/rupiah';
 
-const rupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 
 const columns = [
   ['sw_awal', 'Saldo awal SW'],
@@ -468,7 +467,7 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
   };
 
   return (
-    <AuthenticatedLayout>
+    <>
       <Head title="SKSW — Laporan Unit" />
       <div className="mx-auto flex w-full max-w-[100vw] flex-col gap-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -680,6 +679,6 @@ export default function SkswUnit({ branch, period, batch, data = [], unregistere
       <SavingDetailDrawer savingId={selectedSaving?.saving_id ?? null} employeeName={selectedSaving?.employee?.nama_karyawan} onClose={() => setSelectedSaving(null)} />
       <DialogSetoran open={inputBuka} onClose={() => setInputBuka(false)} rows={data.filter((r) => r.is_active)} period={period} />
       <DialogBukaRekening open={bukaRekeningBuka} onClose={() => setBukaRekeningBuka(false)} unregisteredEmployees={unregisteredEmployees} branch={branch} />
-    </AuthenticatedLayout>
+    </>
   );
 }

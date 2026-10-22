@@ -1,12 +1,11 @@
 import React from 'react';
 import NewNasabah from '@/Pages/NewLoan/NewNasabah';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import LinkButton from '@/Components/LinkButton';
 
 const BatchUpload = () => {
   return (
-    <Authenticated>
+    <>
       <NewNasabah
         onClosed={() => void 0}
         generateAngsuran={true}
@@ -18,7 +17,7 @@ const BatchUpload = () => {
           V2
         </LinkButton>
       </div>
-    </Authenticated>
+    </>
   );
 };
 

@@ -3,6 +3,7 @@ import { Button } from '@/shadcn/ui/button';
 import { useForm, usePage } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import React, { useRef, useState } from 'react';
+import { rp } from '@/lib/rupiah';
 
 /**
  * Gerbang tampilan HARUS sejalan dengan `AppHelper::canDeleteLoan()` di
@@ -21,7 +22,6 @@ import React, { useRef, useState } from 'react';
  *  - can-approve: boleh.
  *  - lainnya    : tidak boleh sama sekali.
  */
-const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
 
 /**
  * Apa yang terjadi kalau pinjaman ini dihapus, dalam bahasa sederhana:

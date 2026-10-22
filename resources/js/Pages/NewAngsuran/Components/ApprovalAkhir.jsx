@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import Loading from '@/Components/Loading';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
+import { rp } from '@/lib/rupiah';
 
 // Nama bulan Indonesia (dayjs di proyek ini tanpa locale id).
 const namaBulan = (d, tahun = false) =>
@@ -39,7 +40,6 @@ const Panah = ({ miring }) => (
   </svg>
 );
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
 // sirkulasi & filter boleh datang dari luar (drawer Buku Storting di halaman
 // lain); bawaannya props halaman.

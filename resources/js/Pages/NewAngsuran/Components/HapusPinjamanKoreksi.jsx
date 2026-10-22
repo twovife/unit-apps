@@ -1,7 +1,7 @@
 import React from 'react';
 import DeleteLoan from './DeleteLoan';
+import { rp } from '@/lib/rupiah';
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
 
 /**
  * Hapus Pinjaman dari modal Angsuran - khusus can-edit / superuser (koreksi).

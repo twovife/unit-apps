@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -14,10 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shadcn/ui/dialog';
+import { rp as rupiah } from '@/lib/rupiah';
 
 dayjs.locale('id');
 
-const rupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 
 export default function GoroUmrah({
   unit,
@@ -48,7 +47,7 @@ export default function GoroUmrah({
   };
 
   return (
-    <AuthenticatedLayout header="Tabungan Goro Umrah">
+    <>
       <Head title="Tabungan Goro Umrah" />
 
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -265,6 +264,6 @@ export default function GoroUmrah({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AuthenticatedLayout>
+    </>
   );
 }

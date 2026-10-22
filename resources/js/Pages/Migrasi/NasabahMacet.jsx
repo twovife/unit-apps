@@ -1,4 +1,3 @@
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
@@ -6,8 +5,8 @@ import { Button } from '@/shadcn/ui/button';
 import CurrencyInput from 'react-currency-input-field';
 import dayjs from 'dayjs';
 import { ArrowLeft } from 'lucide-react';
+import { rpAtauStrip as rp } from '@/lib/rupiah';
 
-const rp = (n) => (n === null || n === undefined ? '—' : new Intl.NumberFormat('id-ID').format(n));
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const PILIH = 'h-8 px-2 text-sm border rounded-md border-input bg-background';
 
@@ -83,7 +82,7 @@ const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
   const zSesudah = ringkasan?.z == null ? null : ringkasan.z - geser;
 
   return (
-    <Authenticated>
+    <>
       <Head title="Nasabah Macet" />
 
       <div className="p-4 space-y-4">
@@ -206,7 +205,7 @@ const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
           </Table>
         </div>
       </div>
-    </Authenticated>
+    </>
   );
 };
 

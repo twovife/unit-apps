@@ -1,4 +1,3 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import { Megaphone, PlayCircle } from 'lucide-react';
@@ -47,7 +46,7 @@ export default function Dashboard(props) {
   const [putar, setPutar] = useState(null); // { judul, src }
 
   return (
-    <AuthenticatedLayout auth={props.auth} errors={props.errors} header="Home">
+    <>
       <Head title="Home" />
 
       <div className="max-w-3xl space-y-4">
@@ -99,6 +98,6 @@ export default function Dashboard(props) {
           )}
         </DialogContent>
       </Dialog>
-    </AuthenticatedLayout>
+    </>
   );
 }

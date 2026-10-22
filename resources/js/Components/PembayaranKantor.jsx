@@ -20,13 +20,13 @@ import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
+import { rpLengkap as rp, rpInput as ribu } from '@/lib/rupiah';
 
 /**
  * Dashboard Kasir: tugas kasir hari ini + kartu pembayaran kantor aktif per
  * bulan, dengan input iuran Tabungan/BOP (gabungan) dan setoran Goro Umrah.
  * Data & aturan di PembayaranKantorController (salinan aturan app_laravel).
  */
-const rp = (n) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
 
 // Link hanya kalau route-nya terdaftar (menu closed beta bisa belum ada).
@@ -66,7 +66,6 @@ const kecilkan = (file) =>
       });
 
 // Isian angka: tampil berpemisah ribuan (1.250.000), disimpan sebagai digit saja.
-const ribu = (v) => (v === '' || v == null ? '' : Number(v).toLocaleString('id-ID'));
 const MAKS_BUKTI = 2 * 1024 * 1024; // = Unggahan::MAKS_KB
 
 /** Tanda besar di pojok kartu. */

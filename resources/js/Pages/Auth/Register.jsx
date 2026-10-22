@@ -6,7 +6,6 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import SelectList from '@/Components/SelectList';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import Loading from '@/Components/Loading';
 import { Button } from '@/shadcn/ui/button';
 
@@ -54,7 +53,7 @@ export default function Register({ employees }) {
   };
 
   return (
-    <Authenticated>
+    <>
       <Loading show={processing} />
       <Head title="Register" />
       {superman && (
@@ -146,6 +145,6 @@ export default function Register({ employees }) {
           </div>
         </form>
       )}
-    </Authenticated>
+    </>
   );
 }

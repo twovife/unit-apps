@@ -5,8 +5,8 @@ import dayjs from 'dayjs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
+import { rp } from '@/lib/rupiah';
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
 
 /** Halaman tempat membetulkan satu baris anomali (tab baru, modal tetap terbuka). */

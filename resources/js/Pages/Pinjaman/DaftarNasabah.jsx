@@ -1,6 +1,7 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import FilterBar from '@/Components/FilterBar';
 import SearchComponent from '@/Components/shadcn/SearchComponent';
+import PilihBulan from '@/Components/shadcn/PilihBulan';
+import { Label } from '@/shadcn/ui/label';
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import SatuanAngka from '@/Components/SatuanAngka';
 import Action from '@/Pages/NewAngsuran/Components/Action';
@@ -32,6 +33,11 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [] }) {
   const unitParams = {};
   if (server_filter.branch_id) unitParams.branch_id = server_filter.branch_id;
   if (server_filter.wilayah) unitParams.wilayah = server_filter.wilayah;
+  // Bulan drop terpisah dari bulan filter global (lihat controller): ikut tiap navigasi FilterBar.
+  unitParams.bulan_drop = server_filter.bulan_drop;
+  const gantiBulan = (bulan) =>
+    bulan !== server_filter.bulan_drop &&
+    router.get(urlLink, { ...unitParams, hari: server_filter.hari, kelompok: server_filter.kelompok, bulan_drop: bulan }, { preserveScroll: true });
 
   const q = cari.trim().toLowerCase();
   const tampil = q
@@ -39,7 +45,7 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [] }) {
     : nasabah;
 
   return (
-    <AuthenticatedLayout header={<Head>Daftar Nasabah</Head>}>
+    <>
       <Head title="Daftar Nasabah" />
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
@@ -58,7 +64,7 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [] }) {
             </PopoverTrigger>
             <PopoverContent>
               <SearchComponent
-                key={`${server_filter.hari}-${server_filter.month}-${server_filter.kelompok}`}
+                key={`${server_filter.hari}-${server_filter.bulan_drop}-${server_filter.kelompok}`}
                 urlLink={urlLink}
                 localState="daftar_nasabah"
                 searchBranch={auth.canShowBranch}
@@ -70,7 +76,11 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [] }) {
       </div>
 
       <div className="mb-3">
-        <FilterBar urlLink={urlLink} storageKey="daftar_nasabah" showHari showMonth showKelompok={auth.canShowKelompok} extraParams={unitParams} />
+        <FilterBar urlLink={urlLink} storageKey="daftar_nasabah" showHari showMonth={false} showKelompok={auth.canShowKelompok} extraParams={unitParams} />
+        <div className="mt-2 sm:max-w-xs">
+          <Label className="text-xs font-medium uppercase text-slate-500">Bulan drop</Label>
+          <PilihBulan name="bulan_drop" className="mt-1" value={server_filter.bulan_drop} onChange={(e) => gantiBulan(e.target.value)} />
+        </div>
       </div>
 
       <div className="flex justify-end mb-2">
@@ -162,6 +172,6 @@ export default function DaftarNasabah({ server_filter, unit, nasabah = [] }) {
           router.reload({ only: ['nasabah'] }); // saldo ikut terbarui sesudah bayar
         }}
       />
-    </AuthenticatedLayout>
+    </>
   );
 }

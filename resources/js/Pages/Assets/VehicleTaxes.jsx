@@ -3,15 +3,14 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, CalendarDays, CheckCircle2, CircleAlert, MapPin, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import VehicleAssetDetail from '@/Components/Assets/VehicleAssetDetail';
 import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
 import { Input } from '@/shadcn/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shadcn/ui/table';
+import { rp as rupiah } from '@/lib/rupiah';
 
-const rupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 const formatDate = (value) => {
   if (!value) return '—';
   const [year, month, day] = value.slice(0, 10).split('-').map(Number);
@@ -81,7 +80,7 @@ export default function VehicleTaxes({ branch, vehicles, branches, period: initi
   };
 
   return (
-    <AuthenticatedLayout>
+    <>
       <Head title="Pajak Kendaraan" />
       <div className="space-y-5 p-4 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -178,6 +177,6 @@ export default function VehicleTaxes({ branch, vehicles, branches, period: initi
           </section>
         </div>
       )}
-    </AuthenticatedLayout>
+    </>
   );
 }

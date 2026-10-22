@@ -1,4 +1,3 @@
-import Authenticated from "@/Layouts/AuthenticatedLayout";
 import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import { Button } from "@/shadcn/ui/button";
@@ -82,7 +81,7 @@ const KalenderKerja = ({ kalender, server_filter }) => {
   const sel = [...Array(kotakKosongAwal).fill(null), ...hari];
 
   return (
-    <Authenticated>
+    <>
       <Head title="Kalender Kerja" />
 
       <div className="p-4 space-y-4">
@@ -321,7 +320,7 @@ const KalenderKerja = ({ kalender, server_filter }) => {
           tidak ada agregat baru bertanggal sebelum itu yang membacanya.
         </p>
       </div>
-    </Authenticated>
+    </>
   );
 };
 

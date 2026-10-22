@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PilihBulan from '@/Components/shadcn/PilihBulan';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Input } from '@/shadcn/ui/input';
 import InputLabel from '@/Components/InputLabel';
 import dayjs from 'dayjs';
@@ -269,7 +268,7 @@ const FastCreateV2 = () => {
   };
 
   return (
-    <Authenticated>
+    <>
       <div className="absolute z-20 right-2 bottom-2">
         <LinkButton
           color="outline"
@@ -628,7 +627,7 @@ const FastCreateV2 = () => {
           </Tabs>
         </div>
       </div>
-    </Authenticated>
+    </>
   );
 };
 

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { Head, router, useForm } from '@inertiajs/react';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
@@ -605,7 +604,7 @@ const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], ref
   const gantiTab = (s) => router.get(route('administrasi.lamaran.index'), { status: s }, { preserveScroll: true, preserveState: true });
 
   return (
-    <Authenticated>
+    <>
       <Head title="Lamaran Kerja" />
       <FormLamaran
         buka={form.buka}
@@ -704,7 +703,7 @@ const Index = ({ lamaran = [], jumlah = {}, filter = {}, unit, jabatan = [], ref
           </div>
         )}
       </div>
-    </Authenticated>
+    </>
   );
 };
 

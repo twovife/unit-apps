@@ -1,4 +1,4 @@
-import Authenticated from '@/Layouts/AuthenticatedLayout';
+import Loading from '@/Components/Loading';
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
@@ -37,7 +37,8 @@ const VideoTutorial = ({ videos, menuOpsi }) => {
   };
 
   return (
-    <Authenticated header={<Head>Video Panduan</Head>} loading={loading}>
+    <>
+      <Loading show={loading} />
       <div className="space-y-4 max-w-4xl">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground">
@@ -84,7 +85,7 @@ const VideoTutorial = ({ videos, menuOpsi }) => {
           </div>
         ))}
       </div>
-    </Authenticated>
+    </>
   );
 };
 

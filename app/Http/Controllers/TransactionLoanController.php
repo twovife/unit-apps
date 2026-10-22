@@ -1226,7 +1226,13 @@ class TransactionLoanController extends Controller
   {
     $scope = \App\Helpers\AuthScope::resolve();
     $grouping = AppHelper::kelompokAktif($scope->branch_id, $scope->kelompok);
-    $bulan = Carbon::parse(preg_match('/^\d{4}-\d{2}$/', (string) $request->month) ? $request->month . '-01' : 'first day of this month');
+    // Bulan drop pakai parameter sendiri (bulan_drop), BUKAN `month` filter global:
+    // memilih Agustus 2025 di sini tidak menggeser bulan menu lain (mas 2026-10-22).
+    // Pilihan terakhir diingat di sesi sendiri.
+    $bulanDrop = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('bulan_drop'))
+      ? $request->query('bulan_drop') : session('daftar_nasabah_bulan', Carbon::now()->format('Y-m'));
+    session(['daftar_nasabah_bulan' => $bulanDrop]);
+    $bulan = Carbon::parse($bulanDrop . '-01');
     // Per hari tagih seperti /pinjaman (bawaan hari ini); tanggal tutup untuk dialog Pay.
     $hari = AppHelper::hariTagih($request->hari);
     $hariIni = AppHelper::dateName(Carbon::now()) == $hari;
@@ -1268,7 +1274,7 @@ class TransactionLoanController extends Controller
     return Inertia::render('Pinjaman/DaftarNasabah', [
       'server_filter' => [
         'closed_transaction' => $tutup,
-        'month' => $bulan->format('Y-m'),
+        'bulan_drop' => $bulanDrop,
         'hari' => $hari,
         'kelompok' => $grouping->kelompok,
         'branch_id' => $scope->branch_id,

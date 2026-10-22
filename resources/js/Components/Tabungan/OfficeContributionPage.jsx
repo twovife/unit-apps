@@ -1,7 +1,6 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { History, MapPin, PiggyBank, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/shadcn/ui/button';
 import {
   Dialog,
@@ -13,8 +12,8 @@ import {
 } from '@/shadcn/ui/dialog';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
+import { rp as rupiah } from '@/lib/rupiah';
 
-const rupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 
 const dateLabel = (value) =>
   value ? new Date(`${value}T00:00:00`).toLocaleDateString('id-ID') : '—';
@@ -108,7 +107,7 @@ export default function OfficeContributionPage({
   };
 
   return (
-    <AuthenticatedLayout header={title}>
+    <>
       <Head title={title} />
 
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -267,6 +266,6 @@ export default function OfficeContributionPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AuthenticatedLayout>
+    </>
   );
 }

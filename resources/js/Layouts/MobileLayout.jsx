@@ -1,12 +1,13 @@
 import React from 'react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import Loading from '@/Components/Loading';
 
-const MobileLayout = ({ header, children, loading = false }) => {
-  return (
-    <AuthenticatedLayout header={header} loading={loading}>
-      {children}
-    </AuthenticatedLayout>
-  );
-};
+// Layout utama (sidebar + navbar) dipasang sekali dari app.jsx (persistent layout);
+// pembungkus ini tinggal menyisakan indikator loading halaman HP.
+const MobileLayout = ({ children, loading = false }) => (
+  <>
+    <Loading show={loading} />
+    {children}
+  </>
+);
 
 export default MobileLayout;

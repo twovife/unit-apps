@@ -1,7 +1,7 @@
 import React from 'react';
 import dayjs from 'dayjs';
+import { rp } from '@/lib/rupiah';
 
-const rp = (n) => new Intl.NumberFormat('id-ID').format(n ?? 0);
 const LABEL = {
   awal_month1: 'Awal M1',
   awal_month2: 'Awal M2',
