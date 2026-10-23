@@ -1,5 +1,5 @@
-import React, { useLayoutEffect, useRef } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +14,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from '@/shadcn/ui/sidebar';
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ import {
   LogOut,
   PiggyBank,
   Plane,
+  Landmark,
   PlusCircle,
   Search,
   ShieldCheck,
@@ -89,6 +91,10 @@ export default function AppSidebar({ ...props }) {
   useLayoutEffect(() => {
     if (gulir.current) gulir.current.scrollTop = posisiGulir;
   }, []);
+  // Layout persisten: sidebar tidak dipasang ulang, jadi laci mobile tetap terbuka
+  // sesudah pindah menu kalau tidak ditutup di sini.
+  const { setOpenMobile } = useSidebar();
+  useEffect(() => router.on('navigate', () => setOpenMobile(false)), [setOpenMobile]);
 
   const isSuperUser = auth?.roles?.includes('superuser');
   // Hak menu dihitung di server (AppHelper::boleh* -> auth.menu), sama dengan gerbang
@@ -377,6 +383,21 @@ export default function AppSidebar({ ...props }) {
                   >
                     <Plane className="size-4" />
                     <span>Tabungan Goro Umrah</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={route().current('dashboard.kasir.pinjaman_modal')}
+                  tooltip="Pinjaman Modal"
+                >
+                  <Link
+                    href={route('dashboard.kasir.pinjaman_modal')}
+                    className="flex items-center gap-2.5 font-medium"
+                  >
+                    <Landmark className="size-4" />
+                    <span>Pinjaman Modal</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

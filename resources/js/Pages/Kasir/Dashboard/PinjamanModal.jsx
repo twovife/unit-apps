@@ -1,19 +1,137 @@
 import { Head, Link, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import { ArrowLeft, Landmark, Receipt } from 'lucide-react';
-import { rpLengkap as rp } from '@/lib/rupiah';
+import { ArrowLeft, Landmark, Plus, Receipt } from 'lucide-react';
+import { useState } from 'react';
+import { rpLengkap as rp, rpInput } from '@/lib/rupiah';
+import { IsiBukti, kecilkan } from '@/Components/PembayaranKantor';
+import { Button } from '@/shadcn/ui/button';
+import { Input } from '@/shadcn/ui/input';
+import { Label } from '@/shadcn/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
 /** Detail Pinjaman Modal kantor aktif per sumber (baca-saja; bayar dari Dashboard Kasir). */
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
 
-const Angka = ({ label, nilai, tebal = false }) => (
-  <div className="p-3 bg-white border rounded-lg">
-    <div className="text-xs font-medium uppercase text-slate-500">{label}</div>
-    <div className={`mt-1 tabular-nums ${tebal ? 'text-lg font-bold text-violet-800' : 'text-base font-semibold text-slate-900'}`}>{rp(nilai)}</div>
-  </div>
-);
+/** Ringkasan satu kartu, gaya halaman Iuran Tabungan 1 Juta: ikon + judul kiri, angka kanan. */
+const Ringkas = ({ r, judul, unit }) => {
+  const persen = r.total_pinjaman > 0 ? Math.min(100, Math.round((r.total_pokok / r.total_pinjaman) * 100)) : 0;
+  const isi = [
+    ['Total pinjaman', r.total_pinjaman, ''],
+    ['Pokok dibayar', r.total_pokok, 'text-emerald-700'],
+    ['Jasa modal dibayar', r.total_jasa, ''],
+    ...(r.jasa_wajib !== null && r.jasa_wajib !== undefined
+      ? [['Jasa wajib bulan ini', r.jasa_wajib, r.jasa_wajib > 0 ? 'text-red-600' : 'text-emerald-700']]
+      : []),
+    ['Sisa pokok', r.sisa, 'text-violet-700'],
+  ];
 
-export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, pinjaman = [], angsuran = [] }) {
+  return (
+    <section className="flex flex-col gap-4 p-4 bg-white border shadow-sm rounded-xl lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex items-start min-w-0 gap-3">
+        <div className="flex items-center justify-center w-10 h-10 rounded-lg shrink-0 bg-violet-50 text-violet-700">
+          <Landmark className="w-5 h-5" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold truncate text-zinc-900">{unit}</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {judul} · {persen}% pokok sudah dibayar
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-5">
+        {isi.map(([label, nilai, kelas]) => (
+          <div key={label}>
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <strong className={`text-sm tabular-nums ${kelas}`}>{rp(nilai)}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/** Tambah pinjaman modal kantor aktif + bukti transfer masuk (PembayaranKantorController::tambahModal). */
+const DialogTambah = ({ buka, tutup, sumber = [] }) => {
+  const kosong = { source: sumber[0]?.kunci ?? '', amount: '', loan_date: dayjs().format('YYYY-MM-DD'), notes: '' };
+  const [isi, setIsi] = useState(kosong);
+  const [file, setFile] = useState(null);
+  const [galat, setGalat] = useState({});
+  const [proses, setProses] = useState(false);
+  const ubah = (k, v) => setIsi((x) => ({ ...x, [k]: v }));
+  const selesai = () => {
+    setIsi(kosong);
+    setFile(null);
+    setGalat({});
+    tutup();
+  };
+  const simpan = async () => {
+    setProses(true);
+    const bukti = await kecilkan(file);
+    router.post(route('dashboard.kasir.modal.tambah'), { ...isi, bukti }, {
+      forceFormData: true,
+      preserveScroll: true,
+      onError: setGalat,
+      onSuccess: selesai,
+      onFinish: () => setProses(false),
+    });
+  };
+
+  return (
+    <Dialog open={buka} onOpenChange={(o) => !o && !proses && selesai()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Tambah pinjaman modal</DialogTitle>
+          <DialogDescription>Uang modal yang masuk ke kantor ini. Jasa 2% mulai bulan ke-4; Modal Awal dicatat pusat.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1">
+            <Label>Sumber dana</Label>
+            <select
+              value={isi.source}
+              onChange={(e) => ubah('source', e.target.value)}
+              className="h-9 px-3 text-sm border rounded-md border-input bg-background"
+            >
+              {sumber.map((x) => (
+                <option key={x.kunci} value={x.kunci}>
+                  {x.judul}
+                </option>
+              ))}
+            </select>
+            {galat.source && <span className="text-xs text-red-600">{galat.source}</span>}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <Label>Nominal</Label>
+              <Input inputMode="numeric" value={rpInput(isi.amount)} onChange={(e) => ubah('amount', e.target.value.replace(/\D/g, ''))} />
+              {galat.amount && <span className="text-xs text-red-600">{galat.amount}</span>}
+            </div>
+            <div className="grid gap-1">
+              <Label>Tanggal masuk</Label>
+              <Input type="date" max={dayjs().format('YYYY-MM-DD')} value={isi.loan_date} onChange={(e) => ubah('loan_date', e.target.value)} />
+              {galat.loan_date && <span className="text-xs text-red-600">{galat.loan_date}</span>}
+            </div>
+          </div>
+          <IsiBukti file={file} setFile={setFile} galat={galat.bukti} />
+          <div className="grid gap-1">
+            <Label>Catatan</Label>
+            <Input value={isi.notes} onChange={(e) => ubah('notes', e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+          <Button variant="outline" disabled={proses} onClick={selesai}>
+            Batal
+          </Button>
+          <Button disabled={proses || !file || !Number(isi.amount) || !isi.source} onClick={simpan}>
+            {proses ? 'Menyimpan…' : 'Simpan pinjaman'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, pinjaman = [], angsuran = [], boleh_tambah = false, sumber_tambah = [] }) {
+  const [tambah, setTambah] = useState(false);
   // Tab buku = drawer app_laravel: Semua | Pusat | Hertawan | Sherly | Modal Awal.
   const judul = sumber_ada.find((x) => x.kunci === sumber)?.judul ?? 'Pinjaman Modal';
   const ke = (q) => router.get(route('dashboard.kasir.pinjaman_modal'), { sumber, ...q }, { preserveScroll: true });
@@ -27,10 +145,18 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
           <Link href={route('dashboard.kasir')} className="inline-flex items-center gap-1 mb-1 text-xs font-medium text-slate-500 hover:text-slate-800">
             <ArrowLeft className="w-3.5 h-3.5" /> Dashboard Kasir
           </Link>
-          <h1 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
-            <Landmark className="w-5 h-5 text-violet-600" /> {judul} — {unit}
-          </h1>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h1 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
+              <Landmark className="w-5 h-5 text-violet-600" /> {judul} — {unit}
+            </h1>
+            {boleh_tambah && sumber_tambah.length > 0 && (
+              <Button size="sm" className="gap-1" onClick={() => setTambah(true)}>
+                <Plus className="w-4 h-4" /> Tambah pinjaman modal
+              </Button>
+            )}
+          </div>
         </div>
+        <DialogTambah buka={tambah} tutup={() => setTambah(false)} sumber={sumber_tambah} />
 
         <div className="inline-flex p-1 rounded-lg bg-slate-100">
           {sumber_ada.map((x) => (
@@ -48,15 +174,7 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
         </div>
 
 
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          <Angka label="Total pinjaman" nilai={ringkas.total_pinjaman} />
-          <Angka label="Pokok dibayar" nilai={ringkas.total_pokok} />
-          <Angka label="Jasa modal dibayar" nilai={ringkas.total_jasa} />
-          <Angka label="Sisa pokok" nilai={ringkas.sisa} tebal />
-          {ringkas.jasa_wajib !== null && ringkas.jasa_wajib !== undefined && (
-            <Angka label="Jasa wajib bulan ini" nilai={ringkas.jasa_wajib} />
-          )}
-        </div>
+        <Ringkas r={ringkas} judul={judul} unit={unit} />
 
         <section>
           <h2 className="mb-2 font-semibold text-slate-900">Daftar pinjaman</h2>
@@ -111,7 +229,14 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
                         {l.status === 'paid' ? 'Lunas' : 'Aktif'}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-slate-600">{l.catatan || '–'}</td>
+                    <td className="px-3 py-2 text-slate-600">
+                      {l.catatan || '–'}
+                      {l.bukti && (
+                        <a href={l.bukti} target="_blank" rel="noreferrer" className="ml-2 text-xs font-medium text-sky-700 hover:underline">
+                          bukti
+                        </a>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

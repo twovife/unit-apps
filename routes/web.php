@@ -39,10 +39,11 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorCo
     Route::post('/umrah', 'setorUmrah')->name('umrah');
     Route::post('/modal', 'bayarModal')->name('modal');
     Route::get('/modal/pratinjau', 'pratinjauModal')->name('modal.pratinjau');
+    Route::post('/modal/pinjaman', 'tambahModal')->name('modal.tambah');
     Route::delete('/umrah/{id}', 'destroyUmrah')->whereNumber('id')->name('umrah.destroy');
     Route::get('/goro-umrah', 'detailUmrah')->name('goro_umrah');
     Route::get('/pinjaman-modal', 'detailModal')->name('pinjaman_modal');
-    Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah', 'modal'])->whereNumber('id')->name('bukti');
+    Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah', 'modal', 'pinjaman'])->whereNumber('id')->name('bukti');
   });
 
 Route::middleware('auth')->group(function () {

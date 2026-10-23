@@ -242,6 +242,52 @@ class PembayaranKantorController extends Controller
         return back()->with('message', 'Pembayaran pinjaman modal dicatat. Pembagiannya bisa dipindah staf kontrol.');
     }
 
+    /**
+     * Tambah pinjaman modal kantor aktif dengan bukti transfer masuk (mas 2026-10-22),
+     * = app_laravel storeCapitalLoan: jenis selalu Pinjaman Modal (Modal Awal dicatat
+     * pusat); sumber Pusat hanya bendahara (kasirpusat); kunci bulanan modal berlaku.
+     */
+    public function tambahModal(Request $request)
+    {
+        $branch = $this->kantor();
+        abort_unless($this->bolehBayar($branch->id), 403, 'Input pinjaman modal untuk kasir, staf kontrol, pusat, dan superuser.');
+        $data = $request->validate([
+            'source' => ['required', 'in:' . implode(',', array_keys(self::SUMBER_MODAL))],
+            'amount' => ['required', 'integer', 'min:1'],
+            'loan_date' => ['required', 'date', 'before_or_equal:today'],
+            'notes' => ['nullable', 'string', 'max:255'],
+            'bukti' => array_merge(['required'], Unggahan::ATURAN),
+        ], ['loan_date.before_or_equal' => 'Tanggal pinjaman tidak boleh di masa depan.'] + Unggahan::pesan('bukti'));
+        abort_if($data['source'] === 'pusat' && !auth()->user()->can('kasirpusat'), 403, 'Pinjaman modal sumber Pusat hanya dicatat Bendahara.');
+
+        $periode = substr((string) $data['loan_date'], 0, 7);
+        if (DB::table('contribution_locks')->where('module', 'modal')->whereNull('branch_id')->where('period', $periode)->exists()) {
+            throw ValidationException::withMessages(['amount' => "Pinjaman modal bulan {$periode} sudah dikunci kasir pusat."]);
+        }
+
+        // Baris dulu (id = nama file bukti), lalu unggah; gagal unggah -> baris batal.
+        DB::transaction(function () use ($request, $branch, $data) {
+            $id = DB::table('tb_capital_loans')->insertGetId([
+            'branch_id' => $branch->id,
+            'source' => $data['source'],
+            'jenis' => JasaModal::PINJAMAN,
+            'amount' => (int) $data['amount'],
+            'loan_date' => $data['loan_date'],
+            'status' => 'active',
+            'notes' => $data['notes'] ?? null,
+            'created_by' => auth()->id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+            ]);
+            Unggahan::simpan($request->file('bukti'), rtrim(self::BUKTI_PINJAMAN, '/'), 'bukti', (string) $id);
+        });
+
+        return back()->with('message', 'Pinjaman modal dicatat.');
+    }
+
+    /** Bukti transfer pinjaman modal: nama tetap per id (tanpa kolom di tb_capital_loans, mas 2026-10-23). */
+    private const BUKTI_PINJAMAN = 'modal-pinjaman-bukti/';
+
     /** Pratinjau pembagian satu nominal (JSON) - angka yang sama dengan yang disimpan bayarModal. */
     public function pratinjauModal(Request $request)
     {
@@ -370,12 +416,17 @@ class PembayaranKantorController extends Controller
             'wajib_mulai' => $info[$l->id]['tempo'] ? JasaModal::wajibMulai($l->loan_date) : null,
             'sumber' => self::SUMBER_MODAL[$l->source] ?? $l->source,
             'jenis' => JasaModal::LABEL[$l->jenis] ?? $l->jenis,
+            'bukti' => Unggahan::ada(self::BUKTI_PINJAMAN . $l->id) ? route('dashboard.kasir.bukti', ['pinjaman', $l->id]) : null,
         ]);
 
         return \Inertia\Inertia::render('Kasir/Dashboard/PinjamanModal', [
             'unit' => $branch->unit,
             'sumber' => $buku,
             'sumber_ada' => collect(['semua' => 'Semua'] + self::BUKU_MODAL)->map(fn($judul, $k) => ['kunci' => $k, 'judul' => $judul])->values(),
+            // Form Tambah pinjaman modal: sumber yang boleh dipilih (Pusat hanya bendahara).
+            'boleh_tambah' => $this->bolehBayar($branch->id),
+            'sumber_tambah' => collect(self::SUMBER_MODAL)->except(auth()->user()->can('kasirpusat') ? [] : ['pusat'])
+                ->map(fn($judul, $k) => ['kunci' => $k, 'judul' => $judul])->values(),
             'ringkas' => [
                 'total_pinjaman' => (int) $daftar->sum('jumlah'),
                 'total_pokok' => (int) $bayar->sum('amount_principal'),
@@ -401,8 +452,11 @@ class PembayaranKantorController extends Controller
     public function bukti(string $modul, int $id)
     {
         abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403);
-        $tabel = ['tb' => 'tb_contributions', 'bop' => 'ops_bop_contributions', 'umrah' => 'goro_umroh_setoran', 'modal' => 'tb_capital_loan_payments'][$modul] ?? abort(404);
+        $tabel = ['tb' => 'tb_contributions', 'bop' => 'ops_bop_contributions', 'umrah' => 'goro_umroh_setoran', 'modal' => 'tb_capital_loan_payments', 'pinjaman' => 'tb_capital_loans'][$modul] ?? abort(404);
         $baris = DB::table($tabel)->find($id) ?? abort(404);
+        if ($modul === 'pinjaman') {
+            $baris->bukti_path = self::BUKTI_PINJAMAN . $baris->id;
+        }
         if ($modul === 'modal') {
             $baris->branch_id = DB::table('tb_capital_loans')->where('id', $baris->tb_capital_loan_id)->value('branch_id');
         }

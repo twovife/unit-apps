@@ -40,7 +40,7 @@ const linkKe = (nama) => {
 
 // Foto HP besar: kecilkan di browser (sisi terpanjang 1600px, JPEG 0.75, EXIF
 // terbuang) seperti app_laravel Unggahan. PDF dikirim apa adanya.
-const kecilkan = (file) =>
+export const kecilkan = (file) =>
   !file || file.type === 'application/pdf'
     ? Promise.resolve(file)
     : new Promise((resolve) => {
@@ -207,7 +207,7 @@ const Tugas = ({ t }) => {
 };
 
 /** Isian bukti transfer (wajib), dengan pratinjau nama file. */
-const IsiBukti = ({ file, setFile, galat }) => {
+export const IsiBukti = ({ file, setFile, galat }) => {
   const ref = useRef(null);
   const [pesan, setPesan] = useState('');
   // Foto selalu dikecilkan sebelum dikirim (kecilkan); PDF tidak bisa, jadi dicek di sini.

@@ -41,7 +41,8 @@ class Unggahan
     }
 
     /** Periksa lalu simpan ke MinIO; mengembalikan path file. */
-    public static function simpan(UploadedFile $file, string $folder, string $field = 'file'): string
+    /** $nama: nama objek tetap (tanpa ekstensi) kalau alamatnya tidak disimpan di DB, mis. id baris. */
+    public static function simpan(UploadedFile $file, string $folder, string $field = 'file', ?string $nama = null): string
     {
         $mime = (string) $file->getMimeType(); // dari isi file (finfo)
         $ext = self::EKSTENSI[$mime] ?? null;
@@ -54,7 +55,7 @@ class Unggahan
             self::periksaPdf($isi, $field);
         }
 
-        $path = trim($folder, '/') . '/' . Str::random(40) . '.' . $ext;
+        $path = trim($folder, '/') . '/' . ($nama ?? Str::random(40) . '.' . $ext);
         try {
             $ok = Storage::disk(self::DISK)->put($path, $isi);
         } catch (\Throwable $e) {
@@ -87,6 +88,16 @@ class Unggahan
             'Content-Disposition' => 'inline; filename="' . addslashes(basename($path)) . '"',
             'Cache-Control' => 'private, max-age=86400',
         ]);
+    }
+
+    /** Objek ada? HEAD; objek yang tidak ada bisa dilempar 403 (tanpa izin list) -> dianggap tidak ada. */
+    public static function ada(string $path, string $disk = self::DISK): bool
+    {
+        try {
+            return Storage::disk($disk)->exists($path);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     private static function periksaPdf(string $isi, string $field): void
