@@ -60,7 +60,7 @@ class VehicleAssetController extends Controller
         return Inertia::render('Assets/Vehicles', [
             'branch' => $branch,
             'assets' => $assets,
-            'branches' => $this->allowedBranches(),
+            'branches' => $this->kantorTujuan(),
             'summary' => [
                 'total' => (int) ($summary->total ?? 0),
                 'active' => (int) ($summary->active ?? 0),
@@ -151,7 +151,7 @@ class VehicleAssetController extends Controller
             'branch' => Branch::query()->findOrFail($branchId, ['id', 'unit']),
             'vehicles' => $vehicles,
             'period' => $period,
-            'branches' => $this->allowedBranches(),
+            'branches' => $this->kantorTujuan(),
         ]);
     }
 
@@ -203,7 +203,7 @@ class VehicleAssetController extends Controller
 
         return response()->json([
             'asset' => $asset,
-            'branches' => $this->allowedBranches(),
+            'branches' => $this->kantorTujuan(),
             'tax_info' => $taxInfo,
         ]);
     }
@@ -305,12 +305,13 @@ class VehicleAssetController extends Controller
         abort_unless($this->bolehKelola($request), 403, 'Mutasi kendaraan bukan untuk kepala mantri / mantri.');
         $this->assertAssetInActiveBranch($request, $asset);
         $validated = $request->validate([
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'branch_id' => ['required', 'integer', 'exists:branches,id,isactive,1'], // = app_laravel: tujuan kantor aktif mana pun
             'pengguna' => ['nullable', 'string', 'max:255'],
             'assigned_date' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
-        $this->assertAllowedBranch((int) $validated['branch_id'], 'memindahkan kendaraan');
+        // Tujuan boleh kantor mana pun (mas 2026-10-23): kasir memindah motor ke kantor lain.
+        // Yang dijaga kantor ASAL (assertAssetInActiveBranch + cek di transaksi).
 
         $activeBranchId = $this->activeBranchId();
         DB::transaction(function () use ($asset, $validated, $activeBranchId) {
@@ -594,14 +595,10 @@ class VehicleAssetController extends Controller
         return $allowed === null ? null : array_map('intval', $allowed);
     }
 
-    private function allowedBranches()
+    /** Kantor tujuan mutasi: semua kantor aktif, bukan hanya kantor yang boleh diakses user. */
+    private function kantorTujuan()
     {
-        $allowed = Branch::getAllowedBranchIds(Auth::user());
-
-        return Branch::query()
-            ->when($allowed !== null, fn ($query) => $query->whereIn('id', $allowed))
-            ->orderBy('unit')
-            ->get(['id', 'unit', 'wilayah']);
+        return Branch::query()->where('isactive', true)->orderBy('unit')->get(['id', 'unit', 'wilayah']);
     }
 
     private function validateAsset(Request $request, bool $creating = false): array
