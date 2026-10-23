@@ -12,76 +12,41 @@ import SatuanAngka from '@/Components/SatuanAngka';
 import { rp } from '@/lib/rupiah';
 
 const EMBER = { month1: 'M1', month2: 'M2', ccm: 'CCM', cm: 'CM', mb: 'MB', ml: 'ML' };
-const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran', pindah: 'Pindah ke pinjaman lain' };
-
-/** Baris pinjaman di hasil pencarian / pilihan tujuan. */
-const BarisPinjaman = ({ l, onClick, aktif = false }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`w-full px-3 py-2 text-left border-b last:border-b-0 hover:bg-sky-50 ${aktif ? 'bg-sky-50' : ''}`}
-  >
-    <div className="text-sm font-medium text-slate-900">
-      {l.nama} <span className="text-xs font-normal text-slate-500">· {l.nomor_anggota || '–'} · NIK {l.nik}</span>
-    </div>
-    <div className="text-xs capitalize text-slate-500">
-      Kel {l.kelompok} · {l.hari} · drop {dayjs(l.drop_date).format('DD-MM-YYYY')} · Rp {rp(l.pinjaman)}
-      {l.ember && <span className="ml-1 font-semibold uppercase text-slate-700">({EMBER[l.ember] ?? l.ember})</span>}
-    </div>
-  </button>
-);
+const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran' };
+const ALASAN_BAWAAN = 'selisih penyesuaian';
 
 /**
- * Dialog satu koreksi: isian per aksi + alasan -> Pratinjau dampak (dijalankan
+ * Dialog satu koreksi: nominal (+ alasan opsional) -> Pratinjau dampak (dijalankan
  * lalu dibatalkan di server) -> Simpan. Simpan baru aktif sesudah pratinjau
- * dengan isian yang sama.
+ * dengan isian yang sama. Angsuran yang ada bisa diganti ke "hapus" dari sini.
  */
-const DialogKoreksi = ({ buka, onClosed, pinjaman, mulai }) => {
-  const { aksi, angsuran } = buka ?? {};
+const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
+  const { angsuran, tanggal } = buka ?? {};
+  const [aksi, setAksi] = useState(null);
   const [nominal, setNominal] = useState('');
-  const [tanggal, setTanggal] = useState('');
   const [alasan, setAlasan] = useState('');
-  const [cariTujuan, setCariTujuan] = useState('');
-  const [hasilTujuan, setHasilTujuan] = useState([]);
-  const [tujuan, setTujuan] = useState(null);
   const [pratinjau, setPratinjau] = useState(null);
   const [galat, setGalat] = useState(null);
   const [proses, setProses] = useState(false);
 
   useEffect(() => {
+    setAksi(buka?.aksi ?? null);
     setNominal(angsuran ? String(angsuran.nominal) : '');
-    setTanggal(buka?.tanggal ?? '');
     setAlasan('');
-    setCariTujuan('');
-    setHasilTujuan([]);
-    setTujuan(null);
     setPratinjau(null);
     setGalat(null);
   }, [buka]);
 
   // Isian berubah -> pratinjau lama tidak berlaku lagi.
-  useEffect(() => setPratinjau(null), [nominal, tanggal, alasan, tujuan]);
-
-  useEffect(() => {
-    if (aksi !== 'pindah' || cariTujuan.trim().length < 3) return setHasilTujuan([]);
-    const t = setTimeout(
-      () =>
-        axios
-          .get(route('migrasi.koreksi_beku_tujuan'), { params: { q: cariTujuan } })
-          .then((r) => setHasilTujuan(r.data.filter((l) => l.id !== pinjaman.id))),
-      300,
-    );
-    return () => clearTimeout(t);
-  }, [cariTujuan, aksi]);
+  useEffect(() => setPratinjau(null), [aksi, nominal, alasan]);
 
   const isian = () => ({
     aksi,
-    alasan,
+    alasan: alasan.trim() || ALASAN_BAWAAN,
     angsuran_id: angsuran?.id,
     loan_id: pinjaman?.id,
-    nominal: aksi === 'ubah' || aksi === 'tambah' ? Number(nominal) : undefined,
+    nominal: aksi === 'hapus' ? undefined : Number(nominal),
     tanggal: aksi === 'tambah' ? tanggal : undefined,
-    loan_tujuan_id: aksi === 'pindah' ? tujuan?.id : undefined,
   });
 
   const lihat = () => {
@@ -109,63 +74,34 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman, mulai }) => {
           <DialogTitle>{JUDUL[aksi]}</DialogTitle>
           <DialogDescription>
             {pinjaman?.nama} · drop {pinjaman && dayjs(pinjaman.drop_date).format('DD-MM-YYYY')}
-            {angsuran && ` · angsuran ${dayjs(angsuran.tanggal).format('DD-MM-YYYY')} Rp ${rp(angsuran.nominal)}`}
+            {angsuran
+              ? ` · angsuran ${dayjs(angsuran.tanggal).format('DD-MM-YYYY')} Rp ${rp(angsuran.nominal)}`
+              : tanggal && ` · tanggal ${dayjs(tanggal).format('DD-MM-YYYY')}`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-3 text-sm">
-          {aksi === 'tambah' && (
-            <label className="grid gap-1">
-              <span className="font-medium">Tanggal angsuran</span>
-              <Input
-                type="date"
-                value={tanggal}
-                min={pinjaman?.drop_date}
-                max={dayjs(mulai).subtract(1, 'day').format('YYYY-MM-DD')}
-                onChange={(e) => setTanggal(e.target.value)}
-              />
-            </label>
-          )}
-          {(aksi === 'ubah' || aksi === 'tambah') && (
-            <label className="grid gap-1">
-              <span className="font-medium">{aksi === 'ubah' ? 'Nominal baru' : 'Nominal'}</span>
-              <Input type="number" min="0" step="1000" value={nominal} onChange={(e) => setNominal(e.target.value)} />
-            </label>
-          )}
-          {aksi === 'pindah' && (
-            <div className="grid gap-1">
-              <span className="font-medium">Pinjaman tujuan (kantor yang sama)</span>
-              {tujuan ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 border rounded-md">
-                    <BarisPinjaman l={tujuan} aktif onClick={() => {}} />
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setTujuan(null)}>
-                    Ganti
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <Input placeholder="Cari nama / NIK / no. anggota" value={cariTujuan} onChange={(e) => setCariTujuan(e.target.value)} />
-                  {hasilTujuan.length > 0 && (
-                    <div className="overflow-y-auto border rounded-md max-h-48">
-                      {hasilTujuan.map((l) => (
-                        <BarisPinjaman key={l.id} l={l} onClick={() => setTujuan(l)} />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+          {aksi === 'hapus' ? (
+            <div className="flex items-center justify-between gap-2 p-2 text-red-700 rounded-md bg-red-50">
+              Angsuran ini akan dihapus.
+              <Button size="xs" variant="outline" onClick={() => setAksi('ubah')}>
+                Batal hapus
+              </Button>
             </div>
+          ) : (
+            <label className="grid gap-1">
+              <span className="font-medium">Nominal</span>
+              <Input type="number" min="0" step="1000" autoFocus value={nominal} onChange={(e) => setNominal(e.target.value)} />
+            </label>
           )}
           <label className="grid gap-1">
-            <span className="font-medium">Alasan (wajib, tercatat di log)</span>
+            <span className="font-medium">Alasan (boleh kosong)</span>
             <textarea
               rows={2}
               value={alasan}
               onChange={(e) => setAlasan(e.target.value)}
               className="px-3 py-2 text-sm border rounded-md border-input bg-background"
-              placeholder="Mis. angsuran 12 Agustus milik Siti tercatat ke Sumi; ditambah sesudah bucket ditutup"
+              placeholder={ALASAN_BAWAAN}
             />
           </label>
 
@@ -179,9 +115,16 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman, mulai }) => {
         </div>
 
         <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
-          <Button variant="outline" disabled={proses} onClick={onClosed}>
-            Batal
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={proses} onClick={onClosed}>
+              Batal
+            </Button>
+            {aksi === 'ubah' && (
+              <Button variant="outline" disabled={proses} className="text-red-600 border-red-200" onClick={() => setAksi('hapus')}>
+                Hapus
+              </Button>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" disabled={proses} onClick={lihat}>
               {proses && !pratinjau ? 'Menghitung…' : 'Pratinjau dampak'}
@@ -200,7 +143,7 @@ const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const PILIH = 'h-9 px-2 text-sm border rounded-md border-input bg-background';
 const rb = (n) => angka(n, { bulat: true });
 
-/** Isi satu sel (nasabah x tanggal): daftar angsuran + aksi. */
+/** Sel berisi lebih dari satu angsuran / pelunasan topup: pilih yang dikoreksi. */
 const DialogSel = ({ sel, onClosed, onAksi }) => {
   const isi = sel ? sel.nasabah.angsuran[sel.tanggal] ?? [] : [];
   return (
@@ -227,19 +170,9 @@ const DialogSel = ({ sel, onClosed, onAksi }) => {
               {a.topup ? (
                 <Lock className="w-4 h-4 text-slate-400" aria-label="Pelunasan topup, tidak bisa dikoreksi" />
               ) : (
-                <div className="flex gap-1">
-                  {['ubah', 'pindah', 'hapus'].map((x) => (
-                    <Button
-                      key={x}
-                      size="xs"
-                      variant="outline"
-                      className={`capitalize ${x === 'hapus' ? 'text-red-600 border-red-200' : ''}`}
-                      onClick={() => onAksi({ aksi: x, angsuran: a })}
-                    >
-                      {x}
-                    </Button>
-                  ))}
-                </div>
+                <Button size="xs" variant="outline" onClick={() => onAksi({ aksi: 'ubah', angsuran: a })}>
+                  Ubah
+                </Button>
               )}
             </div>
           ))}
@@ -257,13 +190,20 @@ const DialogSel = ({ sel, onClosed, onAksi }) => {
 /**
  * Koreksi Data Beku (superuser), tampil seperti buku angsuran: kantor (filter
  * global) x kelompok x hari x BULAN DROP. Baris = nasabah drop bulan itu,
- * kolom = tanggal tagih s/d sebelum migrasi. Klik sel -> ubah / hapus /
- * pindah / tambah, dengan pratinjau dampak & alasan wajib.
+ * kolom = tanggal tagih s/d sebelum migrasi. Klik sel -> langsung isi nominal
+ * (ubah / tambah; hapus dari dialog yang sama), pratinjau dampak, alasan opsional.
  */
 const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
   useModeRibuan();
   const [sel, setSel] = useState(null);
   const [buka, setBuka] = useState(null);
+  // Sel kosong -> tambah; satu angsuran biasa -> ubah langsung; selain itu pilih dulu.
+  const klikSel = (n, t) => {
+    const isi = n.angsuran[t] ?? [];
+    if (!isi.length) return setBuka({ aksi: 'tambah', tanggal: t, nasabah: n });
+    if (isi.length === 1 && !isi[0].topup) return setBuka({ aksi: 'ubah', angsuran: isi[0], nasabah: n });
+    setSel({ nasabah: n, tanggal: t });
+  };
   const ganti = (ubah) => router.get(route('migrasi.koreksi_beku'), { ...filter && { kelompok: filter.kelompok, hari: filter.hari, bulan: filter.bulan }, ...ubah }, { preserveScroll: true });
 
   // Kepala bulan di atas kolom tanggal.
@@ -409,7 +349,7 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                           {!sebelumDrop && (
                             <button
                               type="button"
-                              onClick={() => setSel({ nasabah: n, tanggal: t })}
+                              onClick={() => klikSel(n, t)}
                               className={`w-full h-full px-2 py-1 text-right hover:bg-sky-100 ${isi.length ? 'text-slate-900' : 'text-slate-300'}`}
                             >
                               {isi.some((x) => x.katrol) && <span className="mr-0.5 text-[9px] font-semibold text-emerald-700">K</span>}
@@ -474,7 +414,6 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
         buka={buka}
         onClosed={() => setBuka(null)}
         pinjaman={buka?.nasabah}
-        mulai={kantor.mulai}
       />
     </>
   );

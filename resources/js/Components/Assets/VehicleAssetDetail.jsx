@@ -1,12 +1,15 @@
 import dayjs from 'dayjs';
 import { router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { CheckCircle2, Loader2, MapPin, Pencil, Trash2, Wrench } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Check, CheckCircle2, ChevronsUpDown, Loader2, MapPin, Pencil, Trash2, Wrench } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import { Input } from '@/shadcn/ui/input';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/shadcn/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import { rpLengkap as rupiah } from '@/lib/rupiah';
@@ -22,23 +25,60 @@ const PIC_OPTIONS = [
   'Kasir', 'Staf', ...Array.from({ length: 10 }, (_, index) => `Mantri ${index + 1}`),
 ];
 
+/** Pilih kantor dengan pencarian (pola sama dengan GlobalBranchFilter). */
+function PilihKantor({ branches, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const pilihan = branches.find((branch) => String(branch.id) === String(value));
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" role="combobox" aria-expanded={open} className="h-10 w-full justify-between font-normal">
+          <span className="truncate">{pilihan?.unit ?? 'Pilih kantor'}</span>
+          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Cari kantor..." />
+          <CommandList>
+            <CommandEmpty>Kantor tidak ditemukan.</CommandEmpty>
+            <CommandGroup>
+              {branches.map((branch) => (
+                <CommandItem key={branch.id} value={`${branch.unit} ${branch.id}`} onSelect={() => { onChange(String(branch.id)); setOpen(false); }}>
+                  <Check className={`mr-2 size-4 ${String(branch.id) === String(value) ? 'opacity-100' : 'opacity-0'}`} />
+                  {branch.unit}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function Field({ label, children }) {
   return <div><div className="text-xs text-muted-foreground">{label}</div><div className="mt-1 text-sm font-semibold">{children}</div></div>;
 }
 
+// Dialog Radix, bukan div fixed biasa: Sheet detail yang terbuka mengunci klik di luar
+// dirinya (pointer-events body), jadi modal buatan sendiri tidak bisa dipencet.
 function Modal({ title, description, children, onClose }) {
   return (
-    <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/40 p-4">
-      <section className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border bg-background shadow-xl">
-        <header className="border-b p-4 pr-12"><h3 className="font-semibold">{title}</h3><p className="text-xs text-muted-foreground">{description}</p></header>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-lg gap-0 overflow-y-auto p-0">
+        <DialogHeader className="border-b p-4 pr-12 text-left">
+          <DialogTitle className="text-base">{title}</DialogTitle>
+          <DialogDescription className="text-xs">{description}</DialogDescription>
+        </DialogHeader>
         {children}
         <div className="flex justify-end border-t p-4"><Button type="button" variant="outline" onClick={onClose}>Tutup</Button></div>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-export default function VehicleAssetDetail({ assetId, assetName, branches, onClose, onEdit, bolehKelola = false }) {
+export default function VehicleAssetDetail({ assetId, assetName, branches, onClose, onEdit, bolehKelola = false, bayarPajak = false }) {
   const { auth } = usePage().props;
   const canDelete = !auth?.roles?.includes('kasir');
   const canInputTax = auth?.roles?.includes('superuser') || auth?.permissions?.includes('input-vehicles-tax');
@@ -81,6 +121,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
   };
 
   useEffect(() => {
+    pajakDibuka.current = false;
     if (!assetId) {
       setPayload(null);
       return undefined;
@@ -103,15 +144,38 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     load();
   };
 
+  // Hapus penempatan terakhir -> kembali ke penempatan sebelumnya. Dipakai dari
+  // toast sesudah mutasi (drawer bisa sudah tertutup) dan dari riwayat penempatan.
+  const batalMutasi = (id) => {
+    if (!window.confirm('Batalkan mutasi terakhir? Kendaraan kembali ke penempatan sebelumnya.')) return;
+    // preserveState: drawer tetap terbuka (tanpa itu halaman dipasang ulang dan
+    // drawer tertutup/basi). Kendaraan yang kembali ke kantor lain -> detail 404 ->
+    // drawer ditutup.
+    router.delete(route('assets.mutate.revert', id), {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        toast.success('Mutasi dibatalkan.');
+        if (id !== assetId) return;
+        axios.get(route('assets.detail', id))
+          .then(({ data }) => setPayload(data))
+          .catch(onClose);
+      },
+      onError: (errors) => toast.error(errors.message ?? 'Pembatalan mutasi gagal.'),
+    });
+  };
+
   const submitMutate = (event) => {
     event.preventDefault();
-    mutate.post(route('assets.mutate', assetId), {
+    const id = assetId;
+    mutate.post(route('assets.mutate', id), {
       preserveScroll: true,
       onSuccess: () => {
         const movingOut = Number(mutate.data.branch_id) !== Number(currentLocation?.branch_id);
         setModal('');
         mutate.reset();
         refresh();
+        toast.success('Mutasi dicatat.', { duration: 15000, action: { label: 'Batalkan', onClick: () => batalMutasi(id) } });
         if (movingOut) onClose();
       },
     });
@@ -128,6 +192,16 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
       },
     });
   };
+
+  // Dibuka dari tombol "Bayar Pajak" di daftar: langsung ke tab pajak + form bayar,
+  // sekali per buka, sesudah detail kendaraan itu termuat.
+  const pajakDibuka = useRef(false);
+  useEffect(() => {
+    if (!bayarPajak || pajakDibuka.current || payload?.asset?.id !== assetId) return;
+    pajakDibuka.current = true;
+    setActiveTab('taxes');
+    openTaxPayment();
+  }, [payload, bayarPajak]);
 
   const openTaxPayment = () => {
     if (!asset?.vehicle) return;
@@ -218,6 +292,11 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                         <div className="font-semibold">{location.branch?.unit} · {location.pengguna}</div>
                         {location.before_branch && <div className="text-xs text-muted-foreground">Mutasi dari {location.before_branch.unit}</div>}
                         {location.notes && <p className="mt-1 text-xs">{location.notes}</p>}
+                        {bolehKelola && locations.length > 1 && location.id === asset?.current_location?.id && (
+                          <Button size="sm" variant="outline" className="mt-2 text-red-600 border-red-200" onClick={() => batalMutasi(assetId)}>
+                            Batalkan mutasi ini
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -330,9 +409,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
         <Modal title="Mutasi / Pindah Kantor" description="Penempatan baru akan menjadi lokasi aktif kendaraan." onClose={() => setModal('')}>
           <form onSubmit={submitMutate} className="space-y-3 p-4">
             <label className="block space-y-1 text-sm">Kantor tujuan
-              <select className="h-10 w-full rounded-md border bg-background px-3" value={mutate.data.branch_id} onChange={(event) => mutate.setData('branch_id', event.target.value)} required>
-                <option value="">Pilih kantor</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.unit}</option>)}
-              </select>
+              <PilihKantor branches={branches} value={mutate.data.branch_id} onChange={(id) => mutate.setData('branch_id', id)} />
               {mutate.errors.branch_id && <span className="text-xs text-destructive">{mutate.errors.branch_id}</span>}
             </label>
             <label className="block space-y-1 text-sm">Pemakai / PIC
@@ -372,7 +449,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                     Periode: <strong>{payload.tax_info.periode}{Number(taxForm.data.sampai_periode) > payload.tax_info.periode ? ` – ${taxForm.data.sampai_periode}` : ''}</strong>
                   </p>
                   {payload.tax_info.tertunggak > 0 && (
-                    <p className="mt-1 text-xs text-amber-700">Tunggakan akan dicatat per tahun; nominal biaya dan denda masuk ke periode terakhir.</p>
+                    <p className="mt-1 text-xs text-amber-700">Tunggakan akan dicatat per tahun; nominal biaya masuk ke periode terakhir.</p>
                   )}
                 </>
               )}
@@ -407,17 +484,6 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                 required
               />
               {taxForm.errors.cost && <span className="text-xs text-destructive">{taxForm.errors.cost}</span>}
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              Denda (Rp, opsional)
-              <Input
-                inputMode="numeric"
-                value={taxForm.data.denda ? new Intl.NumberFormat('id-ID').format(taxForm.data.denda) : ''}
-                onChange={(event) => taxForm.setData('denda', event.target.value.replace(/\D/g, ''))}
-                placeholder="0"
-              />
-              {taxForm.errors.denda && <span className="text-xs text-destructive">{taxForm.errors.denda}</span>}
             </label>
 
             <label className="block space-y-1 text-sm">

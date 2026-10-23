@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -222,7 +223,7 @@ class VehicleAssetController extends Controller
                 'asset_code' => 'AST-' . $year . '-' . str_pad((string) $codeCount, 4, '0', STR_PAD_LEFT),
                 'name' => $validated['name'],
                 'purchase_date' => $validated['purchase_date'],
-                'purchase_cost' => $validated['purchase_cost'],
+                'purchase_cost' => $validated['purchase_cost'] ?? 0, // boleh kosong; kolom NOT NULL
                 'status' => $validated['status'],
                 'description' => $validated['description'] ?? null,
             ]);
@@ -259,7 +260,7 @@ class VehicleAssetController extends Controller
             $lockedAsset->update([
                 'name' => $validated['name'],
                 'purchase_date' => $validated['purchase_date'],
-                'purchase_cost' => $validated['purchase_cost'],
+                'purchase_cost' => $validated['purchase_cost'] ?? 0, // boleh kosong; kolom NOT NULL
                 'status' => $validated['status'],
                 'description' => $validated['description'] ?? null,
             ]);
@@ -335,6 +336,31 @@ class VehicleAssetController extends Controller
         });
 
         return back()->with('success', 'Mutasi lokasi kendaraan berhasil dicatat.');
+    }
+
+    /**
+     * Batalkan mutasi terakhir: penempatan terbaru dihapus, kendaraan kembali ke
+     * penempatan sebelumnya. Boleh dari kantor tujuan maupun kantor asal (mutasi
+     * keluar membuat kendaraan hilang dari daftar kantor asal).
+     */
+    public function revertMutate(Request $request, InvAsset $asset)
+    {
+        abort_unless($this->bolehKelola($request), 403, 'Mutasi kendaraan bukan untuk kepala mantri / mantri.');
+        abort_unless((int) $asset->category_id === InvCategory::KENDARAAN, 404);
+        $activeBranchId = $this->activeBranchId();
+        $this->assertAllowedBranch($activeBranchId, 'membatalkan mutasi kendaraan');
+
+        DB::transaction(function () use ($asset, $activeBranchId) {
+            $terakhir = InvLocation::query()->where('asset_id', $asset->id)->lockForUpdate()->latest('id')->firstOrFail();
+            abort_unless(in_array($activeBranchId, [(int) $terakhir->branch_id, (int) $terakhir->before_branch_id], true), 404);
+            if (InvLocation::query()->where('asset_id', $asset->id)->where('id', '<', $terakhir->id)->doesntExist()) {
+                throw ValidationException::withMessages(['message' => 'Penempatan pertama tidak bisa dibatalkan.']);
+            }
+            Log::info('Mutasi kendaraan dibatalkan', ['asset_id' => $asset->id, 'lokasi' => $terakhir->toArray(), 'user_id' => auth()->id()]);
+            $terakhir->delete();
+        });
+
+        return back()->with('success', 'Mutasi dibatalkan, kendaraan kembali ke penempatan sebelumnya.');
     }
 
     public function addMaintenance(Request $request, InvAsset $asset)
@@ -583,7 +609,7 @@ class VehicleAssetController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'purchase_date' => ['required', 'date'],
-            'purchase_cost' => ['required', 'integer', 'min:0'],
+            'purchase_cost' => ['nullable', 'integer', 'min:0'],
             'status' => ['required', 'in:aktif,rusak,hilang,dijual,dihapus'],
             'description' => ['nullable', 'string', 'max:5000'],
             'plat_nomor' => ['required', 'string', 'max:50'],
@@ -600,7 +626,6 @@ class VehicleAssetController extends Controller
         $messages = [
             'name.required' => 'Nama kendaraan wajib diisi.',
             'purchase_date.required' => 'Tanggal perolehan/pembelian wajib diisi.',
-            'purchase_cost.required' => 'Harga perolehan wajib diisi.',
             'purchase_cost.integer' => 'Harga perolehan harus berupa angka.',
             'purchase_cost.min' => 'Harga perolehan minimal 0.',
             'status.required' => 'Status kendaraan wajib dipilih.',

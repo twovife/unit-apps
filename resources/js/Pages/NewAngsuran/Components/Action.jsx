@@ -27,7 +27,6 @@ import { Link, usePage } from '@inertiajs/react';
 import { useFilterAngsuran } from '../FilterAngsuran';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
-import { Toaster } from '@/shadcn/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import { Copy, CircleX, Lock } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
@@ -126,7 +125,6 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
           {/* <Button type="button" /> */}
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-          <Toaster />
           {/* Input Angsuran (aksi utama saat modal dibuka lewat tombol
               "Bayar") dan Detail Pinjaman digabung jadi tab, ditaruh paling
               atas supaya tidak perlu digulir dulu. Detail Pinjaman sekarang

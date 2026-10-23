@@ -242,6 +242,49 @@ class PembayaranKantorController extends Controller
         return back()->with('message', 'Pembayaran pinjaman modal dicatat. Pembagiannya bisa dipindah staf kontrol.');
     }
 
+    /** Slip angsuran modal boleh dihapus: penginput berhak, bulannya belum dikunci, dan slip TERAKHIR kantor (alokasi slip sesudahnya bergantung padanya). */
+    private function bolehHapusModal(int $paymentId): bool
+    {
+        $p = DB::table('tb_capital_loan_payments as p')->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
+            ->where('p.id', $paymentId)->first(['p.payment_date', 'l.branch_id']);
+        if (!$p || !$this->bolehBayar((int) $p->branch_id)) {
+            return false;
+        }
+        $periode = substr((string) $p->payment_date, 0, 7);
+        if (DB::table('contribution_locks')->where('module', 'modal')->whereNull('branch_id')->where('period', $periode)->exists()) {
+            return false;
+        }
+        $terakhir = DB::table('tb_capital_loan_payments as p')->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
+            ->where('l.branch_id', $p->branch_id)->max('p.id');
+        $slip = fn($id) => DB::table('tb_capital_loan_payments')->where('id', $id)->value(DB::raw('COALESCE(slip, id)'));
+
+        return (string) $slip($terakhir) === (string) $slip($paymentId);
+    }
+
+    /** Hapus satu slip angsuran modal (semua barisnya); status pinjaman dihitung ulang dari sisa pokok. */
+    public function hapusModal(int $id)
+    {
+        abort_unless($this->bolehHapusModal($id), 403, 'Slip ini tidak bisa dihapus (bukan slip terakhir / bulan dikunci / tanpa hak).');
+        $slip = DB::table('tb_capital_loan_payments')->where('id', $id)->value('slip');
+        $baris = DB::table('tb_capital_loan_payments')->when($slip, fn($q) => $q->where('slip', $slip), fn($q) => $q->where('id', $id))->get();
+
+        DB::transaction(function () use ($baris) {
+            DB::table('tb_capital_loan_payments')->whereIn('id', $baris->pluck('id'))->delete();
+            foreach ($baris->pluck('tb_capital_loan_id')->unique() as $loanId) {
+                $pokok = (int) DB::table('tb_capital_loans')->where('id', $loanId)->value('amount');
+                $bayar = (int) DB::table('tb_capital_loan_payments')->where('tb_capital_loan_id', $loanId)->sum('amount_principal');
+                DB::table('tb_capital_loans')->where('id', $loanId)->update(['status' => $pokok - $bayar > 0 ? 'active' : 'paid', 'updated_at' => now()]);
+            }
+        });
+
+        $bukti = $baris->first()?->bukti_path;
+        if ($bukti && !DB::table('tb_capital_loan_payments')->where('bukti_path', $bukti)->exists()) {
+            Storage::disk(Unggahan::DISK)->delete($bukti);
+        }
+
+        return back()->with('message', 'Angsuran pinjaman modal dihapus.');
+    }
+
     /**
      * Tambah pinjaman modal kantor aktif dengan bukti transfer masuk (mas 2026-10-22),
      * = app_laravel storeCapitalLoan: jenis selalu Pinjaman Modal (Modal Awal dicatat
@@ -444,6 +487,8 @@ class PembayaranKantorController extends Controller
                 'catatan' => $p->notes,
                 'oleh' => $p->oleh,
                 'bukti' => $p->bukti_path ? route('dashboard.kasir.bukti', ['modal', $p->id]) : null,
+                // Hapus satu slip penuh (semua barisnya), hanya slip terakhir & bulan belum dikunci.
+                'hapus' => $this->bolehHapusModal($p->id) ? route('dashboard.kasir.modal.destroy', $p->id) : null,
             ]),
         ]);
     }
@@ -555,6 +600,9 @@ class PembayaranKantorController extends Controller
         $periode = $bulan->format('Y-m');
         $baris = DB::table($tabel)->where('branch_id', $branch->id)->where('period', $periode);
         $dibayar = (int) (clone $baris)->sum('amount');
+        $bolehHapus = $this->bolehBayar($branch->id) && !$this->terkunci($modul, $branch->id, $periode);
+        $terakhirId = DB::table($tabel)->where('branch_id', $branch->id)
+            ->orderByDesc('period')->orderByDesc('payment_date')->orderByDesc('id')->value('id');
 
         $status = 'belum';
         if ($tenggang && $dibayar === 0) {
@@ -574,13 +622,17 @@ class PembayaranKantorController extends Controller
             'terkunci' => $this->terkunci($modul, $branch->id, $periode),
             'terakhir' => ($t = (clone $baris)->max('payment_date')) ? Carbon::parse($t)->toDateString() : null,
             'akumulasi' => (int) DB::table($tabel)->where('branch_id', $branch->id)->where('period', '<=', $periode)->sum('amount'),
-            'riwayat' => (clone $baris)->orderByDesc('payment_date')->orderByDesc('id')->limit(3)
+            // Semua pembayaran bulan ini. Hapus = aturan TbContribution/BopContribution::destroy:
+            // hanya transaksi terakhir kantor, bulannya belum dikunci.
+            'riwayat' => (clone $baris)->orderByDesc('payment_date')->orderByDesc('id')
                 ->get(['id', 'amount', 'payment_date', 'bukti_path'])
                 ->map(fn($r) => [
                     'id' => $r->id,
                     'nominal' => (int) $r->amount,
                     'tanggal' => Carbon::parse($r->payment_date)->toDateString(),
                     'bukti' => $r->bukti_path ? route('dashboard.kasir.bukti', [$modul, $r->id]) : null,
+                    'hapus' => $bolehHapus && $r->id === $terakhirId
+                        ? route($modul === 'tb' ? 'tabungan.contributions.destroy' : 'bop.contributions.destroy', $r->id) : null,
                 ]),
         ];
     }
@@ -640,12 +692,13 @@ class PembayaranKantorController extends Controller
             // Satu baris per slip (satu input kasir), bukti dari baris pertamanya.
             'riwayat' => (clone $bulanIni)->groupByRaw('COALESCE(p.slip, p.id)')
                 ->selectRaw('MIN(p.id) id, SUM(p.amount_principal + p.amount_jasa_modal) nominal, MAX(p.payment_date) tanggal, MAX(p.bukti_path) bukti_path')
-                ->orderByDesc('tanggal')->orderByDesc('id')->limit(3)->get()
+                ->orderByDesc('tanggal')->orderByDesc('id')->get()
                 ->map(fn($r) => [
                     'id' => $r->id,
                     'nominal' => (int) $r->nominal,
                     'tanggal' => Carbon::parse($r->tanggal)->toDateString(),
                     'bukti' => $r->bukti_path ? route('dashboard.kasir.bukti', ['modal', $r->id]) : null,
+                    'hapus' => $this->bolehHapusModal($r->id) ? route('dashboard.kasir.modal.destroy', $r->id) : null,
                 ]),
         ];
     }
@@ -662,11 +715,34 @@ class PembayaranKantorController extends Controller
             ->get()->keyBy('jenis');
         $ambil = fn($jenis, $k) => (int) ($rows[$jenis]->$k ?? 0);
 
+        // Transaksi bulan ini. Hapus = SkswUnitController::hapus (batch bulan itu masih
+        // terbuka, bukan data lama); mutasi cukup baris pertamanya (pasangannya ikut).
+        $boleh = $this->bolehBayar($branchId);
+        $mutasiPertama = [];
+        $riwayat = \App\Models\SavingTransaction::with(['batch:id,status', 'rekening.employee:id,nama_karyawan'])
+            ->where('branch_id', $branchId)->whereNull('voided_at')->whereBetween('transaction_date', [$awal, $akhir])
+            ->orderBy('id')->get()
+            ->map(function ($t) use ($boleh, &$mutasiPertama) {
+                $pertama = !$t->mutasi_ref || !isset($mutasiPertama[$t->mutasi_ref]);
+                if ($t->mutasi_ref) {
+                    $mutasiPertama[$t->mutasi_ref] = true;
+                }
+
+                return [
+                    'id' => $t->id,
+                    'nominal' => (int) ($t->debit ?: $t->kredit),
+                    'tanggal' => $t->transaction_date->toDateString(),
+                    'keterangan' => trim(($t->rekening?->employee?->nama_karyawan ?? '') . ' · ' . $t->jenis . ($t->kredit > 0 ? ' keluar' : '')),
+                    'hapus' => $boleh && $pertama && $t->batch_id && $t->batch?->status === 'open' ? route('sksw.hapus', $t->id) : null,
+                ];
+            })->reverse()->values();
+
         return [
             'saldo_sw' => $ambil('SW', 'saldo'),
             'saldo_sk' => $ambil('SK', 'saldo'),
             'masuk' => $ambil('SW', 'masuk') + $ambil('SK', 'masuk'),
             'keluar' => $ambil('SW', 'keluar') + $ambil('SK', 'keluar'),
+            'riwayat' => $riwayat,
         ];
     }
 
@@ -674,19 +750,21 @@ class PembayaranKantorController extends Controller
     private function umrah(int $branchId, string $awal, string $akhir, string $periode): array
     {
         $bulanIni = DB::table('goro_umroh_setoran')->where('branch_id', $branchId)->whereBetween('tanggal', [$awal, $akhir]);
+        $bolehHapus = $this->bolehBayar($branchId) && !$this->terkunci('goro', $branchId, $periode);
 
         return [
             'setoran_bulan_ini' => (int) (clone $bulanIni)->sum('amount'),
             'kali_bulan_ini' => (clone $bulanIni)->count(),
             'terkunci' => $this->terkunci('goro', $branchId, $periode),
             'total' => (int) DB::table('goro_umroh_setoran')->where('branch_id', $branchId)->where('tanggal', '<=', $akhir)->sum('amount'),
-            'riwayat' => (clone $bulanIni)->orderByDesc('tanggal')->orderByDesc('id')->limit(3)
+            'riwayat' => (clone $bulanIni)->orderByDesc('tanggal')->orderByDesc('id')
                 ->get(['id', 'amount', 'tanggal', 'bukti_path'])
                 ->map(fn($r) => [
                     'id' => $r->id,
                     'nominal' => (int) $r->amount,
                     'tanggal' => Carbon::parse($r->tanggal)->toDateString(),
                     'bukti' => $r->bukti_path ? route('dashboard.kasir.bukti', ['umrah', $r->id]) : null,
+                    'hapus' => $bolehHapus ? route('dashboard.kasir.umrah.destroy', $r->id) : null,
                 ]),
         ];
     }

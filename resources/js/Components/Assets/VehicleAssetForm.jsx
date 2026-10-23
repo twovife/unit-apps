@@ -174,13 +174,12 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   required
                 />
               </Field>
-              <Field label="Harga Perolehan (Rp)" error={form.errors.purchase_cost} required>
+              <Field label="Harga Perolehan (Rp, boleh kosong)" error={form.errors.purchase_cost}>
                 <Input
                   inputMode="numeric"
                   value={moneyInput(form.data.purchase_cost)}
                   onChange={(event) => form.setData('purchase_cost', event.target.value.replace(/\D/g, ''))}
                   className={form.errors.purchase_cost ? 'border-destructive focus-visible:ring-destructive' : ''}
-                  required
                 />
               </Field>
               <Field label="Pemakai / PIC (kosong = Cadangan)" error={form.errors.pengguna}>

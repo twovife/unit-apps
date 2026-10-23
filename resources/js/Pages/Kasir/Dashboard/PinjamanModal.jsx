@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import { ArrowLeft, Landmark, Plus, Receipt } from 'lucide-react';
+import { ArrowLeft, Landmark, Plus, Receipt, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { rpLengkap as rp, rpInput } from '@/lib/rupiah';
 import { IsiBukti, kecilkan } from '@/Components/PembayaranKantor';
@@ -256,12 +256,13 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
                   <th className="px-3 py-2 font-medium text-left">Pinjaman</th>
                   <th className="px-3 py-2 font-medium text-left">Dicatat oleh</th>
                   <th className="px-3 py-2 font-medium text-center">Bukti</th>
+                  <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
                 {angsuran.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-slate-500">
+                    <td colSpan={7} className="py-6 text-center text-slate-500">
                       Belum ada angsuran.
                     </td>
                   </tr>
@@ -282,6 +283,21 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
                           </a>
                         ) : (
                           '–'
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        {p.hapus && (
+                          <button
+                            type="button"
+                            title="Hapus angsuran (satu slip)"
+                            className="text-rose-600 hover:text-rose-800"
+                            onClick={() =>
+                              window.confirm(`Hapus angsuran ${tgl(p.tanggal)}? Semua bagian dari pembayaran yang sama ikut terhapus.`) &&
+                              router.delete(p.hapus, { preserveScroll: true })
+                            }
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         )}
                       </td>
                     </tr>

@@ -26,34 +26,6 @@ class KoreksiBekuController extends Controller
         abort_unless(auth()->user()?->hasRole('superuser'), 403, 'Koreksi data beku khusus superuser.');
     }
 
-    /** Pinjaman kantor aktif yang cocok dengan pencarian (nama / NIK / no. anggota). */
-    private function cari(int $branchId, string $q, ?Carbon $mulai)
-    {
-        $ids = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id');
-
-        return TransactionLoan::with(['customer', 'manage_customer', 'loan_officer_grouping'])
-            ->whereIn('transaction_loan_officer_grouping_id', $ids)
-            ->where('status', 'success')
-            ->when($mulai, fn($w) => $w->where('drop_date', '<', $mulai->toDateString()))
-            ->where(fn($w) => $w
-                ->whereHas('customer', fn($c) => $c->where('nama', 'like', "%{$q}%")->orWhere('nik', 'like', "%{$q}%"))
-                ->orWhereHas('manage_customer', fn($m) => $m->where('nomor_anggota', $q)))
-            ->orderByDesc('drop_date')
-            ->limit(30)
-            ->get()
-            ->map(fn($l) => [
-                'id' => $l->id,
-                'nama' => $l->customer?->nama,
-                'nik' => $l->customer?->nik,
-                'nomor_anggota' => $l->manage_customer?->nomor_anggota,
-                'kelompok' => $l->loan_officer_grouping?->kelompok,
-                'hari' => $l->hari,
-                'drop_date' => Carbon::parse($l->drop_date)->toDateString(),
-                'pinjaman' => (int) $l->pinjaman,
-                'ember' => $mulai ? Ember::dari($l->drop_date, $mulai) : null,
-            ]);
-    }
-
     /**
      * Buku angsuran beku, seperti buku angsuran: kelompok x hari x BULAN DROP.
      * Baris = pinjaman yang di-drop di bulan itu; kolom = tanggal tagih dari
@@ -151,29 +123,15 @@ class KoreksiBekuController extends Controller
         ]);
     }
 
-    /** Pinjaman tujuan untuk aksi "pindah" (JSON). */
-    public function cariTujuan(Request $request)
-    {
-        $this->wajibSuperuser();
-        $branchId = AuthScope::resolve()->branch_id;
-        $q = trim((string) $request->input('q', ''));
-
-        return response()->json(mb_strlen($q) >= 3 ? $this->cari($branchId, $q, null) : []);
-    }
-
     private function aturan(Request $request): array
     {
         return $request->validate([
             'aksi' => ['required', 'in:' . implode(',', KoreksiBeku::AKSI)],
             'angsuran_id' => ['nullable', 'integer'],
             'loan_id' => ['nullable', 'integer'],
-            'loan_tujuan_id' => ['nullable', 'integer'],
             'tanggal' => ['nullable', 'date'],
             'nominal' => ['nullable', 'integer', 'min:0'],
-            'alasan' => ['required', 'string', 'min:10', 'max:1000'],
-        ], [
-            'alasan.required' => 'Alasan wajib diisi.',
-            'alasan.min' => 'Alasan minimal 10 huruf.',
+            'alasan' => ['nullable', 'string', 'max:1000'],
         ]);
     }
 
@@ -184,7 +142,7 @@ class KoreksiBekuController extends Controller
         $v = $this->aturan($request);
 
         try {
-            return response()->json(KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'], false));
+            return response()->json(KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'] ?? '', false));
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -196,7 +154,7 @@ class KoreksiBekuController extends Controller
         $v = $this->aturan($request);
 
         try {
-            KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'], true);
+            KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'] ?? '', true);
         } catch (\RuntimeException $e) {
             return back()->withErrors($e->getMessage());
         }

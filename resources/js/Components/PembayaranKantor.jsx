@@ -12,6 +12,7 @@ import {
   Plane,
   Plus,
   Receipt,
+  Trash2,
   Wallet,
   XCircle,
 } from 'lucide-react';
@@ -120,22 +121,46 @@ const Baris = ({ label, nilai, tebal = false }) => (
   </div>
 );
 
+/** Pembayaran bulan ini (semua), dengan bukti dan tombol hapus kalau server mengizinkan (r.hapus = URL). */
 const Riwayat = ({ isi = [] }) =>
   isi.length > 0 && (
-    <div className="pt-2 mt-2 space-y-0.5 border-t border-dashed">
-      {isi.map((r) => (
-        <div key={r.id} className="flex items-center justify-between text-xs text-slate-600">
-          <span>{tgl(r.tanggal)}</span>
-          <span className="flex items-center gap-2 tabular-nums">
-            {rp(r.nominal)}
-            {r.bukti && (
-              <a href={r.bukti} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-sky-700 hover:underline">
-                <Receipt className="w-3 h-3" /> bukti
-              </a>
-            )}
-          </span>
-        </div>
-      ))}
+    <div className="pt-2 mt-2 border-t border-dashed">
+      <div className="mb-1 text-xs font-semibold text-slate-700">Pembayaran bulan ini</div>
+      <div className="space-y-0.5 max-h-40 overflow-y-auto">
+        {isi.map((r) => (
+          <div key={r.id} className="flex items-center justify-between gap-2 text-xs text-slate-600">
+            <span className="truncate">
+              {tgl(r.tanggal)}
+              {r.keterangan && <span className="ml-1 text-slate-400">{r.keterangan}</span>}
+            </span>
+            <span className="flex items-center gap-2 tabular-nums shrink-0">
+              {rp(r.nominal)}
+              {r.bukti && (
+                <a href={r.bukti} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-sky-700 hover:underline">
+                  <Receipt className="w-3 h-3" /> bukti
+                </a>
+              )}
+              {r.hapus && (
+                <button
+                  type="button"
+                  title="Hapus pembayaran"
+                  className="text-rose-600 hover:text-rose-800"
+                  onClick={() =>
+                    window.confirm(`Hapus pembayaran ${tgl(r.tanggal)} ${rp(r.nominal)}?`) &&
+                    router.delete(r.hapus, {
+                      preserveScroll: true,
+                      preserveState: true,
+                      onSuccess: () => window.dispatchEvent(new Event('pembayaran-kantor:muat-ulang')),
+                    })
+                  }
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
@@ -567,6 +592,13 @@ export default function PembayaranKantor({ videos = {} }) {
     return () => c.abort();
   }, [bulan, muatUlang]);
 
+  // Sesudah hapus dari daftar Riwayat: muat ulang angka kartu.
+  useEffect(() => {
+    const ulang = () => setMuatUlang((n) => n + 1);
+    window.addEventListener('pembayaran-kantor:muat-ulang', ulang);
+    return () => window.removeEventListener('pembayaran-kantor:muat-ulang', ulang);
+  }, []);
+
   const tutup = () => {
     setDialog(null);
     setMuatUlang((n) => n + 1); // angka kartu ikut terbarui sesudah simpan
@@ -719,6 +751,7 @@ export default function PembayaranKantor({ videos = {} }) {
             <Baris label="Saldo SK" nilai={rp(k.sksw.saldo_sk)} tebal />
             <Baris label="Masuk bulan ini" nilai={rp(k.sksw.masuk)} />
             <Baris label="Keluar bulan ini" nilai={rp(k.sksw.keluar)} />
+            <Riwayat isi={k.sksw.riwayat} />
           </Kartu>
         </div>
       )}

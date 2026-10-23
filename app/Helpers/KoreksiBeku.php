@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\DB;
  */
 class KoreksiBeku
 {
-    public const AKSI = ['ubah', 'hapus', 'tambah', 'pindah'];
+    public const AKSI = ['ubah', 'hapus', 'tambah'];
 
     private const KOLOM = [
         'awal_month1', 'awal_month2', 'awal_ccm', 'awal_cm', 'awal_mb', 'awal_ml',
@@ -41,7 +41,7 @@ class KoreksiBeku
 
     /**
      * @param array $data ubah: angsuran_id, nominal | hapus: angsuran_id |
-     *                    tambah: loan_id, tanggal, nominal | pindah: angsuran_id, loan_tujuan_id
+     *                    tambah: loan_id, tanggal, nominal
      * @return array{dampak:array, log_id:?int}
      * @throws \RuntimeException pesan untuk ditampilkan ke user
      */
@@ -54,11 +54,10 @@ class KoreksiBeku
         if (!in_array($aksi, self::AKSI, true)) {
             throw new \RuntimeException('Aksi tidak dikenal.');
         }
-        if (mb_strlen(trim($alasan)) < 10) {
-            throw new \RuntimeException('Alasan wajib diisi, minimal 10 huruf.');
-        }
+        // Alasan boleh kosong (mas 2026-10-23): diisi bawaan.
+        $alasan = trim($alasan) ?: 'selisih penyesuaian';
 
-        $angsuran = in_array($aksi, ['ubah', 'hapus', 'pindah'], true)
+        $angsuran = in_array($aksi, ['ubah', 'hapus'], true)
             ? TransactionLoanInstalment::findOrFail($data['angsuran_id'] ?? 0)
             : null;
         $loan = $angsuran ? $angsuran->loan : TransactionLoan::findOrFail($data['loan_id'] ?? 0);
@@ -77,7 +76,6 @@ class KoreksiBeku
             throw new \RuntimeException('Angsuran ini pelunasan otomatis topup - tidak bisa dikoreksi di sini.');
         }
 
-        $tujuan = null;
         $nominal = null;
         if (in_array($aksi, ['ubah', 'tambah'], true)) {
             $nominal = (int) ($data['nominal'] ?? -1);
@@ -87,16 +85,6 @@ class KoreksiBeku
         }
         if ($aksi === 'tambah' && $tanggal->lt(Carbon::parse($loan->drop_date)->startOfDay())) {
             throw new \RuntimeException('Tanggal angsuran sebelum tanggal drop pinjaman.');
-        }
-        if ($aksi === 'pindah') {
-            $tujuan = TransactionLoan::findOrFail($data['loan_tujuan_id'] ?? 0);
-            $branchTujuan = (int) TransactionLoanOfficerGrouping::whereKey($tujuan->transaction_loan_officer_grouping_id)->value('branch_id');
-            if ($tujuan->id === $loan->id || $branchTujuan !== $branchId || $tujuan->status !== 'success') {
-                throw new \RuntimeException('Pinjaman tujuan harus pinjaman lain yang sukses di kantor yang sama.');
-            }
-            if ($tanggal->lt(Carbon::parse($tujuan->drop_date)->startOfDay())) {
-                throw new \RuntimeException('Tanggal angsuran sebelum tanggal drop pinjaman tujuan.');
-            }
         }
 
         $ids = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id')->all();
@@ -112,7 +100,7 @@ class KoreksiBeku
 
             DB::statement('SET @koreksi_beku = 1');
             try {
-                $sesudah = self::kerjakan($aksi, $angsuran, $loan, $tujuan, $tanggal, $nominal, $user);
+                $sesudah = self::kerjakan($aksi, $angsuran, $loan, $tanggal, $nominal, $user);
             } finally {
                 DB::statement('SET @koreksi_beku = NULL');
             }
@@ -152,7 +140,7 @@ class KoreksiBeku
         return ['dampak' => $dampak, 'log_id' => $logId];
     }
 
-    private static function kerjakan(string $aksi, ?TransactionLoanInstalment $angsuran, TransactionLoan $loan, ?TransactionLoan $tujuan, Carbon $tanggal, ?int $nominal, $user): ?array
+    private static function kerjakan(string $aksi, ?TransactionLoanInstalment $angsuran, TransactionLoan $loan, Carbon $tanggal, ?int $nominal, $user): ?array
     {
         switch ($aksi) {
             case 'ubah':
@@ -177,16 +165,6 @@ class KoreksiBeku
                     'user_mantri' => $loan->user_mantri,
                 ]);
                 return self::isi($baru);
-
-            case 'pindah':
-                $angsuran->update([
-                    'transaction_loan_id' => $tujuan->id,
-                    'transaction_loan_officer_grouping_id' => $tujuan->transaction_loan_officer_grouping_id,
-                    'status' => AppHelper::generateStatusAngsuran($tujuan->drop_date, $tanggal->toDateString()),
-                ]);
-                $loan->hitungUlangPelunasan();
-                $tujuan->hitungUlangPelunasan();
-                return self::isi($angsuran->fresh());
         }
 
         return null;

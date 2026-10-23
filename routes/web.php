@@ -41,6 +41,7 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorCo
     Route::get('/modal/pratinjau', 'pratinjauModal')->name('modal.pratinjau');
     Route::post('/modal/pinjaman', 'tambahModal')->name('modal.tambah');
     Route::delete('/umrah/{id}', 'destroyUmrah')->whereNumber('id')->name('umrah.destroy');
+    Route::delete('/modal/{id}', 'hapusModal')->whereNumber('id')->name('modal.destroy');
     Route::get('/goro-umrah', 'detailUmrah')->name('goro_umrah');
     Route::get('/pinjaman-modal', 'detailModal')->name('pinjaman_modal');
     Route::get('/bukti/{modul}/{id}', 'bukti')->whereIn('modul', ['tb', 'bop', 'umrah', 'modal', 'pinjaman'])->whereNumber('id')->name('bukti');
@@ -91,6 +92,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/{asset}', 'update')->whereNumber('asset')->name('update');
     Route::delete('/{asset}', 'destroy')->whereNumber('asset')->name('destroy');
     Route::post('/{asset}/mutate', 'mutate')->whereNumber('asset')->name('mutate');
+    Route::delete('/{asset}/mutate', 'revertMutate')->whereNumber('asset')->name('mutate.revert');
     Route::post('/{asset}/maintenance', 'addMaintenance')->whereNumber('asset')->name('maintenance.store');
   });
   });
@@ -214,8 +216,6 @@ Route::middleware('auth')->group(function () {
     // Koreksi Pasca Migrasi (superuser): koreksi angsuran sebelum tanggal migrasi + log.
     Route::get('/koreksi-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'index'])
       ->name('koreksi_beku');
-    Route::get('/koreksi-beku/tujuan', [\App\Http\Controllers\KoreksiBekuController::class, 'cariTujuan'])
-      ->name('koreksi_beku_tujuan');
     Route::post('/koreksi-beku/pratinjau', [\App\Http\Controllers\KoreksiBekuController::class, 'pratinjau'])
       ->name('koreksi_beku_pratinjau');
     Route::post('/koreksi-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'simpan'])

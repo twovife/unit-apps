@@ -3,6 +3,7 @@ import Sidebar from '@/Components/Sidebar';
 import Navbar from '@/Components/Navbar';
 import SweetAlert from '@/Components/SweetAlert';
 import Loading from '@/Components/Loading';
+import { Toaster } from '@/shadcn/ui/sonner';
 import { SidebarProvider, SidebarInset } from '@/shadcn/ui/sidebar';
 
 // Tiap halaman Inertia memasang layout ini ulang, jadi SidebarProvider mulai
@@ -24,6 +25,7 @@ export default function Authenticated({ header, children, loading = false }) {
         flash.message && <SweetAlert type="success" message={flash.message} keys={flash} />
       )}
       <Loading show={loading} />
+      <Toaster richColors closeButton />
 
       <Sidebar />
       {/* min-w-0: tanpa ini isi yang lebar (tabel) melebarkan seluruh halaman,
