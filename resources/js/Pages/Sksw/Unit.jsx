@@ -76,9 +76,9 @@ function InputRupiah({ value, onChange, disabled, placeholder = '0', className =
 
 /** Input setoran bulanan SW/SK banyak karyawan sekaligus (sksw.setoran). */
 function DialogSetoran({ open, onClose, rows, period }) {
-  const hariIni = new Date().toLocaleDateString('sv');
-  const akhirPeriode = new Date(Number(period.slice(0, 4)), Number(period.slice(5, 7)), 0).toLocaleDateString('sv');
-  const [tanggal, setTanggal] = useState(hariIni);
+  // Setoran SKSW per bulan: yang dipilih bulannya, dikirim sebagai tanggal 1.
+  const bulanIni = new Date().toLocaleDateString('sv').slice(0, 7);
+  const [bulan, setBulan] = useState(bulanIni);
   const [isi, setIsi] = useState({});
   const [checked, setChecked] = useState({});
   const [galat, setGalat] = useState(null);
@@ -86,7 +86,7 @@ function DialogSetoran({ open, onClose, rows, period }) {
 
   useEffect(() => {
     if (!open) return;
-    setTanggal(akhirPeriode < hariIni ? akhirPeriode : hariIni);
+    setBulan(period < bulanIni ? period : bulanIni);
     const initialIsi = {};
     const initialChecked = {};
     rows.forEach((r) => {
@@ -140,7 +140,7 @@ function DialogSetoran({ open, onClose, rows, period }) {
 
   const simpan = () => {
     setProses(true);
-    router.post(route('sksw.setoran'), { transaction_date: tanggal, items }, {
+    router.post(route('sksw.setoran'), { transaction_date: `${bulan}-01`, items }, {
       preserveScroll: true,
       onError: (e) => setGalat(Object.values(e).join(' ')),
       onSuccess: onClose,
@@ -161,14 +161,14 @@ function DialogSetoran({ open, onClose, rows, period }) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
           <div className="grid gap-1">
             <label className="text-xs font-semibold text-slate-700" htmlFor="tgl-setoran">
-              Tanggal setoran
+              Bulan setoran
             </label>
             <Input
               id="tgl-setoran"
-              type="date"
-              max={hariIni}
-              value={tanggal}
-              onChange={(e) => setTanggal(e.target.value)}
+              type="month"
+              max={bulanIni}
+              value={bulan}
+              onChange={(e) => e.target.value && setBulan(e.target.value)}
               className="w-40 h-8 text-xs bg-white"
             />
           </div>
@@ -273,9 +273,10 @@ function DialogSetoran({ open, onClose, rows, period }) {
 
 /** Form pendaftaran rekening SKSW untuk pegawai baru (sksw.buka-rekening). */
 function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch }) {
-  const hariIni = new Date().toLocaleDateString('sv');
+  // Buka tabungan per bulan: yang dipilih bulannya, dikirim sebagai tanggal 1.
+  const bulanIni = new Date().toLocaleDateString('sv').slice(0, 7);
   const [employeeId, setEmployeeId] = useState('');
-  const [tglDaftar, setTglDaftar] = useState(hariIni);
+  const [tglDaftar, setTglDaftar] = useState(bulanIni);
   const [nomorRekening, setNomorRekening] = useState('');
   const [saldoAwalSw, setSaldoAwalSw] = useState(0);
   const [saldoAwalSk, setSaldoAwalSk] = useState(0);
@@ -284,7 +285,7 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
 
   useEffect(() => {
     if (!open) return;
-    setTglDaftar(hariIni);
+    setTglDaftar(bulanIni);
     setEmployeeId(unregisteredEmployees[0]?.id ? String(unregisteredEmployees[0].id) : '');
     setNomorRekening('');
     setSaldoAwalSw(0);
@@ -303,7 +304,7 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
       route('sksw.buka-rekening'),
       {
         employee_id: employeeId,
-        tgl_daftar: tglDaftar,
+        tgl_daftar: `${tglDaftar}-01`,
         nomor_rekening: nomorRekening || null,
         saldo_awal_sw: saldoAwalSw || 0,
         saldo_awal_sk: saldoAwalSk || 0,
@@ -367,11 +368,12 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Tanggal Daftar *</label>
+                  <label className="text-xs font-semibold text-slate-700">Bulan Daftar *</label>
                   <Input
-                    type="date"
+                    type="month"
+                    max={bulanIni}
                     value={tglDaftar}
-                    onChange={(e) => setTglDaftar(e.target.value)}
+                    onChange={(e) => e.target.value && setTglDaftar(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
