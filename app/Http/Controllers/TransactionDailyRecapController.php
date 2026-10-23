@@ -337,14 +337,27 @@ class TransactionDailyRecapController extends Controller
       'transaction_loan_officer_grouping_id' => $grouping->id,
       'date' => Carbon::parse($val['date'])->toDateString(),
     ]);
+    // Bawaan 0 untuk semua isian (keputusan mas 2026-10-09): kosong = 0.
+    $nilai = (int) ($val['nilai'] ?? 0);
+    $dibuka = false;
     if ($closing->kasir_lock_at) {
-      return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
+      // Hari terkunci: hanya superuser / can-edit, dan kuncinya dibuka supaya kasir
+      // mengunci ulang (mas 2026-10-23). Nilai sama -> tidak ada yang dibuka.
+      if (!\App\Helpers\Gembok::bolehBuka(auth()->user())) {
+        return redirect()->back()->withErrors('Hari ini sudah dikunci kasir.');
+      }
+      if ((int) $closing->{$val['kolom']} === $nilai) {
+        return redirect()->back();
+      }
+      $closing = \App\Helpers\Gembok::buka($closing, auth()->user(), 'Dibuka otomatis: ubah ' . $nama[$val['kolom']]);
+      $dibuka = true;
     }
 
-    // Bawaan 0 untuk semua isian (keputusan mas 2026-10-09): kosong = 0.
-    $closing->update([$val['kolom'] => (int) ($val['nilai'] ?? 0)]);
+    $closing->update([$val['kolom'] => $nilai]);
 
-    return redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
+    return $dibuka
+      ? redirect()->back()->with('peringatan', $nama[$val['kolom']] . ' diubah — kunci hari ini dibuka, kasir perlu mengunci lagi.')
+      : redirect()->back()->with('message', $nama[$val['kolom']] . ' tersimpan.');
   }
 
   /**

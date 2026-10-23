@@ -121,7 +121,8 @@ const DialogKunci = ({ baris, onClosed, onBukaDrop = null }) => {
               <Baris label="Transport" nilai={rb(baris.transport)} />
               <Baris label="Tunai" nilai={rb(baris.tunai)} tebal />
               <Baris label="Titipan 9%" nilai={rb(baris.titipan9)} />
-              {migrasi && (
+              {/* Disembunyikan dulu (mas 2026-10-23), sama dengan tabel Rekap 1. */}
+              {false && migrasi && (
                 <>
                   <Baris label="Sisa Uang" nilai={rb(baris.sisa_uang)} tebal />
                   <Baris label="SU Lapangan" nilai={rb(baris.su_lapangan ?? baris.storting_cash)} />

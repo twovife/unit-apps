@@ -202,13 +202,16 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
   // Kantor belum migrasi (mas 2026-10-12): kolom setoran tidak ada, kasir
   // hanya mengisi kasbon & transport (disimpan ke tabel lama).
   const migrasi = !!server_filter?.migrasi;
-  const KOLOM_TAMPIL = migrasi ? KOLOM : KOLOM.filter(([k]) => !KHUSUS_MIGRASI.includes(k));
+  // Kolom setoran (Sisa Uang s/d -/+) disembunyikan juga untuk kantor migrasi
+  // (mas 2026-10-23): Rekap 1 disamakan dulu dengan Rekap 1 lama. Datanya tetap dikirim.
+  const KOLOM_TAMPIL = KOLOM.filter(([k]) => !KHUSUS_MIGRASI.includes(k));
   // Sel isian aktif: baris harian. Alur baru: sampai dikunci kasir. Kantor
   // lama: TTD kasir hanya tanda tangan, kasbon & transport tetap bisa diedit.
   const bisaIsi = (r, k) =>
     !bacaSaja &&
     !!KOLOM_ISI[k] &&
-    (migrasi ? !r.status_approve_kasir : ISI_LAMA.includes(k)) &&
+    // Hari terkunci tetap bisa diisi superuser / can-edit; server membuka kuncinya.
+    (migrasi ? !r.status_approve_kasir || bolehBukaKunci : ISI_LAMA.includes(k)) &&
     r.type == 'daily' && auth?.permissions?.includes('can-approve');
   const total = Object.fromEntries(
     KOLOM.map(([k]) => [k, datas.reduce((a, r) => a + (Number(r[k]) || 0), 0)]),
