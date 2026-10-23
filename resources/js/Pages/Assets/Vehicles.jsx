@@ -202,21 +202,7 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                         )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums">Rp {rupiah(asset.purchase_cost)}</TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDate(asset.vehicle?.tanggal_pajak_tahunan)}
-                        {canInputTax && asset.status === 'aktif' && asset.vehicle && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="ml-2 h-7 gap-1 px-2 text-xs"
-                            onClick={() => setDetail({ id: asset.id, name: asset.name, bayarPajak: true })}
-                          >
-                            <Wallet className="size-3.5" />
-                            Bayar Pajak
-                          </Button>
-                        )}
-                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_pajak_tahunan)}</TableCell>
                       <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_stnk)}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {asset.status === 'aktif' ? (
@@ -259,7 +245,6 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
         onClose={() => setDetail(null)}
         onEdit={canEditVehicleRegistration ? (asset) => { setDetail(null); setEditAsset(asset); setFormOpen(true); } : null}
         bolehKelola={bolehKelola}
-        bayarPajak={!!detail?.bayarPajak}
       />
       <VehicleAssetForm
         open={formOpen}

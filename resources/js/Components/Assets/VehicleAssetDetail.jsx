@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Check, CheckCircle2, ChevronsUpDown, Loader2, MapPin, Pencil, Trash2, Wrench } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/shadcn/ui/badge';
 import { Button } from '@/shadcn/ui/button';
@@ -78,7 +78,7 @@ function Modal({ title, description, children, onClose }) {
   );
 }
 
-export default function VehicleAssetDetail({ assetId, assetName, branches, onClose, onEdit, bolehKelola = false, bayarPajak = false }) {
+export default function VehicleAssetDetail({ assetId, assetName, branches, onClose, onEdit, bolehKelola = false }) {
   const { auth } = usePage().props;
   const canDelete = !auth?.roles?.includes('kasir');
   const canInputTax = auth?.roles?.includes('superuser') || auth?.permissions?.includes('input-vehicles-tax');
@@ -121,7 +121,6 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
   };
 
   useEffect(() => {
-    pajakDibuka.current = false;
     if (!assetId) {
       setPayload(null);
       return undefined;
@@ -192,16 +191,6 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
       },
     });
   };
-
-  // Dibuka dari tombol "Bayar Pajak" di daftar: langsung ke tab pajak + form bayar,
-  // sekali per buka, sesudah detail kendaraan itu termuat.
-  const pajakDibuka = useRef(false);
-  useEffect(() => {
-    if (!bayarPajak || pajakDibuka.current || payload?.asset?.id !== assetId) return;
-    pajakDibuka.current = true;
-    setActiveTab('taxes');
-    openTaxPayment();
-  }, [payload, bayarPajak]);
 
   const openTaxPayment = () => {
     if (!asset?.vehicle) return;
