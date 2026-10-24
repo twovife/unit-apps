@@ -124,6 +124,53 @@ class TutupBulanan
         return $hasil;
     }
 
+    /**
+     * Isi baris bulanan hasil hitung SEKARANG, tanpa menulis apa pun (saldo awal
+     * selalu ikut dihitung). Dipakai Koreksi Data Beku untuk mengukur dampak
+     * koreksi saja: hitung sebelum & sesudah, selisihnya yang ditulis.
+     *
+     * @return array<string,array<string,int>>  kunci "groupingId|hari"
+     */
+    public static function hitung(array $groupingIds, $periode): array
+    {
+        $periode = Carbon::parse($periode)->startOfMonth();
+        $arus = self::arusDariHarian($groupingIds, $periode);
+        $kelengkapan = self::kelengkapan($groupingIds, $periode);
+        $awal = HitungAgregat::portofolio($groupingIds, $periode->copy()->subDay(), $periode);
+        $akhir = HitungAgregat::portofolio($groupingIds, $periode->copy()->endOfMonth(), $periode);
+        $saldoMasuk = HitungAgregat::saldoMasuk($groupingIds, $periode);
+
+        $out = [];
+        foreach (array_unique(array_merge(array_keys($arus), array_keys($awal), array_keys($akhir), array_keys($kelengkapan))) as $k) {
+            $out[$k] = self::rakit($arus[$k] ?? [], $awal[$k] ?? [], $akhir[$k] ?? [], $saldoMasuk[$k] ?? 0,
+                $kelengkapan[$k] ?? ['hari_kerja' => 0, 'hari_terkunci' => 0], null, true);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Tambahkan selisih ke baris bulanan TERSIMPAN (bukan hitung ulang penuh):
+     * angka lain di baris itu - termasuk hari yang belum dikunci - dibiarkan.
+     * Baris yang sudah diteken ditulis ulang dengan jejak 'perbarui'.
+     *
+     * ponytail: penjumlahan bertahap, satu-satunya pengecualian aturan "selalu hitung
+     * ulang penuh" di atas - hanya untuk Koreksi Data Beku (mas 2026-10-24: tampilkan
+     * & tulis dampak koreksinya saja). Hitung ulang penuh berikutnya tetap membetulkan.
+     */
+    public static function tambahkan(TransactionMonthlyClosing $baris, array $selisih, array $perbarui): void
+    {
+        $isi = [];
+        foreach ($selisih as $kolom => $d) {
+            $isi[$kolom] = (int) $baris->$kolom + $d;
+        }
+        if ($baris->kasir_lock_at !== null) {
+            self::tulisUlangTerkunci($baris, $isi, $perbarui);
+        } else {
+            $baris->update($isi);
+        }
+    }
+
     private static function berubah(TransactionMonthlyClosing $baris, array $isi): bool
     {
         // Hitungan hari (kelengkapan) tidak dihitung sebagai perubahan: buka

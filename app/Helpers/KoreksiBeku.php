@@ -87,7 +87,8 @@ class KoreksiBeku
             throw new \RuntimeException('Tanggal angsuran sebelum tanggal drop pinjaman.');
         }
 
-        $ids = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id')->all();
+        // Hanya kelompok pinjaman ini (mas 2026-10-24): kelompok lain tidak berubah oleh koreksi.
+        $ids = [(int) $loan->transaction_loan_officer_grouping_id];
         $bulan = [];
         for ($b = $mulai->copy()->startOfMonth(); $b->lte(Carbon::now()->startOfMonth()->addMonthNoOverflow()); $b->addMonthNoOverflow()) {
             $bulan[] = $b->copy();
@@ -97,6 +98,11 @@ class KoreksiBeku
         try {
             $potretAwal = self::potret($ids, $bulan);
             $sebelum = $angsuran ? self::isi($angsuran) : null;
+            // Dampak = hitungan SESUDAH - SEBELUM koreksi, keduanya dari data sekarang.
+            // Angka tersimpan yang belum mengikuti data (hari belum dikunci) tidak ikut
+            // terbawa: yang ditulis hanya selisih akibat koreksi (mas 2026-10-24).
+            $hitungSemua = fn() => array_map(fn($b) => TutupBulanan::hitung($ids, $b), $bulan);
+            $hitungSebelum = $hitungSemua();
 
             DB::statement('SET @koreksi_beku = 1');
             try {
@@ -105,12 +111,34 @@ class KoreksiBeku
                 DB::statement('SET @koreksi_beku = NULL');
             }
 
-            foreach ($bulan as $b) {
-                TutupBulanan::susun($ids, $b, true, [
-                    'employee_id' => $user->employee?->id,
-                    'sumber' => 'koreksi data beku (' . $aksi . '): ' . trim($alasan),
-                    'paksa_awal' => true,
-                ]);
+            $hitungSesudah = $hitungSemua();
+            $perbarui = [
+                'employee_id' => $user->employee?->id,
+                'sumber' => 'koreksi data beku (' . $aksi . '): ' . trim($alasan),
+            ];
+            foreach ($bulan as $i => $b) {
+                foreach (array_unique(array_merge(array_keys($hitungSebelum[$i]), array_keys($hitungSesudah[$i]))) as $k) {
+                    $selisih = [];
+                    foreach (array_diff_key($hitungSesudah[$i][$k] ?? $hitungSebelum[$i][$k], ['hari_kerja' => 0, 'hari_terkunci' => 0]) as $kolom => $_) {
+                        $d = ($hitungSesudah[$i][$k][$kolom] ?? 0) - ($hitungSebelum[$i][$k][$kolom] ?? 0);
+                        if ($d !== 0) {
+                            $selisih[$kolom] = $d;
+                        }
+                    }
+                    if (!$selisih) {
+                        continue;
+                    }
+                    [$g, $hari] = explode('|', $k);
+                    $baris = TransactionMonthlyClosing::where('transaction_loan_officer_grouping_id', $g)
+                        ->where('hari', $hari)->whereDate('periode', $b->toDateString())->first();
+                    if ($baris) {
+                        TutupBulanan::tambahkan($baris, $selisih, $perbarui);
+                    } else {
+                        TransactionMonthlyClosing::create(array_merge($hitungSesudah[$i][$k], [
+                            'transaction_loan_officer_grouping_id' => $g, 'hari' => $hari, 'periode' => $b->toDateString(),
+                        ]));
+                    }
+                }
             }
 
             $dampak = self::selisih($potretAwal, self::potret($ids, $bulan));
