@@ -91,6 +91,9 @@ trait RekapTrait
           'keluar' => (int) $r->keluar,
           'target' => (int) $r->target,
           'cek_km' => $r->kepala_approval_at !== null,
+          // Otomatis alur baru dibaca dari CeklistKepala::daftarOtomatis; kunci ini
+          // wajib ada karena dibaca bersama baris alur lama (prod error 2026-10-24).
+          'km_otomatis' => false,
         ])->groupBy('date');
     } else {
       $daily_recap = TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
