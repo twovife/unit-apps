@@ -45,4 +45,24 @@ class Employee extends Model
   {
     return $this->belongsTo(Employment::class);
   }
+
+  public function employeeBranches()
+  {
+    return $this->hasMany(EmployeeBranch::class);
+  }
+
+  public function employeeZones()
+  {
+    return $this->hasMany(EmployeeZone::class);
+  }
+
+  public function documents()
+  {
+    return $this->hasMany(EmployeeDocument::class);
+  }
+
+  public function savingData()
+  {
+    return $this->hasOne(Saving::class, 'employee_id');
+  }
 }
