@@ -1385,7 +1385,7 @@ class TransactionLoanController extends Controller
       'pecahan_ml' => \App\Helpers\PecahanMacetLama::adalah($loan->notes),
       // Tombol "Hapus Input ML" di detail: aturan akses InputMlController + belum dikunci.
       'hapus_input_ml' => \App\Helpers\PecahanMacetLama::adalah($loan->notes)
-        && AppHelper::bolehRekapPenuh(auth()->user()) && auth()->user()->hasPermissionTo('can-create')
+        && auth()->user()->hasPermissionTo('can-create') && AppHelper::bolehAksesKelompok($loan->loan_officer_grouping)
         && $loan->loan_instalment->every(fn($a) => !AppHelper::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, Carbon::parse($a->transaction_date)->toDateString())),
       'lunas' => $saldo <= 0 && !\App\Helpers\PecahanMacetLama::adalah($loan->notes),
       'alasan_tolak_pengajuan' => $loan->alasanTolakPengajuan(now()->toDateString()),

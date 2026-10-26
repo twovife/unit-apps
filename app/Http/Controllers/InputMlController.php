@@ -26,7 +26,8 @@ class InputMlController extends Controller
 
     private function pastikanBoleh(): int
     {
-        abort_unless(AppHelper::bolehRekapPenuh(auth()->user()), 403, 'Input ML bukan untuk mantri.');
+        // Semua peran ber-can-create, termasuk mantri & KM (mas 2026-10-26); mantri dibatasi
+        // ke kelompoknya sendiri lewat bolehAksesKelompok di simpan / hapus.
         abort_unless(auth()->user()->hasPermissionTo('can-create'), 403, 'Anda tidak mempunyai akses menambahkan.');
         $branchId = (int) AuthScope::getActiveBranchId();
         abort_unless(AgregasiScope::sudahMigrasi($branchId), 422, 'Input ML hanya untuk kantor yang sudah migrasi.');
@@ -111,6 +112,7 @@ class InputMlController extends Controller
     {
         $branchId = $this->pastikanBoleh();
         abort_unless((int) $loan->loan_officer_grouping?->branch_id === $branchId, 404);
+        abort_unless(AppHelper::bolehAksesKelompok($loan->loan_officer_grouping), 403, AppHelper::PESAN_BUKAN_WILAYAH);
         try {
             $hasil = PecahanMacetLama::hapus($loan, auth()->user());
         } catch (\RuntimeException $e) {
@@ -138,6 +140,9 @@ class InputMlController extends Controller
 
         $hasil = DB::transaction(function () use ($v, $branchId) {
             $loan = $this->pinjamanMacetLama($branchId)->firstWhere('id', (int) $v['loan_id']);
+            if ($loan && !AppHelper::bolehAksesKelompok($loan->loan_officer_grouping)) {
+                throw ValidationException::withMessages(['loan_id' => AppHelper::PESAN_BUKAN_WILAYAH]);
+            }
             if (!$loan) {
                 throw ValidationException::withMessages(['loan_id' => 'MACET LAMA tidak ditemukan di kantor ini.']);
             }
