@@ -1232,6 +1232,12 @@ class TransactionLoanController extends Controller
    */
   public function daftar_nasabah(Request $request)
   {
+    return Inertia::render('Pinjaman/DaftarNasabah', $this->dataDaftarNasabah($request));
+  }
+
+  /** Data Daftar Nasabah; dipakai juga menu Ganti Nasabah (GantiNasabahController). */
+  public function dataDaftarNasabah(Request $request): array
+  {
     $scope = \App\Helpers\AuthScope::resolve();
     $grouping = AppHelper::kelompokAktif($scope->branch_id, $scope->kelompok);
     // Bulan drop pakai parameter sendiri (bulan_drop), BUKAN `month` filter global:
@@ -1279,7 +1285,7 @@ class TransactionLoanController extends Controller
       'tanggal_lunas' => ($t = $l->pay_off_date ?? $bayarTerakhir[$l->id] ?? null) ? Carbon::parse($t)->toDateString() : null,
     ]);
 
-    return Inertia::render('Pinjaman/DaftarNasabah', [
+    return [
       'server_filter' => [
         'closed_transaction' => $tutup,
         'bulan_drop' => $bulanDrop,
@@ -1291,7 +1297,7 @@ class TransactionLoanController extends Controller
       ],
       'unit' => \App\Models\Branch::whereKey($scope->branch_id)->value('unit'),
       'nasabah' => $daftar,
-    ]);
+    ];
   }
 
   public function index_pinjaman_macet(Request $request)

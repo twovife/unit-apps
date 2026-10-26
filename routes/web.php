@@ -293,6 +293,21 @@ Route::middleware('auth')->group(function () {
       Route::post('/', 'simpan')->name('simpan');
     });
 
+  // Ubah data nasabah: nama / NIK / No KK / alamat KTP (superuser, dicek di controller).
+  Route::controller(\App\Http\Controllers\UbahNasabahController::class)
+    ->prefix('ubah-nik')->name('ubah_nik.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::put('/{nasabah}', 'simpan')->whereNumber('nasabah')->name('simpan');
+    });
+
+  // Ganti nasabah per pinjaman lewat NIK (superuser, dicek di controller).
+  Route::controller(\App\Http\Controllers\GantiNasabahController::class)
+    ->prefix('ganti-nasabah')->name('ganti_nasabah.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/{loan}/pratinjau', 'pratinjau')->whereNumber('loan')->name('pratinjau');
+      Route::post('/{loan}', 'simpan')->whereNumber('loan')->name('simpan');
+    });
+
   // Video panduan: ganti / hapus (superuser, dicek di controller).
   Route::controller(\App\Http\Controllers\VideoTutorialController::class)
     ->prefix('video-panduan')->name('video_tutorial.')->group(function () {

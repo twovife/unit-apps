@@ -502,6 +502,18 @@ export default function AppSidebar({ ...props }) {
                   active: route().current('mutasi_nasabah.index'),
                 },
                 {
+                  id: 7,
+                  title: 'Ubah Data Nasabah',
+                  link: route('ubah_nik.index'),
+                  active: route().current('ubah_nik.index'),
+                },
+                {
+                  id: 8,
+                  title: 'Ganti Nasabah (NIK)',
+                  link: route('ganti_nasabah.index'),
+                  active: route().current('ganti_nasabah.index'),
+                },
+                {
                   id: 6,
                   title: 'Video Panduan',
                   link: route('video_tutorial.index'),
