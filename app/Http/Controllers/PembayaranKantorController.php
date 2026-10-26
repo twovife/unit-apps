@@ -756,7 +756,7 @@ class PembayaranKantorController extends Controller
         $hariIni = Carbon::today();
 
         return \App\Models\InvVehicle::query()
-            ->with(['asset:id,name,status,category_id', 'asset.currentLocation:id,asset_id,branch_id,pengguna'])
+            ->with(['asset:id,name,status,category_id', 'asset.currentLocation']) // tanpa pilih kolom: latestOfMany join ke tabelnya sendiri -> 'asset_id' ambigu (prod 2026-10-26)
             ->whereHas('asset', fn($q) => $q->where('status', 'aktif')->where('category_id', \App\Models\InvCategory::KENDARAAN)
                 ->whereHas('currentLocation', fn($l) => $l->where('branch_id', $branchId)))
             ->whereDate('tanggal_pajak_tahunan', '<=', $hariIni->copy()->addDays(30))
