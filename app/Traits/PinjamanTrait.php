@@ -1279,7 +1279,9 @@ trait PinjamanTrait
             'nomor_anggota' => $item->manage_customer->nomor_anggota,
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
-            'lunas' => $akhir['saldo'] <= 0,
+            // Pecahan MACET LAMA (Input ML): tanpa tanda lunas, catatan & besar pinjaman.
+            'pecahan_ml' => \App\Helpers\PecahanMacetLama::adalah($item->notes),
+            'lunas' => $akhir['saldo'] <= 0 && !\App\Helpers\PecahanMacetLama::adalah($item->notes),
             // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
             'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
             'pinjaman_ke' => $item->manage_customer->loan->where('drop_date', '<=', $item->drop_date)->where('status', 'success')->count(),

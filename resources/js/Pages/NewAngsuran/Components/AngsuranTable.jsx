@@ -136,7 +136,8 @@ const BEKU = {
   Nama: "sticky left-[200px] shadow-[inset_-1px_0_0_#cbd5e1]",
 };
 
-const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false }) => {
+// tanpaDrop: menu Pinjaman Macet tanpa kolom Drop & Pinjaman, langsung Sisa Awal (mas 2026-10-26).
+const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false, tanpaDrop = false }) => {
   const { auth } = usePage().props;
   // Filter dari halaman, atau dari drawer (FilterAngsuranContext).
   const server_filter = useFilterAngsuran();
@@ -223,7 +224,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
     ["X", "w-10"],
     ["Drop", `${ribuan ? "w-20" : "w-24"} text-right`],
     ["Pinjaman", `${ribuan ? "w-20" : "w-24"} text-right`],
-  ];
+  ].filter(([label]) => !(tanpaDrop && (label === "Drop" || label === "Pinjaman")));
   const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1;
   // Lebar minimum = jumlah lebar kolom (kelas w-N = N x 4px). Kalau layar
   // lebih lebar, tabel mengisi penuh; kalau tidak muat, tabel tetap selebar
@@ -410,8 +411,8 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                       <TableCell className="px-2 py-1.5 text-center">{r.pinjaman_ke}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">{r.x_angs}</TableCell>
                       {/* Pecahan MACET LAMA (Input ML): drop & pinjaman tidak diketahui, tidak ditampilkan. */}
-                      <Angka v={r.pecahan_ml ? null : r.drop} />
-                      <Angka v={r.pecahan_ml ? null : r.pinjaman} kelas="font-medium" />
+                      {!tanpaDrop && <Angka v={r.pecahan_ml ? null : r.drop} />}
+                      {!tanpaDrop && <Angka v={r.pecahan_ml ? null : r.pinjaman} kelas="font-medium" />}
                       {kolomBlok.map((k, j) => {
                         const v = isi(k, r);
                         if (v === null) return <TableCell key={j} className={`bg-slate-100/70 ${garis(k)}`} />;
@@ -438,8 +439,8 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                     Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
                   <TableCell colSpan={7} />
-                  <Angka v={grup.data.reduce((t, r) => t + (r.pecahan_ml ? 0 : Number(r.drop || 0)), 0)} />
-                  <Angka v={grup.data.reduce((t, r) => t + (r.pecahan_ml ? 0 : Number(r.pinjaman || 0)), 0)} />
+                  {!tanpaDrop && <Angka v={grup.data.reduce((t, r) => t + (r.pecahan_ml ? 0 : Number(r.drop || 0)), 0)} />}
+                  {!tanpaDrop && <Angka v={grup.data.reduce((t, r) => t + (r.pecahan_ml ? 0 : Number(r.pinjaman || 0)), 0)} />}
                   {kolomBlok.map((k, j) =>
                     k.lalu && !rinci ? (
                       <TableCell key={j} className={garis(k)} />

@@ -179,7 +179,7 @@ const AngsuranByDate = ({
         }}
       />
       {server_filter.type_show === 'macet' ? (
-        <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} />
+        <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} tanpaDrop />
       ) : (
         <div className="overflow-auto">
           <AngsuranByDateTable datas={datas} />
