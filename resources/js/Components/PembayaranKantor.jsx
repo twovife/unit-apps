@@ -5,6 +5,7 @@ import { Link, router } from '@inertiajs/react';
 import {
   AlertTriangle,
   Building2,
+  Car,
   CheckCircle2,
   ClipboardCheck,
   Landmark,
@@ -752,6 +753,43 @@ export default function PembayaranKantor({ videos = {} }) {
             <Baris label="Masuk bulan ini" nilai={rp(k.sksw.masuk)} />
             <Baris label="Keluar bulan ini" nilai={rp(k.sksw.keluar)} />
             <Riwayat isi={k.sksw.riwayat} />
+          </Kartu>
+          {/* Pajak (her) kendaraan aktif kantor ini: lewat atau <= 30 hari lagi, dihitung dari hari ini. */}
+          <Kartu
+            judul="Pajak Kendaraan"
+            ikon={Car}
+            href={linkKe('assets.index')}
+            warna="bg-sky-100 text-sky-700"
+            tanda={
+              k.kendaraan.length === 0 ? (
+                <Tanda jenis="sudah" teks="Tidak ada yang jatuh tempo" />
+              ) : k.kendaraan.some((v) => v.sisa_hari < 0) ? (
+                <Tanda jenis="belum" teks={`${k.kendaraan.filter((v) => v.sisa_hari < 0).length} lewat jatuh tempo`} />
+              ) : (
+                <Tanda jenis="kurang" teks={`${k.kendaraan.length} jatuh tempo ≤ 30 hari`} />
+              )
+            }
+          >
+            {k.kendaraan.length === 0 ? (
+              <div className="text-sm text-slate-500">Tidak ada kendaraan yang pajaknya lewat atau jatuh tempo 30 hari ke depan.</div>
+            ) : (
+              <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                {k.kendaraan.map((v) => (
+                  <div key={v.asset_id} className="flex items-start justify-between gap-2 text-sm">
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate text-slate-800">
+                        {v.plat} <span className="font-normal text-slate-500">{v.nama}</span>
+                      </div>
+                      <div className="text-xs truncate text-slate-500">{v.pengguna || 'Cadangan'}</div>
+                    </div>
+                    <div className={`text-right text-xs shrink-0 ${v.sisa_hari < 0 ? 'text-rose-600 font-semibold' : 'text-amber-600 font-semibold'}`}>
+                      {tgl(v.tanggal)}
+                      <div>{v.sisa_hari < 0 ? `lewat ${-v.sisa_hari} hari` : v.sisa_hari === 0 ? 'hari ini' : `${v.sisa_hari} hari lagi`}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Kartu>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
-import { Calendar, Car, CircleAlert, Eye, Pencil, Plus, Search, Wallet } from 'lucide-react';
+import { Calendar, Car, CircleAlert, Eye, Pencil, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/shadcn/ui/badge';
@@ -11,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import VehicleAssetDetail from '@/Components/Assets/VehicleAssetDetail';
 import VehicleAssetForm from '@/Components/Assets/VehicleAssetForm';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
-import { rp as rupiah } from '@/lib/rupiah';
 
 const statusLabels = {
   aktif: 'Aktif',
@@ -19,6 +18,7 @@ const statusLabels = {
   hilang: 'Hilang',
   dijual: 'Dijual',
   dihapus: 'Dihapus',
+  'non-aktif': 'Nonaktif',
 };
 
 const statusStyles = {
@@ -32,6 +32,16 @@ const statusStyles = {
 // PIC kosong / '-' / 'Cadangan' = kendaraan cadangan.
 const isCadangan = (pengguna) => !pengguna || pengguna === '-' || pengguna === 'Cadangan';
 
+
+// Sisa hari ke jatuh tempo pajak (her) tahunan; negatif = sudah lewat.
+const sisaHariPajak = (tanggal) => {
+  if (!tanggal) return null;
+  const [y, m, d] = tanggal.slice(0, 10).split('-').map(Number);
+  const hariIni = new Date();
+  hariIni.setHours(0, 0, 0, 0);
+  return Math.round((new Date(y, m - 1, d) - hariIni) / 86400000);
+};
+const BATAS_PAJAK = 30;
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -114,7 +124,12 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
           <SummaryCard title="Total Kendaraan" value={summary.total} icon={Car} description="Terdaftar di kantor aktif" />
           <SummaryCard title="Aktif Dipakai" value={summary.active} icon={Car} description="Status kendaraan aktif" />
           <SummaryCard title="Rusak / Hilang" value={summary.problematic} icon={CircleAlert} description="Perlu tindak lanjut" />
-          <SummaryCard title="Nilai Perolehan" value={`Rp ${rupiah(summary.purchase_value)}`} icon={Wallet} description="Total nilai aset di kantor ini" />
+          <SummaryCard
+            title="Pajak ≤ 30 Hari"
+            value={assets.filter((a) => a.status === 'aktif' && (sisaHariPajak(a.vehicle?.tanggal_pajak_tahunan) ?? Infinity) <= BATAS_PAJAK).length}
+            icon={Calendar}
+            description="Kendaraan aktif yang her-nya lewat / 30 hari lagi"
+          />
         </div>
 
         <Card>
@@ -156,7 +171,6 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                     <TableHead>Plat Nomor</TableHead>
                     <TableHead>Nama Aset</TableHead>
                     <TableHead>Kantor / Pemakai</TableHead>
-                    <TableHead className="text-right">Harga Beli</TableHead>
                     <TableHead>Pajak Tahunan</TableHead>
                     <TableHead>STNK (5 Th)</TableHead>
                     <TableHead>Status</TableHead>
@@ -201,8 +215,21 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                           <div className="text-xs text-muted-foreground">{asset.current_location.pengguna}</div>
                         )}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-right tabular-nums">Rp {rupiah(asset.purchase_cost)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_pajak_tahunan)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {/* Merah = her sudah lewat, kuning = 30 hari lagi atau kurang (kendaraan aktif). */}
+                        {(() => {
+                          const sisa = asset.status === 'aktif' ? sisaHariPajak(asset.vehicle?.tanggal_pajak_tahunan) : null;
+                          const lewat = sisa !== null && sisa < 0;
+                          const dekat = sisa !== null && sisa >= 0 && sisa <= BATAS_PAJAK;
+                          return (
+                            <span className={lewat ? 'font-semibold text-rose-600' : dekat ? 'font-semibold text-amber-600' : ''}>
+                              {formatDate(asset.vehicle?.tanggal_pajak_tahunan)}
+                              {lewat && <span className="block text-xs">lewat {-sisa} hari</span>}
+                              {dekat && <span className="block text-xs">{sisa === 0 ? 'hari ini' : `${sisa} hari lagi`}</span>}
+                            </span>
+                          );
+                        })()}
+                      </TableCell>
                       <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_stnk)}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {asset.status === 'aktif' ? (

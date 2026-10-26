@@ -30,7 +30,6 @@ const BPKB_OPTIONS = [
 ];
 
 const toDateInput = (value) => (value ? String(value).slice(0, 10) : '');
-const moneyInput = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 
 function Field({ label, error, required, children }) {
   return (
@@ -45,12 +44,13 @@ function Field({ label, error, required, children }) {
   );
 }
 
+const STATUS_SAH = ['aktif', 'rusak', 'hilang', 'dijual', 'dihapus'];
+
 export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRegistration, onClose }) {
   const scrollRef = useRef(null);
   const form = useForm({
     name: '',
     purchase_date: '',
-    purchase_cost: '',
     status: 'aktif',
     description: '',
     pengguna: '',
@@ -68,8 +68,9 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
     form.setData({
       name: asset?.name ?? '',
       purchase_date: toDateInput(asset?.purchase_date),
-      purchase_cost: asset ? String(asset.purchase_cost) : '',
-      status: asset?.status ?? 'aktif',
+      // Status di luar pilihan (non-aktif hasil impor lama): dikosongkan, kasir wajib
+      // memilih status sebenarnya (rusak / hilang / dijual / ...) - mas 2026-10-26.
+      status: STATUS_SAH.includes(asset?.status) ? asset.status : asset ? '' : 'aktif',
       description: asset?.description ?? '',
       pengguna: CADANGAN.includes(currentPengguna) ? '' : currentPengguna,
       notes: '',
@@ -162,8 +163,14 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   <option value="rusak">Rusak</option>
                   <option value="hilang">Hilang</option>
                   <option value="dijual">Dijual</option>
+                  <option value="" disabled>— Pilih status —</option>
                   {asset && <option value="dihapus">Dihapus</option>}
                 </select>
+                {asset?.status && !STATUS_SAH.includes(asset.status) && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Status lama "{asset.status}" sudah tidak dipakai. Pilih status sebenarnya: aktif, rusak, hilang, dijual, atau dihapus.
+                  </p>
+                )}
               </Field>
               <Field label="Tanggal Perolehan" error={form.errors.purchase_date} required>
                 <Input
@@ -172,14 +179,6 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   onChange={(event) => form.setData('purchase_date', event.target.value)}
                   className={form.errors.purchase_date ? 'border-destructive focus-visible:ring-destructive' : ''}
                   required
-                />
-              </Field>
-              <Field label="Harga Perolehan (Rp, boleh kosong)" error={form.errors.purchase_cost}>
-                <Input
-                  inputMode="numeric"
-                  value={moneyInput(form.data.purchase_cost)}
-                  onChange={(event) => form.setData('purchase_cost', event.target.value.replace(/\D/g, ''))}
-                  className={form.errors.purchase_cost ? 'border-destructive focus-visible:ring-destructive' : ''}
                 />
               </Field>
               <Field label="Pemakai / PIC (kosong = Cadangan)" error={form.errors.pengguna}>

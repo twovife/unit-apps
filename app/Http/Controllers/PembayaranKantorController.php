@@ -59,6 +59,7 @@ class PembayaranKantorController extends Controller
                 'modal' => $this->modal($branch->id, $awal, $akhir),
                 'sksw' => $this->sksw($branch->id, $awal, $akhir),
                 'umrah' => $this->umrah($branch->id, $awal, $akhir, $periode),
+                'kendaraan' => $this->pajakKendaraan($branch->id),
             ],
         ]);
     }
@@ -744,6 +745,31 @@ class PembayaranKantorController extends Controller
             'keluar' => $ambil('SW', 'keluar') + $ambil('SK', 'keluar'),
             'riwayat' => $riwayat,
         ];
+    }
+
+    /**
+     * Kendaraan aktif di kantor ini yang pajak (her) tahunannya sudah lewat atau jatuh tempo
+     * <= 30 hari lagi (mas 2026-10-26). Selalu dihitung dari HARI INI, tidak ikut pilihan bulan.
+     */
+    private function pajakKendaraan(int $branchId): array
+    {
+        $hariIni = Carbon::today();
+
+        return \App\Models\InvVehicle::query()
+            ->with(['asset:id,name,status,category_id', 'asset.currentLocation:id,asset_id,branch_id,pengguna'])
+            ->whereHas('asset', fn($q) => $q->where('status', 'aktif')->where('category_id', \App\Models\InvCategory::KENDARAAN)
+                ->whereHas('currentLocation', fn($l) => $l->where('branch_id', $branchId)))
+            ->whereDate('tanggal_pajak_tahunan', '<=', $hariIni->copy()->addDays(30))
+            ->orderBy('tanggal_pajak_tahunan')
+            ->get()
+            ->map(fn($v) => [
+                'asset_id' => $v->asset_id,
+                'plat' => $v->plat_nomor,
+                'nama' => $v->asset?->name,
+                'pengguna' => $v->asset?->currentLocation?->pengguna,
+                'tanggal' => $v->tanggal_pajak_tahunan->toDateString(),
+                'sisa_hari' => (int) $hariIni->diffInDays($v->tanggal_pajak_tahunan, false),
+            ])->all();
     }
 
     /** Tabungan Goro Umrah (goro_umroh_setoran). */

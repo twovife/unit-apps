@@ -36,8 +36,7 @@ class VehicleAssetController extends Controller
             ->selectRaw(
                 "COUNT(*) as total,
                 SUM(CASE WHEN status = 'aktif' THEN 1 ELSE 0 END) as active,
-                SUM(CASE WHEN status IN ('rusak', 'hilang') THEN 1 ELSE 0 END) as problematic,
-                COALESCE(SUM(purchase_cost), 0) as purchase_value",
+                SUM(CASE WHEN status IN ('rusak', 'hilang') THEN 1 ELSE 0 END) as problematic",
             )
             ->first();
 
@@ -65,7 +64,6 @@ class VehicleAssetController extends Controller
                 'total' => (int) ($summary->total ?? 0),
                 'active' => (int) ($summary->active ?? 0),
                 'problematic' => (int) ($summary->problematic ?? 0),
-                'purchase_value' => (int) ($summary->purchase_value ?? 0),
             ],
             'canEditVehicleRegistration' => $this->canEditVehicleRegistration($request),
             'canInputTax' => $this->canInputTax($request),
@@ -264,7 +262,7 @@ class VehicleAssetController extends Controller
             $lockedAsset->update([
                 'name' => $validated['name'],
                 'purchase_date' => $validated['purchase_date'],
-                'purchase_cost' => $validated['purchase_cost'] ?? 0, // boleh kosong; kolom NOT NULL
+                // Harga perolehan tidak lagi diisi di form (mas 2026-10-26): angka lama dibiarkan.
                 'status' => $validated['status'],
                 'description' => $validated['description'] ?? null,
             ]);
@@ -611,6 +609,7 @@ class VehicleAssetController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'purchase_date' => ['required', 'date'],
             'purchase_cost' => ['nullable', 'integer', 'min:0'],
+            // non-aktif (impor lama) sengaja TIDAK diterima: kasir harus memilih status sebenarnya.
             'status' => ['required', 'in:aktif,rusak,hilang,dijual,dihapus'],
             'description' => ['nullable', 'string', 'max:5000'],
             'plat_nomor' => ['required', 'string', 'max:50'],
