@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import InputError from '@/Components/InputError';
 import { ExternalLink, Eye, FileText, Paperclip, Pencil, Plus, Search, Trash2, Upload, User, UserPlus } from 'lucide-react';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
-import { pindai } from '@/lib/pindai';
+import { luruskan, pindai } from '@/lib/pindai';
 
 /**
  * Lamaran Kerja (cabang aktif): catat pelamar + unggah dokumen. Edit & hapus
@@ -387,13 +387,78 @@ const ModalLihatDokumen = ({ data, onTutup }) => {
   );
 };
 
+/** Sudut awal atur manual kalau deteksi gagal: kotak 10% dari tepi gambar. */
+const sudutBawaan = (w, h) => ({
+  topLeftCorner: { x: w * 0.1, y: h * 0.1 },
+  topRightCorner: { x: w * 0.9, y: h * 0.1 },
+  bottomRightCorner: { x: w * 0.9, y: h * 0.9 },
+  bottomLeftCorner: { x: w * 0.1, y: h * 0.9 },
+});
+const URUTAN_SUDUT = ['topLeftCorner', 'topRightCorner', 'bottomRightCorner', 'bottomLeftCorner'];
+
+/**
+ * Geser 4 sudut kertas di atas foto. SVG ber-viewBox ukuran kanvas, jadi koordinat titik
+ * = piksel kanvas apa pun ukuran layarnya (layar sentuh & mouse lewat pointer events).
+ */
+const AturSudut = ({ kanvas, sudut, onUbah }) => {
+  const svg = useRef(null);
+  const [geser, setGeser] = useState(null);
+  const url = useMemo(() => kanvas.toDataURL('image/jpeg', 0.85), [kanvas]);
+  const { width: w, height: h } = kanvas;
+  const r = Math.max(w, h) * 0.025;
+
+  const pindah = (e) => {
+    if (!geser) return;
+    const pt = svg.current.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const p = pt.matrixTransform(svg.current.getScreenCTM().inverse());
+    onUbah({ ...sudut, [geser]: { x: Math.min(w, Math.max(0, p.x)), y: Math.min(h, Math.max(0, p.y)) } });
+  };
+
+  return (
+    <svg
+      ref={svg}
+      viewBox={`0 0 ${w} ${h}`}
+      className="w-full max-h-[60vh] touch-none select-none bg-slate-900 rounded-md"
+      onPointerMove={pindah}
+      onPointerUp={() => setGeser(null)}
+      onPointerCancel={() => setGeser(null)}
+    >
+      <image href={url} width={w} height={h} />
+      <polygon
+        points={URUTAN_SUDUT.map((k) => `${sudut[k].x},${sudut[k].y}`).join(' ')}
+        fill="rgba(14,165,233,0.15)"
+        stroke="#0ea5e9"
+        strokeWidth={r / 3}
+      />
+      {URUTAN_SUDUT.map((k) => (
+        <g key={k}>
+          {/* Lingkaran transparan besar = sasaran sentuh jari. */}
+          <circle cx={sudut[k].x} cy={sudut[k].y} r={r * 2.2} fill="transparent" className="cursor-move"
+            onPointerDown={(e) => {
+              e.currentTarget.ownerSVGElement.setPointerCapture(e.pointerId);
+              setGeser(k);
+            }}
+          />
+          <circle cx={sudut[k].x} cy={sudut[k].y} r={r} fill="#fff" stroke="#0ea5e9" strokeWidth={r / 3} pointerEvents="none" />
+        </g>
+      ))}
+    </svg>
+  );
+};
+
 /**
  * Gambar yang dipilih (kamera / file) dipindai dulu: tepi kertas dicari, perspektif
  * diluruskan, latar (meja) dibuang. Kasir memilih Asli atau Hasil scan - deteksi
- * otomatis bisa meleset, jadi hasilnya tidak pernah dipakai diam-diam.
+ * otomatis bisa meleset, jadi hasilnya tidak pernah dipakai diam-diam. Meleset /
+ * tidak terdeteksi: "Atur manual" (geser 4 sudut sendiri).
  */
 const DialogPindai = ({ file, onPilih, onBatal }) => {
   const [hasil, setHasil] = useState(undefined); // undefined = memproses, null = tidak terdeteksi
+  const [kanvas, setKanvas] = useState(null);
+  const [sudut, setSudut] = useState(null);
+  const [atur, setAtur] = useState(false);
   const [galat, setGalat] = useState(null);
   const urlAsli = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   const urlHasil = useMemo(() => (hasil ? URL.createObjectURL(hasil) : null), [hasil]);
@@ -404,9 +469,17 @@ const DialogPindai = ({ file, onPilih, onBatal }) => {
     if (!file) return;
     let batal = false;
     setHasil(undefined);
+    setKanvas(null);
+    setSudut(null);
+    setAtur(false);
     setGalat(null);
     pindai(file)
-      .then((h) => !batal && setHasil(h))
+      .then((h) => {
+        if (batal) return;
+        setKanvas(h.kanvas);
+        setSudut(h.sudut);
+        setHasil(h.hasil);
+      })
       .catch((e) => {
         if (batal) return;
         setGalat(e.message);
@@ -416,6 +489,17 @@ const DialogPindai = ({ file, onPilih, onBatal }) => {
       batal = true;
     };
   }, [file]);
+
+  const mulaiAtur = () => {
+    if (!sudut) setSudut(sudutBawaan(kanvas.width, kanvas.height));
+    setAtur(true);
+  };
+  const terapkan = async () => {
+    setHasil(undefined);
+    const h = await luruskan(kanvas, sudut, file.name).catch(() => null);
+    setHasil(h);
+    setAtur(false);
+  };
 
   const Pratinjau = ({ judul, url, children }) => (
     <div className="grid gap-1">
@@ -430,26 +514,48 @@ const DialogPindai = ({ file, onPilih, onBatal }) => {
     <Dialog open={!!file} onOpenChange={(o) => !o && onBatal()}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Rapikan gambar</DialogTitle>
-          <DialogDescription>Tepi kertas dicari otomatis dan latarnya dibuang. Pilih yang paling jelas.</DialogDescription>
+          <DialogTitle>{atur ? 'Atur sudut kertas' : 'Rapikan gambar'}</DialogTitle>
+          <DialogDescription>
+            {atur
+              ? 'Geser keempat titik ke sudut kertas, lalu Terapkan.'
+              : 'Tepi kertas dicari otomatis dan latarnya dibuang. Pilih yang paling jelas, atau atur sudutnya sendiri.'}
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Pratinjau judul="Asli" url={urlAsli} />
-          <Pratinjau judul="Hasil scan" url={urlHasil}>
-            <span className="px-4 text-sm text-center text-slate-500">
-              {hasil === undefined
-                ? 'Memindai… (pertama kali memuat pemindai ±3 MB, mohon tunggu)'
-                : galat || 'Tepi kertas tidak ditemukan. Pakai gambar asli, atau foto ulang dengan latar yang kontras.'}
-            </span>
-          </Pratinjau>
-        </div>
+        {atur ? (
+          <AturSudut kanvas={kanvas} sudut={sudut} onUbah={setSudut} />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Pratinjau judul="Asli" url={urlAsli} />
+            <Pratinjau judul="Hasil scan" url={urlHasil}>
+              <span className="px-4 text-sm text-center text-slate-500">
+                {hasil === undefined
+                  ? 'Memindai… (pertama kali memuat pemindai ±4 MB, mohon tunggu)'
+                  : galat || 'Tepi kertas tidak ditemukan. Atur sudutnya manual, atau pakai gambar asli.'}
+              </span>
+            </Pratinjau>
+          </div>
+        )}
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onPilih(file)}>
-            Pakai asli
-          </Button>
-          <Button disabled={!hasil} onClick={() => onPilih(hasil)}>
-            Pakai hasil scan
-          </Button>
+          {atur ? (
+            <>
+              <Button variant="outline" onClick={() => setAtur(false)}>
+                Kembali
+              </Button>
+              <Button onClick={terapkan}>Terapkan</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" disabled={!kanvas} onClick={mulaiAtur}>
+                Atur manual
+              </Button>
+              <Button variant="outline" onClick={() => onPilih(file)}>
+                Pakai asli
+              </Button>
+              <Button disabled={!hasil} onClick={() => onPilih(hasil)}>
+                Pakai hasil scan
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
