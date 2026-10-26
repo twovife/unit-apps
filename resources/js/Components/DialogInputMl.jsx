@@ -8,7 +8,7 @@ import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Calendar } from '@/shadcn/ui/calendar';
-import { CalendarIcon, Trash2 } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { rpLengkap as rp, rpInput } from '@/lib/rupiah';
 
 /**
@@ -74,7 +74,7 @@ const TanggalDrop = ({ value, onChange, hari, batas }) => {
 export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
   const [data, setData] = useState(null);
   const [galat, setGalat] = useState(null);
-  const [isi, setIsi] = useState({ nama: '', nik: '', tanggal_drop: '', nominal: '' });
+  const [isi, setIsi] = useState({ nama: '', nik: '', tanggal_drop: '', nominal: '', katrol: true });
   const [proses, setProses] = useState(false);
 
   const muat = () =>
@@ -86,7 +86,7 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
   useEffect(() => {
     if (!buka) return;
     setGalat(null);
-    setIsi({ nama: '', nik: '', tanggal_drop: '', nominal: '' });
+    setIsi({ nama: '', nik: '', tanggal_drop: '', nominal: '', katrol: true });
     muat();
   }, [buka]);
 
@@ -100,7 +100,7 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
       onError: (e) => setGalat(Object.values(e)[0]),
       onSuccess: (p) => {
         if (Object.keys(p.props.errors ?? {}).length) return;
-        setIsi({ nama: '', nik: '', tanggal_drop: '', nominal: '' });
+        setIsi({ nama: '', nik: '', tanggal_drop: '', nominal: '', katrol: true });
         setGalat(null);
         muat(); // sisa & riwayat terbaru; dialog tetap terbuka untuk setoran berikutnya
       },
@@ -111,9 +111,8 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Input ML</DialogTitle>
-          <DialogDescription>
-            Setoran nasabah macet lama yang belum terdaftar. Dicatat ke MACET LAMA kelompok & hari terpilih, saldonya berkurang.
-          </DialogDescription>
+          {/* Radix butuh Description untuk aksesibilitas; teks keterangan dibuang (mas 2026-10-26). */}
+          <DialogDescription className="sr-only">Input ML</DialogDescription>
         </DialogHeader>
 
         {!data && !galat && <div className="text-sm text-slate-500">Memuat…</div>}
@@ -166,6 +165,16 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
                 placeholder={`maks ${rp(ml.sisa)}`}
               />
             </div>
+            {/* Katrol = dana titipan (danatitipan); bawaan tercentang, boleh dilepas. */}
+            <label className="flex items-center gap-2 text-sm font-bold text-red-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-red-600"
+                checked={isi.katrol}
+                onChange={(e) => ubah('katrol', e.target.checked)}
+              />
+              KATROL
+            </label>
           </div>
         )}
         {galat && <div className="p-2 text-sm rounded-md text-rose-700 bg-rose-50">{galat}</div>}
@@ -190,28 +199,6 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
                           {r.nama} <span className="text-slate-400">{r.nik} · drop {dayjs(r.drop).format('DD-MM-YY')}</span>
                         </td>
                         <td className="px-2 py-1 text-right tabular-nums">{rp(r.nominal)}</td>
-                        <td className="px-1 py-1 text-right">
-                          {r.boleh_hapus && (
-                            <button
-                              type="button"
-                              title="Hapus (salah input) - saldo kembali ke MACET LAMA"
-                              className="text-rose-600 hover:text-rose-800"
-                              disabled={proses}
-                              onClick={() =>
-                                window.confirm(`Hapus Input ML ${r.nama} ${rp(r.nominal)}? Saldonya kembali ke MACET LAMA.`) &&
-                                router.delete(route('input_ml.hapus', r.id), {
-                                  preserveScroll: true,
-                                  onStart: () => setProses(true),
-                                  onFinish: () => setProses(false),
-                                  onError: (e) => setGalat(Object.values(e)[0]),
-                                  onSuccess: (p) => !Object.keys(p.props.errors ?? {}).length && muat(),
-                                })
-                              }
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </td>
                       </tr>
                     );
                   })}

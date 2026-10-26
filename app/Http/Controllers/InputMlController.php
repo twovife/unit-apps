@@ -130,6 +130,7 @@ class InputMlController extends Controller
             'nik' => ['required', 'string', 'max:20', 'not_in:' . MigrasiController::NIK_MACET_LAMA],
             'tanggal_drop' => ['required', 'date', 'before:' . PecahanMacetLama::BATAS_DROP],
             'nominal' => ['required', 'integer', 'min:1'],
+            'katrol' => ['boolean'],
         ], [
             'tanggal_drop.before' => 'Nasabah ML harus drop sebelum 1 Juni 2026.',
             'nik.not_in' => 'NIK itu milik MACET LAMA.',

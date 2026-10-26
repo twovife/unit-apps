@@ -23,7 +23,7 @@ import StatusPinjaman from '@/Components/shadcn/StatusPinjaman';
 import BayarAngsuran from './BayarAngsuran';
 import JenisNasabah from './JenisNasabah';
 import DeleteAngsuran from './DeleteAngsuran';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useFilterAngsuran } from '../FilterAngsuran';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
@@ -151,8 +151,23 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   <div className="relative">
                   {customerData.pecahan_ml ? (
                     // Pecahan MACET LAMA: tanpa tanda lunas, setoran berikutnya lewat Input ML.
-                    <div className="px-4 py-6 text-sm text-center border rounded-lg text-slate-600 bg-slate-50">
-                      Setoran ML (pecahan MACET LAMA). Setoran berikutnya nasabah ini lewat tombol <b>Input ML</b> di Pinjaman Macet.
+                    <div className="px-4 py-6 space-y-3 text-sm text-center border rounded-lg text-slate-600 bg-slate-50">
+                      <div>
+                        Setoran ML (pecahan MACET LAMA). Setoran berikutnya nasabah ini lewat tombol <b>Input ML</b> di Pinjaman Macet.
+                      </div>
+                      {customerData.hapus_input_ml && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-200"
+                          onClick={() =>
+                            window.confirm(`Hapus Input ML ${customerData.nama}? Saldonya kembali ke MACET LAMA.`) &&
+                            router.delete(route('input_ml.hapus', customerData.id), { preserveScroll: true, onSuccess: modalIsClosed })
+                          }
+                        >
+                          Hapus Input ML (salah input)
+                        </Button>
+                      )}
                     </div>
                   ) : customerData.lunas ? (
                     // Sudah lunas: tidak ada lagi yang diinput, form diganti kartu.

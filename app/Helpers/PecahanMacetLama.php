@@ -41,7 +41,7 @@ class PecahanMacetLama
     }
 
     /**
-     * @param array{nama:string,nik:string,tanggal_drop:string,nominal:int} $v (nik "UB" -> dibuatkan)
+     * @param array{nama:string,nik:string,tanggal_drop:string,nominal:int,katrol?:bool} $v (nik "UB" -> dibuatkan)
      * @return array ringkasan untuk log / pesan
      */
     public static function simpan(TransactionLoan $ml, array $v, string $tanggalBayar, $user): array
@@ -134,7 +134,8 @@ class PecahanMacetLama
                 'transaction_date' => $tanggalBayar,
                 'nominal' => $nominal,
                 'status' => AppHelper::generateStatusAngsuran($pecahan->drop_date, $tanggalBayar),
-                'danatitipan' => 0,
+                // Katrol (dana titipan): centang di dialog, bawaan ya.
+                'danatitipan' => !empty($v['katrol']) ? 1 : 0,
                 'is_transfer' => false,
                 'user_input' => $user->employee->id,
                 'user_mantri' => AppHelper::getMantri($grouping),
