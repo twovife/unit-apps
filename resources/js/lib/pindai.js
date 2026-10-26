@@ -157,7 +157,7 @@ const cariSudut = (cv, src) => {
  * acuan koordinat sudut; sudut = hasil deteksi atau null; hasil = File lurus atau null.
  * kanvas & sudut dipakai lagi untuk atur manual (luruskan dengan sudut pilihan user).
  */
-export async function pindai(file) {
+export async function pindai(file, { tanpaHasil = false } = {}) {
   await siapkanPemindai();
   const cv = window.cv;
   const img = await bacaGambar(file);
@@ -178,7 +178,8 @@ export async function pindai(file) {
     src.delete();
   }
 
-  return { kanvas, sudut, hasil: sudut ? await luruskan(kanvas, sudut, file.name) : null };
+  // tanpaHasil: alur atur sudut dulu (Lamaran) tidak butuh hasil lurus di langkah ini.
+  return { kanvas, sudut, hasil: sudut && !tanpaHasil ? await luruskan(kanvas, sudut, file.name) : null };
 }
 
 /** Luruskan kanvas dengan 4 sudut (urutan bebas, diurutkan ulang) -> File JPEG atau null. */

@@ -22,6 +22,7 @@ import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
+import DialogPindai, { bisaDipindai } from '@/Components/PindaiGambar';
 import { rpLengkap as rp, rpInput as ribu } from '@/lib/rupiah';
 
 /**
@@ -236,7 +237,15 @@ const Tugas = ({ t }) => {
 export const IsiBukti = ({ file, setFile, galat }) => {
   const ref = useRef(null);
   const [pesan, setPesan] = useState('');
-  // Foto selalu dikecilkan sebelum dikirim (kecilkan); PDF tidak bisa, jadi dicek di sini.
+  const [filePindai, setFilePindai] = useState(null);
+  // Foto dirapikan dulu (atur sudut -> pratinjau); tanpa sudut terdeteksi = gambar utuh,
+  // jadi screenshot bukti transfer tidak terpotong. Lalu dikecilkan saat dikirim (kecilkan).
+  const pilihMentah = (f) => {
+    if (ref.current) ref.current.value = '';
+    if (bisaDipindai(f)) return setFilePindai(f);
+    pilih(f);
+  };
+  // PDF tidak bisa dikecilkan, jadi ukurannya dicek di sini.
   const pilih = (f) => {
     const besar = f && f.type === 'application/pdf' && f.size > MAKS_BUKTI;
     setPesan(besar ? 'PDF maksimal 2MB. Kirim sebagai foto saja.' : '');
@@ -246,7 +255,15 @@ export const IsiBukti = ({ file, setFile, galat }) => {
   return (
     <div className="grid gap-1">
       <Label>Foto bukti transfer (wajib, maks 2MB)</Label>
-      <input ref={ref} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => pilih(e.target.files?.[0])} />
+      <input ref={ref} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => pilihMentah(e.target.files?.[0])} />
+      <DialogPindai
+        file={filePindai}
+        onBatal={() => setFilePindai(null)}
+        onPilih={(f) => {
+          setFilePindai(null);
+          pilih(f);
+        }}
+      />
       <Button type="button" variant="outline" className="justify-start gap-2" onClick={() => ref.current?.click()}>
         <Receipt className="w-4 h-4" />
         {file ? file.name : 'Pilih foto / PDF bukti'}

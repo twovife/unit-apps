@@ -15,9 +15,9 @@ const sidebarTerbuka = () => !/(?:^|;\s*)sidebar:state=false/.test(document.cook
 
 export default function Authenticated({ header, children, loading = false }) {
   const { errors, flash, auth } = usePage().props;
-  // Pemindai dokumen Lamaran (OpenCV ±4 MB) diunduh ke cache di belakang layar, hanya
-  // untuk user bermenu Lamaran. Layout persisten -> sekali per buka aplikasi.
-  const bolehLamaran = !!auth?.menu?.lamaran;
+  // Pemindai dokumen/bukti (OpenCV ±4 MB) diunduh ke cache di belakang layar, hanya untuk
+  // user yang mengunggah (Lamaran / adm kantor). Layout persisten -> sekali per buka aplikasi.
+  const bolehLamaran = !!(auth?.menu?.lamaran || auth?.menu?.admKantor);
   useEffect(() => {
     if (bolehLamaran) unduhPemindaiNanti();
   }, [bolehLamaran]);

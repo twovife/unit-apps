@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shadcn/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
+import DialogPindai, { bisaDipindai } from '@/Components/PindaiGambar';
 
 /** Ukuran area potong di layar dan dimensi hasil ekspor foto (px) */
 const AREA_CROP = 280;
@@ -418,12 +419,21 @@ const DocumentUploaderRow = ({ employee, type, label, existingDoc, bolehUnggah }
   const inputRef = useRef(null);
   const [sedangUpload, setSedangUpload] = useState(false);
   const [sedangHapus, setSedangHapus] = useState(false);
+  const [filePindai, setFilePindai] = useState(null);
 
+  // Foto dokumen dirapikan dulu (atur sudut -> pratinjau -> unggah); PDF langsung.
   const handleFilePilih = (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (bisaDipindai(file)) {
+      setFilePindai(file);
+      return;
+    }
+    kirim(file);
+  };
 
+  const kirim = (file) => {
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Ukuran file maksimal 5MB.');
       return;
@@ -486,6 +496,14 @@ const DocumentUploaderRow = ({ employee, type, label, existingDoc, bolehUnggah }
         accept=".pdf,.jpg,.jpeg,.png"
         className="hidden"
         onChange={handleFilePilih}
+      />
+      <DialogPindai
+        file={filePindai}
+        onBatal={() => setFilePindai(null)}
+        onPilih={(f) => {
+          setFilePindai(null);
+          kirim(f);
+        }}
       />
 
       {/* Info Dokumen */}
