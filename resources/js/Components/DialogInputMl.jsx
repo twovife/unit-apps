@@ -116,12 +116,15 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
         </DialogHeader>
 
         {!data && !galat && <div className="text-sm text-slate-500">Memuat…</div>}
-        {data && !ml && (
-          <div className="p-3 text-sm rounded-md bg-amber-50 text-amber-800">
-            Kelompok {kelompok} hari <span className="capitalize">{hari}</span> tidak punya pinjaman MACET LAMA.
+        {/* Tidak ada MACET LAMA (bucket ML = saldo ML nyata) atau saldonya habis: tidak ada
+            yang bisa dipecah lagi -> setoran lewat buku Macet (mas 2026-10-26). */}
+        {data && (!ml || ml.sisa <= 0) && (
+          <div className="p-3 text-sm font-medium rounded-md bg-emerald-50 text-emerald-800">
+            ML di storting dan di buku macet sudah sesuai, cari nama nasabah ML dulu di buku Macet lalu bayar angsuran (tanpa isi
+            nasabah ulang)
           </div>
         )}
-        {ml && (
+        {ml && ml.sisa > 0 && (
           // Satu kolom, urutan isian ditentukan mas (2026-10-26): NIK, drop, nama, tanggal & nominal angsuran.
           <div className="grid gap-3">
             <div className="p-3 text-sm border rounded-md bg-slate-50">
@@ -208,14 +211,16 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
           </div>
         )}
 
-        <DialogFooter>
-          <Button
-            disabled={proses || !ml?.tanggal_bayar || !isi.nik || !isi.nama.trim() || !isi.tanggal_drop || !Number(isi.nominal)}
-            onClick={simpan}
-          >
-            {proses ? 'Menyimpan…' : 'Simpan setoran'}
-          </Button>
-        </DialogFooter>
+        {ml && ml.sisa > 0 && (
+          <DialogFooter>
+            <Button
+              disabled={proses || !ml.tanggal_bayar || !isi.nik || !isi.nama.trim() || !isi.tanggal_drop || !Number(isi.nominal)}
+              onClick={simpan}
+            >
+              {proses ? 'Menyimpan…' : 'Simpan setoran'}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
