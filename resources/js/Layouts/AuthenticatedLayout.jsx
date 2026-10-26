@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
+import { unduhPemindaiNanti } from '@/lib/pindai';
 import Sidebar from '@/Components/Sidebar';
 import Navbar from '@/Components/Navbar';
 import SweetAlert from '@/Components/SweetAlert';
@@ -13,6 +15,12 @@ const sidebarTerbuka = () => !/(?:^|;\s*)sidebar:state=false/.test(document.cook
 
 export default function Authenticated({ header, children, loading = false }) {
   const { errors, flash, auth } = usePage().props;
+  // Pemindai dokumen Lamaran (OpenCV ±4 MB) diunduh ke cache di belakang layar, hanya
+  // untuk user bermenu Lamaran. Layout persisten -> sekali per buka aplikasi.
+  const bolehLamaran = !!auth?.menu?.lamaran;
+  useEffect(() => {
+    if (bolehLamaran) unduhPemindaiNanti();
+  }, [bolehLamaran]);
 
   return (
     <SidebarProvider defaultOpen={sidebarTerbuka()}>

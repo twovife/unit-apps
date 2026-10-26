@@ -4,6 +4,19 @@ import dayjs from './dayJsConfig';
 import './backTutupOverlay';
 import './lib/pasangAplikasi';
 import './lib/ingatGulir';
+
+// Sesudah deploy, potongan JS lama sudah tidak ada di server: muat ulang halaman
+// supaya mengambil build baru, bukan fitur diam karena impor gagal (anjuran Vite).
+// Dibatasi sekali per 30 detik: kalau potongannya memang rusak, jangan reload berputar.
+window.addEventListener('vite:preloadError', () => {
+  try {
+    if (Date.now() - Number(sessionStorage.getItem('reloadPreload') || 0) < 30000) return;
+    sessionStorage.setItem('reloadPreload', String(Date.now()));
+  } catch {
+    // sessionStorage tidak tersedia: tetap reload sekali.
+  }
+  window.location.reload();
+});
 import { createRoot } from 'react-dom/client';
 
 import { createInertiaApp } from '@inertiajs/react';

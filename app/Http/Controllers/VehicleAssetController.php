@@ -217,7 +217,11 @@ class VehicleAssetController extends Controller
         DB::transaction(function () use ($validated, $branchId, $category) {
             $this->assertUniquePlate($validated['plat_nomor']);
             $year = Carbon::parse($validated['purchase_date'])->year;
-            $codeCount = InvAsset::query()->whereYear('purchase_date', $year)->lockForUpdate()->count() + 1;
+            // Nomor = kode AST-{tahun} terbesar + 1, bukan jumlah aset tahun itu: aset
+            // LEGACY-xxxxx ikut terhitung tapi tidak memakai nomor AST, jadi hitungan
+            // menabrak kode yang sudah ada (prod 2026-10-24: AST-2024-1981 duplikat).
+            $codeCount = (int) InvAsset::query()->where('asset_code', 'like', "AST-{$year}-%")->lockForUpdate()
+                ->max(DB::raw('CAST(SUBSTRING(asset_code, 10) AS UNSIGNED)')) + 1;
             $asset = InvAsset::query()->create([
                 'category_id' => $category->id,
                 'asset_code' => 'AST-' . $year . '-' . str_pad((string) $codeCount, 4, '0', STR_PAD_LEFT),
