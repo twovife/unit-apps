@@ -308,6 +308,14 @@ Route::middleware('auth')->group(function () {
       Route::post('/{loan}', 'simpan')->whereNumber('loan')->name('simpan');
     });
 
+  // Input ML kantor migrasi: setoran nasabah macet lama ke MACET LAMA (dicek di controller).
+  Route::controller(\App\Http\Controllers\InputMlController::class)
+    ->prefix('input-ml')->name('input_ml.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/', 'simpan')->name('simpan');
+      Route::delete('/{loan}', 'hapus')->whereNumber('loan')->name('hapus');
+    });
+
   // Video panduan: ganti / hapus (superuser, dicek di controller).
   Route::controller(\App\Http\Controllers\VideoTutorialController::class)
     ->prefix('video-panduan')->name('video_tutorial.')->group(function () {

@@ -395,7 +395,8 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                         {r.lunas && (
                           <span className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-emerald-500 rounded">Lunas</span>
                         )}
-                        {r.notes && (
+                        {/* Catatan "PECAHAN MACET LAMA #id" hanya penanda sistem, tidak ditampilkan. */}
+                        {r.notes && !r.pecahan_ml && (
                           <span className="block mt-0.5 text-[10px] truncate text-slate-500" title={r.notes}>
                             {r.notes}
                           </span>
@@ -408,8 +409,9 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                       <TableCell className="px-2 py-1.5 capitalize">{r.hari}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">{r.pinjaman_ke}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">{r.x_angs}</TableCell>
-                      <Angka v={r.drop} />
-                      <Angka v={r.pinjaman} kelas="font-medium" />
+                      {/* Pecahan MACET LAMA (Input ML): drop & pinjaman tidak diketahui, tidak ditampilkan. */}
+                      <Angka v={r.pecahan_ml ? null : r.drop} />
+                      <Angka v={r.pecahan_ml ? null : r.pinjaman} kelas="font-medium" />
                       {kolomBlok.map((k, j) => {
                         const v = isi(k, r);
                         if (v === null) return <TableCell key={j} className={`bg-slate-100/70 ${garis(k)}`} />;
@@ -436,8 +438,8 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                     Total {grup.month} · {grup.data.length} nasabah
                   </TableCell>
                   <TableCell colSpan={7} />
-                  <Angka v={grup.data.reduce((t, r) => t + Number(r.drop || 0), 0)} />
-                  <Angka v={grup.data.reduce((t, r) => t + Number(r.pinjaman || 0), 0)} />
+                  <Angka v={grup.data.reduce((t, r) => t + (r.pecahan_ml ? 0 : Number(r.drop || 0)), 0)} />
+                  <Angka v={grup.data.reduce((t, r) => t + (r.pecahan_ml ? 0 : Number(r.pinjaman || 0)), 0)} />
                   {kolomBlok.map((k, j) =>
                     k.lalu && !rinci ? (
                       <TableCell key={j} className={garis(k)} />

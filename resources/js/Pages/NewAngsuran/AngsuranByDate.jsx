@@ -11,6 +11,7 @@ import { FilterIcon, SearchIcon } from 'lucide-react';
 import { Input } from '@/shadcn/ui/input';
 import InputMacet from '../BukuTransaksi/Web/InputMacet';
 import SatuanAngka from '@/Components/SatuanAngka';
+import DialogInputMl from '@/Components/DialogInputMl';
 
 /**
  * CATATAN: cabang `type === 'mobile'` sudah tidak dipakai lagi - caller-nya
@@ -40,6 +41,8 @@ const AngsuranByDate = ({
 }) => {
   const { server_filter, input_macet_mati } = usePage().props;
   const [showInputMacet, setShowInputMacet] = useState(false);
+  // Kantor migrasi: Input Macet diganti Input ML (setoran ke MACET LAMA).
+  const [showInputMl, setShowInputMl] = useState(false);
   const onShowMacet = () => {
     setShowInputMacet(true);
   };
@@ -133,6 +136,11 @@ const AngsuranByDate = ({
               Input Macet
             </Button>
           )}
+          {input_macet_mati && server_filter.type_show === 'macet' && (
+            <Button onClick={() => setShowInputMl(true)} variant="outline">
+              Input ML
+            </Button>
+          )}
         </div>
       </div>
 
@@ -161,6 +169,15 @@ const AngsuranByDate = ({
       {/* Macet memakai buku angsuran yang sama dengan Angsuran Lancar
           (saldo awal, angsuran per tanggal tagih, angsuran, MD, saldo); tabel
           itu punya wadah gulir sendiri. */}
+      <DialogInputMl
+        buka={showInputMl}
+        kelompok={server_filter.kelompok}
+        hari={server_filter.hari}
+        onClosed={() => {
+          setShowInputMl(false);
+          router.reload({ only: ['datas'] });
+        }}
+      />
       {server_filter.type_show === 'macet' ? (
         <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} />
       ) : (

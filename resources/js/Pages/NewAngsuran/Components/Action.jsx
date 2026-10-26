@@ -149,7 +149,12 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 </TabsList>
                 <TabsContent value="input" className="mt-3 space-y-3">
                   <div className="relative">
-                  {customerData.lunas ? (
+                  {customerData.pecahan_ml ? (
+                    // Pecahan MACET LAMA: tanpa tanda lunas, setoran berikutnya lewat Input ML.
+                    <div className="px-4 py-6 text-sm text-center border rounded-lg text-slate-600 bg-slate-50">
+                      Setoran ML (pecahan MACET LAMA). Setoran berikutnya nasabah ini lewat tombol <b>Input ML</b> di Pinjaman Macet.
+                    </div>
+                  ) : customerData.lunas ? (
                     // Sudah lunas: tidak ada lagi yang diinput, form diganti kartu.
                     <div className="flex flex-col items-center gap-1 px-4 py-6 text-center border border-green-200 rounded-lg bg-green-50">
                       <div className="text-base font-semibold text-green-800">Angsuran sudah lunas</div>
@@ -188,7 +193,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                       maupun sukses) - kalau dibongkar, isian & pesan error hilang. */}
                   {!customerData.id ? (
                     loading && <div className="text-xs text-muted-foreground">Memuat…</div>
-                  ) : customerData.lunas ? null : (
+                  ) : customerData.lunas || customerData.pecahan_ml ? null : (
                     <BayarAngsuran
                       triggeredId={customerData.id}
                       triggeredPinjaman={customerData}
@@ -197,7 +202,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                     />
                   )}
                   </div>
-                  {customerData.id && !customerData.lunas && (
+                  {customerData.id && !customerData.lunas && !customerData.pecahan_ml && (
                     <Pengajuan triggeredId={customerData.id} triggeredPinjaman={customerData} terkunci={gateValue} />
                   )}
                 </TabsContent>
@@ -459,15 +464,20 @@ const LoanDetail = ({ customerData }) => {
         </div>
       </div>
 
-      {/* Tingkat 2 - nominal pinjaman, jangkar utama mata */}
+      {/* Tingkat 2 - nominal pinjaman, jangkar utama mata. Pecahan MACET LAMA (Input ML):
+          besar pinjaman tidak diketahui -> tidak ditampilkan (mas 2026-10-26). */}
       <div className="px-3 py-3 border-b">
         <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           Pinjaman
         </div>
-        <FormatNumbering
-          value={customerData.pinjaman}
-          className="text-base font-bold leading-tight text-start tabular-nums text-foreground"
-        />
+        {customerData.pecahan_ml ? (
+          <div className="text-sm font-semibold text-slate-600">Setoran ML (pecahan MACET LAMA)</div>
+        ) : (
+          <FormatNumbering
+            value={customerData.pinjaman}
+            className="text-base font-bold leading-tight text-start tabular-nums text-foreground"
+          />
+        )}
       </div>
 
       {/* Tingkat 3 - identitas & lokasi pinjaman */}

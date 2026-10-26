@@ -110,9 +110,10 @@ const AngsuranTableMobile = ({ datas }) => {
   const [show, setShow] = useState(false);
   const [dropBaru, setDropBaru] = useState(null);
 
-  // Lunas yang tidak dibayar hari ini tidak perlu ditagih -> disembunyikan.
+  // Lunas yang tidak dibayar hari ini tidak perlu ditagih -> disembunyikan (pecahan ML:
+  // tanpa tanda lunas, tapi saldo 0 -> sama).
   const grup = useMemo(
-    () => (datas ?? []).map((g) => ({ ...g, data: g.data.filter((r) => !(r.lunas && !r.is_paid)).sort(urut) })),
+    () => (datas ?? []).map((g) => ({ ...g, data: g.data.filter((r) => !((r.lunas || (r.pecahan_ml && Number(r.saldo) <= 0)) && !r.is_paid)).sort(urut) })),
     [datas]
   );
 
@@ -204,7 +205,7 @@ const AngsuranTableMobile = ({ datas }) => {
               <div className="text-center text-gray-500">{dayjs(r.tanggal_drop).format('DD-MM')}</div>
               <div className="min-w-0 text-sm font-semibold truncate">
                 {r.nama}
-                {r.notes && <BadgeStatus className="ml-1">{r.notes}</BadgeStatus>}
+                {r.notes && !r.pecahan_ml && <BadgeStatus className="ml-1">{r.notes}</BadgeStatus>}
               </div>
               <div className={ANGS}>
                 <Angs r={r} />
@@ -214,7 +215,8 @@ const AngsuranTableMobile = ({ datas }) => {
               <div className={`${KECIL} min-w-0 truncate`}>
                 {r.alamat}
               </div>
-              <div className={`${KECIL} text-right`}>{rb(r.pinjaman)}</div>
+              {/* Pecahan MACET LAMA (Input ML): besar pinjaman tidak ditampilkan. */}
+              <div className={`${KECIL} text-right`}>{r.pecahan_ml ? '–' : rb(r.pinjaman)}</div>
               {/* Sisa tebal & lebih gelap: angka yang paling sering dilihat. */}
               <div className={`${KECIL} text-right font-bold text-gray-800`}>
                 {r.lunas ? <span className="text-green-700">lunas</span> : rb(r.saldo)}

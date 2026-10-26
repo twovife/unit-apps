@@ -39,6 +39,10 @@ class MobileAppsMantriController extends Controller
   public function ml(Request $request)
   {
     $data = $this->getLoanMantri($request, true, true);
+    // Tombol Input ML: kantor migrasi + aturan akses InputMlController (bukan mantri, can-create).
+    $user = auth()->user();
+    $data['input_ml'] = \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId())
+      && \App\Helpers\AppHelper::bolehRekapPenuh($user) && $user->hasPermissionTo('can-create');
     return Inertia::render("MobileApps/Angsuran/Ml", $data);
   }
 }

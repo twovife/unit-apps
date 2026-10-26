@@ -30,6 +30,7 @@ const Angsuran = ({
   type = 'desktop',
   judul = 'Angsuran Lancar',
   videoTutorials,
+  aksi = null, // tombol tambahan di samping judul (mis. Input ML di menu ML)
 }) => {
   const { server_filter } = usePage().props;
   const [stortingBuka, setStortingBuka] = useState(
@@ -61,6 +62,7 @@ const Angsuran = ({
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight">{judul}</h1>
             <VideoTutorialButton videos={videoTutorials} menu="angsuran" buttonText="Video Panduan" />
+            {aksi}
           </div>
           {type === 'desktop' && (
             <p className="text-xs text-muted-foreground">Buku angsuran bulanan per kelompok & hari tagih. <SatuanAngka /></p>

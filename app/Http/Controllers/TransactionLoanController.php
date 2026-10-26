@@ -1382,7 +1382,8 @@ class TransactionLoanController extends Controller
       'pinjaman' => $loan->pinjaman,
       'status_pinjaman' => AppHelper::status_pinjaman($loan->loan_instalment->first()?->status),
       'notes' => $loan->notes ?? null,
-      'lunas' => $saldo <= 0,
+      'pecahan_ml' => \App\Helpers\PecahanMacetLama::adalah($loan->notes),
+      'lunas' => $saldo <= 0 && !\App\Helpers\PecahanMacetLama::adalah($loan->notes),
       'alasan_tolak_pengajuan' => $loan->alasanTolakPengajuan(now()->toDateString()),
       'mantri' => $loan->mantri?->nama_karyawan,
       // Trio "siapa mengerjakan apa" - sama seperti dipakai StatusPengajuan.jsx

@@ -500,7 +500,9 @@ trait PinjamanTrait
           'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
           // ini status lunas
-          'lunas' => $saldo <= 0,
+          // Pecahan MACET LAMA (Input ML): tanpa tanda lunas & besar pinjaman (mas 2026-10-26).
+          'pecahan_ml' => \App\Helpers\PecahanMacetLama::adalah($item->notes),
+          'lunas' => $saldo <= 0 && !\App\Helpers\PecahanMacetLama::adalah($item->notes),
           // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
           'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
           'pinjaman_ke' => $countPinjaman,
@@ -576,7 +578,9 @@ trait PinjamanTrait
 
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
             // ini adalah status lunas
-            'lunas' => $saldo <= 0,
+            // Pecahan MACET LAMA (Input ML): tanpa tanda lunas & besar pinjaman (mas 2026-10-26).
+          'pecahan_ml' => \App\Helpers\PecahanMacetLama::adalah($item->notes),
+          'lunas' => $saldo <= 0 && !\App\Helpers\PecahanMacetLama::adalah($item->notes),
             // Keluar target per akhir bulan terpilih (lingkaran merah di No Ang).
             'keluar_target' => self::keluarTarget($item, $transaction_date->format('Y-m-d')),
             'pinjaman_ke' => $countPinjaman,
@@ -905,7 +909,9 @@ trait PinjamanTrait
           'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
           // ini status lunas
-          'lunas' => $saldo <= 0,
+          // Pecahan MACET LAMA (Input ML): tanpa tanda lunas & besar pinjaman (mas 2026-10-26).
+          'pecahan_ml' => \App\Helpers\PecahanMacetLama::adalah($item->notes),
+          'lunas' => $saldo <= 0 && !\App\Helpers\PecahanMacetLama::adalah($item->notes),
           'drop' => $item->nominal_drop,
           'pinjaman' => $item->pinjaman,
           'hari' => $item->hari,
@@ -972,7 +978,9 @@ trait PinjamanTrait
             'status_pinjaman' => AppHelper::status_pinjaman($item->loan_instalment->first()?->status),
 
             // ini status lunas
-            'lunas' => $saldo <= 0,
+            // Pecahan MACET LAMA (Input ML): tanpa tanda lunas & besar pinjaman (mas 2026-10-26).
+          'pecahan_ml' => \App\Helpers\PecahanMacetLama::adalah($item->notes),
+          'lunas' => $saldo <= 0 && !\App\Helpers\PecahanMacetLama::adalah($item->notes),
             'drop' => $item->nominal_drop,
             'pinjaman' => $item->pinjaman,
             'hari' => $item->hari,
