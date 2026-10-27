@@ -194,6 +194,7 @@ Route::middleware('auth')->group(function () {
     // Cek Selisih Migrasi (superuser): saldo awal vs bucket serah terima, sesuaikan MACET LAMA.
     Route::get('/selisih', [\App\Http\Controllers\SelisihMigrasiController::class, 'index'])->name('selisih');
     Route::post('/selisih/ml', [\App\Http\Controllers\SelisihMigrasiController::class, 'sesuaikanMl'])->name('selisih_ml');
+    Route::post('/selisih/penyesuaian', [\App\Http\Controllers\SelisihMigrasiController::class, 'sesuaikanPenyesuaian'])->name('selisih_penyesuaian');
     // Kesiapan migrasi per kantor (superuser, baca-saja): bucket sistem vs sirkulasi lama + Z.
     Route::get('/kesiapan', [\App\Http\Controllers\MigrasiController::class, 'kesiapanMigrasi'])
       ->name('kesiapan');

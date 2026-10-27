@@ -36,6 +36,7 @@ class SelisihMigrasi
                 ->whereDate('date', $periode)->get()
                 ->groupBy(fn($r) => $r->transaction_loan_officer_grouping_id . '|' . strtolower(trim($r->day)));
             $macetLama = self::macetLama($kelompok->keys()->all());
+            $penyesuaian = self::penyesuaianMl($kelompok->keys()->all(), $periode);
 
             foreach ($bucket as $kunci => $rows) {
                 if ($rows->count() !== 1) {
@@ -61,6 +62,7 @@ class SelisihMigrasi
                     'grouping_id' => (int) $g, 'kelompok' => $kelompok[$g], 'hari' => $hari,
                     'bucket' => $lama, 'sistem' => $kat, 'selisih' => $selisih,
                     'macet_lama' => $ml ? ['id' => $ml->id, 'saldo' => (int) PenyesuaianSaldo::hitungSaldo($ml)['saldo']] : null,
+                    'penyesuaian' => $selisih['ml'] !== 0 ? ($penyesuaian[$kunci] ?? []) : [],
                 ];
             }
         }
@@ -75,6 +77,120 @@ class SelisihMigrasi
             ->whereHas('manage_customer.customers', fn($c) => $c->where('nik', MigrasiController::NIK_MACET_LAMA))
             ->where('status', 'success')->get()
             ->keyBy(fn($l) => $l->transaction_loan_officer_grouping_id . '|' . strtolower($l->hari))->all();
+    }
+
+    /**
+     * Penyesuaian saldo pinjaman ember ML (bulan migrasi) per "groupingId|hari" - calon yang
+     * bisa dikoreksi sebesar selisih ML (mas 2026-10-27: dipilih manual, bukan otomatis).
+     * MACET LAMA (tombolnya sendiri) & pasangan Input ML (PecahanMacetLama) tidak ikut.
+     */
+    private static function penyesuaianMl(array $groupingIds, Carbon $periode): array
+    {
+        $hasil = [];
+        $rows = DB::table('transaction_saldo_adjustments as a')
+            ->join('transaction_loans as l', 'l.id', '=', 'a.transaction_loan_id')
+            ->join('transaction_manage_customers as m', 'm.id', '=', 'l.transaction_manage_customer_id')
+            ->join('transaction_customers as c', 'c.id', '=', 'm.transaction_customer_id')
+            ->whereIn('a.transaction_loan_officer_grouping_id', $groupingIds)
+            ->where('c.nik', '<>', MigrasiController::NIK_MACET_LAMA)
+            ->where(fn($q) => $q->whereNull('l.notes')->orWhere('l.notes', 'not like', PecahanMacetLama::CATATAN . '%'))
+            ->get(['a.id', 'a.transaction_loan_officer_grouping_id as g', 'l.hari', 'l.drop_date', 'c.nama', 'a.jenis', 'a.nominal', 'a.berlaku_bulan', 'a.catatan']);
+        foreach ($rows as $a) {
+            if (Ember::kategori(Ember::dari($a->drop_date, $periode)) !== 'ml') {
+                continue;
+            }
+            $hasil[$a->g . '|' . strtolower($a->hari)][] = [
+                'id' => $a->id, 'nama' => $a->nama, 'jenis' => $a->jenis, 'nominal' => (int) $a->nominal,
+                'berlaku' => Carbon::parse($a->berlaku_bulan)->format('Y-m'), 'catatan' => $a->catatan,
+                'drop' => Carbon::parse($a->drop_date)->toDateString(),
+            ];
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Samakan ML sistem dengan bucket dengan mengoreksi SATU penyesuaian yang dipilih:
+     * efeknya digeser sebesar Z (nominal ± Z sesuai arah jenis; nol = dihapus). Pengaman:
+     * sesudahnya ML sistem harus tepat = bucket, kalau tidak batal. Baris bulanan ikut.
+     */
+    public static function sesuaikanPenyesuaian(int $adjId, $user): array
+    {
+        $adj = TransactionSaldoAdjustment::findOrFail($adjId);
+        $loan = TransactionLoan::findOrFail($adj->transaction_loan_id);
+        $groupingId = (int) $adj->transaction_loan_officer_grouping_id;
+        $hari = strtolower($loan->hari);
+        $baris = collect(self::pindai([DB::table('transaction_loan_officer_groupings')->where('id', $groupingId)->value('branch_id')], true))
+            ->first(fn($b) => $b['grouping_id'] === $groupingId && $b['hari'] === $hari);
+        if (!$baris || !collect($baris['penyesuaian'])->contains('id', $adjId)) {
+            throw new \RuntimeException('Penyesuaian ini bukan calon koreksi selisih ML kelompok & hari itu.');
+        }
+        $z = $baris['bucket']['ml'] - $baris['sistem']['ml'];
+        if ($z === 0 || !isset(TransactionSaldoAdjustment::ARAH[$adj->jenis])) {
+            throw new \RuntimeException('Tidak ada selisih ML / jenis penyesuaian tidak dikenal.');
+        }
+        $nominal = (int) $adj->nominal + TransactionSaldoAdjustment::ARAH[$adj->jenis] * $z;
+        if ($nominal < 0) {
+            throw new \RuntimeException('Nominal penyesuaian (' . number_format($adj->nominal, 0, ',', '.') . ') kurang untuk digeser ' . number_format(abs($z), 0, ',', '.') . '.');
+        }
+        $catatan = 'Cek Selisih Migrasi: penyesuaian #' . $adjId . ' (' . $baris['penyesuaian'][array_search($adjId, array_column($baris['penyesuaian'], 'id'))]['nama'] . ') '
+            . number_format($adj->nominal, 0, ',', '.') . ' -> ' . number_format($nominal, 0, ',', '.');
+
+        return DB::transaction(function () use ($adj, $nominal, $baris, $groupingId, $hari, $z, $catatan, $user) {
+            $bulan = self::bulanSejak(Carbon::parse($baris['mulai']));
+            $hitung = fn() => array_map(fn($b) => TutupBulanan::hitung([$groupingId], $b), $bulan);
+            $sebelum = $hitung();
+            $nominal === 0 ? $adj->delete() : $adj->update(['nominal' => $nominal]);
+
+            $kunci = $groupingId . '|' . $hari;
+            $s = HitungAgregat::portofolio([$groupingId], Carbon::parse($baris['mulai'])->subDay(), $baris['mulai'])[$kunci] ?? [];
+            if (array_sum(array_intersect_key($s, array_flip(Ember::KATEGORI['ml']))) !== $baris['bucket']['ml']) {
+                throw new \RuntimeException('Sesudah dikoreksi ML belum sama dengan bucket (saldo nasabah habis / pindah ember) - dibatalkan, pakai MACET LAMA.');
+            }
+            self::geserBulanan($bulan, $sebelum, $hitung(), $catatan, $user);
+
+            $hasil = ['kantor' => $baris['kantor'], 'kelompok' => $baris['kelompok'], 'hari' => $hari, 'z' => $z, 'adj_id' => $adj->id, 'user_id' => $user->id];
+            Log::info($catatan, $hasil);
+
+            return $hasil;
+        });
+    }
+
+    /** Bulan migrasi s/d bulan depan (baris bulanan yang mungkin tersimpan). */
+    private static function bulanSejak(Carbon $mulai): array
+    {
+        $bulan = [];
+        for ($b = $mulai->copy(); $b->lte(Carbon::now()->startOfMonth()->addMonthNoOverflow()); $b->addMonthNoOverflow()) {
+            $bulan[] = $b->copy();
+        }
+
+        return $bulan;
+    }
+
+    /** Selisih hitung sebelum/sesudah ditambahkan ke baris bulanan tersimpan (jejak 'perbarui'). */
+    private static function geserBulanan(array $bulan, array $sebelum, array $sesudah, string $catatan, $user): void
+    {
+        $perbarui = ['employee_id' => $user->employee?->id, 'sumber' => $catatan];
+        foreach ($bulan as $i => $b) {
+            foreach (array_unique(array_merge(array_keys($sebelum[$i]), array_keys($sesudah[$i]))) as $k) {
+                $sel = [];
+                foreach (array_diff_key($sesudah[$i][$k] ?? $sebelum[$i][$k], ['hari_kerja' => 0, 'hari_terkunci' => 0]) as $kol => $_) {
+                    $d = ($sesudah[$i][$k][$kol] ?? 0) - ($sebelum[$i][$k][$kol] ?? 0);
+                    if ($d !== 0) {
+                        $sel[$kol] = $d;
+                    }
+                }
+                if (!$sel) {
+                    continue;
+                }
+                [$g, $h] = explode('|', $k);
+                $row = TransactionMonthlyClosing::where('transaction_loan_officer_grouping_id', $g)->where('hari', $h)
+                    ->whereDate('periode', $b->toDateString())->first();
+                if ($row) {
+                    TutupBulanan::tambahkan($row, $sel, $perbarui);
+                }
+            }
+        }
     }
 
     /**
@@ -95,10 +211,7 @@ class SelisihMigrasi
         }
         $mulai = Carbon::parse($baris['mulai']);
         $berlaku = $mulai->copy()->subMonthNoOverflow()->toDateString();
-        $bulan = [];
-        for ($b = $mulai->copy(); $b->lte(Carbon::now()->startOfMonth()->addMonthNoOverflow()); $b->addMonthNoOverflow()) {
-            $bulan[] = $b->copy();
-        }
+        $bulan = self::bulanSejak($mulai);
         $hitung = fn() => array_map(fn($b) => TutupBulanan::hitung([$groupingId], $b), $bulan);
         $ml = $baris['macet_lama'] ? TransactionLoan::find($baris['macet_lama']['id']) : null;
         if ($z < 0 && (!$ml || $baris['macet_lama']['saldo'] < -$z)) {
@@ -144,28 +257,7 @@ class SelisihMigrasi
             }
 
             // Baris bulanan tersimpan ikut digeser selisihnya.
-            $sesudah = $hitung();
-            $perbarui = ['employee_id' => $user->employee?->id, 'sumber' => $catatan];
-            foreach ($bulan as $i => $b) {
-                foreach (array_unique(array_merge(array_keys($sebelum[$i]), array_keys($sesudah[$i]))) as $k) {
-                    $sel = [];
-                    foreach (array_diff_key($sesudah[$i][$k] ?? $sebelum[$i][$k], ['hari_kerja' => 0, 'hari_terkunci' => 0]) as $kol => $_) {
-                        $d = ($sesudah[$i][$k][$kol] ?? 0) - ($sebelum[$i][$k][$kol] ?? 0);
-                        if ($d !== 0) {
-                            $sel[$kol] = $d;
-                        }
-                    }
-                    if (!$sel) {
-                        continue;
-                    }
-                    [$g, $h] = explode('|', $k);
-                    $row = TransactionMonthlyClosing::where('transaction_loan_officer_grouping_id', $g)->where('hari', $h)
-                        ->whereDate('periode', $b->toDateString())->first();
-                    if ($row) {
-                        TutupBulanan::tambahkan($row, $sel, $perbarui);
-                    }
-                }
-            }
+            self::geserBulanan($bulan, $sebelum, $hitung(), $catatan, $user);
 
             $hasil = ['kantor' => $baris['kantor'], 'kelompok' => $baris['kelompok'], 'hari' => $hari, 'z' => $z, 'user_id' => $user->id];
             Log::info('Cek Selisih Migrasi: MACET LAMA disesuaikan', $hasil);

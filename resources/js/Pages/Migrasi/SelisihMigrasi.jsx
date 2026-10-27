@@ -10,6 +10,9 @@ const KATEGORI = [
   ['ml', 'ML'],
 ];
 
+// Arah efek penyesuaian ke saldo (= TransactionSaldoAdjustment::ARAH).
+const ARAH = { saldo_awal: -1, duplikat: -1, lebih_input: -1, kurang_input: 1 };
+
 const Selisih = ({ v }) =>
   v === 0 ? <span className="text-slate-300">0</span> : <span className={`font-semibold ${v > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{v > 0 ? '+' : ''}{rp(v)}</span>;
 
@@ -25,6 +28,10 @@ export default function SelisihMigrasi({ semua_kantor, unit, migrasi, baris = []
     const arah = z > 0 ? `ditambah ${rp(z)}${b.macet_lama ? '' : ' (MACET LAMA baru dibuat)'}` : `dikurangi ${rp(-z)}`;
     if (!window.confirm(`${b.kantor} kel ${b.kelompok} ${b.hari}: MACET LAMA ${arah} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`)) return;
     router.post(route('migrasi.selisih_ml'), { grouping_id: b.grouping_id, hari: b.hari }, { preserveScroll: true });
+  };
+  const koreksiPenyesuaian = (b, a, baru) => {
+    if (!window.confirm(`${b.kantor} kel ${b.kelompok} ${b.hari}: penyesuaian ${a.nama} ${rp(a.nominal)} jadi ${rp(baru)}${baru === 0 ? ' (dihapus)' : ''} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`)) return;
+    router.post(route('migrasi.selisih_penyesuaian'), { adj_id: a.id }, { preserveScroll: true });
   };
 
   return (
@@ -80,7 +87,8 @@ export default function SelisihMigrasi({ semua_kantor, unit, migrasi, baris = []
             </thead>
             <tbody>
               {baris.map((b) => (
-                <tr key={`${b.grouping_id}-${b.hari}`} className="border-t">
+                <React.Fragment key={`${b.grouping_id}-${b.hari}`}>
+                <tr className="border-t">
                   <td className="px-2 py-1.5 whitespace-nowrap">{b.kantor}</td>
                   <td className="px-2 py-1.5 text-center">{b.kelompok}</td>
                   <td className="px-2 py-1.5 capitalize">{b.hari}</td>
@@ -104,6 +112,32 @@ export default function SelisihMigrasi({ semua_kantor, unit, migrasi, baris = []
                     )}
                   </td>
                 </tr>
+                {/* Penyesuaian ML kelompok x hari ini: dipilih manual mana yang dikoreksi (mas 2026-10-27). */}
+                {b.penyesuaian.length > 0 && (
+                  <tr className="bg-amber-50/50">
+                    <td colSpan={3 + KATEGORI.length * 3 + 2} className="px-2 py-1.5">
+                      <div className="mb-1 text-[11px] font-semibold text-amber-800">Penyesuaian ML di kelompok & hari ini (pilih yang salah input):</div>
+                      <div className="grid gap-1">
+                        {b.penyesuaian.map((a) => {
+                          const baru = a.nominal + (ARAH[a.jenis] ?? 0) * (b.bucket.ml - b.sistem.ml);
+                          return (
+                            <div key={a.id} className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{a.nama}</span>
+                              <span className="text-slate-500">
+                                drop {a.drop} · {a.jenis} {rp(a.nominal)} · berlaku {a.berlaku}
+                                {a.catatan ? ` · ${a.catatan}` : ''}
+                              </span>
+                              <Button size="xs" variant="outline" disabled={baru < 0} onClick={() => koreksiPenyesuaian(b, a, baru)}>
+                                {baru < 0 ? 'Nominal kurang' : `Jadikan ${rp(baru)}`}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

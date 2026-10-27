@@ -47,4 +47,17 @@ class SelisihMigrasiController extends Controller
 
         return back()->with('message', "MACET LAMA {$h['kantor']} kel {$h['kelompok']} {$h['hari']} disesuaikan, ML sekarang sama dengan bucket.");
     }
+
+    public function sesuaikanPenyesuaian(Request $request)
+    {
+        $this->pastikanSuperuser();
+        $v = $request->validate(['adj_id' => ['required', 'integer']]);
+        try {
+            $h = SelisihMigrasi::sesuaikanPenyesuaian((int) $v['adj_id'], auth()->user());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', "Penyesuaian {$h['kantor']} kel {$h['kelompok']} {$h['hari']} dikoreksi, ML sekarang sama dengan bucket.");
+    }
 }

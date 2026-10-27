@@ -498,6 +498,9 @@ class MigrasiController extends Controller
                     $z = $emberLama['ml'] - $sistemKategori['ml'];
                     if ($z < 0) {
                         $alasan[] = 'Z minus';
+                    } elseif ($z > 0) {
+                        // Z plus dulu lolos - Krian 8 / Surabaya 6 migrasi tanpa MACET LAMA (mas 2026-10-27).
+                        $alasan[] = 'Z plus: buat MACET LAMA';
                     }
                 }
 

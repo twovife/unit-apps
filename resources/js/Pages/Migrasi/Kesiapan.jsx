@@ -73,7 +73,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
               kelompok &amp; hari: angka{' '}
               <b>data real</b> (sisa saldo dari daftar nasabah) dibanding <b>bucket</b> (sirkulasi lama yang dicatat
               kantor). Lancar, CM, dan MB harus sama persis; ML boleh lebih besar di bucket — selisihnya adalah{' '}
-              <b>Z</b> (ML belum terinput). Layar
+              <b>Z</b> (ML belum terinput), wajib ditampung MACET LAMA dulu sebelum siap. Layar
               ini hanya menunjukkan, tidak mengubah apa pun.
             </p>
           </div>
