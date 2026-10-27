@@ -191,6 +191,9 @@ Route::middleware('auth')->group(function () {
   // alias itu tidak terdaftar di app/Http/Kernel.php, dan merantai middleware
   // setelah ->group() juga tidak menempel (lihat 05_temuan_dan_jebakan.md A1).
   Route::prefix('migrasi')->name('migrasi.')->group(function () {
+    // Cek Selisih Migrasi (superuser): saldo awal vs bucket serah terima, sesuaikan MACET LAMA.
+    Route::get('/selisih', [\App\Http\Controllers\SelisihMigrasiController::class, 'index'])->name('selisih');
+    Route::post('/selisih/ml', [\App\Http\Controllers\SelisihMigrasiController::class, 'sesuaikanMl'])->name('selisih_ml');
     // Kesiapan migrasi per kantor (superuser, baca-saja): bucket sistem vs sirkulasi lama + Z.
     Route::get('/kesiapan', [\App\Http\Controllers\MigrasiController::class, 'kesiapanMigrasi'])
       ->name('kesiapan');

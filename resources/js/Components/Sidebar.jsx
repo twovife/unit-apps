@@ -460,6 +460,13 @@ export default function AppSidebar({ ...props }) {
               title="Koreksi Pasca Migrasi"
               items={[
                 {
+                  id: 3,
+                  title: 'Cek Selisih Migrasi',
+                  link: route('migrasi.selisih'),
+                  active: route().current('migrasi.selisih'),
+                  fix: true,
+                },
+                {
                   id: 1,
                   title: 'Koreksi Data Beku',
                   link: route('migrasi.koreksi_beku'),
