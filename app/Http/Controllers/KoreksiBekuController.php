@@ -132,6 +132,7 @@ class KoreksiBekuController extends Controller
             'tanggal' => ['nullable', 'date'],
             'nominal' => ['nullable', 'integer', 'min:0'],
             'alasan' => ['nullable', 'string', 'max:1000'],
+            'ikut_bucket' => ['boolean'],
         ]);
     }
 
@@ -142,7 +143,7 @@ class KoreksiBekuController extends Controller
         $v = $this->aturan($request);
 
         try {
-            return response()->json(KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'] ?? '', false));
+            return response()->json(KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'] ?? '', false, $request->boolean('ikut_bucket')));
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -154,7 +155,7 @@ class KoreksiBekuController extends Controller
         $v = $this->aturan($request);
 
         try {
-            KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'] ?? '', true);
+            KoreksiBeku::jalankan($v['aksi'], $v, $v['alasan'] ?? '', true, $request->boolean('ikut_bucket'));
         } catch (\RuntimeException $e) {
             return back()->withErrors($e->getMessage());
         }

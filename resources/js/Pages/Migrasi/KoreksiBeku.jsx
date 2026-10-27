@@ -25,6 +25,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
   const [aksi, setAksi] = useState(null);
   const [nominal, setNominal] = useState('');
   const [alasan, setAlasan] = useState('');
+  const [ikutBucket, setIkutBucket] = useState(true);
   const [pratinjau, setPratinjau] = useState(null);
   const [galat, setGalat] = useState(null);
   const [proses, setProses] = useState(false);
@@ -33,12 +34,13 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
     setAksi(buka?.aksi ?? null);
     setNominal(angsuran ? String(angsuran.nominal) : '');
     setAlasan('');
+    setIkutBucket(true);
     setPratinjau(null);
     setGalat(null);
   }, [buka]);
 
   // Isian berubah -> pratinjau lama tidak berlaku lagi.
-  useEffect(() => setPratinjau(null), [aksi, nominal, alasan]);
+  useEffect(() => setPratinjau(null), [aksi, nominal, alasan, ikutBucket]);
 
   const isian = () => ({
     aksi,
@@ -47,6 +49,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
     loan_id: pinjaman?.id,
     nominal: aksi === 'hapus' ? undefined : Number(nominal),
     tanggal: aksi === 'tambah' ? tanggal : undefined,
+    ikut_bucket: ikutBucket,
   });
 
   const lihat = () => {
@@ -103,6 +106,15 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
               className="px-3 py-2 text-sm border rounded-md border-input bg-background"
               placeholder={ALASAN_BAWAAN}
             />
+          </label>
+          {/* Centang: koreksi membetulkan kenyataan -> bucket ikut, tidak jadi selisih di Cek
+              Selisih Migrasi. Lepas kalau koreksinya justru untuk menyamakan dengan bucket. */}
+          <label className="flex items-start gap-2 cursor-pointer select-none">
+            <input type="checkbox" className="w-4 h-4 mt-0.5" checked={ikutBucket} onChange={(e) => setIkutBucket(e.target.checked)} />
+            <span>
+              <span className="font-medium">Bucket serah terima ikut dikoreksi</span>
+              <span className="block text-xs text-slate-500">Lepas centang kalau koreksi ini untuk menyamakan saldo dengan bucket.</span>
+            </span>
           </label>
 
           {galat && <div className="p-2 text-sm text-red-700 rounded-md bg-red-50">{galat}</div>}

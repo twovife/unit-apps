@@ -11,6 +11,10 @@ const LABEL = {
   awal_ml: 'Awal ML',
   awal_total: 'Awal total',
   akhir_total: 'Akhir total',
+  bucket_amount: 'Bucket total',
+  bucket_cm_amount: 'Bucket CM',
+  bucket_mb_amount: 'Bucket MB',
+  bucket_ml_amount: 'Bucket ML',
 };
 
 /** Dampak koreksi ke baris bulanan: hanya baris & kolom yang berubah. */

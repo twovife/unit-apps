@@ -25,7 +25,9 @@ use Illuminate\Support\Facades\DB;
  *      2026-10-11, opsi a) - baris yang sudah diteken ditulis ulang dengan
  *      jejak di riwayat kunci;
  *   3. satu baris log di transaction_koreksi_beku: sebelum/sesudah angsuran
- *      dan dampak ke saldo awal/akhir per ember per bulan.
+ *      dan dampak ke saldo awal/akhir per ember per bulan;
+ *   4. opsional ($ikutBucket): bucket serah terima bulan migrasi ikut digeser
+ *      (geserBucket), jejaknya kolom bucket_* di dampak.
  *
  * Pratinjau ($simpan = false) menjalankan koreksi yang sama persis lalu
  * rollback - angka dampaknya pasti sama dengan hasil sesudah disimpan.
@@ -45,7 +47,7 @@ class KoreksiBeku
      * @return array{dampak:array, log_id:?int}
      * @throws \RuntimeException pesan untuk ditampilkan ke user
      */
-    public static function jalankan(string $aksi, array $data, string $alasan, bool $simpan = true): array
+    public static function jalankan(string $aksi, array $data, string $alasan, bool $simpan = true, bool $ikutBucket = false): array
     {
         $user = auth()->user();
         if (!$user?->hasRole('superuser')) {
@@ -142,6 +144,9 @@ class KoreksiBeku
             }
 
             $dampak = self::selisih($potretAwal, self::potret($ids, $bulan));
+            if ($ikutBucket) {
+                array_push($dampak, ...self::geserBucket($mulai->copy()->startOfMonth(), $hitungSebelum[0], $hitungSesudah[0]));
+            }
             $logId = null;
 
             if ($simpan) {
@@ -196,6 +201,49 @@ class KoreksiBeku
         }
 
         return null;
+    }
+
+    /**
+     * Bucket serah terima (transaction_sirculations bulan migrasi) ikut digeser sebesar
+     * dampak koreksi ke saldo awal bulan migrasi (mas 2026-10-27): koreksi yang membetulkan
+     * kenyataan tidak muncul sebagai selisih di Cek Selisih Migrasi. Bucket tanpa baris
+     * tunggal dilewati. Angka sebelum/sesudah masuk dampak (log koreksi) sebagai jejak.
+     */
+    private static function geserBucket(Carbon $periode, array $sebelum, array $sesudah): array
+    {
+        $hasil = [];
+        foreach (array_unique(array_merge(array_keys($sebelum), array_keys($sesudah))) as $k) {
+            $d = fn(string $e) => ($sesudah[$k]['awal_' . $e] ?? 0) - ($sebelum[$k]['awal_' . $e] ?? 0);
+            $geser = [
+                'amount' => array_sum(array_map($d, Ember::SEMUA)),
+                'cm_amount' => $d('cm'), 'mb_amount' => $d('mb'), 'ml_amount' => $d('ml'),
+            ];
+            if (!array_filter($geser)) {
+                continue;
+            }
+            [$g, $hari] = explode('|', $k);
+            $rows = DB::table('transaction_sirculations')->where('transaction_loan_officer_grouping_id', $g)
+                ->whereDate('date', $periode->toDateString())->whereRaw('LOWER(TRIM(day)) = ?', [$hari])->get();
+            if ($rows->count() !== 1) {
+                continue;
+            }
+            $r = $rows->first();
+            $kolom = $isi = [];
+            foreach ($geser as $c => $n) {
+                if ($n !== 0) {
+                    $isi[$c] = (int) $r->$c + $n;
+                    $kolom['bucket_' . $c] = [(int) $r->$c, $isi[$c]];
+                }
+            }
+            DB::table('transaction_sirculations')->where('id', $r->id)->update($isi + ['updated_at' => now()]);
+            $hasil[] = [
+                'periode' => $periode->format('Y-m'),
+                'kelompok' => (string) DB::table('transaction_loan_officer_groupings')->where('id', $g)->value('kelompok'),
+                'hari' => $hari, 'kolom' => $kolom,
+            ];
+        }
+
+        return $hasil;
     }
 
     /** Keadaan satu angsuran untuk log. */
