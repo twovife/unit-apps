@@ -5,12 +5,15 @@ name: deploy
 # Production: push tag prod-v* → pakai image yang SUDAH dites di staging, tanpa build ulang
 #             git tag prod-v1.4.0 && git push origin prod-v1.4.0   (deploy image v1.4.0)
 # Production: muv.ubmidigital.com. Pola sama dengan app_laravel.
+# Preproduction: push tag pre-v* → image yang sama, ke preproduction.usberdigital.com (DB produksi)
+#             git tag pre-v1.4.0 && git push origin pre-v1.4.0
 # Migrasi TIDAK dijalankan di sini; migrasi hanya dari app_laravel (database dipakai bersama).
 on:
   push:
     tags:
       - 'v*'
       - 'prod-v*'
+      - 'pre-v*'
 
 permissions:
   contents: read
@@ -18,7 +21,7 @@ permissions:
 
 # Deploy ke tujuan yang sama berjalan berurutan, tidak saling potong
 concurrency:
-  group: deploy-${{ startsWith(github.ref_name, 'prod-') && 'production' || 'staging' }}
+  group: deploy-${{ startsWith(github.ref_name, 'prod-') && 'production' || startsWith(github.ref_name, 'pre-') && 'preproduction' || 'staging' }}
   cancel-in-progress: false
 
 env:
@@ -27,7 +30,7 @@ env:
 jobs:
   # Production memakai image yang sudah ada di ghcr, jadi build hanya untuk tag baru
   build:
-    if: ${{ !startsWith(github.ref_name, 'prod-') }}
+    if: ${{ !startsWith(github.ref_name, 'prod-') && !startsWith(github.ref_name, 'pre-') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -56,12 +59,12 @@ jobs:
 
   deploy:
     needs: build
-    # Jalan setelah build (tag v*) atau langsung untuk tag prod-v* (build dilewati)
-    if: ${{ always() && (needs.build.result == 'success' || startsWith(github.ref_name, 'prod-')) }}
+    # Jalan setelah build (tag v*) atau langsung untuk tag prod-v* / pre-v* (build dilewati)
+    if: ${{ always() && (needs.build.result == 'success' || startsWith(github.ref_name, 'prod-') || startsWith(github.ref_name, 'pre-')) }}
     runs-on: ubuntu-latest
-    environment: ${{ startsWith(github.ref_name, 'prod-') && 'production' || 'staging' }}
+    environment: ${{ startsWith(github.ref_name, 'prod-') && 'production' || startsWith(github.ref_name, 'pre-') && 'preproduction' || 'staging' }}
     env:
-      TUJUAN: ${{ startsWith(github.ref_name, 'prod-') && 'production' || 'staging' }}
+      TUJUAN: ${{ startsWith(github.ref_name, 'prod-') && 'production' || startsWith(github.ref_name, 'pre-') && 'preproduction' || 'staging' }}
       REF: ${{ github.ref_name }}
     steps:
       - name: Siapkan SSH
@@ -75,4 +78,6 @@ jobs:
       # yang dikirim hanya "<tujuan> <tag>", script di VPS yang menentukan langkahnya.
       # Isi script: .github/deploy/mantriapps-deploy.sh
       - name: Deploy di VPS
-        run: ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "$TUJUAN ${REF#prod-}"
+        run: |
+          TAG="${REF#prod-}"; TAG="${TAG#pre-}"
+          ssh -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "$TUJUAN $TAG"
