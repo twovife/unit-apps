@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shadcn/ui/dialog';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import BargeStatus from '@/Components/shadcn/BargeStatus';
 import WhiteOff from './WhiteOff';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
@@ -28,12 +28,13 @@ import { useFilterAngsuran } from '../FilterAngsuran';
 import NoEditOverlay from '@/Components/NoEditOverlay';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
-import { Copy, CircleX, Lock } from 'lucide-react';
+import { Copy, CircleX, Lock, Pencil } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import Pengajuan from './Pengajuan';
 import HapusPemutihan from './HapusPemutihan';
 import HapusPinjamanKoreksi from './HapusPinjamanKoreksi';
 import Loading from '@/Components/Loading';
+import DialogKoreksi, { KoreksiBekuContext } from '@/Pages/Migrasi/Components/DialogKoreksi';
 import '../../../../css/loader.css';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
@@ -50,6 +51,10 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   const [koreksi, setKoreksi] = useState([]);
 
   const [instalment, setInstalment] = useState([]);
+  // Buku Angsuran Beku (superuser): data sebelum migrasi dikoreksi lewat Koreksi Beku.
+  const kb = useContext(KoreksiBekuContext);
+  const [koreksiBuka, setKoreksiBuka] = useState(null);
+  const [tglTambah, setTglTambah] = useState('');
 
   const onNikSubmit = async (triggeredId) => {
     setLoading(true);
@@ -148,6 +153,22 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                   )}
                 </TabsList>
                 <TabsContent value="input" className="mt-3 space-y-3">
+                  {kb && customerData.id && customerData.tanggal_drop < kb.mulai && (
+                    <div className="flex flex-wrap items-center gap-2 p-2 text-xs border rounded-md border-sky-300 bg-sky-50 text-sky-900">
+                      <span className="font-medium">Tambah angsuran sebelum migrasi</span>
+                      <input
+                        type="date"
+                        className="h-8 px-2 border rounded-md border-input bg-background"
+                        min={String(customerData.tanggal_drop).slice(0, 10)}
+                        max={dayjs(kb.mulai).subtract(1, 'day').format('YYYY-MM-DD')}
+                        value={tglTambah}
+                        onChange={(e) => setTglTambah(e.target.value)}
+                      />
+                      <Button size="sm" className="h-8" disabled={!tglTambah} onClick={() => setKoreksiBuka({ aksi: 'tambah', tanggal: tglTambah })}>
+                        Koreksi beku…
+                      </Button>
+                    </div>
+                  )}
                   <div className="relative">
                   {customerData.pecahan_ml ? (
                     // Pecahan MACET LAMA: tanpa tanda lunas, setoran berikutnya lewat Input ML.
@@ -224,7 +245,19 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                 <TabsContent value="detail" className="mt-3">
                   <LoanDetail customerData={customerData} />
                   {/* Khusus can-edit / superuser (server mengisi hapus_pinjaman hanya untuk mereka). */}
-                  <HapusPinjamanKoreksi data={customerData.hapus_pinjaman} id={customerData.id} onClosed={modalIsClosed} />
+                  {kb && customerData.drop_beku ? (
+                    <div className="flex items-center justify-between gap-2 p-3 mt-3 border border-red-200 rounded-lg bg-red-50/50">
+                      <div className="text-sm text-red-700">
+                        <div className="font-semibold">Hapus Pinjaman (koreksi beku)</div>
+                        <div className="text-xs text-slate-700">Drop sebelum migrasi: pinjaman & angsurannya dihapus lewat Koreksi Beku.</div>
+                      </div>
+                      <Button size="sm" variant="outline" className="text-red-600 border-red-300" onClick={() => setKoreksiBuka({ aksi: 'hapus_pinjaman' })}>
+                        Hapus…
+                      </Button>
+                    </div>
+                  ) : (
+                    <HapusPinjamanKoreksi data={customerData.hapus_pinjaman} id={customerData.id} onClosed={modalIsClosed} />
+                  )}
                 </TabsContent>
                 <TabsContent value="pemutihan" className="relative mt-3">
                   {gateValue && <NoEditOverlay value={gateValue} />}
@@ -251,7 +284,16 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                       Pemutihan (MD) {dayjs(p.transaction_date).format('DD-MM-YYYY')} ·{' '}
                       <FormatNumbering value={p.nominal} className="inline font-semibold" />
                     </span>
-                    {p.terkunci ? (
+                    {kb && p.beku ? (
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        className="text-red-600 border-red-300"
+                        onClick={() => setKoreksiBuka({ aksi: 'hapus_pemutihan', pemutihan: { id: p.id, tanggal: p.transaction_date, nominal: Number(p.nominal) } })}
+                      >
+                        Hapus (koreksi beku)
+                      </Button>
+                    ) : p.terkunci ? (
                       <span title="Tanggal pemutihan sudah dikunci" className="inline-flex text-slate-400">
                         <Lock className="w-3.5 h-3.5" aria-label="terkunci" />
                       </span>
@@ -303,6 +345,20 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                                 <TableCell className="px-1.5 py-1.5">
                                   {item.pelunasan ? (
                                     <span className="text-[10px] font-semibold text-muted-foreground">Pelunasan</span>
+                                  ) : kb && item.beku ? (
+                                    <button
+                                      type="button"
+                                      title="Koreksi beku: ubah / hapus angsuran ini"
+                                      className="inline-flex text-sky-600 hover:text-sky-800"
+                                      onClick={() =>
+                                        setKoreksiBuka({
+                                          aksi: 'ubah',
+                                          angsuran: { id: item.id, nominal: Number(item.nominal), tanggal: item.transaction_date },
+                                        })
+                                      }
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
                                   ) : (
                                     (!closed_transaction || closed_transaction <= item.transaction_date) &&
                                     (item.terkunci ? (
@@ -399,6 +455,21 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
           </div>
         </div>
       </DialogContent>
+      {kb && (
+        <DialogKoreksi
+          buka={koreksiBuka}
+          onClosed={() => setKoreksiBuka(null)}
+          pinjaman={{
+            id: customerData.id,
+            nama: customerData.nama,
+            drop_date: customerData.tanggal_drop,
+            angsuran: { semua: instalment.map((i) => ({ nominal: Number(i.nominal) || 0 })) },
+          }}
+          filter={kb.filter}
+          mulai={kb.mulai}
+          onSaved={(aksi) => (aksi === 'hapus_pinjaman' ? modalIsClosed() : onNikSubmit(customerData.id))}
+        />
+      )}
     </Dialog>
   );
 };

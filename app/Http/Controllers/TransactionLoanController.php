@@ -1414,6 +1414,8 @@ class TransactionLoanController extends Controller
         : null,
       // Kartu "Hapus Pinjaman" di modal Angsuran: hanya untuk can-edit /
       // superuser (koreksi). null = kartu tidak ditampilkan.
+      // Drop sebelum migrasi: di Buku Angsuran Beku (superuser) dihapus lewat Koreksi Beku.
+      'drop_beku' => AppHelper::tanggalBeku($loan->transaction_loan_officer_grouping_id, $loan->drop_date),
       'hapus_pinjaman' => \App\Helpers\Gembok::bolehBuka(auth()->user()) ? AppHelper::canDeleteLoan($loan) + [
         'dari_pelunasan' => (bool) $loan->previous_loan_id,
         'jumlah_angsuran' => $loan->loan_instalment->count(),
@@ -1449,6 +1451,7 @@ class TransactionLoanController extends Controller
         'mantri' => $instalment->usermantri?->nama_karyawan,
         'user_input' => $instalment->userinput?->nama_karyawan,
         'terkunci' => $terkunci($instalment),
+        'beku' => AppHelper::tanggalBeku($instalment->transaction_loan_officer_grouping_id, $instalment->transaction_date),
         'saldo' => $saldoBefore
       ];
     });
@@ -1462,6 +1465,7 @@ class TransactionLoanController extends Controller
       'transaction_date' => \Carbon\Carbon::parse($w->transaction_date)->toDateString(),
       'nominal' => (int) $w->nominal,
       'terkunci' => AppHelper::tanggalTerkunci($w->transaction_loan_officer_grouping_id, $w->transaction_date),
+      'beku' => AppHelper::tanggalBeku($w->transaction_loan_officer_grouping_id, $w->transaction_date),
     ]);
 
     return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment, 'pemutihan' => $pemutihan, 'koreksi' => $koreksi], 200);

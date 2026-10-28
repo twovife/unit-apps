@@ -474,6 +474,13 @@ export default function AppSidebar({ ...props }) {
                   fix: true,
                 },
                 {
+                  id: 4,
+                  title: 'Buku Angsuran Beku',
+                  link: route('migrasi.buku_beku'),
+                  active: route().current('migrasi.buku_beku'),
+                  fix: true,
+                },
+                {
                   id: 2,
                   title: 'Log Koreksi',
                   link: route('migrasi.koreksi_beku_log'),

@@ -11,6 +11,7 @@ use App\Models\Branch;
 use App\Models\TransactionKoreksiBeku;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanOfficerGrouping;
+use App\Traits\PinjamanTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +22,8 @@ use Inertia\Inertia;
  */
 class KoreksiBekuController extends Controller
 {
+    use PinjamanTrait;
+
     private function wajibSuperuser(): void
     {
         abort_unless(auth()->user()?->hasRole('superuser'), 403, 'Koreksi data beku khusus superuser.');
@@ -125,6 +128,29 @@ class KoreksiBekuController extends Controller
                         'topup' => (bool) $a->settled_by_loan_id,
                     ])->values()),
             ])->values(),
+        ]);
+    }
+
+    /**
+     * Buku Angsuran Beku (superuser): tampilan persis /pinjaman (getLoan, komponen
+     * Angsuran yang sama), tapi data sebelum migrasi bisa dikoreksi dari modal
+     * nasabah lewat KoreksiBeku. /pinjaman untuk client tidak berubah.
+     */
+    public function buku(Request $request)
+    {
+        $this->wajibSuperuser();
+        $data = $this->getLoan($request);
+        $f = $data['server_filter'] ?? [];
+        // Kantor dari kelompok yang benar-benar dimuat (server_filter.branch_id bisa kosong untuk user pusat).
+        $branchId = TransactionLoanOfficerGrouping::whereKey($f['groupId'] ?? 0)->value('branch_id') ?? AuthScope::resolve()->branch_id;
+
+        return Inertia::render('Migrasi/BukuBeku', $data + [
+            'beku' => [
+                'mulai' => AgregasiScope::tanggalMulai($branchId)?->toDateString(),
+                'grouping_id' => $f['groupId'] ?? null,
+                'kelompok' => $f['kelompok'] ?? null,
+                'hari' => $f['hari'] ?? null,
+            ],
         ]);
     }
 
