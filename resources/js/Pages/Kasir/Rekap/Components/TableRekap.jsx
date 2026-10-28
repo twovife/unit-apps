@@ -8,7 +8,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/shadcn/ui/accordion';
-import { CheckCircle, Wallet, XCircle } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronRight, Wallet, XCircle } from 'lucide-react';
+import DrawerBukuStorting from '@/Pages/NewAngsuran/Components/DrawerBukuStorting';
 import { Link } from '@inertiajs/react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 
@@ -106,6 +107,11 @@ const TableRekap = ({
   const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
   // Baris saldo awal yang daftar pemutihannya sedang dibuka.
   const [pemutihan, setPemutihan] = useState(null);
+  // Sirkulasi per hari tagih (expand) & buku storting bulan lalu yang menghasilkannya.
+  const [buka, setBuka] = useState({});
+  const [buku, setBuku] = useState(null);
+  const sf = usePage().props.server_filter ?? {};
+  const bulanLalu = dayjs(`${sf.month}-01`).subtract(1, 'month');
 
   useEffect(() => {
     setData(datas);
@@ -149,10 +155,21 @@ const TableRekap = ({
                 </thead>
                 <tbody>
                   {(sirkulasiAwal ?? []).map((item, key) => (
-                    <tr key={key} className="border-t even:bg-slate-50 hover:bg-sky-50">
+                    <React.Fragment key={key}>
+                    <tr className="border-t even:bg-slate-50 hover:bg-sky-50">
                       <td className="px-3 py-1.5 font-medium">{item.kelompok}</td>
                       <td className="px-3 py-1.5 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {item.per_hari?.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setBuka((b) => ({ ...b, [item.kelompok]: !b[item.kelompok] }))}
+                              title="Rincian per hari tagih"
+                              className="inline-flex items-center text-sky-600 hover:text-sky-800"
+                            >
+                              {buka[item.kelompok] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </button>
+                          )}
                           {item.pemutihan > 0 && (
                             // Pemutihan bulan lalu keluar di saldo awal ini.
                             <button
@@ -171,6 +188,31 @@ const TableRekap = ({
                       <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiMb)}</td>
                       <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiMl)}</td>
                     </tr>
+                    {/* Per hari: klik -> buku storting bulan lalu (saldo akhirnya = saldo awal ini). */}
+                    {buka[item.kelompok] &&
+                      item.per_hari.map((h) => (
+                        <tr
+                          key={h.hari}
+                          onClick={() =>
+                            setBuku({
+                              kelompok: item.kelompok,
+                              hari: h.hari,
+                              tanggal: bulanLalu.format('YYYY-MM-DD'),
+                              branch_id: sf.branch_id,
+                              wilayah: sf.wilayah,
+                            })
+                          }
+                          title={`Buka buku storting ${bulanLalu.format('MMMM YYYY')}`}
+                          className="cursor-pointer bg-sky-50/60 text-sky-900 hover:bg-sky-100"
+                        >
+                          <td className="py-1 pl-8 pr-3 capitalize">{h.hari}</td>
+                          <td className="px-3 py-1 text-right underline decoration-dotted">{ribu(h.sirkulasi)}</td>
+                          <td className="px-3 py-1 text-right">{ribu(h.cm)}</td>
+                          <td className="px-3 py-1 text-right">{ribu(h.mb)}</td>
+                          <td className="px-3 py-1 text-right">{ribu(h.ml)}</td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   ))}
                 </tbody>
                 {(sirkulasiAwal ?? []).length > 0 && (
@@ -198,6 +240,7 @@ const TableRekap = ({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+      <DrawerBukuStorting target={buku} onClosed={() => setBuku(null)} />
 
       <Dialog open={!!pemutihan} onOpenChange={(o) => !o && setPemutihan(null)}>
         <DialogContent className="max-w-2xl">

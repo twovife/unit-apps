@@ -17,6 +17,7 @@ import ApprovalAkhir from './ApprovalAkhir';
 import TutupBukuBaru from './TutupBukuBaru';
 import { usePage } from '@inertiajs/react';
 import { useFilterAngsuran } from '../FilterAngsuran';
+import DrawerBukuAngsuran from '@/Pages/Kasir/Rekap/Components/DrawerBukuAngsuran';
 
 // tutupBuku: diisi saat dipakai di drawer (data JSON); bawaan dari props halaman.
 const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
@@ -24,6 +25,8 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
   const halaman = usePage().props;
   const tb = tutupBuku !== undefined ? tutupBuku : halaman.tutup_buku;
   const server_filter = useFilterAngsuran();
+  // Klik angsuran per tanggal -> buku angsuran dengan kolom tanggal itu disorot (seperti Rekap 1).
+  const [bukuAngsuran, setBukuAngsuran] = useState(null);
   const [data, setData] = useState([]);
   const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
     ml: {
@@ -190,7 +193,18 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
 
                   {dateOfWeek.map((day, i) => (
                     <TableCell className={`text-center`} key={i}>
-                      <FormatNumbering ribuan value={row.instalment[day]} />
+                      {row.instalment[day] > 0 ? (
+                        <button
+                          type="button"
+                          title="Lihat buku angsuran tanggal ini"
+                          className="text-sky-700 hover:underline"
+                          onClick={() => setBukuAngsuran({ kelompok: server_filter.kelompok, tanggal: day })}
+                        >
+                          <FormatNumbering ribuan value={row.instalment[day]} />
+                        </button>
+                      ) : (
+                        <FormatNumbering ribuan value={row.instalment[day]} />
+                      )}
                     </TableCell>
                   ))}
                   <TableCell>
@@ -284,6 +298,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
           datas={sirkulasiAkhir}
         />
       )}
+      <DrawerBukuAngsuran target={bukuAngsuran} server_filter={server_filter} onClosed={() => setBukuAngsuran(null)} />
       <Action
         datas={data}
         show={show}

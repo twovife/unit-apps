@@ -7,7 +7,7 @@ import { FilterAngsuranContext } from '../FilterAngsuran';
 
 /**
  * Buku Storting satu kelompok x hari tagih x bulan, sebagai drawer (tanpa
- * pindah halaman). target = { kelompok, hari, tanggal }. Data dari
+ * pindah halaman). target = { kelompok, hari, tanggal, branch_id?, wilayah? }. Data dari
  * pinjaman.buku_angsuran_json (= index_pinjaman); filter buku disuntik lewat
  * FilterAngsuranContext, tutup buku & sirkulasi lewat props.
  */
@@ -15,7 +15,14 @@ const DrawerBukuStorting = ({ target, onClosed }) => {
   const { isi, galat } = useMuatDrawer(
     !!target,
     route('pinjaman.buku_angsuran_json'),
-    target && { kelompok: target.kelompok, hari: target.hari, month: dayjs(target.tanggal).format('YYYY-MM') },
+    target && {
+      kelompok: target.kelompok,
+      hari: target.hari,
+      month: dayjs(target.tanggal).format('YYYY-MM'),
+      // Kantor ikut pemanggil (Rekap 2); tanpa ini pakai kantor sesi (Kesiapan).
+      ...(target.branch_id ? { branch_id: target.branch_id } : {}),
+      ...(target.wilayah ? { wilayah: target.wilayah } : {}),
+    },
     `${target?.kelompok}|${target?.hari}|${target?.tanggal}`,
     { muatUlangSesudahSimpan: true },
   );

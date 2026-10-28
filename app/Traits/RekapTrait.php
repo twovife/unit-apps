@@ -695,29 +695,40 @@ trait RekapTrait
     // lama. Untuk kantor belum-migrasi, pakaiAgregatBaru() = false -> jalur lama
     // di bawah, IDENTIK dengan sebelumnya. Diverifikasi: kantor non-migrasi
     // byte-identik, Krian 2 Juli baca dari tabel baru.
+    // Rincian per hari tagih (expand Sirkulasi di Rekap 2, mas 2026-10-28).
+    $urutHari = array_flip(['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']);
     if (\App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth)) {
       $saldoAwalBulan = \App\Models\TransactionMonthlyClosing::with('loan_officer_grouping')
         ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
         ->whereDate('periode', $startDateofMonth)
         ->get()
         ->groupBy('transaction_loan_officer_grouping_id')
-        ->map(function ($item) {
+        ->map(function ($item) use ($urutHari) {
           return [
             'kelompok' => $item->first()->loan_officer_grouping->kelompok ?? null,
             'sirkulasi' => (int) $item->sum('awal_total'),
             'sirkulasiCm' => (int) $item->sum('awal_cm'),
             'sirkulasiMb' => (int) $item->sum('awal_mb'),
             'sirkulasiMl' => (int) $item->sum('awal_ml'),
+            'per_hari' => $item->sortBy(fn($r) => $urutHari[$r->hari] ?? 9)->map(fn($r) => [
+              'hari' => $r->hari, 'sirkulasi' => (int) $r->awal_total, 'cm' => (int) $r->awal_cm,
+              'mb' => (int) $r->awal_mb, 'ml' => (int) $r->awal_ml,
+            ])->values(),
           ];
         })->sortBy('kelompok')->values();
     } else {
-      $saldoAwalBulan = $transactionSirculation->map(function ($item) {
+      $saldoAwalBulan = $transactionSirculation->map(function ($item) use ($urutHari) {
         return [
           'kelompok' => $item->first()->transaction_loan_officer_grouping->kelompok,
           'sirkulasi' => $item->sum('amount') ?? 0,
           'sirkulasiCm' => $item->sum('cm_amount') ?? 0,
           'sirkulasiMb' => $item->sum('mb_amount') ?? 0,
           'sirkulasiMl' => $item->sum('ml_amount') ?? 0,
+          'per_hari' => $item->groupBy(fn($r) => strtolower(trim($r->day)))->sortBy(fn($r, $h) => $urutHari[$h] ?? 9)
+            ->map(fn($r, $h) => [
+              'hari' => $h, 'sirkulasi' => (int) $r->sum('amount'), 'cm' => (int) $r->sum('cm_amount'),
+              'mb' => (int) $r->sum('mb_amount'), 'ml' => (int) $r->sum('ml_amount'),
+            ])->values(),
         ];
       })->sortBy('kelompok')->values();
     }

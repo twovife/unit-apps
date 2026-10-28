@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
+import { useFilterAngsuran } from '../FilterAngsuran';
 import dayjs from 'dayjs';
 import { Lock } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
@@ -27,6 +28,7 @@ const jumlah = (o) => Object.values(o ?? {}).reduce((a, n) => a + (Number(n) || 
 const TutupBukuBaru = ({ tb, month, show, onClosed }) => {
   useModeRibuan();
   const [proses, setProses] = useState(false);
+  const sf = useFilterAngsuran() ?? {};
   const bulan = dayjs(month);
   const namaBulan = (d) => d.toDate().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   // Angka baru dihitung ulang saat hari dikunci: selama ada hari terbuka angkanya bisa basi,
@@ -119,7 +121,19 @@ const TutupBukuBaru = ({ tb, month, show, onClosed }) => {
               <div className="font-semibold">Buku belum bisa ditutup, dikarenakan ada hari yang belum terkunci di bulan ini:</div>
               <ul className="pl-5 list-disc">
                 {(tb.hari_terbuka ?? []).map((d) => (
-                  <li key={d}>{dayjs(d).toDate().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</li>
+                  <li key={d}>
+                    {/* Ke Rekap 1 tanggal itu untuk dikunci. */}
+                    <Link
+                      href={route('kasir.rekap.rekap_satu', {
+                        date: d,
+                        ...(sf.branch_id ? { branch_id: sf.branch_id } : {}),
+                        ...(sf.wilayah ? { wilayah: sf.wilayah } : {}),
+                      })}
+                      className="font-medium underline hover:text-rose-900"
+                    >
+                      {dayjs(d).toDate().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </Link>
+                  </li>
                 ))}
               </ul>
               <div>Mohon kunci hari terlebih dahulu sebelum melakukan tutup buku.</div>
