@@ -189,4 +189,74 @@ class PenyesuaianSaldo
         });
     }
 
+    /**
+     * Oper saldo antar dua nasabah ML satu kelompok x hari, untuk kantor yang SUDAH
+     * migrasi (mas 2026-10-28): saldo yang ketahuan salah tempat sesudah migrasi
+     * dipindah tanpa menggeser bucket. Dua penyesuaian berlaku bulan migrasi:
+     * pengirim saldo_awal -nominal, penerima kurang_input +nominal.
+     *
+     * Penjaga: saldo bulanan kelompok itu sejak bulan migrasi dihitung sebelum &
+     * sesudah - satu angka saja berubah (mis. beda ember), seluruhnya dibatalkan.
+     *
+     * @throws \RuntimeException
+     */
+    public static function oper(TransactionLoan $dari, TransactionLoan $ke, int $nominal, ?string $catatan, $user): void
+    {
+        if (!$user?->hasRole('superuser')) {
+            throw new \RuntimeException('Oper saldo khusus superuser.');
+        }
+        if ($dari->id === $ke->id) {
+            throw new \RuntimeException('Nasabah pengirim dan penerima sama.');
+        }
+        $gid = (int) $dari->transaction_loan_officer_grouping_id;
+        if ($gid !== (int) $ke->transaction_loan_officer_grouping_id || strtolower($dari->hari) !== strtolower($ke->hari)) {
+            throw new \RuntimeException('Oper hanya antar nasabah kelompok dan hari yang sama.');
+        }
+        $branchId = DB::table('transaction_loan_officer_groupings')->where('id', $gid)->value('branch_id');
+        $mulai = AgregasiScope::tanggalMulai($branchId);
+        if (!$mulai) {
+            throw new \RuntimeException('Kantor ini belum migrasi - sesuaikan lewat isian sisa saldo.');
+        }
+        foreach ([$dari, $ke] as $l) {
+            if (!AgregasiScope::bolehDisesuaikan($branchId, $l->drop_date)) {
+                throw new \RuntimeException('Pinjaman ' . $l->customer?->nama . ' di luar jendela penyesuaian (bukan ML lama).');
+            }
+        }
+        $saldoDari = self::hitungSaldo($dari)['saldo'];
+        if ($nominal < 1 || $nominal > $saldoDari) {
+            throw new \RuntimeException('Nominal harus 1 s/d saldo ' . $dari->customer?->nama . ' sekarang (' . number_format($saldoDari, 0, ',', '.') . ').');
+        }
+
+        $bulan = [];
+        for ($b = $mulai->copy()->startOfMonth(); $b->lte(Carbon::now()->startOfMonth()->addMonthNoOverflow()); $b->addMonthNoOverflow()) {
+            $bulan[] = $b->copy();
+        }
+        // Hitungan hari bukan saldo - tidak ikut dibandingkan.
+        $hitung = fn() => array_map(fn($b) => array_map(
+            fn($r) => array_diff_key($r, ['hari_kerja' => 0, 'hari_terkunci' => 0]),
+            TutupBulanan::hitung([$gid], $b)
+        ), $bulan);
+        $berlaku = $mulai->copy()->startOfMonth()->toDateString();
+        $catatan = trim((string) $catatan);
+
+        DB::transaction(function () use ($dari, $ke, $nominal, $catatan, $user, $hitung, $berlaku, $gid) {
+            $sebelum = $hitung();
+            foreach ([[$dari, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, 'oper ke ' . $ke->customer?->nama],
+                      [$ke, TransactionSaldoAdjustment::JENIS_KURANG_INPUT, 'oper dari ' . $dari->customer?->nama]] as [$l, $jenis, $ket]) {
+                TransactionSaldoAdjustment::create([
+                    'transaction_loan_id' => $l->id,
+                    'transaction_loan_officer_grouping_id' => $gid,
+                    'jenis' => $jenis,
+                    'nominal' => $nominal,
+                    'berlaku_bulan' => $berlaku,
+                    'user_input' => $user->employee?->id,
+                    'catatan' => mb_substr($ket . ($catatan !== '' ? ': ' . $catatan : ''), 0, 500),
+                ]);
+                $l->refresh()->hitungUlangPelunasan();
+            }
+            if ($hitung() != $sebelum) {
+                throw new \RuntimeException('Oper dibatalkan: saldo bulanan kelompok ikut berubah (nasabahnya beda ember?).');
+            }
+        });
+    }
 }

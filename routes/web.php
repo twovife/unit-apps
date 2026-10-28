@@ -218,6 +218,9 @@ Route::middleware('auth')->group(function () {
       ->name('periksa_migrasi');
     Route::post('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'simpanPenyesuaian'])
       ->name('penyesuaian_saldo_simpan');
+    // Oper saldo antar nasabah ML sesudah migrasi (superuser, total kelompok tetap).
+    Route::post('/oper-saldo', [\App\Http\Controllers\MigrasiController::class, 'operSaldo'])
+      ->name('oper_saldo');
     // Koreksi Pasca Migrasi (superuser): koreksi angsuran sebelum tanggal migrasi + log.
     Route::get('/koreksi-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'index'])
       ->name('koreksi_beku');

@@ -70,6 +70,72 @@ const FormSesuai = ({ loan, onKetik }) => {
   );
 };
 
+/**
+ * Kantor sudah migrasi: penyesuaian satu nasabah ditolak (menggeser bucket), yang
+ * boleh hanya OPER saldo ke nasabah lain di daftar ini - total kelompok tetap.
+ */
+const FormOper = ({ loan, pilihan }) => {
+  const [buka, setBuka] = useState(false);
+  const [ke, setKe] = useState('');
+  const [nominal, setNominal] = useState(String(loan.saldo_kini));
+  const [catatan, setCatatan] = useState('');
+  const [proses, setProses] = useState(false);
+  const tujuan = pilihan.filter((p) => p.id !== loan.id && p.boleh);
+
+  const simpan = () =>
+    router.post(
+      route('migrasi.oper_saldo'),
+      { dari_id: loan.id, ke_id: ke, nominal, catatan },
+      {
+        preserveScroll: true,
+        onStart: () => setProses(true),
+        onFinish: () => setProses(false),
+        onSuccess: (p) => !Object.keys(p.props.errors ?? {}).length && setBuka(false),
+      },
+    );
+
+  if (!buka) {
+    return (
+      <Button size="sm" variant="outline" className="h-8" disabled={!loan.saldo_kini || !tujuan.length} onClick={() => setBuka(true)}>
+        Oper saldo
+      </Button>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <select className={`${PILIH} w-44`} value={ke} onChange={(e) => setKe(e.target.value)}>
+        <option value="">ke nasabah…</option>
+        {tujuan.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.nama} ({rp(p.saldo_kini)})
+          </option>
+        ))}
+      </select>
+      <CurrencyInput
+        className="w-28 h-8 px-2 text-sm text-right border rounded-md tabular-nums border-input"
+        allowDecimals={false}
+        allowNegativeValue={false}
+        groupSeparator="."
+        decimalSeparator=","
+        value={nominal}
+        onValueChange={(v) => setNominal(v ?? '')}
+      />
+      <input
+        className="w-32 h-8 px-2 text-sm border rounded-md border-input"
+        placeholder="catatan"
+        value={catatan}
+        onChange={(e) => setCatatan(e.target.value)}
+      />
+      <Button size="sm" className="h-8" disabled={proses || !ke || !Number(nominal)} onClick={simpan}>
+        Oper
+      </Button>
+      <Button size="sm" variant="ghost" className="h-8" disabled={proses} onClick={() => setBuka(false)}>
+        Batal
+      </Button>
+    </div>
+  );
+};
+
 const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
   const f = server_filter ?? {};
   const ganti = (kunci, nilai) =>
@@ -188,7 +254,9 @@ const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
                         </span>
                       </div>
                     ))}
-                    {d.boleh ? (
+                    {d.boleh && f.sudah_migrasi ? (
+                      <FormOper loan={d} pilihan={datas} />
+                    ) : d.boleh ? (
                       <FormSesuai
                         loan={d}
                         onKetik={(v) => setKetik((k) => ({ ...k, [d.id]: v }))}

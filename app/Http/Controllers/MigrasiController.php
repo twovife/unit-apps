@@ -77,6 +77,32 @@ class MigrasiController extends Controller
         return back()->with('message', 'Penyesuaian tersimpan.');
     }
 
+    /** Oper saldo antar dua nasabah ML (kantor sudah migrasi) - PenyesuaianSaldo::oper. */
+    public function operSaldo(Request $request)
+    {
+        $val = $request->validate([
+            'dari_id' => ['required', 'integer'],
+            'ke_id' => ['required', 'integer'],
+            'nominal' => ['required', 'integer', 'min:1'],
+            'catatan' => ['nullable', 'string', 'max:400'],
+        ]);
+        $dari = TransactionLoan::with('customer')->findOrFail($val['dari_id']);
+        $ke = TransactionLoan::with('customer')->findOrFail($val['ke_id']);
+        $branchLoan = DB::table('transaction_loan_officer_groupings')
+            ->where('id', $dari->transaction_loan_officer_grouping_id)->value('branch_id');
+        if ((int) $branchLoan !== (int) AuthScope::resolve()->branch_id) {
+            abort(403, 'Pinjaman ini milik kantor lain.');
+        }
+
+        try {
+            PenyesuaianSaldo::oper($dari, $ke, (int) $val['nominal'], $val['catatan'] ?? null, auth()->user());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', 'Saldo dioper, total kelompok tetap.');
+    }
+
     /**
      * Kesiapan migrasi satu kantor (kantor aktif) ke pendataan baru — superuser,
      * BACA-SAJA. Per kelompok x hari tagih membandingkan:
@@ -207,6 +233,7 @@ class MigrasiController extends Controller
                 'periode' => $periode->toDateString(),
                 'batas_penyesuaian' => $batasSesuai?->toDateString(),
                 'unit' => Branch::whereKey($scope->branch_id)->value('unit'),
+                'sudah_migrasi' => AgregasiScope::sudahMigrasi($scope->branch_id),
             ],
         ]);
     }
