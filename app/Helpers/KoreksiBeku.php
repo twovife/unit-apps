@@ -41,7 +41,8 @@ class KoreksiBeku
     // meninggal / masih bayar), mas 2026-10-28.
     // tambah_pinjaman: nasabah drop sebelum migrasi yang belum terinput (fastcreate
     // ditolak trigger beku), mas 2026-10-28.
-    public const AKSI = ['ubah', 'hapus', 'tambah', 'hapus_pemutihan', 'tambah_pinjaman'];
+    // hapus_pinjaman: drop sebelum migrasi yang salah input, angsurannya ikut terhapus.
+    public const AKSI = ['ubah', 'hapus', 'tambah', 'hapus_pemutihan', 'tambah_pinjaman', 'hapus_pinjaman'];
 
     private const KOLOM = [
         'awal_month1', 'awal_month2', 'awal_ccm', 'awal_cm', 'awal_mb', 'awal_ml',
@@ -51,7 +52,8 @@ class KoreksiBeku
     /**
      * @param array $data ubah: angsuran_id, nominal | hapus: angsuran_id |
      *                    tambah: loan_id, tanggal, nominal | hapus_pemutihan: pemutihan_id |
-     *                    tambah_pinjaman: grouping_id, tanggal (drop), nominal, nik, nama, alamat, nomor_anggota
+     *                    tambah_pinjaman: grouping_id, tanggal (drop), nominal, nik, nama, alamat, nomor_anggota |
+     *                    hapus_pinjaman: loan_id
      * @return array{dampak:array, log_id:?int}
      * @throws \RuntimeException pesan untuk ditampilkan ke user
      */
@@ -82,7 +84,8 @@ class KoreksiBeku
             throw new \RuntimeException('Kantor ini belum migrasi - datanya tidak beku, ubah lewat menu biasa.');
         }
 
-        $tanggal = Carbon::parse(($angsuran ?? $pemutihan)?->transaction_date ?? ($data['tanggal'] ?? ''));
+        $hapusPinjaman = $aksi === 'hapus_pinjaman';
+        $tanggal = Carbon::parse(($angsuran ?? $pemutihan)?->transaction_date ?? ($hapusPinjaman ? $loan->drop_date : ($data['tanggal'] ?? '')));
         if (!$tanggal->lt($mulai)) {
             throw new \RuntimeException('Hanya data bertanggal sebelum migrasi (' . $mulai->toDateString() . '). Sesudahnya ubah lewat menu biasa.');
         }
@@ -100,6 +103,9 @@ class KoreksiBeku
         if ($baru) {
             self::cekPinjamanBaru($data, $tanggal);
         }
+        if ($hapusPinjaman) {
+            self::cekHapusPinjaman($loan);
+        }
         if ($aksi === 'tambah' && $tanggal->lt(Carbon::parse($loan->drop_date)->startOfDay())) {
             throw new \RuntimeException('Tanggal angsuran sebelum tanggal drop pinjaman.');
         }
@@ -114,7 +120,8 @@ class KoreksiBeku
         DB::beginTransaction();
         try {
             $potretAwal = self::potret($ids, $bulan);
-            $sebelum = $angsuran ? self::isi($angsuran) : ($pemutihan ? self::isiPemutihan($pemutihan, $loan) : null);
+            $sebelum = $angsuran ? self::isi($angsuran)
+                : ($pemutihan ? self::isiPemutihan($pemutihan, $loan) : ($hapusPinjaman ? self::isiPinjaman($loan) : null));
             // Dampak = hitungan SESUDAH - SEBELUM koreksi, keduanya dari data sekarang.
             // Angka tersimpan yang belum mengikuti data (hari belum dikunci) tidak ikut
             // terbawa: yang ditulis hanya selisih akibat koreksi (mas 2026-10-24).
@@ -126,6 +133,10 @@ class KoreksiBeku
                 if ($baru) {
                     $loan = self::buatPinjaman($data, $grouping, $tanggal, $nominal, $user);
                     $sesudah = self::isiPinjaman($loan);
+                } elseif ($hapusPinjaman) {
+                    $loan->loan_instalment()->get()->each->delete();
+                    $loan->delete();
+                    $sesudah = null;
                 } else {
                     $sesudah = $pemutihan
                         ? self::hapusPemutihan($pemutihan, $loan)
@@ -178,7 +189,7 @@ class KoreksiBeku
                     'transaction_loan_instalment_id' => $angsuran?->id ?? ($baru ? null : ($sesudah['id'] ?? null)),
                     'aksi' => $aksi,
                     'sebelum' => $sebelum,
-                    'sesudah' => in_array($aksi, ['hapus', 'hapus_pemutihan'], true) ? null : $sesudah,
+                    'sesudah' => in_array($aksi, ['hapus', 'hapus_pemutihan', 'hapus_pinjaman'], true) ? null : $sesudah,
                     'dampak' => $dampak,
                     'alasan' => trim($alasan),
                     'user_id' => $user->id,
@@ -285,6 +296,26 @@ class KoreksiBeku
         }
     }
 
+    /** Hapus pinjaman hanya kalau tidak menyangkut pinjaman / catatan lain - itu dibereskan manual. */
+    private static function cekHapusPinjaman(TransactionLoan $loan): void
+    {
+        if (AppHelper::sudahDiajukanPengganti($loan)) {
+            throw new \RuntimeException('Pinjaman ini sudah jadi dasar pengajuan / topup lain - hapus pinjaman penggantinya dulu.');
+        }
+        if (TransactionLoanInstalment::where('settled_by_loan_id', $loan->id)->exists()) {
+            throw new \RuntimeException('Pinjaman ini topup yang sudah melunasi pinjaman lama - tidak bisa dihapus di sini.');
+        }
+        if ($loan->loan_instalment()->whereNotNull('settled_by_loan_id')->exists()) {
+            throw new \RuntimeException('Pinjaman ini sudah dilunasi topup - hapus topupnya dulu.');
+        }
+        if ($loan->white_off()->exists()) {
+            throw new \RuntimeException('Pinjaman ini punya pemutihan - hapus pemutihannya dulu (kolom MD).');
+        }
+        if (\App\Models\TransactionSaldoAdjustment::where('transaction_loan_id', $loan->id)->exists()) {
+            throw new \RuntimeException('Pinjaman ini punya penyesuaian saldo - tidak bisa dihapus di sini.');
+        }
+    }
+
     /** Pinjaman drop langsung status success, isian sama dengan fastcreate (store_buku_transaksi_batch). */
     private static function buatPinjaman(array $data, TransactionLoanOfficerGrouping $grouping, Carbon $tanggal, int $nominal, $user): TransactionLoan
     {
@@ -311,7 +342,11 @@ class KoreksiBeku
 
     private static function isiPinjaman(TransactionLoan $loan): array
     {
+        $angsuran = $loan->loan_instalment()->get();
+
         return [
+            'angsuran_jumlah' => $angsuran->count(),
+            'angsuran_total' => (int) $angsuran->sum('nominal'),
             'transaction_loan_id' => $loan->id,
             'nasabah' => $loan->customer?->nama,
             'nik' => $loan->customer?->nik,

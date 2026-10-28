@@ -626,6 +626,12 @@ class AppHelper
       return ["status" => false, 'message' => 'Transaksi ini sudah diajukan (jadi dasar pengajuan/Tundaan lain yang masih berjalan), tidak bisa dihapus.'];
     }
 
+    // Drop sebelum migrasi = beku: buka kunci harian tidak menolong, sebut jalannya.
+    if (self::tanggalBeku($transactionLoan->transaction_loan_officer_grouping_id, $transactionLoan->drop_date)) {
+      $mulai = \App\Helpers\AgregasiScope::tanggalMulai(\App\Models\TransactionLoanOfficerGrouping::whereKey($transactionLoan->transaction_loan_officer_grouping_id)->value('branch_id'));
+      return ["status" => false, 'message' => 'Data sebelum migrasi (' . Carbon::parse($mulai)->locale('id')->isoFormat('D MMM Y') . ') beku, buka kunci harian tidak berlaku. Hapus lewat menu Koreksi Data Beku (superuser).'];
+    }
+
     // Hari drop sudah dikunci: tidak ada yang boleh menghapus, semua peran.
     if (self::hariDropTerkunci($transactionLoan)) {
       return ["status" => false, 'message' => 'Hari drop pinjaman ini sudah dikunci, pinjaman tidak bisa dihapus.'];

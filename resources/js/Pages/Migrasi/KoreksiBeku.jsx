@@ -5,15 +5,18 @@ import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
-import { History, Lock, UserPlus } from 'lucide-react';
+import { History, Lock, Trash2, UserPlus } from 'lucide-react';
 import DampakKoreksi from './Components/DampakKoreksi';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 import SatuanAngka from '@/Components/SatuanAngka';
 import { rp } from '@/lib/rupiah';
 
 const EMBER = { month1: 'M1', month2: 'M2', ccm: 'CCM', cm: 'CM', mb: 'MB', ml: 'ML' };
-const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran', hapus_pemutihan: 'Hapus pemutihan', tambah_pinjaman: 'Tambah nasabah (pinjaman sebelum migrasi)' };
+const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran', hapus_pemutihan: 'Hapus pemutihan', tambah_pinjaman: 'Tambah nasabah (pinjaman sebelum migrasi)', hapus_pinjaman: 'Hapus pinjaman' };
 const ALASAN_BAWAAN = 'selisih penyesuaian';
+const semuaAngsuran = (n) => Object.values(n?.angsuran ?? {}).flat();
+const jumlahAngsuran = (n) => semuaAngsuran(n).length;
+const totalAngsuran = (n) => semuaAngsuran(n).reduce((a, i) => a + i.nominal, 0);
 
 /**
  * Dialog satu koreksi: nominal (+ alasan opsional) -> Pratinjau dampak (dijalankan
@@ -54,7 +57,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman, filter, mulai }) => {
     angsuran_id: angsuran?.id,
     pemutihan_id: pemutihan?.id,
     loan_id: pinjaman?.id,
-    nominal: aksi === 'hapus' || aksi === 'hapus_pemutihan' ? undefined : Number(nominal),
+    nominal: ['hapus', 'hapus_pemutihan', 'hapus_pinjaman'].includes(aksi) ? undefined : Number(nominal),
     tanggal: aksi === 'tambah' ? tanggal : undefined,
     ikut_bucket: ikutBucket,
     ...(aksi === 'tambah_pinjaman' && { ...baru, tanggal: baru.tanggal, grouping_id: filter?.grouping_id, hari: filter?.hari }),
@@ -123,7 +126,12 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman, filter, mulai }) => {
               <span className="self-end text-xs text-slate-500">Nama & alamat hanya dipakai kalau NIK belum terdaftar.</span>
             </div>
           )}
-          {aksi === 'hapus_pemutihan' ? (
+          {aksi === 'hapus_pinjaman' ? (
+            <div className="p-2 text-red-700 rounded-md bg-red-50">
+              Pinjaman ini dihapus beserta {jumlahAngsuran(pinjaman)} angsurannya (Rp {rp(totalAngsuran(pinjaman))}). Nasabahnya tetap
+              tercatat.
+            </div>
+          ) : aksi === 'hapus_pemutihan' ? (
             <div className="p-2 text-red-700 rounded-md bg-red-50">
               Pemutihan ini akan dihapus: saldonya kembali jadi tagihan nasabah dan status lunas karena pemutihan dicabut.
             </div>
@@ -393,7 +401,17 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                 {nasabah.map((n) => (
                   <tr key={n.id} className="border-t even:bg-slate-50 hover:bg-sky-50">
                     <td className="sticky left-0 z-10 px-2 py-1 bg-inherit whitespace-nowrap">
-                      <div className="font-medium text-slate-900">{n.nama}</div>
+                      <div className="flex items-center gap-1 font-medium text-slate-900">
+                        {n.nama}
+                        <button
+                          type="button"
+                          title="Hapus pinjaman ini (salah input)"
+                          onClick={() => setBuka({ aksi: 'hapus_pinjaman', nasabah: n })}
+                          className="text-slate-300 hover:text-red-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                       <div className="text-[10px] text-slate-500">No. {n.nomor_anggota || '–'}</div>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">{dayjs(n.drop_date).format('DD-MM')}</td>
