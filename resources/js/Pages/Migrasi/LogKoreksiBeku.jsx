@@ -6,8 +6,8 @@ import { ArrowLeft } from 'lucide-react';
 import DampakKoreksi from './Components/DampakKoreksi';
 import { rp } from '@/lib/rupiah';
 
-const AKSI = { ubah: 'Ubah nominal', hapus: 'Hapus', tambah: 'Tambah', pindah: 'Pindah pinjaman', hapus_pemutihan: 'Hapus pemutihan' };
-const NADA = { ubah: 'bg-sky-100 text-sky-800', hapus: 'bg-red-100 text-red-800', tambah: 'bg-emerald-100 text-emerald-800', pindah: 'bg-amber-100 text-amber-800', hapus_pemutihan: 'bg-red-100 text-red-800' };
+const AKSI = { ubah: 'Ubah nominal', hapus: 'Hapus', tambah: 'Tambah', pindah: 'Pindah pinjaman', hapus_pemutihan: 'Hapus pemutihan', tambah_pinjaman: 'Tambah pinjaman' };
+const NADA = { ubah: 'bg-sky-100 text-sky-800', hapus: 'bg-red-100 text-red-800', tambah: 'bg-emerald-100 text-emerald-800', pindah: 'bg-amber-100 text-amber-800', hapus_pemutihan: 'bg-red-100 text-red-800', tambah_pinjaman: 'bg-emerald-100 text-emerald-800' };
 
 const Angsuran = ({ a }) =>
   a ? (

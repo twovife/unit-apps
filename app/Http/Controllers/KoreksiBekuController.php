@@ -93,9 +93,8 @@ class KoreksiBekuController extends Controller
                 'kelompok' => $scope->kelompok,
                 'kelompok_ada' => $kelompokAda,
                 'hari' => $hari,
+                'grouping_id' => $grouping?->id,
                 'bulan' => $bulan->format('Y-m'),
-                // Pilihan bulan drop: 12 bulan sebelum migrasi.
-                'bulan_ada' => collect(range(1, 12))->map(fn($i) => $mulai->copy()->startOfMonth()->subMonthsNoOverflow($i)->format('Y-m'))->values(),
             ],
             'kolom' => $tanggal,
             'nasabah' => $loans->map(fn($l) => [
@@ -140,6 +139,13 @@ class KoreksiBekuController extends Controller
             'nominal' => ['nullable', 'integer', 'min:0'],
             'alasan' => ['nullable', 'string', 'max:1000'],
             'ikut_bucket' => ['boolean'],
+            // tambah_pinjaman
+            'grouping_id' => ['nullable', 'integer'],
+            'hari' => ['nullable', 'string'],
+            'nik' => ['nullable', 'string', 'max:16'],
+            'nama' => ['nullable', 'string', 'max:255'],
+            'alamat' => ['nullable', 'string', 'max:255'],
+            'nomor_anggota' => ['nullable', 'regex:/^[0-9]+$/', 'max:20'],
         ]);
     }
 

@@ -5,14 +5,14 @@ import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
-import { History, Lock } from 'lucide-react';
+import { History, Lock, UserPlus } from 'lucide-react';
 import DampakKoreksi from './Components/DampakKoreksi';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 import SatuanAngka from '@/Components/SatuanAngka';
 import { rp } from '@/lib/rupiah';
 
 const EMBER = { month1: 'M1', month2: 'M2', ccm: 'CCM', cm: 'CM', mb: 'MB', ml: 'ML' };
-const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran', hapus_pemutihan: 'Hapus pemutihan' };
+const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran', hapus_pemutihan: 'Hapus pemutihan', tambah_pinjaman: 'Tambah nasabah (pinjaman sebelum migrasi)' };
 const ALASAN_BAWAAN = 'selisih penyesuaian';
 
 /**
@@ -20,19 +20,25 @@ const ALASAN_BAWAAN = 'selisih penyesuaian';
  * lalu dibatalkan di server) -> Simpan. Simpan baru aktif sesudah pratinjau
  * dengan isian yang sama. Angsuran yang ada bisa diganti ke "hapus" dari sini.
  */
-const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
+const DialogKoreksi = ({ buka, onClosed, pinjaman, filter, mulai }) => {
   const { angsuran, tanggal, pemutihan } = buka ?? {};
+  // tambah_pinjaman: isian nasabah + tanggal drop (kelompok & hari dari filter).
+  const [baru, setBaru] = useState({});
+  const isiBaru = (k) => (e) => setBaru((b) => ({ ...b, [k]: e.target.value }));
   const [aksi, setAksi] = useState(null);
   const [nominal, setNominal] = useState('');
   const [alasan, setAlasan] = useState('');
   const [ikutBucket, setIkutBucket] = useState(true);
   const [pratinjau, setPratinjau] = useState(null);
+  // Nasabah yang benar-benar dipakai: NIK terdaftar -> nama lama, isian nama diabaikan.
+  const [nasabahBaru, setNasabahBaru] = useState(null);
   const [galat, setGalat] = useState(null);
   const [proses, setProses] = useState(false);
 
   useEffect(() => {
     setAksi(buka?.aksi ?? null);
     setNominal(angsuran ? String(angsuran.nominal) : '');
+    setBaru({});
     setAlasan('');
     setIkutBucket(true);
     setPratinjau(null);
@@ -40,7 +46,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
   }, [buka]);
 
   // Isian berubah -> pratinjau lama tidak berlaku lagi.
-  useEffect(() => setPratinjau(null), [aksi, nominal, alasan, ikutBucket]);
+  useEffect(() => setPratinjau(null), [aksi, nominal, alasan, ikutBucket, baru]);
 
   const isian = () => ({
     aksi,
@@ -51,6 +57,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
     nominal: aksi === 'hapus' || aksi === 'hapus_pemutihan' ? undefined : Number(nominal),
     tanggal: aksi === 'tambah' ? tanggal : undefined,
     ikut_bucket: ikutBucket,
+    ...(aksi === 'tambah_pinjaman' && { ...baru, tanggal: baru.tanggal, grouping_id: filter?.grouping_id, hari: filter?.hari }),
   });
 
   const lihat = () => {
@@ -58,7 +65,10 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
     setGalat(null);
     axios
       .post(route('migrasi.koreksi_beku_pratinjau'), isian())
-      .then((r) => setPratinjau(r.data.dampak))
+      .then((r) => {
+        setPratinjau(r.data.dampak);
+        setNasabahBaru(aksi === 'tambah_pinjaman' ? r.data.sesudah : null);
+      })
       .catch((e) => setGalat(e.response?.data?.message ?? 'Pratinjau gagal.'))
       .finally(() => setProses(false));
   };
@@ -77,6 +87,7 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
         <DialogHeader>
           <DialogTitle>{JUDUL[aksi]}</DialogTitle>
           <DialogDescription>
+            {aksi === 'tambah_pinjaman' && `Kelompok ${filter?.kelompok} · hari ${filter?.hari} · drop sebelum ${dayjs(mulai).format('DD-MM-YYYY')}`}
             {pinjaman?.nama} · drop {pinjaman && dayjs(pinjaman.drop_date).format('DD-MM-YYYY')}
             {angsuran
               ? ` · angsuran ${dayjs(angsuran.tanggal).format('DD-MM-YYYY')} Rp ${rp(angsuran.nominal)}`
@@ -87,6 +98,31 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
         </DialogHeader>
 
         <div className="grid gap-3 text-sm">
+          {aksi === 'tambah_pinjaman' && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1">
+                <span className="font-medium">NIK</span>
+                <Input inputMode="numeric" maxLength={16} autoFocus value={baru.nik ?? ''} onChange={isiBaru('nik')} />
+              </label>
+              <label className="grid gap-1">
+                <span className="font-medium">Nomor anggota (boleh kosong)</span>
+                <Input inputMode="numeric" value={baru.nomor_anggota ?? ''} onChange={isiBaru('nomor_anggota')} />
+              </label>
+              <label className="grid gap-1">
+                <span className="font-medium">Nama</span>
+                <Input value={baru.nama ?? ''} onChange={isiBaru('nama')} />
+              </label>
+              <label className="grid gap-1">
+                <span className="font-medium">Alamat</span>
+                <Input value={baru.alamat ?? ''} onChange={isiBaru('alamat')} />
+              </label>
+              <label className="grid gap-1">
+                <span className="font-medium">Tanggal drop</span>
+                <Input type="date" max={mulai && dayjs(mulai).subtract(1, 'day').format('YYYY-MM-DD')} value={baru.tanggal ?? ''} onChange={isiBaru('tanggal')} />
+              </label>
+              <span className="self-end text-xs text-slate-500">Nama & alamat hanya dipakai kalau NIK belum terdaftar.</span>
+            </div>
+          )}
           {aksi === 'hapus_pemutihan' ? (
             <div className="p-2 text-red-700 rounded-md bg-red-50">
               Pemutihan ini akan dihapus: saldonya kembali jadi tagihan nasabah dan status lunas karena pemutihan dicabut.
@@ -100,8 +136,8 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
             </div>
           ) : (
             <label className="grid gap-1">
-              <span className="font-medium">Nominal</span>
-              <Input type="number" min="0" step="1000" autoFocus value={nominal} onChange={(e) => setNominal(e.target.value)} />
+              <span className="font-medium">{aksi === 'tambah_pinjaman' ? 'Nominal drop' : 'Nominal'}</span>
+              <Input type="number" min="0" step="1000" autoFocus={aksi !== 'tambah_pinjaman'} value={nominal} onChange={(e) => setNominal(e.target.value)} />
             </label>
           )}
           <label className="grid gap-1">
@@ -127,6 +163,12 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
           {galat && <div className="p-2 text-sm text-red-700 rounded-md bg-red-50">{galat}</div>}
           {pratinjau && (
             <div className="grid gap-1">
+              {nasabahBaru && (
+                <div className="p-2 rounded-md bg-emerald-50 text-emerald-900">
+                  Nasabah: <b>{nasabahBaru.nasabah}</b> (NIK {nasabahBaru.nik}) · drop {dayjs(nasabahBaru.drop_date).format('DD-MM-YYYY')} · Rp{' '}
+                  {rp(nasabahBaru.nominal)}
+                </div>
+              )}
               <span className="font-medium">Dampak ke saldo bulanan</span>
               <DampakKoreksi dampak={pratinjau} />
             </div>
@@ -249,12 +291,20 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
             mengoreksi; saldo bulanan dihitung ulang dan tercatat di log. <SatuanAngka />
           </p>
         </div>
+        <div className="flex gap-2">
+        {kantor.mulai && filter?.grouping_id && (
+          <Button variant="outline" className="gap-1" onClick={() => setBuka({ aksi: 'tambah_pinjaman' })}>
+            <UserPlus className="w-4 h-4" />
+            Tambah nasabah
+          </Button>
+        )}
         <Button asChild variant="outline" className="gap-1">
           <Link href={route('migrasi.koreksi_beku_log')}>
             <History className="w-4 h-4" />
             Log koreksi ({kantor.jumlah_koreksi})
           </Link>
         </Button>
+        </div>
       </div>
 
       {!kantor.mulai ? (
@@ -285,13 +335,17 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                 </button>
               ))}
             </div>
-            <select className={PILIH} value={filter.bulan} onChange={(e) => ganti({ bulan: e.target.value })}>
-              {filter.bulan_ada.map((b) => (
-                <option key={b} value={b}>
-                  Drop {dayjs(`${b}-01`).format('MMMM YYYY')}
-                </option>
-              ))}
-            </select>
+            {/* Bulan drop bebas (mas 2026-10-28), asal sebelum bulan migrasi - server menolak sisanya. */}
+            <label className="flex items-center gap-1 text-sm">
+              Drop
+              <input
+                type="month"
+                className={PILIH}
+                value={filter.bulan}
+                max={dayjs(kantor.mulai).subtract(1, 'month').format('YYYY-MM')}
+                onChange={(e) => e.target.value && ganti({ bulan: e.target.value })}
+              />
+            </label>
           </div>
 
           <div className="overflow-auto bg-white border rounded-lg max-h-[70vh]">
@@ -450,6 +504,8 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
         buka={buka}
         onClosed={() => setBuka(null)}
         pinjaman={buka?.nasabah}
+        filter={filter}
+        mulai={kantor.mulai}
       />
     </>
   );

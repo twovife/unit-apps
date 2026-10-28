@@ -2,12 +2,14 @@
 
 namespace App\Helpers;
 
+use App\Models\TransactionCustomer;
 use App\Models\TransactionKoreksiBeku;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
 use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionMonthlyClosing;
 use App\Models\TransactionWhiteOff;
+use App\Models\WorkDay;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -37,7 +39,9 @@ class KoreksiBeku
 {
     // hapus_pemutihan: pemutihan sebelum migrasi yang ternyata salah (nasabah tidak
     // meninggal / masih bayar), mas 2026-10-28.
-    public const AKSI = ['ubah', 'hapus', 'tambah', 'hapus_pemutihan'];
+    // tambah_pinjaman: nasabah drop sebelum migrasi yang belum terinput (fastcreate
+    // ditolak trigger beku), mas 2026-10-28.
+    public const AKSI = ['ubah', 'hapus', 'tambah', 'hapus_pemutihan', 'tambah_pinjaman'];
 
     private const KOLOM = [
         'awal_month1', 'awal_month2', 'awal_ccm', 'awal_cm', 'awal_mb', 'awal_ml',
@@ -46,7 +50,8 @@ class KoreksiBeku
 
     /**
      * @param array $data ubah: angsuran_id, nominal | hapus: angsuran_id |
-     *                    tambah: loan_id, tanggal, nominal | hapus_pemutihan: pemutihan_id
+     *                    tambah: loan_id, tanggal, nominal | hapus_pemutihan: pemutihan_id |
+     *                    tambah_pinjaman: grouping_id, tanggal (drop), nominal, nik, nama, alamat, nomor_anggota
      * @return array{dampak:array, log_id:?int}
      * @throws \RuntimeException pesan untuk ditampilkan ke user
      */
@@ -66,9 +71,11 @@ class KoreksiBeku
             ? TransactionLoanInstalment::findOrFail($data['angsuran_id'] ?? 0)
             : null;
         $pemutihan = $aksi === 'hapus_pemutihan' ? TransactionWhiteOff::findOrFail($data['pemutihan_id'] ?? 0) : null;
-        $loan = $angsuran ? $angsuran->loan
-            : ($pemutihan ? TransactionLoan::findOrFail($pemutihan->transaction_loan_id) : TransactionLoan::findOrFail($data['loan_id'] ?? 0));
-        $branchId = (int) TransactionLoanOfficerGrouping::whereKey($loan->transaction_loan_officer_grouping_id)->value('branch_id');
+        $baru = $aksi === 'tambah_pinjaman';
+        $loan = $baru ? null : ($angsuran ? $angsuran->loan
+            : ($pemutihan ? TransactionLoan::findOrFail($pemutihan->transaction_loan_id) : TransactionLoan::findOrFail($data['loan_id'] ?? 0)));
+        $grouping = TransactionLoanOfficerGrouping::findOrFail($baru ? ($data['grouping_id'] ?? 0) : $loan->transaction_loan_officer_grouping_id);
+        $branchId = (int) $grouping->branch_id;
         $mulai = AgregasiScope::tanggalMulai($branchId);
 
         if (!$mulai) {
@@ -84,18 +91,21 @@ class KoreksiBeku
         }
 
         $nominal = null;
-        if (in_array($aksi, ['ubah', 'tambah'], true)) {
+        if (in_array($aksi, ['ubah', 'tambah', 'tambah_pinjaman'], true)) {
             $nominal = (int) ($data['nominal'] ?? -1);
-            if ($nominal < ($aksi === 'tambah' ? 1 : 0)) {
-                throw new \RuntimeException('Nominal tidak valid.');
+            if ($nominal < ['ubah' => 0, 'tambah' => 1, 'tambah_pinjaman' => 100000][$aksi]) {
+                throw new \RuntimeException($baru ? 'Nominal pinjaman minimal 100.000.' : 'Nominal tidak valid.');
             }
+        }
+        if ($baru) {
+            self::cekPinjamanBaru($data, $tanggal);
         }
         if ($aksi === 'tambah' && $tanggal->lt(Carbon::parse($loan->drop_date)->startOfDay())) {
             throw new \RuntimeException('Tanggal angsuran sebelum tanggal drop pinjaman.');
         }
 
         // Hanya kelompok pinjaman ini (mas 2026-10-24): kelompok lain tidak berubah oleh koreksi.
-        $ids = [(int) $loan->transaction_loan_officer_grouping_id];
+        $ids = [(int) $grouping->id];
         $bulan = [];
         for ($b = $mulai->copy()->startOfMonth(); $b->lte(Carbon::now()->startOfMonth()->addMonthNoOverflow()); $b->addMonthNoOverflow()) {
             $bulan[] = $b->copy();
@@ -113,9 +123,14 @@ class KoreksiBeku
 
             DB::statement('SET @koreksi_beku = 1');
             try {
-                $sesudah = $pemutihan
-                    ? self::hapusPemutihan($pemutihan, $loan)
-                    : self::kerjakan($aksi, $angsuran, $loan, $tanggal, $nominal, $user);
+                if ($baru) {
+                    $loan = self::buatPinjaman($data, $grouping, $tanggal, $nominal, $user);
+                    $sesudah = self::isiPinjaman($loan);
+                } else {
+                    $sesudah = $pemutihan
+                        ? self::hapusPemutihan($pemutihan, $loan)
+                        : self::kerjakan($aksi, $angsuran, $loan, $tanggal, $nominal, $user);
+                }
             } finally {
                 DB::statement('SET @koreksi_beku = NULL');
             }
@@ -160,7 +175,7 @@ class KoreksiBeku
                 $logId = TransactionKoreksiBeku::create([
                     'branch_id' => $branchId,
                     'transaction_loan_id' => $loan->id,
-                    'transaction_loan_instalment_id' => $angsuran?->id ?? ($sesudah['id'] ?? null),
+                    'transaction_loan_instalment_id' => $angsuran?->id ?? ($baru ? null : ($sesudah['id'] ?? null)),
                     'aksi' => $aksi,
                     'sebelum' => $sebelum,
                     'sesudah' => in_array($aksi, ['hapus', 'hapus_pemutihan'], true) ? null : $sesudah,
@@ -177,7 +192,7 @@ class KoreksiBeku
             throw $e;
         }
 
-        return ['dampak' => $dampak, 'log_id' => $logId];
+        return ['dampak' => $dampak, 'log_id' => $logId, 'sesudah' => $sesudah];
     }
 
     private static function kerjakan(string $aksi, ?TransactionLoanInstalment $angsuran, TransactionLoan $loan, Carbon $tanggal, ?int $nominal, $user): ?array
@@ -251,6 +266,60 @@ class KoreksiBeku
         }
 
         return $hasil;
+    }
+
+    /** Syarat pinjaman baru sebelum migrasi: NIK, nama (nasabah baru), hari kerja, hari tagih filter. */
+    private static function cekPinjamanBaru(array $data, Carbon $tanggal): void
+    {
+        if (!preg_match('/^\d{16}$/', (string) ($data['nik'] ?? ''))) {
+            throw new \RuntimeException('NIK harus 16 digit angka.');
+        }
+        if (!TransactionCustomer::where('nik', $data['nik'])->exists() && (!trim($data['nama'] ?? '') || !trim($data['alamat'] ?? ''))) {
+            throw new \RuntimeException('NIK belum terdaftar: nama dan alamat wajib diisi.');
+        }
+        if (!WorkDay::hariKerja($tanggal)) {
+            throw new \RuntimeException('Tanggal drop jatuh di hari libur.');
+        }
+        if (!empty($data['hari']) && AppHelper::dateName($tanggal) !== $data['hari']) {
+            throw new \RuntimeException('Tanggal drop harus hari ' . $data['hari'] . '.');
+        }
+    }
+
+    /** Pinjaman drop langsung status success, isian sama dengan fastcreate (store_buku_transaksi_batch). */
+    private static function buatPinjaman(array $data, TransactionLoanOfficerGrouping $grouping, Carbon $tanggal, int $nominal, $user): TransactionLoan
+    {
+        $customer = TransactionCustomer::firstOrCreate(['nik' => $data['nik']], ['nama' => trim($data['nama'] ?? ''), 'alamat' => trim($data['alamat'] ?? '')]);
+        $manage = $customer->manage_customer()->firstOrCreate(['transaction_loan_officer_grouping_id' => $grouping->id, 'day' => $tanggal->dayOfWeek]);
+        if (!empty($data['nomor_anggota'])) {
+            $manage->update(['nomor_anggota' => $data['nomor_anggota']]);
+        }
+        $mantri = AppHelper::getMantri($grouping);
+
+        return $manage->loan()->create([
+            'transaction_loan_officer_grouping_id' => $grouping->id,
+            'request_date' => $tanggal->toDateString(),
+            'drop_date' => $tanggal->toDateString(),
+            'hari' => AppHelper::dateName($tanggal),
+            'status' => 'success',
+            'user_input' => $user->employee?->id,
+            'user_mantri' => $mantri,
+            'user_drop' => $mantri,
+            'drop_before' => 0,
+            'nominal_drop' => $nominal,
+        ]);
+    }
+
+    private static function isiPinjaman(TransactionLoan $loan): array
+    {
+        return [
+            'transaction_loan_id' => $loan->id,
+            'nasabah' => $loan->customer?->nama,
+            'nik' => $loan->customer?->nik,
+            'drop_date' => Carbon::parse($loan->drop_date)->toDateString(),
+            'tanggal' => Carbon::parse($loan->drop_date)->toDateString(),
+            'nominal' => (int) $loan->nominal_drop,
+            'jenis' => 'pinjaman',
+        ];
     }
 
     /** Hapus satu pemutihan; status lunas / keluar pinjaman dihitung ulang dari saldonya. */
