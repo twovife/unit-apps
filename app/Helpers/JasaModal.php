@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Jasa & pembagian bayar pinjaman modal (tb_capital_loans), aturan mas 2026-10-21 (revisi):
- *  - Jasa 2% sisa pokok AWAL bulan bayar per pinjaman, dibulatkan KE ATAS per 1.000
- *    (2.000.223 -> 2.001.000). Sumber Pusat: tidak ada jasa.
+ *  - Jasa 2% sisa pokok AWAL bulan bayar per pinjaman, tepat ke rupiah; TOTAL jasa wajib
+ *    kantor yang dibulatkan KE ATAS per 1.000 (mas 2026-10-28, dulu per pinjaman: 430 jt
+ *    dua pinjaman jadi 8.601.000). Sisa pembulatan dibebankan ke satu pinjaman (lihat
+ *    perPinjaman), jadi jumlah per pinjaman = total. Sumber Pusat: tidak ada jasa.
  *  - Tempo 3 bulan: bulan ke-1..3 jasa & pokok belum wajib; wajib mulai bulan ke-4
  *    (selisih bulan kalender >= 3; pinjam Juni -> wajib September). Pinjaman tempo yang
  *    kebagian uang tetap kena jasa 2% (tidak wajib, ditarik kalau dibayar).
@@ -23,10 +25,16 @@ class JasaModal
     public const PINJAMAN = 'pinjaman_modal';
     public const LABEL = [self::PINJAMAN => 'Pinjaman Modal', self::MODAL_AWAL => 'Modal Awal'];
 
-    /** 2% dari sisa, bulat ke atas per 1.000 (tanpa float: ceil(sisa*2/100/1000)*1000). */
+    /** 2% dari sisa, dibulatkan ke rupiah terdekat (tanpa float). */
     public static function dari(int $sisa): int
     {
-        return $sisa > 0 ? intdiv($sisa * 2 + 99_999, 100_000) * 1_000 : 0;
+        return $sisa > 0 ? intdiv($sisa * 2 + 50, 100) : 0;
+    }
+
+    /** Total dibulatkan ke atas per 1.000. */
+    public static function bulat(int $total): int
+    {
+        return intdiv($total + 999, 1_000) * 1_000;
     }
 
     /** Sudah lewat tempo 3 bulan (bulan ke-4 dst). */
@@ -53,6 +61,7 @@ class JasaModal
      * Per pinjaman untuk bulan $tanggal: sisa awal bulan, sisa per $sampai, jasa seharusnya
      * (wajib), jasa dibayar bulan itu, jasa wajib (seharusnya - dibayar, min 0), tempo, dan
      * jasa_bila_bayar (jasa yang ditarik kalau pinjaman ini kebagian uang; = wajib bila lewat tempo).
+     * $loans harus SEMUA pinjaman kantor: pembulatan total jasa wajib dihitung atas semuanya.
      *
      * @param  Collection<int,object>  $loans  baris tb_capital_loans (id, amount, loan_date, source, jenis)
      * @return array<int,array{sisa_awal:int,sisa:int,seharusnya:int,dibayar:int,wajib:int,tempo:bool,jasa_bila_bayar:int}>
@@ -90,7 +99,25 @@ class JasaModal
                 'wajib' => max(0, $seharusnya - $dibayar),
                 'tempo' => $tempo,
                 'jasa_bila_bayar' => max(0, $penuh - $dibayar),
+                'penuh' => $penuh,
             ];
+        }
+
+        // Pembulatan total jasa wajib kantor ke atas per 1.000: sisanya (< 1.000) ke pinjaman
+        // yang jasanya ditarik paling dulu di alokasi() - Modal Awal, lalu yang terbaru.
+        $total = array_sum(array_column($hasil, 'seharusnya'));
+        $tambah = self::bulat($total) - $total;
+        if ($tambah > 0) {
+            // Utamakan yang masih bersisa: alokasi() hanya membagi ke pinjaman bersisa.
+            $calon = $loans->filter(fn($l) => $hasil[$l->id]['seharusnya'] > 0)
+                ->sort(fn($a, $b) => [$hasil[$b->id]['sisa'] > 0, $b->jenis === self::MODAL_AWAL, (string) $b->loan_date, $b->id]
+                    <=> [$hasil[$a->id]['sisa'] > 0, $a->jenis === self::MODAL_AWAL, (string) $a->loan_date, $a->id])->first();
+            $h = &$hasil[$calon->id];
+            $h['seharusnya'] += $tambah;
+            $h['penuh'] += $tambah;
+            $h['wajib'] = max(0, $h['seharusnya'] - $h['dibayar']);
+            $h['jasa_bila_bayar'] = max(0, $h['penuh'] - $h['dibayar']);
+            unset($h);
         }
 
         return $hasil;

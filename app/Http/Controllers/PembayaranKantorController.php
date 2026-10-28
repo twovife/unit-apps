@@ -478,7 +478,9 @@ class PembayaranKantorController extends Controller
         $q = DB::table('tb_capital_loans')->where('branch_id', $branch->id);
         $pinjaman = ($buku === 'semua' ? $q : $this->pinjamanBuku($q, $buku))
             ->orderByDesc('loan_date')->orderByDesc('id')->get(['id', 'amount', 'loan_date', 'status', 'notes', 'source', 'jenis']);
-        $info = JasaModal::perPinjaman($pinjaman, now());
+        // Jasa dihitung atas SEMUA pinjaman kantor (pembulatan total per kantor), lalu dipilih bukunya.
+        $info = JasaModal::perPinjaman(DB::table('tb_capital_loans')->where('branch_id', $branch->id)
+            ->get(['id', 'amount', 'loan_date', 'source', 'jenis']), now());
         $bayar = DB::table('tb_capital_loan_payments as p')
             ->leftJoin('users as u', 'u.id', '=', 'p.created_by')
             ->leftJoin('employees as e', 'e.id', '=', 'u.employee_id')
