@@ -29,6 +29,9 @@ const TutupBukuBaru = ({ tb, month, show, onClosed }) => {
   const [proses, setProses] = useState(false);
   const bulan = dayjs(month);
   const namaBulan = (d) => d.toDate().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  // Angka baru dihitung ulang saat hari dikunci: selama ada hari terbuka angkanya bisa basi,
+  // jadi tabel & kotak jumlah disembunyikan (mas 2026-10-28).
+  const lengkap = !!tb.ditutup_at || (tb.hari_kerja > 0 && tb.hari_terkunci >= tb.hari_kerja);
 
   const tutup = () =>
     router.post(route('closing.bulanan.tutup_buku', tb.id), {}, {
@@ -50,6 +53,8 @@ const TutupBukuBaru = ({ tb, month, show, onClosed }) => {
         </SheetHeader>
 
         <div className="px-5 py-4 space-y-4">
+          {lengkap && (
+          <>
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-sm tabular-nums">
               <thead className="bg-slate-100 text-slate-700">
@@ -101,11 +106,23 @@ const TutupBukuBaru = ({ tb, month, show, onClosed }) => {
               </div>
             </div>
           </div>
+          </>
+          )}
 
           {tb.ditutup_at ? (
             <div className="p-3 text-sm border rounded-lg border-emerald-300 bg-emerald-50 text-emerald-900">
               Sudah ditutup {tb.ditutup_oleh ? `oleh ${tb.ditutup_oleh} ` : ''}
               {dayjs(tb.ditutup_at).format('DD-MM-YYYY HH:mm')}.
+            </div>
+          ) : !lengkap ? (
+            <div className="p-3 space-y-2 text-sm border rounded-lg border-rose-300 bg-rose-50 text-rose-800">
+              <div className="font-semibold">Buku belum bisa ditutup, dikarenakan ada hari yang belum terkunci di bulan ini:</div>
+              <ul className="pl-5 list-disc">
+                {(tb.hari_terbuka ?? []).map((d) => (
+                  <li key={d}>{dayjs(d).toDate().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</li>
+                ))}
+              </ul>
+              <div>Mohon kunci hari terlebih dahulu sebelum melakukan tutup buku.</div>
             </div>
           ) : tb.halangan?.length ? (
             <div className="p-3 text-sm border rounded-lg border-rose-300 bg-rose-50 text-rose-800">

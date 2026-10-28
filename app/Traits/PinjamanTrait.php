@@ -420,6 +420,12 @@ trait PinjamanTrait
         'ditutup_at' => $mc->kasir_lock_at?->toDateTimeString(),
         'ditutup_oleh' => $mc->kasir?->nama_karyawan,
         'halangan' => \App\Helpers\GembokBulanan::halanganTutupBuku($mc),
+        // Tanggal hari tagih buku ini yang belum dikunci (ditampilkan di dialog Tutup Buku).
+        'hari_terbuka' => \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
+          ->whereBetween('date', [$transaction_start_date->copy()->startOfMonth()->toDateString(), $transaction_start_date->copy()->endOfMonth()->toDateString()])
+          ->whereNull('kasir_lock_at')->orderBy('date')->pluck('date')
+          ->map(fn($d) => \Carbon\Carbon::parse($d))->filter(fn($d) => AppHelper::dateName($d) === $hari)
+          ->map(fn($d) => $d->toDateString())->values(),
       ];
     }
 
