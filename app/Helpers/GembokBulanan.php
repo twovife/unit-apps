@@ -49,7 +49,7 @@ class GembokBulanan
             $alasan[] = 'Kepala belum menyetujui closing bulan ini.';
         }
 
-        if (!$baris->lengkap()) {
+        if (!$baris->segarkanKelengkapan()->lengkap()) {
             $alasan[] = sprintf(
                 'Belum semua hari kerja terkunci (%d dari %d).',
                 (int) $baris->hari_terkunci,

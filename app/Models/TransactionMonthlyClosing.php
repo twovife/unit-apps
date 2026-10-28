@@ -126,6 +126,20 @@ class TransactionMonthlyClosing extends Model
     }
 
     /**
+     * hari_kerja / hari_terkunci dari kunci harian SEKARANG (tidak disimpan). Angka
+     * tersimpan hanya diperbarui saat kunci harian; buka kunci tidak menyentuhnya, jadi
+     * tanpa ini Tutup Buku bisa lolos dengan hari terbuka & angka basi
+     * (Tulungagung 3 kel 4 senin, mas 2026-10-28).
+     */
+    public function segarkanKelengkapan(): static
+    {
+        $k = \App\Helpers\TutupBulanan::kelengkapan([$this->transaction_loan_officer_grouping_id], \Carbon\Carbon::parse($this->periode))
+            [$this->transaction_loan_officer_grouping_id . '|' . $this->hari] ?? ['hari_kerja' => 0, 'hari_terkunci' => 0];
+
+        return $this->forceFill($k);
+    }
+
+    /**
      * Pintu input ML tertutup begitu sisa kuota habis.
      *
      * NULL ikut menutup, dan itu disengaja: kuota yang belum pernah ditetapkan

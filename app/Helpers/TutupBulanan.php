@@ -321,7 +321,7 @@ class TutupBulanan
      *
      * @return array<string,array<string,int>>
      */
-    private static function kelengkapan(array $groupingIds, Carbon $periode): array
+    public static function kelengkapan(array $groupingIds, Carbon $periode): array
     {
         $rows = TransactionDailyClosing::query()
             ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)

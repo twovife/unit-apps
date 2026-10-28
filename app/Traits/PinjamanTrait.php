@@ -399,6 +399,7 @@ trait PinjamanTrait
     // tangan sekali (GembokBulanan::tutupBuku), lalu tombolnya hilang.
     $tutupBuku = null;
     if ($migrasi && $mc) {
+      $mc->segarkanKelengkapan(); // hari terkunci & halangan dari kunci harian sekarang
       $depan = \App\Models\TransactionMonthlyClosing::where('transaction_loan_officer_grouping_id', $groupingId->id)
         ->where('hari', $hari)
         ->whereDate('periode', $transaction_start_date->copy()->addMonthNoOverflow()->format('Y-m-d'))
