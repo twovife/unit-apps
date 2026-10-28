@@ -197,7 +197,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
                         <button
                           type="button"
                           title="Lihat buku angsuran tanggal ini"
-                          className="text-sky-700 hover:underline"
+                          className="block w-full text-sky-700 hover:underline"
                           onClick={() => setBukuAngsuran({ kelompok: server_filter.kelompok, tanggal: day })}
                         >
                           <FormatNumbering ribuan value={row.instalment[day]} />
