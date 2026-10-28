@@ -124,10 +124,10 @@ const Baris = ({ label, nilai, tebal = false }) => (
 );
 
 /** Pembayaran bulan ini (semua), dengan bukti dan tombol hapus kalau server mengizinkan (r.hapus = URL). */
-const Riwayat = ({ isi = [] }) =>
+const Riwayat = ({ isi = [], judul = 'Pembayaran bulan ini', kata = 'pembayaran' }) =>
   isi.length > 0 && (
     <div className="pt-2 mt-2 border-t border-dashed">
-      <div className="mb-1 text-xs font-semibold text-slate-700">Pembayaran bulan ini</div>
+      <div className="mb-1 text-xs font-semibold text-slate-700">{judul}</div>
       <div className="space-y-0.5 max-h-40 overflow-y-auto">
         {isi.map((r) => (
           <div key={r.id} className="flex items-center justify-between gap-2 text-xs text-slate-600">
@@ -145,10 +145,10 @@ const Riwayat = ({ isi = [] }) =>
               {r.hapus && (
                 <button
                   type="button"
-                  title="Hapus pembayaran"
+                  title={`Hapus ${kata}`}
                   className="text-rose-600 hover:text-rose-800"
                   onClick={() =>
-                    window.confirm(`Hapus pembayaran ${tgl(r.tanggal)} ${rp(r.nominal)}?`) &&
+                    window.confirm(`Hapus ${kata} ${tgl(r.tanggal)} ${rp(r.nominal)}?`) &&
                     router.delete(r.hapus, {
                       preserveScroll: true,
                       preserveState: true,
@@ -762,6 +762,7 @@ export default function PembayaranKantor({ videos = {} }) {
               <Baris label="Dibayar bulan ini (pokok / jasa)" nilai={`${rp(m.pokok_bulan_ini)} / ${rp(m.jasa_bulan_ini)}`} />
               {m.terkunci_modal && <div className="text-xs font-medium text-slate-500">🔒 Bulan ini sudah dikunci kasir pusat.</div>}
               <Riwayat isi={m.riwayat} />
+              <Riwayat isi={m.pinjaman_baru} judul="Tambah pinjaman bulan ini" kata="pinjaman" />
             </Kartu>
           ))(k)}
           <Kartu judul="SKSW" ikon={Wallet} warna="bg-emerald-100 text-emerald-700" href={linkKe('sksw.unit')}>

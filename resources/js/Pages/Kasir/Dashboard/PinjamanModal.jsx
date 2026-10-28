@@ -236,6 +236,20 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
                           bukti
                         </a>
                       )}
+                      {/* Hapus pinjaman salah input: hanya transaksi terakhir sumbernya & bulan belum dikunci. */}
+                      {l.hapus && (
+                        <button
+                          type="button"
+                          title="Hapus pinjaman"
+                          className="ml-2 align-middle text-rose-600 hover:text-rose-800"
+                          onClick={() =>
+                            window.confirm(`Hapus pinjaman ${tgl(l.tanggal)} ${rp(l.jumlah)}?`) &&
+                            router.delete(l.hapus, { preserveScroll: true })
+                          }
+                        >
+                          <Trash2 className="inline w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
