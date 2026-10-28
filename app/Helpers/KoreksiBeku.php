@@ -7,6 +7,7 @@ use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
 use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionMonthlyClosing;
+use App\Models\TransactionWhiteOff;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -34,7 +35,9 @@ use Illuminate\Support\Facades\DB;
  */
 class KoreksiBeku
 {
-    public const AKSI = ['ubah', 'hapus', 'tambah'];
+    // hapus_pemutihan: pemutihan sebelum migrasi yang ternyata salah (nasabah tidak
+    // meninggal / masih bayar), mas 2026-10-28.
+    public const AKSI = ['ubah', 'hapus', 'tambah', 'hapus_pemutihan'];
 
     private const KOLOM = [
         'awal_month1', 'awal_month2', 'awal_ccm', 'awal_cm', 'awal_mb', 'awal_ml',
@@ -43,7 +46,7 @@ class KoreksiBeku
 
     /**
      * @param array $data ubah: angsuran_id, nominal | hapus: angsuran_id |
-     *                    tambah: loan_id, tanggal, nominal
+     *                    tambah: loan_id, tanggal, nominal | hapus_pemutihan: pemutihan_id
      * @return array{dampak:array, log_id:?int}
      * @throws \RuntimeException pesan untuk ditampilkan ke user
      */
@@ -62,7 +65,9 @@ class KoreksiBeku
         $angsuran = in_array($aksi, ['ubah', 'hapus'], true)
             ? TransactionLoanInstalment::findOrFail($data['angsuran_id'] ?? 0)
             : null;
-        $loan = $angsuran ? $angsuran->loan : TransactionLoan::findOrFail($data['loan_id'] ?? 0);
+        $pemutihan = $aksi === 'hapus_pemutihan' ? TransactionWhiteOff::findOrFail($data['pemutihan_id'] ?? 0) : null;
+        $loan = $angsuran ? $angsuran->loan
+            : ($pemutihan ? TransactionLoan::findOrFail($pemutihan->transaction_loan_id) : TransactionLoan::findOrFail($data['loan_id'] ?? 0));
         $branchId = (int) TransactionLoanOfficerGrouping::whereKey($loan->transaction_loan_officer_grouping_id)->value('branch_id');
         $mulai = AgregasiScope::tanggalMulai($branchId);
 
@@ -70,9 +75,9 @@ class KoreksiBeku
             throw new \RuntimeException('Kantor ini belum migrasi - datanya tidak beku, ubah lewat menu biasa.');
         }
 
-        $tanggal = $angsuran ? Carbon::parse($angsuran->transaction_date) : Carbon::parse($data['tanggal'] ?? '');
+        $tanggal = Carbon::parse(($angsuran ?? $pemutihan)?->transaction_date ?? ($data['tanggal'] ?? ''));
         if (!$tanggal->lt($mulai)) {
-            throw new \RuntimeException('Hanya angsuran bertanggal sebelum migrasi (' . $mulai->toDateString() . '). Sesudahnya ubah lewat menu biasa.');
+            throw new \RuntimeException('Hanya data bertanggal sebelum migrasi (' . $mulai->toDateString() . '). Sesudahnya ubah lewat menu biasa.');
         }
         if ($angsuran?->settled_by_loan_id) {
             throw new \RuntimeException('Angsuran ini pelunasan otomatis topup - tidak bisa dikoreksi di sini.');
@@ -99,7 +104,7 @@ class KoreksiBeku
         DB::beginTransaction();
         try {
             $potretAwal = self::potret($ids, $bulan);
-            $sebelum = $angsuran ? self::isi($angsuran) : null;
+            $sebelum = $angsuran ? self::isi($angsuran) : ($pemutihan ? self::isiPemutihan($pemutihan, $loan) : null);
             // Dampak = hitungan SESUDAH - SEBELUM koreksi, keduanya dari data sekarang.
             // Angka tersimpan yang belum mengikuti data (hari belum dikunci) tidak ikut
             // terbawa: yang ditulis hanya selisih akibat koreksi (mas 2026-10-24).
@@ -108,7 +113,9 @@ class KoreksiBeku
 
             DB::statement('SET @koreksi_beku = 1');
             try {
-                $sesudah = self::kerjakan($aksi, $angsuran, $loan, $tanggal, $nominal, $user);
+                $sesudah = $pemutihan
+                    ? self::hapusPemutihan($pemutihan, $loan)
+                    : self::kerjakan($aksi, $angsuran, $loan, $tanggal, $nominal, $user);
             } finally {
                 DB::statement('SET @koreksi_beku = NULL');
             }
@@ -156,7 +163,7 @@ class KoreksiBeku
                     'transaction_loan_instalment_id' => $angsuran?->id ?? ($sesudah['id'] ?? null),
                     'aksi' => $aksi,
                     'sebelum' => $sebelum,
-                    'sesudah' => $aksi === 'hapus' ? null : $sesudah,
+                    'sesudah' => in_array($aksi, ['hapus', 'hapus_pemutihan'], true) ? null : $sesudah,
                     'dampak' => $dampak,
                     'alasan' => trim($alasan),
                     'user_id' => $user->id,
@@ -244,6 +251,28 @@ class KoreksiBeku
         }
 
         return $hasil;
+    }
+
+    /** Hapus satu pemutihan; status lunas / keluar pinjaman dihitung ulang dari saldonya. */
+    private static function hapusPemutihan(TransactionWhiteOff $pemutihan, TransactionLoan $loan): ?array
+    {
+        $pemutihan->delete();
+        $loan->refresh()->hitungUlangPelunasan();
+
+        return null;
+    }
+
+    private static function isiPemutihan(TransactionWhiteOff $w, TransactionLoan $loan): array
+    {
+        return [
+            'pemutihan_id' => $w->id,
+            'transaction_loan_id' => $loan->id,
+            'nasabah' => $loan->customer?->nama,
+            'drop_date' => Carbon::parse($loan->drop_date)->toDateString(),
+            'tanggal' => Carbon::parse($w->transaction_date)->toDateString(),
+            'nominal' => (int) $w->nominal,
+            'jenis' => 'pemutihan',
+        ];
     }
 
     /** Keadaan satu angsuran untuk log. */

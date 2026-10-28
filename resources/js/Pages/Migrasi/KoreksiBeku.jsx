@@ -12,7 +12,7 @@ import SatuanAngka from '@/Components/SatuanAngka';
 import { rp } from '@/lib/rupiah';
 
 const EMBER = { month1: 'M1', month2: 'M2', ccm: 'CCM', cm: 'CM', mb: 'MB', ml: 'ML' };
-const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran' };
+const JUDUL = { ubah: 'Ubah nominal angsuran', hapus: 'Hapus angsuran', tambah: 'Tambah angsuran', hapus_pemutihan: 'Hapus pemutihan' };
 const ALASAN_BAWAAN = 'selisih penyesuaian';
 
 /**
@@ -21,7 +21,7 @@ const ALASAN_BAWAAN = 'selisih penyesuaian';
  * dengan isian yang sama. Angsuran yang ada bisa diganti ke "hapus" dari sini.
  */
 const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
-  const { angsuran, tanggal } = buka ?? {};
+  const { angsuran, tanggal, pemutihan } = buka ?? {};
   const [aksi, setAksi] = useState(null);
   const [nominal, setNominal] = useState('');
   const [alasan, setAlasan] = useState('');
@@ -46,8 +46,9 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
     aksi,
     alasan: alasan.trim() || ALASAN_BAWAAN,
     angsuran_id: angsuran?.id,
+    pemutihan_id: pemutihan?.id,
     loan_id: pinjaman?.id,
-    nominal: aksi === 'hapus' ? undefined : Number(nominal),
+    nominal: aksi === 'hapus' || aksi === 'hapus_pemutihan' ? undefined : Number(nominal),
     tanggal: aksi === 'tambah' ? tanggal : undefined,
     ikut_bucket: ikutBucket,
   });
@@ -79,12 +80,18 @@ const DialogKoreksi = ({ buka, onClosed, pinjaman }) => {
             {pinjaman?.nama} · drop {pinjaman && dayjs(pinjaman.drop_date).format('DD-MM-YYYY')}
             {angsuran
               ? ` · angsuran ${dayjs(angsuran.tanggal).format('DD-MM-YYYY')} Rp ${rp(angsuran.nominal)}`
+              : pemutihan
+              ? ` · pemutihan ${dayjs(pemutihan.tanggal).format('DD-MM-YYYY')} Rp ${rp(pemutihan.nominal)}`
               : tanggal && ` · tanggal ${dayjs(tanggal).format('DD-MM-YYYY')}`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-3 text-sm">
-          {aksi === 'hapus' ? (
+          {aksi === 'hapus_pemutihan' ? (
+            <div className="p-2 text-red-700 rounded-md bg-red-50">
+              Pemutihan ini akan dihapus: saldonya kembali jadi tagihan nasabah dan status lunas karena pemutihan dicabut.
+            </div>
+          ) : aksi === 'hapus' ? (
             <div className="flex items-center justify-between gap-2 p-2 text-red-700 rounded-md bg-red-50">
               Angsuran ini akan dihapus.
               <Button size="xs" variant="outline" onClick={() => setAksi('ubah')}>
@@ -297,6 +304,7 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                   <th rowSpan={2} className="px-2 py-1.5 font-medium text-left">Drop</th>
                   <th rowSpan={2} className="px-2 py-1.5 font-medium text-right">Pinjaman</th>
                   <th rowSpan={2} className="px-2 py-1.5 font-medium text-center">Ember</th>
+                  <th rowSpan={2} className="px-2 py-1.5 font-medium text-right">MD</th>
                   {bulanKolom.map((m) => (
                     <React.Fragment key={m.b}>
                       {m.b === kantor.mulai.slice(0, 7) && (
@@ -337,6 +345,21 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                     <td className="px-2 py-1 whitespace-nowrap">{dayjs(n.drop_date).format('DD-MM')}</td>
                     <td className="px-2 py-1 text-right">{rb(n.pinjaman)}</td>
                     <td className="px-2 py-1 font-semibold text-center uppercase">{EMBER[n.ember] ?? n.ember}</td>
+                    <td className="px-2 py-1 text-right">
+                      {/* Pemutihan sebelum migrasi: klik untuk hapus (ternyata salah). */}
+                      {n.pemutihan ? (
+                        <button
+                          type="button"
+                          title={`Pemutihan ${dayjs(n.pemutihan.tanggal).format('DD-MM-YYYY')} - klik untuk hapus`}
+                          onClick={() => setBuka({ aksi: 'hapus_pemutihan', pemutihan: n.pemutihan, nasabah: n })}
+                          className="px-1.5 py-0.5 text-[11px] font-semibold rounded-md bg-white text-red-600 border border-red-500 hover:bg-red-50"
+                        >
+                          {rb(n.pemutihan.nominal)}
+                        </button>
+                      ) : (
+                        <span className="text-slate-300">·</span>
+                      )}
+                    </td>
                     {kolom.map((t, i) => {
                       const isi = n.angsuran[t] ?? [];
                       const total = isi.reduce((a, x) => a + x.nominal, 0);
@@ -378,7 +401,7 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                 ))}
                 {nasabah.length === 0 && (
                   <tr>
-                    <td colSpan={kolom.length + 6} className="py-6 text-center text-slate-500">
+                    <td colSpan={kolom.length + 7} className="py-6 text-center text-slate-500">
                       Tidak ada nasabah drop {dayjs(`${filter.bulan}-01`).format('MMMM YYYY')} di kelompok {filter.kelompok} hari{' '}
                       {filter.hari}.
                     </td>
@@ -392,6 +415,7 @@ const KoreksiBeku = ({ kantor, filter, kolom = [], nasabah = [] }) => {
                     <td />
                     <td className="px-2 py-1.5 text-right">{rb(nasabah.reduce((a, n) => a + n.pinjaman, 0))}</td>
                     <td />
+                    <td className="px-2 py-1.5 text-right">{rb(nasabah.reduce((a, n) => a + (n.pemutihan?.nominal ?? 0), 0))}</td>
                     {kolom.map((t, i) => (
                       <React.Fragment key={t}>
                         {t === kolomPertamaMigrasi && (

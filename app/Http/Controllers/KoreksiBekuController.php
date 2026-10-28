@@ -64,7 +64,7 @@ class KoreksiBekuController extends Controller
 
         $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->where('kelompok', $scope->kelompok)->first();
         $loans = $grouping
-            ? TransactionLoan::with(['customer', 'manage_customer', 'loan_instalment' => fn($q) => $q->where('transaction_date', '<=', $akhirTampil->toDateString())])
+            ? TransactionLoan::with(['customer', 'manage_customer', 'white_off', 'loan_instalment' => fn($q) => $q->where('transaction_date', '<=', $akhirTampil->toDateString())])
                 ->where('transaction_loan_officer_grouping_id', $grouping->id)
                 ->where('hari', $hari)
                 ->where('status', 'success')
@@ -109,6 +109,12 @@ class KoreksiBekuController extends Controller
                 'pinjaman' => (int) $l->pinjaman,
                 'ember' => Ember::dari($l->drop_date, $mulai),
                 'saldo_awal' => $saldo[$l->id]['saldo'] ?? 0,
+                // Pemutihan (MD) sebelum migrasi: bisa dihapus kalau ternyata salah.
+                'pemutihan' => $l->white_off && Carbon::parse($l->white_off->transaction_date)->lt($mulai) ? [
+                    'id' => $l->white_off->id,
+                    'tanggal' => Carbon::parse($l->white_off->transaction_date)->toDateString(),
+                    'nominal' => (int) $l->white_off->nominal,
+                ] : null,
                 'angsuran' => $l->loan_instalment
                     ->groupBy(fn($a) => Carbon::parse($a->transaction_date)->toDateString())
                     ->map(fn($g) => $g->map(fn($a) => [
@@ -129,6 +135,7 @@ class KoreksiBekuController extends Controller
             'aksi' => ['required', 'in:' . implode(',', KoreksiBeku::AKSI)],
             'angsuran_id' => ['nullable', 'integer'],
             'loan_id' => ['nullable', 'integer'],
+            'pemutihan_id' => ['nullable', 'integer'],
             'tanggal' => ['nullable', 'date'],
             'nominal' => ['nullable', 'integer', 'min:0'],
             'alasan' => ['nullable', 'string', 'max:1000'],
