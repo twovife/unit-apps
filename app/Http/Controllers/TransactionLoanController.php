@@ -1483,7 +1483,21 @@ class TransactionLoanController extends Controller
       'beku' => AppHelper::tanggalBeku($w->transaction_loan_officer_grouping_id, $w->transaction_date),
     ]);
 
-    return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment, 'pemutihan' => $pemutihan, 'koreksi' => $koreksi], 200);
+    // Penyesuaian saldo (migrasi) - ditampilkan di modal Buku Angsuran Beku supaya kelihatan
+    // ke mana saldo yang hilang (mas 2026-10-29, MUZJALIPAH -658rb jadi lunas).
+    $penyesuaian = \App\Models\TransactionSaldoAdjustment::where('transaction_loan_id', $loan->id)->orderBy('id')->get()
+      ->map(fn($a) => [
+        'id' => $a->id,
+        'jenis' => $a->jenis,
+        'nominal' => (int) $a->nominal,
+        'efek' => $a->efek_saldo,
+        'berlaku' => $a->berlaku_bulan->toDateString(),
+        'catatan' => $a->catatan,
+        'oleh' => \App\Models\Employee::whereKey($a->user_input)->value('nama_karyawan'),
+        'dibuat' => $a->created_at?->toDateTimeString(),
+      ]);
+
+    return response()->json(['pinjaman' => $pinjaman, 'instalment' => $instalment, 'pemutihan' => $pemutihan, 'koreksi' => $koreksi, 'penyesuaian' => $penyesuaian], 200);
   }
 
   public function checkpengajuan(TransactionLoan $transactionLoan, Request $request)

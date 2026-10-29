@@ -49,6 +49,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   const [customerData, setCustomerData] = useState({});
   const [pemutihan, setPemutihan] = useState([]);
   const [koreksi, setKoreksi] = useState([]);
+  const [penyesuaian, setPenyesuaian] = useState([]);
 
   const [instalment, setInstalment] = useState([]);
   // Buku Angsuran Beku (superuser): data sebelum migrasi dikoreksi lewat Koreksi Beku.
@@ -69,6 +70,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
         setInstalment(data.instalment);
         setPemutihan(data.pemutihan);
         setKoreksi(data.koreksi);
+        setPenyesuaian(data.penyesuaian ?? []);
       })
       .catch(function ({ response }) {
         setErorAxios(true);
@@ -88,6 +90,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
     setInstalment([]);
     setPemutihan([]);
     setKoreksi([]);
+    setPenyesuaian([]);
   };
 
   /**
@@ -302,6 +305,24 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                     )}
                   </div>
                 ))}
+
+                {/* Buku Angsuran Beku: penyesuaian saldo ditampilkan (ke mana saldonya pergi). */}
+                {kb &&
+                  penyesuaian.map((a) => (
+                    <div
+                      key={a.id}
+                      className="px-3 py-2 mb-2 text-xs border rounded-md border-violet-200 bg-violet-50 text-violet-900"
+                    >
+                      Penyesuaian <b>{a.jenis.replace('_', ' ')}</b> {a.efek < 0 ? '−' : '+'}
+                      <FormatNumbering value={a.nominal} className="inline font-semibold" /> · berlaku{' '}
+                      {dayjs(a.berlaku).format('MMM YYYY')} (mengubah saldo per {dayjs(a.berlaku).subtract(1, 'day').format('DD-MM-YYYY')})
+                      <div className="text-[11px] text-violet-700">
+                        Dibuat {a.dibuat ? dayjs(a.dibuat).format('DD-MM-YYYY HH:mm') : '—'}
+                        {a.oleh ? ` oleh ${a.oleh}` : ''}
+                        {a.catatan ? ` · ${a.catatan}` : ''}
+                      </div>
+                    </div>
+                  ))}
 
                 {/* Tabel rincian: per bulan (terbaru di atas), baris ringkasan
                     bulan di bawahnya - Sisa sejajar kolom Mantri. table-fixed,
