@@ -9,6 +9,7 @@ use App\Support\Unggahan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -243,12 +244,27 @@ class PembayaranKantorController extends Controller
         return back()->with('message', 'Pembayaran pinjaman modal dicatat. Pembagiannya bisa dipindah staf kontrol.');
     }
 
+    /**
+     * Pindah Sisa (app_laravel, mas 2026-10-29): sisa pokok satu pinjaman dipindah ke kantor
+     * lain = baris bayar penutup di kantor asal (pindah_ke) + pinjaman baru di kantor tujuan
+     * (pindahan_dari). Keduanya BUKAN uang: tidak ikut pokok/jasa bulan ini & riwayat, dan
+     * hanya dibatalkan dari app_laravel (hapus baris pindah_ke -> pinjaman pindahan ikut).
+     * Kolomnya dari migrasi app_laravel 2026_10_29_100000; sebelum itu dilewati.
+     */
+    private static function adaPindahSisa(): bool
+    {
+        static $ada;
+
+        return $ada ??= Schema::hasColumn('tb_capital_loan_payments', 'pindah_ke');
+    }
+
     /** Slip angsuran modal boleh dihapus: penginput berhak, bulannya belum dikunci, dan slip TERAKHIR kantor (alokasi slip sesudahnya bergantung padanya). */
     private function bolehHapusModal(int $paymentId): bool
     {
         $p = DB::table('tb_capital_loan_payments as p')->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
-            ->where('p.id', $paymentId)->first(['p.payment_date', 'l.branch_id']);
-        if (!$p || !$this->bolehBayar((int) $p->branch_id)) {
+            ->where('p.id', $paymentId)->first(['p.payment_date', 'l.branch_id', ...(self::adaPindahSisa() ? ['p.pindah_ke'] : [])]);
+        // Baris Pindah Sisa: hapus di sini meninggalkan pinjaman pindahan (sisa dobel).
+        if (!$p || !empty($p->pindah_ke) || !$this->bolehBayar((int) $p->branch_id)) {
             return false;
         }
         $periode = substr((string) $p->payment_date, 0, 7);
@@ -340,7 +356,8 @@ class PembayaranKantorController extends Controller
     private function bolehHapusPinjaman(int $loanId): bool
     {
         $l = DB::table('tb_capital_loans')->find($loanId);
-        if (!$l || $l->jenis !== JasaModal::PINJAMAN || !$this->bolehBayar((int) $l->branch_id)
+        // Pinjaman hasil Pindah Sisa dibatalkan dari kantor asal (app_laravel), bukan dihapus di sini.
+        if (!$l || !empty($l->pindahan_dari) || $l->jenis !== JasaModal::PINJAMAN || !$this->bolehBayar((int) $l->branch_id)
             || ($l->source === 'pusat' && !auth()->user()->can('kasirpusat'))) {
             return false;
         }
@@ -699,7 +716,7 @@ class PembayaranKantorController extends Controller
     private function modal(int $branchId, string $awal, string $akhir): array
     {
         $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branchId)->where('loan_date', '<=', $akhir)
-            ->orderBy('loan_date')->orderBy('id')->get(['id', 'amount', 'loan_date', 'source', 'jenis', 'notes']);
+            ->orderBy('loan_date')->orderBy('id')->get(['id', 'amount', 'loan_date', 'source', 'jenis', 'notes', ...(self::adaPindahSisa() ? ['pindahan_dari'] : [])]);
         $info = JasaModal::perPinjaman($pinjaman, $awal, $akhir);
         $aktif = $pinjaman->filter(fn($l) => $info[$l->id]['sisa'] > 0);
         $jasaAda = fn($l) => $info[$l->id]['seharusnya'] > 0 || $info[$l->id]['dibayar'] > 0;
@@ -722,7 +739,8 @@ class PembayaranKantorController extends Controller
         })->filter(fn($b) => $b['jumlah_aktif'] > 0 || $b['jasa_wajib'] !== null)->values();
 
         $bulanIni = DB::table('tb_capital_loan_payments as p')->join('tb_capital_loans as l', 'l.id', '=', 'p.tb_capital_loan_id')
-            ->where('l.branch_id', $branchId)->whereBetween('p.payment_date', [$awal, $akhir]);
+            ->where('l.branch_id', $branchId)->whereBetween('p.payment_date', [$awal, $akhir])
+            ->when(self::adaPindahSisa(), fn($q) => $q->whereNull('p.pindah_ke'));
 
         return [
             'buku' => $buku,
@@ -746,7 +764,7 @@ class PembayaranKantorController extends Controller
                     'hapus' => $this->bolehHapusModal($r->id) ? route('dashboard.kasir.modal.destroy', $r->id) : null,
                 ]),
             // Pinjaman yang masuk bulan ini (tambah pinjaman), hapus kalau boleh (mas 2026-10-27).
-            'pinjaman_baru' => $pinjaman->filter(fn($l) => (string) $l->loan_date >= $awal)->sortByDesc('id')->values()
+            'pinjaman_baru' => $pinjaman->filter(fn($l) => (string) $l->loan_date >= $awal && empty($l->pindahan_dari))->sortByDesc('id')->values()
                 ->map(fn($l) => [
                     'id' => $l->id,
                     'nominal' => (int) $l->amount,
