@@ -344,7 +344,13 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
     ["Drop", `${ribuan ? "w-20" : "w-24"} text-right`],
     ["Pinjaman", `${ribuan ? "w-20" : "w-24"} text-right`],
   ].filter(([label]) => !(tanpaDrop && (label === "Drop" || label === "Pinjaman")));
-  const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1;
+  // Buku Angsuran Beku: kolom Peny (penyesuaian saldo) sebelum Saldo; Saldo = sesudah
+  // SEMUA penyesuaian, termasuk yang baru berlaku sesudah bulan terpilih (mas 2026-10-29).
+  const akhirBulanIni = bulanIni.endOf("month").format("YYYY-MM-DD");
+  const efekPeny = (r) => (r.penyesuaian ?? []).reduce((t, a) => t + Number(a.efek || 0), 0);
+  const saldoAkhir = (r) =>
+    Number(r.saldo || 0) + (kb ? (r.penyesuaian ?? []).reduce((t, a) => (a.berlaku > akhirBulanIni ? t + Number(a.efek || 0) : t), 0) : 0);
+  const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1 + (kb ? 1 : 0);
   // Lebar minimum = jumlah lebar kolom (kelas w-N = N x 4px). Kalau layar
   // lebih lebar, tabel mengisi penuh; kalau tidak muat, tabel tetap selebar
   // ini dan bisa digeser ke samping - kolom tidak pernah dipepetkan.
@@ -353,7 +359,12 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
   const LEBAR_BLOK = ribuan ? { sisa: 80, tgl: 56, angs: 80, md: 56 } : { sisa: 104, tgl: 88, angs: 104, md: 88 };
   // Lebar tiap kolom (px) - dipakai <colgroup> di DUA tabel (header & isi)
   // supaya kolomnya selalu sejajar.
-  const lebarKolom = [...KOLOM_TETAP.map(([, kelas]) => px(kelas)), ...kolomBlok.map((k) => LEBAR_BLOK[k.jenis]), ribuan ? 80 : 104];
+  const lebarKolom = [
+    ...KOLOM_TETAP.map(([, kelas]) => px(kelas)),
+    ...kolomBlok.map((k) => LEBAR_BLOK[k.jenis]),
+    ...(kb ? [136] : []),
+    ribuan ? 80 : 104,
+  ];
   const lebarMin = lebarKolom.reduce((t, w) => t + w, 0);
   const colgroup = (
     <colgroup>
@@ -440,6 +451,11 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                 </div>
               </TableHead>
             ))}
+            {kb && (
+              <TableHead rowSpan={2} className={`${th} text-right align-bottom border-l-2 border-l-slate-300 bg-violet-100`}>
+                Peny
+              </TableHead>
+            )}
             <TableHead rowSpan={2} className={`${th} w-20 text-right align-bottom border-l-2 border-l-slate-300`}>
               Saldo
             </TableHead>
@@ -531,7 +547,6 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                           <span className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-emerald-500 rounded">Lunas</span>
                         )}
                         {/* Catatan "PECAHAN MACET LAMA #id" hanya penanda sistem, tidak ditampilkan. */}
-                        {kb && (r.penyesuaian ?? []).map((a) => <Penyesuaian key={a.id} a={a} />)}
                         {r.notes && !r.pecahan_ml && (
                           <span className="block mt-0.5 text-[10px] truncate text-slate-500" title={r.notes}>
                             {r.notes}
@@ -573,7 +588,16 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                           />
                         );
                       })}
-                      <Angka v={r.saldo} kelas={`${WARNA.saldo} font-semibold border-l-2 border-l-slate-300`} />
+                      {kb && (
+                        <TableCell className="px-2 py-1 text-right border-l-2 border-l-slate-300 bg-violet-50">
+                          {(r.penyesuaian ?? []).length ? (
+                            (r.penyesuaian ?? []).map((a) => <Penyesuaian key={a.id} a={a} />)
+                          ) : (
+                            <span className="text-slate-300">–</span>
+                          )}
+                        </TableCell>
+                      )}
+                      <Angka v={saldoAkhir(r)} kelas={`${WARNA.saldo} font-semibold border-l-2 border-l-slate-300`} />
                     </TableRow>
                   );
                 })}
@@ -598,8 +622,11 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                       />
                     ),
                   )}
+                  {kb && (
+                    <Angka v={grup.data.reduce((t, r) => t + efekPeny(r), 0)} kelas="bg-violet-100 border-l-2 border-l-slate-300" />
+                  )}
                   <Angka
-                    v={grup.data.reduce((t, r) => t + Number(r.saldo || 0), 0)}
+                    v={grup.data.reduce((t, r) => t + saldoAkhir(r), 0)}
                     kelas="bg-emerald-50 font-extrabold text-gray-900 border-l-2 border-l-slate-300"
                   />
                 </TableRow>

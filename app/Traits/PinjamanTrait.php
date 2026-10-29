@@ -485,7 +485,7 @@ trait PinjamanTrait
     // Penyesuaian saldo per pinjaman (Buku Angsuran Beku): ditampilkan & bisa dikoreksi.
     $penyesuaianPinjaman = $semuaMl
       ? \App\Models\TransactionSaldoAdjustment::whereIn('transaction_loan_id', $idsF8)->orderBy('id')->get()->groupBy('transaction_loan_id')
-        ->map(fn($g) => $g->map(fn($a) => ['id' => $a->id, 'jenis' => $a->jenis, 'nominal' => (int) $a->nominal, 'efek' => $a->efek_saldo, 'oper' => str_starts_with((string) $a->catatan, 'oper ')])->values())
+        ->map(fn($g) => $g->map(fn($a) => ['id' => $a->id, 'jenis' => $a->jenis, 'nominal' => (int) $a->nominal, 'efek' => $a->efek_saldo, 'berlaku' => $a->berlaku_bulan->toDateString(), 'oper' => str_starts_with((string) $a->catatan, 'oper ')])->values())
       : collect();
     if ($semuaMl) {
       // Buang ML yang saldonya 0 di awal & akhir bulan, tanpa gerakan bulan ini, dan tanpa penyesuaian.
