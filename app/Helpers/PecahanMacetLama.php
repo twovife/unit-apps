@@ -83,7 +83,7 @@ class PecahanMacetLama
             ]);
 
             // 3. Pinjaman pecahan (drop lama -> trigger beku dibuka satu aksi, tanpa event model).
-            $nominalDrop = (int) ceil($nominal / 1.3);
+            $nominalDrop = self::nominalDropBulat($nominal, 100000);
             DB::statement('SET @koreksi_beku = 1');
             try {
                 $loanId = DB::table('transaction_loans')->insertGetId([
@@ -211,5 +211,16 @@ class PecahanMacetLama
 
             return $hasil;
         });
+    }
+
+    /**
+     * nominal_drop supaya pinjaman (kolom hitungan = nominal_drop x 1,3) jadi angka bulat:
+     * $saldo dibulatkan KE ATAS ke kelipatan $satuan (39.923.010 -> 40.000.000). Selisih
+     * pinjaman - saldo ditutup penyesuaian saldo_awal oleh pemanggil (mas 2026-10-29: dulu
+     * pinjaman = saldo + 0..1 rupiah, penyesuaian 1 rupiah membingungkan).
+     */
+    public static function nominalDropBulat(int $saldo, int $satuan): int
+    {
+        return (int) round((int) (ceil($saldo / $satuan) * $satuan) / 1.3);
     }
 }

@@ -444,7 +444,8 @@ class MigrasiController extends Controller
                 'drop_date' => $dropDate->toDateString(),
                 'hari' => $val['hari'],
                 'status' => 'success',
-                'nominal_drop' => (int) ceil($z / 1.3),
+                // Pinjaman bulat jutaan, sisanya penyesuaian (mas 2026-10-29).
+                'nominal_drop' => \App\Helpers\PecahanMacetLama::nominalDropBulat($z, 1000000),
                 'user_input' => $employee,
                 'user_mantri' => $employee,
                 'user_drop' => $employee,
