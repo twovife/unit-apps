@@ -178,8 +178,18 @@ class TransactionLoanController extends Controller
     $recap = \App\Helpers\AgregasiScope::sudahMigrasi($grouping->branch_id) ? null
       : \App\Models\TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $grouping->id)->whereDate('date', $val['date'])->first();
     $accKm = $recap?->daily_kepala_approval && (string) $recap->daily_kepala_approval === (string) $recap->daily_kasir_approval;
-    $berubah = !$recap || (int) ($val['target'] ?? $recap->target) !== (int) $recap->target
-      || (int) ($val['keluar'] ?? $recap->keluar) !== (int) $recap->keluar;
+    // Alur baru sama (Krian 2 Goro kel 9, 27 Okt - mas 2026-10-29): hari yang ACC KM-nya otomatis
+    // saat kunci kasir tetap silang merah walau KM sudah simpan form - ACC KM dicatat atas nama KM.
+    $tanggalD = Carbon::parse($val['date'])->toDateString();
+    $closingOtomatis = $recap || !isset(\App\Helpers\CeklistKepala::daftarOtomatis([$grouping->id], $tanggalD, $tanggalD)[$grouping->id . '|' . $tanggalD])
+      ? null
+      : \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $grouping->id)->whereDate('date', $tanggalD)->first();
+    // Pembanding: rekap lama, atau closing harian di kantor migrasi. Simpan tanpa
+    // perubahan tidak lagi dicatat sebagai koreksi target (riwayat kembar).
+    $pembanding = $recap ?? \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $grouping->id)
+      ->whereDate('date', $val['date'])->first();
+    $berubah = !$pembanding || (int) ($val['target'] ?? $pembanding->target) !== (int) $pembanding->target
+      || (int) ($val['keluar'] ?? $pembanding->keluar) !== (int) $pembanding->keluar;
 
     // ACC ulang hari terkunci (alur lama, mas 2026-10-22): drop yang diinput sesudah ACC ikut
     // masuk (hanya naik). Target diubah -> menjalar (KoreksiTarget, target + masuk - keluar);
@@ -199,6 +209,11 @@ class TransactionLoanController extends Controller
         'daily_kepala_approval' => Carbon::now(),
         'daily_kepala_approval_user' => $employeeId,
       ]));
+    }
+    if ($closingOtomatis) {
+      // kepala_approval_at tidak lagi sama dengan jam riwayat acc_auto -> bukan otomatis lagi (hijau).
+      $closingOtomatis->update(['kepala_approval_at' => Carbon::now(), 'kepala_approval_user' => $employeeId]);
+      $accKm = true;
     }
 
     return redirect()->back()->with('message', implode(' ', array_filter([
