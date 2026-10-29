@@ -8,6 +8,7 @@ use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
 use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\TransactionMonthlyClosing;
+use App\Models\TransactionSaldoAdjustment;
 use App\Models\TransactionWhiteOff;
 use App\Models\WorkDay;
 use Carbon\Carbon;
@@ -42,7 +43,8 @@ class KoreksiBeku
     // tambah_pinjaman: nasabah drop sebelum migrasi yang belum terinput (fastcreate
     // ditolak trigger beku), mas 2026-10-28.
     // hapus_pinjaman: drop sebelum migrasi yang salah input, angsurannya ikut terhapus.
-    public const AKSI = ['ubah', 'hapus', 'tambah', 'hapus_pemutihan', 'tambah_pinjaman', 'hapus_pinjaman'];
+    // ubah_penyesuaian: nominal penyesuaian saldo (migrasi) diubah / 0 = dihapus, mas 2026-10-29.
+    public const AKSI = ['ubah', 'hapus', 'tambah', 'hapus_pemutihan', 'tambah_pinjaman', 'hapus_pinjaman', 'ubah_penyesuaian'];
 
     private const KOLOM = [
         'awal_month1', 'awal_month2', 'awal_ccm', 'awal_cm', 'awal_mb', 'awal_ml',
@@ -53,7 +55,7 @@ class KoreksiBeku
      * @param array $data ubah: angsuran_id, nominal | hapus: angsuran_id |
      *                    tambah: loan_id, tanggal, nominal | hapus_pemutihan: pemutihan_id |
      *                    tambah_pinjaman: grouping_id, tanggal (drop), nominal, nik, nama, alamat, nomor_anggota |
-     *                    hapus_pinjaman: loan_id
+     *                    hapus_pinjaman: loan_id | ubah_penyesuaian: penyesuaian_id, nominal (0 = hapus)
      * @return array{dampak:array, log_id:?int}
      * @throws \RuntimeException pesan untuk ditampilkan ke user
      */
@@ -73,9 +75,13 @@ class KoreksiBeku
             ? TransactionLoanInstalment::findOrFail($data['angsuran_id'] ?? 0)
             : null;
         $pemutihan = $aksi === 'hapus_pemutihan' ? TransactionWhiteOff::findOrFail($data['pemutihan_id'] ?? 0) : null;
+        $penyesuaian = $aksi === 'ubah_penyesuaian' ? TransactionSaldoAdjustment::findOrFail($data['penyesuaian_id'] ?? 0) : null;
+        if ($penyesuaian && str_starts_with((string) $penyesuaian->catatan, 'oper ')) {
+            throw new \RuntimeException('Penyesuaian ini bagian dari oper saldo (berpasangan) - tidak diubah di sini.');
+        }
         $baru = $aksi === 'tambah_pinjaman';
         $loan = $baru ? null : ($angsuran ? $angsuran->loan
-            : ($pemutihan ? TransactionLoan::findOrFail($pemutihan->transaction_loan_id) : TransactionLoan::findOrFail($data['loan_id'] ?? 0)));
+            : (($pemutihan ?? $penyesuaian) ? TransactionLoan::findOrFail(($pemutihan ?? $penyesuaian)->transaction_loan_id) : TransactionLoan::findOrFail($data['loan_id'] ?? 0)));
         $grouping = TransactionLoanOfficerGrouping::findOrFail($baru ? ($data['grouping_id'] ?? 0) : $loan->transaction_loan_officer_grouping_id);
         $branchId = (int) $grouping->branch_id;
         $mulai = AgregasiScope::tanggalMulai($branchId);
@@ -85,7 +91,9 @@ class KoreksiBeku
         }
 
         $hapusPinjaman = $aksi === 'hapus_pinjaman';
-        $tanggal = Carbon::parse(($angsuran ?? $pemutihan)?->transaction_date ?? ($hapusPinjaman ? $loan->drop_date : ($data['tanggal'] ?? '')));
+        // Penyesuaian berlaku mulai bulan berlaku_bulan = mengubah saldo per akhir bulan sebelumnya.
+        $tanggal = $penyesuaian ? Carbon::parse($penyesuaian->berlaku_bulan)->subDay()
+            : Carbon::parse(($angsuran ?? $pemutihan)?->transaction_date ?? ($hapusPinjaman ? $loan->drop_date : ($data['tanggal'] ?? '')));
         if (!$tanggal->lt($mulai)) {
             throw new \RuntimeException('Hanya data bertanggal sebelum migrasi (' . $mulai->toDateString() . '). Sesudahnya ubah lewat menu biasa.');
         }
@@ -94,9 +102,9 @@ class KoreksiBeku
         }
 
         $nominal = null;
-        if (in_array($aksi, ['ubah', 'tambah', 'tambah_pinjaman'], true)) {
+        if (in_array($aksi, ['ubah', 'tambah', 'tambah_pinjaman', 'ubah_penyesuaian'], true)) {
             $nominal = (int) ($data['nominal'] ?? -1);
-            if ($nominal < ['ubah' => 0, 'tambah' => 1, 'tambah_pinjaman' => 100000][$aksi]) {
+            if ($nominal < ['ubah' => 0, 'tambah' => 1, 'tambah_pinjaman' => 100000, 'ubah_penyesuaian' => 0][$aksi]) {
                 throw new \RuntimeException($baru ? 'Nominal pinjaman minimal 100.000.' : 'Nominal tidak valid.');
             }
         }
@@ -121,7 +129,8 @@ class KoreksiBeku
         try {
             $potretAwal = self::potret($ids, $bulan);
             $sebelum = $angsuran ? self::isi($angsuran)
-                : ($pemutihan ? self::isiPemutihan($pemutihan, $loan) : ($hapusPinjaman ? self::isiPinjaman($loan) : null));
+                : ($pemutihan ? self::isiPemutihan($pemutihan, $loan)
+                    : ($hapusPinjaman ? self::isiPinjaman($loan) : ($penyesuaian ? self::isiPenyesuaian($penyesuaian, $loan) : null)));
             // Dampak = hitungan SESUDAH - SEBELUM koreksi, keduanya dari data sekarang.
             // Angka tersimpan yang belum mengikuti data (hari belum dikunci) tidak ikut
             // terbawa: yang ditulis hanya selisih akibat koreksi (mas 2026-10-24).
@@ -133,6 +142,10 @@ class KoreksiBeku
                 if ($baru) {
                     $loan = self::buatPinjaman($data, $grouping, $tanggal, $nominal, $user);
                     $sesudah = self::isiPinjaman($loan);
+                } elseif ($penyesuaian) {
+                    $nominal === 0 ? $penyesuaian->delete() : $penyesuaian->update(['nominal' => $nominal]);
+                    $loan->refresh()->hitungUlangPelunasan();
+                    $sesudah = $nominal === 0 ? null : self::isiPenyesuaian($penyesuaian->fresh(), $loan);
                 } elseif ($hapusPinjaman) {
                     $loan->loan_instalment()->get()->each->delete();
                     $loan->delete();
@@ -186,7 +199,7 @@ class KoreksiBeku
                 $logId = TransactionKoreksiBeku::create([
                     'branch_id' => $branchId,
                     'transaction_loan_id' => $loan->id,
-                    'transaction_loan_instalment_id' => $angsuran?->id ?? ($baru ? null : ($sesudah['id'] ?? null)),
+                    'transaction_loan_instalment_id' => $angsuran?->id ?? (($baru || $penyesuaian) ? null : ($sesudah['id'] ?? null)),
                     'aksi' => $aksi,
                     'sebelum' => $sebelum,
                     'sesudah' => in_array($aksi, ['hapus', 'hapus_pemutihan', 'hapus_pinjaman'], true) ? null : $sesudah,
@@ -354,6 +367,19 @@ class KoreksiBeku
             'tanggal' => Carbon::parse($loan->drop_date)->toDateString(),
             'nominal' => (int) $loan->nominal_drop,
             'jenis' => 'pinjaman',
+        ];
+    }
+
+    private static function isiPenyesuaian(TransactionSaldoAdjustment $a, TransactionLoan $loan): array
+    {
+        return [
+            'penyesuaian_id' => $a->id,
+            'transaction_loan_id' => $loan->id,
+            'nasabah' => $loan->customer?->nama,
+            'drop_date' => Carbon::parse($loan->drop_date)->toDateString(),
+            'tanggal' => Carbon::parse($a->berlaku_bulan)->toDateString(),
+            'nominal' => (int) $a->nominal,
+            'jenis' => 'penyesuaian ' . $a->jenis,
         ];
     }
 

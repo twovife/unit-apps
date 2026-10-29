@@ -235,6 +235,8 @@ Route::middleware('auth')->group(function () {
       ->name('buku_beku');
     Route::post('/buku-beku/sel', [\App\Http\Controllers\KoreksiBekuController::class, 'sel'])
       ->name('koreksi_beku_sel');
+    Route::post('/buku-beku/penyesuaian', [\App\Http\Controllers\KoreksiBekuController::class, 'penyesuaian'])
+      ->name('koreksi_beku_penyesuaian');
   });
 
   // Buka kunci harian alur baru. Otorisasi dicek di controller.

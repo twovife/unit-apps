@@ -468,7 +468,9 @@ trait PinjamanTrait
             ->where('nominal', '>', 0);
         })
           // Calon: belum ditutup sebelum bulan ini; yang saldonya 0 disaring sesudah saldo dihitung.
-          ->when($semuaMl, fn($q) => $q->orWhereNull('pay_off_date')->orWhere('pay_off_date', '>=', $transaction_start_date->format('Y-m-d')));
+          ->when($semuaMl, fn($q) => $q->orWhereNull('pay_off_date')->orWhere('pay_off_date', '>=', $transaction_start_date->format('Y-m-d'))
+            // Yang pernah disesuaikan tetap tampil (walau saldonya jadi 0) - nominal penyesuaiannya bisa dikoreksi.
+            ->orWhereIn('id', \App\Models\TransactionSaldoAdjustment::select('transaction_loan_id')));
       })
 
       //
@@ -480,9 +482,14 @@ trait PinjamanTrait
     $idsF8 = $loan->collapse()->pluck('id')->merge($loanMl->pluck('id'))->all();
     $saldoF8 = \App\Helpers\PenyesuaianSaldo::saldoBanyak($idsF8, $transaction_date);
     $saldoAwalF8 = \App\Helpers\PenyesuaianSaldo::saldoBanyak($idsF8, $transaction_start_date->copy()->subDay(), $transaction_start_date);
+    // Penyesuaian saldo per pinjaman (Buku Angsuran Beku): ditampilkan & bisa dikoreksi.
+    $penyesuaianPinjaman = $semuaMl
+      ? \App\Models\TransactionSaldoAdjustment::whereIn('transaction_loan_id', $idsF8)->orderBy('id')->get()->groupBy('transaction_loan_id')
+        ->map(fn($g) => $g->map(fn($a) => ['id' => $a->id, 'jenis' => $a->jenis, 'nominal' => (int) $a->nominal, 'efek' => $a->efek_saldo, 'oper' => str_starts_with((string) $a->catatan, 'oper ')])->values())
+      : collect();
     if ($semuaMl) {
-      // Buang ML yang saldonya 0 di awal & akhir bulan dan tidak ada gerakan bulan ini.
-      $loanMl = $loanMl->filter(fn($l) => ($saldoAwalF8[$l->id]['saldo'] ?? 0) > 0 || ($saldoF8[$l->id]['saldo'] ?? 0) > 0
+      // Buang ML yang saldonya 0 di awal & akhir bulan, tanpa gerakan bulan ini, dan tanpa penyesuaian.
+      $loanMl = $loanMl->filter(fn($l) => ($saldoAwalF8[$l->id]['saldo'] ?? 0) > 0 || ($saldoF8[$l->id]['saldo'] ?? 0) > 0 || $penyesuaianPinjaman->has($l->id)
         || $l->loan_instalment->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])->where('nominal', '>', 0)->isNotEmpty())->values();
     }
     // Pemutihan sebelum bulan terpilih per pinjaman per bulan (Y-m => total),
@@ -501,7 +508,7 @@ trait PinjamanTrait
       'type' => "ml",
       'type2' => "ML",
       'date' => Carbon::parse($begin_transaction)->subMonthNoOverflow(1)->format('Y-m-d'),
-      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan) {
+      'data' => $loanMl->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan, $penyesuaianPinjaman) {
         $pemutihan = $item->white_off?->transaction_date == $tanggalSeleksi ? $item->white_off->nominal : 0;
 
         $pemutihan_before_month = $item->white_off ? ($item->white_off->transaction_date < $transaction_start_date->format('Y-m-d') ? $item->white_off->nominal : 0) : 0;
@@ -551,6 +558,7 @@ trait PinjamanTrait
           'pemutihanThisMonth' => $pemutihan_this_month,
           'x_angs' => $item->loan_instalment->count(),
           'saldo_sebelumnya' => $saldoAwalF8[$item->id]['saldo'],
+          'penyesuaian' => $penyesuaianPinjaman->get($item->id, []),
           // Angsuran per bulan SEBELUM bulan terpilih (Y-m => total) - dibuka di
           // tabel lewat tombol rinci di samping Saldo Sebelumnya, untuk melacak selisih.
           'per_bulan' => $item->loan_instalment
@@ -574,13 +582,13 @@ trait PinjamanTrait
     ];
     // dd($dataMlGenerate);
 
-    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan) {
+    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan, $penyesuaianPinjaman) {
       return [
         'month' => Carbon::parse($key)->format('FY'),
         'type' => AppHelper::generateStatusAngsuranString2(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'type2' => AppHelper::generateStatusAngsuranString(Carbon::parse($key)->startOfMonth()->format('Y-m-d'), $transaction_date->format('Y-m-d')),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
-        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan) {
+        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $tanggalSeleksi, $dailyView, $saldoF8, $saldoAwalF8, $mdPerBulan, $penyesuaianPinjaman) {
           $pemutihan = $item->white_off?->transaction_date == $tanggalSeleksi ? $item->white_off->nominal : 0;
 
           $pemutihan_before_month = $item->white_off ? ($item->white_off->transaction_date < $transaction_start_date->format('Y-m-d') ? $item->white_off->nominal : 0) : 0;
@@ -629,6 +637,7 @@ trait PinjamanTrait
             'pemutihanThisMonth' => $pemutihan_this_month,
             'x_angs' => $item->loan_instalment->count(),
             'saldo_sebelumnya' => $saldoAwalF8[$item->id]['saldo'],
+            'penyesuaian' => $penyesuaianPinjaman->get($item->id, []),
             // Angsuran per bulan SEBELUM bulan terpilih (Y-m => total) - dibuka di
             // tabel lewat tombol rinci di samping Saldo Sebelumnya, untuk melacak selisih.
             'per_bulan' => $item->loan_instalment

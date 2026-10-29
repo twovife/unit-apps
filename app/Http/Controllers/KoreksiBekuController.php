@@ -212,6 +212,7 @@ class KoreksiBekuController extends Controller
             'angsuran_id' => ['nullable', 'integer'],
             'loan_id' => ['nullable', 'integer'],
             'pemutihan_id' => ['nullable', 'integer'],
+            'penyesuaian_id' => ['nullable', 'integer'],
             'tanggal' => ['nullable', 'date'],
             'nominal' => ['nullable', 'integer', 'min:0'],
             'alasan' => ['nullable', 'string', 'max:1000'],
@@ -286,13 +287,30 @@ class KoreksiBekuController extends Controller
                 ? ['hapus', ['angsuran_id' => $isi->first()->id]]
                 : ['ubah', ['angsuran_id' => $isi->first()->id, 'nominal' => $nominal]]);
 
+        return $this->langsung($aksi, $data, 'koreksi sel buku angsuran beku');
+    }
+
+    /** Nominal penyesuaian saldo diubah langsung dari Buku Angsuran Beku (0 = hapus), bucket ikut. */
+    public function penyesuaian(Request $request)
+    {
+        $this->wajibSuperuser();
+        $v = $request->validate([
+            'penyesuaian_id' => ['required', 'integer'],
+            'nominal' => ['required', 'integer', 'min:0'],
+        ]);
+
+        return $this->langsung('ubah_penyesuaian', $v, 'koreksi penyesuaian buku angsuran beku');
+    }
+
+    /** Koreksi tanpa pratinjau, bucket bulan migrasi ikut; pesan berisi geseran saldo awal & bucket. */
+    private function langsung(string $aksi, array $data, string $alasan)
+    {
         try {
-            $hasil = KoreksiBeku::jalankan($aksi, $data, 'koreksi sel buku angsuran beku', true, true);
+            $hasil = KoreksiBeku::jalankan($aksi, $data, $alasan, true, true);
         } catch (\RuntimeException $e) {
             return back()->withErrors($e->getMessage());
         }
 
-        // Ringkas: geseran saldo awal bulan migrasi & bucket, supaya dampaknya kelihatan tanpa pratinjau.
         $geser = collect($hasil['dampak'])->flatMap(fn($d) => collect($d['kolom'] ?? [])
             ->only(['awal_total', 'bucket_amount'])
             ->map(fn($ab, $k) => ($k === 'bucket_amount' ? 'bucket ' : 'saldo awal ') . $d['periode'] . ' ' . ($ab[1] >= $ab[0] ? '+' : '-') . number_format(abs($ab[1] - $ab[0]), 0, ',', '.'))->values())

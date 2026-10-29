@@ -190,6 +190,58 @@ const SelBeku = ({ r, d, v, kelas }) => {
   );
 };
 
+const JENIS_SESUAI = { saldo_awal: "saldo awal", duplikat: "duplikat", lebih_input: "lebih input", kurang_input: "kurang input" };
+
+/**
+ * Penyesuaian saldo (migrasi) satu pinjaman di Buku Angsuran Beku: klik nominal ->
+ * ketik -> Enter langsung tersimpan (0 = hapus), bucket ikut. Oper saldo hanya tampil.
+ */
+const Penyesuaian = ({ a }) => {
+  const [ubah, setUbah] = useState(false);
+  const [nilai, setNilai] = useState(String(a.nominal));
+  useEffect(() => setNilai(String(a.nominal)), [a.nominal]);
+  const kirim = () => {
+    setUbah(false);
+    const baru = Number(nilai || 0);
+    if (baru === a.nominal) return;
+    router.post(
+      route("migrasi.koreksi_beku_penyesuaian"),
+      { penyesuaian_id: a.id, nominal: baru },
+      { preserveScroll: true, preserveState: true, onError: () => setNilai(String(a.nominal)) },
+    );
+  };
+  return (
+    <span
+      className={`block mt-0.5 text-[10px] whitespace-nowrap ${a.efek < 0 ? "text-violet-700" : "text-emerald-700"}`}
+      title={a.oper ? "Bagian dari oper saldo - tidak diubah di sini" : "Klik nominal untuk koreksi (0 = hapus)"}
+    >
+      {JENIS_SESUAI[a.jenis] ?? a.jenis} {a.efek < 0 ? "−" : "+"}
+      {ubah ? (
+        <input
+          autoFocus
+          inputMode="numeric"
+          className="w-16 h-5 px-1 ml-0.5 text-right border rounded outline-none border-sky-400"
+          value={nilai}
+          onChange={(e) => setNilai(e.target.value.replace(/\D/g, ""))}
+          onFocus={(e) => e.target.select()}
+          onBlur={kirim}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") {
+              setNilai(String(a.nominal));
+              setUbah(false);
+            }
+          }}
+        />
+      ) : (
+        <button type="button" disabled={a.oper} className="ml-0.5 font-semibold underline decoration-dotted disabled:no-underline" onClick={() => setUbah(true)}>
+          <FormatNumbering ribuan value={a.nominal} className="inline" />
+        </button>
+      )}
+    </span>
+  );
+};
+
 // Kolom yang dibekukan saat tabel digeser ke samping, dengan posisi kirinya
 // (jumlah lebar kolom sebelumnya). Nama diberi bayangan sebagai batas.
 const BEKU = {
@@ -463,6 +515,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                           <span className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-emerald-500 rounded">Lunas</span>
                         )}
                         {/* Catatan "PECAHAN MACET LAMA #id" hanya penanda sistem, tidak ditampilkan. */}
+                        {kb && (r.penyesuaian ?? []).map((a) => <Penyesuaian key={a.id} a={a} />)}
                         {r.notes && !r.pecahan_ml && (
                           <span className="block mt-0.5 text-[10px] truncate text-slate-500" title={r.notes}>
                             {r.notes}
