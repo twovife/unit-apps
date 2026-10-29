@@ -465,7 +465,7 @@ class MigrasiController extends Controller
      * Baris Kesiapan Migrasi per kelompok x hari (lihat kesiapanMigrasi).
      * $kelompokSaja membatasi ke satu kelompok - dipakai layar Nasabah Macet.
      */
-    private function barisKesiapan(int $branchId, Carbon $periode, $kelompokSaja = null): \Illuminate\Support\Collection
+    public function barisKesiapan(int $branchId, Carbon $periode, $kelompokSaja = null): \Illuminate\Support\Collection
     {
         $groupings = DB::table('transaction_loan_officer_groupings')
             ->where('branch_id', $branchId)

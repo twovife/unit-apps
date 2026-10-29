@@ -233,6 +233,8 @@ Route::middleware('auth')->group(function () {
     // Buku Angsuran Beku (superuser): /pinjaman + koreksi data sebelum migrasi.
     Route::get('/buku-beku', [\App\Http\Controllers\KoreksiBekuController::class, 'buku'])
       ->name('buku_beku');
+    Route::post('/buku-beku/sel', [\App\Http\Controllers\KoreksiBekuController::class, 'sel'])
+      ->name('koreksi_beku_sel');
   });
 
   // Buka kunci harian alur baru. Otorisasi dicek di controller.

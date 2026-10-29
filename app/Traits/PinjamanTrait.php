@@ -312,7 +312,12 @@ trait PinjamanTrait
     ];
   }
 
-  public function getLoan(Request $request, $dailyView = false)
+  /**
+   * @param bool $semuaMl Buku Angsuran Beku (mas 2026-10-29): semua nasabah ML yang
+   *                      masih bersaldo ikut tampil, bukan hanya yang ada setoran / MD
+   *                      bulan ini - supaya saldo ML bisa dikoreksi per nasabah.
+   */
+  public function getLoan(Request $request, $dailyView = false, bool $semuaMl = false)
   {
 
     $date = $request->date ?? null;
@@ -454,14 +459,16 @@ trait PinjamanTrait
     )
       ->where('drop_date', "<", $begin_transaction->format('Y-m-d'))
       ->where($filterEfektif)
-      ->where(function ($item) use ($transaction_start_date, $transaction_date) {
+      ->where(function ($item) use ($transaction_start_date, $transaction_date, $semuaMl) {
         $item->whereHas('loan_instalment', function ($query) use ($transaction_start_date, $transaction_date) {
           $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
             ->where('nominal', '>', 0);
         })->orWhereHas('white_off', function ($query) use ($transaction_start_date, $transaction_date) {
           $query->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])
             ->where('nominal', '>', 0);
-        });
+        })
+          // Calon: belum ditutup sebelum bulan ini; yang saldonya 0 disaring sesudah saldo dihitung.
+          ->when($semuaMl, fn($q) => $q->orWhereNull('pay_off_date')->orWhere('pay_off_date', '>=', $transaction_start_date->format('Y-m-d')));
       })
 
       //
@@ -473,6 +480,11 @@ trait PinjamanTrait
     $idsF8 = $loan->collapse()->pluck('id')->merge($loanMl->pluck('id'))->all();
     $saldoF8 = \App\Helpers\PenyesuaianSaldo::saldoBanyak($idsF8, $transaction_date);
     $saldoAwalF8 = \App\Helpers\PenyesuaianSaldo::saldoBanyak($idsF8, $transaction_start_date->copy()->subDay(), $transaction_start_date);
+    if ($semuaMl) {
+      // Buang ML yang saldonya 0 di awal & akhir bulan dan tidak ada gerakan bulan ini.
+      $loanMl = $loanMl->filter(fn($l) => ($saldoAwalF8[$l->id]['saldo'] ?? 0) > 0 || ($saldoF8[$l->id]['saldo'] ?? 0) > 0
+        || $l->loan_instalment->whereBetween('transaction_date', [$transaction_start_date->format('Y-m-d'), $transaction_date->format('Y-m-d')])->where('nominal', '>', 0)->isNotEmpty())->values();
+    }
     // Pemutihan sebelum bulan terpilih per pinjaman per bulan (Y-m => total),
     // untuk blok bulan di buku angsuran.
     $mdPerBulan = DB::table('transaction_white_offs')

@@ -139,19 +139,70 @@ class KoreksiBekuController extends Controller
     public function buku(Request $request)
     {
         $this->wajibSuperuser();
-        $data = $this->getLoan($request);
+        $data = $this->getLoan($request, false, true);
         $f = $data['server_filter'] ?? [];
         // Kantor dari kelompok yang benar-benar dimuat (server_filter.branch_id bisa kosong untuk user pusat).
         $branchId = TransactionLoanOfficerGrouping::whereKey($f['groupId'] ?? 0)->value('branch_id') ?? AuthScope::resolve()->branch_id;
+        $mulai = AgregasiScope::tanggalMulai($branchId);
 
         return Inertia::render('Migrasi/BukuBeku', $data + [
             'beku' => [
-                'mulai' => AgregasiScope::tanggalMulai($branchId)?->toDateString(),
+                'mulai' => $mulai?->toDateString(),
+                'banding' => $mulai ? $this->bandingBucket($branchId, $mulai->copy()->startOfMonth(), $f['kelompok'] ?? null, $f['hari'] ?? null) : null,
                 'grouping_id' => $f['groupId'] ?? null,
                 'kelompok' => $f['kelompok'] ?? null,
                 'hari' => $f['hari'] ?? null,
             ],
         ]);
+    }
+
+    /**
+     * Bucket serah terima bulan migrasi vs jumlah nasabah sekarang, per kategori
+     * (Lancar / CM / MB / ML): asli (sebelum koreksi beku = sekarang - geseran di log),
+     * sekarang (transaction_sirculations), nasabah (portofolio per akhir bulan lalu,
+     * termasuk MACET LAMA). Sama dengan Kesiapan Migrasi.
+     */
+    private function bandingBucket(int $branchId, Carbon $periode, $kelompok, ?string $hari): ?array
+    {
+        $baris = app(MigrasiController::class)->barisKesiapan($branchId, $periode, $kelompok)->firstWhere('hari', $hari);
+        if (!$baris) {
+            return null;
+        }
+        $nasabah = array_map(fn($isi) => array_sum(array_intersect_key($baris['sistem'], array_flip($isi))), Ember::KATEGORI);
+
+        // Geseran bucket oleh koreksi beku (dampak bucket_*), per kolom sirkulasi.
+        $geser = ['amount' => 0, 'cm_amount' => 0, 'mb_amount' => 0, 'ml_amount' => 0];
+        foreach (TransactionKoreksiBeku::where('branch_id', $branchId)->get(['dampak']) as $log) {
+            foreach ($log->dampak ?? [] as $d) {
+                if ((string) ($d['kelompok'] ?? '') !== (string) $kelompok || ($d['hari'] ?? '') !== $hari || ($d['periode'] ?? '') !== $periode->format('Y-m')) {
+                    continue;
+                }
+                foreach ($geser as $c => $_) {
+                    if (isset($d['kolom']['bucket_' . $c])) {
+                        $geser[$c] += $d['kolom']['bucket_' . $c][1] - $d['kolom']['bucket_' . $c][0];
+                    }
+                }
+            }
+        }
+        $kategori = fn(array $a) => [
+            'lancar' => $a['amount'] - $a['cm_amount'] - $a['mb_amount'] - $a['ml_amount'],
+            'cm' => $a['cm_amount'], 'mb' => $a['mb_amount'], 'ml' => $a['ml_amount'],
+        ];
+        $sekarang = $baris['lama'];
+        $asli = $sekarang ? $kategori([
+            'amount' => array_sum($sekarang) - $geser['amount'],
+            'cm_amount' => $sekarang['cm'] - $geser['cm_amount'],
+            'mb_amount' => $sekarang['mb'] - $geser['mb_amount'],
+            'ml_amount' => $sekarang['ml'] - $geser['ml_amount'],
+        ]) : null;
+
+        return [
+            'periode' => $periode->toDateString(),
+            'asli' => $asli,
+            'sekarang' => $sekarang,
+            'nasabah' => $nasabah,
+            'alasan' => $baris['alasan'],
+        ];
     }
 
     private function aturan(Request $request): array
@@ -200,6 +251,54 @@ class KoreksiBekuController extends Controller
         }
 
         return back()->with('message', 'Koreksi tersimpan, saldo bulanan sudah dihitung ulang.');
+    }
+
+    /**
+     * Isi satu sel buku angsuran beku langsung (mas 2026-10-28): tanpa pratinjau,
+     * bucket bulan migrasi selalu ikut. Sel kosong = tambah, berisi satu angsuran
+     * = ubah (0 = hapus). Sel berisi beberapa angsuran / pelunasan topup ditolak -
+     * lewat modal nasabah.
+     */
+    public function sel(Request $request)
+    {
+        $this->wajibSuperuser();
+        $v = $request->validate([
+            'loan_id' => ['required', 'integer'],
+            'tanggal' => ['required', 'date'],
+            'nominal' => ['required', 'integer', 'min:0'],
+        ]);
+        $isi = \App\Models\TransactionLoanInstalment::where('transaction_loan_id', $v['loan_id'])
+            ->whereDate('transaction_date', $v['tanggal'])->get();
+        $nominal = (int) $v['nominal'];
+
+        if ($isi->count() > 1 || $isi->contains(fn($a) => $a->settled_by_loan_id)) {
+            return back()->withErrors('Sel ' . Carbon::parse($v['tanggal'])->format('d-m-Y') . ' berisi lebih dari satu angsuran / pelunasan topup - koreksi lewat tombol Pay.');
+        }
+        if ($isi->isEmpty() && $nominal === 0) {
+            return back();
+        }
+        if ($isi->count() === 1 && (int) $isi->first()->nominal === $nominal) {
+            return back();
+        }
+        [$aksi, $data] = $isi->isEmpty()
+            ? ['tambah', ['loan_id' => $v['loan_id'], 'tanggal' => $v['tanggal'], 'nominal' => $nominal]]
+            : ($nominal === 0
+                ? ['hapus', ['angsuran_id' => $isi->first()->id]]
+                : ['ubah', ['angsuran_id' => $isi->first()->id, 'nominal' => $nominal]]);
+
+        try {
+            $hasil = KoreksiBeku::jalankan($aksi, $data, 'koreksi sel buku angsuran beku', true, true);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        // Ringkas: geseran saldo awal bulan migrasi & bucket, supaya dampaknya kelihatan tanpa pratinjau.
+        $geser = collect($hasil['dampak'])->flatMap(fn($d) => collect($d['kolom'] ?? [])
+            ->only(['awal_total', 'bucket_amount'])
+            ->map(fn($ab, $k) => ($k === 'bucket_amount' ? 'bucket ' : 'saldo awal ') . $d['periode'] . ' ' . ($ab[1] >= $ab[0] ? '+' : '-') . number_format(abs($ab[1] - $ab[0]), 0, ',', '.'))->values())
+            ->unique()->values()->implode(', ');
+
+        return back()->with('message', 'Koreksi tersimpan' . ($geser ? ': ' . $geser : '') . '.');
     }
 
     public function log(Request $request)
