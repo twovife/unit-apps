@@ -73,7 +73,7 @@ const BukuBeku = ({ datas, dateOfWeek, sirkulasi, beku }) => {
   const filter = { grouping_id: beku.grouping_id, kelompok: beku.kelompok, hari: beku.hari };
 
   return (
-    <KoreksiBekuContext.Provider value={beku.mulai ? { mulai: beku.mulai, filter } : null}>
+    <KoreksiBekuContext.Provider value={beku.mulai ? { mulai: beku.mulai, filter, macetLamaId: beku.macet_lama_id } : null}>
       <Head title="Buku Angsuran Beku" />
       {beku.mulai ? (
         <div className="p-2 mb-3 text-xs border rounded-md border-sky-300 bg-sky-50 text-sky-900">

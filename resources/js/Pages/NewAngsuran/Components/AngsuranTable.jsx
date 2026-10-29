@@ -243,6 +243,58 @@ const Penyesuaian = ({ a }) => {
   );
 };
 
+/**
+ * Oper saldo nasabah ML ke MACET LAMA kelompok x hari ini (Buku Angsuran Beku): klik ->
+ * nominal (bawaan = saldo) -> Enter. Lewat PenyesuaianSaldo::oper: bucket & saldo bulanan
+ * tidak bergeser; ditolak server kalau bukan ML lama.
+ */
+const OperMacetLama = ({ r, saldo, keId }) => {
+  const [buka, setBuka] = useState(false);
+  const [nilai, setNilai] = useState(String(saldo));
+  const [proses, setProses] = useState(false);
+  const kirim = () => {
+    setBuka(false);
+    const n = Number(nilai || 0);
+    if (n <= 0) return;
+    router.post(
+      route("migrasi.oper_saldo"),
+      { dari_id: r.id, ke_id: keId, nominal: n, catatan: "dari Buku Angsuran Beku" },
+      { preserveScroll: true, preserveState: true, onStart: () => setProses(true), onFinish: () => setProses(false) },
+    );
+  };
+  return buka ? (
+    <input
+      autoFocus
+      inputMode="numeric"
+      className="w-20 h-5 mt-0.5 px-1 text-[10px] text-right border rounded outline-none border-amber-400"
+      value={nilai}
+      onChange={(e) => setNilai(e.target.value.replace(/\D/g, ""))}
+      onFocus={(e) => e.target.select()}
+      onBlur={kirim}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          setNilai(String(saldo));
+          setBuka(false);
+        }
+      }}
+    />
+  ) : (
+    <button
+      type="button"
+      disabled={proses}
+      title="Oper saldo nasabah ini ke MACET LAMA (bucket tetap)"
+      className="block ml-auto mt-0.5 px-1 text-[10px] font-semibold rounded text-amber-800 bg-amber-100 hover:bg-amber-200 disabled:opacity-50"
+      onClick={() => {
+        setNilai(String(saldo));
+        setBuka(true);
+      }}
+    >
+      {proses ? "…" : "→ MACET LAMA"}
+    </button>
+  );
+};
+
 // Kolom yang dibekukan saat tabel digeser ke samping, dengan posisi kirinya
 // (jumlah lebar kolom sebelumnya). Nama diberi bayangan sebagai batas.
 const BEKU = {
@@ -590,10 +642,13 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                       })}
                       {kb && (
                         <TableCell className="px-2 py-1 text-right border-l-2 border-l-slate-300 bg-violet-50">
-                          {(r.penyesuaian ?? []).length ? (
-                            (r.penyesuaian ?? []).map((a) => <Penyesuaian key={a.id} a={a} />)
+                          {(r.penyesuaian ?? []).map((a) => (
+                            <Penyesuaian key={a.id} a={a} />
+                          ))}
+                          {kb.macetLamaId && grup.type === "ml" && r.id !== kb.macetLamaId && saldoAkhir(r) > 0 ? (
+                            <OperMacetLama r={r} saldo={saldoAkhir(r)} keId={kb.macetLamaId} />
                           ) : (
-                            <span className="text-slate-300">–</span>
+                            !(r.penyesuaian ?? []).length && <span className="text-slate-300">–</span>
                           )}
                         </TableCell>
                       )}

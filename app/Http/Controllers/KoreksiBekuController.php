@@ -150,6 +150,12 @@ class KoreksiBekuController extends Controller
                 'mulai' => $mulai?->toDateString(),
                 'banding' => $mulai ? $this->bandingBucket($branchId, $mulai->copy()->startOfMonth(), $f['kelompok'] ?? null, $f['hari'] ?? null) : null,
                 'grouping_id' => $f['groupId'] ?? null,
+                // MACET LAMA kelompok x hari ini: tujuan oper saldo nasabah ML (mas 2026-10-29).
+                'macet_lama_id' => TransactionLoan::where('transaction_loan_officer_grouping_id', $f['groupId'] ?? 0)
+                    ->whereRaw('LOWER(hari) = ?', [strtolower((string) ($f['hari'] ?? ''))])
+                    ->where('status', 'success')
+                    ->whereHas('customer', fn($q) => $q->where('nik', MigrasiController::NIK_MACET_LAMA))
+                    ->value('id'),
                 'kelompok' => $f['kelompok'] ?? null,
                 'hari' => $f['hari'] ?? null,
             ],
