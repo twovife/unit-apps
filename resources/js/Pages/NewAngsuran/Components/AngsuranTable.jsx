@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useModeRibuan } from '@/lib/modeAngka';
 import { KoreksiBekuContext } from '@/Pages/Migrasi/Components/DialogKoreksi';
+import DialogGantiNik from '@/Pages/Pinjaman/Components/DialogGantiNik';
 
 /**
  * Buku angsuran bulanan (desktop Angsuran Lancar & Pinjaman Macet).
@@ -383,6 +384,8 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
   const kelasSorot = (k) => (sorot && k.jenis === 'tgl' && k.d === sorot ? 'bg-yellow-200 ring-1 ring-inset ring-yellow-400' : '');
 
   const [triggeredId, setTriggeredId] = useState(null);
+  // Buku Angsuran Beku: NIK diklik -> ganti nasabah pinjaman itu (sama dengan menu Ganti Nasabah).
+  const [gantiNik, setGantiNik] = useState(null);
   const [show, setShow] = useState(false);
   const [selectedId, setSelectedId] = useState([]);
   const pilih = (id) => setSelectedId((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
@@ -509,7 +512,20 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                       >
                         {r.nama}
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums text-slate-500">{r.nik}</TableCell>
+                      <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums text-slate-500">
+                        {kb ? (
+                          <button
+                            type="button"
+                            title="Ganti nasabah pinjaman ini"
+                            className="text-sky-700 hover:underline"
+                            onClick={() => setGantiNik({ id: r.id, nama: r.nama, nik: r.nik, tanggal: r.tanggal_drop })}
+                          >
+                            {r.nik || "(kosong)"}
+                          </button>
+                        ) : (
+                          r.nik
+                        )}
+                      </TableCell>
                       <TableCell className="px-2 py-1.5">
                         {r.lunas && (
                           <span className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-emerald-500 rounded">Lunas</span>
@@ -594,6 +610,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
         </Table>
       </div>
 
+      {gantiNik && <DialogGantiNik key={gantiNik.id} n={gantiNik} onClosed={() => setGantiNik(null)} />}
       <Action
         datas={data}
         show={show}
