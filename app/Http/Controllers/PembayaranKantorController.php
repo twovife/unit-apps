@@ -189,7 +189,8 @@ class PembayaranKantorController extends Controller
      * Awal, pokok lain lewat tempo, lebihnya ke pinjaman tempo). Satu input = satu `slip` (uuid);
      * stafkontrol memindah / meng-0-kan bagiannya lewat re-split slip di app_laravel. Status ikut
      * sisa (active/paid). Tabel tunggakan jasa TIDAK ditulis - dibangun ulang app_laravel.
-     * Pinjaman sumber Pusat hanya ikut kalau penginput bendahara (kasirpusat).
+     * Pinjaman sumber Pusat ikut dibayar kasir juga (mas 2026-10-29; dulu hanya bendahara).
+     * Tambah / hapus pinjaman Pusat tetap hanya bendahara (kasirpusat).
      */
     public function bayarModal(Request $request)
     {
@@ -413,7 +414,6 @@ class PembayaranKantorController extends Controller
     {
         $pinjaman = DB::table('tb_capital_loans')->where('branch_id', $branchId)->where('status', 'active')
             ->where('loan_date', '<=', $tanggal)
-            ->when(!auth()->user()->can('kasirpusat'), fn($q) => $q->where('source', '!=', 'pusat'))
             ->orderBy('loan_date')->orderBy('id')->get(['id', 'amount', 'loan_date', 'source', 'jenis']);
         $info = JasaModal::perPinjaman($pinjaman, $tanggal, $tanggal);
 
