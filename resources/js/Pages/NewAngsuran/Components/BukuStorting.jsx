@@ -11,11 +11,22 @@ import {
 import FormatNumbering from '@/Components/shadcn/FormatNumbering';
 import dayjs from 'dayjs';
 import { Button } from '@/shadcn/ui/button';
-import Action from './Action22';
+import Action from './Action';
 import { Badge } from '@/shadcn/ui/badge';
 import ApprovalAkhir from './ApprovalAkhir';
+import TutupBukuBaru from './TutupBukuBaru';
+import { usePage } from '@inertiajs/react';
+import { useFilterAngsuran } from '../FilterAngsuran';
+import DrawerBukuAngsuran from '@/Pages/Kasir/Rekap/Components/DrawerBukuAngsuran';
 
-const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
+// tutupBuku: diisi saat dipakai di drawer (data JSON); bawaan dari props halaman.
+const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
+  // Kantor migrasi: tutup buku = tanda tangan baris bulanan (sekali).
+  const halaman = usePage().props;
+  const tb = tutupBuku !== undefined ? tutupBuku : halaman.tutup_buku;
+  const server_filter = useFilterAngsuran();
+  // Klik angsuran per tanggal -> buku angsuran dengan kolom tanggal itu disorot (seperti Rekap 1).
+  const [bukuAngsuran, setBukuAngsuran] = useState(null);
   const [data, setData] = useState([]);
   const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
     ml: {
@@ -91,6 +102,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
             [item.type]: {
               sirkulasi: sirkulasiAwal,
               angsuran: totalInstalment,
+              pemutihan: totalPemutihan,
               saldo: sirkulasiAwal - (totalInstalment + totalPemutihan),
             },
           }));
@@ -176,22 +188,33 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
                   <TableCell
                     className={`${row.type == 'normal' ? 'bg-green-200' : ''} `}
                   >
-                    <FormatNumbering value={row.sirkulasi} />
+                    <FormatNumbering ribuan value={row.sirkulasi} />
                   </TableCell>
 
                   {dateOfWeek.map((day, i) => (
                     <TableCell className={`text-center`} key={i}>
-                      <FormatNumbering value={row.instalment[day]} />
+                      {row.instalment[day] > 0 ? (
+                        <button
+                          type="button"
+                          title="Lihat buku angsuran tanggal ini"
+                          className="block w-full text-sky-700 hover:underline"
+                          onClick={() => setBukuAngsuran({ kelompok: server_filter.kelompok, tanggal: day })}
+                        >
+                          <FormatNumbering ribuan value={row.instalment[day]} />
+                        </button>
+                      ) : (
+                        <FormatNumbering ribuan value={row.instalment[day]} />
+                      )}
                     </TableCell>
                   ))}
                   <TableCell>
-                    <FormatNumbering value={row.totalInstalment} />
+                    <FormatNumbering ribuan value={row.totalInstalment} />
                   </TableCell>
                   <TableCell>
-                    <FormatNumbering value={row.totalPemutihan} />
+                    <FormatNumbering ribuan value={row.totalPemutihan} />
                   </TableCell>
                   <TableCell>
-                    <FormatNumbering value={row.sirkulasiAfter} />
+                    <FormatNumbering ribuan value={row.sirkulasiAfter} />
                   </TableCell>
                 </TableRow>
               </React.Fragment>
@@ -208,7 +231,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
               Total
             </TableCell>
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'sirkulasi', true)}
               />
             </TableCell>
@@ -219,26 +242,26 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
           </TableRow>
           <TableRow>
             <TableCell className="text-center">
-              <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
+              <FormatNumbering ribuan value={calculateTotals(data, 'sirkulasi')} />
             </TableCell>
             {dateOfWeek.map((day, i) => (
               <TableCell className="text-center" key={i}>
-                <FormatNumbering value={calculateInstalment(data, day)} />
+                <FormatNumbering ribuan value={calculateInstalment(data, day)} />
               </TableCell>
             ))}
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'totalInstalment')}
               />
             </TableCell>
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'totalPemutihan')}
               />
             </TableCell>
 
             <TableCell className="text-center">
-              <FormatNumbering
+              <FormatNumbering ribuan
                 value={calculateTotals(data, 'sirkulasiAfter')}
               />
             </TableCell>
@@ -246,19 +269,36 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi }) => {
         </TableFooter>
       </Table>
       <div className="flex items-center justify-end gap-3 mt-6">
-        <div>Approval Akhir Bulan</div>
+        <div>Tutup Buku Storting</div>
         <div>
-          <Button onClick={onShowApproval} variant="green" size="sm">
-            Approval
-          </Button>
+          {tb?.ditutup_at ? (
+            // Sudah ditutup: tombol hilang, tinggal keterangan (klik untuk lihat angkanya).
+            <button
+              type="button"
+              onClick={onShowApproval}
+              className="px-2 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-800 ring-1 ring-emerald-300"
+            >
+              Ditutup{tb.ditutup_oleh ? ` · ${tb.ditutup_oleh}` : ''} · {dayjs(tb.ditutup_at).format('DD-MM-YY')}
+            </button>
+          ) : (
+            <Button onClick={onShowApproval} variant="green" size="sm">
+              Tutup Buku
+            </Button>
+          )}
         </div>
       </div>
 
-      <ApprovalAkhir
-        show={showApproval}
-        onClosed={onClosedShowApproval}
-        datas={sirkulasiAkhir}
-      />
+      {tb ? (
+        <TutupBukuBaru tb={tb} month={server_filter.month} show={showApproval} onClosed={onClosedShowApproval} />
+      ) : (
+        <ApprovalAkhir
+          sirkulasi={sirkulasi}
+          show={showApproval}
+          onClosed={onClosedShowApproval}
+          datas={sirkulasiAkhir}
+        />
+      )}
+      <DrawerBukuAngsuran target={bukuAngsuran} server_filter={server_filter} onClosed={() => setBukuAngsuran(null)} />
       <Action
         datas={data}
         show={show}

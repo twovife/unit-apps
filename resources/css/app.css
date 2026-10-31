@@ -195,3 +195,22 @@
     margin: 0;
   }
 }
+
+/*
+ * HP: Safari iOS (dan sebagian Chrome Android) otomatis memperbesar halaman saat
+ * kolom isian berhuruf < 16px difokus, lalu tidak kembali ke ukuran semula.
+ * Isian di HP dipaksa 16px. Sengaja di luar @layer supaya mengalahkan utilitas
+ * text-sm / text-xs Tailwind; zoom cubit (pinch) tetap bisa.
+ */
+/* Ketuk dua kali cepat (mis. tombol simpan) tidak lagi memperbesar halaman; cubit tetap bisa. */
+html {
+  touch-action: manipulation;
+}
+
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

@@ -15,6 +15,8 @@ import dayjs from 'dayjs';
 import { CalendarIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
+const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+
 const DatePicker = ({
   startYear = 2015,
   endYear = getYear(new Date()),
@@ -22,6 +24,7 @@ const DatePicker = ({
   onChange,
   name = 'date',
   minDate,
+  hari,
 }) => {
   const [date, setDate] = useState(null);
   const [open, setOpen] = useState(false);
@@ -73,10 +76,9 @@ const DatePicker = ({
   const isDisabled = (date) => {
     const minimalDate = new Date(minDate);
 
-    const today = dayjs().toDate();
-    const todayDay = today.getDay();
-    // Disable kalau lebih dari 5 bulan lalu atau masuk ke hari Sabtu/Minggu
-    return date > minimalDate || date.getDay() !== todayDay;
+    // Hanya hari tagih filter (bawaan hari ini) sampai batas tanggal.
+    const hariKe = hari ? HARI.indexOf(hari) : new Date().getDay();
+    return date > minimalDate || date.getDay() !== hariKe;
   };
 
   useEffect(() => {

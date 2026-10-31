@@ -8,78 +8,42 @@ use App\Traits\RekapTrait;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
+// Menu mobile_apps yang identik dengan menu web sudah dihapus (transaksi, macet,
+// byDates, rekap-*, rencana-drop-kepala, landing). Yang tersisa cuma yang belum
+// punya padanan web 1:1: input pengajuan (create) dan angsuran per-mantri.
 class MobileAppsMantriController extends Controller
 {
   use RekapTrait;
   use PinjamanTrait;
-  public function index()
-  {
-    return Inertia::render('MobileApps/Index');
-  }
 
   public function create()
   {
-    return Inertia::render('MobileApps/Create/Index');
-  }
+    // User tanpa kelompok di cabang aktif (mis. pusat, area 0) tak bisa create:
+    // hasil grouping null -> dulu fatal di store. Tolak di depan.
+    if (!\App\Helpers\AppHelper::canCreateLoan()) {
+      return redirect()->route('transaction.index_buku_transaksi')
+        ->with('message', 'Tidak bisa input pengajuan: tidak ada kelompok di cabang aktif ini.');
+    }
 
-  public function transaksi(Request $request)
-  {
-    $data = $this->getTransactionLoan($request, false, true);
-    return Inertia::render('MobileApps/BukuTransaksiMantri/TransaksiMantri', $data);
+    return Inertia::render('MobileApps/Create/Index');
   }
 
   public function angsuran(Request $request)
   {
     $data = $this->getLoanMantri($request, true);
+    $data['video_tutorials'] = \App\Helpers\VideoTutorial::url(['pelunasan', 'input_angsuran']);
     return Inertia::render("MobileApps/Angsuran/Index", $data);
   }
 
-  public function buku_angsuran(Request $request)
+  // Menu ML: tampilan & filter sama dengan Angsuran Lancar, isinya hanya ML.
+  public function ml(Request $request)
   {
-    $data = $this->getLoan($request);
-    return Inertia::render("MobileApps/BukuAngsuranMantri/Index", $data);
-  }
-
-  public function macet(Request $request)
-  {
-    $data = $this->getLoanMacet($request);
-
-    return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
-  }
-
-  public function byDates(Request $request)
-  {
-    $data = $this->getLoanByDate($request);
-    return Inertia::render("MobileApps/Angsuran/SearchByDate", $data);
-  }
-
-
-  public function buku_transaksi_kepala(Request $request)
-  {
-    $data = $this->getTransactionLoan($request, true);
-    return Inertia::render('MobileApps/BukuTransaksiKepala/TransaksiMantri', $data);
-  }
-
-  public function rencana_drop_kepala(Request $request)
-  {
-    $data = $this->getRencanaDropKepalaData($request);
-    return Inertia::render('MobileApps/RencanaDropKepala/Index', $data);
-  }
-
-  public function rekap_permantri(Request $request)
-  {
-    $data = $this->getRekapPermantriData($request);
-    return Inertia::render('MobileApps/Rekap/RekapPerMantri', $data);
-  }
-
-  public function rekap_dua(Request $request)
-  {
-    $data = $this->getDataRekapDua($request);
-    return Inertia::render('MobileApps/Rekap/RekapDua', $data);
-  }
-  public function rekap_satu(Request $request)
-  {
-    $data = $this->getRekapDuaData($request);
-    return Inertia::render('MobileApps/Rekap/RekapSatu', $data);
+    $data = $this->getLoanMantri($request, true, true);
+    // Tombol Input ML: kantor migrasi + can-create (mantri, KM, kasir, ...; mantri hanya kelompoknya).
+    $migrasi = \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId());
+    $data['input_ml'] = $migrasi && auth()->user()->hasPermissionTo('can-create');
+    // Kantor belum migrasi: Input Macet lama, can-create termasuk mantri (kelompoknya sendiri).
+    $data['input_macet'] = !$migrasi && auth()->user()->hasPermissionTo('can-create');
+    return Inertia::render("MobileApps/Angsuran/Ml", $data);
   }
 }

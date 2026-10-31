@@ -58,6 +58,9 @@ const BukuTransaksi = ({ datas }) => {
             <div className="whitespace-nowrap">
               {dayjs(getValue()).format('DD-MM-YY')}
             </div>
+            {cell.row.original.is_tundaan && (
+              <BadgeStatus value="td">TD</BadgeStatus>
+            )}
             <BadgeStatus value={cell.row.original.drop_langsung} />
           </div>
         ),

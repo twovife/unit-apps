@@ -1,273 +1,50 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/shadcn/ui/table';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
-import dayjs from 'dayjs';
-import { Button } from '@/shadcn/ui/button';
-import Action from './Action22';
-import { Badge } from '@/shadcn/ui/badge';
-import ApprovalAkhir from './ApprovalAkhir';
+import React from 'react';
+import BargeStatus from '@/Components/shadcn/BargeStatus';
+import { angka, modeRibuan, useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
-const BukuStortingMobile = ({ dateOfWeek, datas, sirkulasi }) => {
-  const [data, setData] = useState([]);
-  const [sirkulasiAkhir, setSirkulasiAkhir] = useState({
-    ml: {
-      sirkulasi: 0,
-      angsuran: 0,
-      saldo: 0,
-    },
-    mb: {
-      sirkulasi: 0,
-      angsuran: 0,
-      saldo: 0,
-    },
-    ccm: {
-      sirkulasi: 0,
-      angsuran: 0,
-      saldo: 0,
-    },
-    cm: {
-      sirkulasi: 0,
-      angsuran: 0,
-      saldo: 0,
-    },
-    all: {
-      surkulasi: 0,
-      angsuran: 0,
-      saldo: 0,
-    },
-  });
+// Angka dalam ribuan, sama dengan Buku Angsuran mobile.
+const rb = (v) => angka(v);
+const jumlah = (rows, key) => rows.reduce((t, r) => t + (Number(r[key]) || 0), 0);
 
-  useEffect(() => {
-    if (datas) {
-      const mapingStortingData = datas.map((item, index) => {
-        const resutl = () => {
-          const instalmentsSum = {};
+// Rupiah penuh (saklar 000): kolom angka dilebarkan supaya tidak menumpuk.
+const kolom = () =>
+  `grid ${modeRibuan() ? 'grid-cols-[1fr_5rem_4.5rem]' : 'grid-cols-[1fr_7rem_6rem]'} gap-x-2 items-center px-2 tabular-nums`;
 
-          // const sirkulasiAwalFunction = (params) => {
-          //   switch (params.type) {
-          //     case 'ml':
-          //       return sirkulasi?.ml_amount ?? 0;
-          //       break;
-          //     default:
-          //       return params.data.reduce(
-          //         (acc, itm) => acc + itm.saldo_sebelumnya,
-          //         0
-          //       );
-          //   }
-          // };
+// Buku storting per hari ini: storting (angsuran masuk) dan MD (pemutihan) pada
+// tanggal terpilih, per bulan drop. Tombol Tutup Buku Storting sengaja tidak
+// ada di versi mobile: komponen ini tidak menghitung saldo, sehingga approval dari
+// sini mengirim saldo awal bulan depan = 0.
+const BukuStortingMobile = ({ datas }) => {
+  useModeRibuan();
+  const grup = datas ?? [];
+  const semua = grup.flatMap((g) => g.data);
 
-          // const sirkulasiAwal = sirkulasiAwalFunction(item);
-
-          dateOfWeek.forEach((date) => {
-            instalmentsSum[date] = 0;
-          });
-
-          let totalInstalment = 0;
-
-          const totalPemutihan = item.data.reduce(
-            (total, item) => total + item.pemutihanThisMonth,
-            0
-          );
-
-          item.data.forEach((data) => {
-            dateOfWeek.forEach((date) => {
-              if (data.instalment[date] !== undefined) {
-                totalInstalment += data.instalment[date].total_nominal;
-                instalmentsSum[date] += data.instalment[date].total_nominal;
-              }
-            });
-          });
-
-          setSirkulasiAkhir((prevSirkulasiAkhir) => ({
-            ...prevSirkulasiAkhir,
-            [item.type]: {
-              // sirkulasi: sirkulasiAwal,
-              angsuran: totalInstalment,
-              // saldo: sirkulasiAwal - (totalInstalment + totalPemutihan),
-            },
-          }));
-
-          return {
-            key: item.month,
-            instalment: { ...instalmentsSum },
-            // sirkulasi: sirkulasiAwal,
-            totalInstalment: totalInstalment,
-            totalPemutihan: totalPemutihan,
-            // sirkulasiAfter: sirkulasiAwal - (totalInstalment + totalPemutihan),
-            type: item.type,
-          };
-        };
-        return resutl();
-      });
-      setData(mapingStortingData);
-    }
-  }, [datas]);
-
-  const calculateInstalment = (data, keyToSum) => {
-    const result = data.reduce(
-      (acc, item) => acc + parseInt(item.instalment[keyToSum] ?? 0),
-      0
-    );
-
-    return result;
-  };
-
-  const calculateTotals = (data, keyToSum, sumAll) => {
-    const result = data.reduce((acc, item) => {
-      if (sumAll && item.type === 'normal') {
-        return acc;
-      }
-      return acc + parseInt(item[keyToSum] ?? 0);
-    }, 0);
-    return result;
-  };
-
-  const [triggeredId, setTriggeredId] = useState(null);
-  const [show, setShow] = useState(false);
-  const onCreateShowOpen = (id) => {
-    setTriggeredId(id);
-    setShow(true);
-  };
-
-  const onClosedShowOpen = () => {
-    setShow(false);
-    setTriggeredId(null);
-  };
-
-  const [showApproval, setShowApproval] = useState(false);
-  const onShowApproval = (id) => {
-    setShowApproval(true);
-  };
-
-  const onClosedShowApproval = () => {
-    setShowApproval(false);
-  };
   return (
-    <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
-      <Table className="text-xs rounded-lg">
-        <TableHeader className="sticky top-0 left-0 z-10">
-          <TableRow className="bg-gray-200">
-            <TableHead className="text-center">Bulan</TableHead>
-            {/* <TableHead className="text-center">Sirkulasi</TableHead> */}
-            {dateOfWeek.map((day, i) => (
-              <TableHead className="text-center" key={i}>
-                {dayjs(day).format('DD-MM-YY')}
-              </TableHead>
-            ))}
-            <TableHead className="text-center">Angsuran</TableHead>
-            <TableHead className="text-center">MD</TableHead>
-            {/* <TableHead className="text-center">Saldo</TableHead> */}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data ? (
-            data.map((row, i) => (
-              <React.Fragment key={i}>
-                <TableRow>
-                  <TableCell>{row.key}</TableCell>
-                  {/* <TableCell
-                    className={`${row.type == 'normal' ? 'bg-green-200' : ''} `}
-                  >
-                    <FormatNumbering value={row.sirkulasi} />
-                  </TableCell> */}
+    <div className="text-xs">
+      <div className="px-2 pb-1 text-[10px] text-gray-500"><SatuanAngka titik={false} /> · MD = pemutihan hari ini</div>
 
-                  {dateOfWeek.map((day, i) => (
-                    <TableCell className={`text-center`} key={i}>
-                      <FormatNumbering value={row.instalment[day]} />
-                    </TableCell>
-                  ))}
-                  <TableCell>
-                    <FormatNumbering value={row.totalInstalment} />
-                  </TableCell>
-                  <TableCell>
-                    <FormatNumbering value={row.totalPemutihan} />
-                  </TableCell>
-                  {/* <TableCell>
-                    <FormatNumbering value={row.sirkulasiAfter} />
-                  </TableCell> */}
-                </TableRow>
-              </React.Fragment>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell>a</TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-        <TableFooter>
-          {/* <TableRow>
-            <TableCell rowSpan={2} className="text-center">
-              Total
-            </TableCell>
-            <TableCell className="text-center">
-              <FormatNumbering
-                value={calculateTotals(data, 'sirkulasi', true)}
-              />
-            </TableCell>
-            <TableCell
-              className="text-center"
-              colspan={dateOfWeek.length + 3}
-            ></TableCell>
-          </TableRow> */}
-          <TableRow>
-            <TableCell className="text-center">Total</TableCell>
-            {/* <TableCell className="text-center">
-              <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
-            </TableCell> */}
-            {dateOfWeek.map((day, i) => (
-              <TableCell className="text-center" key={i}>
-                <FormatNumbering value={calculateInstalment(data, day)} />
-              </TableCell>
-            ))}
-            <TableCell className="text-center">
-              <FormatNumbering
-                value={calculateTotals(data, 'totalInstalment')}
-              />
-            </TableCell>
-            <TableCell className="text-center">
-              <FormatNumbering
-                value={calculateTotals(data, 'totalPemutihan')}
-              />
-            </TableCell>
-
-            {/* <TableCell className="text-center">
-              <FormatNumbering
-                value={calculateTotals(data, 'sirkulasiAfter')}
-              />
-            </TableCell> */}
-          </TableRow>
-        </TableFooter>
-      </Table>
-      <div className="flex items-center justify-end gap-3 mt-6">
-        <div>Approval Akhir Bulan</div>
-        <div>
-          <Button onClick={onShowApproval} variant="green" size="sm">
-            Approval
-          </Button>
-        </div>
+      <div className={`${kolom()} py-1.5 text-gray-500 bg-gray-100 border-y`}>
+        <div>Bulan</div>
+        <div className="text-right">Storting hari ini</div>
+        <div className="text-right">MD</div>
       </div>
 
-      <ApprovalAkhir
-        show={showApproval}
-        onClosed={onClosedShowApproval}
-        datas={sirkulasiAkhir}
-      />
-      <Action
-        datas={data}
-        show={show}
-        onClosed={onClosedShowOpen}
-        triggeredId={triggeredId}
-      />
-      <div>
-        MENU DALAM PROSES PERBAIKAN, STORTING HANYA DAPAT DILIHAT PER HARI INI
+      {grup.map((g, i) => (
+        <div key={i} className={`${kolom()} py-2 border-b`}>
+          <div className="flex items-center min-w-0 gap-1.5">
+            <BargeStatus value={g.type2} />
+            <span className="truncate">{g.month}</span>
+          </div>
+          <div className="text-sm font-bold text-right text-green-700">{rb(jumlah(g.data, 'angs_today'))}</div>
+          <div className="text-right">{rb(jumlah(g.data, 'md_hari_ini'))}</div>
+        </div>
+      ))}
+
+      <div className={`${kolom()} py-2 font-bold text-white bg-gray-900`}>
+        <div>TOTAL</div>
+        <div className="text-base text-right text-green-300">{rb(jumlah(semua, 'angs_today'))}</div>
+        <div className="text-right">{rb(jumlah(semua, 'md_hari_ini'))}</div>
       </div>
     </div>
   );

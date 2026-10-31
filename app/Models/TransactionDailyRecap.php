@@ -54,8 +54,11 @@ class TransactionDailyRecap extends Model
     static::updating(function ($transactionDailyRecap) {
       if ($transactionDailyRecap->isDirty('keluar') || $transactionDailyRecap->isDirty('drop')) {
 
+        // whereKeyNot: baris koreksi (target_on = tanggalnya sendiri, KoreksiTarget)
+        // menunjuk dirinya sendiri -> tanpa ini update memicu dirinya terus (loop).
         $transactionAfter = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
           ->where('target_on', $transactionDailyRecap->date)
+          ->whereKeyNot($transactionDailyRecap->getKey())
           ->first();
         if ($transactionAfter) {
           $transactionAfter->update([
@@ -66,8 +69,11 @@ class TransactionDailyRecap extends Model
 
       if ($transactionDailyRecap->isDirty('target')) {
 
+        // whereKeyNot: baris koreksi (target_on = tanggalnya sendiri, KoreksiTarget)
+        // menunjuk dirinya sendiri -> tanpa ini update memicu dirinya terus (loop).
         $transactionAfter = TransactionDailyRecap::where('transaction_loan_officer_grouping_id', $transactionDailyRecap->transaction_loan_officer_grouping_id)
           ->where('target_on', $transactionDailyRecap->date)
+          ->whereKeyNot($transactionDailyRecap->getKey())
           ->first();
 
         $originalTarget = $transactionDailyRecap->getOriginal('target');
