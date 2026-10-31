@@ -40,7 +40,10 @@ const InputMacet = ({ show, onClosed }) => {
     localStorage.setItem('currentKelompok', currentKelompok);
   }, [currentKelompok]);
 
-  const { printUrl } = usePage().props;
+  const { printUrl, server_filter } = usePage().props;
+  // Drop & bayar ikut hari filter halaman, bukan hari ini.
+  const hariFilter = server_filter?.hari;
+  const tanggalBayar = server_filter?.tanggal_bayar_macet ?? dayjs().format('YYYY-MM-DD');
 
   const { optKelompok } = useOptionGenerator();
 
@@ -48,7 +51,7 @@ const InputMacet = ({ show, onClosed }) => {
     usePage().props.server_filter?.onlineDate ?? new Date(),
   ).format('YYYY-MM-DD');
 
-  const { data, setData, post, errors, processing, reset } = useForm({
+  const { data, setData, post, errors, processing, reset, transform } = useForm({
     isActiveMember: false,
     nik: '',
     tanggal_drop: '',
@@ -231,6 +234,12 @@ const InputMacet = ({ show, onClosed }) => {
   const onSubmitCreate = (e) => {
     e.preventDefault();
 
+    transform((form) => ({
+      ...form,
+      angsuran: form.angsuran.map((item, index) =>
+        index === 1 ? { ...item, transaction_date: tanggalBayar } : item,
+      ),
+    }));
     post(route('transaction.store_buku_transaksi_batch'), {
       onSuccess: () => {
         modalIsClosed();
@@ -293,6 +302,7 @@ const InputMacet = ({ show, onClosed }) => {
                                 values={data.tanggal_drop}
                                 onChange={setData}
                                 minDate={fiveMonthsAgo}
+                                hari={hariFilter}
                               />
                               <InputError message={errors.tanggal_drop} />
                               <div className="mt-1 font-semibold text-green-500">
@@ -440,7 +450,7 @@ const InputMacet = ({ show, onClosed }) => {
 
                           <div className="w-full mb-3">
                             <Label>
-                              Angsuran Hari Ini / {dayjs().format('DD-MM-YYYY')}
+                              Angsuran {dayjs(tanggalBayar).format('dddd')} / {dayjs(tanggalBayar).format('DD-MM-YYYY')}
                             </Label>
                             <CurrencyInput
                               className="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-xs h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"

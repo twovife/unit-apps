@@ -42,10 +42,8 @@ class MobileAppsMantriController extends Controller
     // Tombol Input ML: kantor migrasi + can-create (mantri, KM, kasir, ...; mantri hanya kelompoknya).
     $migrasi = \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId());
     $data['input_ml'] = $migrasi && auth()->user()->hasPermissionTo('can-create');
-    // Kantor belum migrasi: Input Macet lama, aturan = TransactionLoanController::store_buku_transaksi_batch
-    // (bukan mantri, can-create).
-    $data['input_macet'] = !$migrasi && \App\Helpers\AppHelper::bolehRekapPenuh(auth()->user())
-      && auth()->user()->hasPermissionTo('can-create');
+    // Kantor belum migrasi: Input Macet lama, can-create termasuk mantri (kelompoknya sendiri).
+    $data['input_macet'] = !$migrasi && auth()->user()->hasPermissionTo('can-create');
     return Inertia::render("MobileApps/Angsuran/Ml", $data);
   }
 }

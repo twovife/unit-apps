@@ -303,6 +303,14 @@ class AppHelper
   }
 
 
+  /** Input Macet: batas tanggal drop, akhir bulan sebelum kantor online. */
+  public static function batasDropMacet($branchId): string
+  {
+    $online = \App\Models\OnlineBranch::where('branch_id', $branchId)->first()?->online_date ?? Carbon::now()->subMonths(4);
+
+    return Carbon::parse($online)->subMonth()->endOfMonth()->format('Y-m-d');
+  }
+
   public static function getStortingShowDate($req_day)
   {
     $today = Carbon::today()->dayOfWeek;

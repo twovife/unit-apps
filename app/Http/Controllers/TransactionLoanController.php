@@ -678,7 +678,9 @@ class TransactionLoanController extends Controller
   // store for batch Transksi
   public function store_buku_transaksi_batch(Request $request)
   {
-    abort_unless(AppHelper::bolehRekapPenuh(auth()->user()), 403, 'Fastcreate bukan untuk mantri.');
+    // Input Macet boleh mantri (mas 2026-10-31); fastcreate & batch tetap bukan untuk mantri.
+    $macet = $request->boolean('macet');
+    abort_unless($macet || AppHelper::bolehRekapPenuh(auth()->user()), 403, 'Fastcreate bukan untuk mantri.');
     // dd($request->all());
     if (!auth()->user()->hasPermissionTo('can-create')) {
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menambahkan');
@@ -689,10 +691,10 @@ class TransactionLoanController extends Controller
     // }
 
     // `bebas` (fastcreate) melewati cek tanggal ketat untuk sementara.
-    $bebas = $request->boolean('bebas');
+    $bebas = $request->boolean('bebas') && !$macet;
 
     // Input Macet dimatikan untuk kantor yang sudah migrasi (mas 2026-10-12).
-    if ($request->boolean('macet') && \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId())) {
+    if ($macet && \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId())) {
       return redirect()->back()->withErrors('Input Macet tidak tersedia untuk kantor yang sudah migrasi.');
     }
 
@@ -728,6 +730,26 @@ class TransactionLoanController extends Controller
       '*.min' => 'minimal diisi 100rb'
 
     ]);
+
+    // Penanda macet membuka pintu ini untuk mantri: batas drop & kunci wajib di server.
+    if ($macet) {
+      $batasDrop = AppHelper::batasDropMacet(\App\Helpers\AuthScope::getActiveBranchId());
+      if (Carbon::parse($request->tanggal_drop)->toDateString() > $batasDrop) {
+        return redirect()->back()->withErrors('Input Macet hanya untuk drop sampai ' . $batasDrop . '.');
+      }
+
+      $tanggalBayar = $angsuran->map(fn($item) => Carbon::parse($item['transaction_date'])->toDateString())->max();
+      if ($tanggalBayar > Carbon::today()->toDateString()) {
+        return redirect()->back()->withErrors('Tanggal bayar tidak boleh di masa depan.');
+      }
+
+      $groupingMacet = TransactionLoanOfficerGrouping::where('branch_id', \App\Helpers\AuthScope::getActiveBranchId())
+        ->where('kelompok', auth()->user()->can('view-all-groups') ? $request->kelompok : auth()->user()->employee->area)
+        ->first();
+      if ($tanggalBayar && $groupingMacet && AppHelper::tanggalTerkunci($groupingMacet->id, $tanggalBayar)) {
+        return redirect()->back()->withErrors('Tanggal ' . $tanggalBayar . ' sudah dikunci kasir.');
+      }
+    }
 
 
     // validasi tambahan jika angsuran ada

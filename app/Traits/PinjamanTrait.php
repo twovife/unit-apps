@@ -4,7 +4,6 @@ namespace App\Traits;
 
 use App\Helpers\AppHelper;
 use App\Models\Branch;
-use App\Models\OnlineBranch;
 use App\Models\TransactionDailyRecap;
 use App\Models\TransactionLoan;
 use App\Models\TransactionLoanInstalment;
@@ -1066,6 +1065,9 @@ trait PinjamanTrait
         'month' => $transaction_date->format('Y-m'),
         'hari' => $hari,
         'tanggal' => $tanggalSeleksi,
+        // Input Macet (menu ML mantri): tanggal bayar & batas drop.
+        'tanggal_bayar_macet' => $tanggalSeleksi,
+        'onlineDate' => AppHelper::batasDropMacet($branch_id),
         // can-edit / superuser: tetap bisa mengubah - kunci dibuka otomatis.
         'is_locked' => $isLocked && !\App\Helpers\Gembok::bolehBuka(auth()->user()),
         'koreksi_kunci' => $isLocked && \App\Helpers\Gembok::bolehBuka(auth()->user()),
@@ -1234,7 +1236,7 @@ trait PinjamanTrait
     $hari = AppHelper::hariTagih($request->hari);
     $tanggalSeleksi = AppHelper::getStortingShowDate($hari);
     $groupingId = AppHelper::kelompokAktif($branch_id, $kelompok);
-    $onlineDate = Carbon::parse(OnlineBranch::where('branch_id', $branch_id)->first()?->online_date ?? Carbon::now()->subMonths(4))->subMonth()->endOfMonth()->format('Y-m-d');
+    $onlineDate = AppHelper::batasDropMacet($branch_id);
 
     // Macet ikut hari EFEKTIF (lihat getLoanMantri): nasabah yang dipindah
     // muncul di hari barunya. Tanpa mutasi, dua daftar kosong -> tak berubah.
@@ -1377,6 +1379,7 @@ trait PinjamanTrait
         'searchMonth' => true,
         'month' => $transaction_date->format('Y-m'),
         'onlineDate' => $onlineDate,
+        'tanggal_bayar_macet' => $tanggalSeleksi,
       ],
     ];
   }
