@@ -6,6 +6,7 @@ use App\Helpers\AgregasiScope;
 use App\Helpers\AuthScope;
 use App\Helpers\Ember;
 use App\Helpers\KoreksiBeku;
+use App\Helpers\Mutasi;
 use App\Helpers\PenyesuaianSaldo;
 use App\Models\Branch;
 use App\Models\TransactionKoreksiBeku;
@@ -68,8 +69,8 @@ class KoreksiBekuController extends Controller
         $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->where('kelompok', $scope->kelompok)->first();
         $loans = $grouping
             ? TransactionLoan::with(['customer', 'manage_customer', 'white_off', 'loan_instalment' => fn($q) => $q->where('transaction_date', '<=', $akhirTampil->toDateString())])
-                ->where('transaction_loan_officer_grouping_id', $grouping->id)
-                ->where('hari', $hari)
+                // Resort PADA bulan drop yang dibuka (sama dengan dataDaftarNasabah).
+                ->tap(fn($q) => Mutasi::saring($q, 'transaction_loans', [$grouping->id], Mutasi::tgl($bulan), $hari))
                 ->where('status', 'success')
                 ->whereBetween('drop_date', [$bulan->toDateString(), $bulan->copy()->endOfMonth()->toDateString()])
                 ->orderBy('drop_date')
@@ -106,7 +107,7 @@ class KoreksiBekuController extends Controller
                 'nik' => $l->customer?->nik,
                 'nomor_anggota' => $l->manage_customer?->nomor_anggota,
                 'kelompok' => $scope->kelompok,
-                'hari' => $l->hari,
+                'hari' => $hari,
                 'drop_date' => Carbon::parse($l->drop_date)->toDateString(),
                 'pinjaman' => (int) $l->pinjaman,
                 'ember' => Ember::dari($l->drop_date, $mulai),
@@ -150,9 +151,9 @@ class KoreksiBekuController extends Controller
                 'mulai' => $mulai?->toDateString(),
                 'banding' => $mulai ? $this->bandingBucket($branchId, $mulai->copy()->startOfMonth(), $f['kelompok'] ?? null, $f['hari'] ?? null) : null,
                 'grouping_id' => $f['groupId'] ?? null,
-                // MACET LAMA kelompok x hari ini: tujuan oper saldo nasabah ML (mas 2026-10-29).
-                'macet_lama_id' => TransactionLoan::where('transaction_loan_officer_grouping_id', $f['groupId'] ?? 0)
-                    ->whereRaw('LOWER(hari) = ?', [strtolower((string) ($f['hari'] ?? ''))])
+                // MACET LAMA kelompok x hari ini PADA bulan yang dibuka: tujuan oper saldo nasabah ML (mas 2026-10-29).
+                'macet_lama_id' => TransactionLoan::query()
+                    ->tap(fn($q) => Mutasi::saring($q, 'transaction_loans', [(int) ($f['groupId'] ?? 0)], Mutasi::tgl(($f['month'] ?? now()->format('Y-m')) . '-01'), strtolower((string) ($f['hari'] ?? ''))))
                     ->where('status', 'success')
                     ->whereHas('customer', fn($q) => $q->where('nik', MigrasiController::NIK_MACET_LAMA))
                     ->value('id'),

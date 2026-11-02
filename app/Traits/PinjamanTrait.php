@@ -1117,10 +1117,8 @@ trait PinjamanTrait
       }, 'branch', 'customer', 'loan_officer_grouping']
     )
       ->whereBetween('drop_date', [$begin_transaction, $transaction_date->format('Y-m-d')])
-      ->where('hari', $hari)
-      ->whereHas('branch', function ($branch) use ($branch_id, $kelompok) {
-        $branch->where('branch_id', $branch_id)->where('kelompok', $kelompok);
-      })
+      // Resort PADA bulan yang dilihat (rombak_resort §8.3), sama dengan getTransactionLoan.
+      ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'transaction_loans', [AppHelper::kelompokAktif($branch_id, $kelompok)->id], \App\Helpers\Mutasi::tgl($begin_transaction), $hari))
       ->where('status', 'success')
       // Cari nama: substring biasa (LIKE). Sempat dicoba tambah SOUNDEX
       // (toleran typo semacam "azis" -> "Aziz") tapi dibatalkan - SOUNDEX
@@ -1140,11 +1138,11 @@ trait PinjamanTrait
 
 
 
-    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date) {
+    $groupByMonth = $loan->map(function ($item, $key) use ($transaction_date, $transaction_start_date, $hari, $kelompok) {
       return [
         'month' => Carbon::parse($key)->format('FY'),
         'date' => Carbon::parse($key)->startOfMonth()->format('Y-m-d'),
-        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date) {
+        'data' => $item->map(function ($item) use ($transaction_start_date, $transaction_date, $hari, $kelompok) {
 
           return [
             'tanggal_drop' => $item->drop_date,
@@ -1160,11 +1158,12 @@ trait PinjamanTrait
             'drop' => $item->nominal_drop,
 
             'pinjaman' => $item->pinjaman,
-            'hari' => $item->hari,
+            // Resort yang disaring (pada bulan dilihat), bukan kolom yang sudah ditimpa rombak.
+            'hari' => $hari,
 
             'nik' => $item->customer->nik,
 
-            'kelompok' => $item->loan_officer_grouping->kelompok,
+            'kelompok' => $kelompok,
             'jumlah_angsuran' => $item->loan_instalment->count(),
 
             'id' => $item->id,

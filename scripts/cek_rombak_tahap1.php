@@ -96,6 +96,56 @@
         };
         $cek(in_array($loan->id, $daftar(1223, 'senin', $bulanLalu)), 'Daftar Nasabah bulan lalu: di K3 senin');
         $cek(!in_array($loan->id, $daftar(1221, 'rabu', $bulanLalu)), 'Daftar Nasabah bulan lalu: tidak di K1 rabu');
+
+        // [CEK-TASK-9]
+        // Pembaca bulan lalu sisa (N2-N5), lewat fungsi asli layar. Sidoarjo 5 (123) migrasi 2026-10-01.
+        $props = fn ($resp) => (fn () => $this->props)->call($resp);
+        $scope = function ($kelompok) {
+            \App\Helpers\AuthScope::simpanFilterGlobal(['branch_id' => 123, 'kelompok' => $kelompok]);
+        };
+        $req = fn (array $isi) => \Illuminate\Http\Request::create('/', 'GET', $isi);
+        // N2 getLoanByDate (SearchByDate): drop bulan lalu ada di K3 senin, tidak di K1 rabu.
+        $idsByDate = fn ($kelompok, $hari) => (function () use ($scope, $kelompok, $req, $hari, $bulanLalu) {
+            $scope($kelompok);
+            return collect(\App\Http\Controllers\TransactionLoanController::getLoanByDate($req(['month' => substr($bulanLalu, 0, 7), 'hari' => $hari]))['datas'])->flatMap(fn ($b) => collect($b['data'])->pluck('id'))->all();
+        })();
+        $cek(in_array($loan->id, $idsByDate(3, 'senin')), 'getLoanByDate bulan lalu: di K3 senin');
+        $cek(!in_array($loan->id, $idsByDate(1, 'rabu')), 'getLoanByDate bulan lalu: tidak di K1 rabu');
+        // Pinjaman ML 873149 (K3 senin) jadi MACET LAMA palsu (rekeningnya dialihkan) lalu dipindah; 475836 (K10 selasa, punya penyesuaian 4168) dipindah; 2511802 (drop Sep, K3 senin) dipindah.
+        $nikMl = \App\Http\Controllers\MigrasiController::NIK_MACET_LAMA;
+        $custMl = \App\Models\TransactionCustomer::firstOrCreate(['nik' => $nikMl], ['nama' => \App\Http\Controllers\MigrasiController::NAMA_MACET_LAMA, 'alamat' => '-']);
+        $ml = \App\Models\TransactionLoan::findOrFail(873149);
+        DB::table('transaction_manage_customers')->where('id', $ml->transaction_manage_customer_id)->update(['transaction_customer_id' => $custMl->id]);
+        $M::catat($ml, 1221, 'rabu', $bulanIni, 'cek tahap 1', $user);
+        $adjLoan = \App\Models\TransactionLoan::findOrFail(475836);
+        $M::catat($adjLoan, 1221, 'rabu', $bulanIni, 'cek tahap 1', $user);
+        $sep = \App\Models\TransactionLoan::findOrFail(2511802);
+        $M::catat($sep, 1221, 'rabu', $bulanIni, 'cek tahap 1', $user);
+        // N3 MigrasiController: nasabahMacet K3 senin memuat 873149; kesiapan menandai MACET LAMA di K3 senin, tidak di K1 rabu.
+        $scope(3);
+        $nm = $props(app(\App\Http\Controllers\MigrasiController::class)->nasabahMacet($req(['kelompok' => 3, 'hari' => 'senin'])));
+        $cek(collect($nm['datas'])->contains('id', 873149), 'nasabahMacet periode migrasi: ML di K3 senin');
+        $nm1 = $props(app(\App\Http\Controllers\MigrasiController::class)->nasabahMacet($req(['kelompok' => 1, 'hari' => 'rabu'])));
+        $cek(!collect($nm1['datas'])->contains('id', 873149), 'nasabahMacet periode migrasi: ML tidak di K1 rabu');
+        $kes = app(\App\Http\Controllers\MigrasiController::class)->barisKesiapan(123, \Carbon\Carbon::parse('2026-10-01'))->keyBy('kunci');
+        $cek(($kes['1223|senin']['macet_lama'] ?? false) && !($kes['1221|rabu']['macet_lama'] ?? false), 'barisKesiapan: MACET LAMA di K3 senin, tidak di K1 rabu');
+        // N4 SelisihMigrasi: macetLama & penyesuaianMl ber-key resort pada bulan migrasi.
+        $priv = fn ($nama, ...$arg) => (new \ReflectionMethod(\App\Helpers\SelisihMigrasi::class, $nama))->invoke(null, ...$arg);
+        $smMl = $priv('macetLama', $kantor, \Carbon\Carbon::parse('2026-10-01'));
+        $cek((int) ($smMl['1223|senin']->id ?? 0) === 873149 && !isset($smMl['1221|rabu']), 'SelisihMigrasi::macetLama: K3 senin');
+        $smAdj = $priv('penyesuaianMl', $kantor, \Carbon\Carbon::parse('2026-10-01'));
+        $cek(collect($smAdj['1230|selasa'] ?? [])->contains('id', 4168) && !collect($smAdj['1221|rabu'] ?? [])->contains('id', 4168), 'SelisihMigrasi::penyesuaianMl: K10 selasa');
+        // N5 KoreksiBeku: index Sep (bulan sebelum migrasi) K3 senin memuat 2511802; buku Sep K3 senin -> MACET LAMA 873149.
+        $kb = app(\App\Http\Controllers\KoreksiBekuController::class);
+        $scope(3);
+        $cek(collect($props($kb->index($req(['bulan' => '2026-09', 'hari' => 'senin'])))['nasabah'])->contains('id', 2511802), 'KoreksiBeku index Sep: di K3 senin');
+        $scope(1);
+        $cek(!collect($props($kb->index($req(['bulan' => '2026-09', 'hari' => 'rabu'])))['nasabah'])->contains('id', 2511802), 'KoreksiBeku index Sep: tidak di K1 rabu');
+        // Rekening 873149 juga memegang 468904 (tetap K3 senin), jadi K3 senin bisa menjawab salah satunya; pembedanya K1 rabu.
+        $scope(3);
+        $cek(in_array((int) $props($kb->buku($req(['month' => '2026-09', 'hari' => 'senin'])))['beku']['macet_lama_id'], [873149, 468904]), 'KoreksiBeku buku Sep: MACET LAMA K3 senin');
+        $scope(1);
+        $cek((int) $props($kb->buku($req(['month' => '2026-09', 'hari' => 'rabu'])))['beku']['macet_lama_id'] !== 873149, 'KoreksiBeku buku Sep: MACET LAMA pindahan tidak di K1 rabu');
     } finally {
         DB::rollBack();
     }

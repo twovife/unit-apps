@@ -8,6 +8,7 @@ use App\Helpers\DaftarMigrasi;
 use App\Helpers\PemeriksaanMigrasi;
 use App\Helpers\Ember;
 use App\Helpers\HitungAgregat;
+use App\Helpers\Mutasi;
 use App\Helpers\PenyesuaianSaldo;
 use App\Models\Branch;
 use App\Models\TransactionCustomer;
@@ -210,11 +211,8 @@ class MigrasiController extends Controller
      * kelompok x hari - tempat menyesuaikan saldo sebelum / sesudah migrasi
      * supaya saldo awal benar. Superuser. Penyimpanan lewat route
      * penyesuaian_saldo_simpan (PenyesuaianSaldo::buat; arahnya otomatis
-     * dari angka yang diketik).
-     *
-     * ponytail: kelompok & hari diambil dari kolom asli pinjaman, bukan
-     * kelompok efektif mutasi; samakan dengan Mutasi::kelompokSql kalau
-     * mutasi nasabah mulai dipakai.
+     * dari angka yang diketik). Kelompok & hari = resort PADA bulan acuan
+     * (Mutasi), sama dengan ringkasan portofolio.
      */
     public function nasabahMacet(Request $request)
     {
@@ -238,8 +236,7 @@ class MigrasiController extends Controller
         $batasSesuai = AgregasiScope::batasPenyesuaian($scope->branch_id);
 
         $loans = TransactionLoan::with('customer')
-            ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
-            ->whereRaw('LOWER(hari) = ?', [$hari])
+            ->tap(fn($q) => Mutasi::saring($q, 'transaction_loans', $groupingIds->all(), Mutasi::tgl($periode), $hari))
             ->where('status', 'success')
             ->where('drop_date', '<', $batasMl->toDateString())
             // Sama dengan Pinjaman Macet: yang sudah ditutup (pay_off_date) sebelum bulan acuan tidak ikut.
@@ -538,14 +535,15 @@ class MigrasiController extends Controller
             ->get()
             ->groupBy(fn($r) => $r->transaction_loan_officer_grouping_id . '|' . strtolower(trim($r->day)));
 
-        // Kelompok x hari yang sudah punya pinjaman MACET LAMA.
+        // Kelompok x hari yang sudah punya pinjaman MACET LAMA, resort PADA $periode.
+        $ref = Mutasi::tgl($periode);
         $adaMacetLama = DB::table('transaction_loans as l')
             ->join('transaction_manage_customers as m', 'm.id', '=', 'l.transaction_manage_customer_id')
             ->join('transaction_customers as c', 'c.id', '=', 'm.transaction_customer_id')
             ->where('c.nik', self::NIK_MACET_LAMA)
-            ->whereIn('l.transaction_loan_officer_grouping_id', $ids)
-            ->get(['l.transaction_loan_officer_grouping_id as g', 'l.hari'])
-            ->map(fn($r) => $r->g . '|' . strtolower($r->hari))
+            ->tap(fn($q) => Mutasi::saring($q, 'l', $ids, $ref))
+            ->get([DB::raw(Mutasi::kelompokSql('l', $ref) . ' as g'), DB::raw(Mutasi::hariSql('l', $ref) . ' as hari')])
+            ->map(fn($r) => $r->g . '|' . $r->hari)
             ->flip();
 
         $nol = array_fill_keys(Ember::SEMUA, 0);

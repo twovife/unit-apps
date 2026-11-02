@@ -35,7 +35,7 @@ class SelisihMigrasi
             $bucket = DB::table('transaction_sirculations')->whereIn('transaction_loan_officer_grouping_id', $kelompok->keys())
                 ->whereDate('date', $periode)->get()
                 ->groupBy(fn($r) => $r->transaction_loan_officer_grouping_id . '|' . strtolower(trim($r->day)));
-            $macetLama = self::macetLama($kelompok->keys()->all());
+            $macetLama = self::macetLama($kelompok->keys()->all(), $periode);
             $penyesuaian = self::penyesuaianMl($kelompok->keys()->all(), $periode);
 
             foreach ($bucket as $kunci => $rows) {
@@ -70,36 +70,42 @@ class SelisihMigrasi
         return $hasil;
     }
 
-    /** Pinjaman MACET LAMA per "groupingId|hari". */
-    private static function macetLama(array $groupingIds): array
+    /** Pinjaman MACET LAMA per "groupingId|hari", resort PADA bulan migrasi (sama dengan portofolio). */
+    private static function macetLama(array $groupingIds, Carbon $periode): array
     {
-        return TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        $ref = Mutasi::tgl($periode);
+
+        return TransactionLoan::select('transaction_loans.*')
+            ->selectRaw(Mutasi::kelompokSql('transaction_loans', $ref) . ' AS pada_g, ' . Mutasi::hariSql('transaction_loans', $ref) . ' AS pada_hari')
+            ->tap(fn($q) => Mutasi::saring($q, 'transaction_loans', $groupingIds, $ref))
             ->whereHas('manage_customer.customers', fn($c) => $c->where('nik', MigrasiController::NIK_MACET_LAMA))
             ->where('status', 'success')->get()
-            ->keyBy(fn($l) => $l->transaction_loan_officer_grouping_id . '|' . strtolower($l->hari))->all();
+            ->keyBy(fn($l) => $l->pada_g . '|' . $l->pada_hari)->all();
     }
 
     /**
      * Penyesuaian saldo pinjaman ember ML (bulan migrasi) per "groupingId|hari" - calon yang
      * bisa dikoreksi sebesar selisih ML (mas 2026-10-27: dipilih manual, bukan otomatis).
      * MACET LAMA (tombolnya sendiri) & pasangan Input ML (PecahanMacetLama) tidak ikut.
+     * Kunci = resort pinjaman PADA bulan migrasi: di sana efeknya dihitung portofolio.
      */
     private static function penyesuaianMl(array $groupingIds, Carbon $periode): array
     {
         $hasil = [];
+        $ref = Mutasi::tgl($periode);
         $rows = DB::table('transaction_saldo_adjustments as a')
             ->join('transaction_loans as l', 'l.id', '=', 'a.transaction_loan_id')
             ->join('transaction_manage_customers as m', 'm.id', '=', 'l.transaction_manage_customer_id')
             ->join('transaction_customers as c', 'c.id', '=', 'm.transaction_customer_id')
-            ->whereIn('a.transaction_loan_officer_grouping_id', $groupingIds)
+            ->tap(fn($q) => Mutasi::saring($q, 'l', $groupingIds, $ref))
             ->where('c.nik', '<>', MigrasiController::NIK_MACET_LAMA)
             ->where(fn($q) => $q->whereNull('l.notes')->orWhere('l.notes', 'not like', PecahanMacetLama::CATATAN . '%'))
-            ->get(['a.id', 'a.transaction_loan_officer_grouping_id as g', 'l.hari', 'l.drop_date', 'c.nama', 'a.jenis', 'a.nominal', 'a.berlaku_bulan', 'a.catatan']);
+            ->get(['a.id', DB::raw(Mutasi::kelompokSql('l', $ref) . ' as g'), DB::raw(Mutasi::hariSql('l', $ref) . ' as hari'), 'l.drop_date', 'c.nama', 'a.jenis', 'a.nominal', 'a.berlaku_bulan', 'a.catatan']);
         foreach ($rows as $a) {
             if (Ember::kategori(Ember::dari($a->drop_date, $periode)) !== 'ml') {
                 continue;
             }
-            $hasil[$a->g . '|' . strtolower($a->hari)][] = [
+            $hasil[$a->g . '|' . $a->hari][] = [
                 'id' => $a->id, 'nama' => $a->nama, 'jenis' => $a->jenis, 'nominal' => (int) $a->nominal,
                 'berlaku' => Carbon::parse($a->berlaku_bulan)->format('Y-m'), 'catatan' => $a->catatan,
                 'drop' => Carbon::parse($a->drop_date)->toDateString(),
@@ -118,9 +124,14 @@ class SelisihMigrasi
     {
         $adj = TransactionSaldoAdjustment::findOrFail($adjId);
         $loan = TransactionLoan::findOrFail($adj->transaction_loan_id);
-        $groupingId = (int) $adj->transaction_loan_officer_grouping_id;
-        $hari = strtolower($loan->hari);
-        $baris = collect(self::pindai([DB::table('transaction_loan_officer_groupings')->where('id', $groupingId)->value('branch_id')], true))
+        // Resort pinjaman PADA bulan migrasi kantornya (kunci yang sama dengan penyesuaianMl).
+        $branchId = DB::table('transaction_loan_officer_groupings')->where('id', $loan->transaction_loan_officer_grouping_id)->value('branch_id');
+        $ref = Mutasi::tgl(Carbon::parse(DB::table('branches')->where('id', $branchId)->value('mulai_pendataan_baru'))->startOfMonth());
+        $pada = DB::table('transaction_loans as l')->where('l.id', $loan->id)
+            ->first([DB::raw(Mutasi::kelompokSql('l', $ref) . ' as g'), DB::raw(Mutasi::hariSql('l', $ref) . ' as hari')]);
+        $groupingId = (int) $pada->g;
+        $hari = $pada->hari;
+        $baris = collect(self::pindai([$branchId], true))
             ->first(fn($b) => $b['grouping_id'] === $groupingId && $b['hari'] === $hari);
         if (!$baris || !collect($baris['penyesuaian'])->contains('id', $adjId)) {
             throw new \RuntimeException('Penyesuaian ini bukan calon koreksi selisih ML kelompok & hari itu.');
