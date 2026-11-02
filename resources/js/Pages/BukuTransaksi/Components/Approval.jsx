@@ -73,14 +73,14 @@ const Approval = ({
   // can-approve selain stafkontrol; selain itu target hanya baca.
   const { auth: authKoreksi } = usePage().props;
   const bolehKoreksi = authKoreksi?.permissions?.includes('can-approve') && !authKoreksi?.roles?.includes('stafkontrol');
-  // Edit target hanya bulan berjalan; keluar bulan lalu tetap bisa (target sesudahnya menjalar).
-  const bulanBerjalan = dayjs(triggeredData?.tanggal).isSame(dayjs(), 'month');
   const [pratinjau, setPratinjau] = useState(null);
   // Target baru bisa diketik sesudah klik "Edit" (cegah ubah tak sengaja).
   const [ubahTarget, setUbahTarget] = useState(false);
   useEffect(() => setUbahTarget(false), [show, triggeredDate]);
   const [galatKoreksi, setGalatKoreksi] = useState('');
   const [triggeredData, setTriggeredData] = useState([]);
+  // Edit target hanya bulan berjalan; keluar bulan lalu tetap bisa (target sesudahnya menjalar).
+  const bulanBerjalan = dayjs(triggeredData?.tanggal).isSame(dayjs(), 'month');
 
   const [transaksiOpenHariIni, setTransaksiOpenHariIni] = useState([]);
   const [transaksiOpenMingguDepan, setTransaksiOpenMingguDepan] = useState([]);

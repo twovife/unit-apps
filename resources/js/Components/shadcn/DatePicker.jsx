@@ -13,7 +13,7 @@ import {
 import { format, getMonth, getYear, min, setMonth, setYear } from 'date-fns';
 import dayjs from 'dayjs';
 import { CalendarIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
@@ -80,10 +80,6 @@ const DatePicker = ({
     const hariKe = hari ? HARI.indexOf(hari) : new Date().getDay();
     return date > minimalDate || date.getDay() !== hariKe;
   };
-
-  useEffect(() => {
-    onChange(name, dayjs(date).format('YYYY-MM-DD'));
-  }, []);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
