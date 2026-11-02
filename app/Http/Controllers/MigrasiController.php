@@ -213,7 +213,7 @@ class MigrasiController extends Controller
      * dari angka yang diketik).
      *
      * ponytail: kelompok & hari diambil dari kolom asli pinjaman, bukan
-     * kelompok efektif mutasi; samakan dengan Mutasi::ekspresiEfektifSql kalau
+     * kelompok efektif mutasi; samakan dengan Mutasi::kelompokSql kalau
      * mutasi nasabah mulai dipakai.
      */
     public function nasabahMacet(Request $request)

@@ -510,12 +510,6 @@ export default function AppSidebar({ ...props }) {
                   active: route().current('kalender.index'),
                 },
                 {
-                  id: 5,
-                  title: 'Mutasi Nasabah',
-                  link: route('mutasi_nasabah.index'),
-                  active: route().current('mutasi_nasabah.index'),
-                },
-                {
                   id: 7,
                   title: 'Ubah Data Nasabah',
                   link: route('ubah_nik.index'),

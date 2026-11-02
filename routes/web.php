@@ -302,14 +302,6 @@ Route::middleware('auth')->group(function () {
       Route::post('/terapkan-saran', 'terapkanSaran')->name('terapkan_saran');
     });
 
-  // Mutasi nasabah — superuser saja, dicek di controller.
-  Route::controller(\App\Http\Controllers\MutasiNasabahController::class)
-    ->prefix('mutasi-nasabah')->name('mutasi_nasabah.')->group(function () {
-      Route::get('/', 'index')->name('index');
-      Route::post('/cari', 'cari')->name('cari');
-      Route::post('/', 'simpan')->name('simpan');
-    });
-
   // Ubah data nasabah: nama / NIK / No KK / alamat KTP (superuser, dicek di controller).
   Route::controller(\App\Http\Controllers\UbahNasabahController::class)
     ->prefix('ubah-nik')->name('ubah_nik.')->group(function () {
