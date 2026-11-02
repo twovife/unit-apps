@@ -71,6 +71,18 @@
         $cek(array_sum($portoIni['1221|rabu'] ?? []) > array_sum($sebelumLaluPorto['1221|rabu'] ?? []), 'saldo K1 rabu bertambah di bulan ini');
         // Task 4 menambah cek rekap di bawah baris ini.
         // [CEK-TASK-4]
+        $dropPer = function ($ids, $dari, $sampai) use ($M) {
+            $g = $M::kelompokSql('transaction_loans', 'transaction_loans.drop_date');
+            return \App\Models\TransactionLoan::query()
+                ->tap(fn ($q) => $M::saring($q, 'transaction_loans', $ids, 'transaction_loans.drop_date'))
+                ->where('status', 'success')->whereBetween('drop_date', [$dari, $sampai])
+                ->groupByRaw($g)->selectRaw("$g AS g, SUM(nominal_drop) AS n")
+                ->toBase()->get()->pluck('n', 'g')->map(fn ($n) => (int) $n)->all();
+        };
+        $dropLalu = $dropPer($kantor, $bulanLalu, $akhirBulanLalu);
+        $cek(($dropLalu[1223] ?? 0) >= (int) $loan->nominal_drop, 'drop bulan lalu tetap di K3');
+        $harianLalu = collect($sebelumLaluHarian)->groupBy(fn ($v, $k) => (int) explode('|', $k)[0], true)->map(fn ($c) => $c->sum('drop'))->all();
+        $cek(($dropLalu[1223] ?? 0) === ($harianLalu[1223] ?? 0), 'drop rekap K3 = HitungAgregat');
         // Task 5 menambah cek daftar pinjaman di bawah baris ini.
         // [CEK-TASK-5]
     } finally {

@@ -46,7 +46,8 @@ trait RekapTrait
 
     // Sama seperti getDataRekapDua: ikut kalender kerja, tapi tanggal yang
     // sudah punya drop tetap tampil walau libur - biar kelihatan, bukan hilang.
-    $dropBulanIni = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
+    $dropBulanIni = TransactionLoan::query()
+      ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'transaction_loans', $groupingId->pluck('id')->all(), 'transaction_loans.drop_date'))
       ->whereBetween('drop_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
       ->distinct()->pluck('drop_date')->map(fn($t) => Carbon::parse($t)->toDateString());
     $datesMatchDay = \App\Models\WorkDay::tanggalRekapBulan($startOfMonth, $dropBulanIni);
@@ -64,10 +65,12 @@ trait RekapTrait
     // Dijumlah di SQL per (tanggal, kelompok) - dulu ribuan baris pinjaman &
     // angsuran ditarik lalu disaring koleksi per sel, itu yang membuat menu
     // ini ~1 detik lebih lambat. Kunci: "Y-m-d|grouping_id".
-    $loan = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $groupingId->pluck('id'))
+    $gDrop = \App\Helpers\Mutasi::kelompokSql('transaction_loans', 'transaction_loans.drop_date');
+    $loan = TransactionLoan::query()
+      ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'transaction_loans', $groupingId->pluck('id')->all(), 'transaction_loans.drop_date'))
       ->whereBetween('drop_date', [$startOfMonth->toDateString(), $sampai])
-      ->groupBy('transaction_loan_officer_grouping_id', 'drop_date')
-      ->selectRaw("transaction_loan_officer_grouping_id AS g, drop_date AS d,
+      ->groupByRaw("$gDrop, drop_date")
+      ->selectRaw("{$gDrop} AS g, drop_date AS d,
         SUM(CASE WHEN status = 'success' THEN nominal_drop ELSE 0 END) AS drop_,
         SUM(CASE WHEN status = 'success' AND drop_langsung = 1 THEN nominal_drop ELSE 0 END) AS baru,
         SUM(CASE WHEN status = 'success' AND drop_langsung = 0 THEN nominal_drop ELSE 0 END) AS lama,
@@ -252,11 +255,13 @@ trait RekapTrait
     // Hanya yang sukses cair - sama dengan HitungAgregat::drop. success->gagal
     // tidak mengosongkan nominal_drop, jadi tanpa ini drop yang batal ikut terhitung.
     // Per kelompok per tanggal (do11/titipan9 global dibulatkan per tanggal).
-    $loan = TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+    $gDrop = \App\Helpers\Mutasi::kelompokSql('transaction_loans', 'transaction_loans.drop_date');
+    $loan = TransactionLoan::query()
+      ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'transaction_loans', $transactionOffice->pluck('id')->all(), 'transaction_loans.drop_date'))
       ->where('status', 'success')
       ->whereBetween('drop_date', [$startDateofMonth, $transaction_date->format('Y-m-d')])
-      ->groupBy('transaction_loan_officer_grouping_id', 'drop_date')
-      ->selectRaw('transaction_loan_officer_grouping_id AS g, drop_date AS d, SUM(nominal_drop) AS n')
+      ->groupByRaw("$gDrop, drop_date")
+      ->selectRaw("$gDrop AS g, drop_date AS d, SUM(nominal_drop) AS n")
       ->toBase()->get()
       ->map(fn($r) => (object) ['g' => $r->g, 'd' => Carbon::parse($r->d)->toDateString(), 'n' => (int) $r->n])
       ->groupBy('g');
@@ -832,15 +837,16 @@ trait RekapTrait
       // AGREGASI LOAN (SQL)
       // ============================
 
+      $gDrop = \App\Helpers\Mutasi::kelompokSql('transaction_loans', 'transaction_loans.drop_date');
       $loanAgg = TransactionLoan::selectRaw("
-          transaction_loan_officer_grouping_id,
+          $gDrop AS transaction_loan_officer_grouping_id,
           drop_date,
           SUM(nominal_drop) as drop_total
       ")
-        ->whereIn('transaction_loan_officer_grouping_id', $groupingIds)
+        ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'transaction_loans', $groupingIds->all(), 'transaction_loans.drop_date'))
         ->where('status', 'success')
         ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
-        ->groupBy('transaction_loan_officer_grouping_id', 'drop_date')
+        ->groupByRaw("$gDrop, drop_date")
         ->get()
         ->groupBy(['transaction_loan_officer_grouping_id', 'drop_date']);
     }
@@ -1095,7 +1101,8 @@ trait RekapTrait
       ->keyBy(fn($r) => Carbon::parse($r->d)->toDateString());
 
     // Hanya yang sukses cair - sama dengan Rekap 1 & 2.
-    $loan = TransactionLoan::where('transaction_loan_officer_grouping_id', $transactionOffice->id)
+    $loan = TransactionLoan::query()
+      ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'transaction_loans', [$transactionOffice->id], 'transaction_loans.drop_date'))
       ->where('status', 'success')
       ->whereBetween('drop_date', [$startDateofMonth, $endDateofMonth])
       ->groupBy('drop_date')
