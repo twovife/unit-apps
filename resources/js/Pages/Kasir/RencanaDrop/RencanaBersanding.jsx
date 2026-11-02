@@ -22,6 +22,8 @@ const KOLOM = [
 export const KIRI = KOLOM;
 export const KANAN = KOLOM.map(([k, ...rest]) => [`p_${k}`, ...rest]);
 
+// Kolom yang sudah terisi sebelum harinya tiba - tetap tampil di tanggal depan.
+const SUDAH_ADA = ['target', 'rencana'];
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Senin minggu itu (dayjs: Minggu = 0).
 const seninDari = (t) => dayjs(t).subtract((dayjs(t).day() + 6) % 7, 'day').format('YYYY-MM-DD');
@@ -87,8 +89,8 @@ export const Sisi = ({
             <tr key={kunciBaris(r)} className={`h-8 border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
               <td className="px-3 py-1 font-medium whitespace-nowrap">{isiPertama(r)}</td>
               {kolom.map(([k, , kelas]) => {
-                // Target hari depan sudah ada (hasil ACC KM minggu lalu), hanya itu yang tampil.
-                const v = kosong && k !== 'target' ? 0 : r[k];
+                // Target & rencana hari depan sudah ada (diinput / ACC KM minggu lalu), hanya itu yang tampil.
+                const v = kosong && !SUDAH_ADA.includes(k) ? 0 : r[k];
                 return (
                   <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${kelas ?? ''}`}>
                     {banding[k] && !kosong && <Panah ini={r[k]} dulu={r[banding[k]]} />}
@@ -152,7 +154,7 @@ export const Sisi = ({
             {kolom.map(([k, , kelas]) => (
               <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
                 {banding[k] && aktif.length > 0 && <Panah ini={jumlah(aktif, k)} dulu={jumlah(aktif, banding[k])} />}
-                {ribu(jumlah(k === 'target' ? rows : aktif, k))}
+                {ribu(jumlah(SUDAH_ADA.includes(k) ? rows : aktif, k))}
               </td>
             ))}
             {kolomKm && <td />}
