@@ -119,7 +119,10 @@ class KoreksiBeku
         }
 
         // Hanya kelompok pinjaman ini (mas 2026-10-24): kelompok lain tidak berubah oleh koreksi.
-        $ids = [(int) $grouping->id];
+        // Pinjaman yang dipindah resort: bulan sebelum pindah ada di kelompok asal, ikut dihitung.
+        $ids = array_values(array_unique(array_merge([(int) $grouping->id], $loan
+            ? \App\Models\TransactionLoanMutation::where('transaction_loan_id', $loan->id)->pluck('dari_grouping_id')->map(fn($g) => (int) $g)->all()
+            : [])));
         $bulan = [];
         for ($b = $mulai->copy()->startOfMonth(); $b->lte(Carbon::now()->startOfMonth()->addMonthNoOverflow()); $b->addMonthNoOverflow()) {
             $bulan[] = $b->copy();
@@ -234,7 +237,7 @@ class KoreksiBeku
             case 'tambah':
                 $baru = TransactionLoanInstalment::create([
                     'transaction_loan_id' => $loan->id,
-                    'transaction_loan_officer_grouping_id' => $loan->transaction_loan_officer_grouping_id,
+                    'transaction_loan_officer_grouping_id' => Mutasi::kelompokPada($loan, $tanggal),
                     'transaction_date' => $tanggal->toDateString(),
                     'nominal' => $nominal,
                     'status' => AppHelper::generateStatusAngsuran($loan->drop_date, $tanggal->toDateString()),

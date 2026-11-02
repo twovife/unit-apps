@@ -110,17 +110,18 @@ class PecahanMacetLama
             $pecahan = TransactionLoan::findOrFail($loanId);
 
             // 4. Pindah saldo: pecahan tepat = setoran, MACET LAMA berkurang setoran.
-            $adj = fn(int $loanId, int $n, string $catatan) => $n > 0 && TransactionSaldoAdjustment::create([
-                'transaction_loan_id' => $loanId,
-                'transaction_loan_officer_grouping_id' => $grouping->id,
+            // Kelompok PADA berlaku_bulan: MACET LAMA yang dipindah resort sesudahnya dicap kelompok asal; pecahan baru tanpa mutasi = $grouping.
+            $adj = fn(TransactionLoan $l, int $n, string $catatan) => $n > 0 && TransactionSaldoAdjustment::create([
+                'transaction_loan_id' => $l->id,
+                'transaction_loan_officer_grouping_id' => Mutasi::kelompokPada($l, $berlaku),
                 'jenis' => TransactionSaldoAdjustment::JENIS_SALDO_AWAL,
                 'nominal' => $n,
                 'berlaku_bulan' => $berlaku,
                 'user_input' => $user->employee->id,
                 'catatan' => $catatan,
             ]);
-            $adj($pecahan->id, (int) $pecahan->pinjaman - $nominal, 'Pecahan MACET LAMA #' . $ml->id . ': saldo = setoran');
-            $adj($ml->id, $nominal, 'Dipecah ke pinjaman #' . $pecahan->id . ' (' . trim($v['nama']) . ')');
+            $adj($pecahan, (int) $pecahan->pinjaman - $nominal, 'Pecahan MACET LAMA #' . $ml->id . ': saldo = setoran');
+            $adj($ml, $nominal, 'Dipecah ke pinjaman #' . $pecahan->id . ' (' . trim($v['nama']) . ')');
 
             // 5. Pengaman: pemecahan tidak boleh menggeser saldo bulanan apa pun.
             if ($sebelum != $hitung()) {

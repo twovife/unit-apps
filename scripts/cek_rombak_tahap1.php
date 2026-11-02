@@ -146,6 +146,46 @@
         $cek(in_array((int) $props($kb->buku($req(['month' => '2026-09', 'hari' => 'senin'])))['beku']['macet_lama_id'], [873149, 468904]), 'KoreksiBeku buku Sep: MACET LAMA K3 senin');
         $scope(1);
         $cek((int) $props($kb->buku($req(['month' => '2026-09', 'hari' => 'rabu'])))['beku']['macet_lama_id'] !== 873149, 'KoreksiBeku buku Sep: MACET LAMA pindahan tidak di K1 rabu');
+        // [CEK-TASK-10]
+        // N6 penulis bertanggal mundur: baris dicap resort PADA tanggal transaksi / berlaku_bulan.
+        $cek($M::kelompokPada($loan, $akhirBulanLalu) === 1223 && $M::hariPada($loan, $akhirBulanLalu) === 'senin', 'kelompokPada/hariPada bulan lalu: K3 senin');
+        $cek($M::kelompokPada($loan, $bulanIni) === 1221 && $M::hariPada($loan, $bulanIni) === 'rabu', 'kelompokPada/hariPada bulan ini: K1 rabu');
+        // bayar_pinjaman headless (user superuser login). Angsuran lama di tanggal itu dihapus lewat model: hook Gembok membuka kunci kasir resmi.
+        $ctl = app(\App\Http\Controllers\TransactionLoanController::class);
+        $Ang = \App\Models\TransactionLoanInstalment::class;
+        $seninLalu = \Carbon\Carbon::parse($bulanLalu)->lastOfMonth(\Carbon\Carbon::MONDAY)->toDateString();
+        $seninIni = \Carbon\Carbon::parse($bulanIni)->firstOfMonth(\Carbon\Carbon::MONDAY)->toDateString();
+        $bayar = function ($tgl) use ($ctl, $loan, $Ang) {
+            $Ang::where('transaction_loan_id', $loan->id)->whereDate('transaction_date', $tgl)->get()->each->delete();
+            session()->forget('errors');
+            $ctl->bayar_pinjaman(\Illuminate\Http\Request::create('/', 'POST', ['type_transaksi' => 'bayar', 'nominal' => 1000, 'transaction_date' => $tgl]), $loan->fresh());
+            return [(int) $Ang::where('transaction_loan_id', $loan->id)->whereDate('transaction_date', $tgl)->value('transaction_loan_officer_grouping_id'), (string) session('errors')?->first()];
+        };
+        [$gLalu, $eLalu] = $bayar($seninLalu);
+        $cek($gLalu === 1223, "bayar_pinjaman $seninLalu (bulan lalu): angsuran di K3 ($gLalu $eLalu)");
+        [$gIni, $eIni] = $bayar($seninIni);
+        $cek($gIni === 1221, "bayar_pinjaman $seninIni (bulan ini): angsuran di K1 ($gIni $eIni)");
+        // white_off_loan bulan lalu: kunci diperiksa & baris dicap K3 (hari itu sudah dibuka di atas).
+        session()->forget('errors');
+        $ctl->white_off_loan($loan->fresh(), \Illuminate\Http\Request::create('/', 'POST', ['nominal' => 1000, 'transaction_date' => $seninLalu]));
+        $gWo = (int) \App\Models\TransactionWhiteOff::where('transaction_loan_id', $loan->id)->value('transaction_loan_officer_grouping_id');
+        $cek($gWo === 1223, "white_off_loan $seninLalu: pemutihan di K3 ($gWo " . session('errors')?->first() . ')');
+        // KoreksiBeku 'tambah' Sep (sebelum migrasi Okt) untuk 2511802 (dipindah K3 senin -> K1 rabu di atas).
+        $kbHasil = \App\Helpers\KoreksiBeku::jalankan('tambah', ['loan_id' => $sep->id, 'tanggal' => '2026-09-14', 'nominal' => 1000], 'cek tahap 1');
+        $gKb = (int) $Ang::where('transaction_loan_id', $sep->id)->whereDate('transaction_date', '2026-09-14')->latest('id')->value('transaction_loan_officer_grouping_id');
+        $cek($gKb === 1223, "KoreksiBeku tambah Sep: angsuran di K3 ($gKb)");
+        $cek(collect($kbHasil['dampak'])->contains(fn ($d) => $d['periode'] === '2026-10' && (int) $d['kelompok'] === 3 && $d['hari'] === 'senin'), 'KoreksiBeku tambah Sep: saldo Okt K3 senin ikut ditulis ulang');
+        // oper: 475836 & 601224 di K10 selasa saat bulan migrasi, sekarang keduanya K1 rabu.
+        $c601 = \App\Models\TransactionLoan::findOrFail(601224);
+        $M::catat($c601, 1221, 'rabu', $bulanIni, 'cek tahap 1', $user);
+        $eOper = '';
+        try {
+            \App\Helpers\PenyesuaianSaldo::oper($adjLoan->fresh(), $c601->fresh(), 1000, 'cek tahap 1', $user);
+        } catch (\Throwable $e) {
+            $eOper = $e->getMessage();
+        }
+        $gOper = \App\Models\TransactionSaldoAdjustment::whereIn('transaction_loan_id', [$adjLoan->id, $c601->id])->where('catatan', 'like', 'oper %')->pluck('transaction_loan_officer_grouping_id')->map(fn ($g) => (int) $g)->unique()->values()->all();
+        $cek($gOper === [1230], 'oper: penyesuaian dicap K10 (bulan migrasi) ' . json_encode($gOper) . " $eOper");
     } finally {
         DB::rollBack();
     }

@@ -1642,7 +1642,8 @@ class TransactionLoanController extends Controller
 
         $transactionLoan->loan_instalment()->create([
           'nominal' => $request->nominal,
-          'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+          // Resort PADA tanggal bayar: pinjaman yang dipindah bulan ini, dibayar mundur ke bulan lalu, masuk resort lama.
+          'transaction_loan_officer_grouping_id' => \App\Helpers\Mutasi::kelompokPada($transactionLoan, $request->transaction_date),
           'transaction_date' => $request->transaction_date,
           'status' => AppHelper::generateStatusAngsuran($transactionLoan->drop_date, $request->transaction_date),
           'danatitipan' => $request->danatitipan ? 1 : 0,
@@ -1722,7 +1723,9 @@ class TransactionLoanController extends Controller
     }
     // Tanggal yang sudah dikunci kasir / beku tidak bisa dipakai (can-edit:
     // boleh, kuncinya dibuka otomatis lewat model TransactionWhiteOff).
-    if (AppHelper::tanggalTerkunci($transactionLoan->transaction_loan_officer_grouping_id, $request->transaction_date)) {
+    // Resort PADA tanggal pemutihan; kunci yang diperiksa milik resort yang sama.
+    $kelompok = \App\Helpers\Mutasi::kelompokPada($transactionLoan, $request->transaction_date);
+    if (AppHelper::tanggalTerkunci($kelompok, $request->transaction_date)) {
       return redirect()->back()->withErrors('Tanggal ' . Carbon::parse($request->transaction_date)->format('d-m-Y') . ' sudah dikunci. Pilih tanggal yang belum dikunci.');
     }
 
@@ -1730,7 +1733,7 @@ class TransactionLoanController extends Controller
       DB::beginTransaction();
 
       $transactionLoan->white_off()->create([
-        'transaction_loan_officer_grouping_id' => $transactionLoan->transaction_loan_officer_grouping_id,
+        'transaction_loan_officer_grouping_id' => $kelompok,
         'transaction_date' => $request->transaction_date,
         'nominal' => $request->nominal,
       ]);

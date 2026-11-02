@@ -280,15 +280,19 @@ class PenyesuaianSaldo
         if ($dari->id === $ke->id) {
             throw new \RuntimeException('Nasabah pengirim dan penerima sama.');
         }
-        $gid = (int) $dari->transaction_loan_officer_grouping_id;
-        if ($gid !== (int) $ke->transaction_loan_officer_grouping_id || strtolower($dari->hari) !== strtolower($ke->hari)) {
-            throw new \RuntimeException('Oper hanya antar nasabah kelompok dan hari yang sama.');
-        }
-        $branchId = DB::table('transaction_loan_officer_groupings')->where('id', $gid)->value('branch_id');
+        $branchId = DB::table('transaction_loan_officer_groupings')->where('id', $dari->transaction_loan_officer_grouping_id)->value('branch_id');
         $mulai = AgregasiScope::tanggalMulai($branchId);
         if (!$mulai) {
             throw new \RuntimeException('Kantor ini belum migrasi - sesuaikan lewat isian sisa saldo.');
         }
+        // Penyesuaian berlaku bulan migrasi -> kelompok & hari PADA bulan itu (pinjaman bisa sudah dipindah resort).
+        $berlaku = $mulai->copy()->startOfMonth()->toDateString();
+        $gid = Mutasi::kelompokPada($dari, $berlaku);
+        if ($gid !== Mutasi::kelompokPada($ke, $berlaku) || Mutasi::hariPada($dari, $berlaku) !== Mutasi::hariPada($ke, $berlaku)) {
+            throw new \RuntimeException('Oper hanya antar nasabah kelompok dan hari yang sama.');
+        }
+        // Penjaga juga di kelompok sekarang: bulan sesudah pindah resort saldonya ada di sana.
+        $gids = array_values(array_unique([$gid, (int) $dari->transaction_loan_officer_grouping_id, (int) $ke->transaction_loan_officer_grouping_id]));
         foreach ([$dari, $ke] as $l) {
             if (!AgregasiScope::bolehDisesuaikan($branchId, $l->drop_date)) {
                 throw new \RuntimeException('Pinjaman ' . $l->customer?->nama . ' di luar jendela penyesuaian (bukan ML lama).');
@@ -306,9 +310,8 @@ class PenyesuaianSaldo
         // Hitungan hari bukan saldo - tidak ikut dibandingkan.
         $hitung = fn() => array_map(fn($b) => array_map(
             fn($r) => array_diff_key($r, ['hari_kerja' => 0, 'hari_terkunci' => 0]),
-            TutupBulanan::hitung([$gid], $b)
+            TutupBulanan::hitung($gids, $b)
         ), $bulan);
-        $berlaku = $mulai->copy()->startOfMonth()->toDateString();
         $catatan = trim((string) $catatan);
 
         DB::transaction(function () use ($dari, $ke, $nominal, $catatan, $user, $hitung, $berlaku, $gid) {

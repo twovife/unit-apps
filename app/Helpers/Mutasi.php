@@ -96,6 +96,26 @@ class Mutasi
         }
     }
 
+    /** Kelompok pinjaman PADA tanggal $tanggal (versi PHP satu pinjaman, untuk mencap baris transaksi). */
+    public static function kelompokPada(TransactionLoan $loan, $tanggal): int
+    {
+        $m = TransactionLoanMutation::where('transaction_loan_id', $loan->id)
+            ->where('berlaku_bulan', '>', Carbon::parse($tanggal)->toDateString())
+            ->orderBy('berlaku_bulan')->orderBy('id')->first();
+
+        return $m ? (int) $m->dari_grouping_id : (int) $loan->transaction_loan_officer_grouping_id;
+    }
+
+    /** Hari tagih pinjaman PADA tanggal $tanggal (versi PHP). */
+    public static function hariPada(TransactionLoan $loan, $tanggal): string
+    {
+        $m = TransactionLoanMutation::where('transaction_loan_id', $loan->id)
+            ->where('berlaku_bulan', '>', Carbon::parse($tanggal)->toDateString())
+            ->orderBy('berlaku_bulan')->orderBy('id')->first();
+
+        return strtolower($m?->dari_hari ?? $loan->hari);
+    }
+
     /**
      * Tambalan pembacaan per (grouping, hari) PADA bulan $ref: kolom pinjaman
      * sudah susunan baru, jadi bulan sebelum mutasi perlu menambah yang pindah
