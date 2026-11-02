@@ -128,8 +128,11 @@ class HitungAgregat
      */
     private static function drop(array $groupingIds, string $dari, string $sampai): array
     {
+        // Kelompok SAAT DROP (rancangan rombak_resort §8.3): pinjaman yang
+        // dipindah sesudahnya tetap dihitung di kelompok asalnya.
+        $g = Mutasi::kelompokSql('l', 'l.drop_date');
         $rows = DB::table(DB::raw('transaction_loans l'))
-            ->whereIn('l.transaction_loan_officer_grouping_id', $groupingIds)
+            ->tap(fn ($q) => Mutasi::saring($q, 'l', $groupingIds, 'l.drop_date'))
             ->where('l.status', 'success')
             ->whereBetween('l.drop_date', [$dari, $sampai])
             ->whereNotExists(function ($q) {
@@ -138,9 +141,9 @@ class HitungAgregat
                     ->whereColumn('sa.transaction_loan_id', 'l.id')
                     ->where('sa.jenis', TransactionSaldoAdjustment::JENIS_SALDO_AWAL);
             })
-            ->groupBy('l.transaction_loan_officer_grouping_id', 'l.drop_date')
+            ->groupBy(DB::raw($g), 'l.drop_date')
             ->get([
-                DB::raw('l.transaction_loan_officer_grouping_id AS g'),
+                DB::raw("$g AS g"),
                 DB::raw('l.drop_date AS tgl'),
                 DB::raw('SUM(l.nominal_drop) AS n'),
             ]);
@@ -338,6 +341,7 @@ class HitungAgregat
 
         $ref = Carbon::parse($periode)->startOfMonth()->toDateString();
         $efek = self::ekspresiEfekPenyesuaian('sa');
+        $h = Mutasi::hariSql('l', Mutasi::tgl($ref));
 
         $rows = DB::table(DB::raw('transaction_saldo_adjustments sa'))
             ->join(DB::raw('transaction_loans l'), 'l.id', '=', 'sa.transaction_loan_id')
@@ -345,10 +349,10 @@ class HitungAgregat
             ->where('sa.berlaku_bulan', $ref)
             ->whereRaw(TransactionSaldoAdjustment::ekspresiBerlakuSql('sa'))
             ->whereNotNull('l.hari')
-            ->groupBy('sa.transaction_loan_officer_grouping_id', DB::raw('LOWER(l.hari)'))
+            ->groupBy('sa.transaction_loan_officer_grouping_id', DB::raw($h))
             ->get([
                 DB::raw('sa.transaction_loan_officer_grouping_id AS g'),
-                DB::raw('LOWER(l.hari) AS hari'),
+                DB::raw("$h AS hari"),
                 DB::raw("SUM($efek) AS efek"),
             ]);
 

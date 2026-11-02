@@ -61,6 +61,14 @@
 
         // Task 3 menambah cek agregat di bawah baris ini.
         // [CEK-TASK-3]
+        $sesudahLaluPorto = \App\Helpers\HitungAgregat::portofolio($kantor, $akhirBulanLalu, $bulanLalu);
+        $sesudahLaluHarian = \App\Helpers\HitungAgregat::harianBanyak($kantor, $bulanLalu, $akhirBulanLalu);
+        $cek($sesudahLaluPorto == $sebelumLaluPorto, 'portofolio bulan lalu tidak bergeser');
+        $cek($sesudahLaluHarian == $sebelumLaluHarian, 'harian (drop/storting) bulan lalu tidak bergeser');
+        $portoIni = \App\Helpers\HitungAgregat::portofolio($kantor, $akhirBulanLalu, $bulanIni);
+        $total = fn ($p) => array_sum(array_map('array_sum', $p));
+        $cek($total($portoIni) === $total($sebelumLaluPorto), 'total kantor bulan ini = bulan lalu');
+        $cek(array_sum($portoIni['1221|rabu'] ?? []) > array_sum($sebelumLaluPorto['1221|rabu'] ?? []), 'saldo K1 rabu bertambah di bulan ini');
         // Task 4 menambah cek rekap di bawah baris ini.
         // [CEK-TASK-4]
         // Task 5 menambah cek daftar pinjaman di bawah baris ini.
