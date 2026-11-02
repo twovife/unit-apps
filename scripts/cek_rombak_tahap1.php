@@ -2,6 +2,7 @@
 //   tr '\n' ' ' < scripts/cek_rombak_tahap1.php | docker exec -i unit-app php artisan tinker
 // Semua perubahan di-rollback. Hanya untuk DB lokal (salinan prod).
 (function () {
+    if (!app()->environment('local')) { echo "lokal saja\n"; return; }
     $gagal = 0;
     $cek = function (bool $ok, string $pesan) use (&$gagal) {
         echo ($ok ? "\nOK    " : "\nGAGAL ") . $pesan;

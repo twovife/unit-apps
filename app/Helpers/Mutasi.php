@@ -87,9 +87,12 @@ class Mutasi
         }
 
         $ids = implode(',', array_map('intval', $groupingIds));
-        $query->where(function ($w) use ($kolom, $alias, $groupingIds) {
+        // id diambil dulu: OR dengan subquery IN membuat MariaDB memindai seluruh tabel.
+        $pindah = TransactionLoanMutation::whereIn('dari_grouping_id', $groupingIds)
+            ->pluck('transaction_loan_id')->unique()->values()->all();
+        $query->where(function ($w) use ($kolom, $alias, $groupingIds, $pindah) {
             $w->whereIn($kolom, $groupingIds)
-                ->orWhereIn("$alias.id", TransactionLoanMutation::whereIn('dari_grouping_id', $groupingIds)->select('transaction_loan_id'));
+                ->when($pindah, fn($w) => $w->orWhereIn("$alias.id", $pindah));
         })->whereRaw(self::kelompokSql($alias, $refSql) . " IN ($ids)");
         if ($hari !== null) {
             $query->whereRaw(self::hariSql($alias, $refSql) . ' = ?', [strtolower($hari)]);
