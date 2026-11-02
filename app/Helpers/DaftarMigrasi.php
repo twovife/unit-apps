@@ -204,13 +204,26 @@ class DaftarMigrasi
 
         $recaps = DB::table('transaction_daily_recaps')
             ->whereIn('transaction_loan_officer_grouping_id', $ids)
-            ->whereBetween('date', [$periode->toDateString(), $periode->copy()->endOfMonth()->toDateString()])
+            // Sampai +7 hari: target minggu depan hasil ACC akhir bulan jatuh di bulan
+            // berikutnya (prod 2026-11-02: 2-6 Nov hilang di 46 kantor).
+            ->whereBetween('date', [$periode->toDateString(), $periode->copy()->endOfMonth()->addDays(7)->toDateString()])
             ->get(['transaction_loan_officer_grouping_id', 'date', 'kasbon', 'transport', 'keluar', 'target', 'target_on',
                 'daily_kepala_approval', 'daily_kepala_approval_user']);
 
         $terbawa = 0;
 
         foreach ($recaps as $r) {
+            if (Carbon::parse($r->date)->gt($periode->copy()->endOfMonth())) {
+                $depan = TransactionDailyClosing::firstOrCreate([
+                    'transaction_loan_officer_grouping_id' => $r->transaction_loan_officer_grouping_id,
+                    'date' => Carbon::parse($r->date)->toDateString(),
+                ]);
+                if ($depan->target_source === null && (int) $depan->target === 0) {
+                    $depan->update(['target' => (int) ($r->target ?? 0), 'target_on' => $r->target_on, 'target_source' => 'manual']);
+                }
+                continue;
+            }
+
             $terbawa += TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $r->transaction_loan_officer_grouping_id)
                 ->whereDate('date', Carbon::parse($r->date)->toDateString())
                 ->whereNull('kasir_lock_at')

@@ -73,7 +73,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
               kelompok &amp; hari: angka{' '}
               <b>data real</b> (sisa saldo dari daftar nasabah) dibanding <b>bucket</b> (sirkulasi lama yang dicatat
               kantor). Lancar, CM, dan MB harus sama persis; ML boleh lebih besar di bucket — selisihnya adalah{' '}
-              <b>Z</b> (ML belum terinput), wajib ditampung MACET LAMA dulu sebelum siap. Layar
+              <b>Z</b> (ML belum terinput), wajib ditampung SISA MACET BLM TERINPUT dulu sebelum siap. Layar
               ini hanya menunjukkan, tidak mengubah apa pun.
             </p>
           </div>
@@ -205,14 +205,14 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                         <span className="text-amber-800">{b.alasan.join(' · ')}</span>
                       )}
                       {b.macet_lama ? (
-                        <span className="text-[11px] text-violet-700">MACET LAMA ada</span>
+                        <span className="text-[11px] text-violet-700">SISA MACET BLM TERINPUT ada</span>
                       ) : (
                         b.z > 0 && (
                           <button
                             type="button"
                             className="px-2 py-0.5 text-[11px] font-semibold text-white rounded-md bg-violet-600 hover:bg-violet-700"
                             onClick={() =>
-                              confirm(`Buat MACET LAMA kelompok ${b.kelompok} ${b.hari} dengan saldo Rp ${rp(b.z)}?`) &&
+                              confirm(`Buat SISA MACET BLM TERINPUT kelompok ${b.kelompok} ${b.hari} dengan saldo Rp ${rp(b.z)}?`) &&
                               router.post(
                                 route('migrasi.buat_macet_lama'),
                                 { kelompok: b.kelompok, hari: b.hari, periode: server_filter?.periode },
@@ -220,7 +220,7 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                               )
                             }
                           >
-                            Buat MACET LAMA
+                            Buat SISA MACET BLM TERINPUT
                           </button>
                         )
                       )}

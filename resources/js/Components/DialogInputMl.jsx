@@ -81,7 +81,7 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
     axios
       .get(route('input_ml.index'), { params: { kelompok, hari } })
       .then(({ data }) => setData(data))
-      .catch((e) => setGalat(e.response?.data?.message ?? 'Data MACET LAMA gagal dimuat.'));
+      .catch((e) => setGalat(e.response?.data?.message ?? 'Data SISA MACET BLM TERINPUT gagal dimuat.'));
 
   useEffect(() => {
     if (!buka) return;
@@ -129,7 +129,7 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
           <div className="grid gap-3">
             <div className="p-3 text-sm border rounded-md bg-slate-50">
               <div className="font-semibold text-slate-800">
-                MACET LAMA · Kelompok {ml.kelompok} · <span className="capitalize">{ml.hari}</span>
+                SISA MACET BLM TERINPUT · Kelompok {ml.kelompok} · <span className="capitalize">{ml.hari}</span>
               </div>
               <div className="text-slate-600">
                 SALDO ML BELUM TERINPUT <b className="tabular-nums">{rp(ml.sisa)}</b>

@@ -283,14 +283,14 @@ const OperMacetLama = ({ r, saldo, keId }) => {
     <button
       type="button"
       disabled={proses}
-      title="Oper saldo nasabah ini ke MACET LAMA (bucket tetap)"
+      title={keId ? "Oper saldo nasabah ini ke SISA MACET BLM TERINPUT (bucket tetap)" : "Oper saldo nasabah ini ke SISA MACET BLM TERINPUT baru (dibuat otomatis, bucket tetap)"}
       className="block ml-auto mt-0.5 px-1 text-[10px] font-semibold rounded text-amber-800 bg-amber-100 hover:bg-amber-200 disabled:opacity-50"
       onClick={() => {
         setNilai(String(saldo));
         setBuka(true);
       }}
     >
-      {proses ? "…" : "→ MACET LAMA"}
+      {proses ? "…" : "→ SISA MACET BLM TERINPUT"}
     </button>
   );
 };
@@ -305,7 +305,7 @@ const BEKU = {
 };
 
 // tanpaDrop: menu Pinjaman Macet tanpa kolom Drop & Pinjaman, langsung Sisa Awal (mas 2026-10-26).
-const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false, tanpaDrop = false }) => {
+const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false, tanpaDrop = false, bolehHapus = false, nikMacetLama = null }) => {
   const { auth } = usePage().props;
   // Filter dari halaman, atau dari drawer (FilterAngsuranContext).
   const server_filter = useFilterAngsuran();
@@ -402,7 +402,11 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
   const efekPeny = (r) => (r.penyesuaian ?? []).reduce((t, a) => t + Number(a.efek || 0), 0);
   const saldoAkhir = (r) =>
     Number(r.saldo || 0) + (kb ? (r.penyesuaian ?? []).reduce((t, a) => (a.berlaku > akhirBulanIni ? t + Number(a.efek || 0) : t), 0) : 0);
-  const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1 + (kb ? 1 : 0);
+  const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1 + (kb ? 1 : 0) + (bolehHapus ? 1 : 0);
+  const hapusNasabah = (r) => {
+    if (!window.confirm(`Hapus ${r.nama}? Sisa saldonya pindah ke SISA MACET BLM TERINPUT.`)) return;
+    router.post(route("input_ml.hapus_nasabah", r.id), {}, { preserveScroll: true });
+  };
   // Lebar minimum = jumlah lebar kolom (kelas w-N = N x 4px). Kalau layar
   // lebih lebar, tabel mengisi penuh; kalau tidak muat, tabel tetap selebar
   // ini dan bisa digeser ke samping - kolom tidak pernah dipepetkan.
@@ -415,6 +419,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
     ...KOLOM_TETAP.map(([, kelas]) => px(kelas)),
     ...kolomBlok.map((k) => LEBAR_BLOK[k.jenis]),
     ...(kb ? [136] : []),
+    ...(bolehHapus ? [56] : []),
     ribuan ? 80 : 104,
   ];
   const lebarMin = lebarKolom.reduce((t, w) => t + w, 0);
@@ -508,6 +513,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                 Peny
               </TableHead>
             )}
+            {bolehHapus && <TableHead rowSpan={2} className={`${th} align-bottom`} />}
             <TableHead rowSpan={2} className={`${th} w-20 text-right align-bottom border-l-2 border-l-slate-300`}>
               Saldo
             </TableHead>
@@ -645,10 +651,23 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                           {(r.penyesuaian ?? []).map((a) => (
                             <Penyesuaian key={a.id} a={a} />
                           ))}
-                          {kb.macetLamaId && grup.type === "ml" && r.id !== kb.macetLamaId && saldoAkhir(r) > 0 ? (
+                          {grup.type === "ml" && r.id !== kb.macetLamaId && saldoAkhir(r) > 0 ? (
                             <OperMacetLama r={r} saldo={saldoAkhir(r)} keId={kb.macetLamaId} />
                           ) : (
                             !(r.penyesuaian ?? []).length && <span className="text-slate-300">–</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {bolehHapus && (
+                        <TableCell className="px-1 py-1 text-center">
+                          {r.nik !== nikMacetLama && saldoAkhir(r) > 0 && (
+                            <button
+                              type="button"
+                              className="px-1 text-[11px] font-semibold rounded text-rose-700 bg-rose-100 hover:bg-rose-200"
+                              onClick={() => hapusNasabah(r)}
+                            >
+                              Hapus
+                            </button>
                           )}
                         </TableCell>
                       )}
@@ -680,6 +699,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                   {kb && (
                     <Angka v={grup.data.reduce((t, r) => t + efekPeny(r), 0)} kelas="bg-violet-100 border-l-2 border-l-slate-300" />
                   )}
+                  {bolehHapus && <TableCell />}
                   <Angka
                     v={grup.data.reduce((t, r) => t + saldoAkhir(r), 0)}
                     kelas="bg-emerald-50 font-extrabold text-gray-900 border-l-2 border-l-slate-300"

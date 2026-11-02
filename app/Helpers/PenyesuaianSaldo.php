@@ -190,6 +190,81 @@ class PenyesuaianSaldo
     }
 
     /**
+     * Oper saldo nasabah ke MACET LAMA kelompok x harinya (mas 2026-10-31). Belum ada
+     * MACET LAMA = dibuat di sini dengan saldo 0, lalu terisi lewat oper yang sama.
+     *
+     * @throws \RuntimeException
+     */
+    public static function operKeMacetLama(TransactionLoan $dari, int $nominal, ?string $catatan, $user): void
+    {
+        $hari = strtolower($dari->hari);
+        $ke = TransactionLoan::where('transaction_loan_officer_grouping_id', $dari->transaction_loan_officer_grouping_id)
+            ->whereRaw('LOWER(hari) = ?', [$hari])
+            ->where('status', 'success')
+            ->whereHas('customer', fn($q) => $q->where('nik', \App\Http\Controllers\MigrasiController::NIK_MACET_LAMA))
+            ->first();
+
+        DB::transaction(function () use ($dari, $ke, $hari, $nominal, $catatan, $user) {
+            self::oper($dari, $ke ?? self::macetLamaKosong($dari, $hari, $nominal, $user), $nominal, $catatan, $user);
+        });
+    }
+
+    /**
+     * MACET LAMA baru bersaldo 0: pinjaman bulat jutaan, seluruhnya dinolkan penyesuaian.
+     * Drop 2020 -> trigger beku dibuka satu aksi, tanpa event model (lihat PecahanMacetLama).
+     */
+    private static function macetLamaKosong(TransactionLoan $dari, string $hari, int $nominal, $user): TransactionLoan
+    {
+        $gid = (int) $dari->transaction_loan_officer_grouping_id;
+        $branchId = DB::table('transaction_loan_officer_groupings')->where('id', $gid)->value('branch_id');
+        $mulai = AgregasiScope::tanggalMulai($branchId);
+        if (!$mulai) {
+            throw new \RuntimeException('Kantor ini belum migrasi - sesuaikan lewat isian sisa saldo.');
+        }
+
+        $drop = Carbon::parse('2019-12-31')->next(AppHelper::getNumbDays($hari));
+        $rekening = \App\Http\Controllers\MigrasiController::nasabahMacetLama()->manage_customer()->firstOrCreate([
+            'transaction_loan_officer_grouping_id' => $gid,
+            'day' => $drop->dayOfWeek,
+        ]);
+        $employee = $user->employee?->id;
+
+        DB::statement('SET @koreksi_beku = 1');
+        try {
+            $loanId = DB::table('transaction_loans')->insertGetId([
+                'transaction_manage_customer_id' => $rekening->id,
+                'transaction_loan_officer_grouping_id' => $gid,
+                'request_date' => $drop->toDateString(),
+                'drop_date' => $drop->toDateString(),
+                'hari' => $hari,
+                'status' => 'success',
+                'nominal_drop' => PecahanMacetLama::nominalDropBulat($nominal, 1000000),
+                'user_input' => $employee,
+                'user_mantri' => $employee,
+                'user_drop' => $employee,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            DB::statement('SET @koreksi_beku = NULL');
+        }
+        $loan = TransactionLoan::findOrFail($loanId);
+
+        // Awalan "oper " = terkunci dari ubah penyesuaian (KoreksiBeku).
+        TransactionSaldoAdjustment::create([
+            'transaction_loan_id' => $loan->id,
+            'transaction_loan_officer_grouping_id' => $gid,
+            'jenis' => TransactionSaldoAdjustment::JENIS_SALDO_AWAL,
+            'nominal' => (int) $loan->pinjaman,
+            'berlaku_bulan' => $mulai->copy()->startOfMonth()->toDateString(),
+            'user_input' => $employee,
+            'catatan' => 'oper penampung SISA MACET BLM TERINPUT baru',
+        ]);
+
+        return $loan;
+    }
+
+    /**
      * Oper saldo antar dua nasabah ML satu kelompok x hari, untuk kantor yang SUDAH
      * migrasi (mas 2026-10-28): saldo yang ketahuan salah tempat sesudah migrasi
      * dipindah tanpa menggeser bucket. Dua penyesuaian berlaku bulan migrasi:
@@ -202,9 +277,6 @@ class PenyesuaianSaldo
      */
     public static function oper(TransactionLoan $dari, TransactionLoan $ke, int $nominal, ?string $catatan, $user): void
     {
-        if (!$user?->hasRole('superuser')) {
-            throw new \RuntimeException('Oper saldo khusus superuser.');
-        }
         if ($dari->id === $ke->id) {
             throw new \RuntimeException('Nasabah pengirim dan penerima sama.');
         }

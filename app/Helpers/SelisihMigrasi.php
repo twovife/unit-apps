@@ -145,7 +145,7 @@ class SelisihMigrasi
             $kunci = $groupingId . '|' . $hari;
             $s = HitungAgregat::portofolio([$groupingId], Carbon::parse($baris['mulai'])->subDay(), $baris['mulai'])[$kunci] ?? [];
             if (array_sum(array_intersect_key($s, array_flip(Ember::KATEGORI['ml']))) !== $baris['bucket']['ml']) {
-                throw new \RuntimeException('Sesudah dikoreksi ML belum sama dengan bucket (saldo nasabah habis / pindah ember) - dibatalkan, pakai MACET LAMA.');
+                throw new \RuntimeException('Sesudah dikoreksi ML belum sama dengan bucket (saldo nasabah habis / pindah ember) - dibatalkan, pakai SISA MACET BLM TERINPUT.');
             }
             self::geserBulanan($bulan, $sebelum, $hitung(), $catatan, $user);
 
@@ -215,7 +215,7 @@ class SelisihMigrasi
         $hitung = fn() => array_map(fn($b) => TutupBulanan::hitung([$groupingId], $b), $bulan);
         $ml = $baris['macet_lama'] ? TransactionLoan::find($baris['macet_lama']['id']) : null;
         if ($z < 0 && (!$ml || $baris['macet_lama']['saldo'] < -$z)) {
-            throw new \RuntimeException('ML lebih ' . number_format(-$z, 0, ',', '.') . ' tapi saldo MACET LAMA tidak cukup untuk dikurangi - cek manual.');
+            throw new \RuntimeException('ML lebih ' . number_format(-$z, 0, ',', '.') . ' tapi saldo SISA MACET BLM TERINPUT tidak cukup untuk dikurangi - cek manual.');
         }
 
         return DB::transaction(function () use ($baris, $z, $berlaku, $bulan, $hitung, $ml, $groupingId, $hari, $user) {
@@ -233,7 +233,7 @@ class SelisihMigrasi
                 $adj($ml->id, TransactionSaldoAdjustment::JENIS_KURANG_INPUT, $z, $catatan);
             } else {
                 // MACET LAMA baru (= MigrasiController::buatMacetLama), drop 2020 -> trigger beku dibuka satu aksi.
-                $customer = TransactionCustomer::firstOrCreate(['nik' => MigrasiController::NIK_MACET_LAMA], ['nama' => 'MACET LAMA', 'alamat' => '-']);
+                $customer = TransactionCustomer::firstOrCreate(['nik' => MigrasiController::NIK_MACET_LAMA], ['nama' => MigrasiController::NAMA_MACET_LAMA, 'alamat' => '-']);
                 $drop = Carbon::parse('2019-12-31')->next(AppHelper::getNumbDays($hari));
                 $rekening = TransactionManageCustomer::firstOrCreate([
                     'transaction_customer_id' => $customer->id, 'transaction_loan_officer_grouping_id' => $groupingId, 'day' => $drop->dayOfWeek,
@@ -252,7 +252,7 @@ class SelisihMigrasi
                 }
                 $lebih = (int) TransactionLoan::find($id)->pinjaman - $z;
                 if ($lebih > 0) {
-                    $adj($id, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, $lebih, 'Penampung Z (MACET LAMA), ' . $catatan);
+                    $adj($id, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, $lebih, 'Penampung Z (SISA MACET BLM TERINPUT), ' . $catatan);
                 }
             }
 
@@ -260,7 +260,7 @@ class SelisihMigrasi
             self::geserBulanan($bulan, $sebelum, $hitung(), $catatan, $user);
 
             $hasil = ['kantor' => $baris['kantor'], 'kelompok' => $baris['kelompok'], 'hari' => $hari, 'z' => $z, 'user_id' => $user->id];
-            Log::info('Cek Selisih Migrasi: MACET LAMA disesuaikan', $hasil);
+            Log::info('Cek Selisih Migrasi: SISA MACET BLM TERINPUT disesuaikan', $hasil);
 
             return $hasil;
         });

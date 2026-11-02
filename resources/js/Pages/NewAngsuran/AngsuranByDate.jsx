@@ -6,6 +6,7 @@ import FilterBar from '@/Components/FilterBar';
 import { router, usePage } from '@inertiajs/react';
 import AngsuranByDateTable from './Components/AngsuranByDateTable';
 import AngsuranTable from './Components/AngsuranTable';
+import PeringatanMacet from '@/Components/PeringatanMacet';
 import { Button } from '@/shadcn/ui/button';
 import { FilterIcon, SearchIcon } from 'lucide-react';
 import { Input } from '@/shadcn/ui/input';
@@ -39,7 +40,7 @@ const AngsuranByDate = ({
   searchHari,
   type = 'desktop',
 }) => {
-  const { server_filter, input_macet_mati } = usePage().props;
+  const { server_filter, input_macet_mati, boleh_hapus_macet, nik_macet_lama } = usePage().props;
   const [showInputMacet, setShowInputMacet] = useState(false);
   // Kantor migrasi: Input Macet diganti Input ML (setoran ke MACET LAMA).
   const [showInputMl, setShowInputMl] = useState(false);
@@ -144,8 +145,8 @@ const AngsuranByDate = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:items-start">
-        <div className="flex-1 min-w-0">
+      <div className="flex flex-col gap-3 mb-3">
+        <div className="min-w-0">
           <FilterBar
             urlLink={urlLink}
             storageKey={localState}
@@ -155,7 +156,7 @@ const AngsuranByDate = ({
             extraParams={unitExtraParams}
           />
         </div>
-        <div className="relative lg:w-72">
+        <div className="relative w-full">
           <SearchIcon className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
           <Input
             type="text"
@@ -179,7 +180,10 @@ const AngsuranByDate = ({
         }}
       />
       {server_filter.type_show === 'macet' ? (
-        <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} tanpaDrop />
+        <>
+          <PeringatanMacet migrasi={input_macet_mati} />
+          <AngsuranTable datas={datas} dateOfWeek={dateOfWeek} tanpaDrop bolehHapus={boleh_hapus_macet} nikMacetLama={nik_macet_lama} />
+        </>
       ) : (
         <div className="overflow-auto">
           <AngsuranByDateTable datas={datas} />

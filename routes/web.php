@@ -218,6 +218,8 @@ Route::middleware('auth')->group(function () {
       ->name('periksa_migrasi');
     Route::post('/penyesuaian-saldo', [\App\Http\Controllers\MigrasiController::class, 'simpanPenyesuaian'])
       ->name('penyesuaian_saldo_simpan');
+    Route::post('/penyesuaian-saldo/grup', [\App\Http\Controllers\MigrasiController::class, 'simpanPenyesuaianGrup'])
+      ->name('penyesuaian_saldo_grup');
     // Oper saldo antar nasabah ML sesudah migrasi (superuser, total kelompok tetap).
     Route::post('/oper-saldo', [\App\Http\Controllers\MigrasiController::class, 'operSaldo'])
       ->name('oper_saldo');
@@ -329,6 +331,7 @@ Route::middleware('auth')->group(function () {
       Route::get('/', 'index')->name('index');
       Route::post('/', 'simpan')->name('simpan');
       Route::delete('/{loan}', 'hapus')->whereNumber('loan')->name('hapus');
+      Route::post('/hapus-nasabah/{loan}', 'hapusNasabah')->whereNumber('loan')->name('hapus_nasabah');
     });
 
   // Video panduan: ganti / hapus (superuser, dicek di controller).

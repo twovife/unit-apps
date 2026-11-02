@@ -20,14 +20,14 @@ const Kartu = ({ judul, utama, nada = 'text-slate-900', children }) => (
   </div>
 );
 
+// Grup tahun drop: 2026, 2025, 2024, sisanya jadi satu.
+const grupTahun = (d) => {
+  const tahun = dayjs(d.drop_date).year();
+  return tahun >= 2024 ? String(tahun) : 'Sebelum 2024';
+};
+
 /** Isian penyesuaian satu pinjaman: sisa saldo seharusnya + catatan (arah otomatis dari angkanya). */
-const FormSesuai = ({ loan, onKetik }) => {
-  const [sisa, setSisaAsli] = useState('');
-  const setSisa = (v) => {
-    setSisaAsli(v);
-    onKetik(v);
-  };
-  const [catatan, setCatatan] = useState('');
+const FormSesuai = ({ loan, sisa, catatan, onUbah }) => {
   const [proses, setProses] = useState(false);
 
   const simpan = () =>
@@ -38,10 +38,7 @@ const FormSesuai = ({ loan, onKetik }) => {
         preserveScroll: true,
         onStart: () => setProses(true),
         onFinish: () => setProses(false),
-        onSuccess: () => {
-          setSisa('');
-          setCatatan('');
-        },
+        onSuccess: () => onUbah({ sisa: '', catatan: '' }),
       },
     );
 
@@ -55,13 +52,13 @@ const FormSesuai = ({ loan, onKetik }) => {
         decimalSeparator=","
         placeholder="sisa saldo"
         value={sisa}
-        onValueChange={(v) => setSisa(v ?? '')}
+        onValueChange={(v) => onUbah({ sisa: v ?? '' })}
       />
       <input
         className="w-36 h-8 px-2 text-sm border rounded-md border-input"
         placeholder="catatan"
         value={catatan}
-        onChange={(e) => setCatatan(e.target.value)}
+        onChange={(e) => onUbah({ catatan: e.target.value })}
       />
       <Button size="sm" className="h-8" disabled={proses || sisa === ''} onClick={simpan}>
         Simpan
@@ -77,9 +74,42 @@ const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
 
   // Pratinjau: sisa saldo yang sedang diketik (belum disimpan) per pinjaman.
   // Selisihnya dengan saldo sekarang menggeser ML data real, jadi Z ikut bergeser.
-  const [ketik, setKetik] = useState({});
-  const geser = datas.reduce((t, d) => (ketik[d.id] ? t + (Number(ketik[d.id]) - d.saldo_kini) : t), 0);
+  const [isian, setIsian] = useState({});
+  const ubah = (id, nilai) => setIsian((s) => ({ ...s, [id]: { ...s[id], ...nilai } }));
+  const sisaDari = (d) => isian[d.id]?.sisa ?? '';
+  const geser = datas.reduce((t, d) => (sisaDari(d) !== '' ? t + (Number(sisaDari(d)) - d.saldo_kini) : t), 0);
   const zSesudah = ringkasan?.z == null ? null : ringkasan.z - geser;
+
+  const grup = Object.entries(
+    datas.reduce((g, d) => {
+      (g[grupTahun(d)] ??= []).push(d);
+      return g;
+    }, {}),
+  ).sort(([a], [b]) => (Number(b) || 0) - (Number(a) || 0));
+  const [proses, setProses] = useState(false);
+  const bisaNol = (baris) => baris.filter((d) => d.boleh && d.saldo_kini > 0);
+  const nolkan = (baris, nyala) =>
+    setIsian((s) => {
+      const baru = { ...s };
+      bisaNol(baris).forEach((d) => (baru[d.id] = { ...s[d.id], sisa: nyala ? '0' : '' }));
+      return baru;
+    });
+  const simpanGrup = (terisi) =>
+    router.post(
+      route('migrasi.penyesuaian_saldo_grup'),
+      { baris: terisi.map((d) => ({ loan_id: d.id, sisa_saldo: sisaDari(d), catatan: isian[d.id]?.catatan ?? '' })) },
+      {
+        preserveScroll: true,
+        onStart: () => setProses(true),
+        onFinish: () => setProses(false),
+        onSuccess: () =>
+          setIsian((s) => {
+            const baru = { ...s };
+            terisi.forEach((d) => delete baru[d.id]);
+            return baru;
+          }),
+      },
+    );
 
   return (
     <>
@@ -166,7 +196,37 @@ const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
                   </TableCell>
                 </TableRow>
               )}
-              {datas.map((d) => (
+              {grup.map(([tahun, baris]) => {
+                const nol = bisaNol(baris);
+                const terisi = baris.filter((d) => d.boleh && sisaDari(d) !== '');
+                return (
+                  <React.Fragment key={tahun}>
+                    <TableRow className="bg-slate-100 hover:bg-slate-100">
+                      <TableCell colSpan={6} className="px-2 py-1.5 font-semibold">
+                        {tahun} <span className="font-normal text-slate-500">({baris.length} nasabah)</span>
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 font-semibold text-right tabular-nums">
+                        {rp(baris.reduce((t, d) => t + d.saldo_kini, 0))}
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5">
+                        {!f.sudah_migrasi && nol.length > 0 && (
+                          <div className="flex items-center gap-3">
+                            <label className="inline-flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={nol.every((d) => sisaDari(d) === '0')}
+                                onChange={(e) => nolkan(baris, e.target.checked)}
+                              />
+                              Nolkan semua
+                            </label>
+                            <Button size="sm" className="h-7" disabled={proses || !terisi.length} onClick={() => simpanGrup(terisi)}>
+                              Simpan grup ({terisi.length})
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    {baris.map((d) => (
                 <TableRow key={d.id} className="align-top">
                   <TableCell className="px-2 py-2">
                     <div className="font-medium">{d.nama}</div>
@@ -203,7 +263,9 @@ const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
                     ) : d.boleh ? (
                       <FormSesuai
                         loan={d}
-                        onKetik={(v) => setKetik((k) => ({ ...k, [d.id]: v }))}
+                        sisa={sisaDari(d)}
+                        catatan={isian[d.id]?.catatan ?? ''}
+                        onUbah={(nilai) => ubah(d.id, nilai)}
                       />
                     ) : (
                       <div className="text-xs text-slate-500">
@@ -212,7 +274,10 @@ const NasabahMacet = ({ datas = [], ringkasan, server_filter }) => {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                    ))}
+                  </React.Fragment>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

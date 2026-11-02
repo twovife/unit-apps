@@ -6,17 +6,19 @@ import MobileLayout from '@/Layouts/MobileLayout';
 import DialogInputMl from '@/Components/DialogInputMl';
 import InputMacet from '@/Pages/BukuTransaksi/Web/InputMacet';
 import { Button } from '@/shadcn/ui/button';
+import PeringatanMacet from '@/Components/PeringatanMacet';
 
 // Menu ML: Angsuran Lancar versi ML - tampilan & filter sama, isinya hanya
 // pinjaman ML yang belum lunas sebelum tanggal terpilih (getLoanMantri $hanyaMl).
 // Kantor migrasi: tombol Input ML (setoran nasabah macet lama, pecahan MACET LAMA).
 // Kantor belum migrasi: tombol Input Macet lama (input_macet), sama dengan Pinjaman Macet.
-const Ml = ({ datas, dateOfWeek, sirkulasi, input_ml = false, input_macet = false }) => {
+const Ml = ({ datas, dateOfWeek, sirkulasi, input_ml = false, input_macet = false, migrasi = false }) => {
   const { server_filter } = usePage().props;
   const [buka, setBuka] = useState(false);
   const [bukaMacet, setBukaMacet] = useState(false);
   return (
     <MobileLayout header={<Head>Angsuran ML</Head>}>
+      <PeringatanMacet migrasi={migrasi} />
       <Angsuran
         judul="Angsuran ML"
         datas={datas}

@@ -40,6 +40,7 @@ class MigrasiController extends Controller
      * muncul di pencarian.
      */
     public const NIK_MACET_LAMA = 'ML00000000000001';
+    public const NAMA_MACET_LAMA = 'SISA MACET BLM TERINPUT';
 
     /**
      * Simpan satu penyesuaian dari sisa saldo yang diketik. Arahnya dari
@@ -77,17 +78,61 @@ class MigrasiController extends Controller
         return back()->with('message', 'Penyesuaian tersimpan.');
     }
 
+    /** Simpan satu grup tahun di Nasabah Macet sekaligus: gagal satu, semua batal. */
+    public function simpanPenyesuaianGrup(Request $request)
+    {
+        $this->pastikanBolehUbahSaldo();
+
+        $val = $request->validate([
+            'baris' => ['required', 'array', 'min:1', 'max:1000'],
+            'baris.*.loan_id' => ['required', 'integer', 'distinct'],
+            'baris.*.sisa_saldo' => ['required', 'integer', 'min:0'],
+            'baris.*.catatan' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $loans = TransactionLoan::whereIn('id', array_column($val['baris'], 'loan_id'))->get()->keyBy('id');
+        $kantor = DB::table('transaction_loan_officer_groupings')
+            ->whereIn('id', $loans->pluck('transaction_loan_officer_grouping_id')->unique())
+            ->pluck('branch_id')->unique();
+        if ($loans->count() !== count($val['baris']) || $kantor->count() !== 1 || (int) $kantor->first() !== (int) AuthScope::resolve()->branch_id) {
+            abort(403, 'Ada pinjaman milik kantor lain.');
+        }
+
+        try {
+            $jumlah = DB::transaction(function () use ($val, $loans) {
+                $jumlah = 0;
+                foreach ($val['baris'] as $b) {
+                    $loan = $loans[$b['loan_id']];
+                    // Isian sama dengan saldo sekarang: tidak ada yang disesuaikan.
+                    if (PenyesuaianSaldo::hitungSaldo($loan)['saldo'] === (int) $b['sisa_saldo']) {
+                        continue;
+                    }
+                    PenyesuaianSaldo::buat($loan, null, (int) $b['sisa_saldo'], $b['catatan'] ?? null, auth()->user());
+                    $jumlah++;
+                }
+
+                return $jumlah;
+            });
+        } catch (\Throwable $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', "{$jumlah} penyesuaian tersimpan.");
+    }
+
     /** Oper saldo antar dua nasabah ML (kantor sudah migrasi) - PenyesuaianSaldo::oper. */
     public function operSaldo(Request $request)
     {
+        abort_unless(auth()->user()->hasRole('superuser'), 403, 'Oper saldo khusus superuser.');
+
         $val = $request->validate([
             'dari_id' => ['required', 'integer'],
-            'ke_id' => ['required', 'integer'],
+            // Kosong = ke MACET LAMA kelompok x hari pengirim (dibuat kalau belum ada).
+            'ke_id' => ['nullable', 'integer'],
             'nominal' => ['required', 'integer', 'min:1'],
             'catatan' => ['nullable', 'string', 'max:400'],
         ]);
         $dari = TransactionLoan::with('customer')->findOrFail($val['dari_id']);
-        $ke = TransactionLoan::with('customer')->findOrFail($val['ke_id']);
         $branchLoan = DB::table('transaction_loan_officer_groupings')
             ->where('id', $dari->transaction_loan_officer_grouping_id)->value('branch_id');
         if ((int) $branchLoan !== (int) AuthScope::resolve()->branch_id) {
@@ -95,7 +140,11 @@ class MigrasiController extends Controller
         }
 
         try {
-            PenyesuaianSaldo::oper($dari, $ke, (int) $val['nominal'], $val['catatan'] ?? null, auth()->user());
+            if (empty($val['ke_id'])) {
+                PenyesuaianSaldo::operKeMacetLama($dari, (int) $val['nominal'], $val['catatan'] ?? null, auth()->user());
+            } else {
+                PenyesuaianSaldo::oper($dari, TransactionLoan::with('customer')->findOrFail($val['ke_id']), (int) $val['nominal'], $val['catatan'] ?? null, auth()->user());
+            }
         } catch (\RuntimeException $e) {
             return back()->withErrors($e->getMessage());
         }
@@ -396,6 +445,20 @@ class MigrasiController extends Controller
      * ponytail: penampung belum dikecualikan dari NOA / daftar macet / cari
      * NIK / keluar target; tambahkan penanda is_penampung sebelum migrasi.
      */
+    public static function nasabahMacetLama(): TransactionCustomer
+    {
+        $customer = TransactionCustomer::firstOrCreate(
+            ['nik' => self::NIK_MACET_LAMA],
+            ['nama' => self::NAMA_MACET_LAMA, 'alamat' => '-']
+        );
+        // Nama lama tetap diterima sampai baris DB diganti saat deploy.
+        if (!in_array($customer->nama, [self::NAMA_MACET_LAMA, 'MACET LAMA'], true)) {
+            throw new \RuntimeException('NIK ' . self::NIK_MACET_LAMA . ' sudah dipakai nasabah lain (' . $customer->nama . ').');
+        }
+
+        return $customer;
+    }
+
     public function buatMacetLama(Request $request)
     {
         if (!auth()->user()->hasRole('superuser')) {
@@ -417,7 +480,7 @@ class MigrasiController extends Controller
             return back()->withErrors('Z baris ini tidak positif, tidak ada yang perlu ditampung.');
         }
         if ($baris['macet_lama']) {
-            return back()->withErrors('Kelompok & hari ini sudah punya MACET LAMA. Koreksi saldonya lewat Nasabah Macet.');
+            return back()->withErrors('Kelompok & hari ini sudah punya SISA MACET BLM TERINPUT. Koreksi saldonya lewat Nasabah Macet.');
         }
 
         $grouping = TransactionLoanOfficerGrouping::where('branch_id', $scope->branch_id)
@@ -427,14 +490,7 @@ class MigrasiController extends Controller
 
         try {
             DB::transaction(function () use ($grouping, $val, $dropDate, $employee, $z) {
-            $customer = TransactionCustomer::firstOrCreate(
-                ['nik' => self::NIK_MACET_LAMA],
-                ['nama' => 'MACET LAMA', 'alamat' => '-']
-            );
-            if ($customer->nama !== 'MACET LAMA') {
-                throw new \RuntimeException('NIK ' . self::NIK_MACET_LAMA . ' sudah dipakai nasabah lain (' . $customer->nama . ').');
-            }
-            $manage = $customer->manage_customer()->firstOrCreate([
+            $manage = self::nasabahMacetLama()->manage_customer()->firstOrCreate([
                 'transaction_loan_officer_grouping_id' => $grouping->id,
                 'day' => $dropDate->dayOfWeek,
             ]);
@@ -452,14 +508,14 @@ class MigrasiController extends Controller
             ])->fresh();
 
             if ((int) $loan->pinjaman !== $z) {
-                PenyesuaianSaldo::buat($loan, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, $z, 'Penampung Z (MACET LAMA)', auth()->user());
+                PenyesuaianSaldo::buat($loan, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, $z, 'Penampung Z (SISA MACET BLM TERINPUT)', auth()->user());
             }
             });
         } catch (\Throwable $e) {
             return back()->withErrors(\App\Helpers\AppHelper::pesanGagal($e, $e->getMessage()));
         }
 
-        return back()->with('message', 'MACET LAMA dibuat: saldo Rp ' . number_format($z, 0, ',', '.') . '.');
+        return back()->with('message', 'SISA MACET BLM TERINPUT dibuat: saldo Rp ' . number_format($z, 0, ',', '.') . '.');
     }
 
     /**
@@ -528,7 +584,7 @@ class MigrasiController extends Controller
                         $alasan[] = 'Z minus';
                     } elseif ($z > 0) {
                         // Z plus dulu lolos - Krian 8 / Surabaya 6 migrasi tanpa MACET LAMA (mas 2026-10-27).
-                        $alasan[] = 'Z plus: buat MACET LAMA';
+                        $alasan[] = 'Z plus: buat SISA MACET BLM TERINPUT';
                     }
                 }
 

@@ -177,7 +177,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                     // Pecahan MACET LAMA: tanpa tanda lunas, setoran berikutnya lewat Input ML.
                     <div className="px-4 py-6 space-y-3 text-sm text-center border rounded-lg text-slate-600 bg-slate-50">
                       <div>
-                        Setoran ML (pecahan MACET LAMA). Setoran berikutnya nasabah ini lewat tombol <b>Input ML</b> di Pinjaman Macet.
+                        Setoran ML (pecahan SISA MACET BLM TERINPUT). Setoran berikutnya nasabah ini lewat tombol <b>Input ML</b> di Pinjaman Macet.
                       </div>
                       {customerData.hapus_input_ml && (
                         <Button
@@ -185,7 +185,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                           variant="outline"
                           className="text-red-600 border-red-200"
                           onClick={() =>
-                            window.confirm(`Hapus Input ML ${customerData.nama}? Saldonya kembali ke MACET LAMA.`) &&
+                            window.confirm(`Hapus Input ML ${customerData.nama}? Saldonya kembali ke SISA MACET BLM TERINPUT.`) &&
                             router.delete(route('input_ml.hapus', customerData.id), { preserveScroll: true, onSuccess: modalIsClosed })
                           }
                         >
@@ -578,7 +578,7 @@ const LoanDetail = ({ customerData }) => {
           Pinjaman
         </div>
         {customerData.pecahan_ml ? (
-          <div className="text-sm font-semibold text-slate-600">Setoran ML (pecahan MACET LAMA)</div>
+          <div className="text-sm font-semibold text-slate-600">Setoran ML (pecahan SISA MACET BLM TERINPUT)</div>
         ) : (
           <FormatNumbering
             value={customerData.pinjaman}

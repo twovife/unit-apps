@@ -25,8 +25,8 @@ export default function SelisihMigrasi({ semua_kantor, unit, migrasi, baris = []
   const ganti = (semua) => router.get(route('migrasi.selisih'), semua ? { semua_kantor: 1 } : {}, { preserveScroll: true });
   const sesuaikan = (b) => {
     const z = b.bucket.ml - b.sistem.ml;
-    const arah = z > 0 ? `ditambah ${rp(z)}${b.macet_lama ? '' : ' (MACET LAMA baru dibuat)'}` : `dikurangi ${rp(-z)}`;
-    if (!window.confirm(`${b.kantor} kel ${b.kelompok} ${b.hari}: MACET LAMA ${arah} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`)) return;
+    const arah = z > 0 ? `ditambah ${rp(z)}${b.macet_lama ? '' : ' (SISA MACET BLM TERINPUT baru dibuat)'}` : `dikurangi ${rp(-z)}`;
+    if (!window.confirm(`${b.kantor} kel ${b.kelompok} ${b.hari}: SISA MACET BLM TERINPUT ${arah} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`)) return;
     router.post(route('migrasi.selisih_ml'), { grouping_id: b.grouping_id, hari: b.hari }, { preserveScroll: true });
   };
   const koreksiPenyesuaian = (b, a, baru) => {
@@ -72,7 +72,7 @@ export default function SelisihMigrasi({ semua_kantor, unit, migrasi, baris = []
                 {KATEGORI.map(([k, label]) => (
                   <th key={k} colSpan={3} className="px-2 py-1 text-center border-l">{label}</th>
                 ))}
-                <th rowSpan={2} className="px-2 py-1.5 text-right border-l">MACET LAMA</th>
+                <th rowSpan={2} className="px-2 py-1.5 text-right border-l">SISA MACET BLM TERINPUT</th>
                 <th rowSpan={2} className="px-2 py-1.5" />
               </tr>
               <tr>
@@ -105,7 +105,7 @@ export default function SelisihMigrasi({ semua_kantor, unit, migrasi, baris = []
                   <td className="px-2 py-1.5 text-right whitespace-nowrap">
                     {b.selisih.ml !== 0 ? (
                       <Button size="xs" variant="outline" onClick={() => sesuaikan(b)}>
-                        Sesuaikan MACET LAMA
+                        Sesuaikan SISA MACET BLM TERINPUT
                       </Button>
                     ) : (
                       <span className="text-[11px] text-slate-500">cek manual</span>

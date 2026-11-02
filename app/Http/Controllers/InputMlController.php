@@ -119,7 +119,39 @@ class InputMlController extends Controller
             return back()->withErrors(['nominal' => $e->getMessage()]);
         }
 
-        return back()->with('message', "Input ML {$hasil['nama']} dihapus, saldo kembali ke MACET LAMA.");
+        return back()->with('message', "Input ML {$hasil['nama']} dihapus, saldo kembali ke SISA MACET BLM TERINPUT.");
+    }
+
+    /** Tombol Hapus di Pinjaman Macet: seluruh sisa saldo nasabah pindah ke SISA MACET BLM TERINPUT. */
+    public function hapusNasabah(TransactionLoan $loan)
+    {
+        abort_unless(self::bolehHapusNasabah(), 403, 'Hanya KM ke atas dan kasir.');
+        abort_unless(AgregasiScope::sudahMigrasi((int) AuthScope::getActiveBranchId()), 422, 'Hanya untuk kantor yang sudah migrasi.');
+        abort_unless((int) $loan->loan_officer_grouping?->branch_id === (int) AuthScope::getActiveBranchId(), 404);
+        abort_unless(AppHelper::bolehAksesKelompok($loan->loan_officer_grouping), 403, AppHelper::PESAN_BUKAN_WILAYAH);
+        if ($loan->customer?->nik === MigrasiController::NIK_MACET_LAMA) {
+            return back()->withErrors('Nasabah ini penampung saldonya sendiri.');
+        }
+
+        $saldo = (int) PenyesuaianSaldo::hitungSaldo($loan)['saldo'];
+        if ($saldo <= 0) {
+            return back()->withErrors('Saldo nasabah ini sudah 0.');
+        }
+        try {
+            PenyesuaianSaldo::operKeMacetLama($loan, $saldo, 'hapus dari Pinjaman Macet', auth()->user());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors($e->getMessage());
+        }
+
+        return back()->with('message', 'Saldo Rp ' . number_format($saldo, 0, ',', '.') . ' pindah ke ' . MigrasiController::NAMA_MACET_LAMA . '.');
+    }
+
+    /** can-approve (KM ke atas) atau kasir; mantri tidak. */
+    public static function bolehHapusNasabah(): bool
+    {
+        $user = auth()->user();
+
+        return $user->hasRole(['superuser', 'kasir']) || $user->hasPermissionTo('can-approve');
     }
 
     public function simpan(Request $request)
@@ -135,7 +167,7 @@ class InputMlController extends Controller
             'katrol' => ['boolean'],
         ], [
             'tanggal_drop.before' => 'Nasabah ML harus drop sebelum 1 Juni 2026.',
-            'nik.not_in' => 'NIK itu milik MACET LAMA.',
+            'nik.not_in' => 'NIK itu milik SISA MACET BLM TERINPUT.',
         ]);
 
         $hasil = DB::transaction(function () use ($v, $branchId) {
@@ -144,7 +176,7 @@ class InputMlController extends Controller
                 throw ValidationException::withMessages(['loan_id' => AppHelper::PESAN_BUKAN_WILAYAH]);
             }
             if (!$loan) {
-                throw ValidationException::withMessages(['loan_id' => 'MACET LAMA tidak ditemukan di kantor ini.']);
+                throw ValidationException::withMessages(['loan_id' => 'SISA MACET BLM TERINPUT tidak ditemukan di kantor ini.']);
             }
             TransactionLoan::whereKey($loan->id)->lockForUpdate()->first();
             $tanggal = $this->tanggalBayar($loan);
@@ -153,7 +185,7 @@ class InputMlController extends Controller
             }
             $sisa = (int) PenyesuaianSaldo::hitungSaldo($loan)['saldo'];
             if ($v['nominal'] > $sisa) {
-                throw ValidationException::withMessages(['nominal' => 'Melebihi sisa saldo MACET LAMA (Rp ' . number_format(max(0, $sisa), 0, ',', '.') . ').']);
+                throw ValidationException::withMessages(['nominal' => 'Melebihi sisa saldo SISA MACET BLM TERINPUT (Rp ' . number_format(max(0, $sisa), 0, ',', '.') . ').']);
             }
 
             try {
@@ -163,6 +195,6 @@ class InputMlController extends Controller
             }
         });
 
-        return back()->with('message', "Setoran ML {$hasil['nama']} dicatat (NIK {$hasil['nik']}), saldo MACET LAMA berkurang.");
+        return back()->with('message', "Setoran ML {$hasil['nama']} dicatat (NIK {$hasil['nik']}), saldo SISA MACET BLM TERINPUT berkurang.");
     }
 }

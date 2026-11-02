@@ -124,7 +124,7 @@ const Dashboard = ({ wilayah = [], periode }) => {
                           <TableHead className="px-3 text-right">Z total</TableHead>
                           <TableHead className="px-3 text-right">Z minus</TableHead>
                           <TableHead className="px-3 text-right">Tanpa bucket</TableHead>
-                          <TableHead className="px-3 text-right">MACET LAMA</TableHead>
+                          <TableHead className="px-3 text-right">SISA MACET BLM TERINPUT</TableHead>
                           <TableHead className="px-3" />
                         </TableRow>
                       </TableHeader>

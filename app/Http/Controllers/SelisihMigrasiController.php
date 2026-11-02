@@ -45,7 +45,7 @@ class SelisihMigrasiController extends Controller
             return back()->withErrors($e->getMessage());
         }
 
-        return back()->with('message', "MACET LAMA {$h['kantor']} kel {$h['kelompok']} {$h['hari']} disesuaikan, ML sekarang sama dengan bucket.");
+        return back()->with('message', "SISA MACET BLM TERINPUT {$h['kantor']} kel {$h['kelompok']} {$h['hari']} disesuaikan, ML sekarang sama dengan bucket.");
     }
 
     public function sesuaikanPenyesuaian(Request $request)

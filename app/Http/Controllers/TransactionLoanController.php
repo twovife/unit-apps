@@ -1343,6 +1343,8 @@ class TransactionLoanController extends Controller
     // dd($data);
     // Input Macet dimatikan untuk kantor migrasi (mas 2026-10-12, menu baru menyusul).
     $data['input_macet_mati'] = \App\Helpers\AgregasiScope::sudahMigrasi(\App\Helpers\AuthScope::getActiveBranchId());
+    $data['boleh_hapus_macet'] = $data['input_macet_mati'] && InputMlController::bolehHapusNasabah();
+    $data['nik_macet_lama'] = MigrasiController::NIK_MACET_LAMA;
     return Inertia::render("WebView/Angsuran/SearchByDate", $data);
   }
 
