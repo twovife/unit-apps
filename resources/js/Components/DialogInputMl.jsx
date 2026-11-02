@@ -155,7 +155,7 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
                 <Input value={dayjs(ml.tanggal_bayar).format('dddd, DD MMM YYYY')} disabled />
               ) : (
                 <div className="p-2 text-sm font-medium rounded-md text-rose-700 bg-rose-50">
-                  Hari {ml.hari} minggu ini belum tiba, libur, atau sudah dikunci kasir.
+                  Hari tagih {ml.hari} terakhir sudah dikunci kasir.
                 </div>
               )}
             </div>

@@ -18,8 +18,8 @@ use Illuminate\Validation\ValidationException;
  * macet lama dipecah dari MACET LAMA kelompok x hari (penampung Z) menjadi pinjaman atas
  * nama nasabah itu dan langsung diangsur lunas - App\Helpers\PecahanMacetLama.
  *
- * Kelompok & hari = filter halaman. Tanggal bayar = tanggal hari tagih itu MINGGU INI
- * (sudah lewat / hari ini), hari kerja, belum dikunci kasir.
+ * Kelompok & hari = filter halaman. Tanggal bayar = hari tagih terakhir (hari ini / sudah
+ * lewat, lompat libur), belum dikunci kasir.
  */
 class InputMlController extends Controller
 {
@@ -35,20 +35,12 @@ class InputMlController extends Controller
         return $branchId;
     }
 
-    /** Tanggal hari tagih ini di minggu ini, kalau sudah lewat / hari ini, hari kerja & belum dikunci. */
+    /** Hari tagih terakhir (hari ini / sudah lewat, lompat libur), kalau belum dikunci. */
     private function tanggalBayar(TransactionLoan $loan): ?string
     {
-        $hariKe = ['senin' => 0, 'selasa' => 1, 'rabu' => 2, 'kamis' => 3, 'jumat' => 4, 'sabtu' => 5][$loan->hari] ?? null;
-        if ($hariKe === null) {
-            return null;
-        }
-        $tgl = Carbon::now()->startOfWeek(Carbon::MONDAY)->addDays($hariKe);
-        if ($tgl->gt(Carbon::today()) || !\App\Models\WorkDay::hariKerja($tgl)
-            || AppHelper::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, $tgl->toDateString())) {
-            return null;
-        }
+        $tgl = AppHelper::getStortingShowDate($loan->hari);
 
-        return $tgl->toDateString();
+        return AppHelper::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, $tgl) ? null : $tgl;
     }
 
     private function pinjamanMacetLama(int $branchId)
@@ -181,7 +173,7 @@ class InputMlController extends Controller
             TransactionLoan::whereKey($loan->id)->lockForUpdate()->first();
             $tanggal = $this->tanggalBayar($loan);
             if (!$tanggal) {
-                throw ValidationException::withMessages(['loan_id' => "Hari {$loan->hari} minggu ini belum tiba, libur, atau sudah dikunci kasir."]);
+                throw ValidationException::withMessages(['loan_id' => "Hari tagih {$loan->hari} terakhir sudah dikunci kasir."]);
             }
             $sisa = (int) PenyesuaianSaldo::hitungSaldo($loan)['saldo'];
             if ($v['nominal'] > $sisa) {
