@@ -9,106 +9,99 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Mutasi nasabah — mencatat perpindahan + menyediakan keanggotaan EFEKTIF.
+ * Mutasi nasabah — perpindahan resort (kelompok, hari) per pinjaman.
  *
- * KEANGGOTAAN EFEKTIF, DAN KENAPA NO-OP SAAT TAK ADA MUTASI
- * --------------------------------------------------------
- * Untuk bulan referensi R, kelompok efektif sebuah pinjaman adalah tujuan
- * mutasi TERAKHIR yang berlaku_bulan <= R; kalau tidak ada, kolom aslinya
- * (`transaction_loan_officer_grouping_id`). `ekspresiEfektifSql()` membangun
- * itu sebagai subkueri berkorelasi yang COALESCE ke kolom asli — jadi selama
- * belum ada satu pun baris mutasi, hasilnya PERSIS sama dengan membaca kolom
- * langsung. Angka portofolio lama tidak bergeser sedikit pun sampai ada mutasi
- * sungguhan.
+ * CARA B (TIMPA + CATAT), rancangan .agents/rombak_resort.md:
+ * kolom `transaction_loan_officer_grouping_id` & `hari` pinjaman DITIMPA ke
+ * tujuan, dan tiap perpindahan dicatat di sini dengan `berlaku_bulan`. Jadi
+ * bulan berjalan cukup membaca kolom pinjaman. Bulan SEBELUM perpindahan
+ * dibaca lewat catatan: kelompok PADA tanggal X = asal mutasi paling awal yang
+ * berlaku sesudah X; kalau tidak ada, kolom pinjaman.
  *
- * Rancangan: .agents/agregasi_rekap.md §7b.
+ * Selama tabel mutasi kosong, semua helper mengembalikan kolom pinjaman apa
+ * adanya — SQL identik dengan sebelum fitur ini ada.
  */
 class Mutasi
 {
     public const ROLE_PEMUTASI = ['superuser'];
 
+    /** Tanggal -> literal SQL ter-quote, untuk argumen $refSql. */
+    public static function tgl($tanggal): string
+    {
+        return DB::getPdo()->quote(Carbon::parse($tanggal)->toDateString());
+    }
+
+    /** Tabel mutasi kosong? Satu kueri kecil; tidak di-cache karena worker panjang bisa basi. */
+    private static function kosong(): bool
+    {
+        return !TransactionLoanMutation::query()->exists();
+    }
+
     /**
-     * Ekspresi SQL keanggotaan efektif untuk bulan referensi $ref (Y-m-d, tgl 1).
-     *
-     * Dipakai menggantikan `l.transaction_loan_officer_grouping_id` di kueri
-     * agregat. $aliasLoan = alias tabel transaction_loans (mis. 'l').
+     * Ekspresi SQL kelompok pinjaman $alias PADA tanggal $refSql (literal dari
+     * tgl() atau kolom, mis. 'l.drop_date' untuk "kelompok saat drop").
      */
-    public static function ekspresiEfektifSql(string $aliasLoan, string $ref): string
+    public static function kelompokSql(string $alias, string $refSql): string
     {
-        $refQ = DB::getPdo()->quote($ref);
+        $kolom = "$alias.transaction_loan_officer_grouping_id";
+        if (self::kosong()) {
+            return $kolom;
+        }
 
-        return "COALESCE(
-            (SELECT m.ke_grouping_id
-               FROM transaction_loan_mutations m
-              WHERE m.transaction_loan_id = {$aliasLoan}.id
-                AND m.berlaku_bulan <= {$refQ}
-              ORDER BY m.berlaku_bulan DESC, m.id DESC
-              LIMIT 1),
-            {$aliasLoan}.transaction_loan_officer_grouping_id
-        )";
+        return "COALESCE((SELECT m.dari_grouping_id FROM transaction_loan_mutations m
+            WHERE m.transaction_loan_id = $alias.id AND m.berlaku_bulan > $refSql
+            ORDER BY m.berlaku_bulan, m.id LIMIT 1), $kolom)";
+    }
+
+    /** Sama dengan kelompokSql() untuk hari tagih, sudah LOWER. */
+    public static function hariSql(string $alias, string $refSql): string
+    {
+        if (self::kosong()) {
+            return "LOWER($alias.hari)";
+        }
+
+        return "LOWER(COALESCE((SELECT m.dari_hari FROM transaction_loan_mutations m
+            WHERE m.transaction_loan_id = $alias.id AND m.berlaku_bulan > $refSql
+            ORDER BY m.berlaku_bulan, m.id LIMIT 1), $alias.hari))";
     }
 
     /**
-     * Ekspresi SQL HARI TAGIH efektif untuk bulan referensi $ref.
-     *
-     * Sama polanya dengan kelompok efektif: hari tujuan mutasi terakhir yang
-     * berlaku, atau hari asli pinjaman. COALESCE juga menampung ke_hari NULL
-     * (mutasi yang tak mengganti hari) — jatuh ke hari asli.
+     * Saring pinjaman yang PADA $refSql ada di $groupingIds (dan $hari kalau
+     * diisi). whereIn kolom asli tetap dipakai supaya terindeks, ditambah
+     * pinjaman yang dulu di sini tapi sudah pindah keluar; lalu ekspresi
+     * "pada" membuang yang baru pindah masuk.
      */
-    public static function ekspresiHariEfektifSql(string $aliasLoan, string $ref): string
+    public static function saring($query, string $alias, array $groupingIds, string $refSql, ?string $hari = null): void
     {
-        $refQ = DB::getPdo()->quote($ref);
+        $kolom = "$alias.transaction_loan_officer_grouping_id";
+        if (empty($groupingIds)) {
+            $query->whereRaw('0 = 1');
+            return;
+        }
+        if (self::kosong()) {
+            $query->whereIn($kolom, $groupingIds);
+            if ($hari !== null) {
+                $query->where("$alias.hari", $hari);
+            }
+            return;
+        }
 
-        return "COALESCE(
-            (SELECT m.ke_hari
-               FROM transaction_loan_mutations m
-              WHERE m.transaction_loan_id = {$aliasLoan}.id
-                AND m.berlaku_bulan <= {$refQ}
-                AND m.ke_hari IS NOT NULL
-              ORDER BY m.berlaku_bulan DESC, m.id DESC
-              LIMIT 1),
-            {$aliasLoan}.hari
-        )";
+        $ids = implode(',', array_map('intval', $groupingIds));
+        $query->where(function ($w) use ($kolom, $alias, $groupingIds) {
+            $w->whereIn($kolom, $groupingIds)
+                ->orWhereIn("$alias.id", TransactionLoanMutation::whereIn('dari_grouping_id', $groupingIds)->select('transaction_loan_id'));
+        })->whereRaw(self::kelompokSql($alias, $refSql) . " IN ($ids)");
+        if ($hari !== null) {
+            $query->whereRaw(self::hariSql($alias, $refSql) . ' = ?', [strtolower($hari)]);
+        }
     }
 
     /**
-     * Kelompok efektif satu pinjaman pada bulan referensi (versi PHP, untuk
-     * pengecekan/tampilan — bukan agregasi massal).
-     */
-    public static function kelompokEfektif(TransactionLoan $loan, $ref): int
-    {
-        $r = Carbon::parse($ref)->startOfMonth()->toDateString();
-
-        $m = TransactionLoanMutation::where('transaction_loan_id', $loan->id)
-            ->where('berlaku_bulan', '<=', $r)
-            ->orderByDesc('berlaku_bulan')->orderByDesc('id')
-            ->first();
-
-        return $m ? (int) $m->ke_grouping_id : (int) $loan->transaction_loan_officer_grouping_id;
-    }
-
-    /** Hari tagih efektif satu pinjaman pada bulan referensi (versi PHP). */
-    public static function hariEfektif(TransactionLoan $loan, $ref): string
-    {
-        $r = Carbon::parse($ref)->startOfMonth()->toDateString();
-
-        $m = TransactionLoanMutation::where('transaction_loan_id', $loan->id)
-            ->where('berlaku_bulan', '<=', $r)
-            ->whereNotNull('ke_hari')
-            ->orderByDesc('berlaku_bulan')->orderByDesc('id')
-            ->first();
-
-        return $m ? $m->ke_hari : $loan->hari;
-    }
-
-    /**
-     * Penyesuaian pembacaan koleksi harian per (grouping, hari) pada bulan $ref.
-     *
-     * Kolom `hari`/`grouping` ASLI sengaja tak pernah diubah mutasi (demi indeks),
-     * jadi pembacaan berbasis kolom asli MELEWATKAN pinjaman yang pindah MASUK dan
-     * masih ikut menghitung yang pindah KELUAR. Karena mutasi langka, cukup kembalikan
-     * dua daftar ID kecil untuk menambal filter: tambahkan `masuk`, kecualikan `keluar`.
-     * Tanpa mutasi, keduanya kosong dan pembacaan persis seperti semula.
+     * Tambalan pembacaan per (grouping, hari) PADA bulan $ref: kolom pinjaman
+     * sudah susunan baru, jadi bulan sebelum mutasi perlu menambah yang pindah
+     * KELUAR sesudahnya (`masuk`) dan membuang yang pindah MASUK sesudahnya
+     * (`keluar`). Tanpa mutasi, keduanya kosong dan pembacaan persis seperti
+     * semula.
      *
      * @return array{masuk: int[], keluar: int[]}
      */
@@ -117,10 +110,8 @@ class Mutasi
         $refDate = Carbon::parse($ref)->startOfMonth()->toDateString();
         $hari = strtolower($hari);
 
-        // Mulai dari tabel mutasi (kecil), dibatasi yang MENYENTUH grouping ini
-        // (pindah masuk lewat ke_grouping, atau keluar lewat dari_grouping) —
-        // jadi tak menyapu seluruh mutasi kantor lain.
-        $loanIds = TransactionLoanMutation::where('berlaku_bulan', '<=', $refDate)
+        // Hanya mutasi yang BELUM berlaku di bulan $ref dan menyentuh grouping ini.
+        $loanIds = TransactionLoanMutation::where('berlaku_bulan', '>', $refDate)
             ->where(function ($q) use ($groupingId) {
                 $q->where('ke_grouping_id', $groupingId)
                     ->orWhere('dari_grouping_id', $groupingId);
@@ -131,29 +122,25 @@ class Mutasi
             return ['masuk' => [], 'keluar' => []];
         }
 
-        $gEff = self::ekspresiEfektifSql('l', $refDate);
-        $hEff = 'LOWER(' . self::ekspresiHariEfektifSql('l', $refDate) . ')';
-
+        $ref = self::tgl($refDate);
         $rows = DB::table(DB::raw('transaction_loans l'))
             ->whereIn('l.id', $loanIds)
             ->get([
                 DB::raw('l.id AS id'),
                 DB::raw('l.transaction_loan_officer_grouping_id AS og'),
                 DB::raw('LOWER(l.hari) AS oh'),
-                DB::raw("$gEff AS eg"),
-                DB::raw("$hEff AS eh"),
+                DB::raw(self::kelompokSql('l', $ref) . ' AS pg'),
+                DB::raw(self::hariSql('l', $ref) . ' AS ph'),
             ]);
 
         $masuk = [];
         $keluar = [];
-
         foreach ($rows as $r) {
-            $asli = ((int) $r->og === $groupingId) && ($r->oh === $hari);
-            $efektif = ((int) $r->eg === $groupingId) && ($r->eh === $hari);
-
-            if ($efektif && !$asli) {
+            $kolom = ((int) $r->og === $groupingId) && ($r->oh === $hari);
+            $pada = ((int) $r->pg === $groupingId) && ($r->ph === $hari);
+            if ($pada && !$kolom) {
                 $masuk[] = (int) $r->id;
-            } elseif ($asli && !$efektif) {
+            } elseif ($kolom && !$pada) {
                 $keluar[] = (int) $r->id;
             }
         }
@@ -162,20 +149,23 @@ class Mutasi
     }
 
     /**
-     * Catat satu mutasi.
+     * Pindahkan satu pinjaman ke resort (kelompok, hari) tujuan mulai
+     * $berlakuBulan: timpa kolom pinjaman + catat asalnya. Hanya bulan
+     * berjalan: menimpa lebih awal memindah sisa bulan sebelumnya.
+     * Angsuran bulan berjalan yang telanjur masuk TIDAK ikut dipindah di sini
+     * (itu tugas penerapan rombak, tahap 2).
      *
      * @throws \RuntimeException
      */
-    public static function catat(TransactionLoan $loan, int $keGroupingId, ?string $keHari, $berlakuBulan, ?string $alasan, $user): TransactionLoanMutation
+    public static function catat(TransactionLoan $loan, int $keGroupingId, ?string $keHari, $berlakuBulan, ?string $alasan, $user, ?int $rombakId = null): TransactionLoanMutation
     {
         if (!$user || !$user->hasAnyRole(self::ROLE_PEMUTASI)) {
             throw new \RuntimeException('Hanya superuser yang boleh melakukan mutasi.');
         }
 
         $bulan = Carbon::parse($berlakuBulan)->startOfDay();
-
-        if ($bulan->day !== 1) {
-            throw new \RuntimeException('Mutasi hanya berlaku mulai tanggal 1.');
+        if ($bulan->toDateString() !== Carbon::now()->startOfMonth()->toDateString()) {
+            throw new \RuntimeException('Mutasi hanya berlaku mulai tanggal 1 bulan berjalan.');
         }
 
         $tujuan = TransactionLoanOfficerGrouping::find($keGroupingId);
@@ -183,51 +173,41 @@ class Mutasi
             throw new \RuntimeException('Kelompok tujuan tidak ditemukan.');
         }
 
-        // Dibatasi SATU KANTOR. Perpindahan lintas kantor akan membuat kelompok
-        // efektif keluar dari himpunan groupingIds yang dibaca portofolio (yang
-        // menyaring per kolom asli demi indeks), sehingga pinjamannya hilang
-        // dari kedua kantor. Lintas kantor perlu penanganan tersendiri.
+        // Satu kantor dulu (rancangan §11): pindah kantor belum dicakup.
         $branchAsal = $loan->loan_officer_grouping->branch_id ?? null;
         if ($branchAsal !== null && (int) $tujuan->branch_id !== (int) $branchAsal) {
             throw new \RuntimeException('Mutasi antar kantor belum didukung — tujuan harus di kantor yang sama.');
         }
 
-        // Asal = kelompok & hari EFEKTIF pinjaman pada bulan itu (bukan selalu
-        // kolom asli — pinjaman bisa sudah pernah pindah).
-        $dari = self::kelompokEfektif($loan, $bulan);
-        $dariHari = self::hariEfektif($loan, $bulan);
+        $dari = (int) $loan->transaction_loan_officer_grouping_id;
+        $dariHari = strtolower($loan->hari);
         $keHariBersih = $keHari ? strtolower($keHari) : $dariHari;
 
-        if ($dari === (int) $keGroupingId && $keHariBersih === $dariHari) {
+        if ($dari === $keGroupingId && $keHariBersih === $dariHari) {
             throw new \RuntimeException('Tujuan sama dengan kelompok & hari sekarang.');
         }
 
-        // Mutasi harus di masa depan yang bukunya belum tutup — minimal bulan
-        // depan. Menyisipkan mutasi ke bulan yang sudah lewat akan mengubah
-        // agregat yang mungkin sudah ditandatangani.
-        if ($bulan->lte(Carbon::now()->startOfMonth())) {
-            throw new \RuntimeException('Mutasi paling cepat berlaku bulan depan (tanggal 1).');
-        }
-
-        return DB::transaction(function () use ($loan, $keGroupingId, $dari, $dariHari, $keHariBersih, $bulan, $alasan, $user) {
-            // Tutup rentang mutasi sebelumnya yang masih terbuka: berlaku_sampai
-            // = berlaku_bulan mutasi baru. Jadi tiap saat hanya satu yang aktif.
-            TransactionLoanMutation::where('transaction_loan_id', $loan->id)
-                ->whereNull('berlaku_sampai')
-                ->where('berlaku_bulan', '<', $bulan->toDateString())
-                ->update(['berlaku_sampai' => $bulan->toDateString()]);
-
-            return TransactionLoanMutation::create([
+        return DB::transaction(function () use ($loan, $keGroupingId, $dari, $dariHari, $keHariBersih, $bulan, $alasan, $user, $rombakId) {
+            // Catatan dulu: trigger tl_kunci_before_update hanya mengizinkan ganti
+            // kelompok yang didukung mutasi resort yang cocok.
+            $mutasi = TransactionLoanMutation::create([
                 'transaction_loan_id' => $loan->id,
+                'rombak_id' => $rombakId,
                 'dari_grouping_id' => $dari,
                 'dari_hari' => $dariHari,
                 'ke_grouping_id' => $keGroupingId,
-                // ke_hari NULL kalau hari tak berubah — resolusi jatuh ke hari asli.
-                'ke_hari' => $keHariBersih === $dariHari ? null : $keHariBersih,
+                'ke_hari' => $keHariBersih,
                 'berlaku_bulan' => $bulan->toDateString(),
                 'alasan' => $alasan ?: null,
                 'user_input' => $user->employee->id,
             ]);
+
+            $loan->forceFill([
+                'transaction_loan_officer_grouping_id' => $keGroupingId,
+                'hari' => $keHariBersih,
+            ])->save();
+
+            return $mutasi;
         });
     }
 }

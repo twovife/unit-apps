@@ -261,16 +261,11 @@ class HitungAgregat
         $ember = Ember::ekspresiSql('l.drop_date', "'$ref'");
         $efek = self::ekspresiEfekPenyesuaian();
 
-        // Kelompok EFEKTIF pada bulan referensi: tujuan mutasi terakhir yang
-        // sudah berlaku, atau kolom asli kalau belum pernah pindah. Selama
-        // belum ada mutasi, ini persis sama dengan kolom asli — angka lama
-        // tidak bergeser. Mutasi dibatasi satu kantor, jadi kelompok efektif
-        // selalu masih di dalam $groupingIds yang sama; whereIn kolom asli tetap
-        // dipakai agar kuerinya terindeks.
-        $gEfektif = \App\Helpers\Mutasi::ekspresiEfektifSql('l', $ref);
-        // Hari tagih efektif — ikut pindah kalau mutasi mengganti hari; kalau
-        // tidak, jatuh ke l.hari. No-op selama belum ada mutasi ber-ke_hari.
-        $hariEfektif = 'LOWER(' . \App\Helpers\Mutasi::ekspresiHariEfektifSql('l', $ref) . ')';
+        // Kelompok & hari PADA bulan referensi (rancangan rombak_resort §8.3):
+        // sebelum mutasi = asal, sesudahnya = kolom pinjaman. Tanpa mutasi =
+        // kolom pinjaman persis.
+        $gEfektif = Mutasi::kelompokSql('l', Mutasi::tgl($ref));
+        $hariEfektif = Mutasi::hariSql('l', Mutasi::tgl($ref));
 
         $saldo = '(l.pinjaman - IFNULL(i.bayar,0) - IFNULL(w.wo,0) + IFNULL(a.efek,0))';
 
@@ -294,7 +289,7 @@ class HitungAgregat
                      AND " . TransactionSaldoAdjustment::ekspresiBerlakuSql() . "
                    GROUP BY transaction_loan_id) a"
             ), 'a.transaction_loan_id', '=', 'l.id')
-            ->whereIn('l.transaction_loan_officer_grouping_id', $groupingIds)
+            ->tap(fn ($q) => Mutasi::saring($q, 'l', $groupingIds, Mutasi::tgl($ref)))
             ->where('l.status', 'success')
             ->where('l.drop_date', '<=', $asOf)
             ->whereNotNull('l.hari')
