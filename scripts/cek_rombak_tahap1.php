@@ -85,6 +85,15 @@
         $cek(($dropLalu[1223] ?? 0) === ($harianLalu[1223] ?? 0), 'drop rekap K3 = HitungAgregat');
         // Task 5 menambah cek daftar pinjaman di bawah baris ini.
         // [CEK-TASK-5]
+        $daftar = function ($g, $hari, $bulan) use ($M) {
+            return DB::table('transaction_loans as l')
+                ->tap(fn ($q) => $M::saring($q, 'l', [$g], $M::tgl($bulan), $hari))
+                ->where('l.status', 'success')
+                ->whereBetween('l.drop_date', [$bulan, \Carbon\Carbon::parse($bulan)->endOfMonth()->toDateString()])
+                ->pluck('l.id')->all();
+        };
+        $cek(in_array($loan->id, $daftar(1223, 'senin', $bulanLalu)), 'Daftar Nasabah bulan lalu: di K3 senin');
+        $cek(!in_array($loan->id, $daftar(1221, 'rabu', $bulanLalu)), 'Daftar Nasabah bulan lalu: tidak di K1 rabu');
     } finally {
         DB::rollBack();
     }

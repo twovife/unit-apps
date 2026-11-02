@@ -55,8 +55,9 @@ trait PinjamanTrait
         $data->whereBetween('drop_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
           ->orWhereBetween('request_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')]);
       })
-      ->where('transaction_loan_officer_grouping_id', $groupingId->id)
-      ->where('hari', $hari)
+      // Resort PADA bulan yang dilihat (rombak_resort §8.3): bulan sebelum
+      // rombak tetap menampilkan susunan lama.
+      ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'transaction_loans', [$groupingId->id], \App\Helpers\Mutasi::tgl($startOfMonth), $hari))
       ->orderBy('drop_date')
       ->get();
 

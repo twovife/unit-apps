@@ -1292,9 +1292,9 @@ class TransactionLoanController extends Controller
     $loans = DB::table('transaction_loans as l')
       ->join('transaction_manage_customers as m', 'm.id', '=', 'l.transaction_manage_customer_id')
       ->join('transaction_customers as c', 'c.id', '=', 'm.transaction_customer_id')
-      ->where('l.transaction_loan_officer_grouping_id', $grouping->id)
+      // Resort pada bulan drop yang dipilih (rombak_resort §8.3).
+      ->tap(fn($q) => \App\Helpers\Mutasi::saring($q, 'l', [$grouping->id], \App\Helpers\Mutasi::tgl($bulan->copy()->startOfMonth()), $hari))
       ->where('l.status', 'success')
-      ->where('l.hari', $hari)
       ->whereBetween('l.drop_date', [$bulan->copy()->startOfMonth()->toDateString(), $bulan->copy()->endOfMonth()->toDateString()])
       ->orderBy('l.drop_date')->orderBy('c.nama')
       ->get(['l.id', 'l.drop_date', 'l.hari', 'l.nominal_drop', 'l.pinjaman', 'l.pay_off_date', 'c.nama', 'c.nik', 'm.nomor_anggota',
