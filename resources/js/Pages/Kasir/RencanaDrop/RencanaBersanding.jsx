@@ -87,7 +87,8 @@ export const Sisi = ({
             <tr key={kunciBaris(r)} className={`h-8 border-t even:bg-slate-50 hover:bg-sky-50 ${kosong ? 'text-slate-400' : ''}`}>
               <td className="px-3 py-1 font-medium whitespace-nowrap">{isiPertama(r)}</td>
               {kolom.map(([k, , kelas]) => {
-                const v = kosong ? 0 : r[k];
+                // Target hari depan sudah ada (hasil ACC KM minggu lalu), hanya itu yang tampil.
+                const v = kosong && k !== 'target' ? 0 : r[k];
                 return (
                   <td key={k} className={`px-3 py-1 text-right whitespace-nowrap ${kelas ?? ''}`}>
                     {banding[k] && !kosong && <Panah ini={r[k]} dulu={r[banding[k]]} />}
@@ -151,7 +152,7 @@ export const Sisi = ({
             {kolom.map(([k, , kelas]) => (
               <td key={k} className={`px-3 py-1.5 text-right whitespace-nowrap ${kelas ?? ''}`}>
                 {banding[k] && aktif.length > 0 && <Panah ini={jumlah(aktif, k)} dulu={jumlah(aktif, banding[k])} />}
-                {ribu(jumlah(aktif, k))}
+                {ribu(jumlah(k === 'target' ? rows : aktif, k))}
               </td>
             ))}
             {kolomKm && <td />}
