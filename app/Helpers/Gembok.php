@@ -232,10 +232,11 @@ class Gembok
     }
 
     /**
-     * Hari yang TERBUKA DI TENGAH RANTAI: belum terkunci padahal ada hari
-     * sesudahnya (kelompok sama) yang sudah terkunci - hasil buka kunci /
-     * koreksi can-edit yang belum dikunci lagi. Selama ada, kasir tidak bisa
-     * mengunci hari sesudahnya. Dipakai pemberitahuan di Rekap 1 & 2.
+     * Hari kerja sejak MULAI_CEK_KUNCI_LAMA s/d kemarin yang belum terkunci, walau
+     * sudah ganti bulan (mas 2026-11-02). Dulu hanya yang ada hari terkunci
+     * sesudahnya, jadi hari terakhir yang belum dikunci tidak terdeteksi. Selama
+     * ada, kasir tidak bisa mengunci hari sesudahnya. Dipakai pemberitahuan di
+     * Rekap 1 & 2.
      *
      * @return array<int,array{kelompok:int,tanggal:string,alasan:?string,dibuka_at:?string}>
      */
@@ -249,10 +250,8 @@ class Gembok
         $baris = TransactionDailyClosing::from('transaction_daily_closings as c')
             ->whereIn('c.transaction_loan_officer_grouping_id', $grup->keys())
             ->whereNull('c.kasir_lock_at')
-            ->whereExists(fn($q) => $q->select(DB::raw(1))->from('transaction_daily_closings as n')
-                ->whereColumn('n.transaction_loan_officer_grouping_id', 'c.transaction_loan_officer_grouping_id')
-                ->whereColumn('n.date', '>', 'c.date')
-                ->whereNotNull('n.kasir_lock_at'))
+            ->whereBetween('c.date', [self::MULAI_CEK_KUNCI_LAMA, \Carbon\Carbon::yesterday()->toDateString()])
+            ->whereNotIn('c.date', \App\Models\WorkDay::where('is_libur', true)->select('date'))
             ->orderBy('c.date')
             ->get(['c.id', 'c.transaction_loan_officer_grouping_id', 'c.date']);
 
