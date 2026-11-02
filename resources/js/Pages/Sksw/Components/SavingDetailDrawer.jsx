@@ -40,7 +40,10 @@ const PILIH = 'mt-1 w-full h-9 px-3 text-sm border rounded-md border-input bg-ba
 
 function kirim(method, url, data, { onSelesai, setGalat, setProses }) {
   setProses(true);
-  router[method](url, data, {
+  // visit, bukan router[method]: router.delete(url, options) tidak menerima data.
+  router.visit(url, {
+    method,
+    data,
     preserveScroll: true,
     preserveState: true,
     onError: (e) => setGalat(e),
