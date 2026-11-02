@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Koreksi target / keluar hari D dari Buku Transaksi (ACC KM), dua alur
  * (mas 2026-10-20):
- *  - Hanya bulan berjalan (bulan aktif); bulan lalu sudah / akan ditutup buku.
+ *  - Target D hanya bulan berjalan. Keluar D bulan lalu tetap boleh, target D tidak
+ *    berubah tapi tanggal sesudahnya ikut dihitung ulang (mas 2026-11-02).
  *  - Boleh walau D sudah dikunci / TTD kasir: target & keluar saja. Masuk tidak
  *    (ikut drop). Pinjaman & angsuran D tetap terkunci (trigger DB).
  *  - Tanggal sebelum D tidak tersentuh. D ditandai koreksi (alur baru
@@ -54,9 +55,6 @@ class KoreksiTarget
         $grouping = TransactionLoanOfficerGrouping::findOrFail($groupingId);
         $d = Carbon::parse($tanggal)->startOfDay();
 
-        if (!$d->isSameMonth(Carbon::now())) {
-            throw new \RuntimeException('Koreksi target hanya untuk bulan berjalan (' . Carbon::now()->locale('id')->isoFormat('MMMM Y') . ').');
-        }
         if ($d->gt(Carbon::today())) {
             throw new \RuntimeException('Tanggal ini belum lewat.');
         }
@@ -81,6 +79,10 @@ class KoreksiTarget
         $keluarLama = (int) $awal->keluar;
         $targetBaru = $target ?? $targetLama;
         $keluarBaru = $keluar ?? $keluarLama;
+
+        if ($targetBaru !== $targetLama && !$d->isSameMonth(Carbon::now())) {
+            throw new \RuntimeException('Edit target hanya untuk bulan berjalan (' . Carbon::now()->locale('id')->isoFormat('MMMM Y') . '). Bulan lalu hanya keluar yang bisa diubah.');
+        }
 
         $perubahan = [['tanggal' => $d->toDateString(), 'lama' => $targetLama, 'baru' => $targetBaru]];
         if ($tulis) {
@@ -134,7 +136,7 @@ class KoreksiTarget
     /**
      * Dipanggil sesudah ACC KM (dua alur): target hari D diubah di form -> koreksi +
      * menjalar; keluar diubah pada hari yang SUDAH pernah di-ACC (ACC ulang) ->
-     * menjalar ulang bila bulan berjalan. ACC pertama biasa -> diam (D+7 sudah
+     * menjalar ulang, termasuk bulan lalu. ACC pertama biasa -> diam (D+7 sudah
      * ditulis CeklistKepala / ACC lama).
      *
      * @throws \RuntimeException target diubah di luar bulan berjalan, dsb.
@@ -143,7 +145,7 @@ class KoreksiTarget
     {
         $targetBerubah = $targetBaru !== $targetLama;
         $keluarBerubah = $sudahAcc && $keluarBaru !== $keluarLama;
-        if (!$targetBerubah && !($keluarBerubah && Carbon::parse($tanggal)->isSameMonth(Carbon::now()))) {
+        if (!$targetBerubah && !$keluarBerubah) {
             return;
         }
         // Tanpa alasan (mas 2026-10-20): ubah target langsung dari form ACC.

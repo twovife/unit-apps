@@ -73,6 +73,8 @@ const Approval = ({
   // can-approve selain stafkontrol; selain itu target hanya baca.
   const { auth: authKoreksi } = usePage().props;
   const bolehKoreksi = authKoreksi?.permissions?.includes('can-approve') && !authKoreksi?.roles?.includes('stafkontrol');
+  // Edit target hanya bulan berjalan; keluar bulan lalu tetap bisa (target sesudahnya menjalar).
+  const bulanBerjalan = dayjs(triggeredData?.tanggal).isSame(dayjs(), 'month');
   const [pratinjau, setPratinjau] = useState(null);
   // Target baru bisa diketik sesudah klik "Edit" (cegah ubah tak sengaja).
   const [ubahTarget, setUbahTarget] = useState(false);
@@ -426,13 +428,13 @@ const Approval = ({
                 <div className="text-sm">
                   <div className="flex items-center justify-between">
                     <span>Target</span>
-                    {bolehKoreksi && !ubahTarget && (migrasi || triggeredData?.target) ? (
+                    {bolehKoreksi && bulanBerjalan && !ubahTarget && (migrasi || triggeredData?.target) ? (
                       <button type="button" className="text-xs font-semibold text-blue-600 underline" onClick={() => setUbahTarget(true)}>
                         Edit
                       </button>
                     ) : null}
                   </div>
-                  {(bolehKoreksi && ubahTarget) || (!migrasi && !triggeredData?.target) ? (
+                  {bulanBerjalan && ((bolehKoreksi && ubahTarget) || (!migrasi && !triggeredData?.target)) ? (
                     <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} allowNegativeValue={false}
                       prefix="Rp " required onValueChange={onHandleCurencyChange} value={data.target} />
                   ) : (
