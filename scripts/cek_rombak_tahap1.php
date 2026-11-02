@@ -30,8 +30,10 @@
         $sebelumLaluPorto = \App\Helpers\HitungAgregat::portofolio($kantor, $akhirBulanLalu, $bulanLalu);
         $sebelumLaluHarian = \App\Helpers\HitungAgregat::harianBanyak($kantor, $bulanLalu, $akhirBulanLalu);
 
+        auth()->login($user);
         $m = $M::catat($loan, 1221, 'rabu', $bulanIni, 'cek tahap 1', $user);
         $loan->refresh();
+        $cek(\App\Models\TransactionLockHistory::where('created_at', '>=', now()->subMinute())->where('alasan', 'like', '%ubah pinjaman #' . $loan->id . '%')->doesntExist(), 'catat tidak membuka kunci hari drop lama');
 
         // 2. catat menimpa + mencatat.
         $cek((int) $loan->transaction_loan_officer_grouping_id === 1221 && $loan->hari === 'rabu', 'catat menimpa kolom pinjaman');

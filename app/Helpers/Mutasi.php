@@ -202,10 +202,11 @@ class Mutasi
                 'user_input' => $user->employee->id,
             ]);
 
+            // Hook TransactionLoan::updating membuka kunci hari drop lama di dua kelompok; rombak tidak menggeser angka hari itu (pembaca memakai kelompok saat drop), jadi hook dilewati; pembukaan kunci bulan M lewat penerapan (tahap 2).
             $loan->forceFill([
                 'transaction_loan_officer_grouping_id' => $keGroupingId,
                 'hari' => $keHariBersih,
-            ])->save();
+            ])->saveQuietly();
 
             return $mutasi;
         });
