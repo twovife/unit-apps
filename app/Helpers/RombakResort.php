@@ -216,9 +216,11 @@ class RombakResort
             ->leftJoin('transaction_customers as c', 'c.id', '=', 'm.transaction_customer_id')
             ->whereIn('l.transaction_loan_officer_grouping_id', $gIds)
             ->whereIn(DB::raw('LOWER(l.hari)'), self::HARI)
-            ->where(fn($q) => $q->whereIn('l.status', ['open', 'acc'])
-                ->orWhere(fn($q) => $q->where('l.status', 'success')
-                    ->where(fn($q) => $q->whereNull('l.pay_off_date')->orWhere('l.pay_off_date', '>=', $M))))
+            // Yang dirombak hanya nasabah yang sudah cair SEBELUM bulan M (mas 2026-11-03). Drop &
+            // pengajuan (open/acc) bulan M tetap di kelompok yang mengeluarkannya; kasir merapikan sendiri.
+            ->where('l.drop_date', '<', $M)
+            ->where('l.status', 'success')
+            ->where(fn($q) => $q->whereNull('l.pay_off_date')->orWhere('l.pay_off_date', '>=', $M))
             ->orderBy('l.id')
             // terapkan: kunci baris pinjaman supaya angsuran/drop yang bersamaan menunggu commit.
             ->when($kunci, fn($q) => $q->lockForUpdate())

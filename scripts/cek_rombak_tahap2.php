@@ -113,7 +113,7 @@
         $cek(count($p['macet_lama']) === (int) $mlGanda->n && $leburP === (int) $mlGanda->lebur, 'MACET LAMA ganda: ' . count($p['macet_lama']) . " resort, $leburP dilebur (kueri: {$mlGanda->n}, {$mlGanda->lebur})");
         $cek(collect($p['macet_lama'])->every(fn($m) => collect($m['lebur'])->every(fn($l) => $l['id'] > $m['pertahankan']['id'])), 'MACET LAMA: yang dipertahankan id terkecil');
         $pindahSql = DB::table('transaction_loans as l')->join('transaction_resort_rombak_peta as p', fn($j) => $j->on('p.dari_grouping_id', '=', 'l.transaction_loan_officer_grouping_id')->on('p.dari_hari', '=', DB::raw('LOWER(l.hari)')))
-            ->where('p.rombak_id', 2)->where(fn($q) => $q->whereIn('l.status', ['open', 'acc'])->orWhere(fn($q) => $q->where('l.status', 'success')->where(fn($q) => $q->whereNull('l.pay_off_date')->orWhere('l.pay_off_date', '>=', $bulanIni))))->count();
+            ->where('p.rombak_id', 2)->where('l.drop_date', '<', $bulanIni)->where('l.status', 'success')->where(fn($q) => $q->whereNull('l.pay_off_date')->orWhere('l.pay_off_date', '>=', $bulanIni))->count();
         $cek(array_sum(array_map(fn($x) => $x['aktif'] + $x['open'] + $x['acc'], $p['pindah'])) === $pindahSql, "pinjaman pindah = kueri ($pindahSql)");
         $tutup = \App\Models\TransactionDailyClosing::firstOrCreate(['transaction_loan_officer_grouping_id' => $kantor[0], 'date' => $bulanIni]);
         DB::table('transaction_daily_closings')->where('id', $tutup->id)->update(['kasir_lock_at' => now()]);
