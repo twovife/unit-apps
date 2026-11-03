@@ -55,6 +55,21 @@ class TransactionLoan extends Model
   public const SEBAB_LUNAS_LAMA = 5; // cap data lama saat migrasi pay_off_date
 
 
+  /**
+   * Kelompok pinjaman pada hari drop-nya (pinjaman pindahan: kelompok lama) -
+   * kunci hari drop ada di sana, sama dengan trigger tl_kunci_before_update/delete.
+   * $asli = nilai sebelum perubahan yang sedang ditulis.
+   */
+  private static function kelompokSaatDrop(self $loan, bool $asli = false)
+  {
+    $l = $asli ? (clone $loan)->setRawAttributes($loan->getRawOriginal()) : $loan;
+    if (!$l->transaction_loan_officer_grouping_id || !$l->drop_date) {
+      return $l->transaction_loan_officer_grouping_id;
+    }
+
+    return \App\Helpers\Mutasi::kelompokPada($l, $l->drop_date);
+  }
+
   protected static function boot()
   {
     parent::boot();
@@ -72,16 +87,16 @@ class TransactionLoan extends Model
       }
       $aksi = sprintf('ubah pinjaman #%d (%s)', $loan->id, implode(', ', array_keys(array_intersect_key(
         $loan->getDirty(), array_flip(['status', 'nominal_drop', 'drop_date', 'transaction_loan_officer_grouping_id'])))));
-      \App\Helpers\Gembok::bukaOtomatis($loan->getOriginal('transaction_loan_officer_grouping_id'), $loan->getOriginal('drop_date'), $aksi);
-      \App\Helpers\Gembok::bukaOtomatis($loan->transaction_loan_officer_grouping_id, $loan->drop_date, $aksi);
+      \App\Helpers\Gembok::bukaOtomatis(self::kelompokSaatDrop($loan, true), $loan->getOriginal('drop_date'), $aksi);
+      \App\Helpers\Gembok::bukaOtomatis(self::kelompokSaatDrop($loan), $loan->drop_date, $aksi);
     });
     static::deleting(function (self $loan) {
-      \App\Helpers\Gembok::bukaOtomatis($loan->transaction_loan_officer_grouping_id, $loan->drop_date, 'hapus pinjaman #' . $loan->id);
+      \App\Helpers\Gembok::bukaOtomatis(self::kelompokSaatDrop($loan), $loan->drop_date, 'hapus pinjaman #' . $loan->id);
     });
     // Alur lama: tanggal yang barusan dibuka otomatis -> rekapnya disegarkan sesudah tertulis.
     $segarkan = function (self $loan) {
-      \App\Helpers\Gembok::segarkanSesudahTulis($loan->getOriginal('transaction_loan_officer_grouping_id'), $loan->getOriginal('drop_date'));
-      \App\Helpers\Gembok::segarkanSesudahTulis($loan->transaction_loan_officer_grouping_id, $loan->drop_date);
+      \App\Helpers\Gembok::segarkanSesudahTulis(self::kelompokSaatDrop($loan, true), $loan->getOriginal('drop_date'));
+      \App\Helpers\Gembok::segarkanSesudahTulis(self::kelompokSaatDrop($loan), $loan->drop_date);
     };
     static::created($segarkan);
     static::updated($segarkan);

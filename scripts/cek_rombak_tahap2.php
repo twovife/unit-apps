@@ -44,6 +44,37 @@
         $cek($g === $kantor[1] && $e === '', "bayar $seninLalu (Senin bulan lalu, sebelum pindah): diterima di kel 2 ($g $e)");
         [$g, $e] = $bayar($seninIni);
         $cek($g === 0 && $e === 'Hari Tidak Sama', "bayar $seninIni (Senin bulan ini): ditolak Hari Tidak Sama ($g $e)");
+
+        // [CEK-TASK-2] T2: kunci hari drop memakai kelompok PADA drop_date.
+        // Pinjaman kel 2 drop Oktober (hari itu terkunci kasir di kel 2) -> pindah ke kel 3; kunci kel 3 di tanggal itu dibuka supaya hanya kelompok lama yang menahan.
+        $Tutup = \App\Models\TransactionDailyClosing::class;
+        $kunciDi = fn($g, $tgl) => $Tutup::where('transaction_loan_officer_grouping_id', $g)->whereDate('date', $tgl)->whereNotNull('kasir_lock_at')->exists();
+        $drop = \App\Models\TransactionLoan::where('transaction_loan_officer_grouping_id', $kantor[1])
+            ->where('status', 'success')->whereNull('pay_off_date')
+            ->whereBetween('drop_date', [\Carbon\Carbon::parse($bulanIni)->subMonth()->toDateString(), \Carbon\Carbon::parse($bulanIni)->subDay()->toDateString()])
+            ->orderByDesc('drop_date')->get()
+            ->first(fn($l) => $kunciDi($kantor[1], $l->drop_date));
+        $tglDrop = \Carbon\Carbon::parse($drop->drop_date)->toDateString();
+        $M::catat($drop, $kantor[2], null, $bulanIni, 'cek tahap 2 T2', $user);
+        $Tutup::where('transaction_loan_officer_grouping_id', $kantor[2])->whereDate('date', $tglDrop)->update(['kasir_lock_at' => null, 'kasir_lock_user' => null]);
+        $drop = $drop->fresh();
+        $cek($M::kelompokPada($drop, $tglDrop) === $kantor[1] && $kunciDi($kantor[1], $tglDrop) && !$kunciDi($kantor[2], $tglDrop), "loan {$drop->id} drop $tglDrop: kel lama terkunci, kel baru terbuka");
+        $tolak = function (callable $f) {
+            DB::beginTransaction();
+            try { $f(); $e = ''; } catch (\Throwable $t) { $e = $t->getMessage(); }
+            DB::rollBack();
+            return str_contains($e, 'sudah dikunci kasir');
+        };
+        $cek($tolak(fn() => DB::table('transaction_loans')->where('id', $drop->id)->update(['nominal_drop' => $drop->nominal_drop + 1000])), 'trigger update: ubah nominal_drop ditolak (kunci kel lama)');
+        $cek($tolak(fn() => DB::table('transaction_loans')->where('id', $drop->id)->delete()), 'trigger delete: hapus ditolak (kunci kel lama)');
+        $mantri = \App\Models\User::findOrFail(1636);
+        auth()->login($mantri);
+        $hapus = \App\Helpers\AppHelper::canDeleteLoan($drop);
+        $cek(!\App\Helpers\Gembok::bolehBuka($mantri) && \App\Helpers\AppHelper::hariDropTerkunci($drop) && $hapus['status'] === false, "hariDropTerkunci & canDeleteLoan (mantri): terkunci ({$hapus['message']})");
+        auth()->login($user);
+        $ok = true;
+        try { $drop->update(['nominal_drop' => $drop->nominal_drop + 1000]); } catch (\Throwable $t) { $ok = $t->getMessage(); }
+        $cek($ok === true && !$kunciDi($kantor[1], $tglDrop), 'hook updating (superuser): kunci kel lama dibuka, ubah lolos (' . ($ok === true ? 'ok' : $ok) . ')');
     } finally {
         \Carbon\Carbon::setTestNow();
         DB::rollBack();

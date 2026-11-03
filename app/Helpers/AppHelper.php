@@ -562,7 +562,8 @@ class AppHelper
    */
   public static function hariDropTerkunci(\App\Models\TransactionLoan $loan): bool
   {
-    return self::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, $loan->drop_date);
+    // Pinjaman pindahan: kunci hari drop ada di kelompok saat drop (kelompok lama).
+    return self::tanggalTerkunci(\App\Helpers\Mutasi::kelompokPada($loan, $loan->drop_date), $loan->drop_date);
   }
 
   /**
@@ -625,8 +626,11 @@ class AppHelper
   public static function canDeleteLoan(\App\Models\TransactionLoan $transactionLoan): array
   {
     $user = auth()->user();
+    $kelompokDrop = $transactionLoan->drop_date
+      ? \App\Helpers\Mutasi::kelompokPada($transactionLoan, $transactionLoan->drop_date)
+      : $transactionLoan->transaction_loan_officer_grouping_id;
 
-    if ($pesan = self::tolakHapusLewatSeminggu($transactionLoan->transaction_loan_officer_grouping_id, $transactionLoan->drop_date, 'drop')) {
+    if ($pesan = self::tolakHapusLewatSeminggu($kelompokDrop, $transactionLoan->drop_date, 'drop')) {
       return ["status" => false, 'message' => $pesan];
     }
 
@@ -635,8 +639,8 @@ class AppHelper
     }
 
     // Drop sebelum migrasi = beku: buka kunci harian tidak menolong, sebut jalannya.
-    if (self::tanggalBeku($transactionLoan->transaction_loan_officer_grouping_id, $transactionLoan->drop_date)) {
-      $mulai = \App\Helpers\AgregasiScope::tanggalMulai(\App\Models\TransactionLoanOfficerGrouping::whereKey($transactionLoan->transaction_loan_officer_grouping_id)->value('branch_id'));
+    if (self::tanggalBeku($kelompokDrop, $transactionLoan->drop_date)) {
+      $mulai = \App\Helpers\AgregasiScope::tanggalMulai(\App\Models\TransactionLoanOfficerGrouping::whereKey($kelompokDrop)->value('branch_id'));
       return ["status" => false, 'message' => 'Data sebelum migrasi (' . Carbon::parse($mulai)->locale('id')->isoFormat('D MMM Y') . ') beku, buka kunci harian tidak berlaku. Hapus lewat menu Koreksi Data Beku (superuser).'];
     }
 
