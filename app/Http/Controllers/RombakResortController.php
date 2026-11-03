@@ -187,6 +187,9 @@ class RombakResortController extends Controller
     public function salin(TransactionResortRombak $rombak)
     {
         $this->pastikanSuperuser();
+        // Peta rombak diterapkan relatif ke susunan SEBELUM rombak itu; sesudah diterapkan,
+        // kolom pinjaman sudah susunan baru, jadi salinannya akan memetakan resort yang sudah tidak ada.
+        abort_unless($rombak->status === 'dibatalkan', 422, 'Hanya rombak yang sudah dibatalkan yang bisa disalin.');
 
         $baru = DB::transaction(function () use ($rombak) {
             $baru = TransactionResortRombak::create([

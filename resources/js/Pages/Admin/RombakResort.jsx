@@ -458,7 +458,7 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
               <Undo2 className="w-4 h-4 mr-1" /> {memuat ? "Membatalkan…" : "Batal rombak"}
             </Button>
           )}
-          {draf && draf.status !== "draf" && (
+          {draf?.status === "dibatalkan" && (
             <Button
               variant="outline"
               onClick={() => router.post(route("rombak_resort.salin", draf.id))}
