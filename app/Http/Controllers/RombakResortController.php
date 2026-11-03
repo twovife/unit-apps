@@ -66,9 +66,9 @@ class RombakResortController extends Controller
         $gIds = $kelompok->pluck('id')->all();
         $namaKel = $kelompok->pluck('kelompok', 'id');
 
-        // Saldo & pecahan: akhir bulan sebelum berlaku (sumber yang sama dengan rekap).
-        $sebelum = $bulan->copy()->subMonthNoOverflow();
-        $porto = HitungAgregat::portofolio($gIds, $sebelum->copy()->endOfMonth(), $sebelum->copy()->startOfMonth());
+        // Saldo & pecahan = saldo AWAL bulan berlaku M, seperti Rekap M menampilkannya:
+        // saldo per akhir M-1, ember relatif terhadap M (sudah naik kelas).
+        $porto = HitungAgregat::portofolio($gIds, $bulan->copy()->subDay(), $bulan);
 
         // Jumlah pinjaman per resort — kolom pinjaman sekarang (layar ini tentang susunan sekarang).
         $hitung = empty($gIds) ? collect() : DB::table('transaction_loans')

@@ -131,7 +131,7 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
           <h1 className="text-lg font-semibold text-slate-900">Rombak Resort</h1>
           <p className="max-w-3xl mt-1 text-sm text-slate-600">
             Kotak = resort tujuan (kelompok × hari), isinya blok resort asal. Seret blok ke kotak lain,
-            atau klik blok lalu klik kotak (Esc membatalkan). Saldo per akhir bulan sebelum berlaku. {satuanAngka()}
+            atau klik blok lalu klik kotak (Esc membatalkan). Saldo = saldo awal bulan berlaku (seperti Rekap bulan itu). {satuanAngka()}
           </p>
         </div>
 
