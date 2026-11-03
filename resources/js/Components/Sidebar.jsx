@@ -510,6 +510,12 @@ export default function AppSidebar({ ...props }) {
                   active: route().current('kalender.index'),
                 },
                 {
+                  id: 9,
+                  title: 'Rombak Resort',
+                  link: route('rombak_resort.index'),
+                  active: route().current('rombak_resort.index'),
+                },
+                {
                   id: 7,
                   title: 'Ubah Data Nasabah',
                   link: route('ubah_nik.index'),
