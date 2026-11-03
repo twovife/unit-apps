@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthScope;
-use App\Helpers\Ember;
-use App\Helpers\HitungAgregat;
+use App\Helpers\RombakResort;
 use App\Models\TransactionResortRombak;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -15,14 +14,12 @@ use Inertia\Inertia;
 
 /**
  * Menu Rombak Resort (superuser): penyusun peta resort asal -> resort tujuan
- * per kantor, disimpan sebagai draf. Tahap ini TIDAK menerapkan apa pun —
- * pinjaman tidak disentuh; Submit/Preview & Terapkan menyusul.
+ * per kantor, disimpan sebagai draf; pratinjau dihitung server (RombakResort).
+ * Terapkan menyusul.
  * Rancangan: .agents/rombak_resort.md §5–§6.
  */
 class RombakResortController extends Controller
 {
-    private const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
-
     private function pastikanSuperuser(): void
     {
         abort_unless(auth()->user()->hasRole('superuser'), 403, 'Rombak resort hanya untuk superuser.');
@@ -63,50 +60,7 @@ class RombakResortController extends Controller
 
         $kelompok = DB::table('transaction_loan_officer_groupings')->where('branch_id', $branchId)
             ->orderBy('kelompok')->get(['id', 'kelompok']);
-        $gIds = $kelompok->pluck('id')->all();
-        $namaKel = $kelompok->pluck('kelompok', 'id');
-
-        // Saldo & pecahan = saldo AWAL bulan berlaku M, seperti Rekap M menampilkannya:
-        // saldo per akhir M-1, ember relatif terhadap M (sudah naik kelas).
-        $porto = HitungAgregat::portofolio($gIds, $bulan->copy()->subDay(), $bulan);
-
-        // Jumlah pinjaman per resort — kolom pinjaman sekarang (layar ini tentang susunan sekarang).
-        $hitung = empty($gIds) ? collect() : DB::table('transaction_loans')
-            ->whereIn('transaction_loan_officer_grouping_id', $gIds)
-            ->whereIn(DB::raw('LOWER(hari)'), self::HARI)
-            ->groupBy('transaction_loan_officer_grouping_id', DB::raw('LOWER(hari)'))
-            ->get([
-                'transaction_loan_officer_grouping_id AS g',
-                DB::raw('LOWER(hari) AS hari'),
-                DB::raw("SUM(status = 'success' AND pay_off_date IS NULL) AS nasabah"),
-                DB::raw("SUM(status = 'open') AS open"),
-                DB::raw("SUM(status = 'acc') AS acc"),
-            ])
-            ->keyBy(fn($r) => $r->g . '|' . $r->hari);
-
-        $blok = [];
-        foreach ($gIds as $g) {
-            foreach (self::HARI as $h) {
-                $k = "$g|$h";
-                $e = $porto[$k] ?? [];
-                $c = $hitung[$k] ?? null;
-                $b = [
-                    'grouping_id' => $g,
-                    'kelompok' => $namaKel[$g],
-                    'hari' => $h,
-                    'nasabah' => (int) ($c->nasabah ?? 0),
-                    'saldo' => array_sum($e),
-                    'open' => (int) ($c->open ?? 0),
-                    'acc' => (int) ($c->acc ?? 0),
-                ];
-                foreach (Ember::KATEGORI as $kat => $ember) {
-                    $b[$kat] = array_sum(array_intersect_key($e, array_flip($ember)));
-                }
-                if ($b['nasabah'] || $b['saldo'] || $b['open'] || $b['acc']) {
-                    $blok[] = $b;
-                }
-            }
-        }
+        $blok = RombakResort::blok($branchId, $bulan);
 
         return Inertia::render('Admin/RombakResort', [
             'kantor' => $kantor,
@@ -152,8 +106,8 @@ class RombakResortController extends Controller
             'peta.*.dari_grouping_id' => ['required', 'integer', Rule::in($gIds)],
             // Tujuan NULL (keduanya) = blok diparkir di stash; hanya satu yang NULL ditolak.
             'peta.*.ke_grouping_id' => ['nullable', 'required_with:peta.*.ke_hari', 'integer', Rule::in($gIds)],
-            'peta.*.dari_hari' => ['required', Rule::in(self::HARI)],
-            'peta.*.ke_hari' => ['nullable', 'required_with:peta.*.ke_grouping_id', Rule::in(self::HARI)],
+            'peta.*.dari_hari' => ['required', Rule::in(RombakResort::HARI)],
+            'peta.*.ke_hari' => ['nullable', 'required_with:peta.*.ke_grouping_id', Rule::in(RombakResort::HARI)],
         ]);
 
         $peta = collect($val['peta']);
@@ -199,5 +153,13 @@ class RombakResortController extends Controller
         $rombak->delete(); // peta ikut terhapus (FK cascade)
 
         return back()->with('message', 'Draf dihapus.');
+    }
+
+    /** Pratinjau draf (hanya baca), JSON untuk dialog. */
+    public function pratinjau(TransactionResortRombak $rombak)
+    {
+        $this->pastikanSuperuser();
+
+        return response()->json(RombakResort::pratinjau($rombak));
     }
 }

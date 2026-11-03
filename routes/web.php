@@ -304,12 +304,13 @@ Route::middleware('auth')->group(function () {
       Route::put('/{nasabah}', 'simpan')->whereNumber('nasabah')->name('simpan');
     });
 
-  // Rombak resort: penyusun peta resort per kantor, draf saja (superuser, dicek di controller).
+  // Rombak resort: penyusun peta resort per kantor, draf + pratinjau (superuser, dicek di controller).
   Route::controller(\App\Http\Controllers\RombakResortController::class)
     ->prefix('rombak-resort')->name('rombak_resort.')->group(function () {
       Route::get('/', 'index')->name('index');
       Route::post('/', 'simpan')->name('simpan');
       Route::delete('/{rombak}', 'hapus')->whereNumber('rombak')->name('hapus');
+      Route::post('/{rombak}/pratinjau', 'pratinjau')->whereNumber('rombak')->name('pratinjau');
     });
 
   // Ganti nasabah per pinjaman lewat NIK (superuser, dicek di controller).

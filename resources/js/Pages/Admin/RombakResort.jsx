@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
+import axios from "axios";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/ui/dialog";
 import { Button } from "@/shadcn/ui/button";
 import { Input } from "@/shadcn/ui/input";
 import PilihBulan from "@/Components/shadcn/PilihBulan";
 import { angka, satuanAngka, useModeRibuan } from "@/lib/modeAngka";
 import { rp } from "@/lib/rupiah";
 import { WARNA } from "@/Pages/Kasir/Rekap/Components/TableRekapKasir";
-import { AlertTriangle, ArrowDown, ArrowUp, Archive, RotateCcw, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Archive, Eye, RotateCcw, Save, Trash2 } from "lucide-react";
 
-// Rancangan: .agents/rombak_resort.md §6. Tahap ini hanya draf — Submit/Preview & Terapkan belum ada.
+// Rancangan: .agents/rombak_resort.md §6. Draf + pratinjau server; Terapkan menyusul.
 const HARI = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"];
 const H3 = { senin: "Sen", selasa: "Sel", rabu: "Rab", kamis: "Kam", jumat: "Jum", sabtu: "Sab" };
 const NAMA_HARI = { senin: "Senin", selasa: "Selasa", rabu: "Rabu", kamis: "Kamis", jumat: "Jumat", sabtu: "Sabtu" };
@@ -114,12 +116,131 @@ const Blok = ({ b, pindah, terpilih, onPilih }) => (
   </div>
 );
 
+const Bagian = ({ judul, children }) => (
+  <div className="space-y-1">
+    <div className="text-sm font-semibold text-slate-800">{judul}</div>
+    {children}
+  </div>
+);
+const TH = "px-2 py-1 font-medium text-left";
+const TD = "px-2 py-1";
+
+// Dialog pratinjau: semua angka dihitung server dari data asli (RombakResort::pratinjau).
+const Pratinjau = ({ data, onTutup }) => (
+  <Dialog open={!!data} onOpenChange={(o) => !o && onTutup()}>
+    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Pratinjau rombak · berlaku {data?.berlaku_bulan.slice(0, 7)}</DialogTitle>
+      </DialogHeader>
+      {data && (
+        <div className="space-y-4 text-xs tabular-nums">
+          {data.galat.length > 0 ? (
+            <div className="p-2 text-sm text-red-700 border border-red-200 rounded bg-red-50">
+              <div className="font-semibold">Belum bisa diterapkan:</div>
+              {data.galat.map((g, i) => <div key={i}>• {g}</div>)}
+            </div>
+          ) : (
+            <div className="p-2 text-sm border rounded text-emerald-800 border-emerald-200 bg-emerald-50">Tidak ada galat.</div>
+          )}
+
+          <Bagian judul={`Kotak sesudah rombak (saldo awal ${data.berlaku_bulan.slice(0, 7)})`}>
+            <table className="w-full">
+              <thead className="bg-slate-100">
+                <tr>
+                  <th className={TH}>Resort</th><th className={TH}>Asal</th>
+                  {["Nasabah", "Saldo", "Lancar", "CM", "MB", "ML"].map((l) => <th key={l} className={`${TH} text-right`}>{l}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {data.kotak.map((k) => (
+                  <tr key={k.resort} className={`border-t ${k.berubah ? "bg-amber-50" : ""}`}>
+                    <td className={`${TD} font-medium`}>{k.label}</td>
+                    <td className={TD}>{k.asal.join(" + ")}</td>
+                    <td className={`${TD} text-right`}>{rp(k.nasabah)}</td>
+                    {["saldo", "lancar", "cm", "mb", "ml"].map((f) => <td key={f} className={`${TD} text-right`}>{rb(k[f])}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="font-bold border-t">
+                  <td className={TD} colSpan={2}>Total</td>
+                  <td className={`${TD} text-right`}>{rp(jumlah(data.kotak, "nasabah"))}</td>
+                  {["saldo", "lancar", "cm", "mb", "ml"].map((f) => <td key={f} className={`${TD} text-right`}>{rb(jumlah(data.kotak, f))}</td>)}
+                </tr>
+              </tfoot>
+            </table>
+          </Bagian>
+
+          <Bagian judul={`Pinjaman pindah: ${rp(jumlah(data.pindah, "aktif"))} aktif · ${jumlah(data.pindah, "open")} open · ${jumlah(data.pindah, "acc")} acc`}>
+            <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+              {data.pindah.map((p) => (
+                <div key={p.resort}>{p.label} → {p.ke}: {p.aktif} aktif{p.open ? ` · ${p.open} open` : ""}{p.acc ? ` · ${p.acc} acc` : ""}</div>
+              ))}
+            </div>
+            <div className="text-slate-600">
+              Transaksi bulan ini ikut pindah: {rp(data.angsuran_m.jumlah)} angsuran ({rb(data.angsuran_m.nominal)}) ·{" "}
+              {data.angsuran_m.pemutihan_jumlah} pemutihan ({rb(data.angsuran_m.pemutihan_nominal)}) · {data.angsuran_m.penyesuaian_jumlah} penyesuaian saldo
+            </div>
+          </Bagian>
+
+          <Bagian judul={`Hari terkunci yang akan dibuka: ${data.hari_dibuka.length}`}>
+            {data.hari_dibuka.length === 0 ? (
+              <div className="text-slate-500">Tidak ada.</div>
+            ) : (
+              <div>{data.hari_dibuka.map((h) => `K${h.kelompok} ${h.tanggal}`).join(" · ")}</div>
+            )}
+          </Bagian>
+
+          <Bagian judul="Target hari tagih pertama (recount, resort yang berubah)">
+            <table className="w-full">
+              <thead className="bg-slate-100">
+                <tr><th className={TH}>Resort</th><th className={TH}>Tanggal</th><th className={`${TH} text-right`}>Lama</th><th className={`${TH} text-right`}>Baru</th></tr>
+              </thead>
+              <tbody>
+                {data.target.map((t) => (
+                  <tr key={t.resort} className="border-t">
+                    <td className={TD}>{t.label}</td>
+                    <td className={TD}>{t.tanggal_pertama ?? "—"}</td>
+                    <td className={`${TD} text-right`}>{t.lama === null ? "—" : rb(t.lama)}</td>
+                    <td className={`${TD} text-right font-semibold`}>
+                      {t.lama !== null && <Panah ini={t.baru} dulu={t.lama} />}
+                      {rb(t.baru)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Bagian>
+
+          <Bagian judul={`MACET LAMA dilebur: ${data.macet_lama.length} resort`}>
+            {data.macet_lama.length === 0 && <div className="text-slate-500">Tidak ada resort dengan MACET LAMA ganda.</div>}
+            {data.macet_lama.map((m) => (
+              <div key={m.resort}>
+                <b>{m.label}</b>: pertahankan #{m.pertahankan.id} (asal {m.pertahankan.asal}, {rb(m.pertahankan.saldo)}) ← lebur{" "}
+                {m.lebur.map((l) => `#${l.id} (asal ${l.asal}, ${rb(l.saldo)})`).join(", ")} = {rb(m.saldo)}
+              </div>
+            ))}
+          </Bagian>
+
+          <Bagian judul={`Rekening: ${rp(data.rekening.ditimpa)} ditimpa ke resort tujuan · ${data.rekening.bentrok.length} bentrok (tidak diubah)`}>
+            {data.rekening.bentrok.map((b) => (
+              <div key={b.id} className="text-amber-800">#{b.id} {b.nama} → {b.ke}: {b.bentrok}</div>
+            ))}
+          </Bagian>
+        </div>
+      )}
+    </DialogContent>
+  </Dialog>
+);
+
 const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }) => {
   useModeRibuan();
   const { errors } = usePage().props;
   const [letak, setLetak] = useState(() => letakAwal(draf));
   const [catatan, setCatatan] = useState(draf?.catatan ?? "");
   const [pilih, setPilih] = useState(null);
+  const [pratinjau, setPratinjau] = useState(null);
+  const [memuat, setMemuat] = useState(false);
   const bisaSimpan = !draf || draf.status === "draf";
 
   useEffect(() => {
@@ -170,23 +291,36 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
     (k) => blok.some((b) => b.grouping_id === k.id) && HARI.every((h) => !isiKotak[kunci(k.id, h)]?.length),
   );
 
-  const simpan = () =>
+  const petaKirim = berubah.map((b) => {
+    if (di(b) === STASH) return { dari_grouping_id: b.grouping_id, dari_hari: b.hari, ke_grouping_id: null, ke_hari: null };
+    const [g, h] = di(b).split("|");
+    return { dari_grouping_id: b.grouping_id, dari_hari: b.hari, ke_grouping_id: Number(g), ke_hari: h };
+  });
+  const urut = (ps) => JSON.stringify(ps.map((p) => [p.dari_grouping_id, p.dari_hari, p.ke_grouping_id, p.ke_hari]).sort());
+  const tersimpan =
+    draf && draf.berlaku_bulan.slice(0, 7) === bulan && (draf.catatan ?? "") === catatan && urut(draf.peta) === urut(petaKirim);
+
+  const simpan = (onSuccess) =>
     router.post(
       route("rombak_resort.simpan"),
-      {
-        id: draf?.id ?? null,
-        branch_id,
-        berlaku_bulan: `${bulan}-01`,
-        catatan: catatan || null,
-        peta: berubah.map((b) => {
-          if (di(b) === STASH) return { dari_grouping_id: b.grouping_id, dari_hari: b.hari, ke_grouping_id: null, ke_hari: null };
-          const [g, h] = di(b).split("|");
-          return { dari_grouping_id: b.grouping_id, dari_hari: b.hari, ke_grouping_id: Number(g), ke_hari: h };
-        }),
-      },
+      { id: draf?.id ?? null, branch_id, berlaku_bulan: `${bulan}-01`, catatan: catatan || null, peta: petaKirim },
       // Gagal validasi -> susunan di layar tetap; berhasil -> dimuat ulang dari draf tersimpan.
-      { preserveScroll: true, preserveState: "errors" },
+      { preserveScroll: true, preserveState: "errors", onSuccess },
     );
+
+  // Submit / Preview: simpan draf dulu kalau berubah, lalu minta pratinjau server.
+  const lihat = async (id) => {
+    setMemuat(true);
+    try {
+      const { data } = await axios.post(route("rombak_resort.pratinjau", id));
+      setPratinjau(data);
+    } catch (e) {
+      window.alert(e.response?.data?.message ?? "Pratinjau gagal dimuat.");
+    } finally {
+      setMemuat(false);
+    }
+  };
+  const submit = () => (tersimpan ? lihat(draf.id) : simpan((page) => page.props.draf?.id && lihat(page.props.draf.id)));
 
   const hapus = (r) => {
     if (!window.confirm(`Hapus draf #${r.id} (berlaku ${r.berlaku_bulan})?`)) return;
@@ -196,6 +330,7 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
   return (
     <>
       <Head title="Rombak Resort" />
+      <Pratinjau data={pratinjau} onTutup={() => setPratinjau(null)} />
 
       <div className="p-4 space-y-4">
         <div>
@@ -232,10 +367,17 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
             Catatan
             <Input className="mt-1" maxLength={255} value={catatan} onChange={(e) => setCatatan(e.target.value)} />
           </label>
-          <Button onClick={simpan} disabled={!bisaSimpan}>
+          <Button onClick={() => simpan()} disabled={!bisaSimpan}>
             <Save className="w-4 h-4 mr-1" /> Simpan draf{draf ? ` #${draf.id}` : ""}
           </Button>
-          <Button variant="outline" disabled title={alasanTutup}>Submit / Preview</Button>
+          <Button
+            variant="outline"
+            onClick={submit}
+            disabled={!bisaSimpan || stash.length > 0 || memuat}
+            title={stash.length ? alasanTutup : tersimpan ? "Pratinjau draf tersimpan" : "Simpan draf lalu pratinjau"}
+          >
+            <Eye className="w-4 h-4 mr-1" /> {memuat ? "Menghitung…" : "Submit / Preview"}
+          </Button>
           <Button variant="outline" disabled title={alasanTutup}>Terapkan — belum tersedia</Button>
           {stash.length > 0 && <span className="text-xs text-amber-700">Masih ada {stash.length} blok di stash</span>}
         </div>

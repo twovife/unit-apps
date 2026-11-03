@@ -75,6 +75,44 @@
         $ok = true;
         try { $drop->update(['nominal_drop' => $drop->nominal_drop + 1000]); } catch (\Throwable $t) { $ok = $t->getMessage(); }
         $cek($ok === true && !$kunciDi($kantor[1], $tglDrop), 'hook updating (superuser): kunci kel lama dibuka, ubah lolos (' . ($ok === true ? 'ok' : $ok) . ')');
+        // [CEK-TASK-3] Pratinjau draf #2 (Babat 1, berlaku bulan ini) dihitung server, hanya baca.
+        $RR = \App\Helpers\RombakResort::class;
+        $draf2 = \App\Models\TransactionResortRombak::with('peta')->findOrFail(2);
+        $p = app(\App\Http\Controllers\RombakResortController::class)->pratinjau($draf2)->getData(true);
+        $cek($p['galat'] === [], 'pratinjau draf #2: galat kosong (' . implode(' | ', $p['galat']) . ')');
+        $porto = \App\Helpers\HitungAgregat::portofolio($kantor, \Carbon\Carbon::parse($bulanIni)->subDay(), $bulanIni);
+        $saldoKantor = array_sum(array_map('array_sum', $porto));
+        $nsbKantor = DB::table('transaction_loans')->whereIn('transaction_loan_officer_grouping_id', $kantor)->where('status', 'success')->whereNull('pay_off_date')->whereIn(DB::raw('LOWER(hari)'), $RR::HARI)->count();
+        $cek(array_sum(array_column($p['kotak'], 'saldo')) === $saldoKantor && array_sum(array_column($p['kotak'], 'nasabah')) === $nsbKantor, 'total kotak = portofolio kantor (' . array_sum(array_column($p['kotak'], 'saldo')) . " vs $saldoKantor, nsb $nsbKantor)");
+        $cek(array_sum(array_map(fn($k) => $k['lancar'] + $k['cm'] + $k['mb'] + $k['ml'], $p['kotak'])) === $saldoKantor, 'pecahan kotak menjumlah ke saldo');
+        $ids = implode(',', $kantor);
+        $mlGanda = DB::select("SELECT COUNT(*) n, COALESCE(SUM(x.n - 1), 0) lebur FROM (
+            SELECT COALESCE(p.ke_grouping_id, l.transaction_loan_officer_grouping_id) g, COALESCE(p.ke_hari, LOWER(l.hari)) h, COUNT(*) n
+            FROM transaction_loans l
+            JOIN transaction_manage_customers m ON m.id = l.transaction_manage_customer_id
+            JOIN transaction_customers c ON c.id = m.transaction_customer_id AND c.nik = 'ML00000000000001'
+            LEFT JOIN transaction_resort_rombak_peta p ON p.rombak_id = 2 AND p.dari_grouping_id = l.transaction_loan_officer_grouping_id AND p.dari_hari = LOWER(l.hari)
+            WHERE l.transaction_loan_officer_grouping_id IN ($ids) AND l.status = 'success' AND l.pay_off_date IS NULL
+            GROUP BY g, h HAVING n > 1 AND (g, h) IN (SELECT ke_grouping_id, ke_hari FROM transaction_resort_rombak_peta WHERE rombak_id = 2)) x")[0];
+        $leburP = array_sum(array_map(fn($m) => count($m['lebur']), $p['macet_lama']));
+        $cek(count($p['macet_lama']) === (int) $mlGanda->n && $leburP === (int) $mlGanda->lebur, 'MACET LAMA ganda: ' . count($p['macet_lama']) . " resort, $leburP dilebur (kueri: {$mlGanda->n}, {$mlGanda->lebur})");
+        $cek(collect($p['macet_lama'])->every(fn($m) => collect($m['lebur'])->every(fn($l) => $l['id'] > $m['pertahankan']['id'])), 'MACET LAMA: yang dipertahankan id terkecil');
+        $pindahSql = DB::table('transaction_loans as l')->join('transaction_resort_rombak_peta as p', fn($j) => $j->on('p.dari_grouping_id', '=', 'l.transaction_loan_officer_grouping_id')->on('p.dari_hari', '=', DB::raw('LOWER(l.hari)')))
+            ->where('p.rombak_id', 2)->where(fn($q) => $q->whereIn('l.status', ['open', 'acc'])->orWhere(fn($q) => $q->where('l.status', 'success')->where(fn($q) => $q->whereNull('l.pay_off_date')->orWhere('l.pay_off_date', '>=', $bulanIni))))->count();
+        $cek(array_sum(array_map(fn($x) => $x['aktif'] + $x['open'] + $x['acc'], $p['pindah'])) === $pindahSql, "pinjaman pindah = kueri ($pindahSql)");
+        $tutup = \App\Models\TransactionDailyClosing::firstOrCreate(['transaction_loan_officer_grouping_id' => $kantor[0], 'date' => $bulanIni]);
+        DB::table('transaction_daily_closings')->where('id', $tutup->id)->update(['kasir_lock_at' => now()]);
+        $cek(collect($RR::pratinjau($draf2->fresh())['hari_dibuka'])->contains(fn($h) => $h['grouping_id'] === $kantor[0] && $h['tanggal'] === $bulanIni), "hari terkunci $bulanIni kel 1 masuk hari_dibuka");
+        $stash = \App\Models\TransactionResortRombak::create(['branch_id' => 21, 'berlaku_bulan' => $bulanIni, 'status' => 'draf', 'dibuat_oleh' => $user->employee->id]);
+        $stash->peta()->createMany($draf2->peta->map(fn($x, $i) => ['dari_grouping_id' => $x->dari_grouping_id, 'dari_hari' => $x->dari_hari, 'ke_grouping_id' => $i ? $x->ke_grouping_id : null, 'ke_hari' => $i ? $x->ke_hari : null])->all());
+        $g = $RR::periksa($stash->fresh());
+        $cek(count($g) === 1 && str_contains($g[0], 'stash'), 'draf dengan stash: galat stash (' . implode(' | ', $g) . ')');
+        $stash->update(['berlaku_bulan' => \Carbon\Carbon::parse($bulanIni)->subMonth()->toDateString()]);
+        $draf2->update(['status' => 'diterapkan']);
+        $g = $RR::periksa($stash->fresh());
+        $cek(collect($g)->contains(fn($x) => str_contains($x, 'bukan bulan berjalan')) && !collect($g)->contains(fn($x) => str_contains($x, 'diterapkan')), 'bulan lalu: galat bulan berjalan (' . count($g) . ' galat)');
+        $stash->update(['berlaku_bulan' => $bulanIni]);
+        $cek(collect($RR::periksa($stash->fresh()))->contains(fn($x) => str_contains($x, 'rombak #2 yang diterapkan')), 'rombak lain diterapkan di bulan sama: galat');
     } finally {
         \Carbon\Carbon::setTestNow();
         DB::rollBack();
