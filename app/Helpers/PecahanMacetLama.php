@@ -61,6 +61,12 @@ class PecahanMacetLama
         if ($drop->dayOfWeek !== AppHelper::getNumbDays($ml->hari)) {
             throw new \RuntimeException("Tanggal drop harus hari {$ml->hari}, sama dengan hari tagih.");
         }
+        // Saldo MACET LAMA ada di ember ML; pecahan yang drop-nya lebih baru jatuh di ember lain
+        // dan menggeser CM/MB/ML bulanan -> pengaman di bawah membatalkan. Tolak di depan dengan alasan jelas.
+        if (Ember::dari($drop, $mulai->copy()->startOfMonth()) !== Ember::ML) {
+            $batas = $mulai->copy()->startOfMonth()->subMonthsNoOverflow(Ember::SELISIH_ML)->endOfMonth();
+            throw new \RuntimeException('Tanggal drop terlalu baru untuk macet lama: paling lambat ' . $batas->format('d-m-Y') . ' (harus sudah ML di bulan migrasi).');
+        }
 
         return DB::transaction(function () use ($ml, $v, $user, $grouping, $berlaku, $hitung, $nominal, $drop, $tanggalBayar) {
             $sebelum = $hitung();
