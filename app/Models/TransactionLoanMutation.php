@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Mutasi nasabah — pinjaman pindah kelompok. Lihat .agents/agregasi_rekap.md §7b.
+ * Mutasi nasabah — pinjaman pindah resort (kelompok, hari). Lihat .agents/rombak_resort.md.
  *
- * Satu baris = satu pinjaman pindah, berlaku sejak `berlaku_bulan` (tanggal 1)
- * sampai `berlaku_sampai` (diisi saat mutasi berikutnya). Ember dihitung dari
- * drop_date pinjaman, bukan disimpan di sini.
+ * Satu baris = satu perpindahan, berlaku mulai `berlaku_bulan` (tanggal 1).
+ * Resort pada tanggal X = asal mutasi paling awal yang berlaku sesudah X, kalau
+ * tidak ada kolom pinjaman (App\Helpers\Mutasi). Kolom `berlaku_sampai` tidak
+ * dipakai. Ember dihitung dari drop_date pinjaman, bukan disimpan di sini.
  */
 class TransactionLoanMutation extends Model
 {

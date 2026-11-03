@@ -252,7 +252,8 @@ class TransactionLoan extends Model
         }
 
         $previousLoan->loan_instalment()->create([
-          'transaction_loan_officer_grouping_id' => $previousLoan->transaction_loan_officer_grouping_id,
+          // Resort pinjaman lama PADA tanggal drop pengganti (drop mundur sebelum rombak).
+          'transaction_loan_officer_grouping_id' => \App\Helpers\Mutasi::kelompokPada($previousLoan, $transactionLoan->drop_date),
           'settled_by_loan_id' => $transactionLoan->id,
           'transaction_date' => $transactionLoan->drop_date,
           'nominal' => $saldo,

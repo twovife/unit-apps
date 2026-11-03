@@ -46,12 +46,21 @@ class VerifikasiAgregat extends Command
 
         $bedaTerkunci = 0;
         $bedaBulanan = 0;
+        $bedaLain = 0;
 
         foreach ($branches as $branch) {
             $h = PemeriksaAgregat::periksa($branch->id, $periode);
 
             $bedaTerkunci += $h['beda_terkunci'];
             $bedaBulanan += $h['beda_bulanan'];
+            $bedaLain += $h['beda_sinambung'] + $h['beda_kelompok'];
+
+            foreach ($h['sinambung'] as $s) {
+                $this->line(sprintf('  %-20s <fg=red>awal %s %s != akhir bulan lalu %s</>', $branch->unit, $s['resort'], number_format($s['awal']), number_format($s['akhir_lalu'])));
+            }
+            if ($h['beda_kelompok']) {
+                $this->line(sprintf('  %-20s <fg=red>baris pinjaman rombak di kelompok salah: %s</>', $branch->unit, json_encode($h['kelompok'])));
+            }
 
             if ($h['baris'] === 0) {
                 $this->line("  {$branch->unit}: belum ada baris harian.");
@@ -81,7 +90,7 @@ class VerifikasiAgregat extends Command
 
         $this->newLine();
 
-        if ($bedaTerkunci === 0 && $bedaBulanan === 0) {
+        if ($bedaTerkunci === 0 && $bedaBulanan === 0 && $bedaLain === 0) {
             $this->info('BERSIH — seluruh angka TERKUNCI cocok dengan sumbernya.');
             $this->line('Baris yang belum terkunci tidak dihitung: angkanya memang belum ditetapkan.');
             return self::SUCCESS;
@@ -93,6 +102,10 @@ class VerifikasiAgregat extends Command
 
         if ($bedaBulanan > 0) {
             $this->warn("{$bedaBulanan} kolom BULANAN tidak sama dengan jumlah hariannya.");
+        }
+
+        if ($bedaLain > 0) {
+            $this->warn("{$bedaLain} temuan kesinambungan saldo / kelompok baris rombak (lihat di atas).");
         }
 
         $this->line('Perintah ini tidak memperbaiki apa pun; memperbaiki diam-diam menghapus buktinya.');

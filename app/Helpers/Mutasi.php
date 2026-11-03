@@ -202,6 +202,9 @@ class Mutasi
             throw new \RuntimeException('Mutasi antar kantor belum didukung — tujuan harus di kantor yang sama.');
         }
 
+        if (!$loan->hari) {
+            throw new \RuntimeException('Pinjaman belum punya hari tagih.');
+        }
         $dari = (int) $loan->transaction_loan_officer_grouping_id;
         $dariHari = strtolower($loan->hari);
         $keHariBersih = $keHari ? strtolower($keHari) : $dariHari;

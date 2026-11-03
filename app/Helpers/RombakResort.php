@@ -376,7 +376,7 @@ class RombakResort
      * hook angsuran/pemutihan hanya membuka kunci otomatis (sudah dibuka
      * eksplisit di langkah 3), menyegarkan rekap alur lama (kantor ini alur
      * baru) dan menghitung pelunasan (saldo tidak berubah karena pindah
-     * kelompok) - semuanya tidak perlu, dan closing dihitung ulang di langkah 8.
+     * kelompok) - semuanya tidak perlu, dan closing dihitung ulang di langkah 9.
      *
      * @throws \RuntimeException
      */
@@ -421,13 +421,18 @@ class RombakResort
 
             // 5. Baris bulan M ikut kelompok baru pinjamannya (kolom sudah ditimpa di langkah 4).
             // jumlah = semua baris M pinjaman pindah (= pratinjau); ganti_kelompok = yang kelompoknya berubah (pindah hari saja tidak).
+            // dipindah = {id baris: kelompok lama} untuk batal; id_maks = baris sesudahnya lahir sesudah terapkan.
             $pindahBaris = function (string $tabel, string $kolom) use ($ids, $m) {
                 $q = fn() => DB::table("$tabel as x")->join('transaction_loans as l', 'l.id', '=', 'x.transaction_loan_id')
                     ->whereIn('x.transaction_loan_id', $ids)->where("x.$kolom", '>=', $m);
-                return !$ids ? ['jumlah' => 0, 'ganti_kelompok' => 0] : [
+                $dipindah = !$ids ? [] : $q()->whereColumn('x.transaction_loan_officer_grouping_id', '<>', 'l.transaction_loan_officer_grouping_id')
+                    ->pluck('x.transaction_loan_officer_grouping_id', 'x.id')->map(fn($g) => (int) $g)->all();
+                return !$ids ? ['jumlah' => 0, 'ganti_kelompok' => 0, 'dipindah' => [], 'id_maks' => (int) DB::table($tabel)->max('id')] : [
                     'jumlah' => $q()->count(),
                     'ganti_kelompok' => $q()->whereColumn('x.transaction_loan_officer_grouping_id', '<>', 'l.transaction_loan_officer_grouping_id')
                         ->update(['x.transaction_loan_officer_grouping_id' => DB::raw('l.transaction_loan_officer_grouping_id')]),
+                    'dipindah' => $dipindah,
+                    'id_maks' => (int) DB::table($tabel)->max('id'),
                 ];
             };
             $baris = [
@@ -458,14 +463,16 @@ class RombakResort
             foreach ($macet as $x) {
                 $g = (int) explode('|', $x['resort'])[0];
                 $ke = TransactionLoan::findOrFail($x['pertahankan']['id']);
+                $lama = fn($loan) => $loan->only(['pay_off_date', 'out_date', 'transaction_out_reasons_id']);
+                // Nilai sebelum lebur pertama (lebur berikutnya melihat ke yang sudah diubah). Hanya jejak: batal menghitung ulang.
+                $lamaKe = $lama($ke);
                 foreach ($x['lebur'] as $l) {
                     if ($l['saldo'] <= 0) {
                         continue;
                     }
                     $dari = TransactionLoan::findOrFail($l['id']);
-                    $lama = fn($loan) => $loan->only(['pay_off_date', 'out_date', 'transaction_out_reasons_id']);
                     $catat = ['resort' => $x['resort'], 'dari' => $dari->id, 'ke' => $ke->id, 'nominal' => $l['saldo'],
-                        'lama_dari' => $lama($dari), 'lama_ke' => $lama($ke)];
+                        'lama_dari' => $lama($dari), 'lama_ke' => $lamaKe];
                     foreach ([[$dari, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, 'adj_dari', "oper ke #{$ke->id}"],
                               [$ke, TransactionSaldoAdjustment::JENIS_KURANG_INPUT, 'adj_ke', "oper dari #{$dari->id}"]] as [$loan, $jenis, $kolom, $ket]) {
                         $catat[$kolom] = TransactionSaldoAdjustment::create([
@@ -483,10 +490,9 @@ class RombakResort
                 }
             }
 
-            // 8. Closing harian & bulanan M (K13: saldo awal M langsung susunan baru).
-            [$harian, $bulanan] = self::segarkanClosing($gIds, $M, ['employee_id' => $employee, 'sumber' => $alasan, 'paksa_awal' => true]);
-
-            // 9. Target recount (K14) di hari tagih pertama + rantai yang sudah lahir sesudahnya di bulan M.
+            // 8. Target recount (K14) di hari tagih pertama + rantai yang sudah lahir sesudahnya (boleh sampai M+1).
+            // Sebelum closing: baris hari pertama yang baru dibuat ikut diisi angkanya di langkah 9.
+            // Rantai berhenti di baris yang ditetapkan manusia (manual/koreksi) atau recount lain.
             $targetLama = [];
             foreach ($target as $t) {
                 if (!$t['tanggal_pertama']) {
@@ -496,10 +502,10 @@ class RombakResort
                 $catat = $t + ['dibuat' => $row->wasRecentlyCreated, 'target_on' => $row->target_on ? Carbon::parse($row->target_on)->toDateString() : null,
                     'target_source' => $row->target_source, 'rantai' => []];
                 $row->update(['target' => $t['baru'], 'target_source' => 'recount']);
-                for ($tgl = $t['tanggal_pertama'], $nilai = $t['baru'], $prev = $row; ($depan = TargetMingguan::tanggalDepan($tgl)) && Carbon::parse($depan)->isSameMonth($M);) {
+                for ($tgl = $t['tanggal_pertama'], $nilai = $t['baru'], $prev = $row; $depan = TargetMingguan::tanggalDepan($tgl);) {
                     $next = TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $t['grouping_id'])->whereDate('date', $depan)->first();
                     if (!$next || ($next->target_on ? Carbon::parse($next->target_on)->toDateString() : null) !== $tgl
-                        || in_array($next->target_source, TargetMingguan::SUMBER_PUTUS, true)) {
+                        || in_array($next->target_source, [...TargetMingguan::SUMBER_PUTUS, 'manual'], true)) {
                         break;
                     }
                     $baru = TargetMingguan::hitung($nilai, (int) (HitungAgregat::harian($t['grouping_id'], $tgl)['drop'] ?? 0), (int) $prev->keluar);
@@ -509,6 +515,9 @@ class RombakResort
                 }
                 $targetLama[] = $catat;
             }
+
+            // 9. Closing harian & bulanan M (K13: saldo awal M langsung susunan baru).
+            [$harian, $bulanan] = self::segarkanClosing($gIds, $M, ['employee_id' => $employee, 'sumber' => $alasan, 'paksa_awal' => true]);
 
             // 10. Status + ringkasan.
             $ringkasan = [
@@ -599,20 +608,29 @@ class RombakResort
                 $dibuka[] = ['id' => $d->id, 'grouping_id' => (int) $d->transaction_loan_officer_grouping_id, 'tanggal' => Carbon::parse($d->date)->toDateString()];
             }
 
-            // 2. MACET LAMA: hapus pasangan penyesuaian lebur, pulihkan kolom tutup (urutan terbalik: catatan paling awal menang).
-            foreach (array_reverse($ring['macet_lama']) as $x) {
+            // 2. MACET LAMA: hapus pasangan penyesuaian lebur, lalu pelunasan kedua pinjaman dihitung ulang
+            // (angsuran/pemutihan sesudah terapkan bisa sudah mengubahnya; nilai tercatat bisa basi).
+            foreach ($ring['macet_lama'] as $x) {
                 TransactionSaldoAdjustment::whereKey([$x['adj_dari'], $x['adj_ke']])->delete();
-                DB::table('transaction_loans')->where('id', $x['ke'])->update($x['lama_ke']);
-                DB::table('transaction_loans')->where('id', $x['dari'])->update($x['lama_dari']);
+            }
+            foreach (collect($ring['macet_lama'])->flatMap(fn($x) => [$x['dari'], $x['ke']])->unique() as $id) {
+                TransactionLoan::findOrFail($id)->hitungUlangPelunasan();
             }
 
-            // 3. Baris bulan M (tanggal >= M, termasuk yang masuk sesudah terapkan) -> kelompok asal mutasi.
+            // 3. Baris bulan M: yang dipindah terapkan -> kelompok tercatatnya; yang lahir sesudah terapkan
+            // (id > id_maks; ringkasan lama tanpa catatan: semua baris >= M) -> kelompok asal mutasi.
             $mutasi = fn(string $tabel) => DB::table("$tabel as x")
                 ->join('transaction_loan_mutations as m', fn($j) => $j->on('m.transaction_loan_id', '=', 'x.transaction_loan_id')->where('m.rombak_id', $r->id));
             $baris = [];
             foreach (['angsuran' => ['transaction_loan_instalments', 'transaction_date'], 'pemutihan' => ['transaction_white_offs', 'transaction_date'],
                       'penyesuaian' => ['transaction_saldo_adjustments', 'berlaku_bulan']] as $nama => [$tabel, $kolom]) {
-                $baris[$nama] = $mutasi($tabel)->where("x.$kolom", '>=', $m)->whereColumn('x.transaction_loan_officer_grouping_id', '<>', 'm.dari_grouping_id')
+                $catat = $ring['baris_m'][$nama];
+                $baris[$nama] = 0;
+                foreach (collect($catat['dipindah'] ?? [])->map(fn($g, $id) => [$id, $g])->groupBy(1) as $g => $xs) {
+                    $baris[$nama] += DB::table($tabel)->whereIn('id', $xs->pluck(0))->update(['transaction_loan_officer_grouping_id' => $g]);
+                }
+                $baris[$nama] += $mutasi($tabel)->where("x.$kolom", '>=', $m)->where('x.id', '>', $catat['id_maks'] ?? 0)
+                    ->whereColumn('x.transaction_loan_officer_grouping_id', '<>', 'm.dari_grouping_id')
                     ->update(['x.transaction_loan_officer_grouping_id' => DB::raw('m.dari_grouping_id')]);
             }
 

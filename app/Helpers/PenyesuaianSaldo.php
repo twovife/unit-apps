@@ -292,7 +292,10 @@ class PenyesuaianSaldo
             throw new \RuntimeException('Oper hanya antar nasabah kelompok dan hari yang sama.');
         }
         // Penjaga juga di kelompok sekarang: bulan sesudah pindah resort saldonya ada di sana.
-        $gids = array_values(array_unique([$gid, (int) $dari->transaction_loan_officer_grouping_id, (int) $ke->transaction_loan_officer_grouping_id]));
+        // ...dan di semua kelompok yang pernah disinggahi (mutasi ganda: resort tengah juga).
+        $riwayat = DB::table('transaction_loan_mutations')->whereIn('transaction_loan_id', [$dari->id, $ke->id])->get(['dari_grouping_id', 'ke_grouping_id'])
+            ->flatMap(fn($m) => [(int) $m->dari_grouping_id, (int) $m->ke_grouping_id])->all();
+        $gids = array_values(array_unique([$gid, (int) $dari->transaction_loan_officer_grouping_id, (int) $ke->transaction_loan_officer_grouping_id, ...$riwayat]));
         foreach ([$dari, $ke] as $l) {
             if (!AgregasiScope::bolehDisesuaikan($branchId, $l->drop_date)) {
                 throw new \RuntimeException('Pinjaman ' . $l->customer?->nama . ' di luar jendela penyesuaian (bukan ML lama).');

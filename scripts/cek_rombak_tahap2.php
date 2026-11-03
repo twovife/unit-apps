@@ -14,10 +14,21 @@
     // Babat 1 (branch 21), kel 1..10 = grouping 201..210.
     $kantor = \App\Models\TransactionLoanOfficerGrouping::where('branch_id', 21)->orderBy('kelompok')->pluck('id')->all();
     $user = \App\Models\User::findOrFail(40);
+    // Rombak #2 sudah diterapkan sungguhan di lokal (Task 6). Tiap transaksi uji mulai dengan membatalkannya lalu
+    // mengembalikannya ke draf, supaya cek di bawah berjalan dari susunan sebelum rombak; rollback memulihkan #2.
+    $awal2 = [\App\Models\TransactionResortRombak::findOrFail(2)->status, \App\Models\TransactionLoanMutation::where('rombak_id', 2)->count()];
+    $jadiDraf = function () use ($user) {
+        $r = \App\Models\TransactionResortRombak::findOrFail(2);
+        if ($r->status === 'diterapkan') {
+            \App\Helpers\RombakResort::batal($r, $user);
+        }
+        $r->refresh()->update(['status' => 'draf', 'ringkasan' => null, 'diterapkan_oleh' => null, 'diterapkan_at' => null, 'dibatalkan_oleh' => null, 'dibatalkan_at' => null]);
+    };
 
     DB::beginTransaction();
     try {
         auth()->login($user);
+        $jadiDraf();
 
         // [CEK-TASK-1] T1: "Hari Tidak Sama" memakai hari tagih pinjaman PADA tanggal transaksi.
         // Pinjaman aktif kel 2 Senin (drop sebelum Senin terakhir bulan lalu) -> pindah ke kel 3 Rabu.
@@ -118,6 +129,7 @@
         DB::rollBack();
         DB::beginTransaction();
         auth()->login($user);
+        $jadiDraf();
         $draf2 = \App\Models\TransactionResortRombak::with('peta')->findOrFail(2);
         $Mc = \Carbon\Carbon::parse($bulanIni);
         $okt = $Mc->copy()->subMonth();
@@ -190,6 +202,21 @@
         $kunciRow->refresh();
         $cek($kunciRow->kasir_lock_at === null && collect($ring['hari_dibuka'])->pluck('id')->all() === [$kunciRow->id]
             && \App\Models\TransactionLockHistory::where('transaction_daily_closing_id', $kunciRow->id)->where('aksi', \App\Models\TransactionLockHistory::AKSI_BUKA)->where('alasan', 'Rombak resort #2')->exists(), 'hari terkunci dibuka lewat Gembok::buka dengan alasan, tercatat di ringkasan');
+        // [CEK-TASK-7] Pemeriksa agregat sesudah terapkan: kesinambungan di total kantor, baris bulan M di kelompok pada tanggalnya.
+        $cek(count($bm['angsuran']['dipindah']) === $bm['angsuran']['ganti_kelompok'] && $bm['angsuran']['id_maks'] > 0, 'ringkasan mencatat id angsuran yang dipindah + kelompok lamanya (' . count($bm['angsuran']['dipindah']) . ')');
+        $PA = \App\Helpers\PemeriksaAgregat::class;
+        $h = $PA::periksa(21, $bulanIni);
+        $perResort = DB::table('transaction_monthly_closings as n')->join('transaction_monthly_closings as o', fn($j) => $j->on('o.transaction_loan_officer_grouping_id', '=', 'n.transaction_loan_officer_grouping_id')->on('o.hari', '=', 'n.hari'))
+            ->whereIn('n.transaction_loan_officer_grouping_id', $kantor)->whereDate('n.periode', $bulanIni)->whereDate('o.periode', $okt->toDateString())->whereColumn('n.awal_total', '<>', 'o.akhir_total')->count();
+        $cek($h['beda_sinambung'] === 0 && $h['beda_kelompok'] === 0 && $perResort > 0, "PemeriksaAgregat sesudah terapkan: kesinambungan total kantor & kelompok baris M bersih (per resort $perResort beda, wajar)");
+        DB::beginTransaction();
+        $salahId = array_key_first($bm['angsuran']['dipindah']);
+        DB::table('transaction_loan_instalments')->where('id', $salahId)->update(['transaction_loan_officer_grouping_id' => $bm['angsuran']['dipindah'][$salahId]]);
+        DB::table('transaction_monthly_closings')->whereIn('transaction_loan_officer_grouping_id', $kantor)->whereDate('periode', $bulanIni)->orderBy('id')->limit(1)->increment('awal_month1');
+        $h = $PA::periksa(21, $bulanIni);
+        DB::rollBack();
+        $cek($h['kelompok']['angsuran'] === 1 && count($h['sinambung']) === 1 && $h['sinambung'][0]['resort'] === 'kantor' && $h['sinambung'][0]['awal'] === $h['sinambung'][0]['akhir_lalu'] + 1,
+            'PemeriksaAgregat menangkap angsuran tertinggal di kelompok lama & saldo awal kantor meleset 1 (' . json_encode([$h['kelompok'], $h['sinambung']]) . ')');
         $d2 = $draf2->fresh();
         $cek($d2->status === 'diterapkan' && (int) $d2->diterapkan_oleh === (int) $user->employee->id && $d2->ringkasan['pinjaman']['jumlah'] === count($ids), 'status diterapkan, ringkasan tersimpan');
         $ulang = '';
@@ -200,6 +227,7 @@
         DB::rollBack();
         DB::beginTransaction();
         auth()->login($user);
+        $jadiDraf();
         $draf2 = \App\Models\TransactionResortRombak::with('peta')->findOrFail(2);
         $pindah = $RR::pinjaman($draf2)->where('pindah', true)->keyBy('id');
         $ids = $pindah->keys()->all();
@@ -226,6 +254,19 @@
         $hilang = collect($RR::target($draf2, $RR::pinjaman($draf2)))->filter(fn($t) => $t['tanggal_pertama'] > now()->toDateString())
             ->map(fn($t) => \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $t['grouping_id'])->whereDate('date', $t['tanggal_pertama'])->whereNull('kepala_approval_at')->whereNull('kasir_lock_at')->first())->filter()->first();
         DB::table('transaction_daily_closings')->where('id', $hilang->id)->delete();
+        // Rantai target buatan di resort lain: auto tiap minggu sampai minggu pertama M+1, lalu satu baris manual. Terapkan harus
+        // meneruskan rantai sampai M+1 dan berhenti di baris manual; batal mengembalikannya.
+        $Tm = \App\Helpers\TargetMingguan::class;
+        $depanBulan = $Mc->copy()->addMonthNoOverflow()->toDateString();
+        $tR = collect($RR::target($draf2, $RR::pinjaman($draf2)))->first(fn($t) => $t['tanggal_pertama'] && $t['grouping_id'] !== (int) $hilang->transaction_loan_officer_grouping_id);
+        $rantaiBuat = [];
+        for ($tgl = $tR['tanggal_pertama'], $sumber = 'auto'; $sumber === 'auto'; $tgl = $depan) {
+            $depan = $Tm::tanggalDepan($tgl);
+            $sumber = $tgl >= $depanBulan ? 'manual' : 'auto';
+            $row = \App\Models\TransactionDailyClosing::firstOrCreate(['transaction_loan_officer_grouping_id' => $tR['grouping_id'], 'date' => $depan]);
+            DB::table('transaction_daily_closings')->where('id', $row->id)->update(['target' => 1, 'target_on' => $tgl, 'target_source' => $sumber]);
+            $rantaiBuat[$row->id] = [$sumber, $depan];
+        }
         // Baris closing lokal basi (hari tanpa segarkan masih nol): segarkan dulu dengan susunan sekarang, supaya beda sesudah batal hanya bisa datang dari terapkan/batal.
         $RR::segarkanClosing($kantor, $Mc, ['employee_id' => $user->employee->id, 'sumber' => 'cek tahap 2', 'paksa_awal' => true]);
         $foto0 = $foto();
@@ -234,6 +275,12 @@
         $berubah = collect($foto0)->filter(fn($v, $k) => $v !== $foto1[$k])->keys();
         $cek($berubah->count() >= 6, 'terapkan mengubah foto (' . $berubah->implode(', ') . ')');
 
+        $rt = collect($ring['target_lama'])->firstWhere('resort', $tR['resort']);
+        $auto = collect($rantaiBuat)->filter(fn($x) => $x[0] === 'auto');
+        $manualId = collect($rantaiBuat)->search(fn($x) => $x[0] === 'manual');
+        $cek(collect($rt['rantai'])->pluck('id')->all() === $auto->keys()->all() && $auto->last()[1] >= $depanBulan && (int) \App\Models\TransactionDailyClosing::find($manualId)->target === 1
+            && collect($rt['rantai'])->every(fn($x) => (int) \App\Models\TransactionDailyClosing::find($x['id'])->target === $x['baru']),
+            "rantai target {$tR['resort']}: " . count($rt['rantai']) . ' baris diteruskan sampai ' . $auto->last()[1] . ' (M+1), berhenti di baris manual');
         $dibuat = collect($ring['target_lama'])->where('dibuat', true);
         $cek($dibuat->count() === 1 && $dibuat->first()['grouping_id'] === (int) $hilang->transaction_loan_officer_grouping_id && $dibuat->first()['tanggal_pertama'] === $hilang->date->toDateString(), "terapkan membuat baris hari pertama yang hilang (g{$hilang->transaction_loan_officer_grouping_id} {$hilang->date->toDateString()})");
         $d2 = $draf2->fresh();
@@ -290,6 +337,7 @@
         \Carbon\Carbon::setTestNow();
         DB::rollBack();
     }
-    $cek(\App\Models\TransactionResortRombak::find(2)->status === 'draf' && \App\Models\TransactionLoanMutation::count() === 0, 'sesudah rollback: draf #2 tetap draf, mutasi kosong');
+    $akhir2 = [\App\Models\TransactionResortRombak::find(2)->status, \App\Models\TransactionLoanMutation::where('rombak_id', 2)->count()];
+    $cek($akhir2 === $awal2, 'sesudah rollback: rombak #2 kembali seperti semula (' . implode(', ', $akhir2) . ')');
     echo "\n" . ($gagal ? "$gagal GAGAL" : 'SEMUA OK') . "\n";
 })();

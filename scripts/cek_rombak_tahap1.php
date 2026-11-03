@@ -1,5 +1,5 @@
 // Cek tahap 1 rombak resort (tanpa <?php: isinya disuapkan ke tinker). Jalankan:
-//   tr '\n' ' ' < scripts/cek_rombak_tahap1.php | docker exec -i unit-app php artisan tinker
+//   grep -v '^\s*//' scripts/cek_rombak_tahap1.php | tr '\n' ' ' | docker exec -i unit-app php artisan tinker
 // Semua perubahan di-rollback. Hanya untuk DB lokal (salinan prod).
 (function () {
     if (!app()->environment('local')) { echo "lokal saja\n"; return; }
@@ -17,6 +17,12 @@
 
     DB::beginTransaction();
     try {
+        // Rombak #2 (Babat 1) sudah diterapkan sungguhan di lokal: dibatalkan dulu di dalam transaksi ini supaya tabel mutasi kosong.
+        $r2 = \App\Models\TransactionResortRombak::find(2);
+        if ($r2 && $r2->status === 'diterapkan') {
+            auth()->login(\App\Models\User::findOrFail(40));
+            \App\Helpers\RombakResort::batal($r2, auth()->user());
+        }
         // 1. Tabel kosong -> SQL kolom asli persis.
         $cek(\App\Models\TransactionLoanMutation::count() === 0, 'tabel mutasi kosong di awal');
         $cek($M::kelompokSql('l', $M::tgl($bulanLalu)) === 'l.transaction_loan_officer_grouping_id', 'kosong: kelompokSql = kolom');
