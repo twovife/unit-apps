@@ -1311,7 +1311,7 @@ class TransactionLoanController extends Controller
     $daftar = $loans->map(fn($l) => [
       'id' => $l->id,
       'tanggal' => Carbon::parse($l->drop_date)->toDateString(),
-      'hari' => $l->hari,
+      'hari' => $hari,
       'nama' => $l->nama,
       'nik' => $l->nik,
       'nomor_anggota' => $l->nomor_anggota,
@@ -1626,6 +1626,8 @@ class TransactionLoanController extends Controller
         // sama (ketuk dua kali, dua HP) menunggu di sini, lalu membaca angsuran
         // yang baru tersimpan. Cek di bawah harus sesudah kunci ini.
         TransactionLoan::whereKey($transactionLoan->id)->lockForUpdate()->first();
+        // Baca ulang sesudah kunci: rombak resort yang sedang diterapkan bisa sudah memindah kelompoknya.
+        $transactionLoan->refresh();
 
         $tolak = null;
         $sisa = \App\Helpers\PenyesuaianSaldo::hitungSaldo($transactionLoan)['saldo'];
