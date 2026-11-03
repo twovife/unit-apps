@@ -221,6 +221,8 @@ class PecahanMacetLama
      */
     public static function nominalDropBulat(int $saldo, int $satuan): int
     {
-        return (int) round((int) (ceil($saldo / $satuan) * $satuan) / 1.3);
+        // ceil, bukan round: kolom pinjaman (nominal_drop x 1,3, dibulatkan) tidak boleh di bawah saldo,
+        // mis. 600.000 -> round 461.538 -> pinjaman 599.999 -> pecahan kurang 1 rupiah -> pemecahan dibatalkan.
+        return (int) ceil((int) (ceil($saldo / $satuan) * $satuan) / 1.3);
     }
 }
