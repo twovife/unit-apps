@@ -195,6 +195,97 @@
         $ulang = '';
         try { $RR::terapkan($d2, $user); } catch (\RuntimeException $e) { $ulang = $e->getMessage(); }
         $cek(str_contains($ulang, 'bukan draf'), "terapkan ulang ditolak ($ulang)");
+
+        // [CEK-TASK-5] Batal: terapkan lalu batal di transaksi uji yang bersih -> semua kembali persis seperti sebelum terapkan.
+        DB::rollBack();
+        DB::beginTransaction();
+        auth()->login($user);
+        $draf2 = \App\Models\TransactionResortRombak::with('peta')->findOrFail(2);
+        $pindah = $RR::pinjaman($draf2)->where('pindah', true)->keyBy('id');
+        $ids = $pindah->keys()->all();
+        $gIds = $RR::kelompokTerkait($draf2);
+        $akhirM = $Mc->copy()->endOfMonth()->toDateString();
+        $tanpa = fn($rows, $buang) => $rows->map(fn($x) => array_diff_key((array) $x, array_flip($buang)))->toJson();
+        $foto = fn() => [
+            'pinjaman' => $tanpa(DB::table('transaction_loans')->whereIn('transaction_loan_officer_grouping_id', $kantor)->orderBy('id')->get(), ['updated_at']),
+            'angsuran >= M' => DB::table('transaction_loan_instalments')->whereIn('transaction_loan_officer_grouping_id', $kantor)->where('transaction_date', '>=', $bulanIni)->orderBy('id')->get(['id', 'transaction_loan_id', 'transaction_loan_officer_grouping_id', 'transaction_date', 'nominal'])->toJson(),
+            'pemutihan >= M' => DB::table('transaction_white_offs')->whereIn('transaction_loan_officer_grouping_id', $kantor)->where('transaction_date', '>=', $bulanIni)->orderBy('id')->get(['id', 'transaction_loan_id', 'transaction_loan_officer_grouping_id', 'transaction_date', 'nominal'])->toJson(),
+            'penyesuaian >= M' => DB::table('transaction_saldo_adjustments')->whereIn('transaction_loan_officer_grouping_id', $kantor)->where('berlaku_bulan', '>=', $bulanIni)->orderBy('id')->get(['id', 'transaction_loan_id', 'transaction_loan_officer_grouping_id', 'berlaku_bulan', 'jenis', 'nominal'])->toJson(),
+            'penyesuaian semua (jumlah)' => DB::table('transaction_saldo_adjustments')->count(),
+            'rekening' => $tanpa(DB::table('transaction_manage_customers')->whereIn('transaction_loan_officer_grouping_id', $kantor)->orderBy('id')->get(), ['updated_at']),
+            'saldo MACET LAMA' => json_encode(\App\Helpers\PenyesuaianSaldo::saldoBanyak($mlIds)),
+            'target M' => DB::table('transaction_daily_closings')->whereIn('transaction_loan_officer_grouping_id', $kantor)->whereBetween('date', [$bulanIni, $akhirM])->orderBy('id')->get(['id', 'transaction_loan_officer_grouping_id', 'date', 'target', 'target_on', 'target_source'])->toJson(),
+            'closing harian M' => $tanpa(DB::table('transaction_daily_closings')->whereIn('transaction_loan_officer_grouping_id', $kantor)->whereBetween('date', [$bulanIni, $akhirM])->orderBy('id')->get(), ['updated_at']),
+            'closing bulanan M & M+1' => $tanpa(DB::table('transaction_monthly_closings')->whereIn('transaction_loan_officer_grouping_id', $kantor)->where('periode', '>=', $bulanIni)->orderBy('id')->get(), ['created_at', 'updated_at']),
+            'portofolio Oktober' => json_encode($portoOkt()),
+            'portofolio November' => json_encode([$urut($HA::portofolio($kantor, $okt->copy()->endOfMonth(), $Mc)), $urut($HA::portofolio($kantor, now(), $Mc))]),
+            'harianBanyak Oktober' => json_encode($harianOkt()),
+            'harianBanyak November' => json_encode($urut($HA::harianBanyak($kantor, $Mc, $Mc->copy()->endOfMonth()))),
+        ];
+        // Satu baris hari tagih pertama (belum diteken) dihapus: terapkan harus membuatnya (dibuat), batal harus menghapusnya lagi.
+        $hilang = collect($RR::target($draf2, $RR::pinjaman($draf2)))->filter(fn($t) => $t['tanggal_pertama'] > now()->toDateString())
+            ->map(fn($t) => \App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $t['grouping_id'])->whereDate('date', $t['tanggal_pertama'])->whereNull('kepala_approval_at')->whereNull('kasir_lock_at')->first())->filter()->first();
+        DB::table('transaction_daily_closings')->where('id', $hilang->id)->delete();
+        // Baris closing lokal basi (hari tanpa segarkan masih nol): segarkan dulu dengan susunan sekarang, supaya beda sesudah batal hanya bisa datang dari terapkan/batal.
+        $RR::segarkanClosing($kantor, $Mc, ['employee_id' => $user->employee->id, 'sumber' => 'cek tahap 2', 'paksa_awal' => true]);
+        $foto0 = $foto();
+        $ring = $RR::terapkan($draf2, $user);
+        $foto1 = $foto();
+        $berubah = collect($foto0)->filter(fn($v, $k) => $v !== $foto1[$k])->keys();
+        $cek($berubah->count() >= 6, 'terapkan mengubah foto (' . $berubah->implode(', ') . ')');
+
+        $dibuat = collect($ring['target_lama'])->where('dibuat', true);
+        $cek($dibuat->count() === 1 && $dibuat->first()['grouping_id'] === (int) $hilang->transaction_loan_officer_grouping_id && $dibuat->first()['tanggal_pertama'] === $hilang->date->toDateString(), "terapkan membuat baris hari pertama yang hilang (g{$hilang->transaction_loan_officer_grouping_id} {$hilang->date->toDateString()})");
+        $d2 = $draf2->fresh();
+        $cek(collect($RR::periksaBatal($d2))->isEmpty() && str_contains($RR::periksaBatal($draf2)[0] ?? '', 'bukan diterapkan'), 'periksaBatal: draf ditolak, yang diterapkan boleh');
+        DB::beginTransaction();
+        $lagi = \App\Models\TransactionLoan::with('loan_officer_grouping')->findOrFail($ids[0]);
+        $M::catat($lagi, $kantor[$lagi->transaction_loan_officer_grouping_id === $kantor[0] ? 1 : 0], null, $bulanIni, 'cek mutasi lagi', $user);
+        $g = $RR::periksaBatal($d2->fresh());
+        $cek(count($g) === 1 && str_contains($g[0], '1 pinjaman sudah dimutasi lagi'), 'pinjaman dimutasi lagi sesudah terapkan: batal diblokir (' . implode(' | ', $g) . ')');
+        DB::rollBack();
+        // Satu hari November sesudah terapkan dikunci di kelompok tujuan yang punya angsuran pinjaman pindah: batal harus membukanya.
+        $kunciRow = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $gIds)->whereBetween('date', [$bulanIni, now()->subDay()->toDateString()])->whereNotNull('kepala_approval_at')->orderBy('date')->get()
+            ->first(fn($c) => DB::table('transaction_loan_instalments')->whereIn('transaction_loan_id', $ids)->where('transaction_loan_officer_grouping_id', $c->transaction_loan_officer_grouping_id)->whereDate('transaction_date', $c->date)->exists());
+        \App\Helpers\Gembok::kunci($kunciRow, $user->employee->id);
+
+        // Angsuran yang masuk SESUDAH terapkan (pinjaman pindah, hari baru, bulan M) -> sesudah batal ada di kelompok lama.
+        $hariIni = $RR::HARI[now()->dayOfWeekIso - 1];
+        $pil = $pindah->first(fn($l) => $l->status === 'success' && $l->pay_off_date === null && !$l->ml && explode('|', $l->ke)[1] === $hariIni && explode('|', $l->ke)[0] !== explode('|', $l->asal)[0]
+            && !DB::table('transaction_loan_instalments')->where('transaction_loan_id', $l->id)->whereDate('transaction_date', now()->toDateString())->exists());
+        DB::beginTransaction();
+        session()->forget('errors');
+        $ctl = app(\App\Http\Controllers\TransactionLoanController::class);
+        $ctl->bayar_pinjaman(\Illuminate\Http\Request::create('/', 'POST', ['type_transaksi' => 'bayar', 'nominal' => 1000, 'transaction_date' => now()->toDateString()]), \App\Models\TransactionLoan::findOrFail($pil->id));
+        $baru = $Ang::where('transaction_loan_id', $pil->id)->whereDate('transaction_date', now()->toDateString())->first();
+        $cek($baru && (int) $baru->transaction_loan_officer_grouping_id === (int) explode('|', $pil->ke)[0], "angsuran baru loan {$pil->id} sesudah terapkan masuk kel tujuan g{$pil->ke} (" . ($baru->transaction_loan_officer_grouping_id ?? session('errors')?->first()) . ')');
+        $RR::batal($d2, $user);
+        $cek((int) $baru->fresh()->transaction_loan_officer_grouping_id === (int) explode('|', $pil->asal)[0] && \App\Models\TransactionLoan::find($pil->id)->transaction_loan_officer_grouping_id . '|' . \App\Models\TransactionLoan::find($pil->id)->hari === $pil->asal,
+            "sesudah batal: angsuran baru itu & pinjamannya kembali ke asal g{$pil->asal} ({$baru->fresh()->transaction_loan_officer_grouping_id})");
+        DB::rollBack();
+
+        $t0 = microtime(true);
+        $b = $RR::batal($d2, $user);
+        $detik = round(microtime(true) - $t0, 1);
+        $cek(true, "batal draf #2 selesai dalam $detik detik ({$b['pinjaman']} pinjaman, angsuran kembali {$b['baris_m']['angsuran']}, target dihapus {$b['target_dihapus']}, drop sesudah {$b['drop_sesudah']})");
+        $foto2 = $foto();
+        $cek($b['target_dihapus'] === 1 && !\App\Models\TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $hilang->transaction_loan_officer_grouping_id)->whereDate('date', $hilang->date)->exists(), 'batal menghapus baris hari pertama yang dibuat terapkan');
+        foreach ($foto0 as $k => $v) {
+            $cek($foto2[$k] === $v, "sesudah batal: $k sama persis dengan sebelum terapkan");
+        }
+        $cek(\App\Models\TransactionLoanMutation::where('rombak_id', 2)->count() === 0 && \App\Models\TransactionLoanMutation::count() === 0, 'mutasi rombak #2 terhapus (tabel mutasi kosong)');
+        $harianM = $HA::harianBanyak($kantor, $Mc, $Mc->copy()->endOfMonth());
+        $basi = \App\Models\TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $kantor)->whereBetween('date', [$bulanIni, $akhirM])->get()
+            ->filter(fn($c) => collect($harianM[$c->transaction_loan_officer_grouping_id . '|' . $c->date->toDateString()] ?? $HA::kosong())->some(fn($v, $f) => (int) $c->$f !== $v));
+        $cek($basi->isEmpty() && $b['closing_harian'] > 0, "closing harian November = sumber sesudah batal ({$b['closing_harian']} baris ditulis, basi {$basi->count()})");
+        $kunciRow->refresh();
+        $cek($kunciRow->kasir_lock_at === null && collect($b['hari_dibuka'])->pluck('id')->all() === [$kunciRow->id]
+            && \App\Models\TransactionLockHistory::where('transaction_daily_closing_id', $kunciRow->id)->where('aksi', \App\Models\TransactionLockHistory::AKSI_BUKA)->where('alasan', 'Batal rombak resort #2')->exists(), 'hari yang dikunci sesudah terapkan dibuka lewat Gembok::buka dengan alasan batal');
+        $d3 = $draf2->fresh();
+        $cek($d3->status === 'dibatalkan' && (int) $d3->dibatalkan_oleh === (int) $user->employee->id && $d3->dibatalkan_at !== null && isset($d3->ringkasan['batal'], $d3->ringkasan['target_lama']), 'status dibatalkan, dibatalkan_oleh/at, ringkasan + batal');
+        $ulang = '';
+        try { $RR::batal($d3, $user); } catch (\RuntimeException $e) { $ulang = $e->getMessage(); }
+        $cek(str_contains($ulang, 'bukan diterapkan'), "batal ulang ditolak ($ulang)");
     } finally {
         \Carbon\Carbon::setTestNow();
         DB::rollBack();
