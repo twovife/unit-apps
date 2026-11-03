@@ -150,9 +150,10 @@ class RombakResortController extends Controller
                 ->where('branch_id', $branchId)->where('status', 'draf')],
             'peta' => ['present', 'array'],
             'peta.*.dari_grouping_id' => ['required', 'integer', Rule::in($gIds)],
-            'peta.*.ke_grouping_id' => ['required', 'integer', Rule::in($gIds)],
+            // Tujuan NULL (keduanya) = blok diparkir di stash; hanya satu yang NULL ditolak.
+            'peta.*.ke_grouping_id' => ['nullable', 'required_with:peta.*.ke_hari', 'integer', Rule::in($gIds)],
             'peta.*.dari_hari' => ['required', Rule::in(self::HARI)],
-            'peta.*.ke_hari' => ['required', Rule::in(self::HARI)],
+            'peta.*.ke_hari' => ['nullable', 'required_with:peta.*.ke_grouping_id', Rule::in(self::HARI)],
         ]);
 
         $peta = collect($val['peta']);
@@ -160,7 +161,8 @@ class RombakResortController extends Controller
         if ($peta->map(fn($p) => $p['dari_grouping_id'] . '|' . $p['dari_hari'])->duplicates()->isNotEmpty()) {
             throw ValidationException::withMessages(['peta' => 'Satu resort asal muncul dua kali di peta.']);
         }
-        $peta = $peta->reject(fn($p) => $p['dari_grouping_id'] == $p['ke_grouping_id'] && $p['dari_hari'] === $p['ke_hari']);
+        // dari == ke dibuang (tidak pindah); stash (tujuan NULL) tetap disimpan.
+        $peta = $peta->reject(fn($p) => $p['dari_grouping_id'] == ($p['ke_grouping_id'] ?? null) && $p['dari_hari'] === ($p['ke_hari'] ?? null));
 
         $rombak = DB::transaction(function () use ($val, $peta, $branchId) {
             $rombak = !empty($val['id'])
@@ -178,8 +180,8 @@ class RombakResortController extends Controller
             $rombak->peta()->createMany($peta->map(fn($p) => [
                 'dari_grouping_id' => $p['dari_grouping_id'],
                 'dari_hari' => $p['dari_hari'],
-                'ke_grouping_id' => $p['ke_grouping_id'],
-                'ke_hari' => $p['ke_hari'],
+                'ke_grouping_id' => $p['ke_grouping_id'] ?? null,
+                'ke_hari' => $p['ke_hari'] ?? null,
             ])->values()->all());
 
             return $rombak;
