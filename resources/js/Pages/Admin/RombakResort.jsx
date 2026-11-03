@@ -281,14 +281,14 @@ const Ringkasan = ({ draf, kelompok }) => {
 const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }) => {
   useModeRibuan();
   const { errors } = usePage().props;
-  // Rombak yang sudah diterapkan: kolom pinjaman sudah susunan baru, peta tidak ditumpuk lagi.
-  const [letak, setLetak] = useState(() => (!draf || draf.status === "draf" ? letakAwal(draf) : {}));
+  // Diterapkan / dibatalkan: `blok` = susunan sebelum rombak (server), jadi peta tetap ditumpuk = riwayat rencana.
+  const [letak, setLetak] = useState(() => letakAwal(draf));
   const [catatan, setCatatan] = useState(draf?.catatan ?? "");
   const [pilih, setPilih] = useState(null);
   const [pratinjau, setPratinjau] = useState(null);
   const [memuat, setMemuat] = useState(false);
   const bisaSimpan = !draf || draf.status === "draf";
-  const hanyaBaca = !bisaSimpan; // diterapkan / dibatalkan: papan = susunan sekarang, terkunci
+  const hanyaBaca = !bisaSimpan; // diterapkan / dibatalkan: papan = rencana waktu itu, terkunci
   const namaKantor = kantor.find((k) => k.id === branch_id)?.unit ?? "";
 
   useEffect(() => {
@@ -568,7 +568,7 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
         <div className="sticky top-0 z-10 p-2 space-y-2 bg-white border rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-700">
-              Papan{hanyaBaca ? " — susunan sekarang, hanya baca" : ""}
+              Papan{hanyaBaca ? " — rencana rombak (susunan sebelum rombak), hanya baca" : ""}
             </span>
             <Button size="sm" variant="outline" className="ml-auto" disabled={hanyaBaca} onClick={() => {
               setLetak(Object.fromEntries(blok.map((b) => [asalnya(b), STASH])));

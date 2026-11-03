@@ -18,8 +18,8 @@
     DB::beginTransaction();
     try {
         // Rombak #2 (Babat 1) sudah diterapkan sungguhan di lokal: dibatalkan dulu di dalam transaksi ini supaya tabel mutasi kosong.
-        $r2 = \App\Models\TransactionResortRombak::find(2);
-        if ($r2 && $r2->status === 'diterapkan') {
+        // Sekarang yang diterapkan bisa rombak lain (mis. #17): semua yang diterapkan dibatalkan.
+        foreach (\App\Models\TransactionResortRombak::where('status', 'diterapkan')->orderByDesc('id')->get() as $r2) {
             auth()->login(\App\Models\User::findOrFail(40));
             \App\Helpers\RombakResort::batal($r2, auth()->user());
         }

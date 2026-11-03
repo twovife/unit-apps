@@ -60,7 +60,13 @@ class RombakResortController extends Controller
 
         $kelompok = DB::table('transaction_loan_officer_groupings')->where('branch_id', $branchId)
             ->orderBy('kelompok')->get(['id', 'kelompok']);
-        $blok = RombakResort::blok($branchId, $bulan);
+        // Diterapkan / dibatalkan = riwayat: papan SEBELUM rombak, layar menumpuk peta di atasnya.
+        if ($draf && $draf->status !== 'draf') {
+            $bulan = $draf->berlaku_bulan->copy()->startOfMonth();
+            $blok = RombakResort::papanRiwayat($draf);
+        } else {
+            $blok = RombakResort::blok($branchId, $bulan);
+        }
 
         return Inertia::render('Admin/RombakResort', [
             'kantor' => $kantor,

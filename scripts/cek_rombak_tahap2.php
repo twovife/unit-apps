@@ -18,6 +18,10 @@
     // mengembalikannya ke draf, supaya cek di bawah berjalan dari susunan sebelum rombak; rollback memulihkan #2.
     $awal2 = [\App\Models\TransactionResortRombak::findOrFail(2)->status, \App\Models\TransactionLoanMutation::where('rombak_id', 2)->count()];
     $jadiDraf = function () use ($user) {
+        // Rombak lain yang diterapkan (mis. #17, kantor & bulan sama) dibatalkan dulu supaya #2 boleh diterapkan.
+        foreach (\App\Models\TransactionResortRombak::where('status', 'diterapkan')->where('id', '<>', 2)->orderByDesc('id')->get() as $lain) {
+            \App\Helpers\RombakResort::batal($lain, $user);
+        }
         $r = \App\Models\TransactionResortRombak::findOrFail(2);
         if ($r->status === 'diterapkan') {
             \App\Helpers\RombakResort::batal($r, $user);
@@ -154,10 +158,12 @@
         $saldoMl = fn() => collect(\App\Helpers\PenyesuaianSaldo::saldoBanyak($mlIds))->sum('saldo');
         $sebelum = [$portoOkt(), $harianOkt(), $totalM(), $angLalu(), $saldoMl()];
 
+        $papanSebelum = $RR::blok(21, $Mc);
         $t0 = microtime(true);
         $ring = $RR::terapkan($draf2, $user);
         $detik = round(microtime(true) - $t0, 1);
         $cek(true, "terapkan draf #2 selesai dalam $detik detik (" . count($ids) . ' pinjaman)');
+        $cek(($ring['blok'] ?? null) === $papanSebelum && $RR::papanRiwayat($draf2->fresh()) === $papanSebelum, 'ringkasan menyimpan papan sebelum rombak; layar riwayat membacanya (' . count($papanSebelum) . ' blok)');
 
         $mut = \App\Models\TransactionLoanMutation::where('rombak_id', 2)->get()->groupBy('transaction_loan_id');
         $kolom = DB::table('transaction_loans')->whereIn('id', $ids)->get(['id', DB::raw("CONCAT(transaction_loan_officer_grouping_id, '|', LOWER(hari)) k")])->pluck('k', 'id');

@@ -252,7 +252,7 @@ class HitungAgregat
      *
      * @return array<string,array<string,int>>  kunci "groupingId|hari"
      */
-    public static function portofolio(array $groupingIds, $asOf, $bulanReferensi): array
+    public static function portofolio(array $groupingIds, $asOf, $bulanReferensi, $kelompokPada = null): array
     {
         if (empty($groupingIds)) {
             return [];
@@ -267,8 +267,11 @@ class HitungAgregat
         // Kelompok & hari PADA bulan referensi (rancangan rombak_resort §8.3):
         // sebelum mutasi = asal, sesudahnya = kolom pinjaman. Tanpa mutasi =
         // kolom pinjaman persis.
-        $gEfektif = Mutasi::kelompokSql('l', Mutasi::tgl($ref));
-        $hariEfektif = Mutasi::hariSql('l', Mutasi::tgl($ref));
+        // $kelompokPada (opsional) memisahkan tanggal pengelompokan dari bulan ember,
+        // mis. papan riwayat rombak: kelompok pada M-1, ember relatif M.
+        $refKel = Mutasi::tgl($kelompokPada ?? $ref);
+        $gEfektif = Mutasi::kelompokSql('l', $refKel);
+        $hariEfektif = Mutasi::hariSql('l', $refKel);
 
         $saldo = '(l.pinjaman - IFNULL(i.bayar,0) - IFNULL(w.wo,0) + IFNULL(a.efek,0))';
 
@@ -292,7 +295,7 @@ class HitungAgregat
                      AND " . TransactionSaldoAdjustment::ekspresiBerlakuSql() . "
                    GROUP BY transaction_loan_id) a"
             ), 'a.transaction_loan_id', '=', 'l.id')
-            ->tap(fn ($q) => Mutasi::saring($q, 'l', $groupingIds, Mutasi::tgl($ref)))
+            ->tap(fn ($q) => Mutasi::saring($q, 'l', $groupingIds, $refKel))
             ->where('l.status', 'success')
             ->where('l.drop_date', '<=', $asOf)
             ->whereNotNull('l.hari')

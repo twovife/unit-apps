@@ -43,21 +43,28 @@ class RombakResort
      * Blok papan per resort asal: saldo & pecahan = saldo AWAL bulan M (akhir M-1,
      * ember relatif M, sama dengan Rekap M), nasabah/open/acc = kolom pinjaman.
      *
+     * $kelompokPada (riwayat rombak tanpa salinan papan): kelompok & hari dibaca
+     * PADA tanggal itu lewat catatan mutasi, bukan kolom pinjaman. Mutasi tidak
+     * pernah antar kantor, jadi saringan kolom per kantor tetap mencakup semuanya.
+     *
      * @return array<int,array<string,mixed>>
      */
-    public static function blok(int $branchId, Carbon $bulan): array
+    public static function blok(int $branchId, Carbon $bulan, ?Carbon $kelompokPada = null): array
     {
         $kelompok = DB::table('transaction_loan_officer_groupings')->where('branch_id', $branchId)->orderBy('kelompok')->pluck('kelompok', 'id');
         $gIds = $kelompok->keys()->all();
-        $porto = HitungAgregat::portofolio($gIds, $bulan->copy()->subDay(), $bulan);
+        $porto = HitungAgregat::portofolio($gIds, $bulan->copy()->subDay(), $bulan, $kelompokPada);
 
-        $hitung = empty($gIds) ? collect() : DB::table('transaction_loans')
-            ->whereIn('transaction_loan_officer_grouping_id', $gIds)
-            ->whereIn(DB::raw('LOWER(hari)'), self::HARI)
-            ->groupBy('transaction_loan_officer_grouping_id', DB::raw('LOWER(hari)'))
+        $ref = $kelompokPada ? Mutasi::tgl($kelompokPada) : null;
+        $gSql = $ref ? Mutasi::kelompokSql('l', $ref) : 'l.transaction_loan_officer_grouping_id';
+        $hSql = $ref ? Mutasi::hariSql('l', $ref) : 'LOWER(l.hari)';
+        $hitung = empty($gIds) ? collect() : DB::table(DB::raw('transaction_loans l'))
+            ->whereIn('l.transaction_loan_officer_grouping_id', $gIds)
+            ->whereIn(DB::raw($hSql), self::HARI)
+            ->groupBy(DB::raw($gSql), DB::raw($hSql))
             ->get([
-                'transaction_loan_officer_grouping_id AS g',
-                DB::raw('LOWER(hari) AS hari'),
+                DB::raw("$gSql AS g"),
+                DB::raw("$hSql AS hari"),
                 DB::raw("SUM(status = 'success' AND pay_off_date IS NULL) AS nasabah"),
                 DB::raw("SUM(status = 'open') AS open"),
                 DB::raw("SUM(status = 'acc') AS acc"),
@@ -85,6 +92,50 @@ class RombakResort
                 if ($b['nasabah'] || $b['saldo'] || $b['open'] || $b['acc']) {
                     $blok[] = $b;
                 }
+            }
+        }
+
+        return $blok;
+    }
+
+    /**
+     * Papan riwayat rombak non-draf = papan SEBELUM rombak itu: salinan di ringkasan
+     * kalau ada. Rombak lama tanpa salinan: dibatalkan = kolom pinjaman sudah susunan
+     * lama; diterapkan = kelompok pada M-1 lewat mutasi, lalu lebur macet lama rombak
+     * itu (penyesuaian berlaku M + pelunasan pinjaman yang dilebur) dikembalikan.
+     */
+    public static function papanRiwayat(TransactionResortRombak $r): array
+    {
+        if (isset($r->ringkasan['blok'])) {
+            return $r->ringkasan['blok'];
+        }
+        $M = $r->berlaku_bulan->copy()->startOfMonth();
+        if ($r->status !== 'diterapkan') {
+            return self::blok((int) $r->branch_id, $M);
+        }
+        $blok = self::blok((int) $r->branch_id, $M, $M->copy()->subMonth());
+        $ix = [];
+        foreach ($blok as $i => $b) {
+            $ix[$b['grouping_id'] . '|' . $b['hari']] = $i;
+        }
+        $geser = function (TransactionLoan $loan, int $nominal, int $nasabah) use (&$blok, $ix, $M) {
+            $pada = $M->copy()->subMonth();
+            $i = $ix[Mutasi::kelompokPada($loan, $pada) . '|' . Mutasi::hariPada($loan, $pada)] ?? null;
+            if ($i !== null) {
+                $blok[$i]['saldo'] += $nominal;
+                $blok[$i]['ml'] += $nominal;
+                $blok[$i]['nasabah'] += $nasabah;
+            }
+        };
+        foreach ($r->ringkasan['macet_lama'] ?? [] as $x) {
+            $dari = TransactionLoan::find($x['dari']);
+            $ke = TransactionLoan::find($x['ke']);
+            if ($dari) {
+                $lunasOlehLebur = $dari->status === 'success' && $dari->pay_off_date !== null && ($x['lama_dari']['pay_off_date'] ?? null) === null;
+                $geser($dari, (int) $x['nominal'], $lunasOlehLebur ? 1 : 0);
+            }
+            if ($ke) {
+                $geser($ke, -(int) $x['nominal'], 0);
             }
         }
 
@@ -405,6 +456,9 @@ class RombakResort
             $target = self::target($r, $pinjaman);
             $gIds = self::kelompokTerkait($r);
 
+            // Papan sebelum rombak, disimpan sebagai riwayat (layar membaca ini untuk rombak non-draf).
+            $papan = self::blok((int) $r->branch_id, $M);
+
             // 3. Buka kunci kasir hari M s/d hari ini (trigger angsuran menolak hari terkunci).
             $dibuka = [];
             foreach (self::hariDibuka($r) as $d) {
@@ -532,6 +586,7 @@ class RombakResort
                 'closing_harian' => $harian,
                 'closing_bulanan' => $bulanan,
                 'target_lama' => $targetLama,
+                'blok' => $papan,
             ];
             $r->update(['status' => 'diterapkan', 'diterapkan_oleh' => $employee, 'diterapkan_at' => now(), 'ringkasan' => $ringkasan]);
 
