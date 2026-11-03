@@ -206,10 +206,16 @@ class RombakResortController extends Controller
     {
         $this->pastikanSuperuser();
         set_time_limit(120);
+        if (!auth()->user()->employee) {
+            return back()->withErrors(['rombak' => 'Akun superuser ini tidak terhubung ke data karyawan.']);
+        }
         try {
             RombakResort::$aksi($rombak, auth()->user());
         } catch (\RuntimeException $e) {
             return back()->withErrors(['rombak' => $e->getMessage()]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Lock wait / deadlock / SIGNAL trigger: transaksi sudah rollback, data aman.
+            return back()->withErrors(['rombak' => 'Gagal (database): ' . $e->getPrevious()?->getMessage()]);
         }
 
         return redirect()->route('rombak_resort.index', ['branch_id' => $rombak->branch_id, 'rombak' => $rombak->id])

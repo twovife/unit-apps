@@ -553,6 +553,10 @@ class RombakResort
         if ($r->status !== 'diterapkan') {
             $galat[] = "Rombak #{$r->id} berstatus {$r->status}, bukan diterapkan.";
         }
+        // Batal hanya di bulan berlaku: segarkanClosing() hanya menghitung ulang hari bulan M.
+        if (!$M->isSameMonth(Carbon::now())) {
+            $galat[] = 'Batal hanya bisa di bulan berlaku ' . $M->format('Y-m') . '.';
+        }
         $gIds = $r->ringkasan['kelompok'] ?? self::kelompokTerkait($r);
         if ($gIds && DB::table('transaction_monthly_closings')->whereIn('transaction_loan_officer_grouping_id', $gIds)
             ->whereDate('periode', $M->toDateString())->whereNotNull('kasir_lock_at')->exists()) {
