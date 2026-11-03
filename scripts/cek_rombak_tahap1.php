@@ -155,7 +155,7 @@
         $ctl = app(\App\Http\Controllers\TransactionLoanController::class);
         $Ang = \App\Models\TransactionLoanInstalment::class;
         $seninLalu = \Carbon\Carbon::parse($bulanLalu)->lastOfMonth(\Carbon\Carbon::MONDAY)->toDateString();
-        $seninIni = \Carbon\Carbon::parse($bulanIni)->firstOfMonth(\Carbon\Carbon::MONDAY)->toDateString();
+        $rabuIni = \Carbon\Carbon::parse($bulanIni)->firstOfMonth(\Carbon\Carbon::WEDNESDAY)->toDateString();
         $bayar = function ($tgl) use ($ctl, $loan, $Ang) {
             $Ang::where('transaction_loan_id', $loan->id)->whereDate('transaction_date', $tgl)->get()->each->delete();
             session()->forget('errors');
@@ -164,8 +164,11 @@
         };
         [$gLalu, $eLalu] = $bayar($seninLalu);
         $cek($gLalu === 1223, "bayar_pinjaman $seninLalu (bulan lalu): angsuran di K3 ($gLalu $eLalu)");
-        [$gIni, $eIni] = $bayar($seninIni);
-        $cek($gIni === 1221, "bayar_pinjaman $seninIni (bulan ini): angsuran di K1 ($gIni $eIni)");
+        // Bulan ini hari tagihnya Rabu (tahap 2 T1). Kalau Rabu itu belum tiba, jam dimajukan ke sana.
+        \Carbon\Carbon::setTestNow(max(now(), \Carbon\Carbon::parse($rabuIni)->setTime(10, 0)));
+        [$gIni, $eIni] = $bayar($rabuIni);
+        \Carbon\Carbon::setTestNow();
+        $cek($gIni === 1221, "bayar_pinjaman $rabuIni (bulan ini): angsuran di K1 ($gIni $eIni)");
         // white_off_loan bulan lalu: kunci diperiksa & baris dicap K3 (hari itu sudah dibuka di atas).
         session()->forget('errors');
         $ctl->white_off_loan($loan->fresh(), \Illuminate\Http\Request::create('/', 'POST', ['nominal' => 1000, 'transaction_date' => $seninLalu]));
@@ -188,6 +191,7 @@
         $gOper = \App\Models\TransactionSaldoAdjustment::whereIn('transaction_loan_id', [$adjLoan->id, $c601->id])->where('catatan', 'like', 'oper %')->pluck('transaction_loan_officer_grouping_id')->map(fn ($g) => (int) $g)->unique()->values()->all();
         $cek($gOper === [1230], 'oper: penyesuaian dicap K10 (bulan migrasi) ' . json_encode($gOper) . " $eOper");
     } finally {
+        \Carbon\Carbon::setTestNow();
         DB::rollBack();
     }
     echo "\n" . ($gagal ? "$gagal GAGAL" : 'SEMUA OK') . "\n";

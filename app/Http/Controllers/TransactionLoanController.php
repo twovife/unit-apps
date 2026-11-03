@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AppHelper;
+use App\Helpers\Mutasi;
 use App\Models\Employee;
 use App\Models\TransactionCustomer;
 use App\Models\TransactionLoan;
@@ -920,7 +921,7 @@ class TransactionLoanController extends Controller
       return redirect()->back()->withErrors('Anda Tidak Mempunyai Akses Menghapus');
     }
 
-    if (AppHelper::dateName($transactionLoan->drop_date) !== AppHelper::dateName($request->request_date)) {
+    if (Mutasi::hariPada($transactionLoan, $request->request_date) !== AppHelper::dateName($request->request_date)) {
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
     if (AppHelper::dateName($request->request_date) !== AppHelper::dateName($request->tanggal_drop)) {
@@ -1589,7 +1590,7 @@ class TransactionLoanController extends Controller
         return redirect()->back()->withErrors('Angsuran ini ada di drop pelunasan, klik drop untuk mengisi pelunasan / gagalkan terlebih dahulu.');
       }
 
-      if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
+      if (AppHelper::dateName($request->transaction_date) !== Mutasi::hariPada($transactionLoan, $request->transaction_date)) {
         return redirect()->back()->withErrors('Hari Tidak Sama');
       }
 
@@ -1715,7 +1716,7 @@ class TransactionLoanController extends Controller
       'transaction_date.before_or_equal' => 'Tanggal pemutihan tidak boleh melewati hari ini.',
     ]);
 
-    if (AppHelper::dateName($request->transaction_date) !== AppHelper::dateName($transactionLoan->drop_date)) {
+    if (AppHelper::dateName($request->transaction_date) !== Mutasi::hariPada($transactionLoan, $request->transaction_date)) {
       return redirect()->back()->withErrors('Hari Tidak Sama');
     }
     if (\App\Models\TransactionWhiteOff::where('transaction_loan_id', $transactionLoan->id)->exists()) {
@@ -1894,7 +1895,7 @@ class TransactionLoanController extends Controller
     if (AppHelper::dateName($transactionLoan->drop_date) != AppHelper::dateName($transactionLoan->request_date)) {
       return redirect()->back()->withErrors('Nama Hari Tidak Sama');
     } else {
-      if (AppHelper::dateName($transactionLoan->drop_date) != $transactionLoan->hari) {
+      if (AppHelper::dateName($transactionLoan->drop_date) != Mutasi::hariPada($transactionLoan, $transactionLoan->drop_date)) {
         return redirect()->back()->withErrors('Nama Hari Tidak Sama');
       }
     }
