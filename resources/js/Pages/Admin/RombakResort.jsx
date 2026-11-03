@@ -458,6 +458,16 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
               <Undo2 className="w-4 h-4 mr-1" /> {memuat ? "Membatalkan…" : "Batal rombak"}
             </Button>
           )}
+          {draf && draf.status !== "draf" && (
+            <Button
+              variant="outline"
+              onClick={() => router.post(route("rombak_resort.salin", draf.id))}
+              disabled={memuat}
+              title="Buat draf baru (bulan berjalan) dengan peta yang sama, bisa diedit lalu diterapkan lagi"
+            >
+              Salin jadi draf baru
+            </Button>
+          )}
           {stash.length > 0 && <span className="text-xs text-amber-700">Masih ada {stash.length} blok di stash</span>}
         </div>
 

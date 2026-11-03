@@ -183,6 +183,28 @@ class RombakResortController extends Controller
         return back()->with('message', 'Draf dihapus.');
     }
 
+    /** Salin peta rombak (biasanya yang dibatalkan) jadi draf baru bulan berjalan, supaya bisa diedit & diterapkan lagi. */
+    public function salin(TransactionResortRombak $rombak)
+    {
+        $this->pastikanSuperuser();
+
+        $baru = DB::transaction(function () use ($rombak) {
+            $baru = TransactionResortRombak::create([
+                'branch_id' => $rombak->branch_id,
+                'berlaku_bulan' => Carbon::now()->startOfMonth()->toDateString(),
+                'status' => 'draf',
+                'catatan' => trim("Salinan #{$rombak->id}. " . ($rombak->catatan ?? '')),
+                'dibuat_oleh' => auth()->user()->employee->id,
+            ]);
+            $baru->peta()->createMany($rombak->peta->map(fn($p) => $p->only(['dari_grouping_id', 'dari_hari', 'ke_grouping_id', 'ke_hari']))->all());
+
+            return $baru;
+        });
+
+        return redirect()->route('rombak_resort.index', ['branch_id' => $baru->branch_id, 'rombak' => $baru->id])
+            ->with('message', "Draf #{$baru->id} disalin dari #{$rombak->id}.");
+    }
+
     /** Pratinjau draf (hanya baca), JSON untuk dialog. */
     public function pratinjau(TransactionResortRombak $rombak)
     {

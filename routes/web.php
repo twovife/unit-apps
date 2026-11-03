@@ -313,6 +313,7 @@ Route::middleware('auth')->group(function () {
       Route::post('/{rombak}/pratinjau', 'pratinjau')->whereNumber('rombak')->name('pratinjau');
       Route::post('/{rombak}/terapkan', 'terapkan')->whereNumber('rombak')->name('terapkan');
       Route::post('/{rombak}/batal', 'batal')->whereNumber('rombak')->name('batal');
+      Route::post('/{rombak}/salin', 'salin')->whereNumber('rombak')->name('salin');
     });
 
   // Ganti nasabah per pinjaman lewat NIK (superuser, dicek di controller).
