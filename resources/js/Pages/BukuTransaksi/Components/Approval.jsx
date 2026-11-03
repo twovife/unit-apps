@@ -79,8 +79,6 @@ const Approval = ({
   useEffect(() => setUbahTarget(false), [show, triggeredDate]);
   const [galatKoreksi, setGalatKoreksi] = useState('');
   const [triggeredData, setTriggeredData] = useState([]);
-  // Edit target hanya bulan berjalan; keluar bulan lalu tetap bisa (target sesudahnya menjalar).
-  const bulanBerjalan = dayjs(triggeredData?.tanggal).isSame(dayjs(), 'month');
 
   const [transaksiOpenHariIni, setTransaksiOpenHariIni] = useState([]);
   const [transaksiOpenMingguDepan, setTransaksiOpenMingguDepan] = useState([]);
@@ -428,13 +426,13 @@ const Approval = ({
                 <div className="text-sm">
                   <div className="flex items-center justify-between">
                     <span>Target</span>
-                    {bolehKoreksi && bulanBerjalan && !ubahTarget && (migrasi || triggeredData?.target) ? (
+                    {bolehKoreksi && !ubahTarget && (migrasi || triggeredData?.target) ? (
                       <button type="button" className="text-xs font-semibold text-blue-600 underline" onClick={() => setUbahTarget(true)}>
                         Edit
                       </button>
                     ) : null}
                   </div>
-                  {bulanBerjalan && ((bolehKoreksi && ubahTarget) || (!migrasi && !triggeredData?.target)) ? (
+                  {((bolehKoreksi && ubahTarget) || (!migrasi && !triggeredData?.target)) ? (
                     <CurrencyInput className={KELAS_INPUT} name="target" allowDecimals={false} allowNegativeValue={false}
                       prefix="Rp " required onValueChange={onHandleCurencyChange} value={data.target} />
                   ) : (

@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Koreksi target / keluar hari D dari Buku Transaksi (ACC KM), dua alur
  * (mas 2026-10-20):
- *  - Target D hanya bulan berjalan. Keluar D bulan lalu tetap boleh, target D tidak
- *    berubah tapi tanggal sesudahnya ikut dihitung ulang (mas 2026-11-02).
+ *  - Target & keluar D boleh di bulan lalu (mas 2026-11-03, mencabut batas bulan
+ *    berjalan 2026-11-02): rantai menjalar sampai tanggal terbaru, jadi koreksi
+ *    Oktober menyambung ulang November; mau ubah November lagi, edit November.
  *  - Boleh walau D sudah dikunci / TTD kasir: target & keluar saja. Masuk tidak
  *    (ikut drop). Pinjaman & angsuran D tetap terkunci (trigger DB).
  *  - Tanggal sebelum D tidak tersentuh. D ditandai koreksi (alur baru
@@ -80,10 +81,6 @@ class KoreksiTarget
         $targetBaru = $target ?? $targetLama;
         $keluarBaru = $keluar ?? $keluarLama;
 
-        if ($targetBaru !== $targetLama && !$d->isSameMonth(Carbon::now())) {
-            throw new \RuntimeException('Edit target hanya untuk bulan berjalan (' . Carbon::now()->locale('id')->isoFormat('MMMM Y') . '). Bulan lalu hanya keluar yang bisa diubah.');
-        }
-
         $perubahan = [['tanggal' => $d->toDateString(), 'lama' => $targetLama, 'baru' => $targetBaru]];
         if ($tulis) {
             // Tanda koreksi (putus dari ACC minggu lalu) hanya kalau TARGET-nya yang
@@ -139,7 +136,7 @@ class KoreksiTarget
      * menjalar ulang, termasuk bulan lalu. ACC pertama biasa -> diam (D+7 sudah
      * ditulis CeklistKepala / ACC lama).
      *
-     * @throws \RuntimeException target diubah di luar bulan berjalan, dsb.
+     * @throws \RuntimeException tanggal belum lewat, beku, belum ada rekap, dsb.
      */
     public static function sesudahAcc(int $groupingId, string $tanggal, int $targetLama, int $targetBaru, int $keluarLama, int $keluarBaru, ?string $alasan, int $employeeId, bool $sudahAcc): void
     {

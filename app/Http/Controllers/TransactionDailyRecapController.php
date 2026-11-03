@@ -541,7 +541,7 @@ class TransactionDailyRecapController extends Controller
 
       DB::commit();
     } catch (\RuntimeException $e) {
-      // Pesan untuk user dari KoreksiTarget (mis. target diubah di luar bulan berjalan).
+      // Pesan untuk user dari KoreksiTarget (mis. tanggal belum lewat atau beku).
       DB::rollBack();
       return redirect()->back()->withErrors($e->getMessage());
     } catch (Exception $e) {

@@ -136,7 +136,7 @@ class TransactionLoanController extends Controller
   // EVENT, bukan hook rekursif; drop satu sumber (HitungAgregat). Menimpa nilai
   // 'auto' (verifikasi manusia mengalahkan placeholder cron).
   /**
-   * Koreksi target / keluar hari D (bulan berjalan), menjalar ke tanggal sesudahnya
+   * Koreksi target / keluar hari D (bulan berjalan atau lalu), menjalar ke tanggal sesudahnya
    * (AppHelper\KoreksiTarget). Boleh walau hari D sudah dikunci kasir. can-approve
    * selain stafkontrol, kelompok di wilayahnya. GET = pratinjau, POST = simpan.
    */
