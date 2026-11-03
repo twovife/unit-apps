@@ -151,7 +151,7 @@ class RombakResort
      * (masih ada di saldo awal M -> blok papan), open, acc (K17). `pindah` =
      * resortnya berubah. Lunas sebelum M, gagal, tolak tidak ikut.
      */
-    public static function pinjaman(TransactionResortRombak $r): Collection
+    public static function pinjaman(TransactionResortRombak $r, bool $kunci = false): Collection
     {
         $M = $r->berlaku_bulan->copy()->startOfMonth()->toDateString();
         $peta = self::peta($r);
@@ -169,6 +169,8 @@ class RombakResort
                 ->orWhere(fn($q) => $q->where('l.status', 'success')
                     ->where(fn($q) => $q->whereNull('l.pay_off_date')->orWhere('l.pay_off_date', '>=', $M))))
             ->orderBy('l.id')
+            // terapkan: kunci baris pinjaman supaya angsuran/drop yang bersamaan menunggu commit.
+            ->when($kunci, fn($q) => $q->lockForUpdate())
             ->get([
                 'l.id', 'l.status', 'l.transaction_loan_officer_grouping_id as g', DB::raw('LOWER(l.hari) as hari'),
                 'l.drop_date', 'l.pay_off_date', 'l.out_date', 'l.nominal_drop', 'l.transaction_manage_customer_id as rekening_id',
@@ -381,6 +383,9 @@ class RombakResort
     public static function terapkan(TransactionResortRombak $r, $user): array
     {
         return DB::transaction(function () use ($r, $user) {
+            // Kunci semua rombak kantor+bulan ini (urut id) supaya dua draf tidak bisa sama-sama diterapkan.
+            TransactionResortRombak::where('branch_id', $r->branch_id)->whereDate('berlaku_bulan', $r->berlaku_bulan->toDateString())
+                ->orderBy('id')->lockForUpdate()->get();
             $r = TransactionResortRombak::with('peta')->lockForUpdate()->findOrFail($r->id);
             // 1. Validasi.
             if ($galat = self::periksa($r)) {
@@ -392,7 +397,7 @@ class RombakResort
             $employee = $user->employee->id;
 
             // 2. Rencana, dari susunan sebelum rombak (K4).
-            $pinjaman = self::pinjaman($r);
+            $pinjaman = self::pinjaman($r, true);
             $pindah = $pinjaman->where('pindah', true);
             $ids = $pindah->pluck('id')->all();
             $rekening = self::rekening($pinjaman);
@@ -570,7 +575,13 @@ class RombakResort
     public static function batal(TransactionResortRombak $r, $user): array
     {
         return DB::transaction(function () use ($r, $user) {
+            // Kunci semua rombak kantor+bulan ini (urut id) supaya dua draf tidak bisa sama-sama diterapkan.
+            TransactionResortRombak::where('branch_id', $r->branch_id)->whereDate('berlaku_bulan', $r->berlaku_bulan->toDateString())
+                ->orderBy('id')->lockForUpdate()->get();
             $r = TransactionResortRombak::with('peta')->lockForUpdate()->findOrFail($r->id);
+            // Kunci pinjaman yang dipindah rombak ini supaya angsuran/edit yang bersamaan menunggu commit.
+            DB::table('transaction_loans')->whereIn('id', DB::table('transaction_loan_mutations')->where('rombak_id', $r->id)->select('transaction_loan_id'))
+                ->orderBy('id')->lockForUpdate()->pluck('id');
             if ($galat = self::periksaBatal($r)) {
                 throw new \RuntimeException($galat[0]);
             }

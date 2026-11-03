@@ -15,7 +15,7 @@ use Inertia\Inertia;
 /**
  * Menu Rombak Resort (superuser): penyusun peta resort asal -> resort tujuan
  * per kantor, disimpan sebagai draf; pratinjau dihitung server (RombakResort).
- * Terapkan menyusul.
+ * Terapkan & batal: RombakResort::terapkan / batal.
  * Rancangan: .agents/rombak_resort.md §5–§6.
  */
 class RombakResortController extends Controller
@@ -84,8 +84,36 @@ class RombakResortController extends Controller
                 'catatan' => $draf->catatan,
                 'status' => $draf->status,
                 'peta' => $draf->peta->map->only(['dari_grouping_id', 'dari_hari', 'ke_grouping_id', 'ke_hari'])->values(),
+                'diterapkan_at' => $draf->diterapkan_at?->toDateTimeString(),
+                'dibatalkan_at' => $draf->dibatalkan_at?->toDateTimeString(),
+                'ringkasan' => $this->ringkas($draf->ringkasan),
+                'galat_batal' => $draf->status === 'diterapkan' ? RombakResort::periksaBatal($draf) : null,
             ] : null,
         ]);
+    }
+
+    /** Angka ringkasan untuk layar (ringkasan lengkap disimpan untuk batal). */
+    private function ringkas(?array $x): ?array
+    {
+        if (!$x) {
+            return null;
+        }
+        $b = $x['batal'] ?? null;
+
+        return [
+            'pinjaman' => $x['pinjaman'],
+            'baris_m' => collect($x['baris_m'])->map(fn($v) => $v['jumlah']),
+            'hari_dibuka' => count($x['hari_dibuka']),
+            'macet_lama' => count($x['macet_lama']),
+            'target' => count($x['target_lama']),
+            'rekening' => count($x['rekening']['ditimpa']),
+            'rekening_bentrok' => count($x['rekening']['bentrok']),
+            'batal' => $b ? [
+                'pinjaman' => $b['pinjaman'],
+                'hari_dibuka' => count($b['hari_dibuka']),
+                'drop_sesudah' => $b['drop_sesudah'],
+            ] : null,
+        ];
     }
 
     public function simpan(Request $request)
@@ -161,5 +189,30 @@ class RombakResortController extends Controller
         $this->pastikanSuperuser();
 
         return response()->json(RombakResort::pratinjau($rombak));
+    }
+
+    public function terapkan(TransactionResortRombak $rombak)
+    {
+        return $this->jalankan($rombak, 'terapkan', 'diterapkan');
+    }
+
+    public function batal(TransactionResortRombak $rombak)
+    {
+        return $this->jalankan($rombak, 'batal', 'dibatalkan');
+    }
+
+    /** Terapkan / batal: Babat 1 makan ~20 detik, gagal -> kembali dengan pesan galat. */
+    private function jalankan(TransactionResortRombak $rombak, string $aksi, string $kata)
+    {
+        $this->pastikanSuperuser();
+        set_time_limit(120);
+        try {
+            RombakResort::$aksi($rombak, auth()->user());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['rombak' => $e->getMessage()]);
+        }
+
+        return redirect()->route('rombak_resort.index', ['branch_id' => $rombak->branch_id, 'rombak' => $rombak->id])
+            ->with('message', "Rombak #{$rombak->id} $kata.");
     }
 }

@@ -8,9 +8,9 @@ import PilihBulan from "@/Components/shadcn/PilihBulan";
 import { angka, satuanAngka, useModeRibuan } from "@/lib/modeAngka";
 import { rp } from "@/lib/rupiah";
 import { WARNA } from "@/Pages/Kasir/Rekap/Components/TableRekapKasir";
-import { AlertTriangle, ArrowDown, ArrowUp, Archive, Eye, RotateCcw, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Archive, Check, Eye, RotateCcw, Save, Trash2, Undo2 } from "lucide-react";
 
-// Rancangan: .agents/rombak_resort.md §6. Draf + pratinjau server; Terapkan menyusul.
+// Rancangan: .agents/rombak_resort.md §6–§9. Draf + pratinjau server, terapkan & batal.
 const HARI = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"];
 const H3 = { senin: "Sen", selasa: "Sel", rabu: "Rab", kamis: "Kam", jumat: "Jum", sabtu: "Sab" };
 const NAMA_HARI = { senin: "Senin", selasa: "Selasa", rabu: "Rabu", kamis: "Kamis", jumat: "Jumat", sabtu: "Sabtu" };
@@ -126,7 +126,7 @@ const TH = "px-2 py-1 font-medium text-left";
 const TD = "px-2 py-1";
 
 // Dialog pratinjau: semua angka dihitung server dari data asli (RombakResort::pratinjau).
-const Pratinjau = ({ data, onTutup }) => (
+const Pratinjau = ({ data, onTutup, onTerapkan, sibuk }) => (
   <Dialog open={!!data} onOpenChange={(o) => !o && onTutup()}>
     <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
@@ -140,7 +140,12 @@ const Pratinjau = ({ data, onTutup }) => (
               {data.galat.map((g, i) => <div key={i}>• {g}</div>)}
             </div>
           ) : (
-            <div className="p-2 text-sm border rounded text-emerald-800 border-emerald-200 bg-emerald-50">Tidak ada galat.</div>
+            <div className="flex items-center justify-between gap-2 p-2 text-sm border rounded text-emerald-800 border-emerald-200 bg-emerald-50">
+              <span>Tidak ada galat.</span>
+              <Button size="sm" onClick={onTerapkan} disabled={sibuk}>
+                <Check className="w-4 h-4 mr-1" /> {sibuk ? "Menerapkan…" : "Terapkan"}
+              </Button>
+            </div>
           )}
 
           <Bagian judul={`Kotak sesudah rombak (saldo awal ${data.berlaku_bulan.slice(0, 7)})`}>
@@ -233,15 +238,58 @@ const Pratinjau = ({ data, onTutup }) => (
   </Dialog>
 );
 
+// Rombak diterapkan / dibatalkan: angka dari `ringkasan` + peta yang dipakai.
+const Ringkasan = ({ draf, kelompok }) => {
+  const r = draf.ringkasan;
+  const nama = Object.fromEntries(kelompok.map((k) => [k.id, k.kelompok]));
+  const label = (g, h) => `K${nama[g] ?? "?"} ${H3[h] ?? h}`;
+  return (
+    <div className={`p-2 text-sm border rounded-lg space-y-1 ${draf.status === "diterapkan" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"}`}>
+      <div className="font-semibold">
+        Rombak #{draf.id} {draf.status} · berlaku {draf.berlaku_bulan.slice(0, 7)}
+        {draf.diterapkan_at && ` · diterapkan ${draf.diterapkan_at}`}
+        {draf.dibatalkan_at && ` · dibatalkan ${draf.dibatalkan_at}`}
+      </div>
+      {r && (
+        <div className="text-xs tabular-nums">
+          {rp(r.pinjaman.jumlah)} pinjaman pindah ({r.pinjaman.success} success · {r.pinjaman.open} open · {r.pinjaman.acc} acc) ·{" "}
+          baris bulan ini: {r.baris_m.angsuran} angsuran, {r.baris_m.pemutihan} pemutihan, {r.baris_m.penyesuaian} penyesuaian ·{" "}
+          {r.macet_lama} MACET LAMA dilebur · {r.target} target resort diubah · {r.hari_dibuka} hari dibuka ·{" "}
+          {rp(r.rekening)} rekening ditimpa ({r.rekening_bentrok} bentrok)
+        </div>
+      )}
+      {r?.batal && (
+        <div className="text-xs">
+          Batal: {rp(r.batal.pinjaman)} pinjaman kembali · {r.batal.hari_dibuka} hari dibuka · {r.batal.drop_sesudah} pinjaman baru sesudah terapkan tetap di resort baru
+        </div>
+      )}
+      {draf.galat_batal?.length > 0 && <div className="text-xs text-red-700">Tidak bisa dibatalkan: {draf.galat_batal.join(" ")}</div>}
+      <details className="text-xs">
+        <summary className="cursor-pointer text-slate-600">Peta ({draf.peta.length} resort)</summary>
+        <div className="grid gap-x-4 mt-1 sm:grid-cols-3 lg:grid-cols-6">
+          {draf.peta.map((p) => (
+            <div key={`${p.dari_grouping_id}|${p.dari_hari}`}>
+              {label(p.dari_grouping_id, p.dari_hari)} → {label(p.ke_grouping_id, p.ke_hari)}
+            </div>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
+};
+
 const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }) => {
   useModeRibuan();
   const { errors } = usePage().props;
-  const [letak, setLetak] = useState(() => letakAwal(draf));
+  // Rombak yang sudah diterapkan: kolom pinjaman sudah susunan baru, peta tidak ditumpuk lagi.
+  const [letak, setLetak] = useState(() => (!draf || draf.status === "draf" ? letakAwal(draf) : {}));
   const [catatan, setCatatan] = useState(draf?.catatan ?? "");
   const [pilih, setPilih] = useState(null);
   const [pratinjau, setPratinjau] = useState(null);
   const [memuat, setMemuat] = useState(false);
   const bisaSimpan = !draf || draf.status === "draf";
+  const hanyaBaca = !bisaSimpan; // diterapkan / dibatalkan: papan = susunan sekarang, terkunci
+  const namaKantor = kantor.find((k) => k.id === branch_id)?.unit ?? "";
 
   useEffect(() => {
     const esc = (e) => e.key === "Escape" && setPilih(null);
@@ -250,6 +298,7 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
   }, []);
 
   const pindahkan = (asal, tujuan) => {
+    if (hanyaBaca) return;
     if (blok.some((b) => asalnya(b) === asal)) setLetak({ ...letak, [asal]: tujuan });
     setPilih(null);
   };
@@ -322,6 +371,27 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
   };
   const submit = () => (tersimpan ? lihat(draf.id) : simpan((page) => page.props.draf?.id && lihat(page.props.draf.id)));
 
+  // Terapkan: konfirmasi dengan mengetik nama kantor.
+  const terapkan = () => {
+    const ketik = window.prompt(`Terapkan rombak #${draf.id} untuk ${namaKantor}? Ketik nama kantor untuk konfirmasi:`);
+    if (ketik === null) return;
+    if (ketik.trim().toLowerCase() !== namaKantor.trim().toLowerCase()) return window.alert("Nama kantor tidak cocok, tidak diterapkan.");
+    router.post(route("rombak_resort.terapkan", draf.id), {}, {
+      preserveScroll: true,
+      onStart: () => setMemuat(true),
+      onFinish: () => setMemuat(false),
+      onSuccess: () => setPratinjau(null),
+    });
+  };
+  const batal = () => {
+    if (!window.confirm(`Batalkan rombak #${draf.id}? Pinjaman & transaksi bulan ${draf.berlaku_bulan.slice(0, 7)} kembali ke susunan lama.`)) return;
+    router.post(route("rombak_resort.batal", draf.id), {}, {
+      preserveScroll: true,
+      onStart: () => setMemuat(true),
+      onFinish: () => setMemuat(false),
+    });
+  };
+
   const hapus = (r) => {
     if (!window.confirm(`Hapus draf #${r.id} (berlaku ${r.berlaku_bulan})?`)) return;
     router.delete(route("rombak_resort.hapus", r.id), { preserveScroll: true, preserveState: true });
@@ -330,7 +400,7 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
   return (
     <>
       <Head title="Rombak Resort" />
-      <Pratinjau data={pratinjau} onTutup={() => setPratinjau(null)} />
+      <Pratinjau data={pratinjau} onTutup={() => setPratinjau(null)} onTerapkan={terapkan} sibuk={memuat} />
 
       <div className="p-4 space-y-4">
         <div>
@@ -378,7 +448,16 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
           >
             <Eye className="w-4 h-4 mr-1" /> {memuat ? "Menghitung…" : "Submit / Preview"}
           </Button>
-          <Button variant="outline" disabled title={alasanTutup}>Terapkan — belum tersedia</Button>
+          {draf?.status === "diterapkan" && (
+            <Button
+              variant="destructive"
+              onClick={batal}
+              disabled={memuat || draf.galat_batal?.length > 0}
+              title={draf.galat_batal?.join(" ") || "Kembalikan ke susunan lama"}
+            >
+              <Undo2 className="w-4 h-4 mr-1" /> {memuat ? "Membatalkan…" : "Batal rombak"}
+            </Button>
+          )}
           {stash.length > 0 && <span className="text-xs text-amber-700">Masih ada {stash.length} blok di stash</span>}
         </div>
 
@@ -387,6 +466,8 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
             {Object.values(errors).map((e, i) => <div key={i}>{e}</div>)}
           </div>
         )}
+
+        {hanyaBaca && <Ringkasan draf={draf} kelompok={kelompok} />}
 
         <div className="flex flex-wrap items-start gap-4">
           {/* Daftar rombak */}
@@ -476,14 +557,16 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
         {/* Kepala papan + stash. */}
         <div className="sticky top-0 z-10 p-2 space-y-2 bg-white border rounded-lg">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Papan</span>
-            <Button size="sm" variant="outline" className="ml-auto" onClick={() => {
+            <span className="text-sm font-medium text-slate-700">
+              Papan{hanyaBaca ? " — susunan sekarang, hanya baca" : ""}
+            </span>
+            <Button size="sm" variant="outline" className="ml-auto" disabled={hanyaBaca} onClick={() => {
               setLetak(Object.fromEntries(blok.map((b) => [asalnya(b), STASH])));
               setPilih(null);
             }}>
               <Archive className="w-4 h-4 mr-1" /> Semua ke stash
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => { setLetak({}); setPilih(null); }}>
+            <Button size="sm" variant="ghost" disabled={hanyaBaca} onClick={() => { setLetak({}); setPilih(null); }}>
               <RotateCcw className="w-4 h-4 mr-1" /> Reset
             </Button>
           </div>
