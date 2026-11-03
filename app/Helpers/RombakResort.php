@@ -4,7 +4,9 @@ namespace App\Helpers;
 
 use App\Http\Controllers\MigrasiController;
 use App\Models\TransactionDailyClosing;
+use App\Models\TransactionLoan;
 use App\Models\TransactionResortRombak;
+use App\Models\TransactionSaldoAdjustment;
 use App\Models\WorkDay;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -332,6 +334,182 @@ class RombakResort
 
             return ['resort' => $k, 'grouping_id' => (int) $g, 'hari' => $h, 'tanggal_pertama' => $tgl, 'lama' => $lama === null ? null : (int) $lama, 'baru' => (int) $baru];
         })->all();
+    }
+
+    /**
+     * Terapkan draf (spec §7). Satu transaksi: gagal di langkah mana pun ->
+     * tidak ada yang berubah. Rencana (pinjaman, rekening, MACET LAMA, hari
+     * dibuka, target) dibentuk SEKALI di awal dengan fungsi yang sama dengan
+     * pratinjau, jadi hasilnya = pratinjau. `ringkasan` menyimpan apa yang
+     * dibutuhkan batal (Task 5); pinjaman dicatat di transaction_loan_mutations.
+     *
+     * Baris per-baris bulan M dipindah dengan UPDATE borongan (bukan Eloquent):
+     * hook angsuran/pemutihan hanya membuka kunci otomatis (sudah dibuka
+     * eksplisit di langkah 3), menyegarkan rekap alur lama (kantor ini alur
+     * baru) dan menghitung pelunasan (saldo tidak berubah karena pindah
+     * kelompok) - semuanya tidak perlu, dan closing dihitung ulang di langkah 8.
+     *
+     * @throws \RuntimeException
+     */
+    public static function terapkan(TransactionResortRombak $r, $user): array
+    {
+        return DB::transaction(function () use ($r, $user) {
+            $r = TransactionResortRombak::with('peta')->lockForUpdate()->findOrFail($r->id);
+            // 1. Validasi.
+            if ($galat = self::periksa($r)) {
+                throw new \RuntimeException($galat[0]);
+            }
+            $M = $r->berlaku_bulan->copy()->startOfMonth();
+            $m = $M->toDateString();
+            $alasan = "Rombak resort #{$r->id}";
+            $employee = $user->employee->id;
+
+            // 2. Rencana, dari susunan sebelum rombak (K4).
+            $pinjaman = self::pinjaman($r);
+            $pindah = $pinjaman->where('pindah', true);
+            $ids = $pindah->pluck('id')->all();
+            $rekening = self::rekening($pinjaman);
+            $macet = self::macetLama($r, $pinjaman);
+            $target = self::target($r, $pinjaman);
+            $gIds = self::kelompokTerkait($r);
+
+            // 3. Buka kunci kasir hari M s/d hari ini (trigger angsuran menolak hari terkunci).
+            $dibuka = [];
+            foreach (self::hariDibuka($r) as $d) {
+                Gembok::buka(TransactionDailyClosing::findOrFail($d->id), $user, $alasan);
+                $dibuka[] = ['id' => $d->id, 'grouping_id' => (int) $d->transaction_loan_officer_grouping_id, 'tanggal' => Carbon::parse($d->date)->toDateString()];
+            }
+
+            // 4. Timpa pinjaman + catat mutasi.
+            $keLoan = $pindah->pluck('ke', 'id');
+            TransactionLoan::with('loan_officer_grouping')->whereIn('id', $ids)->get()->each(function ($loan) use ($keLoan, $m, $alasan, $user, $r) {
+                [$g, $h] = explode('|', $keLoan[$loan->id]);
+                Mutasi::catat($loan, (int) $g, $h, $m, $alasan, $user, $r->id);
+            });
+
+            // 5. Baris bulan M ikut kelompok baru pinjamannya (kolom sudah ditimpa di langkah 4).
+            // jumlah = semua baris M pinjaman pindah (= pratinjau); ganti_kelompok = yang kelompoknya berubah (pindah hari saja tidak).
+            $pindahBaris = function (string $tabel, string $kolom) use ($ids, $m) {
+                $q = fn() => DB::table("$tabel as x")->join('transaction_loans as l', 'l.id', '=', 'x.transaction_loan_id')
+                    ->whereIn('x.transaction_loan_id', $ids)->where("x.$kolom", '>=', $m);
+                return !$ids ? ['jumlah' => 0, 'ganti_kelompok' => 0] : [
+                    'jumlah' => $q()->count(),
+                    'ganti_kelompok' => $q()->whereColumn('x.transaction_loan_officer_grouping_id', '<>', 'l.transaction_loan_officer_grouping_id')
+                        ->update(['x.transaction_loan_officer_grouping_id' => DB::raw('l.transaction_loan_officer_grouping_id')]),
+                ];
+            };
+            $baris = [
+                'angsuran' => $pindahBaris('transaction_loan_instalments', 'transaction_date'),
+                'pemutihan' => $pindahBaris('transaction_white_offs', 'transaction_date'),
+                'penyesuaian' => $pindahBaris('transaction_saldo_adjustments', 'berlaku_bulan'),
+            ];
+
+            // 6. Rekening: timpa kecuali bentrok; nilai lama disimpan untuk batal.
+            $ditimpa = [];
+            $perTujuan = [];
+            foreach ($rekening as $x) {
+                if ($x['bentrok']) {
+                    continue;
+                }
+                [$g, $day] = explode('|', $x['dari']);
+                $ditimpa[] = ['id' => $x['id'], 'grouping_id' => (int) $g, 'day' => (int) $day];
+                $perTujuan[$x['ke_g'] . '|' . $x['ke_day']][] = $x['id'];
+            }
+            foreach ($perTujuan as $k => $rekIds) {
+                [$g, $day] = explode('|', $k);
+                DB::table('transaction_manage_customers')->whereIn('id', $rekIds)
+                    ->update(['transaction_loan_officer_grouping_id' => (int) $g, 'day' => (int) $day]);
+            }
+
+            // 7. MACET LAMA ganda: lebur ke yang dipertahankan, berlaku M (varian oper).
+            $lebur = [];
+            foreach ($macet as $x) {
+                $g = (int) explode('|', $x['resort'])[0];
+                $ke = TransactionLoan::findOrFail($x['pertahankan']['id']);
+                foreach ($x['lebur'] as $l) {
+                    if ($l['saldo'] <= 0) {
+                        continue;
+                    }
+                    $dari = TransactionLoan::findOrFail($l['id']);
+                    $lama = fn($loan) => $loan->only(['pay_off_date', 'out_date', 'transaction_out_reasons_id']);
+                    $catat = ['resort' => $x['resort'], 'dari' => $dari->id, 'ke' => $ke->id, 'nominal' => $l['saldo'],
+                        'lama_dari' => $lama($dari), 'lama_ke' => $lama($ke)];
+                    foreach ([[$dari, TransactionSaldoAdjustment::JENIS_SALDO_AWAL, 'adj_dari', "oper ke #{$ke->id}"],
+                              [$ke, TransactionSaldoAdjustment::JENIS_KURANG_INPUT, 'adj_ke', "oper dari #{$dari->id}"]] as [$loan, $jenis, $kolom, $ket]) {
+                        $catat[$kolom] = TransactionSaldoAdjustment::create([
+                            'transaction_loan_id' => $loan->id,
+                            'transaction_loan_officer_grouping_id' => $g,
+                            'jenis' => $jenis,
+                            'nominal' => $l['saldo'],
+                            'berlaku_bulan' => $m,
+                            'user_input' => $employee,
+                            'catatan' => "$ket ($alasan)",
+                        ])->id;
+                        $loan->refresh()->hitungUlangPelunasan();
+                    }
+                    $lebur[] = $catat;
+                }
+            }
+
+            // 8. Closing harian M (semua baris belum terkunci; hari tanpa transaksi = nol,
+            // jalur Gembok/ClosingHarian hanya menulis hari yang ada angkanya), lalu bulanan.
+            $angka = HitungAgregat::harianBanyak($gIds, $M, $M->copy()->endOfMonth());
+            $harian = 0;
+            foreach (TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $gIds)
+                ->whereBetween('date', [$m, $M->copy()->endOfMonth()->toDateString()])->whereNull('kasir_lock_at')
+                ->get(['id', 'transaction_loan_officer_grouping_id', 'date']) as $c) {
+                $harian += DB::table('transaction_daily_closings')->where('id', $c->id)
+                    ->update($angka[$c->transaction_loan_officer_grouping_id . '|' . $c->date->toDateString()] ?? HitungAgregat::kosong());
+            }
+            // K13: saldo awal M langsung susunan baru, walau serah terima sudah diteken (paksa_awal).
+            $perbarui = ['employee_id' => $employee, 'sumber' => $alasan, 'paksa_awal' => true];
+            $bulanan = [
+                $m => TutupBulanan::susun($gIds, $M, true, $perbarui),
+                $M->copy()->addMonthNoOverflow()->toDateString() => TutupBulanan::susun($gIds, $M->copy()->addMonthNoOverflow(), true, $perbarui),
+            ];
+
+            // 9. Target recount (K14) di hari tagih pertama + rantai yang sudah lahir sesudahnya di bulan M.
+            $targetLama = [];
+            foreach ($target as $t) {
+                if (!$t['tanggal_pertama']) {
+                    continue;
+                }
+                $row = TransactionDailyClosing::firstOrCreate(['transaction_loan_officer_grouping_id' => $t['grouping_id'], 'date' => $t['tanggal_pertama']]);
+                $catat = $t + ['dibuat' => $row->wasRecentlyCreated, 'target_on' => $row->target_on ? Carbon::parse($row->target_on)->toDateString() : null,
+                    'target_source' => $row->target_source, 'rantai' => []];
+                $row->update(['target' => $t['baru'], 'target_source' => 'recount']);
+                for ($tgl = $t['tanggal_pertama'], $nilai = $t['baru'], $prev = $row; ($depan = TargetMingguan::tanggalDepan($tgl)) && Carbon::parse($depan)->isSameMonth($M);) {
+                    $next = TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $t['grouping_id'])->whereDate('date', $depan)->first();
+                    if (!$next || ($next->target_on ? Carbon::parse($next->target_on)->toDateString() : null) !== $tgl
+                        || in_array($next->target_source, TargetMingguan::SUMBER_PUTUS, true)) {
+                        break;
+                    }
+                    $baru = TargetMingguan::hitung($nilai, (int) (HitungAgregat::harian($t['grouping_id'], $tgl)['drop'] ?? 0), (int) $prev->keluar);
+                    $catat['rantai'][] = ['id' => $next->id, 'tanggal' => $depan, 'lama' => $next->target === null ? null : (int) $next->target, 'baru' => $baru];
+                    $next->update(['target' => $baru]);
+                    [$tgl, $nilai, $prev] = [$depan, $baru, $next];
+                }
+                $targetLama[] = $catat;
+            }
+
+            // 10. Status + ringkasan.
+            $ringkasan = [
+                'berlaku_bulan' => $m,
+                'kelompok' => $gIds,
+                'hari_dibuka' => $dibuka,
+                'pinjaman' => ['jumlah' => count($ids), 'success' => $pindah->where('status', 'success')->count(),
+                    'open' => $pindah->where('status', 'open')->count(), 'acc' => $pindah->where('status', 'acc')->count()],
+                'baris_m' => $baris,
+                'rekening' => ['ditimpa' => $ditimpa, 'bentrok' => array_values(array_filter($rekening, fn($x) => $x['bentrok']))],
+                'macet_lama' => $lebur,
+                'closing_harian' => $harian,
+                'closing_bulanan' => $bulanan,
+                'target_lama' => $targetLama,
+            ];
+            $r->update(['status' => 'diterapkan', 'diterapkan_oleh' => $employee, 'diterapkan_at' => now(), 'ringkasan' => $ringkasan]);
+
+            return $ringkasan;
+        });
     }
 
     /** Hanya baca. Lihat .agents/rombak_resort.md §6 Preview. */
