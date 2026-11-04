@@ -1030,6 +1030,8 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
 
   const [pilihId, setPilihId] = useState(null);
   const pilih = datas.find((d) => d.id === pilihId) ?? null;
+  const [akunId, setAkunId] = useState(null);
+  const pilihAkun = datas.find((d) => d.id === akunId) ?? null;
 
   const [tab, setTab] = useState('aktif');
   const [cari, setCari] = useState('');
@@ -1125,6 +1127,29 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
           setTargetEmployee(null);
         }}
       />
+
+      {/* Kelola akun langsung dari kolom Username (superuser) */}
+      <Dialog open={!!pilihAkun} onOpenChange={(o) => !o && setAkunId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Kelola Akun</DialogTitle>
+            <DialogDescription>{pilihAkun?.employee_name}</DialogDescription>
+          </DialogHeader>
+          {pilihAkun && (
+            <div className="space-y-1 text-sm">
+              {pilihAkun.username ? (
+                <UsernameTag username={pilihAkun.username} aktif={pilihAkun.username_status == 1} className="text-sm" />
+              ) : (
+                <span className="text-slate-400 italic">Belum ada akun</span>
+              )}
+              {pilihAkun.rolelist?.length > 0 && (
+                <div className="text-xs text-slate-500">Role: {pilihAkun.rolelist.map((r) => r.name).join(', ')}</div>
+              )}
+              {akun && <AkunKaryawan d={pilihAkun} akun={akun} />}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Modal Viewer Foto Besar */}
       <ModalLihatFoto data={previewFotoData} onTutup={() => setPreviewFotoData(null)} />
@@ -1344,10 +1369,10 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
                         </button>
                       </td>
 
-                      {/* Akun: superuser klik -> panel detail berisi kelola akun */}
+                      {/* Akun: superuser klik -> dialog kelola akun langsung (seperti app_laravel) */}
                       <td
                         className={`px-4 py-3 ${superuser ? 'cursor-pointer hover:bg-sky-50' : ''}`}
-                        onClick={superuser ? () => setPilihId(d.id) : undefined}
+                        onClick={superuser ? () => setAkunId(d.id) : undefined}
                         title={superuser ? 'Kelola akun' : undefined}
                       >
                         {d.username ? (
