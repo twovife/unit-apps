@@ -77,8 +77,9 @@ function InputRupiah({ value, onChange, disabled, placeholder = '0', className =
 /** Input setoran bulanan SW/SK banyak karyawan sekaligus (sksw.setoran). */
 function DialogSetoran({ open, onClose, rows, period }) {
   // Setoran SKSW per bulan: yang dipilih bulannya, dikirim sebagai tanggal 1.
-  const bulanIni = new Date().toLocaleDateString('sv').slice(0, 7);
-  const [bulan, setBulan] = useState(bulanIni);
+  // Paling akhir bulan lalu: bulan berjalan belum bisa diinput (mas 2026-11-04).
+  const bulanMaks = (() => { const d = new Date(); d.setDate(0); return d.toLocaleDateString('sv').slice(0, 7); })();
+  const [bulan, setBulan] = useState(bulanMaks);
   const [isi, setIsi] = useState({});
   const [checked, setChecked] = useState({});
   const [galat, setGalat] = useState(null);
@@ -86,7 +87,7 @@ function DialogSetoran({ open, onClose, rows, period }) {
 
   useEffect(() => {
     if (!open) return;
-    setBulan(period < bulanIni ? period : bulanIni);
+    setBulan(period < bulanMaks ? period : bulanMaks);
     const initialIsi = {};
     const initialChecked = {};
     rows.forEach((r) => {
@@ -166,7 +167,7 @@ function DialogSetoran({ open, onClose, rows, period }) {
             <Input
               id="tgl-setoran"
               type="month"
-              max={bulanIni}
+              max={bulanMaks}
               value={bulan}
               onChange={(e) => e.target.value && setBulan(e.target.value)}
               className="w-40 h-8 text-xs bg-white"
@@ -274,9 +275,10 @@ function DialogSetoran({ open, onClose, rows, period }) {
 /** Form pendaftaran rekening SKSW untuk pegawai baru (sksw.buka-rekening). */
 function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch }) {
   // Buka tabungan per bulan: yang dipilih bulannya, dikirim sebagai tanggal 1.
-  const bulanIni = new Date().toLocaleDateString('sv').slice(0, 7);
+  // Paling akhir bulan lalu: bulan berjalan belum bisa diinput (mas 2026-11-04).
+  const bulanMaks = (() => { const d = new Date(); d.setDate(0); return d.toLocaleDateString('sv').slice(0, 7); })();
   const [employeeId, setEmployeeId] = useState('');
-  const [tglDaftar, setTglDaftar] = useState(bulanIni);
+  const [tglDaftar, setTglDaftar] = useState(bulanMaks);
   const [nomorRekening, setNomorRekening] = useState('');
   const [saldoAwalSw, setSaldoAwalSw] = useState(0);
   const [saldoAwalSk, setSaldoAwalSk] = useState(0);
@@ -285,7 +287,7 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
 
   useEffect(() => {
     if (!open) return;
-    setTglDaftar(bulanIni);
+    setTglDaftar(bulanMaks);
     setEmployeeId(unregisteredEmployees[0]?.id ? String(unregisteredEmployees[0].id) : '');
     setNomorRekening('');
     setSaldoAwalSw(0);
@@ -371,7 +373,7 @@ function DialogBukaRekening({ open, onClose, unregisteredEmployees = [], branch 
                   <label className="text-xs font-semibold text-slate-700">Bulan Daftar *</label>
                   <Input
                     type="month"
-                    max={bulanIni}
+                    max={bulanMaks}
                     value={tglDaftar}
                     onChange={(e) => e.target.value && setTglDaftar(e.target.value)}
                   />

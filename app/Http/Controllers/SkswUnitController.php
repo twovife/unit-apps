@@ -148,16 +148,31 @@ class SkswUnitController extends Controller
      * = app_laravel SavingController::addTransaction: setoran sekali per bulan
      * per jenis, penarikan tidak boleh melebihi saldo, tidak boleh mundur.
      */
+    private const PESAN_BULAN = 'Bulan berjalan belum bisa diinput - paling akhir bulan lalu.';
+
+    /** SKSW per bulan (mas 2026-11-04): input berupa bulan, paling akhir bulan lalu. */
+    private static function aturanBulan(): array
+    {
+        return ['required', 'date', 'before:' . Carbon::now()->startOfMonth()->toDateString()];
+    }
+
+    /** Tanggal apa pun -> tanggal 1 bulannya. */
+    private static function tglBulan(string $tanggal): string
+    {
+        return Carbon::parse($tanggal)->startOfMonth()->toDateString();
+    }
+
     public function transaksi(Request $request, Saving $saving)
     {
         $data = $request->validate([
             'jenis' => ['required', 'in:SW,SK'],
-            'transaction_date' => ['required', 'date', 'before_or_equal:today'],
+            'transaction_date' => self::aturanBulan(),
             'transaction_type' => ['required', 'in:D,K,KRMD'],
             'debit' => ['nullable', 'integer', 'min:0'],
             'kredit' => ['nullable', 'integer', 'min:0'],
             'note' => ['nullable', 'string', 'max:500'],
-        ], ['transaction_date.before_or_equal' => 'Tanggal transaksi tidak boleh di masa depan.']);
+        ], ['transaction_date.before' => self::PESAN_BULAN]);
+        $data['transaction_date'] = self::tglBulan($data['transaction_date']);
         $batch = $this->siapTulis($saving, $data['transaction_date']);
 
         $setoran = $data['transaction_type'] === 'D';
@@ -199,9 +214,10 @@ class SkswUnitController extends Controller
     public function mutasi(Request $request, Saving $saving)
     {
         $data = $request->validate([
-            'transaction_date' => ['required', 'date', 'before_or_equal:today'],
+            'transaction_date' => self::aturanBulan(),
             'note' => ['nullable', 'string', 'max:500'],
-        ]);
+        ], ['transaction_date.before' => self::PESAN_BULAN]);
+        $data['transaction_date'] = self::tglBulan($data['transaction_date']);
         $fromBatch = $this->siapTulis($saving, $data['transaction_date']);
 
         $tujuan = (int) $saving->employee()->value('branch_id');
@@ -265,12 +281,13 @@ class SkswUnitController extends Controller
         abort_unless($this->bolehInput(), 403, 'Input SKSW untuk kasir, staf kontrol, pusat, dan superuser.');
 
         $data = $request->validate([
-            'transaction_date' => ['required', 'date', 'before_or_equal:today'],
+            'transaction_date' => self::aturanBulan(),
             'items' => ['required', 'array', 'min:1'],
             'items.*.saving_id' => ['required', 'integer'],
             'items.*.sw' => ['nullable', 'integer', 'min:0'],
             'items.*.sk' => ['nullable', 'integer', 'min:0'],
-        ], ['transaction_date.before_or_equal' => 'Tanggal setoran tidak boleh di masa depan.']);
+        ], ['transaction_date.before' => self::PESAN_BULAN]);
+        $data['transaction_date'] = self::tglBulan($data['transaction_date']);
 
         $branchId = (int) AuthScope::resolve()->branch_id;
         $this->authorizeBranch($branchId);
@@ -564,16 +581,17 @@ class SkswUnitController extends Controller
 
         $validated = $request->validate([
             'employee_id' => ['required', 'integer', 'exists:employees,id'],
-            'tgl_daftar' => ['required', 'date', 'before_or_equal:today'],
+            'tgl_daftar' => self::aturanBulan(),
             'nomor_rekening' => ['nullable', 'string', 'max:50', 'unique:savings,nomor_rekening'],
         ], [
             'employee_id.required' => 'Pilih pegawai yang akan didaftarkan.',
             'employee_id.exists' => 'Pegawai tidak ditemukan.',
             'tgl_daftar.required' => 'Tanggal pendaftaran wajib diisi.',
-            'tgl_daftar.before_or_equal' => 'Tanggal pendaftaran tidak boleh di masa depan.',
+            'tgl_daftar.before' => self::PESAN_BULAN,
             'nomor_rekening.unique' => 'Nomor rekening ini sudah digunakan.',
         ]);
 
+        $validated['tgl_daftar'] = self::tglBulan($validated['tgl_daftar']);
         $employee = Employee::query()->findOrFail($validated['employee_id']);
 
         if ($employee->date_resign !== null) {

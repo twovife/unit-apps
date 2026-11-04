@@ -20,7 +20,8 @@ import { rp } from '@/lib/rupiah';
  */
 const TX_TYPE_LABEL = { D: 'Setoran', K: 'Pengambilan', DM: 'Mutasi masuk', KM: 'Mutasi keluar', KRMD: 'Resign / MD' };
 const angka = (v) => String(v ?? '').replace(/\D/g, '');
-const hariIni = () => new Date().toLocaleDateString('sv');
+// SKSW per bulan, paling akhir bulan lalu (mas 2026-11-04); dikirim sebagai tanggal 1.
+const bulanMaks = () => { const d = new Date(); d.setDate(0); return d.toLocaleDateString('sv').slice(0, 7); };
 const tglPendek = (v) => {
   if (!v) return '-';
   const d = new Date(v);
@@ -59,7 +60,7 @@ function TambahTransaksi({ saving, onSelesai }) {
   const [proses, setProses] = useState(false);
   useEffect(() => {
     if (buka) {
-      setIsi({ jenis: 'SW', transaction_type: 'D', transaction_date: hariIni(), nominal: '', note: '' });
+      setIsi({ jenis: 'SW', transaction_type: 'D', transaction_date: bulanMaks(), nominal: '', note: '' });
       setGalat({});
     }
   }, [buka]);
@@ -70,7 +71,7 @@ function TambahTransaksi({ saving, onSelesai }) {
     kirim('post', route('sksw.transaksi', saving.id), {
       jenis: isi.jenis,
       transaction_type: isi.transaction_type,
-      transaction_date: isi.transaction_date,
+      transaction_date: `${isi.transaction_date}-01`,
       debit: debit ? nominal : 0,
       kredit: debit ? 0 : nominal,
       note: isi.note,
@@ -111,8 +112,8 @@ function TambahTransaksi({ saving, onSelesai }) {
                 </div>
               </div>
               <div>
-                <Label>Tanggal Transaksi</Label>
-                <Input type="date" max={hariIni()} className="mt-1" value={isi.transaction_date ?? ''} onChange={(e) => ubah('transaction_date', e.target.value)} />
+                <Label>Bulan Transaksi</Label>
+                <Input type="month" max={bulanMaks()} className="mt-1" value={isi.transaction_date ?? ''} onChange={(e) => e.target.value && ubah('transaction_date', e.target.value)} />
                 {galat.transaction_date && <p className="text-sm text-destructive">{galat.transaction_date}</p>}
               </div>
               <div>
@@ -165,14 +166,14 @@ function MutasiKantor({ saving, onSelesai }) {
 
   useEffect(() => {
     if (buka) {
-      setIsi({ transaction_date: hariIni(), note: '' });
+      setIsi({ transaction_date: bulanMaks(), note: '' });
       setGalat({});
     }
   }, [buka]);
 
   const simpan = (e) => {
     e.preventDefault();
-    kirim('post', route('sksw.mutasi', saving.id), isi, { onSelesai: () => { setBuka(false); onSelesai(); }, setGalat, setProses });
+    kirim('post', route('sksw.mutasi', saving.id), { ...isi, transaction_date: `${isi.transaction_date}-01` }, { onSelesai: () => { setBuka(false); onSelesai(); }, setGalat, setProses });
   };
 
   const handleKlikMutasi = () => {
@@ -280,8 +281,8 @@ function MutasiKantor({ saving, onSelesai }) {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div>
-                <Label>Tanggal Mutasi</Label>
-                <Input type="date" max={hariIni()} className="mt-1" value={isi.transaction_date ?? ''} onChange={(e) => setIsi((x) => ({ ...x, transaction_date: e.target.value }))} />
+                <Label>Bulan Mutasi</Label>
+                <Input type="month" max={bulanMaks()} className="mt-1" value={isi.transaction_date ?? ''} onChange={(e) => e.target.value && setIsi((x) => ({ ...x, transaction_date: e.target.value }))} />
                 {galat.transaction_date && <p className="text-sm text-destructive">{galat.transaction_date}</p>}
               </div>
               <div>
