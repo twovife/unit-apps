@@ -394,6 +394,14 @@ const JabatanBadge = ({ jabatan = '' }) => {
   );
 };
 
+/** Username akun login: titik hijau = akun aktif, merah = nonaktif. */
+const UsernameTag = ({ username, aktif, className = '' }) => (
+  <span className={`inline-flex items-center gap-1.5 font-mono text-[11px] font-medium ${aktif ? 'text-slate-700' : 'text-slate-400'} ${className}`}>
+    <span className={`w-2 h-2 rounded-full shrink-0 ${aktif ? 'bg-emerald-500' : 'bg-red-500'}`} title={aktif ? 'Akun aktif' : 'Akun nonaktif'} />
+    {username}
+  </span>
+);
+
 /**
  * Badge Status Aktif / Resign dengan dot indikator
  */
@@ -780,20 +788,12 @@ const DetailKaryawan = ({
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="flex items-center gap-2 font-medium text-slate-500">
-                    <Shield className="w-4 h-4 text-slate-400" /> Akun Login Aplikasi
+                    <Shield className="w-4 h-4 text-slate-400" /> Username
                   </span>
                   <div className="text-right">
                     {d.username ? (
                       <div>
-                        <span
-                          className={`inline-block px-2 py-0.5 text-xs font-mono font-medium rounded ${
-                            d.username_status == 1
-                              ? 'bg-sky-50 text-sky-800 border border-sky-200/60'
-                              : 'bg-slate-200 text-slate-500 line-through'
-                          }`}
-                        >
-                          @{d.username}
-                        </span>
+                        <UsernameTag username={d.username} aktif={d.username_status == 1} className="text-xs" />
                         {superuser && d.rolelist?.length > 0 && (
                           <div className="text-[11px] text-slate-400 mt-0.5">
                             {d.rolelist.map((r) => r.name).join(', ')}
@@ -1094,7 +1094,7 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
                   <th className="px-4 py-3">Jabatan</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Berkas</th>
-                  <th className="px-4 py-3">Akun Login</th>
+                  <th className="px-4 py-3">Username</th>
                   <th className="px-4 py-3">Masa Kerja</th>
                   <th className="px-4 py-3">Alamat</th>
                   <th className="w-24 px-4 py-3 text-center">Aksi</th>
@@ -1178,15 +1178,7 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
                       <td className="px-4 py-3">
                         {d.username ? (
                           <div className="min-w-0">
-                            <span
-                              className={`inline-block font-mono text-[11px] font-medium px-2 py-0.5 rounded border ${
-                                d.username_status == 1
-                                  ? 'bg-sky-50 text-sky-700 border-sky-200/70'
-                                  : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
-                              }`}
-                            >
-                              @{d.username}
-                            </span>
+                            <UsernameTag username={d.username} aktif={d.username_status == 1} />
                             {superuser && d.rolelist?.length > 0 && (
                               <div className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[140px]">
                                 {d.rolelist.map((r) => r.name).join(', ')}
@@ -1328,9 +1320,7 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
                   <FileText className="w-3 h-3" /> {jumlahDokumen} Dokumen
                 </span>
                 {d.username && (
-                  <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200/60">
-                    @{d.username}
-                  </span>
+                  <UsernameTag username={d.username} aktif={d.username_status == 1} />
                 )}
               </div>
 
