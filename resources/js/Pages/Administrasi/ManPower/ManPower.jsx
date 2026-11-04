@@ -1344,8 +1344,12 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
                         </button>
                       </td>
 
-                      {/* Akun */}
-                      <td className="px-4 py-3">
+                      {/* Akun: superuser klik -> panel detail berisi kelola akun */}
+                      <td
+                        className={`px-4 py-3 ${superuser ? 'cursor-pointer hover:bg-sky-50' : ''}`}
+                        onClick={superuser ? () => setPilihId(d.id) : undefined}
+                        title={superuser ? 'Kelola akun' : undefined}
+                      >
                         {d.username ? (
                           <div className="min-w-0">
                             <UsernameTag username={d.username} aktif={d.username_status == 1} />
