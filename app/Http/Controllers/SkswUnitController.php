@@ -218,12 +218,20 @@ class SkswUnitController extends Controller
             'note' => ['nullable', 'string', 'max:500'],
         ], ['transaction_date.before' => self::PESAN_BULAN]);
         $data['transaction_date'] = self::tglBulan($data['transaction_date']);
-        $fromBatch = $this->siapTulis($saving, $data['transaction_date']);
 
         $tujuan = (int) $saving->employee()->value('branch_id');
         if (!$tujuan || $tujuan === (int) $saving->branch_id) {
             throw ValidationException::withMessages(['transaction_date' => 'Karyawan belum dimutasi. Mutasikan karyawannya dulu di menu Karyawan.']);
         }
+        // Saldo 0 (= app_laravel mutate): tidak ada saldo yang dipindah, cukup kantor rekeningnya.
+        // Tanpa transaksi, jadi batch & tanggal tidak berpengaruh (dicek sebelum siapTulis).
+        if ($saving->saldoSW() === 0 && $saving->saldoSK() === 0) {
+            abort_unless($this->bolehInput(), 403, 'Input SKSW untuk kasir, staf kontrol, pusat, dan superuser.');
+            $this->authorizeBranch((int) $saving->branch_id);
+            $saving->update(['branch_id' => $tujuan]);
+            return back()->with('message', 'Saldo SKSW Rp 0; rekening dipindah ke ' . (Branch::whereKey($tujuan)->value('unit') ?? 'kantor tujuan') . '.');
+        }
+        $fromBatch = $this->siapTulis($saving, $data['transaction_date']);
         $toBatch = SavingBatch::firstOrCreate(['branch_id' => $tujuan, 'period' => $fromBatch->period], ['status' => 'open']);
         if ($toBatch->status === 'locked') {
             throw ValidationException::withMessages(['transaction_date' => "Batch periode {$fromBatch->period} kantor tujuan sudah dikunci. Hubungi kantor pusat."]);

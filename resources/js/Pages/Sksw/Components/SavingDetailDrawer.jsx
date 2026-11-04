@@ -162,7 +162,8 @@ function MutasiKantor({ saving, onSelesai }) {
   const kantorSama = !tujuan || tujuan.id === saving.branch?.id;
   const saldoKosong = (Number(saving.saldo_sw) || 0) <= 0 && (Number(saving.saldo_sk) || 0) <= 0;
   const isResign = !!saving.employee?.date_resign;
-  const tidakBisaMutasi = kantorSama || saldoKosong || isResign;
+  // Saldo 0 tetap bisa: yang dipindah cuma kantor rekeningnya, tanpa transaksi (= app_laravel).
+  const tidakBisaMutasi = kantorSama || isResign;
 
   useEffect(() => {
     if (buka) {
@@ -231,13 +232,6 @@ function MutasiKantor({ saving, onSelesai }) {
                     Mutasi tabungan SKSW hanya dapat dilakukan apabila karyawan telah dipindahtugaskan ke kantor cabang lain.
                   </p>
                 </>
-              ) : saldoKosong ? (
-                <>
-                  <p className="font-semibold text-amber-900">Saldo SW & SK Kosong (Rp 0)</p>
-                  <p className="text-slate-600">
-                    Tabungan karyawan ini tidak memiliki saldo (SW: Rp 0, SK: Rp 0), sehingga tidak ada saldo yang perlu dimutasikan ke kantor baru.
-                  </p>
-                </>
               ) : isResign ? (
                 <>
                   <p className="font-semibold text-amber-900">Karyawan Sudah Resign</p>
@@ -275,8 +269,12 @@ function MutasiKantor({ saving, onSelesai }) {
             <DialogHeader>
               <DialogTitle>Mutasi Pindah Kantor</DialogTitle>
               <DialogDescription>
-                Pindahkan seluruh saldo SW & SK untuk <strong>{saving.employee.nama_karyawan}</strong> ke kantor baru. Sistem akan
-                otomatis memindahkan Rp {rp(saving.saldo_sw)} (SW) dan Rp {rp(saving.saldo_sk)} (SK).
+                {saldoKosong ? (
+                  <>Saldo <strong>{saving.employee.nama_karyawan}</strong> Rp 0: yang dipindah hanya kantor rekeningnya, tanpa transaksi.</>
+                ) : (
+                  <>Pindahkan seluruh saldo SW & SK untuk <strong>{saving.employee.nama_karyawan}</strong> ke kantor baru. Sistem akan
+                otomatis memindahkan Rp {rp(saving.saldo_sw)} (SW) dan Rp {rp(saving.saldo_sk)} (SK).</>
+                )}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
