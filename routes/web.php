@@ -168,6 +168,12 @@ Route::middleware('auth')->group(function () {
       Route::get('/{employee}/documents/{document}', "showDocument")->name('documents.show');
       Route::post('/{employee}/documents', "uploadDocument")->name('documents.upload');
       Route::delete('/{employee}/documents/{document}', "deleteDocument")->name('documents.destroy');
+      // Akun login karyawan (khusus superuser), cermin Settings\UserController app_laravel.
+      Route::post('/{employee}/akun', "akunBuat")->name('akun.store');
+      Route::put('/akun/{user}/password', "akunPassword")->name('akun.password');
+      Route::put('/akun/{user}/aktif', "akunAktif")->name('akun.aktif');
+      Route::put('/akun/{user}/username', "akunUsername")->name('akun.username');
+      Route::put('/akun/{user}/role', "akunRole")->name('akun.role');
     });
     // Lamaran Kerja: catat pelamar & dokumen untuk cabang aktif; terima / tolak di app_laravel.
     Route::controller(\App\Http\Controllers\LamaranKerjaController::class)->prefix('lamaran')->name('lamaran.')->group(function () {

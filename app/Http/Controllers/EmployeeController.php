@@ -64,7 +64,8 @@ class EmployeeController extends Controller
       }
     };
 
-    $data = $employee->map(function ($item) use ($foto) {
+    $superuser = auth()->user()->hasRole('superuser');
+    $data = $employee->map(function ($item) use ($foto, $superuser) {
       $username = $item->username->first();
       $jabatanName = $item->employment?->jabatan ?? '-';
       return [
@@ -80,6 +81,8 @@ class EmployeeController extends Controller
           ];
         }),
         'username_status' => $username?->isactive,
+        // Kelola akun (khusus superuser)
+        'user_id' => $superuser ? $username?->id : null,
         'address' => $item->alamat,
         'employment' => strtolower($jabatanName) === "mantri" ? ($jabatanName . " " . $item->area) : $jabatanName,
         'isActive' => $item->date_resign ? false : true,
@@ -108,7 +111,12 @@ class EmployeeController extends Controller
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
         'branch_id' => $branch_id
-      ]
+      ],
+      // Kelola akun login (khusus superuser): role yang bisa diberikan + kode cabang untuk saran username
+      'akun' => $superuser ? [
+        'roles' => \Spatie\Permission\Models\Role::orderBy('name')->pluck('name'),
+        'branch_code' => Branch::whereKey($branch_id)->value('code'),
+      ] : null,
     ]);
   }
 
@@ -270,6 +278,110 @@ class EmployeeController extends Controller
     abort_unless((int) $document->employee_id === (int) $employee->id, 404);
 
     return \App\Support\Unggahan::tampilkan($document->file_path);
+  }
+
+  /** Akun login yang dikelola harus milik seorang karyawan; semua aksi akun khusus superuser. */
+  private function akunSuperuser(?\App\Models\User $user = null): void
+  {
+    abort_unless(auth()->user()->hasRole('superuser'), 403, 'Akses ditolak.');
+    abort_if($user && !$user->employee_id, 404, 'Akun ini tidak terhubung ke karyawan.');
+  }
+
+  // Cermin app_laravel Settings\UserController::storeForEmployee
+  public function akunBuat(Request $request, Employee $employee)
+  {
+    $this->akunSuperuser();
+
+    if (\App\Models\User::where('employee_id', $employee->id)->exists()) {
+      return back()->withErrors(['username' => 'Karyawan ini sudah memiliki akun pengguna.']);
+    }
+
+    $validated = $request->validate([
+      'username' => 'required|string|max:255|unique:users,username',
+      'password' => ['required', 'string', 'min:8'],
+      'role' => 'nullable|string|exists:roles,name',
+    ]);
+
+    $email = strtolower(str_replace(' ', '', $validated['username'])) . '@ubmi.co.id';
+
+    $user = \App\Models\User::create([
+      'username' => $validated['username'],
+      'email' => $email,
+      'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+      'isactive' => true,
+      'employee_id' => $employee->id,
+    ]);
+
+    if (!empty($validated['role'])) {
+      $user->assignRole($validated['role']);
+    }
+
+    return back()->with('message', "Akun pengguna untuk {$employee->nama_karyawan} berhasil dibuat.");
+  }
+
+  // Cermin app_laravel Settings\UserController::resetPassword
+  public function akunPassword(Request $request, \App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    $validated = $request->validate([
+      'password' => ['required', 'string', 'min:8'],
+    ]);
+
+    $user->update([
+      'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+    ]);
+
+    return back()->with('message', 'Password pengguna berhasil direset.');
+  }
+
+  // Cermin app_laravel Settings\UserController::toggleActive
+  public function akunAktif(\App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    // Jangan biarkan superuser menonaktifkan dirinya sendiri
+    if ($user->id === auth()->id()) {
+      return back()->withErrors(['isactive' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.']);
+    }
+
+    $user->update([
+      'isactive' => !$user->isactive,
+    ]);
+
+    $status = $user->isactive ? 'diaktifkan' : 'dinonaktifkan';
+    return back()->with('message', "Akun pengguna berhasil $status.");
+  }
+
+  // Cermin app_laravel Settings\UserController::updateUsername
+  public function akunUsername(Request $request, \App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    $validated = $request->validate([
+      'username' => 'required|string|unique:users,username,' . $user->id . '|max:255',
+    ]);
+
+    $user->update([
+      'username' => $validated['username'],
+    ]);
+
+    return back()->with('message', 'Username pengguna berhasil diperbarui.');
+  }
+
+  // Cermin app_laravel Settings\UserController::updateRoles
+  public function akunRole(Request $request, \App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    $validated = $request->validate([
+      'roles' => 'array',
+      'roles.*' => 'exists:roles,name',
+    ]);
+
+    $user->syncRoles($validated['roles'] ?? []);
+
+    return back()->with('message', 'Role pengguna berhasil diperbarui.');
   }
 
   /**

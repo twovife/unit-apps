@@ -11,15 +11,18 @@ import {
   Eye,
   FileText,
   IdCard,
+  KeyRound,
   ImageUp,
   Loader2,
   MapPin,
+  Pencil,
   RefreshCw,
   Search,
   Shield,
   Trash2,
   Upload,
   UserCheck,
+  UserPlus,
   Users,
   UserX,
   X,
@@ -632,6 +635,170 @@ const DocumentUploaderRow = ({ employee, type, label, existingDoc, bolehUnggah }
 };
 
 /**
+ * Kelola akun login karyawan (khusus superuser). Aturan cermin app_laravel
+ * employees/components/user-create-modal.tsx & user-manage-modal.tsx.
+ */
+const PASSWORD_AWAL = '4343abab';
+const saranUsername = (nama, kode) => {
+  const bersih = (v) => (v ?? '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+  const akhiran = bersih(kode);
+  return bersih(nama) + (akhiran ? `_${akhiran}` : '');
+};
+
+const AkunKaryawan = ({ d, akun }) => {
+  const [mode, setMode] = useState(null); // buat | password | username | role
+  const [form, setForm] = useState({});
+  const [errors, setErrors] = useState({});
+  const [proses, setProses] = useState(false);
+  const roles = akun?.roles ?? [];
+
+  const buka = (m) => {
+    setErrors({});
+    setForm(
+      {
+        buat: { username: saranUsername(d.employee_name, akun?.branch_code), password: PASSWORD_AWAL, role: roles[0] ?? '' },
+        password: { password: '' },
+        username: { username: d.username ?? '' },
+        role: { roles: (d.rolelist ?? []).map((r) => r.name) },
+      }[m]
+    );
+    setMode(m);
+  };
+
+  const kirim = (url, method, data, pesan, tutup = true) => {
+    setProses(true);
+    router.visit(url, {
+      method,
+      data,
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        toast.success(pesan);
+        if (tutup) setMode(null);
+      },
+      onError: (err) => {
+        setErrors(err);
+        toast.error(Object.values(err)[0] ?? 'Gagal menyimpan.');
+      },
+      onFinish: () => setProses(false),
+    });
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (mode === 'buat') kirim(route('administrasi.manpower.akun.store', d.id), 'post', form, 'Akun pengguna berhasil dibuat.');
+    if (mode === 'password') kirim(route('administrasi.manpower.akun.password', d.user_id), 'put', form, 'Password pengguna berhasil direset.');
+    if (mode === 'username') kirim(route('administrasi.manpower.akun.username', d.user_id), 'put', form, 'Username pengguna berhasil diperbarui.');
+    if (mode === 'role') kirim(route('administrasi.manpower.akun.role', d.user_id), 'put', form, 'Role pengguna berhasil diperbarui.');
+  };
+
+  const aktif = d.username_status == 1;
+  const toggleAktif = () => {
+    if (!confirm(`${aktif ? 'Nonaktifkan' : 'Aktifkan'} akun ${d.username}?`)) return;
+    kirim(route('administrasi.manpower.akun.aktif', d.user_id), 'put', {}, `Akun pengguna berhasil ${aktif ? 'dinonaktifkan' : 'diaktifkan'}.`, false);
+  };
+
+  const err = (k) => errors[k] && <span className="block text-[11px] text-rose-600 mt-1">{errors[k]}</span>;
+  const tombol = 'h-7 px-2 text-[11px]';
+
+  return (
+    <>
+      <div className="flex flex-wrap justify-end gap-1 mt-2">
+        {!d.user_id ? (
+          <Button size="sm" variant="outline" className={tombol} onClick={() => buka('buat')}>
+            <UserPlus className="w-3.5 h-3.5 mr-1" /> Buat Akun
+          </Button>
+        ) : (
+          <>
+            <Button size="sm" variant="outline" className={tombol} onClick={() => buka('password')}>
+              <KeyRound className="w-3.5 h-3.5 mr-1" /> Reset Password
+            </Button>
+            <Button size="sm" variant="outline" className={tombol} onClick={toggleAktif} disabled={proses}>
+              {aktif ? <UserX className="w-3.5 h-3.5 mr-1" /> : <UserCheck className="w-3.5 h-3.5 mr-1" />}
+              {aktif ? 'Nonaktifkan' : 'Aktifkan'}
+            </Button>
+            <Button size="sm" variant="outline" className={tombol} onClick={() => buka('username')}>
+              <Pencil className="w-3.5 h-3.5 mr-1" /> Username
+            </Button>
+            <Button size="sm" variant="outline" className={tombol} onClick={() => buka('role')}>
+              <Shield className="w-3.5 h-3.5 mr-1" /> Role
+            </Button>
+          </>
+        )}
+      </div>
+
+      <Dialog open={!!mode} onOpenChange={(o) => !o && setMode(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {{ buat: 'Buat Akun Pengguna', password: 'Reset Password', username: 'Ganti Username', role: 'Ubah Role' }[mode]}
+            </DialogTitle>
+            <DialogDescription>
+              {d.employee_name}
+              {d.username ? ` (${d.username})` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="space-y-3 text-sm text-left">
+            {(mode === 'buat' || mode === 'username') && (
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Username Log In</span>
+                <Input value={form.username ?? ''} onChange={(e) => setForm({ ...form, username: e.target.value })} required autoFocus />
+                {mode === 'buat' && (
+                  <span className="block text-[11px] text-slate-400 mt-1">Otomatis disertai kode cabang sebagai akhiran (dapat diubah/dihapus).</span>
+                )}
+                {err('username')}
+              </label>
+            )}
+            {(mode === 'buat' || mode === 'password') && (
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">{mode === 'buat' ? 'Password Pertama' : 'Password Baru'}</span>
+                <Input type="text" value={form.password ?? ''} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+                {mode === 'buat' && (
+                  <span className="block text-[11px] text-slate-400 mt-1">Default password diset ke <code className="font-mono font-bold">{PASSWORD_AWAL}</code>.</span>
+                )}
+                {err('password')}
+              </label>
+            )}
+            {mode === 'buat' && roles.length > 0 && (
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Role / Hak Akses Awal</span>
+                <select className="w-full h-9 rounded-md border border-slate-200 px-2 text-sm bg-white" value={form.role ?? ''} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                  {roles.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+                {err('role')}
+              </label>
+            )}
+            {mode === 'role' && (
+              <div className="grid grid-cols-2 gap-2">
+                {roles.map((r) => (
+                  <label key={r} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.roles?.includes(r) ?? false}
+                      onChange={(e) =>
+                        setForm({ roles: e.target.checked ? [...(form.roles ?? []), r] : (form.roles ?? []).filter((x) => x !== r) })
+                      }
+                    />
+                    <span className="capitalize">{r}</span>
+                  </label>
+                ))}
+                {err('roles')}
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="submit" size="sm" disabled={proses}>
+                {proses && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Simpan
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+/**
  * Dialog Detail Karyawan Lengkap (Profil + Berkas Dokumen Digital + Cropper Foto)
  */
 const DetailKaryawan = ({
@@ -642,6 +809,7 @@ const DetailKaryawan = ({
   onMulaiGantiFoto,
   onHapusFoto,
   onLihatFoto,
+  akun,
 }) => {
   if (!d) return null;
 
@@ -803,6 +971,7 @@ const DetailKaryawan = ({
                     ) : (
                       <span className="text-slate-400 italic">Belum ada akun</span>
                     )}
+                    {superuser && akun && <AkunKaryawan d={d} akun={akun} />}
                   </div>
                 </div>
 
@@ -855,7 +1024,7 @@ const DetailKaryawan = ({
 };
 
 const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
-  const { auth } = usePage().props;
+  const { auth, akun } = usePage().props;
   const superuser = auth?.roles?.includes('superuser');
   const bolehUnggah = superuser || auth?.roles?.includes('kasir');
 
@@ -969,6 +1138,7 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
         onMulaiGantiFoto={mulaiGantiFoto}
         onHapusFoto={konfirmasiHapusFoto}
         onLihatFoto={setPreviewFotoData}
+        akun={akun}
       />
 
       {/* Header Halaman & Statistik Ringkas */}
