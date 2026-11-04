@@ -373,7 +373,7 @@ class TransactionLoan extends Model
 
   public function hitungUlangPelunasan(): bool
   {
-    $saldo = \App\Helpers\PenyesuaianSaldo::hitungSaldo($this);
+    $saldo = \App\Helpers\PenyesuaianSaldo::hitungSaldo($this, null, true);
     $lunas = $this->status === 'success' && $saldo['saldo'] <= 0;
     $isi = ['total_angsuran' => $saldo['angsuran']];
 

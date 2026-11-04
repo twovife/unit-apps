@@ -37,9 +37,9 @@ class PenyesuaianSaldo
      * @param  \DateTimeInterface|string|null  $perTanggal  null = semua yang tercatat
      * @return array{pinjaman:int, angsuran:int, pemutihan:int, efek:int, saldo:int}
      */
-    public static function hitungSaldo(TransactionLoan $loan, $perTanggal = null): array
+    public static function hitungSaldo(TransactionLoan $loan, $perTanggal = null, bool $mentah = false): array
     {
-        return self::saldoBanyak([$loan->id], $perTanggal)[$loan->id]
+        return self::saldoBanyak([$loan->id], $perTanggal, null, $mentah)[$loan->id]
             ?? ['pinjaman' => 0, 'angsuran' => 0, 'pemutihan' => 0, 'efek' => 0, 'saldo' => 0];
     }
 
@@ -64,7 +64,7 @@ class PenyesuaianSaldo
      * @param  \DateTimeInterface|string|null  $bulanPenyesuaian
      * @return array<int, array{pinjaman:int, angsuran:int, pemutihan:int, efek:int, saldo:int}>
      */
-    public static function saldoBanyak(array $loanIds, $perTanggal = null, $bulanPenyesuaian = null): array
+    public static function saldoBanyak(array $loanIds, $perTanggal = null, $bulanPenyesuaian = null, bool $mentah = false): array
     {
         if (empty($loanIds)) {
             return [];
@@ -103,7 +103,9 @@ class PenyesuaianSaldo
             ];
             $s['saldo'] = $s['pinjaman'] - $s['angsuran'] - $s['pemutihan'] + $s['efek'];
             // Lunas fosil (lihat AgregasiScope::BATAS_FOSIL_LUNAS): sama dengan HitungAgregat::portofolio().
-            if ($r->pay_off_date && $r->pay_off_date < AgregasiScope::BATAS_FOSIL_LUNAS && (!$tanggal || $r->pay_off_date <= $tanggal)) {
+            // $mentah: tanpa aturan ini - dipakai hitungUlangPelunasan, supaya pinjaman yang
+            // koreksinya membuat saldo > 0 lagi tidak terkunci "lunas" oleh pay_off_date lamanya sendiri.
+            if (!$mentah && $r->pay_off_date && $r->pay_off_date < AgregasiScope::BATAS_FOSIL_LUNAS && (!$tanggal || $r->pay_off_date <= $tanggal)) {
                 $s['saldo'] = 0;
             }
             $out[(int) $r->id] = $s;

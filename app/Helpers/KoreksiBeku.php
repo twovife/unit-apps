@@ -117,6 +117,16 @@ class KoreksiBeku
         if ($aksi === 'tambah' && $tanggal->lt(Carbon::parse($loan->drop_date)->startOfDay())) {
             throw new \RuntimeException('Tanggal angsuran sebelum tanggal drop pinjaman.');
         }
+        // Sama dengan bayar_pinjaman: angsuran tidak boleh melebihi sisa saldo (mas 2026-11-04,
+        // kasus Pariah #2243490 - angsuran susulan dobel bikin saldo minus, rekap & buku storting beda).
+        if (in_array($aksi, ['tambah', 'ubah'], true) && $loan) {
+            $tambahan = $nominal - ($aksi === 'ubah' ? (int) $angsuran->nominal : 0);
+            // Saldo mentah: pinjaman lunas fosil yang angsurannya belum lengkap tetap bisa dilengkapi.
+            $sisa = (int) PenyesuaianSaldo::hitungSaldo($loan, null, true)['saldo'];
+            if ($tambahan > 0 && $tambahan > $sisa) {
+                throw new \RuntimeException('Angsuran melebihi sisa saldo (Rp ' . number_format(max(0, $sisa), 0, ',', '.') . ').');
+            }
+        }
 
         // Hanya kelompok pinjaman ini (mas 2026-10-24): kelompok lain tidak berubah oleh koreksi.
         // Pinjaman yang dipindah resort: bulan sebelum pindah ada di kelompok asal, ikut dihitung.
