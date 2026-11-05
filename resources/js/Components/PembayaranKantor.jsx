@@ -3,11 +3,10 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { Link, router } from '@inertiajs/react';
 import {
-  AlertTriangle,
-  Building2,
   Car,
   CheckCircle2,
-  ClipboardCheck,
+  ChevronRight,
+  Circle,
   Landmark,
   PiggyBank,
   Plane,
@@ -15,7 +14,6 @@ import {
   Receipt,
   Trash2,
   Wallet,
-  XCircle,
 } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
@@ -74,15 +72,14 @@ const MAKS_BUKTI = 2 * 1024 * 1024; // = Unggahan::MAKS_KB
 /** Tanda besar di pojok kartu. */
 const Tanda = ({ jenis, teks }) => {
   const gaya = {
-    sudah: ['bg-emerald-100 text-emerald-800', CheckCircle2],
-    kurang: ['bg-amber-100 text-amber-800', AlertTriangle],
-    belum: ['bg-rose-100 text-rose-800', XCircle],
-    netral: ['bg-slate-100 text-slate-600', null],
+    sudah: 'text-emerald-700 bg-emerald-50',
+    kurang: 'text-amber-700 bg-amber-50',
+    belum: 'text-rose-700 bg-rose-50',
+    netral: 'text-slate-500 bg-slate-50',
   }[jenis];
-  const Ikon = gaya[1];
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${gaya[0]}`}>
-      {Ikon && <Ikon className="w-3.5 h-3.5" />}
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-full whitespace-nowrap ${gaya}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
       {teks}
     </span>
   );
@@ -91,28 +88,25 @@ const Tanda = ({ jenis, teks }) => {
 /** Tombol kecil "Detail" ke menu asal kartu; tidak tampil kalau menunya belum ada. */
 const TombolDetail = ({ href }) =>
   href ? (
-    <Link
-      href={href}
-      className="px-2 py-0.5 text-[11px] font-semibold rounded-md shrink-0 text-sky-700 ring-1 ring-sky-300 hover:bg-sky-50"
-    >
-      Detail
+    <Link href={href} className="text-xs font-medium shrink-0 text-slate-400 hover:text-sky-700">
+      Detail →
     </Link>
   ) : null;
 
 const Kartu = ({ judul, ikon: Ikon, warna, href, tanda, aksi, children }) => (
-  <div className="flex flex-col h-full p-4 bg-white border shadow-sm rounded-xl">
-    <div className="flex items-start justify-between gap-2 mb-3">
-      <div className="flex items-center min-w-0 gap-2">
-        <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${warna}`}>
-          <Ikon className="w-5 h-5" />
+  <div className="flex flex-col h-full p-5 transition-colors bg-white border rounded-2xl border-slate-200/70 hover:border-slate-300">
+    <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex items-center min-w-0 gap-2.5">
+        <span className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${warna}`}>
+          <Ikon className="w-4 h-4" />
         </span>
-        <h3 className="font-semibold truncate text-slate-900">{judul}</h3>
-        <TombolDetail href={href} />
+        <h3 className="text-sm font-semibold truncate text-slate-800">{judul}</h3>
       </div>
-      {tanda}
+      <TombolDetail href={href} />
     </div>
-    <div className="flex-1 space-y-1 text-sm">{children}</div>
-    {aksi && <div className="pt-3 mt-3 border-t">{aksi}</div>}
+    {tanda && <div className="mb-3">{tanda}</div>}
+    <div className="flex-1 space-y-1.5 text-sm">{children}</div>
+    {aksi && <div className="pt-4 mt-4">{aksi}</div>}
   </div>
 );
 
@@ -192,44 +186,74 @@ const IsiIuran = ({ d }) => {
   );
 };
 
-/** Tugas kasir hari ini: kunci/TTD, ACC KM, iuran. */
+/** Satu baris tugas: lingkaran centang, judul, keterangan, nilai di kanan. */
+const BarisTugas = ({ ok, judul, ket, nilai, href, children }) => {
+  const isi = (
+    <>
+      {ok ? (
+        <CheckCircle2 className="w-5 h-5 mt-0.5 text-emerald-500 shrink-0" />
+      ) : (
+        <Circle className="w-5 h-5 mt-0.5 text-slate-300 shrink-0" />
+      )}
+      <div className="flex-1 min-w-0">
+        <div className={`text-sm font-medium ${ok ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>{judul}</div>
+        {ket && <div className="text-xs text-slate-400">{ket}</div>}
+        {children}
+      </div>
+      {nilai && <div className={`text-sm tabular-nums shrink-0 ${ok ? 'text-slate-400' : 'font-semibold text-slate-700'}`}>{nilai}</div>}
+      {href && <ChevronRight className="w-4 h-4 mt-0.5 text-slate-300 shrink-0" />}
+    </>
+  );
+  const kelas = 'flex items-start gap-3 px-4 py-3';
+  return href ? <Link href={href} className={`${kelas} hover:bg-slate-50`}>{isi}</Link> : <div className={kelas}>{isi}</div>;
+};
+
+const MAKS_CHIP = 6;
+
+/** Tugas harian: Rekap 1 (hari belum dikunci, hari ini) + iuran bulan ini. */
 const Tugas = ({ t }) => {
-  const item = [
-    {
-      ok: t.kelompok > 0 && t.acc_km >= t.kelompok,
-      teks: `ACC KM hari ini: ${t.acc_km}/${t.kelompok} kelompok`,
-      href: linkKe('transaction.index_buku_transaksi'),
-    },
-    {
-      ok: t.kelompok > 0 && t.kunci >= t.kelompok,
-      teks: `${t.migrasi ? 'Kunci' : 'TTD'} kasir hari ini (Rekap 1): ${t.kunci}/${t.kelompok} kelompok`,
-      href: linkKe('kasir.rekap.rekap_satu'),
-    },
-    { ok: t.iuran_tb >= t.target_tb, teks: `Iuran Tabungan 1 Juta bulan ini: ${rp(t.iuran_tb)} / ${rp(t.target_tb)}` },
-    { ok: t.iuran_bop >= t.target_bop, teks: `Iuran BOP bulan ini: ${rp(t.iuran_bop)} / ${rp(t.target_bop)}` },
-  ];
+  const [semua, setSemua] = useState(false);
+  const perTanggal = Object.entries((t.belum_kunci ?? []).reduce((a, h) => ((a[h.tanggal] ??= []).push(h.kelompok), a), {}));
+  const tampil = semua ? perTanggal : perTanggal.slice(0, MAKS_CHIP);
+  const rekap1 = linkKe('kasir.rekap.rekap_satu');
+  const kunci = t.migrasi ? 'Kunci' : 'TTD';
+  const selesai = [perTanggal.length === 0, t.kelompok > 0 && t.acc_km >= t.kelompok, t.kelompok > 0 && t.kunci >= t.kelompok];
   return (
-    <section className="p-4 bg-white border shadow-sm rounded-xl">
-      <h3 className="flex items-center gap-2 mb-2 font-semibold text-slate-900">
-        <ClipboardCheck className="w-5 h-5 text-slate-500" />
-        Tugas kasir hari ini — {dayjs(t.tanggal).format('dddd, DD MMMM YYYY')}
-      </h3>
-      {!t.hari_kerja && <p className="mb-2 text-sm text-slate-500">Hari ini libur — tidak ada kunci harian.</p>}
-      <ul className="grid gap-1.5 text-sm sm:grid-cols-2">
-        {item.map((x, i) => (
-          <li key={i} className="flex items-center gap-2">
-            {x.ok ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <XCircle className="w-4 h-4 text-rose-500 shrink-0" />}
-            {x.href ? (
-              <Link href={x.href} className={`hover:underline ${x.ok ? 'text-slate-600' : 'text-slate-900 font-medium'}`}>
-                {x.teks}
+    <div className="bg-white border divide-y rounded-2xl border-slate-200/70 divide-slate-100">
+      <div className="flex items-center justify-between px-4 py-3">
+        <p className="text-xs text-slate-400">{t.hari_kerja ? dayjs(t.tanggal).format('dddd, DD MMMM YYYY') : 'Hari ini libur — tidak ada kunci harian'}</p>
+        <span className="text-xs font-medium tabular-nums text-slate-500">
+          {selesai.filter(Boolean).length}/{selesai.length} selesai
+        </span>
+      </div>
+      <BarisTugas
+        ok={selesai[0]}
+        judul={`${kunci} hari sebelumnya`}
+        ket={selesai[0] ? 'Semua hari sebelumnya sudah dikunci' : `${perTanggal.length} hari belum dikunci — klik tanggal untuk membuka Rekap 1`}
+      >
+        {perTanggal.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {tampil.map(([tanggal, kel]) => (
+              <Link
+                key={tanggal}
+                href={route('kasir.rekap.rekap_satu', { date: tanggal })}
+                title={`Kelompok ${kel.join(', ')}`}
+                className="px-2.5 py-1 text-xs rounded-full bg-amber-50 text-amber-800 hover:bg-amber-100"
+              >
+                {dayjs(tanggal).format('ddd DD/MM')} · {kel.length} kel
               </Link>
-            ) : (
-              <span className={x.ok ? 'text-slate-600' : 'text-slate-900 font-medium'}>{x.teks}</span>
+            ))}
+            {perTanggal.length > MAKS_CHIP && (
+              <button type="button" onClick={() => setSemua(!semua)} className="px-1 text-xs text-slate-500 hover:text-slate-800">
+                {semua ? 'ringkas' : `+${perTanggal.length - MAKS_CHIP} lagi`}
+              </button>
             )}
-          </li>
-        ))}
-      </ul>
-    </section>
+          </div>
+        )}
+      </BarisTugas>
+      <BarisTugas ok={selesai[1]} judul="ACC KM hari ini" ket="Rekap harian disetujui kepala mantri" nilai={`${t.acc_km}/${t.kelompok}`} href={linkKe('transaction.index_buku_transaksi')} />
+      <BarisTugas ok={selesai[2]} judul={`${kunci} kasir hari ini`} ket="Rekap 1" nilai={`${t.kunci}/${t.kelompok}`} href={rekap1} />
+    </div>
   );
 };
 
@@ -592,8 +616,26 @@ const DialogModal = ({ m, onClosed, rekening }) => {
   );
 };
 
-export default function PembayaranKantor({ videos = {} }) {
+const sapaan = () => {
+  const j = new Date().getHours();
+  return j < 11 ? 'Selamat pagi' : j < 15 ? 'Selamat siang' : j < 18 ? 'Selamat sore' : 'Selamat malam';
+};
+
+/** Foto profil (MinIO, link sementara) atau inisial kalau tidak ada / gagal dimuat. */
+const Foto = ({ p }) => {
+  const [gagal, setGagal] = useState(false);
+  return p.foto && !gagal ? (
+    <img src={p.foto} alt={p.nama} onError={() => setGagal(true)} className="object-cover w-24 h-24 rounded-full ring-4 ring-white shadow-sm shrink-0" />
+  ) : (
+    <span className="flex items-center justify-center w-24 h-24 text-2xl font-semibold rounded-full ring-4 ring-white shadow-sm bg-sky-50 text-sky-700 shrink-0">
+      {p.nama.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
+    </span>
+  );
+};
+
+export default function PembayaranKantor({ videos = {}, profil = null, samping = null }) {
   const [bulan, setBulan] = useState(dayjs().format('YYYY-MM'));
+  const [tab, setTab] = useState('tugas');
   const [data, setData] = useState(null);
   const [galat, setGalat] = useState(null);
   const [muatUlang, setMuatUlang] = useState(0);
@@ -626,40 +668,84 @@ export default function PembayaranKantor({ videos = {} }) {
   const bayar = data?.boleh_bayar;
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-              <Building2 className="w-5 h-5 text-slate-500" />
-              Dashboard Kasir {data?.unit ? `— ${data.unit}` : ''}
-            </h2>
+    <section className="grid items-start gap-6 lg:grid-cols-[1fr_18rem]">
+      {/* Kolom kanan (desktop): kartu profil (+ isi tambahan, mis. pengumuman). Di HP tampil paling atas. */}
+      <aside className="space-y-4 lg:sticky lg:top-4 lg:order-last">
+        <div className="flex flex-col items-center p-6 text-center bg-white border rounded-2xl border-slate-200/70">
+          {profil && <Foto p={profil} />}
+          <h2 className="mt-4 text-lg font-semibold text-slate-900">{profil?.nama ?? 'Dashboard Kasir'}</h2>
+          {profil?.jabatan && <p className="text-sm capitalize text-slate-500">{profil.jabatan}</p>}
+          <dl className="w-full mt-5 space-y-2 text-sm text-left">
+            {[
+              ['Kantor', profil?.kantor ?? data?.unit],
+              ['Wilayah', profil?.wilayah],
+              ['Hari ini', dayjs().format('ddd, DD MMM YYYY')],
+            ]
+              .filter(([, v]) => v)
+              .map(([l, v]) => (
+                <div key={l} className="flex justify-between gap-2">
+                  <dt className="text-slate-400">{l}</dt>
+                  <dd className="font-medium text-right text-slate-700">{v}</dd>
+                </div>
+              ))}
+          </dl>
+          <div className="w-full pt-5 mt-5 border-t border-slate-100">
             <VideoTutorialButton videos={videos} menu="kasir" buttonText="Video Panduan" />
           </div>
-          <p className="text-sm text-slate-500">Tugas hari ini dan pembayaran kantor aktif per bulan.</p>
         </div>
-        <input
-          type="month"
-          value={bulan}
-          max={dayjs().format('YYYY-MM')}
-          onChange={(e) => e.target.value && setBulan(e.target.value)}
-          className="h-9 px-3 text-sm border rounded-md border-input bg-background"
-          aria-label="Bulan"
-        />
-      </div>
+        {samping}
+      </aside>
 
-      {galat && <div className="p-3 text-sm border rounded-lg border-rose-200 bg-rose-50 text-rose-700">{galat}</div>}
-      {!k && !galat && <div className="text-sm text-slate-500">Memuat…</div>}
+      <div className="min-w-0 space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            {sapaan()}{profil ? `, ${profil.nama.split(' ')[0]}` : ''}
+          </h1>
+          <p className="text-sm text-slate-500">Yang perlu dikerjakan hari ini dan pembayaran kantor bulan ini.</p>
+        </div>
 
-      {data?.tugas && <Tugas t={data.tugas} />}
+        {galat && <div className="p-3 text-sm rounded-xl bg-rose-50 text-rose-700">{galat}</div>}
+        {!k && !galat && <div className="text-sm text-slate-400">Memuat…</div>}
 
-      {k && (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200">
+          <div className="flex gap-6" role="tablist">
+            {[
+              ['tugas', 'Tugas Harian'],
+              ['bayar', 'Pembayaran Kantor'],
+            ].map(([kunci, label]) => (
+              <button
+                key={kunci}
+                type="button"
+                role="tab"
+                aria-selected={tab === kunci}
+                onClick={() => setTab(kunci)}
+                className={`-mb-px pb-2.5 text-sm font-medium border-b-2 ${tab === kunci ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-700'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {tab === 'bayar' && k && (
+            <input
+              type="month"
+              value={bulan}
+              max={dayjs().format('YYYY-MM')}
+              onChange={(e) => e.target.value && setBulan(e.target.value)}
+              className="h-8 px-2 mb-2 text-sm bg-white border rounded-lg border-slate-200 text-slate-600"
+              aria-label="Bulan"
+            />
+          )}
+        </div>
+
+        {tab === 'tugas' && data?.tugas && <Tugas t={data.tugas} />}
+
+      {tab === 'bayar' && k && (
+        <div className="grid gap-4 md:grid-cols-2">
           {/* Tabungan 1 Juta + BOP satu kartu: satu tombol bayar (gabungan), dua link detail. */}
           <Kartu
             judul="Iuran Bulanan"
             ikon={PiggyBank}
-            warna="bg-pink-100 text-pink-700"
+            warna="bg-pink-50 text-pink-600"
             aksi={
               <div className="grid gap-2">
                 {bayar && (
@@ -690,7 +776,7 @@ export default function PembayaranKantor({ videos = {} }) {
             judul="Tabungan Goro Umrah"
             ikon={Plane}
             href={linkKe('dashboard.kasir.goro_umrah')}
-            warna="bg-teal-100 text-teal-700"
+            warna="bg-teal-50 text-teal-600"
             tanda={
               k.umrah.kali_bulan_ini > 0 ? (
                 <Tanda jenis="sudah" teks={`Sudah setor ${k.umrah.kali_bulan_ini}x`} />
@@ -719,7 +805,7 @@ export default function PembayaranKantor({ videos = {} }) {
               judul="Pinjaman Modal"
               ikon={Landmark}
               href={linkKe('dashboard.kasir.pinjaman_modal')}
-              warna="bg-violet-100 text-violet-700"
+              warna="bg-violet-50 text-violet-600"
               aksi={
                 m.boleh_bayar &&
                 m.jumlah_aktif > 0 &&
@@ -765,7 +851,7 @@ export default function PembayaranKantor({ videos = {} }) {
               <Riwayat isi={m.pinjaman_baru} judul="Tambah pinjaman bulan ini" kata="pinjaman" />
             </Kartu>
           ))(k)}
-          <Kartu judul="SKSW" ikon={Wallet} warna="bg-emerald-100 text-emerald-700" href={linkKe('sksw.unit')}>
+          <Kartu judul="SKSW" ikon={Wallet} warna="bg-emerald-50 text-emerald-600" href={linkKe('sksw.unit')}>
             <Baris label="Saldo SW" nilai={rp(k.sksw.saldo_sw)} tebal />
             <Baris label="Saldo SK" nilai={rp(k.sksw.saldo_sk)} tebal />
             <Baris label="Masuk bulan ini" nilai={rp(k.sksw.masuk)} />
@@ -777,7 +863,7 @@ export default function PembayaranKantor({ videos = {} }) {
             judul="Pajak Kendaraan"
             ikon={Car}
             href={linkKe('assets.index')}
-            warna="bg-sky-100 text-sky-700"
+            warna="bg-sky-50 text-sky-600"
             tanda={
               k.kendaraan.length === 0 ? (
                 <Tanda jenis="sudah" teks="Tidak ada yang jatuh tempo" />
@@ -811,6 +897,8 @@ export default function PembayaranKantor({ videos = {} }) {
           </Kartu>
         </div>
       )}
+
+      </div>
 
       <DialogIuran buka={dialog === 'iuran'} onClosed={tutup} data={data} bulan={bulan} />
       <DialogUmrah buka={dialog === 'umrah'} onClosed={tutup} rekening={data?.rekening} />

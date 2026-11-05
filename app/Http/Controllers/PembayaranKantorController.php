@@ -34,8 +34,27 @@ class PembayaranKantorController extends Controller
     {
         abort_unless(\App\Helpers\AppHelper::bolehAdmKantor(auth()->user()), 403, 'Dashboard kasir untuk kepala mantri, kasir, dan pimpinan.');
 
+        $emp = auth()->user()->employee?->loadMissing('employment');
+        $foto = null;
+        if ($emp?->avatar && config('filesystems.disks.s3_publik.bucket')) {
+            try {
+                $foto = Storage::disk('s3_publik')->temporaryUrl($emp->avatar, now()->addHours(3));
+            } catch (\Throwable $e) {
+                $foto = null; // MinIO mati: tampil inisial
+            }
+        }
+        $branch = $this->kantor();
+
         return \Inertia\Inertia::render('Kasir/Dashboard/Index', [
             'videos' => \App\Helpers\VideoTutorial::url(['iuran', 'pinjamanmodal', 'sksw', 'sksw_karyawan_baru', 'tabungangoro']),
+            'video' => \App\Helpers\VideoPengumuman::url(),
+            'profil' => [
+                'nama' => $emp?->nama_karyawan ?? auth()->user()->name,
+                'jabatan' => $emp?->employment?->jabatan,
+                'kantor' => $branch->unit,
+                'wilayah' => $branch->wilayah,
+                'foto' => $foto,
+            ],
         ]);
     }
 
@@ -649,6 +668,7 @@ class PembayaranKantorController extends Controller
             'acc_km' => (int) ($harian->km ?? 0),
             'kunci' => (int) ($harian->kasir ?? 0),
             'migrasi' => $migrasi,
+            'belum_kunci' => $migrasi ? \App\Helpers\Gembok::hariTerbuka($branchId) : \App\Helpers\Gembok::belumDikunciLama($branchId),
             'iuran_tb' => (int) DB::table('tb_contributions')->where('branch_id', $branchId)->where('period', $periode)->sum('amount'),
             'iuran_bop' => (int) DB::table('ops_bop_contributions')->where('branch_id', $branchId)->where('period', $periode)->sum('amount'),
             'target_tb' => self::TARGET_TABUNGAN,
