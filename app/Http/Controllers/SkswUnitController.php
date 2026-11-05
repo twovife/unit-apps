@@ -268,7 +268,9 @@ class SkswUnitController extends Controller
     public function hapus(SavingTransaction $transaction)
     {
         abort_unless($this->bolehInput(), 403, 'Input SKSW untuk kasir, staf kontrol, pusat, dan superuser.');
-        $this->authorizeBranch((int) $transaction->branch_id);
+        // Mutasi: baris pertama tercatat di kantor asal, tapi rekening sudah di kantor tujuan
+        // dan tombol hapus tampil di sana -> izin ikut kantor rekening.
+        $this->authorizeBranch((int) ($transaction->mutasi_ref ? $transaction->rekening->branch_id : $transaction->branch_id));
         abort_unless($this->bisaHapus($transaction, Auth::user()), 403, 'Transaksi ini tidak bisa dihapus (batch terkunci / data lama).');
 
         $transaction->delete();
@@ -576,7 +578,12 @@ class SkswUnitController extends Controller
     {
         // = app_laravel canBeVoidedBy tanpa bypass: data legacy (batch_id null) tidak bisa
         // di-void dari unit-apps; bypass-sksw-lock hanya lewat app_laravel (mas 2026-10-19).
-        return $this->bolehInput() && $tx->voided_at === null && $tx->batch_id !== null && $tx->batch?->status === 'open';
+        if (!($this->bolehInput() && $tx->voided_at === null && $tx->batch_id !== null && $tx->batch?->status === 'open')) {
+            return false;
+        }
+        // Pasangan mutasi ikut terhapus: batch kantor seberang juga harus masih terbuka.
+        return !$tx->mutasi_ref || !SavingTransaction::where('mutasi_ref', $tx->mutasi_ref)
+            ->whereDoesntHave('batch', fn($q) => $q->where('status', 'open'))->exists();
     }
 
     public function bukaRekening(Request $request)
