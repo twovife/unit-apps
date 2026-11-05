@@ -25,7 +25,9 @@ export default function Authenticated({ header, children, loading = false }) {
   return (
     <SidebarProvider defaultOpen={sidebarTerbuka()}>
       {Object.keys(errors).length > 0 && (
-        <SweetAlert type="error" message={errors[0]} keys={flash} />
+        // Pesan bernama (withErrors(['items' => ...]), validasi) juga ditampilkan, bukan hanya errors[0];
+        // dulu yang bernama jatuh ke "Terjadi Kesalahan Silahkan hub IT." tanpa alasan.
+        <SweetAlert type="error" message={errors[0] ?? [...new Set(Object.values(errors).flat())].join(' ')} keys={flash} />
       )}
       {flash.peringatan ? (
         <SweetAlert type="warning" message={flash.peringatan} keys={flash} />
