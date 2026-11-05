@@ -73,7 +73,13 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
         setPenyesuaian(data.penyesuaian ?? []);
       })
       .catch(function ({ response }) {
-        setErorAxios(true);
+        setLoading(false);
+        // Alasan dari server (mis. 403 "bukan kantor / kelompok Anda"), bukan pesan umum.
+        setErorAxios(
+          response?.status === 401
+            ? 'Sesi habis, silakan login lagi.'
+            : response?.data?.message || 'TERJADI KESALAHAN SAAT PENGAMBILAN DATA, MOHON REFRESH BROWSER',
+        );
       });
   };
   // check is pengajuan exist
@@ -447,7 +453,7 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                     ) : erorAxios ? (
                       <TableRow>
                         <TableCell colSpan={5} className="font-semibold text-red-500">
-                          TERJADI KESALAHAN SAAT PENGAMBILAN DATA, MOHON REFRESH BROWSER
+                          {erorAxios}
                         </TableCell>
                       </TableRow>
                     ) : (
