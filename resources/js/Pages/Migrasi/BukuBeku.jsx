@@ -22,7 +22,7 @@ const jumlah = (o) => (o ? Object.values(o).reduce((a, n) => a + (Number(n) || 0
  */
 const BandingBucket = ({ b, kelompok, hari }) => {
   useModeRibuan();
-  const rb = (n) => (n === null || n === undefined ? '—' : angka(n, { bulat: true }));
+  const rb = (n) => (n === null || n === undefined ? '—' : angka(n));
   const baris = [...KATEGORI, ['total', 'Total']].map(([k, label]) => {
     const ambil = (o) => (o ? (k === 'total' ? jumlah(o) : o[k]) : null);
     const s = ambil(b.sekarang);

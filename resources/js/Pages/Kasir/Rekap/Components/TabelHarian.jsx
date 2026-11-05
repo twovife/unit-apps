@@ -5,7 +5,7 @@ import { angka, useModeRibuan } from '@/lib/modeAngka';
 
 // Angka dipangkas ribuannya (1.300.000 -> 1.300), atau rupiah penuh kalau
 // saklar header bilang begitu. Komponen pemakai memanggil useModeRibuan().
-export const ribu = (n) => angka(n, { bulat: true });
+export const ribu = (n) => angka(n);
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 // Senin minggu itu (dayjs: Minggu = 0) - penanda minggu.

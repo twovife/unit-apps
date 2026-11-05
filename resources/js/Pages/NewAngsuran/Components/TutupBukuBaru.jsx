@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 import SatuanAngka from '@/Components/SatuanAngka';
 
-const rb = (n) => angka(n, { bulat: true });
+const rb = (n) => angka(n);
 const EMBER = [
   ['month1', 'Month 1'],
   ['month2', 'Month 2'],

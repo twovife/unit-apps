@@ -18,7 +18,7 @@ const PILIH = "h-9 px-2 text-sm border rounded-md border-input bg-background";
 
 const kunci = (g, h) => `${g}|${h}`;
 const asalnya = (b) => kunci(b.grouping_id, b.hari);
-const rb = (n) => angka(n, { bulat: true });
+const rb = (n) => angka(n);
 const jumlah = (xs, f) => xs.reduce((s, x) => s + x[f], 0);
 // Tempat parkir blok yang belum dapat kotak. Disimpan sebagai peta dengan ke_* NULL.
 const STASH = "stash";

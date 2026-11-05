@@ -59,10 +59,10 @@ const fmtRibuan = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 const fmtPenuh = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
 
 /** Rupiah -> teks sesuai saklar (ribuan: dibagi 1000, maks 1 desimal). */
-export const angka = (n, opsi = {}) => {
+export const angka = (n) => {
   const v = Number(n) || 0;
   if (!modeRibuan()) return fmtPenuh.format(v);
-  return opsi.bulat ? fmtRibuan.format(Math.round(v / 1000)) : fmtRibuan.format(v / 1000);
+  return fmtRibuan.format(v / 1000);
 };
 
 /** Keterangan satuan untuk teks penjelas di halaman. */

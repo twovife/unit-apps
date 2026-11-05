@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 import SatuanAngka from '@/Components/SatuanAngka';
 
-const rb = (n) => angka(n, { bulat: true });
+const rb = (n) => angka(n);
 const EMBER = [
   ['month1', 'Month 1'],
   ['month2', 'Month 2'],
@@ -40,7 +40,7 @@ const BarisPinjaman = ({ l, ket, onKlik }) => {
         <span className={onKlik ? 'underline decoration-dotted' : ''}>{l.nama ?? '—'}</span>
         <span className="ml-1 text-xs text-slate-500">— {ket}</span>
       </span>
-      <span className="tabular-nums">{angka(l.nominal, { bulat: true })}</span>
+      <span className="tabular-nums">{angka(l.nominal)}</span>
     </div>
   );
   return onKlik ? (

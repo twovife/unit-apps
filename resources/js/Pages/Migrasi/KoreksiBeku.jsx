@@ -13,7 +13,7 @@ const EMBER = { month1: 'M1', month2: 'M2', ccm: 'CCM', cm: 'CM', mb: 'MB', ml: 
 
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const PILIH = 'h-9 px-2 text-sm border rounded-md border-input bg-background';
-const rb = (n) => angka(n, { bulat: true });
+const rb = (n) => angka(n);
 
 /** Sel berisi lebih dari satu angsuran / pelunasan topup: pilih yang dikoreksi. */
 const DialogSel = ({ sel, onClosed, onAksi }) => {
