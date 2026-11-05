@@ -2,7 +2,7 @@ import { useForm } from '@inertiajs/react';
 import { AlertCircle, Lock, Save } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 
@@ -30,10 +30,19 @@ const BPKB_OPTIONS = [
 ];
 
 const toDateInput = (value) => (value ? String(value).slice(0, 10) : '');
+const formatTgl = (tgl) => {
+  const [y, m, d] = tgl.split('-').map(Number);
+  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(y, m - 1, d));
+};
+// STNK 5 tahunan jatuh di bulan & tanggal yang sama dengan pajak tahunan (29 Feb -> 28 Feb di tahun bukan kabisat).
+const stnkPada = (pajak, tahun) => {
+  const [, m, d] = pajak.split('-');
+  return `${tahun}-${m}-${m === '02' && d === '29' && tahun % 4 ? '28' : d}`;
+};
 
 function Field({ label, error, required, children }) {
   return (
-    <label className="block space-y-1.5 text-sm">
+    <label className="block space-y-1 text-sm">
       <span className="flex items-center gap-1 font-medium">
         {label}
         {required && <span className="font-bold text-rose-500">*</span>}
@@ -51,7 +60,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
   const form = useForm({
     name: '',
     purchase_date: '',
-    status: 'aktif',
+    status: '',
     description: '',
     pengguna: '',
     notes: '',
@@ -70,7 +79,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
       purchase_date: toDateInput(asset?.purchase_date),
       // Status di luar pilihan (non-aktif hasil impor lama): dikosongkan, kasir wajib
       // memilih status sebenarnya (rusak / hilang / dijual / ...) - mas 2026-10-26.
-      status: STATUS_SAH.includes(asset?.status) ? asset.status : asset ? '' : 'aktif',
+      status: STATUS_SAH.includes(asset?.status) ? asset.status : '',
       description: asset?.description ?? '',
       pengguna: CADANGAN.includes(currentPengguna) ? '' : currentPengguna,
       notes: '',
@@ -109,22 +118,31 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
   };
 
   const isLocked = !!asset?.vehicle && !canEditVehicleRegistration;
+  // Pilihan STNK: tahun pajak tahunan s/d +4 (STNK berlaku 5 tahun); nilai lama tetap ditampilkan.
+  const tahunPajak = Number(form.data.tanggal_pajak_tahunan.slice(0, 4));
+  const pilihanStnk = tahunPajak
+    ? [...new Set([...Array.from({ length: 5 }, (_, i) => stnkPada(form.data.tanggal_pajak_tahunan, tahunPajak + i)), form.data.tanggal_stnk].filter(Boolean))].sort()
+    : [];
+  const gantiPajak = (pajak) => {
+    const tahunStnk = Number(form.data.tanggal_stnk.slice(0, 4));
+    form.setData((d) => ({ ...d, tanggal_pajak_tahunan: pajak, tanggal_stnk: pajak && tahunStnk ? stnkPada(pajak, tahunStnk) : d.tanggal_stnk }));
+  };
   const errorEntries = Object.entries(form.errors);
   const hasErrors = errorEntries.length > 0;
 
   return (
-    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
-      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <SheetHeader className="border-b px-5 py-4 pr-12 text-left">
-          <SheetTitle>{asset ? 'Ubah Kendaraan' : 'Kendaraan Baru'}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl lg:max-w-5xl">
+        <DialogHeader className="border-b px-5 py-4 pr-12 text-left">
+          <DialogTitle>{asset ? 'Ubah Kendaraan' : 'Kendaraan Baru'}</DialogTitle>
+          <DialogDescription>
             {asset ? asset.asset_code : `Penempatan awal: ${branch.unit}`}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-          <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto p-5">
+          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
             {hasErrors && (
-              <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+              <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 lg:col-span-2 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="mt-0.5 size-5 shrink-0 text-rose-600 dark:text-rose-400" />
                   <div className="space-y-1 text-sm">
@@ -140,7 +158,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
               </div>
             )}
 
-            <section className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
+            <section className="grid gap-3 rounded-lg border p-4 sm:grid-cols-2">
               <h3 className="font-semibold sm:col-span-2">Informasi aset</h3>
               <Field label="Nama Kendaraan" error={form.errors.name} required>
                 <Input
@@ -159,11 +177,11 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   onChange={(event) => form.setData('status', event.target.value)}
                   required
                 >
+                  <option value="" disabled>— Pilih status —</option>
                   <option value="aktif">Aktif / Digunakan</option>
                   <option value="rusak">Rusak</option>
                   <option value="hilang">Hilang</option>
                   <option value="dijual">Dijual</option>
-                  <option value="" disabled>— Pilih status —</option>
                   {asset && <option value="dihapus">Dihapus</option>}
                 </select>
                 {asset?.status && !STATUS_SAH.includes(asset.status) && (
@@ -212,7 +230,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   <Field label="Kantor Penempatan">
                     <Input value={branch.unit} readOnly />
                   </Field>
-                  <Field label="Catatan Penempatan" error={form.errors.notes}>
+                  <Field label="Catatan" error={form.errors.notes}>
                     <Input
                       value={form.data.notes}
                       onChange={(event) => form.setData('notes', event.target.value)}
@@ -223,7 +241,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
               )}
             </section>
 
-            <section className="space-y-4 rounded-lg border p-4">
+            <section className="space-y-3 rounded-lg border p-4">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">Informasi STNK dan pajak</h3>
                 {isLocked && (
@@ -239,7 +257,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   edit STNK) diperlukan untuk mengubah manual.
                 </p>
               )}
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Plat Nomor" error={form.errors.plat_nomor} required>
                   <Input
                     value={form.data.plat_nomor}
@@ -262,26 +280,11 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                     required
                   />
                 </Field>
-                <Field label="Masa Berlaku STNK (5 Tahunan)" error={form.errors.tanggal_stnk} required>
-                  <Input
-                    type="date"
-                    value={form.data.tanggal_stnk}
-                    onChange={(event) => form.setData('tanggal_stnk', event.target.value)}
-                    disabled={isLocked}
-                    className={form.errors.tanggal_stnk ? 'border-destructive focus-visible:ring-destructive' : ''}
-                    required
-                  />
-                  {isLocked && (
-                    <span className="block text-[11px] text-amber-700 dark:text-amber-400">
-                      Terkunci untuk Kasir. Diperbarui otomatis saat pembayaran Pajak 5 Tahunan atau oleh Superuser.
-                    </span>
-                  )}
-                </Field>
                 <Field label="Jatuh Tempo Pajak Tahunan" error={form.errors.tanggal_pajak_tahunan} required>
                   <Input
                     type="date"
                     value={form.data.tanggal_pajak_tahunan}
-                    onChange={(event) => form.setData('tanggal_pajak_tahunan', event.target.value)}
+                    onChange={(event) => gantiPajak(event.target.value)}
                     disabled={isLocked}
                     className={form.errors.tanggal_pajak_tahunan ? 'border-destructive focus-visible:ring-destructive' : ''}
                     required
@@ -289,6 +292,30 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                   {isLocked && (
                     <span className="block text-[11px] text-amber-700 dark:text-amber-400">
                       Terkunci untuk Kasir. Diperbarui otomatis saat konfirmasi pembayaran pajak atau oleh Superuser.
+                    </span>
+                  )}
+                </Field>
+                <Field label="Masa Berlaku STNK (5 Tahunan)" error={form.errors.tanggal_stnk} required>
+                  {/* Bulan & tanggal STNK = bulan & tanggal pajak tahunan; tinggal pilih tahunnya. */}
+                  <select
+                    className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${
+                      form.errors.tanggal_stnk ? 'border-destructive ring-1 ring-destructive' : ''
+                    }`}
+                    value={form.data.tanggal_stnk}
+                    onChange={(event) => form.setData('tanggal_stnk', event.target.value)}
+                    disabled={isLocked || !form.data.tanggal_pajak_tahunan}
+                    required
+                  >
+                    <option value="" disabled>{form.data.tanggal_pajak_tahunan ? '— Pilih tahun —' : 'Isi pajak tahunan dulu'}</option>
+                    {pilihanStnk.map((tgl) => (
+                      <option key={tgl} value={tgl}>
+                        {formatTgl(tgl)}
+                      </option>
+                    ))}
+                  </select>
+                  {isLocked && (
+                    <span className="block text-[11px] text-amber-700 dark:text-amber-400">
+                      Terkunci untuk Kasir. Diperbarui otomatis saat pembayaran Pajak 5 Tahunan atau oleh Superuser.
                     </span>
                   )}
                 </Field>
@@ -321,7 +348,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
             </Button>
           </div>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

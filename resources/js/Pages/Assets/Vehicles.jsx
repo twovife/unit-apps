@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import axios from 'axios';
 import { Calendar, Car, CircleAlert, Eye, Pencil, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -21,13 +21,9 @@ const statusLabels = {
   'non-aktif': 'Nonaktif',
 };
 
-const statusStyles = {
-  aktif: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  rusak: 'border-amber-200 bg-amber-50 text-amber-700',
-  hilang: 'border-rose-200 bg-rose-50 text-rose-700',
-  dijual: 'border-blue-200 bg-blue-50 text-blue-700',
-  dihapus: 'border-slate-200 bg-slate-100 text-slate-600',
-};
+// Tab daftar: bawaan Aktif (mas 2026-11-04).
+const TAB = { aktif: 'Aktif', nonaktif: 'Tidak Aktif', semua: 'Semua' };
+const cocokTab = (tab, status) => tab === 'semua' || (tab === 'aktif') === (status === 'aktif');
 
 // PIC kosong / '-' / 'Cadangan' = kendaraan cadangan.
 const isCadangan = (pengguna) => !pengguna || pengguna === '-' || pengguna === 'Cadangan';
@@ -65,9 +61,9 @@ function SummaryCard({ title, value, icon: Icon, description }) {
   );
 }
 
-export default function Vehicles({ branch, assets, branches, summary, canEditVehicleRegistration, canInputTax, bolehKelola, video }) {
+export default function Vehicles({ branch, assets, branches, summary, canEditVehicleRegistration, bolehKelola, video }) {
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const [tab, setTab] = useState('aktif');
   const [detail, setDetail] = useState(null);
   const [editAsset, setEditAsset] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -76,12 +72,12 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
   const assetList = useMemo(() => {
     const q = search.trim().toLowerCase();
     const qPlat = q.replace(/\s/g, '');
-    return semua.filter((a) => (!status || a.status === status) && (!q
+    return semua.filter((a) => cocokTab(tab, a.status) && (!q
       || a.name?.toLowerCase().includes(q)
       || a.asset_code?.toLowerCase().includes(q)
       || a.current_location?.pengguna?.toLowerCase().includes(q)
       || a.vehicle?.plat_nomor?.toLowerCase().replace(/\s/g, '').includes(qPlat)));
-  }, [semua, search, status]);
+  }, [semua, search, tab]);
   const bukaEdit = (id) => {
     if (!canEditVehicleRegistration) return;
     axios.get(route('assets.edit_data', id))
@@ -109,11 +105,6 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
           </div>
           <div className="flex flex-wrap gap-2">
             <VideoTutorialButton videos={video} menu="aset" />
-            {canInputTax && (
-              <Button asChild variant="outline">
-                <Link href={route('assets.her')}><Calendar className="mr-2 size-4" />Pajak Kendaraan</Link>
-              </Button>
-            )}
             <Button onClick={() => { setEditAsset(null); setFormOpen(true); }}>
               <Plus className="mr-2 size-4" />Kendaraan Baru
             </Button>
@@ -143,22 +134,25 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Cari nama, kode aset, atau plat nomor"
+                  placeholder="Cari nama, pemakai, atau plat nomor"
                   className="pl-9"
                   aria-label="Cari kendaraan"
                 />
               </div>
-              <select
-                value={status}
-                onChange={(event) => setStatus(event.target.value)}
-                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                aria-label="Filter status kendaraan"
-              >
-                <option value="">Semua status</option>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+              <div className="inline-flex h-10 shrink-0 rounded-md bg-muted p-1" role="tablist" aria-label="Status kendaraan">
+                {Object.entries(TAB).map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === k}
+                    onClick={() => setTab(k)}
+                    className={`rounded px-3 text-sm font-medium ${tab === k ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    {label} ({semua.filter((a) => cocokTab(k, a.status)).length})
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
 
             <div className="overflow-x-auto rounded-md border">
@@ -167,10 +161,10 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                   <TableRow>
                     <TableHead className="w-12">No.</TableHead>
                     <TableHead className="w-14 text-center">Edit</TableHead>
-                    <TableHead>Kode Aset</TableHead>
                     <TableHead>Plat Nomor</TableHead>
                     <TableHead>Nama Aset</TableHead>
-                    <TableHead>Kantor / Pemakai</TableHead>
+                    <TableHead>Kantor</TableHead>
+                    <TableHead>Pemakai</TableHead>
                     <TableHead>Pajak Tahunan</TableHead>
                     <TableHead>STNK (5 Th)</TableHead>
                     <TableHead>Status</TableHead>
@@ -192,7 +186,6 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                           <Pencil className="size-4" />
                         </Button>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap font-mono text-xs">{asset.asset_code}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {asset.vehicle?.plat_nomor ? (
                           <button
@@ -207,13 +200,11 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                         ) : '—'}
                       </TableCell>
                       <TableCell className="min-w-40">{asset.name}</TableCell>
-                      <TableCell className="min-w-36">
-                        <div>{asset.current_location?.branch?.unit ?? branch.unit}</div>
+                      <TableCell className="whitespace-nowrap">{asset.current_location?.branch?.unit ?? branch.unit}</TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {isCadangan(asset.current_location?.pengguna) ? (
-                          <Badge variant="outline" className="mt-0.5 border-violet-200 bg-violet-50 text-violet-700">Cadangan</Badge>
-                        ) : (
-                          <div className="text-xs text-muted-foreground">{asset.current_location.pengguna}</div>
-                        )}
+                          <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">Cadangan</Badge>
+                        ) : asset.current_location.pengguna}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {/* Merah = her sudah lewat, kuning = 30 hari lagi atau kurang (kendaraan aktif). */}
@@ -232,16 +223,12 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                       </TableCell>
                       <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_stnk)}</TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {asset.status === 'aktif' ? (
-                          <Badge variant="outline" className={statusStyles.aktif}>Aktif</Badge>
-                        ) : (
-                          <div className="flex flex-col items-start gap-0.5">
-                            <Badge variant="outline" className="border-slate-300 bg-slate-100 text-slate-600">Nonaktif</Badge>
-                            <span className={`text-xs font-medium ${(statusStyles[asset.status] ?? '').split(' ').find((c) => c.startsWith('text-')) ?? ''}`}>
-                              {statusLabels[asset.status] ?? asset.status}
-                            </span>
-                          </div>
-                        )}
+                        <Badge
+                          variant="outline"
+                          className={asset.status === 'aktif' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}
+                        >
+                          {statusLabels[asset.status] ?? asset.status}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   )) : (

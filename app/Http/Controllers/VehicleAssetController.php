@@ -66,7 +66,6 @@ class VehicleAssetController extends Controller
                 'problematic' => (int) ($summary->problematic ?? 0),
             ],
             'canEditVehicleRegistration' => $this->canEditVehicleRegistration($request),
-            'canInputTax' => $this->canInputTax($request),
             'bolehKelola' => $this->bolehKelola($request),
             'video' => \App\Helpers\VideoTutorial::url(['cekaset', 'cek_pajak']),
         ]);
