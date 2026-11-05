@@ -93,22 +93,35 @@ const TombolDetail = ({ href }) =>
     </Link>
   ) : null;
 
-const Kartu = ({ judul, ikon: Ikon, warna, href, tanda, aksi, children }) => (
-  <div className="flex flex-col h-full p-5 transition-colors bg-white border rounded-2xl border-slate-200/70 hover:border-slate-300">
-    <div className="flex items-center justify-between gap-2 mb-4">
-      <div className="flex items-center min-w-0 gap-2.5">
-        <span className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${warna}`}>
-          <Ikon className="w-4 h-4" />
-        </span>
-        <h3 className="text-sm font-semibold truncate text-slate-800">{judul}</h3>
+// Warna per kartu: [border, latar header tipis, ikon] (kelas utuh supaya terbaca Tailwind).
+const WARNA = {
+  pink: ['border-pink-300', 'bg-pink-50/70', 'text-pink-600'],
+  teal: ['border-teal-300', 'bg-teal-50/70', 'text-teal-600'],
+  violet: ['border-violet-300', 'bg-violet-50/70', 'text-violet-600'],
+  emerald: ['border-emerald-300', 'bg-emerald-50/70', 'text-emerald-600'],
+  sky: ['border-sky-300', 'bg-sky-50/70', 'text-sky-600'],
+};
+
+const Kartu = ({ judul, ikon: Ikon, warna = 'sky', href, tanda, aksi, children }) => {
+  const [garis, latar, ikon] = WARNA[warna] ?? WARNA.sky;
+  return (
+    <div className={`flex flex-col h-full p-5 bg-white border rounded-2xl ${garis}`}>
+      {/* Header: latar tipis sewarna border, di dalam padding kartu (tidak selebar kartu). */}
+      <div className={`flex items-center justify-between gap-2 px-3 py-2 mb-4 rounded-xl ${latar}`}>
+        <div className="flex items-center min-w-0 gap-2.5">
+          <span className={`flex items-center justify-center w-8 h-8 bg-white rounded-full shadow-sm shrink-0 ${ikon}`}>
+            <Ikon className="w-4 h-4" />
+          </span>
+          <h3 className="text-sm font-semibold truncate text-slate-800">{judul}</h3>
+        </div>
+        <TombolDetail href={href} />
       </div>
-      <TombolDetail href={href} />
+      {tanda && <div className="mb-3">{tanda}</div>}
+      <div className="flex-1 space-y-1.5 text-sm">{children}</div>
+      {aksi && <div className="pt-4 mt-4">{aksi}</div>}
     </div>
-    {tanda && <div className="mb-3">{tanda}</div>}
-    <div className="flex-1 space-y-1.5 text-sm">{children}</div>
-    {aksi && <div className="pt-4 mt-4">{aksi}</div>}
-  </div>
-);
+  );
+};
 
 const Baris = ({ label, nilai, tebal = false }) => (
   <div className="flex justify-between gap-3">
@@ -712,6 +725,7 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
             {[
               ['tugas', 'Tugas Harian'],
               ['bayar', 'Pembayaran Kantor'],
+              ['pajak', `Pajak Kendaraan${k?.kendaraan?.length ? ` (${k.kendaraan.length})` : ''}`],
             ].map(([kunci, label]) => (
               <button
                 key={kunci}
@@ -745,7 +759,7 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
           <Kartu
             judul="Iuran Bulanan"
             ikon={PiggyBank}
-            warna="bg-pink-50 text-pink-600"
+            warna="pink"
             aksi={
               <div className="grid gap-2">
                 {bayar && (
@@ -775,8 +789,8 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
           <Kartu
             judul="Tabungan Goro Umrah"
             ikon={Plane}
+            warna="teal"
             href={linkKe('dashboard.kasir.goro_umrah')}
-            warna="bg-teal-50 text-teal-600"
             tanda={
               k.umrah.kali_bulan_ini > 0 ? (
                 <Tanda jenis="sudah" teks={`Sudah setor ${k.umrah.kali_bulan_ini}x`} />
@@ -804,8 +818,8 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
             <Kartu
               judul="Pinjaman Modal"
               ikon={Landmark}
+              warna="violet"
               href={linkKe('dashboard.kasir.pinjaman_modal')}
-              warna="bg-violet-50 text-violet-600"
               aksi={
                 m.boleh_bayar &&
                 m.jumlah_aktif > 0 &&
@@ -851,51 +865,54 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
               <Riwayat isi={m.pinjaman_baru} judul="Tambah pinjaman bulan ini" kata="pinjaman" />
             </Kartu>
           ))(k)}
-          <Kartu judul="SKSW" ikon={Wallet} warna="bg-emerald-50 text-emerald-600" href={linkKe('sksw.unit')}>
+          <Kartu judul="SKSW" ikon={Wallet} warna="emerald" href={linkKe('sksw.unit')}>
             <Baris label="Saldo SW" nilai={rp(k.sksw.saldo_sw)} tebal />
             <Baris label="Saldo SK" nilai={rp(k.sksw.saldo_sk)} tebal />
             <Baris label="Masuk bulan ini" nilai={rp(k.sksw.masuk)} />
             <Baris label="Keluar bulan ini" nilai={rp(k.sksw.keluar)} />
             <Riwayat isi={k.sksw.riwayat} />
           </Kartu>
-          {/* Pajak (her) kendaraan aktif kantor ini: lewat atau <= 30 hari lagi, dihitung dari hari ini. */}
-          <Kartu
-            judul="Pajak Kendaraan"
-            ikon={Car}
-            href={linkKe('assets.index')}
-            warna="bg-sky-50 text-sky-600"
-            tanda={
-              k.kendaraan.length === 0 ? (
-                <Tanda jenis="sudah" teks="Tidak ada yang jatuh tempo" />
-              ) : k.kendaraan.some((v) => v.sisa_hari < 0) ? (
-                <Tanda jenis="belum" teks={`${k.kendaraan.filter((v) => v.sisa_hari < 0).length} lewat jatuh tempo`} />
-              ) : (
-                <Tanda jenis="kurang" teks={`${k.kendaraan.length} jatuh tempo ≤ 30 hari`} />
-              )
-            }
-          >
-            {k.kendaraan.length === 0 ? (
-              <div className="text-sm text-slate-500">Tidak ada kendaraan yang pajaknya lewat atau jatuh tempo 30 hari ke depan.</div>
-            ) : (
-              <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                {k.kendaraan.map((v) => (
-                  <div key={v.asset_id} className="flex items-start justify-between gap-2 text-sm">
-                    <div className="min-w-0">
-                      <div className="font-semibold truncate text-slate-800">
-                        {v.plat} <span className="font-normal text-slate-500">{v.nama}</span>
-                      </div>
-                      <div className="text-xs truncate text-slate-500">{v.pengguna || 'Cadangan'}</div>
-                    </div>
-                    <div className={`text-right text-xs shrink-0 ${v.sisa_hari < 0 ? 'text-rose-600 font-semibold' : 'text-amber-600 font-semibold'}`}>
-                      {tgl(v.tanggal)}
-                      <div>{v.sisa_hari < 0 ? `lewat ${-v.sisa_hari} hari` : v.sisa_hari === 0 ? 'hari ini' : `${v.sisa_hari} hari lagi`}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Kartu>
         </div>
+      )}
+
+      {/* Pajak (her) kendaraan aktif kantor ini: lewat atau <= 30 hari lagi, dihitung dari hari ini. */}
+      {tab === 'pajak' && k && (
+      <Kartu
+        judul="Pajak Kendaraan"
+        ikon={Car}
+        warna="sky"
+        href={linkKe('assets.index')}
+        tanda={
+          k.kendaraan.length === 0 ? (
+            <Tanda jenis="sudah" teks="Tidak ada yang jatuh tempo" />
+          ) : k.kendaraan.some((v) => v.sisa_hari < 0) ? (
+            <Tanda jenis="belum" teks={`${k.kendaraan.filter((v) => v.sisa_hari < 0).length} lewat jatuh tempo`} />
+          ) : (
+            <Tanda jenis="kurang" teks={`${k.kendaraan.length} jatuh tempo ≤ 30 hari`} />
+          )
+        }
+      >
+        {k.kendaraan.length === 0 ? (
+          <div className="text-sm text-slate-500">Tidak ada kendaraan yang pajaknya lewat atau jatuh tempo 30 hari ke depan.</div>
+        ) : (
+          <div className="grid gap-x-8 gap-y-3 md:grid-cols-2">
+            {k.kendaraan.map((v) => (
+              <div key={v.asset_id} className="flex items-start justify-between gap-2 text-sm">
+                <div className="min-w-0">
+                  <div className="font-semibold truncate text-slate-800">
+                    {v.plat} <span className="font-normal text-slate-500">{v.nama}</span>
+                  </div>
+                  <div className="text-xs truncate text-slate-500">{v.pengguna || 'Cadangan'}</div>
+                </div>
+                <div className={`text-right text-xs shrink-0 ${v.sisa_hari < 0 ? 'text-rose-600 font-semibold' : 'text-amber-600 font-semibold'}`}>
+                  {tgl(v.tanggal)}
+                  <div>{v.sisa_hari < 0 ? `lewat ${-v.sisa_hari} hari` : v.sisa_hari === 0 ? 'hari ini' : `${v.sisa_hari} hari lagi`}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Kartu>
       )}
 
       </div>
