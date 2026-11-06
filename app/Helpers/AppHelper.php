@@ -304,11 +304,13 @@ class AppHelper
 
 
   /** Input Macet: batas tanggal drop, akhir bulan sebelum kantor online. */
-  public static function batasDropMacet($branchId): string
+  // Batas drop Input Macet: semua kantor sama, drop s/d 31 Mei 2026 (mas
+  // 2026-11-06), sama dengan Input ML (PecahanMacetLama::BATAS_DROP). Dulu dari
+  // online_branches, dengan cadangan "4 bulan lalu" yang terus bergeser dan
+  // membuka pintu input ulang pinjaman yang sudah tercatat (Jember 5, 27 Okt).
+  public static function batasDropMacet($branchId = null): string
   {
-    $online = \App\Models\OnlineBranch::where('branch_id', $branchId)->first()?->online_date ?? Carbon::now()->subMonths(4);
-
-    return Carbon::parse($online)->subMonth()->endOfMonth()->format('Y-m-d');
+    return Carbon::parse(\App\Helpers\PecahanMacetLama::BATAS_DROP)->subDay()->toDateString();
   }
 
   public static function getStortingShowDate($req_day)
