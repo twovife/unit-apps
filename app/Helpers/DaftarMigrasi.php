@@ -80,36 +80,18 @@ class DaftarMigrasi
             throw new \RuntimeException('Kunci otomatis butuh akun yang terhubung ke data karyawan.');
         }
 
-        $bulan = [];
-        for ($b = $periode->copy(); $b->lte(Carbon::now()->startOfMonth()) || empty($bulan); $b->addMonthNoOverflow()) {
-            $bulan[] = $b->copy();
-        }
-
         $kunci = 0;
 
-        DB::transaction(function () use ($branch, $periode, $bulan, $kunciSampai, $employeeId, &$kunci) {
+        DB::transaction(function () use ($branch, $periode, $kunciSampai, $employeeId, &$kunci) {
             DB::table('branches')->where('id', $branch->id)
                 ->update(['mulai_pendataan_baru' => $periode->toDateString()]);
             AgregasiScope::lupakanCache();
 
-            foreach ($bulan as $b) {
-                self::siapkanBaris($branch->id, $b);
-            }
-
-            $ids = TransactionLoanOfficerGrouping::where('branch_id', $branch->id)->pluck('id')->all();
-
-            if ($kunciSampai) {
-                $kunci = Gembok::kunciMigrasi($ids, $periode, $kunciSampai, $employeeId);
-            }
-
-            foreach ($bulan as $b) {
-                TutupBulanan::susun($ids, $b);
-            }
-
-            // Saldo awal BULAN DEPAN (= akhir bulan berjalan) langsung tersedia,
-            // sama dengan tiap tutup harian (ClosingHarianController::
-            // susunBulanan) - tidak menunggu kunci kasir pertama.
-            TutupBulanan::susun($ids, Carbon::now()->startOfMonth()->addMonthNoOverflow());
+            self::bangunBaris($branch->id, $periode, function ($ids) use ($periode, $kunciSampai, $employeeId, &$kunci) {
+                if ($kunciSampai) {
+                    $kunci = Gembok::kunciMigrasi($ids, $periode, $kunciSampai, $employeeId);
+                }
+            });
         });
 
         AgregasiScope::lupakanCache();
@@ -124,6 +106,61 @@ class DaftarMigrasi
         ]);
 
         return true;
+    }
+
+    /**
+     * Baris harian setiap bulan dari $periode s/d bulan berjalan, lalu baris
+     * bulanannya (saldo awal rekap) + bulan depan. $sebelumSusun dipanggil di
+     * antaranya (kunci otomatis migrasi).
+     */
+    private static function bangunBaris(int $branchId, Carbon $periode, ?callable $sebelumSusun = null): void
+    {
+        $bulan = [];
+        for ($b = $periode->copy(); $b->lte(Carbon::now()->startOfMonth()) || empty($bulan); $b->addMonthNoOverflow()) {
+            $bulan[] = $b->copy();
+        }
+
+        foreach ($bulan as $b) {
+            self::siapkanBaris($branchId, $b);
+        }
+
+        $ids = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id')->all();
+
+        if ($sebelumSusun) {
+            $sebelumSusun($ids);
+        }
+
+        foreach ($bulan as $b) {
+            TutupBulanan::susun($ids, $b);
+        }
+
+        // Saldo awal BULAN DEPAN (= akhir bulan berjalan) langsung tersedia,
+        // sama dengan tiap tutup harian (ClosingHarianController::
+        // susunBulanan) - tidak menunggu kunci kasir pertama.
+        TutupBulanan::susun($ids, Carbon::now()->startOfMonth()->addMonthNoOverflow());
+    }
+
+    /**
+     * Kantor baru dibuat app_laravel (Settings -> Branch) langsung dengan
+     * mulai_pendataan_baru = tanggal 1 bulan buka, tanpa baris agregat. Di sini
+     * barisnya dilengkapi: kantor bertanda migrasi yang belum punya satu pun
+     * baris harian. Dijadwalkan tiap jam (Kernel); aman diulang.
+     */
+    public static function lengkapiKantorBaru(): int
+    {
+        $ids = Branch::whereNotNull('mulai_pendataan_baru')
+            ->whereNotExists(fn($q) => $q->from('transaction_loan_officer_groupings as g')
+                ->join('transaction_daily_closings as c', 'c.transaction_loan_officer_grouping_id', '=', 'g.id')
+                ->whereColumn('g.branch_id', 'branches.id'))
+            ->whereExists(fn($q) => $q->from('transaction_loan_officer_groupings as g')->whereColumn('g.branch_id', 'branches.id'))
+            ->get(['id', 'unit', 'mulai_pendataan_baru']);
+
+        foreach ($ids as $b) {
+            DB::transaction(fn() => self::bangunBaris($b->id, Carbon::parse($b->mulai_pendataan_baru)->startOfMonth()));
+            Log::info('Kantor baru: baris agregat dilengkapi', ['branch_id' => $b->id, 'unit' => $b->unit]);
+        }
+
+        return $ids->count();
     }
 
     /**

@@ -42,6 +42,11 @@ class Kernel extends ConsoleKernel
       \Illuminate\Support\Facades\Artisan::call('closing:generate', ['periode' => $bulanDepan]);
     })->dailyAt('01:00')->name('closing-generate-bulan-depan')->withoutOverlapping();
 
+    // Kantor baru (dibuat app_laravel sudah bertanda migrasi) belum punya baris
+    // agregat - dilengkapi di sini, paling lambat sejam sesudah dibuat.
+    $schedule->call(fn() => \App\Helpers\DaftarMigrasi::lengkapiKantorBaru())
+      ->hourly()->name('lengkapi-kantor-baru')->withoutOverlapping();
+
     // Target minggu depan (auto) untuk kantor migrasi, H+1 dini hari. Hari tagih
     // yang sudah lewat tapi belum dicek KM tetap melahirkan target minggu depan
     // (source='auto', status belum dicek) supaya rantai tak putus saat kantor
