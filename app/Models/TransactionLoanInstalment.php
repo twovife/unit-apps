@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class TransactionLoanInstalment extends Model
 {
@@ -12,128 +11,84 @@ class TransactionLoanInstalment extends Model
 
   protected $fillable = [
     "transaction_loan_id",
+    "settled_by_loan_id",
     "transaction_loan_officer_grouping_id",
     "transaction_date",
     "nominal",
     "status",
     "instalment_notes",
     "danatitipan",
+    "is_transfer",
     "user_mantri",
     "user_input"
   ];
 
 
+  private static function bukaKunci($groupingId, $tanggal, string $aksi, $nominal): void
+  {
+    \App\Helpers\Gembok::bukaOtomatis($groupingId, $tanggal,
+      sprintf('%s Rp %s', $aksi, number_format((int) $nominal, 0, ',', '.')));
+  }
+
   protected static function boot()
   {
     parent::boot();
 
-    static::creating(function (self $transactionLoanInstalment) {
-      if ($transactionLoanInstalment->nominal <= 0) {
-        return;
+    // Penjaga terakhir untuk semua jalur tulis (bayar, fastcreate, sinkron, batch).
+    static::creating(function (self $angsuran) {
+      if ($angsuran->nominal < 0) {
+        throw new \DomainException('Nominal angsuran tidak boleh minus.');
       }
-
-      DB::transaction(function () use ($transactionLoanInstalment) {
-        $recap = TransactionDailyRecap::query()
-          ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
-          ->where('date', $transactionLoanInstalment->transaction_date)
-          ->firstOrCreate([
-            'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-            'date'                                 => $transactionLoanInstalment->transaction_date,
-          ]);
-
-        $recap->increment('storting', $transactionLoanInstalment->nominal);
-
-        $sumInstalment = TransactionLoan::withSum('loan_instalment', 'nominal')
-          ->where('id', $transactionLoanInstalment->transaction_loan_id)
-          ->first();
-
-        // dd($sumInstalment);
-        if ($sumInstalment) {
-          $newTotal = $sumInstalment->loan_instalment_sum_nominal + $transactionLoanInstalment->nominal;
-          // dd($newTotal);
-
-          $attrs = ['total_angsuran' => $newTotal];
-
-          // Lunas bila total angsuran ≥ pinjaman (kolom 'pinjaman' atau 'nominal_drop')
-          if ($newTotal >= $sumInstalment->pinjaman /* atau $loan->nominal_drop */) {
-            $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
-            $attrs['out_status'] = 'LUNAS';
-          } else {
-            $attrs['out_date']   = null;
-            $attrs['out_status'] = null;
-          }
-
-          $sumInstalment->update($attrs);
-        }
-      });
+      self::bukaKunci($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date, 'tambah angsuran', $angsuran->nominal);
     });
 
+    // Koreksi user can-edit di tanggal terkunci -> tanggalnya dibuka otomatis
+    // (Gembok::bukaOtomatis). Tanggal lama & baru sama-sama.
+    static::updating(function (self $angsuran) {
+      self::bukaKunci($angsuran->getOriginal('transaction_loan_officer_grouping_id'), $angsuran->getOriginal('transaction_date'), 'ubah angsuran #' . $angsuran->id, $angsuran->getOriginal('nominal'));
+      self::bukaKunci($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date, 'ubah angsuran #' . $angsuran->id, $angsuran->nominal);
+    });
 
-    static::deleting(function (self $transactionLoanInstalment): void {
+    static::deleting(function (self $angsuran) {
+      self::bukaKunci($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date, 'hapus angsuran #' . $angsuran->id, $angsuran->nominal);
+    });
 
-      // Abaikan angsuran bernominal 0 / negatif
-      if ($transactionLoanInstalment->nominal <= 0) {
+    // Alur lama: tanggal yang barusan dibuka otomatis -> rekapnya disegarkan sesudah tertulis.
+    $segarkan = function (self $angsuran) {
+      \App\Helpers\Gembok::segarkanSesudahTulis($angsuran->getOriginal('transaction_loan_officer_grouping_id'), $angsuran->getOriginal('transaction_date'));
+      \App\Helpers\Gembok::segarkanSesudahTulis($angsuran->transaction_loan_officer_grouping_id, $angsuran->transaction_date);
+    };
+    static::created($segarkan);
+    static::updated($segarkan);
+    static::deleted($segarkan);
+
+    // F1: angsuran masuk/keluar -> status lunas induk dihitung ulang penuh dari
+    // sumber (TransactionLoan::hitungUlangPelunasan). Di created/deleted, bukan
+    // creating/deleting, supaya baris ini sudah / tidak lagi ikut terjumlah.
+    // (Increment storting ke transaction_daily_recaps dicabut 2026-08-02.)
+    static::created(function (self $angsuran) {
+      if ($angsuran->nominal <= 0 || !$loan = $angsuran->loan) {
         return;
       }
 
-      /**
-       * 1) Jalankan dalam transaksi + retry   (Laravel 10+ bisa pakai attempts=3)
-       * 2) Lock parent‑loan dulu, baru lock recap — konsisten agar anti‑deadlock
-       */
-      DB::connection()->transaction(function () use ($transactionLoanInstalment) {
+      // Rekening -> 'ist' (istirahat): lunas lewat pelunasan MANUAL, tanpa
+      // topup. Settlement topup (settled_by_loan_id) ditandai 'pelunasan' di
+      // hook TransactionLoan. Penanda lunak.
+      if ($loan->hitungUlangPelunasan() && !$angsuran->settled_by_loan_id) {
+        \App\Helpers\SiklusRekening::tandai($loan->transaction_manage_customer_id, \App\Helpers\SiklusRekening::IST);
+      }
+    });
 
-        /*────────── 1. LOCK & UPDATE PARENT LOAN ──────────*/
-        $sumInstalment = TransactionLoan::withSum('loan_instalment', 'nominal')
-          ->where('id', $transactionLoanInstalment->transaction_loan_id)
-          ->first();
+    static::deleted(function (self $angsuran) {
+      if ($angsuran->nominal <= 0 || !$loan = $angsuran->loan) {
+        return;
+      }
 
-
-        $freshLoan = self::whereKey($transactionLoanInstalment->id)
-          ->first();
-
-        // dd($sumInstalment);
-        // Jika parent loan sudah hilang (soft‑deleted / race), keluar
-        if (!$freshLoan) {
-          return; //
-        }
-        if (!$sumInstalment) {
-          return;
-        }
-
-        // Hitung total angsuran setelah baris ini dihapus
-        $newTotal = $sumInstalment->loan_instalment_sum_nominal - $transactionLoanInstalment->nominal;
-        if ($newTotal < 0) {                 // tidak boleh negatif
-          $newTotal = 0;
-        }
-
-        // Siapkan kolom yang akan diperbarui
-        $attrs = ['total_angsuran' => $newTotal];
-
-        // Tentukan status lunas / belum lunas
-        $plafond = $sumInstalment->pinjaman;          // atau $loan->nominal_drop
-        if ($newTotal >= $plafond) {
-          $attrs['out_date']   = $transactionLoanInstalment->transaction_date;
-          $attrs['out_status'] = 'LUNAS';
-        } else {
-          $attrs['out_date']   = null;
-          $attrs['out_status'] = null;
-        }
-
-        // UPDATE parent loan (1 query)
-        $sumInstalment->update($attrs);
-
-        /*────────── 2. LOCK & UPDATE REKAP HARIAN ──────────*/
-        $recap = TransactionDailyRecap::query()
-          ->where('transaction_loan_officer_grouping_id', $transactionLoanInstalment->transaction_loan_officer_grouping_id)
-          ->where('date', $transactionLoanInstalment->transaction_date)              // row‑level lock
-          ->firstOrCreate([
-            'transaction_loan_officer_grouping_id' => $transactionLoanInstalment->transaction_loan_officer_grouping_id,
-            'date'                                 => $transactionLoanInstalment->transaction_date,
-          ]);
-
-        // Kurangi storting secara atomik
-        $recap->decrement('storting', $transactionLoanInstalment->nominal);
-      }, attempts: 3); // retry otomatis bila deadlock
+      // Pelunasan manual dibatalkan -> siklus 'ist' ikut kosong. Baris
+      // settlement topup dibersihkan lewat reverseAutoSettlement.
+      if (!$loan->hitungUlangPelunasan() && !$angsuran->settled_by_loan_id) {
+        \App\Helpers\SiklusRekening::bersihkan($loan->transaction_manage_customer_id);
+      }
     });
   }
 

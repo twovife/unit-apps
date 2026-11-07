@@ -18,12 +18,20 @@ class TransactionManageCustomer extends Model
     "residential_address",
     "alternative_name",
     "status",
-    'notes'
+    'siklus_id',
+    'notes',
+    'nomor_anggota',
   ];
 
   public function customers()
   {
     return $this->belongsTo(TransactionCustomer::class, 'transaction_customer_id', 'id');
+  }
+
+  // Siklus rekening (pelunasan/ist/bht/…) — lookup transaction_siklus, tak hardcode.
+  public function siklus()
+  {
+    return $this->belongsTo(TransactionSiklus::class, 'siklus_id', 'id');
   }
 
   public function loan()

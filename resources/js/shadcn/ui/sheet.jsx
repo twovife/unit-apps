@@ -47,9 +47,10 @@ const SheetContent = React.forwardRef(({ side = "right", className, children, ..
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
+      {/* Tombol tutup: ikon merah supaya jelas terlihat di semua drawer. */}
       <SheetPrimitive.Close
-        className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-        <Cross2Icon className="h-4 w-4" />
+        className="absolute z-10 inline-flex items-center justify-center text-white transition-colors bg-red-600 rounded-md shadow-sm right-3 top-3 size-8 hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:pointer-events-none">
+        <Cross2Icon className="w-4 h-4" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
       {children}

@@ -37,38 +37,38 @@ const JenisNasabah = ({ loan }) => {
       <CardContent>
         <form onSubmit={onSubmitCreate}>
           <InputLabel htmlFor="status" value="Status" />
-          <div className="flex items-center justify-between w-full gap-3">
-            <div className="flex-3">
-              <SelectList
-                id="notes"
-                type="date"
-                name="notes"
-                value={data.notes}
-                options={[
-                  {
-                    id: 1,
-                    value: '10L',
-                    display: '10L',
-                  },
-                  {
-                    id: 2,
-                    value: 'Beban Pemakaian',
-                    display: 'Beban Pemakaian',
-                  },
-                  {
-                    id: 3,
-                    value: 'CM LUNAS',
-                    display: 'CM LUNAS',
-                  },
-                ]}
-                nullValue={true}
-                className="block w-full mt-1"
-                onChange={handleOnChange}
-              />
-            </div>
-            <div className="flex-1">
-              <PrimaryButton title={'Submit'} type="submit" />
-            </div>
+          {/* Dulu select + tombol berdampingan (flex-3/flex-1) - pas kartu
+              ini jadi setengah lebar (2 kolom), teks placeholder select
+              ("Pilih Salah Satu") kepotong. Ditumpuk saja, sama-sama full
+              width, supaya tidak kepotong berapa pun lebar kartunya. */}
+          <div className="flex flex-col w-full gap-3">
+            <SelectList
+              id="notes"
+              type="date"
+              name="notes"
+              value={data.notes}
+              options={[
+                {
+                  id: 1,
+                  value: '10L',
+                  display: '10L',
+                },
+                {
+                  id: 2,
+                  value: 'Beban Pemakaian',
+                  display: 'Beban Pemakaian',
+                },
+                {
+                  id: 3,
+                  value: 'CM LUNAS',
+                  display: 'CM LUNAS',
+                },
+              ]}
+              nullValue={true}
+              className="block w-full mt-1"
+              onChange={handleOnChange}
+            />
+            <PrimaryButton title={'Submit'} type="submit" className="w-full" />
           </div>
 
           <InputError message={errors.notes} className="mt-2" />

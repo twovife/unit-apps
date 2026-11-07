@@ -1,0 +1,56 @@
+# Apa yang TIDAK boleh masuk knowledge graph (/graphify).
+# Sintaksnya sama dengan .gitignore.
+#
+# PRINSIPNYA: buang yang DIHASILKAN MESIN atau VENDOR. Simpan semua yang
+# ditulis tangan — termasuk yang sedang tidak kita sentuh.
+#
+# Godaan yang harus ditolak adalah mempersempit ke "berkas yang sedang
+# dikerjakan". Nilai graf ini justru ada di kode yang TIDAK sedang dibuka:
+# bug hari libur di `getStortingShowDate` ketemu karena `resources/js/` ikut
+# terindeks, padahal yang sedang dikerjakan cuma sisi PHP-nya. Mempersempit
+# cakupan = membutakan satu-satunya kemampuan yang tidak dimiliki grep.
+
+# ── Hasil build ────────────────────────────────────────────────────────────
+# Bundel Vite. Di repo ini keduanya SENGAJA dilacak git supaya bisa di-deploy
+# tanpa build di server, jadi .gitignore tidak menyaringnya dan graphify ikut
+# membacanya. Terukur 427 simpul (16% graf), dan 242 fungsi tercatat DUA KALI
+# — sekali dari sumber, sekali dari bundelnya. Tiap `npm run build` memberi
+# nama ber-hash baru, jadi sampahnya menumpuk tiap build kalau dibiarkan.
+bootstrap/ssr/
+public/build/
+bootstrap/cache/
+
+# ── Dependensi & konfigurasi perkakas ──────────────────────────────────────
+# Tiap dependensi jadi node sendiri: package.json 108 simpul, composer.json 59,
+# components.json 17, jsconfig.json 7. Semuanya nama paket, bukan kode kita —
+# dan cukup untuk melahirkan dua komunitas palsu ("Dependensi npm",
+# "Konfigurasi shadcn") yang menutupi modul sungguhan.
+package.json
+package-lock.json
+composer.json
+composer.lock
+components.json
+jsconfig.json
+tailwind.config.js
+postcss.config.cjs
+vite.config.js
+vite.config.mjs
+node_modules/
+vendor/
+
+# ── Cache, log, aset statis ────────────────────────────────────────────────
+# storage/framework/views berisi blade terkompilasi bernama hash — hasil mesin.
+# public/ isinya aset dan titik masuk; satu-satunya "temuan" darinya sejauh ini
+# adalah sisi AMBIGUOUS antara robots.txt dan README.
+storage/
+public/
+graphify-out/
+
+# ── Yang SENGAJA DIBIARKAN MASUK, jangan dibuang ───────────────────────────
+#   database/seeders/    skrip tulisan tangan yang menyentuh tabel produksi —
+#                        justru berbahaya kalau tidak terpetakan
+#   database/migrations/ riwayat skema; menjawab "kolom ini lahir kapan, kenapa"
+#   tests/               menunjukkan perilaku apa yang dianggap benar
+#   .agents/             keputusan dan alasannya — sumber `rationale_for`
+#   resources/js/        separuh logika tanggal ada di sini; membuangnya
+#                        membutakan pencarian logika kembar lintas bahasa

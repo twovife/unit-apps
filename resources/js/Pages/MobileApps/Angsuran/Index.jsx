@@ -1,12 +1,11 @@
 import React from 'react';
 
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 
 import { Head } from '@inertiajs/react';
 import Angsuran from '@/Pages/NewAngsuran/Angsuran';
 import MobileLayout from '@/Layouts/MobileLayout';
 
-const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
+const Index = ({ datas, dateOfWeek, sirkulasi, video_tutorials, ...props }) => {
   return (
     <MobileLayout header={<Head>Angsuran Lancar</Head>}>
       <Angsuran
@@ -16,6 +15,7 @@ const Index = ({ datas, dateOfWeek, sirkulasi, ...props }) => {
         type={'mobile'}
         urlLink={route('mobile_apps.angsuran')}
         localState={'mobile_apps.angsuran'}
+        videoTutorials={video_tutorials}
       />
     </MobileLayout>
   );

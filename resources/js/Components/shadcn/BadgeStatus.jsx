@@ -17,6 +17,7 @@ const variantMap = {
   normal: 'green',
   lunas: 'greenoutline',
   belum_lunas: 'outline',
+  td: 'blue',
 };
 const BadgeStatus = ({ value, onClick, children, ...props }) => {
   const variant = variantMap[value] || 'default';
