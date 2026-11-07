@@ -732,6 +732,16 @@ class TransactionLoanController extends Controller
 
     ]);
 
+    // Kantor migrasi: drop sebelum tanggal migrasi = data beku, trigger DB menolaknya.
+    // Tolak di depan dengan alasan + jalur yang benar (Banyuwangi 2, 2026-11-07).
+    $mulaiMigrasi = \App\Helpers\AgregasiScope::tanggalMulai(\App\Helpers\AuthScope::getActiveBranchId());
+    if ($mulaiMigrasi && Carbon::parse($request->tanggal_drop)->lt($mulaiMigrasi)) {
+      return redirect()->back()->withErrors(
+        'Tanggal drop ' . Carbon::parse($request->tanggal_drop)->translatedFormat('d M Y') . ' sebelum migrasi kantor ('
+          . $mulaiMigrasi->translatedFormat('d M Y') . '): data beku. Nasabah ML lama diinput lewat Input ML di Buku Macet.'
+      );
+    }
+
     // Penanda macet membuka pintu ini untuk mantri: batas drop & kunci wajib di server.
     if ($macet) {
       $batasDrop = AppHelper::batasDropMacet(\App\Helpers\AuthScope::getActiveBranchId());
@@ -895,7 +905,11 @@ class TransactionLoanController extends Controller
         'user_id' => auth()->id(),
         'line' => $exception->getLine(),
       ]);
-      return redirect()->back()->withErrors($exception->getMessage());
+      // Galat SQL tidak diteruskan mentah ke layar; penolakan trigger (45000) membawa
+      // kalimat untuk user. Exception lain (aturan model) tetap pesannya sendiri.
+      return redirect()->back()->withErrors($exception instanceof \Illuminate\Database\QueryException
+        ? AppHelper::pesanGagal($exception, 'Data gagal disimpan. Ulangi atau hubungi IT.')
+        : $exception->getMessage());
     }
 
 
