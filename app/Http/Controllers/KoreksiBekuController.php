@@ -288,6 +288,14 @@ class KoreksiBekuController extends Controller
         if ($isi->count() === 1 && (int) $isi->first()->nominal === $nominal) {
             return back();
         }
+
+        // Tanggal sejak migrasi (mas 2026-11-07): bukan data beku -> jalur angsuran biasa
+        // (cek hari, drop, sisa, pengajuan; Gembok membuka kunci hari & rekap disegarkan).
+        $loan = TransactionLoan::with('loan_officer_grouping')->findOrFail($v['loan_id']);
+        $mulai = AgregasiScope::tanggalMulai((int) $loan->loan_officer_grouping?->branch_id);
+        if ($mulai && !Carbon::parse($v['tanggal'])->lt($mulai)) {
+            return $this->selBiasa($request, $loan, $isi->first(), $v['tanggal'], $nominal);
+        }
         [$aksi, $data] = $isi->isEmpty()
             ? ['tambah', ['loan_id' => $v['loan_id'], 'tanggal' => $v['tanggal'], 'nominal' => $nominal]]
             : ($nominal === 0
@@ -295,6 +303,40 @@ class KoreksiBekuController extends Controller
                 : ['ubah', ['angsuran_id' => $isi->first()->id, 'nominal' => $nominal]]);
 
         return $this->langsung($aksi, $data, 'koreksi sel buku angsuran beku');
+    }
+
+    /** Sel tanggal sejak migrasi: kosong = bayar, 0 = hapus, angka lain = ubah nominal. */
+    private function selBiasa(Request $request, TransactionLoan $loan, ?\App\Models\TransactionLoanInstalment $ada, string $tanggal, int $nominal)
+    {
+        $pinjaman = app(\App\Http\Controllers\TransactionLoanController::class);
+        if (!$ada) {
+            $request->merge(['type_transaksi' => 'bayar', 'nominal' => $nominal, 'transaction_date' => Carbon::parse($tanggal)->toDateString()]);
+
+            return $pinjaman->bayar_pinjaman($request, $loan);
+        }
+        if ($nominal === 0) {
+            return $pinjaman->destroy_angsuran($ada);
+        }
+
+        // Ubah nominal: sisa dihitung tanpa angsuran ini; status lunas & siklus rekening
+        // dihitung ulang seperti created/deleted di model angsuran.
+        $tolak = \Illuminate\Support\Facades\DB::transaction(function () use ($loan, $ada, $nominal) {
+            TransactionLoan::whereKey($loan->id)->lockForUpdate()->first();
+            $sisa = (int) PenyesuaianSaldo::hitungSaldo($loan)['saldo'] + (int) $ada->nominal;
+            if ($nominal > $sisa) {
+                return 'Angsuran melebihi sisa saldo (Rp ' . number_format(max(0, $sisa), 0, ',', '.') . ').';
+            }
+            $ada->update(['nominal' => $nominal]);
+            if ($loan->refresh()->hitungUlangPelunasan()) {
+                \App\Helpers\SiklusRekening::tandai($loan->transaction_manage_customer_id, \App\Helpers\SiklusRekening::IST);
+            } else {
+                \App\Helpers\SiklusRekening::bersihkan($loan->transaction_manage_customer_id);
+            }
+
+            return null;
+        });
+
+        return $tolak ? back()->withErrors($tolak) : back()->with('message', 'Angsuran ' . Carbon::parse($tanggal)->format('d-m-Y') . ' diubah.');
     }
 
     /** Nominal penyesuaian saldo diubah langsung dari Buku Angsuran Beku (0 = hapus), bucket ikut. */

@@ -131,9 +131,9 @@ const SelNomorAnggota = ({ r, boleh, className = "" }) => {
 };
 
 /**
- * Sel tanggal sebelum migrasi di Buku Angsuran Beku (superuser): klik -> ketik ->
- * Enter / klik di luar langsung tersimpan lewat Koreksi Beku (tanpa pratinjau,
- * bucket ikut). Kosong = tambah, berisi = ubah, 0 = hapus. Esc batal.
+ * Sel tanggal di Buku Angsuran Beku (superuser): klik -> ketik -> Enter / klik di
+ * luar langsung tersimpan. Sebelum migrasi lewat Koreksi Beku (bucket ikut), sesudahnya
+ * lewat jalur angsuran biasa. Kosong = tambah, berisi = ubah, 0 = hapus. Esc batal.
  */
 const SelBeku = ({ r, d, v, kelas }) => {
   const [ubah, setUbah] = useState(false);
@@ -161,7 +161,7 @@ const SelBeku = ({ r, d, v, kelas }) => {
   return (
     <TableCell
       className={`px-1 py-1 text-right tabular-nums cursor-text ring-inset hover:ring-1 hover:ring-sky-400 ${kelas}`}
-      title="Data beku - klik untuk koreksi langsung"
+      title="Klik untuk isi / ubah langsung (0 = hapus)"
       onClick={() => !ubah && !simpan && setUbah(true)}
     >
       {ubah ? (
@@ -317,13 +317,14 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
   const ribuan = useModeRibuan();
   const beku = isMobile ? { Nama: "sticky left-0 shadow-[inset_-1px_0_0_#cbd5e1]" } : BEKU;
   const bolehUbah = auth?.permissions?.includes("can-create");
-  // Buku Angsuran Beku: sel tanggal sebelum migrasi bisa diisi langsung.
+  // Buku Angsuran Beku: sel tanggal (sebelum & sesudah migrasi) bisa diisi langsung.
   const kb = useContext(KoreksiBekuContext);
   const [data, setData] = useState([]);
   useEffect(() => setData(datas), [datas]);
 
   const [jumlahBulan, setJumlahBulan] = useState(0);
   const bulanIni = dayjs(server_filter?.month);
+  const hariIni = dayjs().format("YYYY-MM-DD");
   const hariKe = HARI_KE[String(server_filter?.hari).toLowerCase()];
   // Buku Angsuran Beku: ML ikut dirinci per bulan supaya bisa dikoreksi per sel.
   const dirinci = (grup) => !!kb || grup.type !== "ml";
@@ -626,7 +627,9 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                         const v = isi(k, r);
                         if (v === null) return <TableCell key={j} className={`bg-slate-100/70 ${garis(k)}`} />;
                         const katrol = k.jenis === "tgl" && r.instalment?.[k.d]?.is_active;
-                        if (kb && k.jenis === "tgl" && k.d < kb.mulai && !r.pecahan_ml && k.d >= String(r.tanggal_drop).slice(0, 10)) {
+                        // Buku Beku: semua tanggal sejak drop s/d hari ini bisa diisi; sebelum migrasi lewat
+                        // Koreksi Beku, sesudahnya lewat jalur angsuran biasa (KoreksiBekuController::sel).
+                        if (kb && k.jenis === "tgl" && !r.pecahan_ml && k.d >= String(r.tanggal_drop).slice(0, 10) && k.d <= hariIni) {
                           return (
                             <SelBeku
                               key={j}
