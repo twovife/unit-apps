@@ -3,12 +3,16 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { Link, router } from '@inertiajs/react';
+import { id as localeId } from 'date-fns/locale';
 import {
+  AlertCircle,
+  Building2,
+  CalendarDays,
   Car,
   CheckCircle2,
   ChevronRight,
-  Circle,
   Landmark,
+  MapPin,
   PiggyBank,
   Plane,
   Plus,
@@ -20,6 +24,7 @@ import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
+import { Calendar } from '@/shadcn/ui/calendar';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
 import DialogPindai, { bisaDipindai } from '@/Components/PindaiGambar';
 import { rpLengkap as rp, rpInput as ribu } from '@/lib/rupiah';
@@ -201,73 +206,119 @@ const IsiIuran = ({ d }) => {
   );
 };
 
-/** Satu baris tugas: lingkaran centang, judul, keterangan, nilai di kanan. */
-const BarisTugas = ({ ok, judul, ket, nilai, href, children }) => {
+/** Satu kartu tugas: ikon status, judul, keterangan, progres, angka besar di kanan. */
+const BarisTugas = ({ ok, judul, ket, nilai, persen, href }) => {
   const isi = (
     <>
-      {ok ? (
-        <CheckCircle2 className="w-5 h-5 mt-0.5 text-emerald-500 shrink-0" />
-      ) : (
-        <Circle className="w-5 h-5 mt-0.5 text-slate-300 shrink-0" />
-      )}
+      <span className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${ok ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+        {ok ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+      </span>
       <div className="flex-1 min-w-0">
-        <div className={`text-sm font-medium ${ok ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>{judul}</div>
-        {ket && <div className="text-xs text-slate-400">{ket}</div>}
-        {children}
+        <div className="text-sm font-semibold text-slate-800">{judul}</div>
+        {ket && <div className="text-xs text-slate-500">{ket}</div>}
+        {persen != null && (
+          <div className="h-1.5 mt-2 overflow-hidden rounded-full bg-slate-100">
+            <div className={`h-full rounded-full ${ok ? 'bg-emerald-500' : 'bg-rose-400'}`} style={{ width: `${persen}%` }} />
+          </div>
+        )}
       </div>
-      {nilai && <div className={`text-sm tabular-nums shrink-0 ${ok ? 'text-slate-400' : 'font-semibold text-slate-700'}`}>{nilai}</div>}
-      {href && <ChevronRight className="w-4 h-4 mt-0.5 text-slate-300 shrink-0" />}
+      {nilai && <div className={`text-lg font-bold tabular-nums shrink-0 ${ok ? 'text-emerald-600' : 'text-rose-600'}`}>{nilai}</div>}
+      {href && <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />}
     </>
   );
-  const kelas = 'flex items-start gap-3 px-4 py-3';
-  return href ? <Link href={href} className={`${kelas} hover:bg-slate-50`}>{isi}</Link> : <div className={kelas}>{isi}</div>;
+  const kelas = `flex items-center gap-3 p-4 bg-white border rounded-2xl ${ok ? 'border-emerald-200' : 'border-rose-200'}`;
+  return href ? <Link href={href} className={`${kelas} transition hover:shadow-md`}>{isi}</Link> : <div className={kelas}>{isi}</div>;
 };
 
-const MAKS_CHIP = 6;
+const hariBelumKunci = (t) => [...new Set((t?.belum_kunci ?? []).map((h) => h.tanggal))];
+const persenDari = (a, b) => (b > 0 ? Math.min(100, Math.round((a / b) * 100)) : 0);
 
-/** Tugas harian: Rekap 1 (hari belum dikunci, hari ini) + iuran bulan ini. */
+/** Status 3 tugas harian; hari libur = tugas hari ini dianggap selesai. Dipakai juga untuk angka tab. */
+const statusTugas = (t) => [
+  hariBelumKunci(t).length === 0,
+  !t.hari_kerja || (t.kelompok > 0 && t.acc_km >= t.kelompok),
+  !t.hari_kerja || (t.kelompok > 0 && t.kunci >= t.kelompok),
+];
+
+/** Tugas harian: kunci hari sebelumnya (tanggalnya di kalender samping), ACC KM & kunci kasir hari ini. */
 const Tugas = ({ t }) => {
-  const [semua, setSemua] = useState(false);
-  const perTanggal = Object.entries((t.belum_kunci ?? []).reduce((a, h) => ((a[h.tanggal] ??= []).push(h.kelompok), a), {}));
-  const tampil = semua ? perTanggal : perTanggal.slice(0, MAKS_CHIP);
-  const rekap1 = linkKe('kasir.rekap.rekap_satu');
+  const hari = hariBelumKunci(t).length;
   const kunci = t.migrasi ? 'Kunci' : 'TTD';
-  const selesai = [perTanggal.length === 0, t.kelompok > 0 && t.acc_km >= t.kelompok, t.kelompok > 0 && t.kunci >= t.kelompok];
+  const selesai = statusTugas(t);
+  const jumlah = selesai.filter(Boolean).length;
+  const rekap1 = linkKe('kasir.rekap.rekap_satu');
   return (
-    <div className="bg-white border divide-y rounded-2xl border-slate-200/70 divide-slate-100">
-      <div className="flex items-center justify-between px-4 py-3">
-        <p className="text-xs text-slate-400">{t.hari_kerja ? dayjs(t.tanggal).format('dddd, DD MMMM YYYY') : 'Hari ini libur — tidak ada kunci harian'}</p>
-        <span className="text-xs font-medium tabular-nums text-slate-500">
-          {selesai.filter(Boolean).length}/{selesai.length} selesai
-        </span>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-4 p-4 text-white rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900">
+        <div>
+          <p className="text-xs text-slate-300">{dayjs(t.tanggal).format('dddd, DD MMMM YYYY')}</p>
+          <p className="mt-0.5 text-lg font-semibold">
+            {jumlah === selesai.length ? 'Semua tugas selesai 🎉' : `${selesai.length - jumlah} tugas belum selesai`}
+          </p>
+          {!t.hari_kerja && <p className="text-xs text-slate-300">Hari ini libur, tidak ada kunci harian.</p>}
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-3xl font-bold tabular-nums">
+            {jumlah}
+            <span className="text-base font-medium text-slate-400">/{selesai.length}</span>
+          </div>
+          <div className="w-24 h-1.5 mt-1 overflow-hidden rounded-full bg-white/15">
+            <div className="h-full rounded-full bg-emerald-400" style={{ width: `${persenDari(jumlah, selesai.length)}%` }} />
+          </div>
+        </div>
       </div>
       <BarisTugas
         ok={selesai[0]}
         judul={`${kunci} hari sebelumnya`}
-        ket={selesai[0] ? 'Semua hari sebelumnya sudah dikunci' : `${perTanggal.length} hari belum dikunci — klik tanggal untuk membuka Rekap 1`}
-      >
-        {perTanggal.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {tampil.map(([tanggal, kel]) => (
-              <Link
-                key={tanggal}
-                href={route('kasir.rekap.rekap_satu', { date: tanggal })}
-                title={`Kelompok ${kel.join(', ')}`}
-                className="px-2.5 py-1 text-xs rounded-full bg-amber-50 text-amber-800 hover:bg-amber-100"
-              >
-                {dayjs(tanggal).format('ddd DD/MM')} · {kel.length} kel
-              </Link>
-            ))}
-            {perTanggal.length > MAKS_CHIP && (
-              <button type="button" onClick={() => setSemua(!semua)} className="px-1 text-xs text-slate-500 hover:text-slate-800">
-                {semua ? 'ringkas' : `+${perTanggal.length - MAKS_CHIP} lagi`}
-              </button>
-            )}
-          </div>
-        )}
-      </BarisTugas>
-      <BarisTugas ok={selesai[1]} judul="ACC KM hari ini" ket="Rekap harian disetujui kepala mantri" nilai={`${t.acc_km}/${t.kelompok}`} href={linkKe('transaction.index_buku_transaksi')} />
-      <BarisTugas ok={selesai[2]} judul={`${kunci} kasir hari ini`} ket="Rekap 1" nilai={`${t.kunci}/${t.kelompok}`} href={rekap1} />
+        ket={selesai[0] ? 'Semua hari sebelumnya sudah dikunci' : 'Tanggal merah di kalender belum dikunci, klik untuk membuka Rekap 1'}
+        nilai={selesai[0] ? null : `${hari} hari`}
+        href={rekap1}
+      />
+      <BarisTugas
+        ok={selesai[1]}
+        judul="ACC KM hari ini"
+        ket="Rekap harian disetujui kepala mantri"
+        nilai={`${t.acc_km}/${t.kelompok}`}
+        persen={persenDari(t.acc_km, t.kelompok)}
+        href={linkKe('transaction.index_buku_transaksi')}
+      />
+      <BarisTugas
+        ok={selesai[2]}
+        judul={`${kunci} kasir hari ini`}
+        ket="Rekap 1"
+        nilai={`${t.kunci}/${t.kelompok}`}
+        persen={persenDari(t.kunci, t.kelompok)}
+        href={rekap1}
+      />
+    </div>
+  );
+};
+
+/** Kalender Rekap 1: merah = ada kelompok belum dikunci, hijau = hari ini; klik tanggal membuka Rekap 1. */
+const KalenderKunci = ({ t }) => {
+  const merah = hariBelumKunci(t).map((d) => dayjs(d).toDate());
+  const bisa = !!linkKe('kasir.rekap.rekap_satu');
+  return (
+    <div className="p-3 bg-white border rounded-2xl border-slate-200/70">
+      <div className="flex items-center gap-2 px-2 pt-1 text-sm font-semibold text-slate-800">
+        <CalendarDays className="w-4 h-4 text-sky-600" /> Kalender Rekap 1
+      </div>
+      <Calendar
+        locale={localeId}
+        modifiers={{ merah }}
+        modifiersClassNames={{
+          merah:
+            "!bg-rose-50 !text-rose-600 font-semibold hover:!bg-rose-100 after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-rose-500 after:content-['']",
+        }}
+        classNames={{ day: 'relative size-8 p-0 text-sm font-normal rounded-full hover:bg-slate-100', day_today: 'ring-2 ring-emerald-500 text-emerald-700 font-semibold' }}
+        disabled={{ after: new Date() }}
+        onDayClick={(d, m) => bisa && !m.disabled && router.visit(route('kasir.rekap.rekap_satu', { date: dayjs(d).format('YYYY-MM-DD') }))}
+        className="mx-auto w-fit"
+      />
+      <div className="flex justify-center gap-4 pb-1 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-50 ring-1 ring-rose-400" /> Belum dikunci</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full ring-2 ring-emerald-500" /> Hari ini</span>
+      </div>
     </div>
   );
 };
@@ -652,15 +703,15 @@ const sapaan = () => {
 const Foto = ({ p }) => {
   const [gagal, setGagal] = useState(false);
   return p.foto && !gagal ? (
-    <img src={p.foto} alt={p.nama} onError={() => setGagal(true)} className="object-cover w-24 h-24 rounded-full ring-4 ring-white shadow-sm shrink-0" />
+    <img src={p.foto} alt={p.nama} onError={() => setGagal(true)} className="object-cover w-24 h-24 rounded-full ring-4 ring-white shadow-md shrink-0 bg-white" />
   ) : (
-    <span className="flex items-center justify-center w-24 h-24 text-2xl font-semibold rounded-full ring-4 ring-white shadow-sm bg-sky-50 text-sky-700 shrink-0">
+    <span className="flex items-center justify-center w-24 h-24 text-2xl font-semibold rounded-full ring-4 ring-white shadow-md bg-sky-50 text-sky-700 shrink-0">
       {p.nama.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
     </span>
   );
 };
 
-export default function PembayaranKantor({ videos = {}, profil = null, samping = null }) {
+export default function PembayaranKantor({ videos = {}, profil = null, pembaruan = null }) {
   const [bulan, setBulan] = useState(dayjs().format('YYYY-MM'));
   const [tab, setTab] = useState('tugas');
   const [data, setData] = useState(null);
@@ -694,39 +745,55 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
   const k = data?.kartu;
   const bayar = data?.boleh_bayar;
 
+  // Angka di tab = yang belum beres. Pembayaran: merah mulai tanggal 20 (atau bulan lalu), sebelumnya kuning.
+  const belumTugas = data?.tugas ? statusTugas(data.tugas).filter((ok) => !ok).length : 0;
+  const belumBayar = k
+    ? [k.tabungan, k.bop].filter((d) => ['belum', 'kurang'].includes(d.status)).length +
+      (k.umrah.kali_bulan_ini === 0 ? 1 : 0) +
+      (k.modal.jumlah_aktif > 0 && !k.modal.terakhir ? 1 : 0)
+    : 0;
+  const telatBayar = bulan < dayjs().format('YYYY-MM') || dayjs().date() >= 20;
+  const pajakLewat = k?.kendaraan?.some((v) => v.sisa_hari < 0);
+
   return (
     <section className="grid items-start gap-6 lg:grid-cols-[1fr_18rem]">
       {/* Kolom kanan (desktop): kartu profil (+ isi tambahan, mis. pengumuman). Di HP tampil paling atas. */}
       <aside className="space-y-4 lg:sticky lg:top-4 lg:order-last">
-        <div className="flex flex-col items-center p-6 text-center bg-white border rounded-2xl border-slate-200/70">
-          {profil && <Foto p={profil} />}
-          <h2 className="mt-4 text-lg font-semibold text-slate-900">{profil?.nama ?? 'Dashboard Kasir'}</h2>
-          {profil?.jabatan && <p className="text-sm capitalize text-slate-500">{profil.jabatan}</p>}
-          <dl className="w-full mt-5 space-y-2 text-sm text-left">
-            {[
-              ['Kantor', profil?.kantor ?? data?.unit],
-              ['Wilayah', profil?.wilayah],
-              ['Hari ini', dayjs().format('ddd, DD MMM YYYY')],
-            ]
-              .filter(([, v]) => v)
-              .map(([l, v]) => (
-                <div key={l} className="flex justify-between gap-2">
-                  <dt className="text-slate-400">{l}</dt>
-                  <dd className="font-medium text-right text-slate-700">{v}</dd>
-                </div>
-              ))}
-          </dl>
-          <div className="w-full pt-5 mt-5 border-t border-slate-100">
-            <VideoTutorialButton videos={videos} menu="kasir" buttonText="Video Panduan" />
+        <div className="overflow-hidden bg-white border rounded-2xl border-slate-200/70">
+          <div className="h-20 bg-gradient-to-br from-sky-500 via-sky-600 to-indigo-600" />
+          <div className="flex flex-col items-center px-6 pb-6 -mt-12 text-center">
+            {profil && <Foto p={profil} />}
+            <h2 className="mt-3 text-lg font-semibold leading-tight text-slate-900">{profil?.nama ?? 'Dashboard Kasir'}</h2>
+            {profil?.jabatan && (
+              <span className="px-2.5 py-0.5 mt-1.5 text-xs font-medium capitalize rounded-full bg-sky-50 text-sky-700">{profil.jabatan}</span>
+            )}
+            <dl className="w-full mt-5 space-y-2 text-sm text-left">
+              {[
+                [Building2, 'Kantor', profil?.kantor ?? data?.unit],
+                [MapPin, 'Wilayah', profil?.wilayah],
+                [CalendarDays, 'Hari ini', dayjs().format('ddd, DD MMM YYYY')],
+              ]
+                .filter(([, , v]) => v)
+                .map(([Ikon, l, v]) => (
+                  <div key={l} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50">
+                    <Ikon className="w-4 h-4 text-sky-600 shrink-0" />
+                    <dt className="text-slate-500">{l}</dt>
+                    <dd className="ml-auto font-medium text-right text-slate-800">{v}</dd>
+                  </div>
+                ))}
+            </dl>
+            <div className="w-full pt-4 mt-4 border-t border-slate-100">
+              <VideoTutorialButton videos={videos} menu="kasir" buttonText="Video Panduan" />
+            </div>
           </div>
         </div>
-        {samping}
+        {data?.tugas && <KalenderKunci t={data.tugas} />}
       </aside>
 
       <div className="min-w-0 space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            {sapaan()}{profil ? `, ${profil.nama.split(' ')[0]}` : ''}
+            {sapaan()}{profil ? `, ${profil.nama}` : ''}
           </h1>
           <p className="text-sm text-slate-500">Yang perlu dikerjakan hari ini dan pembayaran kantor bulan ini.</p>
         </div>
@@ -734,22 +801,30 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
         {galat && <div className="p-3 text-sm rounded-xl bg-rose-50 text-rose-700">{galat}</div>}
         {!k && !galat && <div className="text-sm text-slate-400">Memuat…</div>}
 
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200">
-          <div className="flex gap-6" role="tablist">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-1 p-1 mb-2 overflow-x-auto rounded-xl bg-slate-100" role="tablist">
             {[
-              ['tugas', 'Tugas Harian'],
-              ['bayar', 'Pembayaran Kantor'],
-              ['pajak', `Pajak Kendaraan${k?.kendaraan?.length ? ` (${k.kendaraan.length})` : ''}`],
-            ].map(([kunci, label]) => (
+              ['tugas', 'Tugas Harian', belumTugas, true],
+              ['bayar', 'Pembayaran Kantor', belumBayar, telatBayar],
+              ['pajak', 'Pajak Kendaraan', k?.kendaraan?.length ?? 0, pajakLewat],
+              ['pembaruan', 'Pembaruan', 0, false],
+            ].map(([kunci, label, angka, merah]) => (
               <button
                 key={kunci}
                 type="button"
                 role="tab"
                 aria-selected={tab === kunci}
                 onClick={() => setTab(kunci)}
-                className={`-mb-px pb-2.5 text-sm font-medium border-b-2 ${tab === kunci ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-700'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap transition ${tab === kunci ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'}`}
               >
                 {label}
+                {angka > 0 && (
+                  <span
+                    className={`min-w-5 h-5 px-1.5 inline-flex items-center justify-center text-[11px] font-bold rounded-full tabular-nums ${merah ? 'bg-rose-500 text-white' : 'bg-amber-400 text-amber-950'}`}
+                  >
+                    {angka}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -766,6 +841,7 @@ export default function PembayaranKantor({ videos = {}, profil = null, samping =
         </div>
 
         {tab === 'tugas' && data?.tugas && <Tugas t={data.tugas} />}
+        {tab === 'pembaruan' && pembaruan}
 
       {tab === 'bayar' && k && (
         <div className="grid gap-4 md:grid-cols-2">

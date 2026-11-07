@@ -8,7 +8,7 @@ export default function DashboardKasir({ videos, video, profil }) {
     <>
       <Head title="Dashboard Kasir" />
       <div>
-        <PembayaranKantor videos={videos} profil={profil} samping={<PengumumanPembaruan video={video ?? {}} lipat />} />
+        <PembayaranKantor videos={videos} profil={profil} pembaruan={<PengumumanPembaruan video={video ?? {}} />} />
       </div>
     </>
   );
