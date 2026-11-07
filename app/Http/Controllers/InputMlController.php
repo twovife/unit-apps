@@ -66,6 +66,8 @@ class InputMlController extends Controller
 
         return response()->json([
             'batas_drop' => PecahanMacetLama::BATAS_DROP,
+            // Batas bawah pilihan tanggal angsuran (Buku Angsuran Beku, superuser).
+            'mulai' => AgregasiScope::tanggalMulai($branchId)->toDateString(),
             'macet_lama' => $loans->map(fn($l) => [
                 'id' => $l->id,
                 'kelompok' => $l->loan_officer_grouping?->kelompok,
@@ -157,7 +159,9 @@ class InputMlController extends Controller
             'tanggal_drop' => ['required', 'date', 'before:' . PecahanMacetLama::BATAS_DROP],
             'nominal' => ['required', 'integer', 'min:1'],
             'katrol' => ['boolean'],
+            'tanggal_bayar' => ['nullable', 'date', 'before_or_equal:today', new \App\Rules\HariKerja('Tanggal angsuran')],
         ], [
+            'tanggal_bayar.before_or_equal' => 'Tanggal angsuran tidak boleh di masa depan.',
             'tanggal_drop.before' => 'Nasabah ML harus drop sebelum 1 Juni 2026.',
             'nik.not_in' => 'NIK itu milik SISA MACET BLM TERINPUT.',
         ]);
@@ -171,7 +175,20 @@ class InputMlController extends Controller
                 throw ValidationException::withMessages(['loan_id' => 'SISA MACET BLM TERINPUT tidak ditemukan di kantor ini.']);
             }
             TransactionLoan::whereKey($loan->id)->lockForUpdate()->first();
-            $tanggal = $this->tanggalBayar($loan);
+            // Superuser boleh memilih tanggal (mas 2026-11-07: macet Oktober terlewat input ->
+            // selisih). Hari terkunci dibuka otomatis oleh Gembok saat angsuran ditulis; tanggal
+            // sebelum migrasi tetap ditolak (beku). Peran lain: hari tagih terakhir.
+            if (!empty($v['tanggal_bayar']) && auth()->user()->hasRole('superuser')) {
+                $tanggal = Carbon::parse($v['tanggal_bayar'])->toDateString();
+                if (Carbon::parse($tanggal)->dayOfWeek !== AppHelper::getNumbDays($loan->hari)) {
+                    throw ValidationException::withMessages(['tanggal_bayar' => "Tanggal angsuran harus hari {$loan->hari}."]);
+                }
+                if ($tanggal < AgregasiScope::tanggalMulai($branchId)->toDateString() || AppHelper::tanggalTerkunci($loan->transaction_loan_officer_grouping_id, $tanggal)) {
+                    throw ValidationException::withMessages(['tanggal_bayar' => 'Tanggal sebelum migrasi kantor sudah beku.']);
+                }
+            } else {
+                $tanggal = $this->tanggalBayar($loan);
+            }
             if (!$tanggal) {
                 throw ValidationException::withMessages(['loan_id' => "Hari tagih {$loan->hari} terakhir sudah dikunci kasir."]);
             }

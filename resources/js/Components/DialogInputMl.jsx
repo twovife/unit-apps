@@ -26,12 +26,12 @@ const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'O
  * Tanggal drop nasabah ML: hanya hari tagih yang sama (Senin -> hanya Senin) dan sebelum
  * batas. <input type="date"> tidak bisa membatasi hari, jadi pakai kalender + pilih bulan/tahun.
  */
-const TanggalDrop = ({ value, onChange, hari, batas }) => {
+const TanggalDrop = ({ value, onChange, hari, batas, mulai }) => {
   const [buka, setBuka] = useState(false);
   const akhir = dayjs(batas).subtract(1, 'day');
   const [lihat, setLihat] = useState(() => (value ? dayjs(value) : akhir).startOf('month').toDate());
   const tahun = Array.from({ length: akhir.year() - 2015 + 1 }, (_, i) => akhir.year() - i);
-  const mati = (d) => d.getDay() !== HARI_KE[hari] || !dayjs(d).isBefore(dayjs(batas), 'day');
+  const mati = (d) => d.getDay() !== HARI_KE[hari] || !dayjs(d).isBefore(dayjs(batas), 'day') || (mulai && dayjs(d).isBefore(dayjs(mulai), 'day'));
   const geser = (b, t) => setLihat(new Date(t, b, 1));
   return (
     <Popover open={buka} onOpenChange={setBuka}>
@@ -71,10 +71,12 @@ const TanggalDrop = ({ value, onChange, hari, batas }) => {
   );
 };
 
-export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
+// pilihTanggal: Buku Angsuran Beku (superuser) - tanggal angsuran bebas sejak migrasi s/d hari ini.
+export default function DialogInputMl({ buka, onClosed, kelompok, hari, pilihTanggal = false }) {
   const [data, setData] = useState(null);
   const [galat, setGalat] = useState(null);
   const [isi, setIsi] = useState({ nama: '', nik: '', tanggal_drop: '', nominal: '', katrol: true });
+  const [tanggalBayar, setTanggalBayar] = useState(''); // superuser: kosong = hari tagih terakhir
   const [proses, setProses] = useState(false);
 
   const muat = () =>
@@ -87,13 +89,14 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
     if (!buka) return;
     setGalat(null);
     setIsi({ nama: '', nik: '', tanggal_drop: '', nominal: '', katrol: true });
+    setTanggalBayar('');
     muat();
   }, [buka]);
 
   const ml = data?.macet_lama.find((m) => String(m.kelompok) === String(kelompok) && m.hari === hari);
   const ubah = (k, v) => setIsi((x) => ({ ...x, [k]: v }));
   const simpan = () =>
-    router.post(route('input_ml.simpan'), { ...isi, loan_id: ml?.id, nominal: Number(isi.nominal) }, {
+    router.post(route('input_ml.simpan'), { ...isi, loan_id: ml?.id, nominal: Number(isi.nominal), tanggal_bayar: tanggalBayar || null }, {
       preserveScroll: true,
       onStart: () => setProses(true),
       onFinish: () => setProses(false),
@@ -151,7 +154,15 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
             </div>
             <div className="grid gap-1">
               <Label>Tanggal angsuran</Label>
-              {ml.tanggal_bayar ? (
+              {pilihTanggal ? (
+                <TanggalDrop
+                  value={tanggalBayar || ml.tanggal_bayar || ''}
+                  onChange={setTanggalBayar}
+                  hari={ml.hari}
+                  mulai={data.mulai}
+                  batas={dayjs().add(1, 'day').format('YYYY-MM-DD')}
+                />
+              ) : ml.tanggal_bayar ? (
                 <Input value={dayjs(ml.tanggal_bayar).format('dddd, DD MMM YYYY')} disabled />
               ) : (
                 <div className="p-2 text-sm font-medium rounded-md text-rose-700 bg-rose-50">
@@ -214,7 +225,7 @@ export default function DialogInputMl({ buka, onClosed, kelompok, hari }) {
         {ml && ml.sisa > 0 && (
           <DialogFooter>
             <Button
-              disabled={proses || !ml.tanggal_bayar || !isi.nik || !isi.nama.trim() || !isi.tanggal_drop || !Number(isi.nominal)}
+              disabled={proses || !(tanggalBayar || ml.tanggal_bayar) || !isi.nik || !isi.nama.trim() || !isi.tanggal_drop || !Number(isi.nominal)}
               onClick={simpan}
             >
               {proses ? 'Menyimpan…' : 'Simpan setoran'}

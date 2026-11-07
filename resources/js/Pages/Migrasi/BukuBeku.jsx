@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import { UserPlus } from 'lucide-react';
+import DialogInputMl from '@/Components/DialogInputMl';
 import { Button } from '@/shadcn/ui/button';
 import Angsuran from '@/Pages/NewAngsuran/Angsuran';
 import DialogKoreksi, { KoreksiBekuContext } from './Components/DialogKoreksi';
@@ -70,6 +71,7 @@ const BandingBucket = ({ b, kelompok, hari }) => {
  */
 const BukuBeku = ({ datas, dateOfWeek, sirkulasi, beku }) => {
   const [buka, setBuka] = useState(null);
+  const [inputMl, setInputMl] = useState(false);
   const filter = { grouping_id: beku.grouping_id, kelompok: beku.kelompok, hari: beku.hari };
 
   return (
@@ -96,14 +98,30 @@ const BukuBeku = ({ datas, dateOfWeek, sirkulasi, beku }) => {
         aksi={
           beku.mulai &&
           beku.grouping_id && (
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => setBuka({ aksi: 'tambah_pinjaman' })}>
-              <UserPlus className="w-4 h-4" />
-              Tambah nasabah
-            </Button>
+            <>
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => setBuka({ aksi: 'tambah_pinjaman' })}>
+                <UserPlus className="w-4 h-4" />
+                Tambah nasabah
+              </Button>
+              {/* Input ML tanggal bebas: macet yang terlewat input di hari lalu (mas 2026-11-07). */}
+              <Button size="sm" variant="outline" onClick={() => setInputMl(true)}>
+                Input ML
+              </Button>
+            </>
           )
         }
       />
       <DialogKoreksi buka={buka} onClosed={() => setBuka(null)} filter={filter} mulai={beku.mulai} />
+      <DialogInputMl
+        buka={inputMl}
+        kelompok={beku.kelompok}
+        hari={beku.hari}
+        pilihTanggal
+        onClosed={() => {
+          setInputMl(false);
+          router.reload();
+        }}
+      />
     </KoreksiBekuContext.Provider>
   );
 };
