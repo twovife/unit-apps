@@ -68,14 +68,6 @@ export default function VehicleTaxes({ branch, vehicles, branches, period: initi
         setPayment(null);
         form.reset();
       },
-      onError: (errors) => {
-        const list = Object.values(errors);
-        if (list.length > 0) {
-          toast.error(list[0], {
-            description: list.length > 1 ? `Terdapat ${list.length} data yang perlu diperbaiki.` : undefined,
-          });
-        }
-      },
     });
   };
 

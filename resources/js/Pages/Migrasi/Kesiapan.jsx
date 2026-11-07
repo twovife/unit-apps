@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import ModalMigrasi from './Components/ModalMigrasi';
 import DrawerBukuStorting from '@/Pages/NewAngsuran/Components/DrawerBukuStorting';
 import { rpAtauStrip as rp } from '@/lib/rupiah';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
@@ -211,8 +212,8 @@ const Kesiapan = ({ datas = [], ringkasan, server_filter }) => {
                           <button
                             type="button"
                             className="px-2 py-0.5 text-[11px] font-semibold text-white rounded-md bg-violet-600 hover:bg-violet-700"
-                            onClick={() =>
-                              confirm(`Buat SISA MACET BLM TERINPUT kelompok ${b.kelompok} ${b.hari} dengan saldo Rp ${rp(b.z)}?`) &&
+                            onClick={async () =>
+                              (await konfirmasi(`Buat SISA MACET BLM TERINPUT kelompok ${b.kelompok} ${b.hari} dengan saldo Rp ${rp(b.z)}?`)) &&
                               router.post(
                                 route('migrasi.buat_macet_lama'),
                                 { kelompok: b.kelompok, hari: b.hari, periode: server_filter?.periode },

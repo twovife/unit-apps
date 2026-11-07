@@ -189,7 +189,13 @@ class LamaranKerjaController extends Controller
             }
             $lama->update(['file_path' => $path]);
         } else {
-            $lamaran->documents()->create(['type' => $val['type'], 'file_path' => $path]);
+            try {
+                $lamaran->documents()->create(['type' => $val['type'], 'file_path' => $path]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // Dua unggahan jenis sama bersamaan (ketuk ganda, lamaran 103 2026-11-06):
+                // yang kalah menimpa baris pemenang, bukan 500.
+                $lamaran->documents()->where('type', $val['type'])->update(['file_path' => $path]);
+            }
         }
 
         return back()->with('message', 'Dokumen diunggah.');

@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import { rpLengkap as rupiah } from '@/lib/rupiah';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const formatDate = (value) => value
   ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${String(value).slice(0, 10)}T00:00:00`))
@@ -145,8 +146,8 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
 
   // Hapus penempatan terakhir -> kembali ke penempatan sebelumnya. Dipakai dari
   // toast sesudah mutasi (drawer bisa sudah tertutup) dan dari riwayat penempatan.
-  const batalMutasi = (id) => {
-    if (!window.confirm('Batalkan mutasi terakhir? Kendaraan kembali ke penempatan sebelumnya.')) return;
+  const batalMutasi = async (id) => {
+    if (!(await konfirmasi('Batalkan mutasi terakhir? Kendaraan kembali ke penempatan sebelumnya.'))) return;
     // preserveState: drawer tetap terbuka (tanpa itu halaman dipasang ulang dan
     // drawer tertutup/basi). Kendaraan yang kembali ke kantor lain -> detail 404 ->
     // drawer ditutup.
@@ -160,7 +161,6 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
           .then(({ data }) => setPayload(data))
           .catch(onClose);
       },
-      onError: (errors) => toast.error(errors.message ?? 'Pembatalan mutasi gagal.'),
     });
   };
 
@@ -188,6 +188,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
         setModal('');
         maintenance.reset();
         refresh();
+        toast.success('Catatan servis ditambahkan.');
       },
     });
   };
@@ -223,25 +224,27 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     });
   };
 
-  const deleteAsset = () => {
-    if (!window.confirm(`Hapus kendaraan ${asset?.name}? Riwayat pajak, mutasi, dan servis ikut terhapus.`)) return;
+  const deleteAsset = async () => {
+    if (!(await konfirmasi(`Hapus kendaraan ${asset?.name}? Riwayat pajak, mutasi, dan servis ikut terhapus.`))) return;
     setConfirmingDelete(true);
     router.delete(route('assets.destroy', assetId), {
-      onSuccess: onClose,
+      onSuccess: () => {
+        toast.success('Kendaraan dihapus.');
+        onClose();
+      },
       onFinish: () => setConfirmingDelete(false),
     });
   };
 
-  const cancelTax = (tax) => {
+  const cancelTax = async (tax) => {
     const message = tax.pajak_before
       ? `Batalkan konfirmasi pajak periode ${tax.periode}? Tanggal STNK dan jatuh tempo akan dikembalikan.`
       : `Hapus riwayat pajak warisan periode ${tax.periode}?`;
-    if (!window.confirm(message)) return;
+    if (!(await konfirmasi(message))) return;
     setCancelingTaxId(tax.id);
     router.delete(route('assets.her.cancel', tax.id), {
       preserveScroll: true,
       onSuccess: refresh,
-      onError: (errors) => toast.error(errors.message ?? 'Pembatalan pajak gagal.'),
       onFinish: () => setCancelingTaxId(null),
     });
   };

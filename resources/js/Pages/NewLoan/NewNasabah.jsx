@@ -285,7 +285,7 @@ const NewNasabah = ({
   // newGenerate
   return (
     <div className="flex flex-col w-full gap-5 xl:flex-row">
-      <Loading show={loading || processing} />
+      <Loading show={loading || processing} pesan={processing ? 'Menyimpan…' : 'Mencari NIK…'} />
       <div className="w-full xl:w-[30rem] xl:shrink-0 space-y-4">
         <fieldset className="p-4 border rounded-lg bg-muted/20">
           <legend className="px-1 -ml-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">

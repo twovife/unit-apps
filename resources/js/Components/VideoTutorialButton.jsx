@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/shadcn/ui/dialog';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const METADATA = {
   iuran: {
@@ -104,8 +105,8 @@ export default function VideoTutorialButton({
   }, [menu]);
   useEffect(muat, [muat]);
 
-  const hapusExtra = (v) => {
-    if (!confirm(`Hapus video "${v.judul}"?`)) return;
+  const hapusExtra = async (v) => {
+    if (!(await konfirmasi(`Hapus video "${v.judul}"?`))) return;
     axios.delete(route('video_tutorial.destroy', v.key)).then(() => {
       setBuka(false);
       muat();

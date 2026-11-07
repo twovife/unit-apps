@@ -36,6 +36,7 @@ import HapusPinjamanKoreksi from './HapusPinjamanKoreksi';
 import Loading from '@/Components/Loading';
 import DialogKoreksi, { KoreksiBekuContext } from '@/Pages/Migrasi/Components/DialogKoreksi';
 import '../../../../css/loader.css';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const Action = ({ datas, show = false, onClosed, triggeredId }) => {
   const { auth } = usePage().props;
@@ -190,8 +191,8 @@ const Action = ({ datas, show = false, onClosed, triggeredId }) => {
                           size="sm"
                           variant="outline"
                           className="text-red-600 border-red-200"
-                          onClick={() =>
-                            window.confirm(`Hapus Input ML ${customerData.nama}? Saldonya kembali ke SISA MACET BLM TERINPUT.`) &&
+                          onClick={async () =>
+                            (await konfirmasi(`Hapus Input ML ${customerData.nama}? Saldonya kembali ke SISA MACET BLM TERINPUT.`)) &&
                             router.delete(route('input_ml.hapus', customerData.id), { preserveScroll: true, onSuccess: modalIsClosed })
                           }
                         >

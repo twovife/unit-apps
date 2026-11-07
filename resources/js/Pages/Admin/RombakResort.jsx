@@ -9,6 +9,8 @@ import { angka, satuanAngka, useModeRibuan } from "@/lib/modeAngka";
 import { rp } from "@/lib/rupiah";
 import { WARNA } from "@/Pages/Kasir/Rekap/Components/TableRekapKasir";
 import { AlertTriangle, ArrowDown, ArrowUp, Archive, Check, Eye, RotateCcw, Save, Trash2, Undo2 } from "lucide-react";
+import { konfirmasi } from '@/lib/konfirmasi';
+import { toast } from 'sonner';
 
 // Rancangan: .agents/rombak_resort.md §6–§9. Draf + pratinjau server, terapkan & batal.
 const HARI = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"];
@@ -364,7 +366,7 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
       const { data } = await axios.post(route("rombak_resort.pratinjau", id));
       setPratinjau(data);
     } catch (e) {
-      window.alert(e.response?.data?.message ?? "Pratinjau gagal dimuat.");
+      toast.error(e.response?.data?.message ?? "Pratinjau gagal dimuat.", { duration: Infinity });
     } finally {
       setMemuat(false);
     }
@@ -372,10 +374,8 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
   const submit = () => (tersimpan ? lihat(draf.id) : simpan((page) => page.props.draf?.id && lihat(page.props.draf.id)));
 
   // Terapkan: konfirmasi dengan mengetik nama kantor.
-  const terapkan = () => {
-    const ketik = window.prompt(`Terapkan rombak #${draf.id} untuk ${namaKantor}? Ketik nama kantor untuk konfirmasi:`);
-    if (ketik === null) return;
-    if (ketik.trim().toLowerCase() !== namaKantor.trim().toLowerCase()) return window.alert("Nama kantor tidak cocok, tidak diterapkan.");
+  const terapkan = async () => {
+    if (!(await konfirmasi(`Terapkan rombak #${draf.id} untuk ${namaKantor}? Ketik nama kantor untuk konfirmasi.`, { ketik: namaKantor }))) return;
     router.post(route("rombak_resort.terapkan", draf.id), {}, {
       preserveScroll: true,
       onStart: () => setMemuat(true),
@@ -383,8 +383,8 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
       onSuccess: () => setPratinjau(null),
     });
   };
-  const batal = () => {
-    if (!window.confirm(`Batalkan rombak #${draf.id}? Pinjaman & transaksi bulan ${draf.berlaku_bulan.slice(0, 7)} kembali ke susunan lama.`)) return;
+  const batal = async () => {
+    if (!(await konfirmasi(`Batalkan rombak #${draf.id}? Pinjaman & transaksi bulan ${draf.berlaku_bulan.slice(0, 7)} kembali ke susunan lama.`))) return;
     router.post(route("rombak_resort.batal", draf.id), {}, {
       preserveScroll: true,
       onStart: () => setMemuat(true),
@@ -392,8 +392,8 @@ const RombakResort = ({ kantor, branch_id, bulan, kelompok, blok, rombak, draf }
     });
   };
 
-  const hapus = (r) => {
-    if (!window.confirm(`Hapus draf #${r.id} (berlaku ${r.berlaku_bulan})?`)) return;
+  const hapus = async (r) => {
+    if (!(await konfirmasi(`Hapus draf #${r.id} (berlaku ${r.berlaku_bulan})?`))) return;
     router.delete(route("rombak_resort.hapus", r.id), { preserveScroll: true, preserveState: true });
   };
 

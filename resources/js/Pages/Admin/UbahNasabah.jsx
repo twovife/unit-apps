@@ -5,13 +5,14 @@ import { Search } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 /** Form satu nasabah: 4 kolom data diri + rekening (hanya dibaca). */
 const KartuNasabah = ({ n, dobel }) => {
   const form = useForm({ nama: n.nama ?? '', nik: n.nik ?? '', no_kk: n.no_kk ?? '', alamat: n.alamat ?? '' });
-  const simpan = (e) => {
+  const simpan = async (e) => {
     e.preventDefault();
-    if (!window.confirm(`Simpan perubahan data ${n.nama}?`)) return;
+    if (!(await konfirmasi(`Simpan perubahan data ${n.nama}?`))) return;
     form.put(route('ubah_nik.simpan', n.id), { preserveScroll: true });
   };
   const isian = [

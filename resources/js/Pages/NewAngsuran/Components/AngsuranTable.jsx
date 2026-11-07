@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useModeRibuan } from '@/lib/modeAngka';
 import { KoreksiBekuContext } from '@/Pages/Migrasi/Components/DialogKoreksi';
 import DialogGantiNik from '@/Pages/Pinjaman/Components/DialogGantiNik';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 /**
  * Buku angsuran bulanan (desktop Angsuran Lancar & Pinjaman Macet).
@@ -403,8 +404,8 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
   const saldoAkhir = (r) =>
     Number(r.saldo || 0) + (kb ? (r.penyesuaian ?? []).reduce((t, a) => (a.berlaku > akhirBulanIni ? t + Number(a.efek || 0) : t), 0) : 0);
   const totalKolom = KOLOM_TETAP.length + kolomBlok.length + 1 + (kb ? 1 : 0) + (bolehHapus ? 1 : 0);
-  const hapusNasabah = (r) => {
-    if (!window.confirm(`Hapus ${r.nama}? Sisa saldonya pindah ke SISA MACET BLM TERINPUT.`)) return;
+  const hapusNasabah = async (r) => {
+    if (!(await konfirmasi(`Hapus ${r.nama}? Sisa saldonya pindah ke SISA MACET BLM TERINPUT.`))) return;
     router.post(route("input_ml.hapus_nasabah", r.id), {}, { preserveScroll: true });
   };
   // Lebar minimum = jumlah lebar kolom (kelas w-N = N x 4px). Kalau layar

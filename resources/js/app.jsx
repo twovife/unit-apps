@@ -22,6 +22,7 @@ import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import AuthenticatedLayout from './Layouts/AuthenticatedLayout';
+import { KunciKirim } from './lib/kunciKirim';
 
 // Persistent layout: sidebar + navbar dipasang SEKALI untuk semua halaman, jadi pindah
 // menu hanya mengganti isi (sidebar tidak dibuat ulang / berkedip). Halaman tamu tanpa layout.
@@ -42,7 +43,13 @@ createInertiaApp({
   setup({ el, App, props }) {
     const root = createRoot(el);
 
-    root.render(<App {...props} />);
+    // KunciKirim di luar layout: halaman tanpa layout (login, Input Macet) ikut terkunci.
+    root.render(
+      <>
+        <App {...props} />
+        <KunciKirim />
+      </>,
+    );
   },
   progress: {
     color: '#4B5563',

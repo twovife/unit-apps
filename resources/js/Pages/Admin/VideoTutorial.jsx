@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
 import TambahVideo from '@/Components/TambahVideo';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const MAKS_MB = 50;
 
@@ -27,8 +28,8 @@ const VideoTutorial = ({ videos, menuOpsi }) => {
     });
   };
 
-  const hapus = (v) => {
-    if (!confirm(`Hapus video "${v.judul}"?`)) return;
+  const hapus = async (v) => {
+    if (!(await konfirmasi(`Hapus video "${v.judul}"?`))) return;
     router.delete(route('video_tutorial.destroy', v.kunci), {
       preserveScroll: true,
       onStart: () => setLoading(true),

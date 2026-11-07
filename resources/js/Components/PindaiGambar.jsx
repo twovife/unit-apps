@@ -87,11 +87,20 @@ export default function DialogPindai({ file, onPilih, onBatal }) {
   const [hasil, setHasil] = useState(null);
   const [proses, setProses] = useState(false);
   const [galat, setGalat] = useState(null);
+  // Satu file = satu kiriman: ketuk ganda "Unggah" dulu mengirim dua kali
+  // sebelum dialog sempat tertutup (lamaran 103, 2026-11-06).
+  const terkirim = useRef(false);
+  const pilih = (f) => {
+    if (terkirim.current) return;
+    terkirim.current = true;
+    onPilih(f);
+  };
   const urlHasil = useMemo(() => (hasil ? URL.createObjectURL(hasil) : null), [hasil]);
   useEffect(() => () => urlHasil && URL.revokeObjectURL(urlHasil), [urlHasil]);
 
   useEffect(() => {
     if (!file) return;
+    terkirim.current = false;
     let batal = false;
     setKanvas(null);
     setSudut(null);
@@ -149,7 +158,7 @@ export default function DialogPindai({ file, onPilih, onBatal }) {
               <Button variant="outline" onClick={() => setHasil(null)}>
                 Atur lagi
               </Button>
-              <Button onClick={() => onPilih(hasil)}>Unggah</Button>
+              <Button onClick={() => pilih(hasil)}>Unggah</Button>
             </>
           ) : kanvas ? (
             <Button disabled={proses} onClick={simpan}>
@@ -157,7 +166,7 @@ export default function DialogPindai({ file, onPilih, onBatal }) {
             </Button>
           ) : (
             galat && (
-              <Button variant="outline" onClick={() => onPilih(file)}>
+              <Button variant="outline" onClick={() => pilih(file)}>
                 Unggah tanpa dirapikan
               </Button>
             )

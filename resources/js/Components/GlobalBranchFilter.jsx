@@ -1,6 +1,7 @@
 import { router, usePage } from "@inertiajs/react";
 import React, { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/shadcn/ui/button";
@@ -32,9 +33,14 @@ export default function GlobalBranchFilter({ compact = false }) {
 
     const handleChange = (branchId) => {
         setOpen(false);
+        // Muat ulang data kantor bisa lama: toast berputar sampai selesai, lalu
+        // pesan server ("Cabang aktif berhasil diubah.") muncul lewat layout.
+        const tujuan = globalFilter.allowed_branches.find((b) => b.id.toString() === branchId.toString());
+        const t = toast.loading(`Pindah ke ${tujuan?.unit ?? 'cabang lain'}…`);
         router.post(route('set-branch'), { branch_id: branchId }, {
             preserveState: false,
             preserveScroll: true,
+            onFinish: () => toast.dismiss(t),
         });
     };
 

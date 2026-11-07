@@ -2,6 +2,7 @@ import React from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Button } from '@/shadcn/ui/button';
 import { rp } from '@/lib/rupiah';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const KATEGORI = [
   ['lancar', 'Lancar'],
@@ -23,14 +24,14 @@ const Selisih = ({ v }) =>
  */
 export default function SelisihMigrasi({ semua_kantor, unit, migrasi, baris = [] }) {
   const ganti = (semua) => router.get(route('migrasi.selisih'), semua ? { semua_kantor: 1 } : {}, { preserveScroll: true });
-  const sesuaikan = (b) => {
+  const sesuaikan = async (b) => {
     const z = b.bucket.ml - b.sistem.ml;
     const arah = z > 0 ? `ditambah ${rp(z)}${b.macet_lama ? '' : ' (SISA MACET BLM TERINPUT baru dibuat)'}` : `dikurangi ${rp(-z)}`;
-    if (!window.confirm(`${b.kantor} kel ${b.kelompok} ${b.hari}: SISA MACET BLM TERINPUT ${arah} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`)) return;
+    if (!(await konfirmasi(`${b.kantor} kel ${b.kelompok} ${b.hari}: SISA MACET BLM TERINPUT ${arah} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`))) return;
     router.post(route('migrasi.selisih_ml'), { grouping_id: b.grouping_id, hari: b.hari }, { preserveScroll: true });
   };
-  const koreksiPenyesuaian = (b, a, baru) => {
-    if (!window.confirm(`${b.kantor} kel ${b.kelompok} ${b.hari}: penyesuaian ${a.nama} ${rp(a.nominal)} jadi ${rp(baru)}${baru === 0 ? ' (dihapus)' : ''} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`)) return;
+  const koreksiPenyesuaian = async (b, a, baru) => {
+    if (!(await konfirmasi(`${b.kantor} kel ${b.kelompok} ${b.hari}: penyesuaian ${a.nama} ${rp(a.nominal)} jadi ${rp(baru)}${baru === 0 ? ' (dihapus)' : ''} supaya ML = bucket. Saldo bulanan tersimpan ikut disesuaikan. Lanjut?`))) return;
     router.post(route('migrasi.selisih_penyesuaian'), { adj_id: a.id }, { preserveScroll: true });
   };
 

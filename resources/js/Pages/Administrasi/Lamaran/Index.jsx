@@ -10,6 +10,8 @@ import InputError from '@/Components/InputError';
 import { ExternalLink, Eye, FileText, Paperclip, Pencil, Plus, Search, Trash2, Upload, User, UserPlus } from 'lucide-react';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
 import DialogPindai, { bisaDipindai } from '@/Components/PindaiGambar';
+import { konfirmasi } from '@/lib/konfirmasi';
+import { toast } from 'sonner';
 
 /**
  * Lamaran Kerja (cabang aktif): catat pelamar + unggah dokumen. Edit & hapus
@@ -418,6 +420,7 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
     setGalat(null);
     setProses(true);
     setStatusTeks('Mengompresi…');
+    const t = toast.loading('Mengunggah dokumen…');
 
     try {
       const file = await kompresGambar(fileMentah);
@@ -434,20 +437,22 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
           preserveState: true,
           onError: (err) => setGalat(err.file ?? err.type ?? Object.values(err)[0] ?? 'Gagal mengunggah.'),
           onFinish: () => {
+            toast.dismiss(t);
             setProses(false);
             setStatusTeks(null);
           },
         },
       );
     } catch (err) {
+      toast.dismiss(t);
       setGalat(err instanceof Error ? err.message : 'Gagal memproses file.');
       setProses(false);
       setStatusTeks(null);
     }
   };
-  const hapusBerkas = (j, doc) => {
+  const hapusBerkas = async (j, doc) => {
     const label = NAMA_DOK[j] ?? j;
-    if (!window.confirm(`Hapus dokumen ${label} milik ${l.nama}?`)) return;
+    if (!(await konfirmasi(`Hapus dokumen ${label} milik ${l.nama}?`))) return;
     setProses(true);
     setStatusTeks('Menghapus…');
     setGalat(null);
@@ -461,8 +466,8 @@ const Detail = ({ l, jenis, onClosed, onEdit }) => {
       },
     });
   };
-  const hapus = () => {
-    if (!window.confirm(`Hapus lamaran ${l.nama}? Dokumennya ikut terhapus.`)) return;
+  const hapus = async () => {
+    if (!(await konfirmasi(`Hapus lamaran ${l.nama}? Dokumennya ikut terhapus.`))) return;
     router.delete(route('administrasi.lamaran.destroy', l.id), { preserveScroll: true, onSuccess: onClosed });
   };
 

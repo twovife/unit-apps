@@ -8,6 +8,7 @@ import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { Label } from '@/shadcn/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shadcn/ui/dialog';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 /** Detail Pinjaman Modal kantor aktif per sumber (baca-saja; bayar dari Dashboard Kasir). */
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
@@ -242,8 +243,8 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
                           type="button"
                           title="Hapus pinjaman"
                           className="ml-2 align-middle text-rose-600 hover:text-rose-800"
-                          onClick={() =>
-                            window.confirm(`Hapus pinjaman ${tgl(l.tanggal)} ${rp(l.jumlah)}?`) &&
+                          onClick={async () =>
+                            (await konfirmasi(`Hapus pinjaman ${tgl(l.tanggal)} ${rp(l.jumlah)}?`)) &&
                             router.delete(l.hapus, { preserveScroll: true })
                           }
                         >
@@ -305,8 +306,8 @@ export default function PinjamanModal({ unit, sumber, sumber_ada = [], ringkas, 
                             type="button"
                             title="Hapus angsuran (satu slip)"
                             className="text-rose-600 hover:text-rose-800"
-                            onClick={() =>
-                              window.confirm(`Hapus angsuran ${tgl(p.tanggal)}? Semua bagian dari pembayaran yang sama ikut terhapus.`) &&
+                            onClick={async () =>
+                              (await konfirmasi(`Hapus angsuran ${tgl(p.tanggal)}? Semua bagian dari pembayaran yang sama ikut terhapus.`)) &&
                               router.delete(p.hapus, { preserveScroll: true })
                             }
                           >

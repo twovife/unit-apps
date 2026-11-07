@@ -15,6 +15,7 @@ import {
   Lightbulb,
   Lock,
 } from "lucide-react";
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const NAMA_HARI = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
@@ -58,13 +59,13 @@ const KalenderKerja = ({ kalender, server_filter }) => {
     );
   };
 
-  const terapkanSaran = () => {
+  const terapkanSaran = async () => {
     if (
-      !window.confirm(
+      !(await konfirmasi(
         `Terapkan ${kalender.jumlah_saran} saran untuk ${kalender.nama_periode}?\n\n` +
           "Hanya tanggal yang belum ditetapkan yang disentuh. Penetapan yang sudah " +
           "ada adalah keputusan orang dan tidak akan ditimpa.",
-      )
+      ))
     )
       return;
 

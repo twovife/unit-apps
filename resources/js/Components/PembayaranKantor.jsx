@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { Link, router } from '@inertiajs/react';
 import {
@@ -22,6 +23,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
 import DialogPindai, { bisaDipindai } from '@/Components/PindaiGambar';
 import { rpLengkap as rp, rpInput as ribu } from '@/lib/rupiah';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 /**
  * Dashboard Kasir: tugas kasir hari ini + kartu pembayaran kantor aktif per
@@ -154,8 +156,8 @@ const Riwayat = ({ isi = [], judul = 'Pembayaran bulan ini', kata = 'pembayaran'
                   type="button"
                   title={`Hapus ${kata}`}
                   className="text-rose-600 hover:text-rose-800"
-                  onClick={() =>
-                    window.confirm(`Hapus ${kata} ${tgl(r.tanggal)} ${rp(r.nominal)}?`) &&
+                  onClick={async () =>
+                    (await konfirmasi(`Hapus ${kata} ${tgl(r.tanggal)} ${rp(r.nominal)}?`)) &&
                     router.delete(r.hapus, {
                       preserveScroll: true,
                       preserveState: true,
@@ -337,6 +339,7 @@ const DialogIuran = ({ buka, onClosed, data, bulan }) => {
 
   const simpan = async () => {
     setProses(true);
+    const t = toast.loading('Mengunggah bukti…');
     const bukti = await kecilkan(file);
     router.post(
       route('dashboard.kasir.iuran'),
@@ -347,7 +350,10 @@ const DialogIuran = ({ buka, onClosed, data, bulan }) => {
         preserveState: true,
         onError: setGalat,
         onSuccess: onClosed,
-        onFinish: () => setProses(false),
+        onFinish: () => {
+        toast.dismiss(t);
+        setProses(false);
+      },
       },
     );
   };
@@ -469,6 +475,7 @@ const DialogUmrah = ({ buka, onClosed, rekening }) => {
   }, [buka]);
   const simpan = async () => {
     setProses(true);
+    const t = toast.loading('Mengunggah bukti…');
     const bukti = await kecilkan(file);
     router.post(route('dashboard.kasir.umrah'), { ...isi, bukti }, {
       forceFormData: true,
@@ -476,7 +483,10 @@ const DialogUmrah = ({ buka, onClosed, rekening }) => {
       preserveState: true,
       onError: setGalat,
       onSuccess: onClosed,
-      onFinish: () => setProses(false),
+      onFinish: () => {
+        toast.dismiss(t);
+        setProses(false);
+      },
     });
   };
   const ubah = (k, v) => setIsi((x) => ({ ...x, [k]: v }));
@@ -555,6 +565,7 @@ const DialogModal = ({ m, onClosed, rekening }) => {
   }, [m, nominal, isi.payment_date]);
   const simpan = async () => {
     setProses(true);
+    const t = toast.loading('Mengunggah bukti…');
     const bukti = await kecilkan(file);
     router.post(route('dashboard.kasir.modal'), { ...isi, bukti }, {
       forceFormData: true,
@@ -562,7 +573,10 @@ const DialogModal = ({ m, onClosed, rekening }) => {
       preserveState: true,
       onError: setGalat,
       onSuccess: onClosed,
-      onFinish: () => setProses(false),
+      onFinish: () => {
+        toast.dismiss(t);
+        setProses(false);
+      },
     });
   };
   const ubah = (k, v) => setIsi((x) => ({ ...x, [k]: v }));

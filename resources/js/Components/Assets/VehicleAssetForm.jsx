@@ -100,15 +100,7 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
         toast.success(asset?.id ? 'Data kendaraan berhasil diperbarui.' : 'Kendaraan baru berhasil didaftarkan.');
         onClose();
       },
-      onError: (errors) => {
-        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-        const list = Object.values(errors);
-        if (list.length > 0) {
-          toast.error(list[0], {
-            description: list.length > 1 ? `Terdapat ${list.length} data yang perlu diperbaiki.` : undefined,
-          });
-        }
-      },
+      onError: () => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }),
     };
     if (asset?.id) {
       form.put(route('assets.update', asset.id), options);

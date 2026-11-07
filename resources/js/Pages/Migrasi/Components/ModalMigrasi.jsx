@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
 import { rp } from '@/lib/rupiah';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 const tgl = (d) => (d ? dayjs(d).format('DD MMM YYYY') : '–');
 
@@ -156,11 +157,11 @@ const ModalMigrasi = ({ open, onOpenChange, unit, periode }) => {
       .finally(() => setMemuat(false));
   };
 
-  const migrasikan = () => {
+  const migrasikan = async () => {
     const pesan = kunci
       ? `Migrasikan ${unit} mulai ${tgl(periode)} dan KUNCI semua hari s/d ${tgl(sampai)}?`
       : `Migrasikan ${unit} mulai ${tgl(periode)} tanpa kunci otomatis?`;
-    if (!confirm(pesan)) return;
+    if (!(await konfirmasi(pesan))) return;
     router.post(
       route('migrasi.jalankan_migrasi'),
       { periode, kunci_sampai: kunci ? sampai : null },

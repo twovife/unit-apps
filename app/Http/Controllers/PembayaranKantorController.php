@@ -209,7 +209,7 @@ class PembayaranKantorController extends Controller
      * stafkontrol memindah / meng-0-kan bagiannya lewat re-split slip di app_laravel. Status ikut
      * sisa (active/paid). Tabel tunggakan jasa TIDAK ditulis - dibangun ulang app_laravel.
      * Pinjaman sumber Pusat ikut dibayar kasir juga (mas 2026-10-29; dulu hanya bendahara).
-     * Tambah / hapus pinjaman Pusat tetap hanya bendahara (kasirpusat).
+     * Tambah / hapus pinjaman Pusat juga boleh kasir (= app_laravel sumberPinjamanModalBoleh).
      */
     public function bayarModal(Request $request)
     {
@@ -325,7 +325,7 @@ class PembayaranKantorController extends Controller
     /**
      * Tambah pinjaman modal kantor aktif dengan bukti transfer masuk (mas 2026-10-22),
      * = app_laravel storeCapitalLoan: jenis selalu Pinjaman Modal (Modal Awal dicatat
-     * pusat); sumber Pusat hanya bendahara (kasirpusat); kunci bulanan modal berlaku.
+     * pusat); semua sumber termasuk Pusat (= app_laravel); kunci bulanan modal berlaku.
      */
     public function tambahModal(Request $request)
     {
@@ -338,7 +338,6 @@ class PembayaranKantorController extends Controller
             'notes' => ['nullable', 'string', 'max:255'],
             'bukti' => array_merge(['required'], Unggahan::ATURAN),
         ], ['loan_date.before_or_equal' => 'Tanggal pinjaman tidak boleh di masa depan.'] + Unggahan::pesan('bukti'));
-        abort_if($data['source'] === 'pusat' && !auth()->user()->can('kasirpusat'), 403, 'Pinjaman modal sumber Pusat hanya dicatat Bendahara.');
 
         $periode = substr((string) $data['loan_date'], 0, 7);
         if (DB::table('contribution_locks')->where('module', 'modal')->whereNull('branch_id')->where('period', $periode)->exists()) {
@@ -370,15 +369,14 @@ class PembayaranKantorController extends Controller
 
     /**
      * Pinjaman modal boleh dihapus (= app_laravel destroyCapitalLoan): jenis Pinjaman Modal (Modal
-     * Awal dicatat pusat), hak input (Pusat hanya bendahara), bulan belum dikunci, dan transaksi
+     * Awal dicatat pusat), hak input, bulan belum dikunci, dan transaksi
      * TERAKHIR buku sumbernya (tidak ada angsuran sumber itu sesudahnya).
      */
     private function bolehHapusPinjaman(int $loanId): bool
     {
         $l = DB::table('tb_capital_loans')->find($loanId);
         // Pinjaman hasil Pindah Sisa dibatalkan dari kantor asal (app_laravel), bukan dihapus di sini.
-        if (!$l || !empty($l->pindahan_dari) || $l->jenis !== JasaModal::PINJAMAN || !$this->bolehBayar((int) $l->branch_id)
-            || ($l->source === 'pusat' && !auth()->user()->can('kasirpusat'))) {
+        if (!$l || !empty($l->pindahan_dari) || $l->jenis !== JasaModal::PINJAMAN || !$this->bolehBayar((int) $l->branch_id)) {
             return false;
         }
         if (DB::table('contribution_locks')->where('module', 'modal')->whereNull('branch_id')->where('period', substr((string) $l->loan_date, 0, 7))->exists()) {
@@ -547,9 +545,10 @@ class PembayaranKantorController extends Controller
             'unit' => $branch->unit,
             'sumber' => $buku,
             'sumber_ada' => collect(['semua' => 'Semua'] + self::BUKU_MODAL)->map(fn($judul, $k) => ['kunci' => $k, 'judul' => $judul])->values(),
-            // Form Tambah pinjaman modal: sumber yang boleh dipilih (Pusat hanya bendahara).
+            // Form Tambah pinjaman modal: semua sumber (kasir boleh Pusat juga, = app_laravel).
+            // Pusat paling bawah supaya bukan pilihan bawaan.
             'boleh_tambah' => $this->bolehBayar($branch->id),
-            'sumber_tambah' => collect(self::SUMBER_MODAL)->except(auth()->user()->can('kasirpusat') ? [] : ['pusat'])
+            'sumber_tambah' => collect(array_merge(array_diff_key(self::SUMBER_MODAL, ['pusat' => 1]), ['pusat' => self::SUMBER_MODAL['pusat']]))
                 ->map(fn($judul, $k) => ['kunci' => $k, 'judul' => $judul])->values(),
             'ringkas' => [
                 'total_pinjaman' => (int) $daftar->sum('jumlah'),

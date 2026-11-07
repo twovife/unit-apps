@@ -48,6 +48,7 @@ import {
 } from '@/shadcn/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import DialogPindai, { bisaDipindai } from '@/Components/PindaiGambar';
+import { konfirmasi } from '@/lib/konfirmasi';
 
 /** Ukuran area potong di layar dan dimensi hasil ekspor foto (px) */
 const AREA_CROP = 280;
@@ -236,6 +237,7 @@ const ModalCropAvatar = ({ employee, file, onBatal, onSelesai }) => {
 
         const formDataFile = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
         setProses(true);
+        const t = toast.loading('Mengunggah foto…');
 
         router.post(
           route('administrasi.manpower.avatar', employee.id),
@@ -244,14 +246,11 @@ const ModalCropAvatar = ({ employee, file, onBatal, onSelesai }) => {
             forceFormData: true,
             preserveScroll: true,
             preserveState: true,
-            onSuccess: () => {
-              toast.success('Foto profil berhasil diperbarui.');
-              onSelesai();
+            onSuccess: onSelesai,
+            onFinish: () => {
+              toast.dismiss(t);
+              setProses(false);
             },
-            onError: (err) => {
-              toast.error(err.avatar ?? Object.values(err)[0] ?? 'Gagal mengunggah foto profil.');
-            },
-            onFinish: () => setProses(false),
           }
         );
       },
@@ -455,23 +454,21 @@ const DocumentUploaderRow = ({ employee, type, label, existingDoc, bolehUnggah }
     formData.append('file', file);
 
     setSedangUpload(true);
+    const t = toast.loading('Mengunggah dokumen…');
     router.post(route('administrasi.manpower.documents.upload', employee.id), formData, {
       forceFormData: true,
       preserveScroll: true,
       preserveState: true,
-      onSuccess: () => {
-        toast.success(`Dokumen ${label} berhasil diperbarui.`);
+      onFinish: () => {
+        toast.dismiss(t);
+        setSedangUpload(false);
       },
-      onError: (err) => {
-        toast.error(err.file ?? err.type ?? Object.values(err)[0] ?? 'Gagal mengunggah dokumen.');
-      },
-      onFinish: () => setSedangUpload(false),
     });
   };
 
-  const handleHapusDokumen = () => {
+  const handleHapusDokumen = async () => {
     if (!existingDoc) return;
-    if (!confirm(`Apakah Anda yakin ingin menghapus dokumen ${label}?`)) return;
+    if (!(await konfirmasi(`Hapus dokumen ${label}?`))) return;
 
     setSedangHapus(true);
     router.delete(
@@ -479,12 +476,6 @@ const DocumentUploaderRow = ({ employee, type, label, existingDoc, bolehUnggah }
       {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
-          toast.success(`Dokumen ${label} berhasil dihapus.`);
-        },
-        onError: () => {
-          toast.error(`Gagal menghapus dokumen ${label}.`);
-        },
         onFinish: () => setSedangHapus(false),
       }
     );
@@ -673,13 +664,9 @@ const AkunKaryawan = ({ d, akun }) => {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => {
-        toast.success(pesan);
         if (tutup) setMode(null);
       },
-      onError: (err) => {
-        setErrors(err);
-        toast.error(Object.values(err)[0] ?? 'Gagal menyimpan.');
-      },
+      onError: setErrors,
       onFinish: () => setProses(false),
     });
   };
@@ -693,8 +680,8 @@ const AkunKaryawan = ({ d, akun }) => {
   };
 
   const aktif = d.username_status == 1;
-  const toggleAktif = () => {
-    if (!confirm(`${aktif ? 'Nonaktifkan' : 'Aktifkan'} akun ${d.username}?`)) return;
+  const toggleAktif = async () => {
+    if (!(await konfirmasi(`${aktif ? 'Nonaktifkan' : 'Aktifkan'} akun ${d.username}?`))) return;
     kirim(route('administrasi.manpower.akun.aktif', d.user_id), 'put', {}, `Akun pengguna berhasil ${aktif ? 'dinonaktifkan' : 'diaktifkan'}.`, false);
   };
 
@@ -1086,19 +1073,11 @@ const ManPower = ({ datas = [], title = 'Data Karyawan' }) => {
   };
 
   // Handler Hapus Foto Profil
-  const konfirmasiHapusFoto = (employee) => {
+  const konfirmasiHapusFoto = async (employee) => {
     if (!employee) return;
-    if (!confirm(`Hapus foto profil karyawan "${employee.employee_name}"?`)) return;
+    if (!(await konfirmasi(`Hapus foto profil karyawan "${employee.employee_name}"?`))) return;
 
-    router.delete(route('administrasi.manpower.avatar.delete', employee.id), {
-      preserveScroll: true,
-      onSuccess: () => {
-        toast.success('Foto profil berhasil dihapus.');
-      },
-      onError: () => {
-        toast.error('Gagal menghapus foto profil.');
-      },
-    });
+    router.delete(route('administrasi.manpower.avatar.delete', employee.id), { preserveScroll: true });
   };
 
   return (

@@ -3,6 +3,8 @@ import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 import EditableRow from '@/Pages/Administrasi/BatchInput/EditableRow';
 import axios from 'axios';
+import { konfirmasi } from '@/lib/konfirmasi';
+import { toast } from 'sonner';
 // import EditableRow from './Partials/EditableRow';
 
 const Index = () => {
@@ -85,8 +87,8 @@ const Index = () => {
     });
   };
 
-  const handleReset = () => {
-    if (confirm('Kosongkan semua data di tabel?')) {
+  const handleReset = async () => {
+    if ((await konfirmasi('Kosongkan semua data di tabel?'))) {
       setData([]);
       setColumns([]);
       setActiveTab('');
@@ -261,9 +263,7 @@ const Index = () => {
   const handleTry = async () => {
     const hasFrontendError = processedData.some((item) => item._isInvalid);
     if (hasFrontendError) {
-      alert(
-        'Perbaiki error (warna merah) di tabel dulu sebelum cek ke server!',
-      );
+      toast.error('Perbaiki error (warna merah) di tabel dulu sebelum cek ke server.');
       return;
     }
 
@@ -294,15 +294,13 @@ const Index = () => {
       setData(verifiedData);
 
       if (response.data.all_ok) {
-        alert('✅ Verifikasi Berhasil! Semua data aman diupload.');
+        toast.success('Verifikasi berhasil. Semua data aman diupload.');
       } else {
-        alert('⚠️ Beberapa data ditolak oleh sistem. Cek kolom status!');
+        toast.warning('Beberapa data ditolak sistem. Cek kolom status.', { duration: Infinity });
       }
     } catch (error) {
       console.error('Validation Error:', error.response?.data || error.message);
-      alert(
-        'Gagal terhubung ke server untuk validasi. Cek console untuk detail.',
-      );
+      toast.error('Gagal terhubung ke server untuk validasi.', { duration: Infinity });
     } finally {
       setIsProcessing(false);
     }
@@ -314,11 +312,11 @@ const Index = () => {
       (i) => !i._isVerified || i._isInvalid,
     );
     if (unverified) {
-      alert('Ada data yang belum diverifikasi (TRY) atau masih error.');
+      toast.error('Ada data yang belum diverifikasi (TRY) atau masih error.');
       return;
     }
 
-    if (!confirm(`Simpan ${processedData.length} data?`)) return;
+    if (!(await konfirmasi(`Simpan ${processedData.length} data?`))) return;
 
     setIsProcessing(true);
     const chunkSize = 50;
@@ -343,14 +341,14 @@ const Index = () => {
         }
       }
 
-      alert(`🎉 Berhasil! ${successCount} data tersimpan.`);
+      toast.success(`${successCount} data tersimpan.`);
       setData([]);
     } catch (error) {
       // Tangkap pesan error asli dari Laravel (hasil try-catch di controller)
       const errorMsg =
         error.response?.data?.message || 'Terjadi kesalahan server.';
       console.error('Upload Error:', error.response?.data);
-      alert(`❌ Gagal: ${errorMsg}`);
+      toast.error(`Gagal: ${errorMsg}`, { duration: Infinity });
     } finally {
       setIsProcessing(false);
     }

@@ -214,3 +214,27 @@ html {
     font-size: 16px;
   }
 }
+
+/* Tombol yang sedang mengirim (lib/kunciKirim.jsx): redup + ikon berputar di depan teks. */
+[data-memuat] {
+  opacity: 0.6;
+  cursor: wait;
+}
+[data-memuat]::before {
+  content: '';
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.4em;
+  vertical-align: -0.15em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: putar-memuat 0.7s linear infinite;
+}
+@keyframes putar-memuat {
+  to {
+    transform: rotate(360deg);
+  }
+}
