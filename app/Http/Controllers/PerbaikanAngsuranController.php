@@ -42,7 +42,14 @@ class PerbaikanAngsuranController extends Controller
         if (!$migrasi) {
             // Paling lama di depan: blok tabel & Buku Storting urut dari kiri / atas.
             for ($i = $mundur; $i >= 1; $i--) {
-                $r = $request->duplicate(['month' => $akhir->copy()->subMonthsNoOverflow($i)->format('Y-m')] + $request->except(['date', 'mundur']));
+                // Permintaan baru tanpa `date`: FilterGlobal menyisipkan date (hari tagih bulan
+                // terpilih) dan getLoan mengutamakan date di atas month (bug prod 2026-11-10).
+                $r = Request::create($request->url(), 'GET', array_filter([
+                    'month' => $akhir->copy()->subMonthsNoOverflow($i)->format('Y-m'),
+                    'hari' => $utama['server_filter']['hari'],
+                    'kelompok' => $request->input('kelompok'),
+                ]));
+                $r->setUserResolver($request->getUserResolver());
                 $d = $this->getLoan($r);
                 $bulan[] = ['month' => $d['server_filter']['month'], 'datas' => $d['datas'], 'dateOfWeek' => $d['dateOfWeek'], 'sirkulasi' => $d['sirkulasi']];
             }
