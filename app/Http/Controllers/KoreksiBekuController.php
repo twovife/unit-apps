@@ -305,8 +305,9 @@ class KoreksiBekuController extends Controller
         return $this->langsung($aksi, $data, 'koreksi sel buku angsuran beku');
     }
 
-    /** Sel tanggal sejak migrasi: kosong = bayar, 0 = hapus, angka lain = ubah nominal. */
-    private function selBiasa(Request $request, TransactionLoan $loan, ?\App\Models\TransactionLoanInstalment $ada, string $tanggal, int $nominal)
+    /** Sel tanggal lewat jalur angsuran biasa: kosong = bayar, 0 = hapus, angka lain = ubah nominal.
+     *  Dipakai juga Perbaikan Angsuran (kantor belum migrasi). */
+    public function selBiasa(Request $request, TransactionLoan $loan, ?\App\Models\TransactionLoanInstalment $ada, string $tanggal, int $nominal)
     {
         $pinjaman = app(\App\Http\Controllers\TransactionLoanController::class);
         if (!$ada) {

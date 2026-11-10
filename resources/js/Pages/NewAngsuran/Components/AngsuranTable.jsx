@@ -135,7 +135,7 @@ const SelNomorAnggota = ({ r, boleh, className = "" }) => {
  * luar langsung tersimpan. Sebelum migrasi lewat Koreksi Beku (bucket ikut), sesudahnya
  * lewat jalur angsuran biasa. Kosong = tambah, berisi = ubah, 0 = hapus. Esc batal.
  */
-const SelBeku = ({ r, d, v, kelas }) => {
+const SelBeku = ({ r, d, v, kelas, rute = "migrasi.koreksi_beku_sel" }) => {
   const [ubah, setUbah] = useState(false);
   const [nilai, setNilai] = useState(String(v || ""));
   const [simpan, setSimpan] = useState(false);
@@ -146,7 +146,7 @@ const SelBeku = ({ r, d, v, kelas }) => {
     const baru = Number(String(nilai).replace(/\D/g, "") || 0);
     if (baru === Number(v || 0)) return;
     router.post(
-      route("migrasi.koreksi_beku_sel"),
+      route(rute),
       { loan_id: r.id, tanggal: d, nominal: baru },
       {
         preserveScroll: true,
@@ -306,7 +306,16 @@ const BEKU = {
 };
 
 // tanpaDrop: menu Pinjaman Macet tanpa kolom Drop & Pinjaman, langsung Sisa Awal (mas 2026-10-26).
-const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false, tanpaDrop = false, bolehHapus = false, nikMacetLama = null }) => {
+// Ember drop bulan `drop` dilihat dari bulan `lihat` (= AppHelper::generateStatusAngsuranString2).
+const EMBER = { 0: "Baru", 1: "N1", 2: "CCM", 3: "CM", 4: "MB" };
+const emberDi = (drop, lihat) => {
+  const n = dayjs(lihat).startOf("month").diff(dayjs(drop).startOf("month"), "month");
+  return n > 4 ? "ML" : EMBER[n] ?? "–";
+};
+
+// selRute: sel tanggal bisa diisi langsung lewat rute ini (Perbaikan Angsuran).
+// mundur/onMundur: jumlah bulan lalu dikendalikan halaman (datanya dimuat server).
+const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false, tanpaDrop = false, bolehHapus = false, nikMacetLama = null, selRute = null, mundur = null, onMundur = null, maksMundur = MAKS_BULAN }) => {
   const { auth } = usePage().props;
   // Filter dari halaman, atau dari drawer (FilterAngsuranContext).
   const server_filter = useFilterAngsuran();
@@ -322,12 +331,15 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
   const [data, setData] = useState([]);
   useEffect(() => setData(datas), [datas]);
 
-  const [jumlahBulan, setJumlahBulan] = useState(0);
+  const [jumlahBulanLokal, setJumlahBulanLokal] = useState(0);
+  const jumlahBulan = mundur ?? jumlahBulanLokal;
+  const setJumlahBulan = (f) => (onMundur ? onMundur(typeof f === "function" ? f(jumlahBulan) : f) : setJumlahBulanLokal(f));
+  const ruteSel = selRute ?? (kb ? "migrasi.koreksi_beku_sel" : null);
   const bulanIni = dayjs(server_filter?.month);
   const hariIni = dayjs().format("YYYY-MM-DD");
   const hariKe = HARI_KE[String(server_filter?.hari).toLowerCase()];
   // Buku Angsuran Beku: ML ikut dirinci per bulan supaya bisa dikoreksi per sel.
-  const dirinci = (grup) => !!kb || grup.type !== "ml";
+  const dirinci = (grup) => !!kb || !!selRute || grup.type !== "ml";
   const adaYangDirinci = data?.some(dirinci);
 
   const tanggalTagih = (b) => {
@@ -486,7 +498,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
             {blok.map((b, i) => (
               <TableHead key={b.nama} colSpan={b.kolom.length} className={`${th} text-center border-l-2 border-l-slate-300`}>
                 <div className="flex items-center justify-center gap-1">
-                  {i === 0 && adaYangDirinci && jumlahBulan < MAKS_BULAN && (
+                  {i === 0 && adaYangDirinci && jumlahBulan < maksMundur && (
                     <button
                       type="button"
                       title="Buka satu bulan lagi ke belakang"
@@ -550,7 +562,15 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
               <React.Fragment key={g}>
                 <TableRow className="bg-slate-200/70 hover:bg-slate-200/70">
                   <TableCell colSpan={totalKolom} className="px-2 py-1.5 text-xs font-semibold text-slate-700">
-                    <span className="sticky left-2">{grup.month}</span>
+                    <span className="sticky left-2">
+                      {grup.month}
+                      {/* Perbaikan Angsuran: ember grup ini di tiap bulan yang terbuka. */}
+                      {selRute && grup.date && (
+                        <span className="ml-3 font-normal text-slate-500">
+                          {blok.map((b, x) => `${b.nama.split(" ")[0].slice(0, 3)}: ${emberDi(grup.date, bulanIni.subtract(blok.length - 1 - x, "month"))}`).join(" · ")}
+                        </span>
+                      )}
+                    </span>
                   </TableCell>
                 </TableRow>
 
@@ -629,13 +649,14 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
                         const katrol = k.jenis === "tgl" && r.instalment?.[k.d]?.is_active;
                         // Buku Beku: semua tanggal sejak drop s/d hari ini bisa diisi; sebelum migrasi lewat
                         // Koreksi Beku, sesudahnya lewat jalur angsuran biasa (KoreksiBekuController::sel).
-                        if (kb && k.jenis === "tgl" && !r.pecahan_ml && k.d >= String(r.tanggal_drop).slice(0, 10) && k.d <= hariIni) {
+                        if (ruteSel && k.jenis === "tgl" && !r.pecahan_ml && k.d >= String(r.tanggal_drop).slice(0, 10) && k.d <= hariIni) {
                           return (
                             <SelBeku
                               key={j}
                               r={r}
                               d={k.d}
                               v={v}
+                              rute={ruteSel}
                               kelas={`${kelasSorot(k) || "bg-sky-50/60"} ${garis(k)} ${katrol ? "text-red-600 font-semibold" : ""}`}
                             />
                           );

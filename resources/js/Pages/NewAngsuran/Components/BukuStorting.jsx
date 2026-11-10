@@ -20,7 +20,8 @@ import { useFilterAngsuran } from '../FilterAngsuran';
 import DrawerBukuAngsuran from '@/Pages/Kasir/Rekap/Components/DrawerBukuAngsuran';
 
 // tutupBuku: diisi saat dipakai di drawer (data JSON); bawaan dari props halaman.
-const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
+// pas: tinggi ikut isi (Perbaikan Angsuran, beberapa buku bertumpuk).
+const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false }) => {
   // Kantor migrasi: tutup buku = tanda tangan baris bulanan (sekali).
   const halaman = usePage().props;
   const tb = tutupBuku !== undefined ? tutupBuku : halaman.tutup_buku;
@@ -163,7 +164,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku }) => {
     setShowApproval(false);
   };
   return (
-    <div className="relative overflow-auto h-[60vh] lg:h-[85vh] scrollbar-thin">
+    <div className={`relative overflow-auto scrollbar-thin ${pas ? "" : "h-[60vh] lg:h-[85vh]"}`}>
       <Table className="text-xs rounded-lg">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">

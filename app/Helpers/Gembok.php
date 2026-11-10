@@ -313,7 +313,8 @@ class Gembok
             return false;
         }
 
-        return $user->hasRole('superuser') || $user->hasPermissionTo('can-edit');
+        // maintenance-worker: kasir yang ditunjuk memperbaiki angsuran lama (Perbaikan Angsuran, mas 2026-11-10).
+        return $user->hasRole('superuser') || $user->hasPermissionTo('can-edit') || $user->hasPermissionTo('maintenance-worker');
     }
 
     /**

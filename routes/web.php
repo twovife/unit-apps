@@ -242,6 +242,13 @@ Route::middleware('auth')->group(function () {
       ->name('koreksi_beku_penyesuaian');
   });
 
+  // Perbaikan Angsuran (mas 2026-11-10): buku angsuran lebar, kantor belum migrasi.
+  Route::middleware('permission:maintenance-worker')->controller(\App\Http\Controllers\PerbaikanAngsuranController::class)
+    ->prefix('perbaikan-angsuran')->name('perbaikan_angsuran.')->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/sel', 'sel')->name('sel');
+    });
+
   // Buka kunci harian alur baru. Otorisasi dicek di controller.
   Route::controller(\App\Http\Controllers\ClosingHarianController::class)
     ->prefix('closing')->name('closing.')->group(function () {

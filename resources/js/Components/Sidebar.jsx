@@ -216,6 +216,17 @@ export default function AppSidebar({ ...props }) {
               link: route('pinjaman.index_pinjaman'),
               active: route().current('pinjaman.index_pinjaman'),
             },
+            // Perbaikan Angsuran: kantor belum migrasi, izin maintenance-worker (mas 2026-11-10).
+            ...(isSuperUser || auth?.permissions?.includes('maintenance-worker')
+              ? [
+                  {
+                    id: 5,
+                    title: 'Perbaikan Angsuran',
+                    link: route('perbaikan_angsuran.index'),
+                    active: route().current('perbaikan_angsuran.index'),
+                  },
+                ]
+              : []),
             {
               id: 3,
               title: 'Buku Macet',
