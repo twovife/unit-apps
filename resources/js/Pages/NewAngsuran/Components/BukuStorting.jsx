@@ -20,8 +20,9 @@ import { useFilterAngsuran } from '../FilterAngsuran';
 import DrawerBukuAngsuran from '@/Pages/Kasir/Rekap/Components/DrawerBukuAngsuran';
 
 // tutupBuku: diisi saat dipakai di drawer (data JSON); bawaan dari props halaman.
-// pas: tinggi ikut isi (Perbaikan Angsuran, beberapa buku bertumpuk).
-const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false }) => {
+// pas: tinggi & lebar ikut isi, gulir ditangani induk (Perbaikan Angsuran, beberapa buku bertumpuk).
+// onKlikTanggal: ganti drawer buku angsuran (Perbaikan: sorot kolom di buku lebar halaman).
+const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false, onKlikTanggal = null }) => {
   // Kantor migrasi: tutup buku = tanda tangan baris bulanan (sekali).
   const halaman = usePage().props;
   const tb = tutupBuku !== undefined ? tutupBuku : halaman.tutup_buku;
@@ -164,7 +165,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false }) 
     setShowApproval(false);
   };
   return (
-    <div className={`relative overflow-auto scrollbar-thin ${pas ? "" : "h-[60vh] lg:h-[85vh]"}`}>
+    <div className={pas ? "relative w-max min-w-full" : "relative overflow-auto scrollbar-thin h-[60vh] lg:h-[85vh]"}>
       <Table className="text-xs rounded-lg">
         <TableHeader className="sticky top-0 left-0 z-10">
           <TableRow className="bg-gray-200">
@@ -199,7 +200,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false }) 
                           type="button"
                           title="Lihat buku angsuran tanggal ini"
                           className="block w-full text-sky-700 hover:underline"
-                          onClick={() => setBukuAngsuran({ kelompok: server_filter.kelompok, tanggal: day })}
+                          onClick={() => (onKlikTanggal ? onKlikTanggal(day) : setBukuAngsuran({ kelompok: server_filter.kelompok, tanggal: day }))}
                         >
                           <FormatNumbering ribuan value={row.instalment[day]} />
                         </button>

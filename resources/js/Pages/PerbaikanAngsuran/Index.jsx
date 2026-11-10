@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, UserPlus } from 'lucide-react';
 import FilterBar from '@/Components/FilterBar';
 import SatuanAngka from '@/Components/SatuanAngka';
 import { Button } from '@/shadcn/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import AngsuranTable from '@/Pages/NewAngsuran/Components/AngsuranTable';
 import BukuStorting from '@/Pages/NewAngsuran/Components/BukuStorting';
+import FastCreateV2 from '@/Pages/BukuTransaksi/Web/FastCreateV2';
 import { FilterAngsuranContext } from '@/Pages/NewAngsuran/FilterAngsuran';
 
 const bulanPanjang = (m) => dayjs(`${m}-01`).toDate().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
@@ -87,6 +88,16 @@ const gabungBaris = (bulan) => {
  */
 export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_mundur, sudah_migrasi }) {
   const [storting, setStorting] = useState(false);
+  // Fastcreate di sheet: simpan -> redirect back ke halaman ini, buku dimuat ulang.
+  const [fastcreate, setFastcreate] = useState(false);
+  // Klik angka storting: tutup sheet, sorot + geser ke kolom tanggal itu di buku lebar.
+  // Di-null-kan dulu supaya klik tanggal yang sama tetap menggeser lagi.
+  const [sorot, setSorot] = useState(null);
+  const keTanggal = (d) => {
+    setStorting(false);
+    setSorot(null);
+    requestAnimationFrame(() => setSorot(dayjs(d).format('YYYY-MM-DD')));
+  };
   const ini = bulan[bulan.length - 1];
   const datas = useMemo(() => gabungBaris(bulan), [bulan]);
 
@@ -143,7 +154,11 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
               . Sisa awal bulan berikutnya belum sama dengan hasil hitung sekarang - buka Buku Storting lalu Tutup Buku.
             </div>
           )}
-          <div className="flex justify-end mb-2">
+          <div className="sticky z-30 flex items-center justify-end h-12 gap-2 bg-white top-14">
+            <Button type="button" variant="outline" onClick={() => setFastcreate(true)} className="gap-1 font-semibold">
+              <UserPlus className="w-4 h-4" />
+              Fastcreate
+            </Button>
             <Button type="button" onClick={() => setStorting(true)} className="gap-1 font-semibold text-white shadow-sm bg-sky-600 hover:bg-sky-700">
               <BookOpen className="w-4 h-4" />
               Buku Storting
@@ -156,17 +171,31 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
             mundur={mundur}
             onMundur={keMundur}
             maksMundur={maks_mundur}
+            sorot={sorot}
+            atasKepala="top-[6.5rem]"
           />
 
+          <Sheet open={fastcreate} onOpenChange={setFastcreate}>
+            <SheetContent side="right" className="flex flex-col w-full p-0 sm:max-w-5xl lg:max-w-none">
+              <SheetHeader className="px-5 py-4 border-b pr-14 shrink-0">
+                <SheetTitle>Fastcreate</SheetTitle>
+                <SheetDescription>Sesudah disimpan, buku angsuran di halaman ini dimuat ulang.</SheetDescription>
+              </SheetHeader>
+              <div className="relative flex-1 min-h-0 p-4 overflow-auto scrollbar-thin">
+                <FastCreateV2 bulanAwal={ini.month} kelompokAwal={server_filter.kelompok} />
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <Sheet open={storting} onOpenChange={setStorting}>
-            <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-5xl lg:max-w-none">
-              <SheetHeader className="px-5 py-4 pr-14 border-b">
+            <SheetContent side="right" className="flex flex-col w-full p-0 sm:max-w-5xl lg:max-w-none">
+              <SheetHeader className="px-5 py-4 border-b pr-14 shrink-0">
                 <SheetTitle>Buku Storting</SheetTitle>
                 <SheetDescription>
                   Kelompok {server_filter.kelompok} · {server_filter.hari} · {bulanPanjang(bulan[0].month)} s/d {bulanPanjang(ini.month)}
                 </SheetDescription>
               </SheetHeader>
-              <div className="p-3 space-y-4 divide-y">
+              <div className="flex-1 min-h-0 p-3 space-y-4 overflow-auto divide-y scrollbar-thin">
                 {bulan.map((b, i) => (
                   <section key={b.month} className="pt-4 first:pt-0">
                     <h3 className="flex items-center gap-2 mb-2 text-sm font-semibold">
@@ -174,7 +203,7 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
                       {beda[i] && <span className="px-2 py-0.5 text-[11px] rounded-full bg-rose-100 text-rose-700">Perlu tutup buku ulang</span>}
                     </h3>
                     <FilterAngsuranContext.Provider value={{ ...server_filter, month: b.month }}>
-                      <BukuStorting dateOfWeek={b.dateOfWeek} datas={b.datas} sirkulasi={b.sirkulasi} tutupBuku={null} pas />
+                      <BukuStorting dateOfWeek={b.dateOfWeek} datas={b.datas} sirkulasi={b.sirkulasi} tutupBuku={null} pas onKlikTanggal={keTanggal} />
                     </FilterAngsuranContext.Provider>
                   </section>
                 ))}

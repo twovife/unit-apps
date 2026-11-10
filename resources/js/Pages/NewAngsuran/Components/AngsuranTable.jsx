@@ -315,7 +315,8 @@ const emberDi = (drop, lihat) => {
 
 // selRute: sel tanggal bisa diisi langsung lewat rute ini (Perbaikan Angsuran).
 // mundur/onMundur: jumlah bulan lalu dikendalikan halaman (datanya dimuat server).
-const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false, tanpaDrop = false, bolehHapus = false, nikMacetLama = null, selRute = null, mundur = null, onMundur = null, maksMundur = MAKS_BULAN }) => {
+// atasKepala: posisi sticky header kalau halaman punya baris sticky lain di atasnya.
+const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = false, tanpaDrop = false, bolehHapus = false, nikMacetLama = null, selRute = null, mundur = null, onMundur = null, maksMundur = MAKS_BULAN, atasKepala = null }) => {
   const { auth } = usePage().props;
   // Filter dari halaman, atau dari drawer (FilterAngsuranContext).
   const server_filter = useFilterAngsuran();
@@ -481,7 +482,7 @@ const AngsuranTable = ({ dateOfWeek, datas, sorot: sorotProp = null, diDrawer = 
     // kotak yang hanya menggulir ke samping, gesernya disalin ke header.
     // Kolom kiri beku di keduanya.
     <div className="relative border rounded-lg">
-      <div ref={kepala} className={`sticky z-20 overflow-hidden rounded-t-lg ${diDrawer ? 'top-0' : 'top-14'} bg-slate-100`}>
+      <div ref={kepala} className={`sticky z-20 overflow-hidden rounded-t-lg ${atasKepala ?? (diDrawer ? 'top-0' : 'top-14')} bg-slate-100`}>
         <Table className="w-full text-xs table-fixed" style={{ minWidth: lebarMin }}>
           {colgroup}
         <TableHeader className="bg-slate-100">

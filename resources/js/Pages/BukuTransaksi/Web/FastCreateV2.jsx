@@ -21,10 +21,12 @@ import { Separator } from '@/shadcn/ui/separator';
 import RiwayatPengajuan from '@/Pages/NewLoan/Components/RiwayatPengajuan';
 import LinkButton from '@/Components/LinkButton';
 
-const FastCreateV2 = () => {
+// bulanAwal/kelompokAwal: diisi saat ditanam di halaman lain (Perbaikan Angsuran)
+// supaya ikut filter halaman itu, bukan pilihan terakhir di localStorage.
+const FastCreateV2 = ({ bulanAwal = null, kelompokAwal = null }) => {
   const initialMonth =
-    localStorage.getItem('currentMonth') || dayjs().format('YYYY-MM');
-  const initialKelompok = localStorage.getItem('currentKelompok') || 1;
+    bulanAwal || localStorage.getItem('currentMonth') || dayjs().format('YYYY-MM');
+  const initialKelompok = kelompokAwal || localStorage.getItem('currentKelompok') || 1;
 
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [currentKelompok, setCurrentKelompok] = useState(initialKelompok);

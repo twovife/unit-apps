@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import dayjs from 'dayjs';
 
 import SearchComponent from '@/Components/shadcn/SearchComponent';
 import FilterBar from '@/Components/FilterBar';
@@ -36,6 +37,16 @@ const Angsuran = ({
   const [stortingBuka, setStortingBuka] = useState(
     () => new URLSearchParams(window.location.search).get('tab') === 'bukustorting',
   );
+
+  // Klik angka storting (desktop): tutup sheet, sorot + geser ke kolom tanggal itu
+  // di buku angsuran halaman ini (sama dengan Perbaikan Angsuran). Drawer buku
+  // angsuran tetap dipakai di Rekap 1, yang tidak punya buku di halamannya.
+  const [sorot, setSorot] = useState(null);
+  const keTanggal = (d) => {
+    setStortingBuka(false);
+    setSorot(null);
+    requestAnimationFrame(() => setSorot(dayjs(d).format('YYYY-MM-DD')));
+  };
 
   const canFilterUnit =
     server_filter.userAuthorized.canShowBranch ||
@@ -129,7 +140,7 @@ const Angsuran = ({
         {/* Buku Storting dibuka sebagai drawer di atas buku angsuran (dulu
             tab). Datanya sama dengan halaman ini - tidak ada muat tambahan.
             ?tab=bukustorting (link dari Kesiapan Migrasi) membukanya langsung. */}
-        <div className="flex justify-end mb-2">
+        <div className={type === 'desktop' ? 'sticky z-30 flex items-center justify-end h-12 bg-white top-14' : 'flex justify-end mb-2'}>
           {/* Tombol utama halaman ini - dibuat menonjol (isi biru, teks putih). */}
           <Button
             type="button"
@@ -141,11 +152,11 @@ const Angsuran = ({
           </Button>
         </div>
         {type === 'mobile' && <AngsuranTableMobile dateOfWeek={dateOfWeek} datas={datas} />}
-        {type === 'desktop' && <AngsuranTable dateOfWeek={dateOfWeek} datas={datas} />}
+        {type === 'desktop' && <AngsuranTable dateOfWeek={dateOfWeek} datas={datas} sorot={sorot} atasKepala="top-[6.5rem]" />}
 
         <Sheet open={stortingBuka} onOpenChange={setStortingBuka}>
-          <SheetContent side="right" className="w-full p-0 overflow-y-auto sm:max-w-5xl lg:max-w-none">
-            <SheetHeader className="px-5 py-4 pr-14 border-b">
+          <SheetContent side="right" className="flex flex-col w-full p-0 sm:max-w-5xl lg:max-w-none">
+            <SheetHeader className="px-5 py-4 border-b pr-14 shrink-0">
               <SheetTitle>Buku Storting</SheetTitle>
               <SheetDescription>
                 Kelompok {server_filter.kelompok}
@@ -153,11 +164,13 @@ const Angsuran = ({
                 {server_filter.tanggal ? ` · ${server_filter.tanggal}` : server_filter.month ? ` · ${server_filter.month}` : ''}
               </SheetDescription>
             </SheetHeader>
-            <div className="p-3">
+            <div className="flex-1 min-h-0 p-3 overflow-auto scrollbar-thin">
               {type === 'mobile' && (
                 <BukuStortingMobile dateOfWeek={dateOfWeek} datas={datas} sirkulasi={sirkulasi} />
               )}
-              {type === 'desktop' && <BukuStorting dateOfWeek={dateOfWeek} datas={datas} sirkulasi={sirkulasi} />}
+              {type === 'desktop' && (
+                <BukuStorting dateOfWeek={dateOfWeek} datas={datas} sirkulasi={sirkulasi} pas onKlikTanggal={keTanggal} />
+              )}
             </div>
           </SheetContent>
         </Sheet>
