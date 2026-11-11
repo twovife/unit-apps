@@ -36,9 +36,10 @@ class ClosingHarianController extends Controller
         $kasir = auth()->user()->employee->id;
         $gagal = 0;
         $accOtomatis = false;
+        $disambung = false;
 
         try {
-            DB::transaction(function () use ($closing, $kasir, &$gagal, &$accOtomatis) {
+            DB::transaction(function () use ($closing, $kasir, &$gagal, &$accOtomatis, &$disambung) {
                 // Drop hari ini yang masih menggantung digagalkan sebelum
                 // dikunci: sesudah kunci statusnya tidak bisa diubah lagi.
                 // Pengajuan (drop minggu depan) TIDAK disentuh - masih bisa
@@ -57,6 +58,11 @@ class ClosingHarianController extends Controller
                 // bisa masuk antara Ceklist Kepala dan kunci kasir, dan yang
                 // dibekukan harus angka sebenarnya.
                 $this->hitungUlangTurunan($closing);
+
+                // Target minggu depan ditulis saat ACC KM; drop / keluar bisa berubah
+                // sesudahnya (Malang 4, 2 Nov: drop sukses sesudah ACC -> masuk tidak
+                // ikut). Saat dibekukan, sambung ulang rantainya kalau sudah tidak cocok.
+                $disambung = self::sambungTargetDepan($closing, $kasir);
 
                 // Setoran yang belum diisi kasir dibekukan dengan angka bawaan
                 // dari angsuran hari itu (cash / transfer / katrol) - angka yang
@@ -81,9 +87,37 @@ class ClosingHarianController extends Controller
         $catatan = array_filter([
             $gagal ? $gagal . ' drop hari ini digagalkan' : null,
             $accOtomatis ? 'ACC KM otomatis (belum dicek KM)' : null,
+            $disambung ? 'target minggu depan dihitung ulang dari drop & keluar terbaru' : null,
         ]);
 
         return back()->with('message', 'Terkunci.' . ($catatan ? ' Otomatis: ' . implode(', ', $catatan) . '.' : ''));
+    }
+
+    /**
+     * Target D+7 != target D + masuk(drop D) - keluar D -> sambung ulang rantai dari D
+     * (KoreksiTarget, menjalar ke depan, tercatat di riwayat). Diam kalau D+7 dikoreksi
+     * tangan / recount, sudah dikunci, belum ada, atau sudah cocok.
+     */
+    public static function sambungTargetDepan(TransactionDailyClosing $closing, int $employeeId): bool
+    {
+        $g = $closing->transaction_loan_officer_grouping_id;
+        $tgl = Carbon::parse($closing->date)->toDateString();
+        $tglDepan = \App\Helpers\TargetMingguan::tanggalDepan($tgl);
+        $depan = $tglDepan ? TransactionDailyClosing::where('transaction_loan_officer_grouping_id', $g)->whereDate('date', $tglDepan)->first() : null;
+        if (!$depan || $depan->kasir_lock_at || in_array($depan->target_source, \App\Helpers\TargetMingguan::SUMBER_PUTUS, true)) {
+            return false;
+        }
+        $harus = \App\Helpers\TargetMingguan::hitung((int) $closing->target, (int) (HitungAgregat::harian($g, $tgl)['drop'] ?? 0), (int) $closing->keluar);
+        if ((int) $depan->target === $harus) {
+            return false;
+        }
+        try {
+            \App\Helpers\KoreksiTarget::simpan($g, $tgl, null, null, 'Disambung ulang saat kunci kasir (drop / keluar berubah sesudah ACC KM).', $employeeId);
+        } catch (\RuntimeException $e) {
+            return false; // beku / belum ada baris: kunci tetap jalan
+        }
+
+        return true;
     }
 
     /**

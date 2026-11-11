@@ -278,6 +278,7 @@ class TransactionDailyRecapController extends Controller
       'daily_kasir_approval' => null,
       'daily_kasir_approval_user' => null,
     ] + ($kmOtomatis ? ['daily_kepala_approval' => null, 'daily_kepala_approval_user' => null] : []));
+    \App\Helpers\Gembok::catatBukaLama($grouping->id, $date, auth()->user()->employee->id, $val['alasan']);
 
     return redirect()->back()->with('message', 'Kunci berhasil dibuka.' . ($kmOtomatis ? ' ACC KM otomatis ikut dibatalkan; TTD ulang akan menghitung ulang target.' : ''));
   }

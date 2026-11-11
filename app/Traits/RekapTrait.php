@@ -286,7 +286,15 @@ trait RekapTrait
       ? \App\Helpers\CeklistKepala::daftarOtomatis($transactionOffice->pluck('id'), $transaction_date, $transaction_date)
       : [];
 
-    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb, $alurBaru, $harianBulan, $kmOtomatis) {
+    // Buka kunci terakhir per kelompok di tanggal ini (kedua alur), ditampilkan
+    // di kolom Kunci selama hari itu belum dikunci ulang.
+    $dibuka = \App\Models\TransactionLockHistory::with('pelaku:id,nama_karyawan')
+      ->whereIn('transaction_loan_officer_grouping_id', $transactionOffice->pluck('id'))
+      ->whereDate('tanggal', $transaction_date)
+      ->where('aksi', \App\Models\TransactionLockHistory::AKSI_BUKA)
+      ->orderBy('id')->get()->keyBy('transaction_loan_officer_grouping_id');
+
+    $data =  $transactionOffice->map(function ($item) use ($loan, $instalment, $transactionSirculation, $transactionDailyRecap, $transaction_date, $startDateofMonth, $dateOfCm, $dateOfMb, $alurBaru, $harianBulan, $kmOtomatis, $dibuka) {
       $transaction_date = $transaction_date->format('Y-m-d');
       // dd($transaction_date);
       $thisLoan = $loan->get($item->id, collect());
@@ -382,6 +390,11 @@ trait RekapTrait
         'rekap_status' => $thisDailyRecap ? true : false,
         'status_approve_kepala' => $status_kepala,
         'status_approve_kasir' => $status_kasir,
+        'dibuka' => !$status_kasir && ($h = $dibuka->get($item->id)) ? [
+          'oleh' => $h->pelaku?->nama_karyawan ?? '-',
+          'pada' => $h->created_at?->format('d/m H:i'),
+          'alasan' => $h->alasan,
+        ] : null,
         // Kantor lama: ACC KM otomatis saat TTD kasir = waktu ACC KM sama persis dengan TTD.
         'kepala_otomatis' => $alurBaru
           ? isset($kmOtomatis[$item->id . '|' . $transaction_date])

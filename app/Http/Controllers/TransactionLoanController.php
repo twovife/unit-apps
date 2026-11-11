@@ -191,6 +191,17 @@ class TransactionLoanController extends Controller
       ->whereDate('date', $val['date'])->first();
     $berubah = !$pembanding || (int) ($val['target'] ?? $pembanding->target) !== (int) $pembanding->target
       || (int) ($val['keluar'] ?? $pembanding->keluar) !== (int) $pembanding->keluar;
+    // Simpan tanpa ubah angka tetap menyambung ulang rantai kalau target sesudahnya
+    // sudah tidak sama dengan target + masuk - keluar (Tambun 2 kel 6, 3->10 Nov:
+    // warisan ACC alur lama yang tidak mengurangi keluar). Rantai rapi -> tetap diam.
+    if (!$berubah) {
+      try {
+        $berubah = collect(\App\Helpers\KoreksiTarget::pratinjau((int) $val['id'], $val['date'], null, null)['perubahan'])
+          ->skip(1)->contains(fn($p) => $p['lama'] !== $p['baru']);
+      } catch (\RuntimeException $e) {
+        // Tanggal beku / belum ada rekap: biarkan simpan() di bawah tidak jalan.
+      }
+    }
 
     // ACC ulang hari terkunci (alur lama, mas 2026-10-22): drop yang diinput sesudah ACC ikut
     // masuk (hanya naik). Target diubah -> menjalar (KoreksiTarget, target + masuk - keluar);

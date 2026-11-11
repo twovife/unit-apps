@@ -339,6 +339,11 @@ const TableRekapKasir = ({ datas = [], bacaSaja = false, onKlikKelompok = null, 
                       Kunci
                     </button>
                   )}
+                  {r.dibuka && (
+                    <div title={r.dibuka.alasan ?? ''} className="mt-0.5 text-[10px] leading-tight text-amber-700 whitespace-nowrap">
+                      Dibuka {r.dibuka.oleh} · {r.dibuka.pada}
+                    </div>
+                  )}
                 </td>
               )}
               {/* ACC KM: centang = KM sudah mengecek; silang = belum, termasuk ACC

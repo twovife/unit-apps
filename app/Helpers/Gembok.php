@@ -201,8 +201,24 @@ class Gembok
             'daily_kasir_approval_user' => null,
         ] + ($kmOtomatis ? ['daily_kepala_approval' => null, 'daily_kepala_approval_user' => null] : [])));
         self::$segarkan["$groupingId|$tgl"] = true;
+        self::catatBukaLama($groupingId, $tgl, $user->employee->id, 'Dibuka otomatis: ' . $alasan);
         \Illuminate\Support\Facades\Log::info('Kunci alur lama dibuka otomatis', [
             'rekap_id' => $rekap->id, 'oleh' => $user->employee->id, 'alasan' => $alasan, 'acc_km_otomatis_dihapus' => $kmOtomatis,
+        ]);
+    }
+
+    /**
+     * Alur lama: jejak buka kunci (TTD kasir dihapus) supaya Rekap 1 bisa menampilkan
+     * siapa yang membuka. Tanpa baris closing - dikenali lewat kelompok + tanggal.
+     */
+    public static function catatBukaLama($groupingId, string $tanggal, int $employeeId, string $alasan): void
+    {
+        TransactionLockHistory::create([
+            'transaction_loan_officer_grouping_id' => $groupingId,
+            'tanggal' => $tanggal,
+            'aksi' => TransactionLockHistory::AKSI_BUKA,
+            'user_id' => $employeeId,
+            'alasan' => $alasan,
         ]);
     }
 
