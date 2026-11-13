@@ -86,7 +86,25 @@ const gabungBaris = (bulan) => {
  * migrasi. Tombol < membuka bulan sebelumnya (dimuat server = /pinjaman bulan itu);
  * sel tanggal diisi langsung. Buku Storting per bulan bertumpuk, tutup buku alur lama.
  */
-export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_mundur, sudah_migrasi }) {
+export default function PerbaikanAngsuran(props) {
+  return (
+    <BukuLebar
+      {...props}
+      rute="perbaikan_angsuran.index"
+      judul="Perbaikan Angsuran"
+      keterangan="Buku angsuran lebar untuk kantor yang belum migrasi. Klik sel tanggal, ketik, Enter (0 = hapus)."
+      selRute="perbaikan_angsuran.sel"
+    />
+  );
+}
+
+/**
+ * Isi halaman buku lebar, dipakai Perbaikan Angsuran (alur lama) dan Buku Angsuran
+ * Beku (beku = kantor migrasi): beku -> tanpa Fastcreate & tanda tutup buku ulang alur
+ * lama, Tutup Buku hanya baris bulanan alur baru, sel lewat KoreksiBekuContext.
+ * aksi = tombol tambahan di baris tombol; atas = isi di atas buku (banner dsb).
+ */
+export function BukuLebar({ server_filter, bulan, mundur, maks_mundur, sudah_migrasi = false, rute, judul, keterangan, selRute = null, beku = false, aksi = null, atas = null }) {
   const [storting, setStorting] = useState(false);
   // Fastcreate di sheet: simpan -> redirect back ke halaman ini, buku dimuat ulang.
   const [fastcreate, setFastcreate] = useState(false);
@@ -111,26 +129,26 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
 
   const keMundur = (n) =>
     router.get(
-      route('perbaikan_angsuran.index'),
+      route(rute),
       { ...Object.fromEntries(new URLSearchParams(window.location.search)), mundur: n },
       { preserveScroll: true, preserveState: true },
     );
 
   return (
     <>
-      <Head title="Perbaikan Angsuran" />
+      <Head title={judul} />
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Perbaikan Angsuran</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{judul}</h1>
           <p className="text-xs text-muted-foreground">
-            Buku angsuran lebar untuk kantor yang belum migrasi. Klik sel tanggal, ketik, Enter (0 = hapus). <SatuanAngka />
+            {keterangan} <SatuanAngka />
           </p>
         </div>
       </div>
       <div className="mb-3">
         <FilterBar
-          urlLink={route('perbaikan_angsuran.index')}
-          storageKey="perbaikan_angsuran"
+          urlLink={route(rute)}
+          storageKey={rute}
           showHari
           showMonth
           showKelompok={server_filter.userAuthorized?.canShowKelompok}
@@ -143,7 +161,8 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
         </div>
       ) : (
         <>
-          {beda.some(Boolean) && (
+          {atas}
+          {!beku && beda.some(Boolean) && (
             <div className="p-3 mb-3 text-sm border rounded-lg border-rose-300 bg-rose-50 text-rose-800">
               <b>Perlu tutup buku ulang</b> (urut dari yang paling lama):{' '}
               {bulan
@@ -155,10 +174,13 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
             </div>
           )}
           <div className="sticky z-30 flex items-center justify-end h-12 gap-2 bg-white top-14">
-            <Button type="button" variant="outline" onClick={() => setFastcreate(true)} className="gap-1 font-semibold">
-              <UserPlus className="w-4 h-4" />
-              Fastcreate
-            </Button>
+            {aksi}
+            {!beku && (
+              <Button type="button" variant="outline" onClick={() => setFastcreate(true)} className="gap-1 font-semibold">
+                <UserPlus className="w-4 h-4" />
+                Fastcreate
+              </Button>
+            )}
             <Button type="button" onClick={() => setStorting(true)} className="gap-1 font-semibold text-white shadow-sm bg-sky-600 hover:bg-sky-700">
               <BookOpen className="w-4 h-4" />
               Buku Storting
@@ -167,7 +189,7 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
           <AngsuranTable
             dateOfWeek={ini.dateOfWeek}
             datas={datas}
-            selRute="perbaikan_angsuran.sel"
+            selRute={selRute}
             mundur={mundur}
             onMundur={keMundur}
             maksMundur={maks_mundur}
@@ -200,10 +222,10 @@ export default function PerbaikanAngsuran({ server_filter, bulan, mundur, maks_m
                   <section key={b.month} className="pt-4 first:pt-0">
                     <h3 className="flex items-center gap-2 mb-2 text-sm font-semibold">
                       {bulanPanjang(b.month)}
-                      {beda[i] && <span className="px-2 py-0.5 text-[11px] rounded-full bg-rose-100 text-rose-700">Perlu tutup buku ulang</span>}
+                      {!beku && beda[i] && <span className="px-2 py-0.5 text-[11px] rounded-full bg-rose-100 text-rose-700">Perlu tutup buku ulang</span>}
                     </h3>
                     <FilterAngsuranContext.Provider value={{ ...server_filter, month: b.month }}>
-                      <BukuStorting dateOfWeek={b.dateOfWeek} datas={b.datas} sirkulasi={b.sirkulasi} tutupBuku={null} pas onKlikTanggal={keTanggal} />
+                      <BukuStorting dateOfWeek={b.dateOfWeek} datas={b.datas} sirkulasi={b.sirkulasi} tutupBuku={beku ? b.tutup_buku ?? null : null} tanpaTutup={beku} pas onKlikTanggal={keTanggal} />
                     </FilterAngsuranContext.Provider>
                   </section>
                 ))}

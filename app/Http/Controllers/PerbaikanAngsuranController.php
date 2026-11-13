@@ -38,23 +38,7 @@ class PerbaikanAngsuranController extends Controller
             ? (int) $request->query('mundur')
             : $this->sejakTutupBuku($utama['server_filter']['groupId'], $utama['server_filter']['hari'], $akhir);
         $mundur = min(self::MAKS_MUNDUR, max(0, $mundur));
-        $bulan = [];
-        if (!$migrasi) {
-            // Paling lama di depan: blok tabel & Buku Storting urut dari kiri / atas.
-            for ($i = $mundur; $i >= 1; $i--) {
-                // Permintaan baru tanpa `date`: FilterGlobal menyisipkan date (hari tagih bulan
-                // terpilih) dan getLoan mengutamakan date di atas month (bug prod 2026-11-10).
-                $r = Request::create($request->url(), 'GET', array_filter([
-                    'month' => $akhir->copy()->subMonthsNoOverflow($i)->format('Y-m'),
-                    'hari' => $utama['server_filter']['hari'],
-                    'kelompok' => $request->input('kelompok'),
-                ]));
-                $r->setUserResolver($request->getUserResolver());
-                $d = $this->getLoan($r);
-                $bulan[] = ['month' => $d['server_filter']['month'], 'datas' => $d['datas'], 'dateOfWeek' => $d['dateOfWeek'], 'sirkulasi' => $d['sirkulasi']];
-            }
-        }
-        $bulan[] = ['month' => $utama['server_filter']['month'], 'datas' => $utama['datas'], 'dateOfWeek' => $utama['dateOfWeek'], 'sirkulasi' => $utama['sirkulasi']];
+        $bulan = $this->bukuMundur($request, $utama, $migrasi ? 0 : $mundur);
 
         return Inertia::render('PerbaikanAngsuran/Index', [
             'server_filter' => $utama['server_filter'],

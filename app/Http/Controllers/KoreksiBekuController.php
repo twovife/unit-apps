@@ -146,6 +146,17 @@ class KoreksiBekuController extends Controller
         $branchId = TransactionLoanOfficerGrouping::whereKey($f['groupId'] ?? 0)->value('branch_id') ?? AuthScope::resolve()->branch_id;
         $mulai = AgregasiScope::tanggalMulai($branchId);
 
+        // Buku lebar seperti Perbaikan Angsuran (mas 2026-11-13). Tanpa ?mundur: buka sejak
+        // bulan migrasi kantor (data beku bulan itu ikut terlihat), maksimal 24 bulan.
+        $akhir = Carbon::parse($f['month'] . '-01');
+        $mundur = $request->has('mundur')
+            ? (int) $request->query('mundur')
+            : ($mulai ? (int) $mulai->copy()->startOfMonth()->diffInMonths($akhir) : 0);
+        $mundur = min(24, max(0, $mundur));
+        $data['bulan'] = $this->bukuMundur($request, $data, $mundur, true);
+        $data['mundur'] = $mundur;
+        $data['maks_mundur'] = 24;
+
         return Inertia::render('Migrasi/BukuBeku', $data + [
             'beku' => [
                 'mulai' => $mulai?->toDateString(),

@@ -317,6 +317,33 @@ trait PinjamanTrait
    *                      masih bersaldo ikut tampil, bukan hanya yang ada setoran / MD
    *                      bulan ini - supaya saldo ML bisa dikoreksi per nasabah.
    */
+  /**
+   * Buku lebar (Perbaikan Angsuran, Buku Beku): getLoan bulan terpilih ($utama) didahului
+   * $mundur bulan sebelumnya, paling lama di depan. Tiap bulan = getLoan bulan itu apa adanya.
+   *
+   * @return array<int,array{month:string,datas:mixed,dateOfWeek:array,sirkulasi:mixed,tutup_buku:mixed}>
+   */
+  public function bukuMundur(Request $request, array $utama, int $mundur, bool $semuaMl = false): array
+  {
+    $akhir = Carbon::parse($utama['server_filter']['month'] . '-01');
+    $ambil = fn($d) => ['month' => $d['server_filter']['month'], 'datas' => $d['datas'], 'dateOfWeek' => $d['dateOfWeek'], 'sirkulasi' => $d['sirkulasi'], 'tutup_buku' => $d['tutup_buku'] ?? null];
+    $bulan = [];
+    for ($i = $mundur; $i >= 1; $i--) {
+      // Permintaan baru tanpa `date`: FilterGlobal menyisipkan date (hari tagih bulan
+      // terpilih) dan getLoan mengutamakan date di atas month (bug prod 2026-11-10).
+      $r = Request::create($request->url(), 'GET', array_filter([
+        'month' => $akhir->copy()->subMonthsNoOverflow($i)->format('Y-m'),
+        'hari' => $utama['server_filter']['hari'],
+        'kelompok' => $request->input('kelompok'),
+      ]));
+      $r->setUserResolver($request->getUserResolver());
+      $bulan[] = $ambil($this->getLoan($r, false, $semuaMl));
+    }
+    $bulan[] = $ambil($utama);
+
+    return $bulan;
+  }
+
   public function getLoan(Request $request, $dailyView = false, bool $semuaMl = false)
   {
 

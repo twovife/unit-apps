@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { UserPlus } from 'lucide-react';
 import DialogInputMl from '@/Components/DialogInputMl';
 import { Button } from '@/shadcn/ui/button';
-import Angsuran from '@/Pages/NewAngsuran/Angsuran';
+import { BukuLebar } from '@/Pages/PerbaikanAngsuran/Index';
 import DialogKoreksi, { KoreksiBekuContext } from './Components/DialogKoreksi';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 
@@ -65,46 +65,51 @@ const BandingBucket = ({ b, kelompok, hari }) => {
 };
 
 /**
- * Buku Angsuran Beku (superuser): halaman /pinjaman yang sama persis (komponen
- * Angsuran), dibungkus KoreksiBekuContext - modal nasabah menampilkan tombol
- * koreksi untuk data sebelum migrasi. /pinjaman (client) tidak tersentuh.
+ * Buku Angsuran Beku (superuser): buku lebar yang sama dengan Perbaikan Angsuran
+ * (BukuLebar, mode beku), dibungkus KoreksiBekuContext - sel & modal nasabah lewat
+ * jalur koreksi beku untuk data sebelum migrasi.
  */
-const BukuBeku = ({ datas, dateOfWeek, sirkulasi, beku }) => {
+const BukuBeku = ({ server_filter, bulan, mundur, maks_mundur, beku }) => {
   const [buka, setBuka] = useState(null);
   const [inputMl, setInputMl] = useState(false);
   const filter = { grouping_id: beku.grouping_id, kelompok: beku.kelompok, hari: beku.hari };
 
   return (
     <KoreksiBekuContext.Provider value={beku.mulai ? { mulai: beku.mulai, filter, macetLamaId: beku.macet_lama_id } : null}>
-      <Head title="Buku Angsuran Beku" />
-      {beku.mulai ? (
-        <div className="p-2 mb-3 text-xs border rounded-md border-sky-300 bg-sky-50 text-sky-900">
-          Mode koreksi data beku: data sebelum {dayjs(beku.mulai).format('DD MMM YYYY')} dikoreksi dari modal nasabah (tombol
-          biru). Tiap koreksi dipratinjau, menghitung ulang saldo bulanan, dan tercatat di log.
-        </div>
-      ) : (
-        <div className="p-2 mb-3 text-xs border rounded-md border-amber-300 bg-amber-50 text-amber-900">
-          Kantor ini belum migrasi - tidak ada data beku. Ubah lewat menu biasa.
-        </div>
-      )}
-      {beku.banding && <BandingBucket b={beku.banding} kelompok={beku.kelompok} hari={beku.hari} />}
-      <Angsuran
-        datas={datas}
-        dateOfWeek={dateOfWeek}
-        sirkulasi={sirkulasi}
-        urlLink={route('migrasi.buku_beku')}
-        localState={'migrasi_buku_beku'}
+      <BukuLebar
+        server_filter={server_filter}
+        bulan={bulan}
+        mundur={mundur}
+        maks_mundur={maks_mundur}
+        rute="migrasi.buku_beku"
         judul="Buku Angsuran Beku"
+        keterangan="Buku angsuran lebar kantor migrasi. Klik sel tanggal, ketik, Enter (0 = hapus) - lewat koreksi beku."
+        beku
+        atas={
+          <>
+            {beku.mulai ? (
+              <div className="p-2 mb-3 text-xs border rounded-md border-sky-300 bg-sky-50 text-sky-900">
+                Mode koreksi data beku: data sebelum {dayjs(beku.mulai).format('DD MMM YYYY')} dikoreksi dari sel tanggal atau
+                modal nasabah (tombol biru). Tiap koreksi dipratinjau, menghitung ulang saldo bulanan, dan tercatat di log.
+              </div>
+            ) : (
+              <div className="p-2 mb-3 text-xs border rounded-md border-amber-300 bg-amber-50 text-amber-900">
+                Kantor ini belum migrasi - tidak ada data beku. Perbaiki lewat menu Perbaikan Angsuran.
+              </div>
+            )}
+            {beku.banding && <BandingBucket b={beku.banding} kelompok={beku.kelompok} hari={beku.hari} />}
+          </>
+        }
         aksi={
           beku.mulai &&
           beku.grouping_id && (
             <>
-              <Button size="sm" variant="outline" className="gap-1" onClick={() => setBuka({ aksi: 'tambah_pinjaman' })}>
+              <Button variant="outline" className="gap-1 font-semibold" onClick={() => setBuka({ aksi: 'tambah_pinjaman' })}>
                 <UserPlus className="w-4 h-4" />
                 Tambah nasabah
               </Button>
               {/* Input ML tanggal bebas: macet yang terlewat input di hari lalu (mas 2026-11-07). */}
-              <Button size="sm" variant="outline" onClick={() => setInputMl(true)}>
+              <Button variant="outline" className="font-semibold" onClick={() => setInputMl(true)}>
                 Input ML
               </Button>
             </>

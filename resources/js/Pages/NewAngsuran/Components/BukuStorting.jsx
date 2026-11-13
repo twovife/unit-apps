@@ -21,8 +21,9 @@ import DrawerBukuAngsuran from '@/Pages/Kasir/Rekap/Components/DrawerBukuAngsura
 
 // tutupBuku: diisi saat dipakai di drawer (data JSON); bawaan dari props halaman.
 // pas: tinggi & lebar ikut isi, gulir ditangani induk (Perbaikan Angsuran, beberapa buku bertumpuk).
+// tanpaTutup: tanpa Tutup Buku alur lama (Buku Beku: kantor migrasi, bulan tanpa baris bulanan).
 // onKlikTanggal: ganti drawer buku angsuran (Perbaikan: sorot kolom di buku lebar halaman).
-const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false, onKlikTanggal = null }) => {
+const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false, onKlikTanggal = null, tanpaTutup = false }) => {
   // Kantor migrasi: tutup buku = tanda tangan baris bulanan (sekali).
   const halaman = usePage().props;
   const tb = tutupBuku !== undefined ? tutupBuku : halaman.tutup_buku;
@@ -270,6 +271,7 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false, on
           </TableRow>
         </TableFooter>
       </Table>
+      {!(tanpaTutup && !tb) && (
       <div className="flex items-center justify-end gap-3 mt-6">
         <div>Tutup Buku Storting</div>
         <div>
@@ -289,10 +291,11 @@ const BukuStorting = ({ dateOfWeek, datas, sirkulasi, tutupBuku, pas = false, on
           )}
         </div>
       </div>
+      )}
 
       {tb ? (
         <TutupBukuBaru tb={tb} month={server_filter.month} show={showApproval} onClosed={onClosedShowApproval} />
-      ) : (
+      ) : tanpaTutup ? null : (
         <ApprovalAkhir
           sirkulasi={sirkulasi}
           show={showApproval}
