@@ -39,6 +39,8 @@ export default function DeleteLoan({ id, onClosed }) {
     e.preventDefault();
 
     destroy(route('pinjaman.destroy_loan', id), {
+      // Jangan lompat ke atas daftar sesudah hapus.
+      preserveScroll: true,
       onSuccess: () => {
         reset();
         onClosed();

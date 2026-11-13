@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Authenticated from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import AngsuranByDate from '@/Pages/NewAngsuran/AngsuranByDate';
 
@@ -16,7 +15,7 @@ const SearchByDate = ({ datas, dateOfWeek, server_filter, ...props }) => {
       : 'pinjaman_index_pinjaman_search';
 
   return (
-    <Authenticated header={<Head>{headerName}</Head>}>
+    <>
       <AngsuranByDate
         headerName={headerName}
         datas={datas}
@@ -26,7 +25,7 @@ const SearchByDate = ({ datas, dateOfWeek, server_filter, ...props }) => {
         searchMonth={server_filter.searchMonth}
         searchHari={true}
       />
-    </Authenticated>
+    </>
   );
 };
 

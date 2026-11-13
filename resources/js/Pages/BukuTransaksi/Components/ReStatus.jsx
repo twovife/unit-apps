@@ -15,6 +15,8 @@ const ReStatus = ({ triggeredId, onClosed }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     put(route('transaction.updateEverything', triggeredId), {
+      // Jangan lompat ke atas daftar sesudah simpan.
+      preserveScroll: true,
       preventDefault: true,
       preserveState: true,
       onSuccess: () => {

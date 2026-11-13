@@ -5,12 +5,8 @@ namespace App\Http\Controllers;
 use App\Helpers\AppHelper;
 use App\Models\Branch;
 use App\Models\Employee;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
-use Spatie\Permission\Models\Role;
 
 class EmployeeController extends Controller
 {
@@ -20,42 +16,89 @@ class EmployeeController extends Controller
   public function index(Request $request)
   {
 
-    $authorized = auth()->user();
-    $branch_id = $authorized->can('can show branch') ? ($request->branch_id ?? 1) : $authorized->employee->branch_id;
-    $wilayah = $authorized->can('can show branch') ? (Branch::find($branch_id)->wilayah ?? 1) : $authorized->employee->branch->wilayah;
-    $kelompok = $authorized->can('can show kelompok') ? ($request->kelompok ?? 1) : $authorized->employee->area;
+    // Data karyawan (NIK, alamat) hanya untuk KM / kasir / pimpinan ke atas,
+    // dan hanya cabang yang boleh diakses user - ?branch_id dari URL dulu
+    // dipakai mentah, jadi siapa pun bisa membaca karyawan cabang mana pun.
+    abort_unless(\App\Helpers\AppHelper::bolehRekapPenuh(auth()->user()), 403, 'Data karyawan untuk kepala mantri, kasir, dan pimpinan.');
+    $scope = \App\Helpers\AuthScope::resolve();
+    $boleh = Branch::getAllowedBranchIds(auth()->user());
+    $branch_id = $request->filled('branch_id') && ($boleh === null || in_array((int) $request->branch_id, $boleh))
+      ? (int) $request->branch_id
+      : $scope->branch_id;
+    $wilayah = $scope->wilayah;
+    $kelompok = $scope->kelompok;
+    $authorized = $scope->user;
     $userAuthorized = AppHelper::branch_permission($authorized, $branch_id);
-    // dd($userAuthorized);
+    // dd($scope->branch_id);
 
 
-    $roles = Role::with('permissions', 'users')->get();
-    $employee = Employee::with('username.rolelist', 'employment')->where('branch_id', $branch_id)
-      ->select('id', 'branch_id', 'nik', 'nama_karyawan', 'alamat', 'hire_date', 'area', 'janis_jaminan', 'date_resign', 'resign_status', 'resign_reson', 'employment_id')
+    $employee = Employee::with([
+      'username.rolelist',
+      'employment',
+      'documents' => fn($q) => $q->where('is_old', false)->orderBy('created_at', 'desc'),
+    ])->where('branch_id', $branch_id)
+      ->select('id', 'branch_id', 'nik', 'nama_karyawan', 'alamat', 'hire_date', 'area', 'janis_jaminan', 'date_resign', 'resign_status', 'resign_reson', 'employment_id', 'avatar')
       ->orderBy('date_resign')
       ->orderBy('employment_id')
       ->orderBy('area')
       ->get();
 
 
-    $data = $employee->map(function ($item) {
+    // Foto profil & dokumen: disimpan di MinIO (disk s3). Di sini link sementara lewat s3_publik.
+    $disk = null;
+    if (config('filesystems.disks.s3_publik.bucket')) {
+      try {
+        $disk = \Illuminate\Support\Facades\Storage::disk('s3_publik');
+      } catch (\Throwable $e) {
+        $disk = null;
+      }
+    }
+    $foto = function (?string $path) use ($disk) {
+      if (!$disk || !$path) {
+        return null;
+      }
+      try {
+        return $disk->temporaryUrl($path, now()->addHours(3));
+      } catch (\Throwable $e) {
+        return null;
+      }
+    };
+
+    $superuser = auth()->user()->hasRole('superuser');
+    $data = $employee->map(function ($item) use ($foto, $superuser) {
       $username = $item->username->first();
+      $jabatanName = $item->employment?->jabatan ?? '-';
       return [
         'id' => $item->id,
         'branch_id' => $item->branch_id,
         'identity_id' => $item->nik,
         'employee_name' => $item->nama_karyawan,
+        'avatar' => $foto($item->avatar),
         'username' => $username?->username,
         'rolelist' => $username?->rolelist->map(function ($role) {
           return [
             'name' => $role->name
           ];
         }),
-        'username_status' => $item->username->first()?->isactive,
+        'username_status' => $username?->isactive,
+        // Kelola akun (khusus superuser)
+        'user_id' => $superuser ? $username?->id : null,
         'address' => $item->alamat,
-        'employment' => $item->employment->jabatan == "mantri" ? $item->employment->jabatan . " " . $item->area : $item->employment->jabatan,
+        'employment' => strtolower($jabatanName) === "mantri" ? ($jabatanName . " " . $item->area) : $jabatanName,
         'isActive' => $item->date_resign ? false : true,
         'resign_date' => $item->date_resign,
         'hire_date' => $item->hire_date,
+        'documents' => $item->documents->map(function ($doc) use ($foto) {
+          $tglUpdate = $doc->updated_at ?? $doc->created_at;
+          return [
+            'id' => $doc->id,
+            'type' => $doc->type,
+            'file_path' => $doc->file_path,
+            'url' => $foto($doc->file_path),
+            'updated_at' => $tglUpdate ? $tglUpdate->format('d M Y H:i') : null,
+            'human_updated' => $tglUpdate ? $tglUpdate->diffForHumans() : null,
+          ];
+        })->values(),
       ];
     });
 
@@ -63,13 +106,17 @@ class EmployeeController extends Controller
 
     return Inertia::render('WebView/ManPower/Index', [
       'datas' => $data,
-      'roles' => $roles,
       'server_filter' => [
         'wilayah' => $wilayah,
         'branch' => $userAuthorized['branches'],
         'userAuthorized' => $userAuthorized,
         'branch_id' => $branch_id
-      ]
+      ],
+      // Kelola akun login (khusus superuser): role yang bisa diberikan + kode cabang untuk saran username
+      'akun' => $superuser ? [
+        'roles' => \Spatie\Permission\Models\Role::orderBy('name')->pluck('name'),
+        'branch_code' => Branch::whereKey($branch_id)->value('code'),
+      ] : null,
     ]);
   }
 
@@ -82,40 +129,259 @@ class EmployeeController extends Controller
   }
 
   /**
-   * Store a newly created resource in storage.
+   * Unggah foto profil (avatar) karyawan: kasir & superuser, karyawan di cabang
+   * yang boleh diakses. Disimpan di MinIO folder avatars/ (disk s3) - tempat
+   * yang sama dengan unggahan app_laravel - lalu foto lama dihapus.
+   * Beda dengan pas foto berkas lamaran kerja (menyusul).
    */
-  public function store(Request $request)
+  public function uploadAvatar(Request $request, Employee $employee)
   {
-    $branchCode = Branch::find($request->branch_id)->code;
-    $_suffix = "_" . strtolower($branchCode);
-    $request->merge(['username' => $request->username . $_suffix]);
-    $validate = $request->validate([
-      'id' => ['required'],
-      'branch_id' => ['required'],
-      'username' => ['required', 'unique:users,username'],
-      'role' => ['required'],
-    ]);
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Unggah foto khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
 
+    $request->validate(
+      ['avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048']],
+      ['avatar.max' => 'Ukuran foto maksimal 2MB.', 'avatar.image' => 'File harus berupa foto.']
+    );
 
     try {
-      DB::beginTransaction();
-      $employee = Employee::find($request->id);
-      $users = $employee->username()->create([
-        'username' => $request->username,
-        'password' => Hash::make('4343abab'),
-        'email' => $request->username . '@usberdigital.com',
-        'isactive' => 1
-      ]);
-
-      $role = Role::findById($request->role);
-      $users->syncRoles($role);
-      DB::commit();
-    } catch (Exception $e) {
-      DB::rollBack();
-      ddd($e);
-      return redirect()->back()->withErrors('Gagal Membuat User');
+      $path = $request->file('avatar')->store('avatars', 's3');
+    } catch (\Throwable $e) {
+      \Illuminate\Support\Facades\Log::error('Unggah avatar gagal: ' . $e->getMessage(), ['employee' => $employee->id]);
+      $path = false;
     }
-    return redirect()->back()->with('message', 'Berhasil Membuat User');
+    if (!$path) {
+      return back()->withErrors('Gagal menyimpan foto ke server penyimpanan.');
+    }
+
+    $lama = $employee->getAttribute('avatar');
+    $employee->forceFill(['avatar' => $path])->save();
+
+    if ($lama) {
+      try {
+        \Illuminate\Support\Facades\Storage::disk('s3')->delete($lama);
+      } catch (\Throwable $e) {
+        // Foto lama gagal dihapus tidak boleh menggagalkan penggantian.
+      }
+    }
+
+    return back()->with('message', 'Foto profil diperbarui.');
+  }
+
+  /**
+   * Hapus foto profil karyawan (khusus kasir / superuser cabang).
+   */
+  public function deleteAvatar(Employee $employee)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Hapus foto khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+
+    $lama = $employee->getAttribute('avatar');
+    $employee->forceFill(['avatar' => null])->save();
+
+    if ($lama) {
+      try {
+        \Illuminate\Support\Facades\Storage::disk('s3')->delete($lama);
+      } catch (\Throwable $e) {
+        // Foto lama gagal dihapus tidak boleh menggagalkan proses reset.
+      }
+    }
+
+    return back()->with('message', 'Foto profil berhasil dihapus.');
+  }
+
+  /**
+   * Unggah dokumen berkas digital karyawan (KTP, KK, SKCK, Ijazah, Lamaran Kerja, Pasfoto).
+   */
+  public function uploadDocument(Request $request, Employee $employee)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Unggah dokumen khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+
+    $request->validate([
+      'type' => ['required', 'string', 'in:ktp,kk,skck,ijazah,lamaran_kerja,pasfoto'],
+      'file' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:5120'],
+    ], [
+      'file.mimes' => 'File harus berupa foto (JPEG, PNG) atau dokumen PDF.',
+      'file.max' => 'Ukuran file maksimal 5MB.',
+    ]);
+
+    try {
+      $path = $request->file('file')->store('documents/' . $employee->id, 's3');
+    } catch (\Throwable $e) {
+      \Illuminate\Support\Facades\Log::error('Unggah dokumen karyawan gagal: ' . $e->getMessage(), ['employee' => $employee->id]);
+      $path = false;
+    }
+
+    if (!$path) {
+      return back()->withErrors('Gagal menyimpan file ke server penyimpanan.');
+    }
+
+    // Dokumen aktif jenis ini digantikan yang baru
+    $existing = $employee->documents()->where('type', $request->type)->where('is_old', false)->first();
+    if ($existing) {
+      if ($existing->file_path) {
+        try {
+          \Illuminate\Support\Facades\Storage::disk('s3')->delete($existing->file_path);
+        } catch (\Throwable $e) {}
+      }
+      $existing->delete();
+    }
+
+    \App\Models\EmployeeDocument::create([
+      'employee_id' => $employee->id,
+      'type' => $request->type,
+      'file_path' => $path,
+      'is_old' => false,
+    ]);
+
+    return back()->with('message', 'Dokumen berhasil diunggah.');
+  }
+
+  /**
+   * Hapus dokumen berkas digital karyawan.
+   */
+  public function deleteDocument(Employee $employee, \App\Models\EmployeeDocument $document)
+  {
+    $user = auth()->user();
+    abort_unless($user->hasAnyRole(['kasir', 'superuser']), 403, 'Hapus dokumen khusus kasir.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+    abort_unless((int) $document->employee_id === (int) $employee->id, 404);
+
+    if ($document->file_path) {
+      try {
+        \Illuminate\Support\Facades\Storage::disk('s3')->delete($document->file_path);
+      } catch (\Throwable $e) {}
+    }
+
+    $document->delete();
+
+    return back()->with('message', 'Dokumen berhasil dihapus.');
+  }
+
+  /**
+   * Tampilkan dokumen digital karyawan secara inline di tab baru.
+   */
+  public function showDocument(Employee $employee, \App\Models\EmployeeDocument $document)
+  {
+    $user = auth()->user();
+    abort_unless(\App\Helpers\AppHelper::bolehRekapPenuh($user), 403, 'Akses ditolak.');
+    $boleh = Branch::getAllowedBranchIds($user);
+    abort_unless($boleh === null || in_array((int) $employee->branch_id, $boleh), 403, 'Karyawan ini bukan cabang Anda.');
+    abort_unless((int) $document->employee_id === (int) $employee->id, 404);
+
+    return \App\Support\Unggahan::tampilkan($document->file_path);
+  }
+
+  /** Akun login yang dikelola harus milik seorang karyawan; semua aksi akun khusus superuser. */
+  private function akunSuperuser(?\App\Models\User $user = null): void
+  {
+    abort_unless(auth()->user()->hasRole('superuser'), 403, 'Akses ditolak.');
+    abort_if($user && !$user->employee_id, 404, 'Akun ini tidak terhubung ke karyawan.');
+  }
+
+  // Cermin app_laravel Settings\UserController::storeForEmployee
+  public function akunBuat(Request $request, Employee $employee)
+  {
+    $this->akunSuperuser();
+
+    if (\App\Models\User::where('employee_id', $employee->id)->exists()) {
+      return back()->withErrors(['username' => 'Karyawan ini sudah memiliki akun pengguna.']);
+    }
+
+    $validated = $request->validate([
+      'username' => 'required|string|max:255|unique:users,username',
+      'password' => ['required', 'string', 'min:8'],
+      'role' => 'nullable|string|exists:roles,name',
+    ]);
+
+    $email = strtolower(str_replace(' ', '', $validated['username'])) . '@ubmi.co.id';
+
+    $user = \App\Models\User::create([
+      'username' => $validated['username'],
+      'email' => $email,
+      'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+      'isactive' => true,
+      'employee_id' => $employee->id,
+    ]);
+
+    if (!empty($validated['role'])) {
+      $user->assignRole($validated['role']);
+    }
+
+    return back()->with('message', "Akun pengguna untuk {$employee->nama_karyawan} berhasil dibuat.");
+  }
+
+  // Cermin app_laravel Settings\UserController::resetPassword
+  public function akunPassword(Request $request, \App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    $validated = $request->validate([
+      'password' => ['required', 'string', 'min:8'],
+    ]);
+
+    $user->update([
+      'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+    ]);
+
+    return back()->with('message', 'Password pengguna berhasil direset.');
+  }
+
+  // Cermin app_laravel Settings\UserController::toggleActive
+  public function akunAktif(\App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    // Jangan biarkan superuser menonaktifkan dirinya sendiri
+    if ($user->id === auth()->id()) {
+      return back()->withErrors(['isactive' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.']);
+    }
+
+    $user->update([
+      'isactive' => !$user->isactive,
+    ]);
+
+    $status = $user->isactive ? 'diaktifkan' : 'dinonaktifkan';
+    return back()->with('message', "Akun pengguna berhasil $status.");
+  }
+
+  // Cermin app_laravel Settings\UserController::updateUsername
+  public function akunUsername(Request $request, \App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    $validated = $request->validate([
+      'username' => 'required|string|unique:users,username,' . $user->id . '|max:255',
+    ]);
+
+    $user->update([
+      'username' => $validated['username'],
+    ]);
+
+    return back()->with('message', 'Username pengguna berhasil diperbarui.');
+  }
+
+  // Cermin app_laravel Settings\UserController::updateRoles
+  public function akunRole(Request $request, \App\Models\User $user)
+  {
+    $this->akunSuperuser($user);
+
+    $validated = $request->validate([
+      'roles' => 'array',
+      'roles.*' => 'exists:roles,name',
+    ]);
+
+    $user->syncRoles($validated['roles'] ?? []);
+
+    return back()->with('message', 'Role pengguna berhasil diperbarui.');
   }
 
   /**
