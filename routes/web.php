@@ -32,6 +32,13 @@ Route::get('/dashboard/pembayaran', [\App\Http\Controllers\PembayaranKantorContr
 // Dashboard Kasir: halaman kartu pembayaran kantor (bukan di Home).
 Route::get('/dashboard-kasir', [\App\Http\Controllers\PembayaranKantorController::class, 'halaman'])
   ->middleware(['auth'])->name('dashboard.kasir');
+// Checklist Aplikasi Baru per kantor (mas 2026-11-19); peran dicek di controller.
+Route::middleware(['auth'])->controller(\App\Http\Controllers\BranchChecklistController::class)->group(function () {
+  Route::get('/checklist-aplikasi', 'index')->name('checklist.index');
+  Route::post('/checklist-aplikasi/{item}', 'centang')->name('checklist.centang');
+  Route::delete('/checklist-aplikasi/{item}', 'batal')->name('checklist.batal');
+  Route::get('/laporan/checklist-aplikasi', 'laporan')->name('checklist.laporan');
+});
 Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorController::class)
   ->prefix('dashboard-kasir')->name('dashboard.kasir.')->group(function () {
     Route::post('/iuran', 'bayarIuran')->name('iuran');
@@ -81,6 +88,18 @@ Route::middleware('auth')->group(function () {
   // Aset Kendaraan: + pengawas (mas 2026-10-19). Edit = edit-vehicle-stnk-data,
   // mutasi & servis = peran di VehicleAssetController::bolehKelola.
   Route::middleware('role:kasir|stafkontrol|pusat|pimpinan|pengawas|superuser')->group(function () {
+  // Angsuran Motor (mas 2026-11-19): peran sama dengan Aset Kendaraan.
+  Route::controller(\App\Http\Controllers\VehicleLoanController::class)->prefix('assets/angsuran')->name('assets.angsuran.')->group(function () {
+    Route::get('/', 'page')->name('index');
+    Route::get('/data', 'data')->name('data');
+    Route::get('/belum', 'belum')->name('belum');
+    Route::get('/{loan}/detail', 'detail')->whereNumber('loan')->name('detail');
+    Route::post('/awal', 'awal')->name('awal');
+    Route::post('/bayar', 'bayar')->name('bayar');
+    Route::delete('/pembayaran/{payment}', 'hapus')->whereNumber('payment')->name('hapus');
+    Route::get('/pembayaran/{payment}/bukti/{n?}', 'bukti')->whereNumber(['payment', 'n'])->name('bukti');
+    Route::delete('/{loan}', 'hapusKontrak')->whereNumber('loan')->name('hapus_kontrak');
+  });
   Route::controller(\App\Http\Controllers\VehicleAssetController::class)->prefix('assets')->name('assets.')->group(function () {
     Route::get('/', 'index')->name('index');
     Route::post('/', 'store')->name('store');
@@ -94,6 +113,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/{asset}/mutate', 'mutate')->whereNumber('asset')->name('mutate');
     Route::delete('/{asset}/mutate', 'revertMutate')->whereNumber('asset')->name('mutate.revert');
     Route::post('/{asset}/maintenance', 'addMaintenance')->whereNumber('asset')->name('maintenance.store');
+    Route::post('/{asset}/status', 'ubahStatus')->whereNumber('asset')->name('status');
+    Route::post('/{asset}/catatan', 'ubahCatatan')->whereNumber('asset')->name('catatan');
   });
   });
 

@@ -9,7 +9,7 @@ import Navbar from '@/Components/Navbar';
 import Loading from '@/Components/Loading';
 import { Toaster } from '@/shadcn/ui/sonner';
 import { KonfirmasiHost } from '@/lib/konfirmasi';
-import { SidebarProvider, SidebarInset } from '@/shadcn/ui/sidebar';
+import { SidebarProvider, SidebarInset, useSidebar } from '@/shadcn/ui/sidebar';
 
 // Tiap halaman Inertia memasang layout ini ulang, jadi SidebarProvider mulai
 // dari awal. Posisi terakhir (dicatat shadcn di cookie sidebar:state) dibaca
@@ -67,10 +67,22 @@ export default function Authenticated({ header, children, loading = false }) {
           jadi gulir samping terjadi di halaman, bukan di dalam tabelnya. */}
       <SidebarInset className="min-w-0">
         <Navbar auth={auth} header={header} />
-        <main className="flex-1 px-4 py-6 md:px-6 bg-white min-h-[calc(100vh-3.5rem)]">
-          {children}
-        </main>
+        <IsiUtama>{children}</IsiUtama>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+// Klik isi halaman di desktop = sidebar disembunyikan (mas 2026-11-19); buka lagi lewat
+// tombol di navbar. HP sudah tertutup sendiri (laci + overlay).
+function IsiUtama({ children }) {
+  const { open, setOpen, isMobile } = useSidebar();
+  return (
+    <main
+      onMouseDown={() => { if (open && !isMobile) setOpen(false); }}
+      className="flex-1 px-4 py-6 md:px-6 bg-white min-h-[calc(100vh-3.5rem)]"
+    >
+      {children}
+    </main>
   );
 }

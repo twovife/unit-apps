@@ -1,3 +1,5 @@
+import AngsuranMotor, { DialogBayar } from '@/Components/Assets/AngsuranMotor';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -207,7 +209,7 @@ const IsiIuran = ({ d }) => {
 };
 
 /** Satu kartu tugas: ikon status, judul, keterangan, progres, angka besar di kanan. */
-const BarisTugas = ({ ok, judul, ket, nilai, persen, href }) => {
+const BarisTugas = ({ ok, judul, ket, nilai, persen, href, onClick }) => {
   const isi = (
     <>
       <span className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${ok ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
@@ -223,9 +225,12 @@ const BarisTugas = ({ ok, judul, ket, nilai, persen, href }) => {
         )}
       </div>
       {nilai && <div className={`text-lg font-bold tabular-nums shrink-0 ${ok ? 'text-emerald-600' : 'text-rose-600'}`}>{nilai}</div>}
-      {href && <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />}
+      {(href || onClick) && <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />}
     </>
   );
+  if (onClick) {
+    return <button type="button" onClick={onClick} className={`flex w-full items-center gap-3 p-4 text-left bg-white border rounded-2xl transition hover:shadow-md ${ok ? 'border-emerald-200' : 'border-rose-200'}`}>{isi}</button>;
+  }
   const kelas = `flex items-center gap-3 p-4 bg-white border rounded-2xl ${ok ? 'border-emerald-200' : 'border-rose-200'}`;
   return href ? <Link href={href} className={`${kelas} transition hover:shadow-md`}>{isi}</Link> : <div className={kelas}>{isi}</div>;
 };
@@ -241,6 +246,80 @@ const statusTugas = (t) => [
 ];
 
 /** Tugas harian: kunci hari sebelumnya (tanggalnya di kalender samping), ACC KM & kunci kasir hari ini. */
+// Tugas paling atas (mas 2026-11-19): angsuran motor yang tagihannya s/d bulan ini belum dibayar.
+// Klik = dialog Bayar (centang + bukti). Tidak tampil untuk peran tanpa menu Aset / tanpa kontrak.
+const TugasAngsuranMotor = () => {
+  const boleh = !!usePage().props.auth?.menu?.admKantor;
+  const [n, setN] = useState(null);
+  const [buka, setBuka] = useState(false);
+  useEffect(() => {
+    if (boleh) axios.get(route('assets.angsuran.belum')).then(({ data }) => setN(data.tagihan ?? 0)).catch(() => {});
+  }, [boleh]);
+  if (!boleh || n === null) return null;
+  return (
+    <>
+      <BarisTugas
+        ok={n === 0}
+        judul="Bayar angsuran motor"
+        ket={n === 0 ? 'Angsuran motor bulan ini sudah dibayar semua' : 'Tagihan angsuran motor s/d bulan ini belum dibayar. Klik untuk bayar.'}
+        nilai={n === 0 ? null : `${n} motor`}
+        onClick={n === 0 ? undefined : () => setBuka(true)}
+      />
+      {buka && <DialogBayar buka={buka} onClosed={() => setBuka(false)} />}
+    </>
+  );
+};
+// Checklist Aplikasi Baru (mas 2026-11-19): sekali per kantor; mengecil jadi satu baris kalau selesai.
+const ChecklistAplikasi = () => {
+  const [d, setD] = useState(null);
+  const [buka, setBuka] = useState(true);
+  const muat = () => axios.get(route('checklist.index')).then(({ data }) => setD(data)).catch(() => {});
+  useEffect(() => { muat(); }, []);
+  if (!d) return null;
+  const selesai = d.item.filter((i) => i.selesai).length;
+  const semua = selesai === d.item.length;
+  const ubah = (i) => {
+    const opsi = { preserveScroll: true, preserveState: true, onSuccess: muat };
+    if (i.selesai) router.delete(route('checklist.batal', i.kunci), opsi);
+    else router.post(route('checklist.centang', i.kunci), {}, opsi);
+  };
+  return (
+    <div className={`overflow-hidden bg-white border rounded-2xl ${semua ? 'border-emerald-200' : 'border-sky-200'}`}>
+      <button type="button" onClick={() => setBuka((b) => !b)} className="flex items-center w-full gap-3 p-4 text-left">
+        <span className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${semua ? 'bg-emerald-50 text-emerald-600' : 'bg-sky-50 text-sky-600'}`}>
+          {semua ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-slate-800">Checklist Aplikasi Baru</div>
+          <div className="text-xs text-slate-500">{semua ? 'Selesai semua ✓' : 'Sekali saja per kantor. Cek tiap menu, lalu klik Sudah.'}</div>
+        </div>
+        <div className={`text-lg font-bold tabular-nums ${semua ? 'text-emerald-600' : 'text-sky-700'}`}>{selesai}/{d.item.length}</div>
+        <ChevronRight className={`w-4 h-4 text-slate-300 transition ${buka && !semua ? 'rotate-90' : ''}`} />
+      </button>
+      {buka && !semua && (
+        <ul className="border-t divide-y">
+          {d.item.map((i) => (
+            <li key={i.kunci} className="flex items-center gap-3 px-4 py-2.5">
+              {i.selesai ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <span className="w-4 h-4 border-2 rounded-full border-slate-300 shrink-0" />}
+              <div className="flex-1 min-w-0">
+                <Link href={i.link} className={`text-sm font-medium hover:underline ${i.selesai ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{i.judul}</Link>
+                <div className="text-xs text-slate-500">{i.petunjuk}</div>
+                {i.ket && <div className={`text-xs ${i.selesai ? 'text-emerald-600' : 'text-amber-700'}`}>{i.ket}</div>}
+              </div>
+              {i.otomatis ? (
+                <span className="text-xs text-slate-400">otomatis</span>
+              ) : d.boleh_centang && (
+                <Button size="sm" variant={i.selesai ? 'ghost' : 'outline'} onClick={() => ubah(i)} className={i.selesai ? 'text-slate-500' : ''}>
+                  {i.selesai ? 'Batal' : 'Sudah'}
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 const Tugas = ({ t }) => {
   const hari = hariBelumKunci(t).length;
   const kunci = t.migrasi ? 'Kunci' : 'TTD';
@@ -267,6 +346,8 @@ const Tugas = ({ t }) => {
           </div>
         </div>
       </div>
+      <ChecklistAplikasi />
+      <TugasAngsuranMotor />
       <BarisTugas
         ok={selesai[0]}
         judul={`${kunci} hari sebelumnya`}
@@ -712,6 +793,8 @@ const Foto = ({ p }) => {
 };
 
 export default function PembayaranKantor({ videos = {}, profil = null, pembaruan = null }) {
+  // Tab Angsuran Motor = peran menu Aset (auth.menu.admKantor, sama dengan sidebar).
+  const bolehAngsuran = !!usePage().props.auth?.menu?.admKantor;
   const [bulan, setBulan] = useState(dayjs().format('YYYY-MM'));
   const [tab, setTab] = useState('tugas');
   const [data, setData] = useState(null);
@@ -807,6 +890,7 @@ export default function PembayaranKantor({ videos = {}, profil = null, pembaruan
               ['tugas', 'Tugas Harian', belumTugas, true],
               ['bayar', 'Pembayaran Kantor', belumBayar, telatBayar],
               ['pajak', 'Pajak Kendaraan', k?.kendaraan?.length ?? 0, pajakLewat],
+              ...(bolehAngsuran ? [['angsuran', 'Angsuran Motor', 0, false]] : []),
               ['pembaruan', 'Pembaruan', 0, false],
             ].map(([kunci, label, angka, merah]) => (
               <button
@@ -842,6 +926,7 @@ export default function PembayaranKantor({ videos = {}, profil = null, pembaruan
 
         {tab === 'tugas' && data?.tugas && <Tugas t={data.tugas} />}
         {tab === 'pembaruan' && pembaruan}
+        {tab === 'angsuran' && <AngsuranMotor />}
 
       {tab === 'bayar' && k && (
         <div className="grid gap-4 md:grid-cols-2">

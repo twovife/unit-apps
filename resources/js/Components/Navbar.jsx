@@ -1,6 +1,7 @@
 import React from 'react';
 import { SidebarTrigger } from '@/shadcn/ui/sidebar';
 import GlobalBranchFilter from './GlobalBranchFilter';
+import AlertAngsuranMotor from './Assets/AlertAngsuranMotor';
 import SaklarRibuan from './SaklarRibuan';
 import VideoTutorialButton from './VideoTutorialButton';
 
@@ -38,6 +39,7 @@ const Navbar = ({ header }) => {
       </div>
       <div className="flex flex-1 items-center justify-end gap-4">
         {menuVideo && <VideoTutorialButton menu={menuVideo} buttonText="Video" />}
+        <AlertAngsuranMotor />
         <GlobalBranchFilter compact />
       </div>
     </header>

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { Check, CheckCircle2, ChevronsUpDown, Loader2, MapPin, Pencil, Trash2, Wrench } from 'lucide-react';
+import { Check, CheckCircle2, ChevronsUpDown, Loader2, MapPin, Pencil, RefreshCw, Trash2, Wrench } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/shadcn/ui/badge';
@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/shadcn/ui/popover';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/shadcn/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shadcn/ui/tabs';
 import { rpLengkap as rupiah } from '@/lib/rupiah';
+import { durasi, KONDISI, labelStatus, warnaStatus } from '@/lib/statusKendaraan';
 import { konfirmasi } from '@/lib/konfirmasi';
 
 const formatDate = (value) => value
@@ -58,8 +59,40 @@ function PilihKantor({ branches, value, onChange }) {
   );
 }
 
+// Satu baris: label kiri, nilai kanan (dibaca seperti daftar, bukan grid kecil).
 function Field({ label, children }) {
-  return <div><div className="text-xs text-muted-foreground">{label}</div><div className="mt-1 text-sm font-semibold">{children}</div></div>;
+  return (
+    <div className="flex items-start justify-between gap-4 py-2.5">
+      <div className="shrink-0 text-sm text-slate-500">{label}</div>
+      <div className="text-right text-sm font-semibold text-slate-900">{children}</div>
+    </div>
+  );
+}
+
+// Kartu ringkasan berjudul (Penempatan / Surat kendaraan / Biaya).
+function Kartu({ judul, children }) {
+  return (
+    <section className="overflow-hidden rounded-lg border">
+      <h3 className="border-b bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800">{judul}</h3>
+      <div className="divide-y px-4">{children}</div>
+    </section>
+  );
+}
+
+// Sisa hari ke tanggal; negatif = sudah lewat. Sama dengan daftar kendaraan (merah lewat, kuning <= 30 hari).
+const sisaHari = (tanggal) => (tanggal ? dayjs(String(tanggal).slice(0, 10)).diff(dayjs().startOf('day'), 'day') : null);
+function TanggalJatuhTempo({ tanggal }) {
+  const sisa = sisaHari(tanggal);
+  if (sisa === null) return '—';
+  const [kelas, teks] = sisa < 0
+    ? ['bg-rose-100 text-rose-700', `lewat ${durasi(tanggal)}`]
+    : sisa <= 30 ? ['bg-amber-100 text-amber-800', sisa === 0 ? 'hari ini' : `${durasi(tanggal)} lagi`] : ['bg-emerald-50 text-emerald-700', `${durasi(tanggal)} lagi`];
+  return (
+    <span className="flex flex-wrap items-center justify-end gap-1.5">
+      {formatDate(tanggal)}
+      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${kelas}`}>{teks}</span>
+    </span>
+  );
 }
 
 // Dialog Radix, bukan div fixed biasa: Sheet detail yang terbuka mengunci klik di luar
@@ -86,7 +119,7 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('placements');
+  const [activeTab, setActiveTab] = useState('taxes');
   const [modal, setModal] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [cancelingTaxId, setCancelingTaxId] = useState(null);
@@ -101,6 +134,19 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     cost: '',
     odometer: '',
     description: '',
+  });
+  const statusForm = useForm({ status: '', kondisi: '' });
+  // Catatan diubah di tempat (pensil di kartu Aset & penempatan).
+  const [ubahCatatan, setUbahCatatan] = useState(false);
+  const catatanForm = useForm({ description: '' });
+  const simpanCatatan = () => catatanForm.post(route('assets.catatan', assetId), {
+    preserveScroll: true,
+    preserveState: true,
+    onSuccess: () => {
+      setUbahCatatan(false);
+      refresh();
+      toast.success('Catatan diubah.');
+    },
   });
   const taxForm = useForm({
     cost: '',
@@ -224,6 +270,19 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
     });
   };
 
+  const submitStatus = (event) => {
+    event.preventDefault();
+    statusForm.post(route('assets.status', assetId), {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        setModal('');
+        refresh();
+        toast.success('Status kendaraan diubah.');
+      },
+    });
+  };
+
   const deleteAsset = async () => {
     if (!(await konfirmasi(`Hapus kendaraan ${asset?.name}? Riwayat pajak, mutasi, dan servis ikut terhapus.`))) return;
     setConfirmingDelete(true);
@@ -254,51 +313,122 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
       <Sheet open={!!assetId} onOpenChange={(open) => !open && onClose()}>
         <SheetContent side="right" className="flex h-full w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
           <SheetHeader className="border-b px-5 py-4 pr-14 text-left">
-            <SheetTitle>{asset?.name ?? assetName ?? 'Detail Kendaraan'}</SheetTitle>
-            <SheetDescription>{asset?.asset_code ?? (loading ? 'Memuat...' : '')} · {asset?.vehicle?.plat_nomor ?? ''}</SheetDescription>
+            <SheetTitle className="flex flex-wrap items-center gap-2">
+              Detail Aset {asset?.name ?? assetName ?? ''}
+              {asset && (
+                <Badge variant="outline" className={warnaStatus(asset)}>{labelStatus(asset)}</Badge>
+              )}
+            </SheetTitle>
+            <SheetDescription className="flex flex-wrap items-center gap-2">
+              {asset?.vehicle?.plat_nomor && (
+                <span className="rounded border-2 border-slate-800 bg-white px-2 py-0.5 font-mono text-base font-bold tracking-wider text-slate-900">{asset.vehicle.plat_nomor}</span>
+              )}
+              <span>{asset?.asset_code ?? (loading ? 'Memuat...' : '')}</span>
+            </SheetDescription>
+            {asset && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {onEdit !== undefined && (
+                  <Button size="sm" variant="default" disabled={!onEdit} title={onEdit ? undefined : 'Butuh izin edit-vehicle-stnk-data'} onClick={() => onEdit?.(asset)}>
+                    <Pencil className="mr-1.5 size-4" />Ubah Kendaraan
+                  </Button>
+                )}
+                {asset.vehicle && (
+                  <Button size="sm" variant="outline" onClick={openTaxPayment} disabled={!canInputTax} title={canInputTax ? undefined : 'Butuh izin input-vehicles-tax'}>
+                    <CheckCircle2 className="mr-1.5 size-4" />Bayar Pajak
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setModal('maintenance')} disabled={!bolehKelola} title={bolehKelola ? undefined : 'Bukan untuk kepala mantri / mantri'}>
+                  <Wrench className="mr-1.5 size-4" />Catat Servis
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  mutate.setData({
+                    branch_id: String(currentLocation?.branch_id ?? ''),
+                    pengguna: '',
+                    assigned_date: dayjs().format('YYYY-MM-DD'),
+                    notes: '',
+                  });
+                  setModal('mutate');
+                }} disabled={!bolehKelola} title={bolehKelola ? undefined : 'Bukan untuk kepala mantri / mantri'}>
+                  <MapPin className="mr-1.5 size-4" />Mutasi / Pindah Kantor
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  statusForm.setData({ status: asset.status === 'aktif' ? 'aktif' : 'nonaktif', kondisi: asset.kondisi ?? (asset.status === 'aktif' ? 'baik' : '') });
+                  statusForm.clearErrors();
+                  setModal('status');
+                }} disabled={!bolehKelola} title={bolehKelola ? undefined : 'Bukan untuk kepala mantri / mantri'}>
+                  <RefreshCw className="mr-1.5 size-4" />Ubah Status
+                </Button>
+              </div>
+            )}
           </SheetHeader>
           {loading && <div className="p-6 text-sm text-muted-foreground"><Loader2 className="mr-2 inline size-4 animate-spin" />Memuat detail kendaraan...</div>}
           {error && <p role="alert" className="m-5 rounded border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
           {!loading && asset && (
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+              <div className="grid gap-3 md:grid-cols-2">
+                <Kartu judul="Aset & penempatan">
+                  <Field label="Kode aset">{asset.asset_code ?? '—'}</Field>
+                  <Field label="Kategori">{asset.category?.name ?? '—'}</Field>
+                  <Field label="Kantor">{currentLocation?.branch?.unit ?? 'Belum ditempatkan'}</Field>
+                  <Field label="Pemakai">{currentLocation?.pengguna && currentLocation.pengguna !== '-' ? currentLocation.pengguna : 'Cadangan'}</Field>
+                  <Field label="Sejak">{formatDate(currentLocation?.assigned_date)}</Field>
+                  <Field label="Tanggal perolehan">{formatDate(asset.purchase_date)}</Field>
+                  {Number(asset.purchase_cost) > 0 && <Field label="Harga perolehan">{rupiah(asset.purchase_cost)}</Field>}
+                  <div className="py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm text-slate-500">Catatan</div>
+                      {bolehKelola && !ubahCatatan && (
+                        <button
+                          type="button"
+                          title="Ubah catatan"
+                          className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                          onClick={() => { catatanForm.setData('description', asset.description ?? ''); catatanForm.clearErrors(); setUbahCatatan(true); }}
+                        >
+                          <Pencil className="size-4" />
+                        </button>
+                      )}
+                    </div>
+                    {ubahCatatan ? (
+                      <div className="mt-1.5 space-y-2">
+                        <textarea
+                          autoFocus
+                          className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+                          value={catatanForm.data.description}
+                          onChange={(event) => catatanForm.setData('description', event.target.value)}
+                        />
+                        {catatanForm.errors.description && <p className="text-xs text-destructive">{catatanForm.errors.description}</p>}
+                        <div className="flex justify-end gap-2">
+                          <Button type="button" size="sm" variant="outline" onClick={() => setUbahCatatan(false)}>Batal</Button>
+                          <Button type="button" size="sm" disabled={catatanForm.processing} onClick={simpanCatatan}>{catatanForm.processing ? 'Menyimpan...' : 'Simpan'}</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-1 whitespace-pre-wrap text-sm font-semibold text-slate-900">{asset.description || '—'}</p>
+                    )}
+                  </div>
+                </Kartu>
+                <Kartu judul="Pajak & surat kendaraan">
+                  <Field label="Pajak tahunan"><TanggalJatuhTempo tanggal={asset.vehicle?.tanggal_pajak_tahunan} /></Field>
+                  {payload?.tax_info && <Field label="Jenis pajak">{payload.tax_info.jenis_pajak} · tahun ke-{payload.tax_info.tahun_ke}</Field>}
+                  <Field label="STNK (5 tahun)">{formatDate(asset.vehicle?.tanggal_stnk)}</Field>
+                  <Field label="Nama di STNK">{asset.vehicle?.nama_stnk ?? '—'}</Field>
+                  <Field label="Posisi BPKB"><span className="capitalize">{asset.vehicle?.bpkb_location ?? '—'}</span></Field>
+                  <Field label="Bayar pajak terakhir">{taxes[0] ? `${formatDate(taxes[0].paid_date)} (periode ${taxes[0].periode})` : '—'}</Field>
+                  <Field label="Total pajak + denda">{rupiah(taxTotal)}</Field>
+                </Kartu>
+              </div>
+
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="h-auto flex-wrap justify-start">
-                  <TabsTrigger value="placements">Penempatan ({locations.length})</TabsTrigger>
-                  <TabsTrigger value="taxes">Pajak ({taxes.length})</TabsTrigger>
-                  <TabsTrigger value="maintenance">Servis ({maintenanceLogs.length})</TabsTrigger>
+                  <TabsTrigger value="taxes">Riwayat Pajak ({taxes.length})</TabsTrigger>
+                  <TabsTrigger value="maintenance">Riwayat Servis ({maintenanceLogs.length})</TabsTrigger>
+                  <TabsTrigger value="placements">Riwayat Penempatan ({locations.length})</TabsTrigger>
                 </TabsList>
-                <TabsContent value="placements" className="space-y-3">
-                  <Button className="w-full" variant="outline" onClick={() => {
-                    mutate.setData({
-                      branch_id: String(currentLocation?.branch_id ?? ''),
-                      pengguna: '',
-                      assigned_date: dayjs().format('YYYY-MM-DD'),
-                      notes: '',
-                    });
-                    setModal('mutate');
-                  }} disabled={!bolehKelola} title={bolehKelola ? undefined : 'Bukan untuk kepala mantri / mantri'}><MapPin className="mr-2 size-4" />Mutasi / Pindah Kantor</Button>
-                  <div className="space-y-3">
-                    {locations.map((location) => (
-                      <div key={location.id} className="rounded-md border p-3">
-                        <div className="text-xs text-muted-foreground">{formatDate(location.assigned_date)}</div>
-                        <div className="font-semibold">{location.branch?.unit} · {location.pengguna}</div>
-                        {location.before_branch && <div className="text-xs text-muted-foreground">Mutasi dari {location.before_branch.unit}</div>}
-                        {location.notes && <p className="mt-1 text-xs">{location.notes}</p>}
-                        {bolehKelola && locations.length > 1 && location.id === asset?.current_location?.id && (
-                          <Button size="sm" variant="outline" className="mt-2 text-red-600 border-red-200" onClick={() => batalMutasi(assetId)}>
-                            Batalkan mutasi ini
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
                 <TabsContent value="taxes" className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-semibold">Akumulasi biaya pajak: {rupiah(taxTotal)}</p>
                       {payload?.tax_info && (
-                        <p className="mt-0.5 text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           Jatuh tempo: <strong className="text-foreground">{formatDate(payload.tax_info.tanggal_pajak_tahunan)}</strong> · {payload.tax_info.jenis_pajak}
                           {payload.tax_info.tertunggak > 0 && (
                             <span className="ml-1.5 font-semibold text-rose-600">(Tertunggak {payload.tax_info.tertunggak} tahun)</span>
@@ -306,12 +436,6 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                         </p>
                       )}
                     </div>
-                    {asset.vehicle && (
-                      <Button size="sm" onClick={openTaxPayment} disabled={!canInputTax} title={canInputTax ? undefined : 'Butuh izin input-vehicles-tax'}>
-                        <CheckCircle2 className="mr-1 size-4" />
-                        Bayar Pajak
-                      </Button>
-                    )}
                   </div>
                   <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
@@ -338,13 +462,22 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                           </tr>
                         )) : <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Belum ada riwayat pajak.</td></tr>}
                       </tbody>
+                      {taxes.length > 0 && (
+                        <tfoot className="border-t bg-muted/40 font-semibold">
+                          <tr>
+                            <td colSpan={3} className="px-3 py-2">Akumulasi biaya pajak</td>
+                            <td className="px-3 py-2 text-right">{rupiah(taxes.reduce((t, x) => t + Number(x.cost), 0))}</td>
+                            <td className="px-3 py-2 text-right">{rupiah(taxes.reduce((t, x) => t + Number(x.denda), 0))}</td>
+                            <td colSpan={2} className="px-3 py-2">Total {rupiah(taxTotal)}</td>
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
                 </TabsContent>
                 <TabsContent value="maintenance" className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold">Akumulasi servis: {rupiah(maintenanceTotal)}</p>
-                    <Button size="sm" onClick={() => setModal('maintenance')} disabled={!bolehKelola} title={bolehKelola ? undefined : 'Bukan untuk kepala mantri / mantri'}><Wrench className="mr-1 size-4" />Catat servis</Button>
                   </div>
                   <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
@@ -357,19 +490,24 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                     </table>
                   </div>
                 </TabsContent>
+                <TabsContent value="placements" className="space-y-3">
+                  <div className="space-y-3">
+                    {locations.map((location) => (
+                      <div key={location.id} className="rounded-md border p-3">
+                        <div className="text-xs text-muted-foreground">{formatDate(location.assigned_date)}</div>
+                        <div className="font-semibold">{location.branch?.unit} · {location.pengguna}</div>
+                        {location.before_branch && <div className="text-xs text-muted-foreground">Mutasi dari {location.before_branch.unit}</div>}
+                        {location.notes && <p className="mt-1 text-xs">{location.notes}</p>}
+                        {bolehKelola && locations.length > 1 && location.id === asset?.current_location?.id && (
+                          <Button size="sm" variant="outline" className="mt-2 text-red-600 border-red-200" onClick={() => batalMutasi(assetId)}>
+                            Batalkan mutasi ini
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
               </Tabs>
-
-              <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2">
-                <Field label="Status">{asset.status}</Field>
-                <Field label="Lokasi sekarang">{currentLocation ? `${currentLocation.branch?.unit ?? '—'} (${currentLocation.pengguna})` : 'Belum ditempatkan'}</Field>
-                <Field label="Tanggal perolehan">{formatDate(asset.purchase_date)}</Field>
-                <Field label="Harga perolehan">{rupiah(asset.purchase_cost)}</Field>
-                <Field label="Total pajak + denda">{rupiah(taxTotal)}</Field>
-                <Field label="Total servis">{rupiah(maintenanceTotal)}</Field>
-                <Field label="Nama di STNK">{asset.vehicle?.nama_stnk ?? '—'}</Field>
-                <Field label="Posisi BPKB"><span className="capitalize">{asset.vehicle?.bpkb_location ?? '—'}</span></Field>
-                {asset.description && <div className="sm:col-span-2"><Field label="Spesifikasi / catatan">{asset.description}</Field></div>}
-              </div>
             </div>
           )}
 
@@ -386,11 +524,6 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
                 <Button size="sm" variant="outline" onClick={onClose}>
                   Tutup
                 </Button>
-                {onEdit !== undefined && (
-                  <Button size="sm" variant="default" disabled={!onEdit} title={onEdit ? undefined : 'Butuh izin edit-vehicle-stnk-data'} onClick={() => onEdit?.(asset)}>
-                    <Pencil className="mr-1.5 size-4" />Ubah Kendaraan
-                  </Button>
-                )}
               </div>
             </SheetFooter>
           )}
@@ -413,6 +546,46 @@ export default function VehicleAssetDetail({ assetId, assetName, branches, onClo
             <label className="block space-y-1 text-sm">Tanggal mutasi<Input type="date" value={mutate.data.assigned_date} onChange={(event) => mutate.setData('assigned_date', event.target.value)} required /></label>
             <label className="block space-y-1 text-sm">Catatan<Input value={mutate.data.notes} onChange={(event) => mutate.setData('notes', event.target.value)} /></label>
             <Button type="submit" disabled={mutate.processing} className="w-full">{mutate.processing ? 'Menyimpan...' : 'Simpan mutasi'}</Button>
+          </form>
+        </Modal>
+      )}
+      {modal === 'status' && asset && (
+        <Modal title="Ubah status kendaraan" description={`${asset.name} · ${asset.vehicle?.plat_nomor ?? ''}`} onClose={() => setModal('')}>
+          <form onSubmit={submitStatus} className="space-y-3 p-4">
+            <div>
+              <div className="mb-1 text-sm font-medium">Status</div>
+              <div className="grid grid-cols-2 gap-2">
+                {[['aktif', 'Aktif'], ['nonaktif', 'Nonaktif']].map(([nilai, label]) => (
+                  <button
+                    key={nilai}
+                    type="button"
+                    onClick={() => statusForm.setData({ status: nilai, kondisi: nilai === 'aktif' ? 'baik' : '' })}
+                    className={`rounded-md border px-3 py-2 text-sm font-medium ${statusForm.data.status === nilai ? 'border-slate-900 bg-slate-900 text-white' : 'hover:bg-slate-50'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-1 text-sm font-medium">Kondisi</div>
+              <div className="grid grid-cols-3 gap-2">
+                {(KONDISI[statusForm.data.status] ?? []).map(([nilai, label]) => (
+                  <button
+                    key={nilai}
+                    type="button"
+                    onClick={() => statusForm.setData('kondisi', nilai)}
+                    className={`rounded-md border px-3 py-2 text-sm font-medium ${statusForm.data.kondisi === nilai ? 'border-slate-900 bg-slate-900 text-white' : 'hover:bg-slate-50'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(statusForm.errors.status || statusForm.errors.kondisi) && <p className="text-xs text-destructive">{statusForm.errors.status ?? statusForm.errors.kondisi}</p>}
+            <Button type="submit" className="w-full" disabled={statusForm.processing || !statusForm.data.kondisi || (statusForm.data.status === asset.status && statusForm.data.kondisi === asset.kondisi)}>
+              {statusForm.processing ? 'Menyimpan...' : 'Simpan status'}
+            </Button>
           </form>
         </Modal>
       )}

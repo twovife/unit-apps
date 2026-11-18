@@ -27,7 +27,6 @@ import {
 import {
   Book,
   BookOpen,
-  Calendar,
   Car,
   ChevronsUpDown,
   ClipboardCheck,
@@ -35,20 +34,12 @@ import {
   FileSpreadsheet,
   HandCoins,
   Home,
-  Layers,
   LayoutDashboard,
   LogOut,
-  PiggyBank,
-  Plane,
-  Landmark,
-  PlusCircle,
-  Search,
   ShieldCheck,
   Smartphone,
   UserRound,
-  UserPlus,
   Users,
-  UserX,
 } from 'lucide-react';
 import GlobalBranchFilter from './GlobalBranchFilter';
 import TombolPasangAplikasi from './TombolPasangAplikasi';
@@ -301,140 +292,58 @@ export default function AppSidebar({ ...props }) {
             <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Administrasi Cabang
             </SidebarGroupLabel>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={route().current('administrasi.manpower.index')}
-                  tooltip="Data Karyawan"
-                >
-                  <Link
-                    href={route('administrasi.manpower.index')}
-                    className="flex items-center gap-2.5 font-medium"
-                  >
-                    <Users className="size-4" />
-                    <span>Data Karyawan</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {menu.lamaran && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={route().current('administrasi.lamaran.index')}
-                    tooltip="Lamaran Kerja"
-                  >
-                    <Link
-                      href={route('administrasi.lamaran.index')}
-                      className="flex items-center gap-2.5 font-medium"
-                    >
-                      <UserPlus className="size-4" />
-                      <span>Lamaran Kerja</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-              {/* Iuran 1 Juta, Iuran BOP, SKSW, Aset: sudah rilis, bukan closed beta lagi (mas 2026-10-15). */}
-              {bolehAdmKantor && (
-              <>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={route().current('tabungan.contributions')}
-                  tooltip="Iuran Tabungan 1 Juta"
-                >
-                  <Link
-                    href={route('tabungan.contributions')}
-                    className="flex items-center gap-2.5 font-medium"
-                  >
-                    <PiggyBank className="size-4" />
-                    <span>Iuran Tabungan 1 Juta</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={route().current('bop.contributions')}
-                  tooltip="Iuran BOP"
-                >
-                  <Link
-                    href={route('bop.contributions')}
-                    className="flex items-center gap-2.5 font-medium"
-                  >
-                    <HandCoins className="size-4" />
-                    <span>Iuran BOP</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={route().current('sksw.unit')}
-                  tooltip="SKSW — Laporan Unit"
-                >
-                  <Link
-                    href={route('sksw.unit')}
-                    className="flex items-center gap-2.5 font-medium"
-                  >
-                    <FileSpreadsheet className="size-4" />
-                    <span>SKSW — Laporan Unit</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={route().current('dashboard.kasir.goro_umrah')}
-                  tooltip="Tabungan Goro Umrah"
-                >
-                  <Link
-                    href={route('dashboard.kasir.goro_umrah')}
-                    className="flex items-center gap-2.5 font-medium"
-                  >
-                    <Plane className="size-4" />
-                    <span>Tabungan Goro Umrah</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={route().current('dashboard.kasir.pinjaman_modal')}
-                  tooltip="Pinjaman Modal"
-                >
-                  <Link
-                    href={route('dashboard.kasir.pinjaman_modal')}
-                    className="flex items-center gap-2.5 font-medium"
-                  >
-                    <Landmark className="size-4" />
-                    <span>Pinjaman Modal</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              </>
-              )}
-              {bolehAset && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={route().current('assets.index')}
-                  tooltip="Aset Kendaraan"
-                >
-                  <Link
-                    href={route('assets.index')}
-                    className="flex items-center gap-2.5 font-medium"
-                  >
-                    <Car className="size-4" />
-                    <span>Aset Kendaraan</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              )}
-            </SidebarMenu>
+            {/* Tiga grup (mas 2026-11-19): Man Power, Pembayaran Kantor, Aset. */}
+            <SidebarSubMenuSection
+              icon={Users}
+              title="Man Power"
+              items={[
+                { id: 'mp-karyawan', title: 'Data Karyawan', link: route('administrasi.manpower.index'), active: route().current('administrasi.manpower.index') },
+                ...(menu.lamaran ? [{ id: 'mp-lamaran', title: 'Lamaran Kerja', link: route('administrasi.lamaran.index'), active: route().current('administrasi.lamaran.index') }] : []),
+              ]}
+            />
+            {bolehAdmKantor && (
+              <SidebarSubMenuSection
+                icon={HandCoins}
+                title="Pembayaran Kantor"
+                items={[
+                  { id: 'pk-iuran', title: 'Iuran Tabungan 1 Juta', link: route('tabungan.contributions'), active: route().current('tabungan.contributions') },
+                  { id: 'pk-bop', title: 'Iuran BOP', link: route('bop.contributions'), active: route().current('bop.contributions') },
+                  { id: 'pk-sksw', title: 'SKSW — Laporan Unit', link: route('sksw.unit'), active: route().current('sksw.unit') },
+                  { id: 'pk-umrah', title: 'Tabungan Goro Umrah', link: route('dashboard.kasir.goro_umrah'), active: route().current('dashboard.kasir.goro_umrah') },
+                  { id: 'pk-modal', title: 'Pinjaman Modal', link: route('dashboard.kasir.pinjaman_modal'), active: route().current('dashboard.kasir.pinjaman_modal') },
+                ]}
+              />
+            )}
+            {bolehAset && (
+              <SidebarSubMenuSection
+                icon={Car}
+                title="Aset"
+                items={[
+                  { id: 'aset-motor', title: 'Daftar Aset Motor', link: route('assets.index'), active: route().current('assets.index') },
+                  { id: 'aset-angsuran', title: 'Angsuran Motor', link: route('assets.angsuran.index'), active: route().current('assets.angsuran.index') },
+                ]}
+              />
+            )}
+            {(isSuperUser || auth?.roles?.includes('pusat')) && (
+              <SidebarSubMenuSection
+                icon={ClipboardCheck}
+                title="Laporan"
+                items={[
+                  { id: 'lap-checklist', title: 'Checklist Aplikasi Baru', link: route('checklist.laporan'), active: route().current('checklist.laporan') },
+                ]}
+              />
+            )}
 
+          </SidebarGroup>
+        )}
+
+        {/* Group: Administrator (Superuser) */}
+        {isSuperUser && (
+          <SidebarGroup className="pt-2">
+            <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Super User
+            </SidebarGroupLabel>
             {/* Submenu: Persiapan Migrasi Agregasi - khusus superuser (mas 2026-10-10). */}
-            {isSuperUser && (
             <SidebarSubMenuSection
               icon={ClipboardCheck}
               title="Persiapan Migrasi"
@@ -462,10 +371,8 @@ export default function AppSidebar({ ...props }) {
                 },
               ]}
             />
-            )}
 
             {/* Koreksi Pasca Migrasi - khusus superuser (mas 2026-10-11). */}
-            {isSuperUser && (
             <SidebarSubMenuSection
               icon={FilePenLine}
               title="Koreksi Pasca Migrasi"
@@ -500,16 +407,6 @@ export default function AppSidebar({ ...props }) {
                 },
               ]}
             />
-            )}
-          </SidebarGroup>
-        )}
-
-        {/* Group: Administrator (Superuser) */}
-        {isSuperUser && (
-          <SidebarGroup className="pt-2">
-            <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Super User
-            </SidebarGroupLabel>
             <SidebarSubMenuSection
               icon={ShieldCheck}
               title="Pengaturan"

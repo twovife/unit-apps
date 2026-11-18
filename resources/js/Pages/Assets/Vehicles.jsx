@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
-import { Calendar, Car, CircleAlert, Eye, Pencil, Plus, Search } from 'lucide-react';
+import { Calendar, Car, CircleAlert, Eye, Plus, Search } from 'lucide-react';
+import { durasi, labelStatus, warnaStatus } from '@/lib/statusKendaraan';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/shadcn/ui/badge';
@@ -12,14 +13,6 @@ import VehicleAssetDetail from '@/Components/Assets/VehicleAssetDetail';
 import VehicleAssetForm from '@/Components/Assets/VehicleAssetForm';
 import VideoTutorialButton from '@/Components/VideoTutorialButton';
 
-const statusLabels = {
-  aktif: 'Aktif',
-  rusak: 'Rusak',
-  hilang: 'Hilang',
-  dijual: 'Dijual',
-  dihapus: 'Dihapus',
-  'non-aktif': 'Nonaktif',
-};
 
 // Tab daftar: bawaan Aktif (mas 2026-11-04).
 const TAB = { aktif: 'Aktif', nonaktif: 'Tidak Aktif', semua: 'Semua' };
@@ -49,13 +42,14 @@ const formatDate = (value) => {
 function SummaryCard({ title, value, icon: Icon, description }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      {/* HP: kartu kecil 2 kolom, tanpa keterangan. */}
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+        <CardTitle className="text-xs font-medium sm:text-sm">{title}</CardTitle>
         <Icon className="size-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
+      <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+        <div className="text-xl font-bold sm:text-2xl">{value}</div>
+        <p className="hidden text-xs text-muted-foreground sm:block">{description}</p>
       </CardContent>
     </Card>
   );
@@ -97,7 +91,7 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
   return (
     <>
       <Head title="Registri Kendaraan" />
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Registri Kendaraan</h1>
@@ -111,7 +105,7 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
           <SummaryCard title="Total Kendaraan" value={summary.total} icon={Car} description="Terdaftar di kantor aktif" />
           <SummaryCard title="Aktif Dipakai" value={summary.active} icon={Car} description="Status kendaraan aktif" />
           <SummaryCard title="Rusak / Hilang" value={summary.problematic} icon={CircleAlert} description="Perlu tindak lanjut" />
@@ -124,10 +118,10 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="px-3 sm:px-6">
             <CardTitle className="text-base">Daftar kendaraan</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-3 sm:px-6">
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -155,18 +149,65 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
+            {/* HP: kartu per kendaraan (tabel terlalu lebar untuk layar sempit). */}
+            <div className="space-y-2 md:hidden">
+              {assetList.length ? assetList.map((asset) => {
+                const sisa = asset.status === 'aktif' ? sisaHariPajak(asset.vehicle?.tanggal_pajak_tahunan) : null;
+                const lewat = sisa !== null && sisa < 0;
+                const dekat = sisa !== null && sisa >= 0 && sisa <= BATAS_PAJAK;
+                return (
+                  <button
+                    key={asset.id}
+                    type="button"
+                    onClick={() => setDetail({ id: asset.id, name: asset.name })}
+                    className={`w-full rounded-lg border p-3 text-left active:bg-slate-50 ${asset.status === 'aktif' ? '' : 'bg-slate-50 text-muted-foreground'} ${lewat ? 'border-rose-300' : dekat ? 'border-amber-300' : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-mono text-base font-bold tracking-wide text-blue-700">{asset.vehicle?.plat_nomor ?? '—'}</div>
+                        <div className="text-sm font-medium">{asset.name}</div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={warnaStatus(asset)}
+                      >
+                        {labelStatus(asset)}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 text-sm text-slate-600">
+                      {asset.current_location?.branch?.unit ?? branch.unit} · {isCadangan(asset.current_location?.pengguna) ? 'Cadangan' : asset.current_location.pengguna}
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Pajak tahunan</div>
+                        <div className={lewat ? 'font-semibold text-rose-600' : dekat ? 'font-semibold text-amber-600' : 'font-medium'}>{formatDate(asset.vehicle?.tanggal_pajak_tahunan)}</div>
+                        {lewat && <Badge variant="outline" className="mt-1 border-rose-200 bg-rose-50 text-rose-700">Lewat {durasi(asset.vehicle?.tanggal_pajak_tahunan)}</Badge>}
+                        {dekat && <Badge variant="outline" className="mt-1 border-amber-200 bg-amber-50 text-amber-800">{sisa === 0 ? 'Hari ini' : `${durasi(asset.vehicle?.tanggal_pajak_tahunan)} lagi`}</Badge>}
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">STNK (5 th)</div>
+                        <div className="font-medium">{formatDate(asset.vehicle?.tanggal_stnk)}</div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              }) : (
+                <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Tidak ada kendaraan yang cocok di kantor aktif.</div>
+              )}
+            </div>
+
+            <div className="hidden overflow-x-auto rounded-md border md:block">
+              <Table className="text-sm">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">No.</TableHead>
-                    <TableHead className="w-14 text-center">Edit</TableHead>
                     <TableHead>Plat Nomor</TableHead>
                     <TableHead>Nama Aset</TableHead>
                     <TableHead>Kantor</TableHead>
                     <TableHead>Pemakai</TableHead>
                     <TableHead>Pajak Tahunan</TableHead>
                     <TableHead>STNK (5 Th)</TableHead>
+                    <TableHead>Sisa Waktu Pajak</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -174,18 +215,6 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                   {assetList.length ? assetList.map((asset, index) => (
                     <TableRow key={asset.id} className={asset.status === 'aktif' ? '' : 'bg-slate-50 text-muted-foreground'}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          disabled={!canEditVehicleRegistration}
-                          title={canEditVehicleRegistration ? 'Ubah kendaraan' : 'Butuh izin edit-vehicle-stnk-data'}
-                          onClick={() => bukaEdit(asset.id)}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                      </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {asset.vehicle?.plat_nomor ? (
                           <button
@@ -206,34 +235,41 @@ export default function Vehicles({ branch, assets, branches, summary, canEditVeh
                           <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">Cadangan</Badge>
                         ) : asset.current_location.pengguna}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {/* Merah = her sudah lewat, kuning = 30 hari lagi atau kurang (kendaraan aktif). */}
-                        {(() => {
-                          const sisa = asset.status === 'aktif' ? sisaHariPajak(asset.vehicle?.tanggal_pajak_tahunan) : null;
-                          const lewat = sisa !== null && sisa < 0;
-                          const dekat = sisa !== null && sisa >= 0 && sisa <= BATAS_PAJAK;
-                          return (
-                            <span className={lewat ? 'font-semibold text-rose-600' : dekat ? 'font-semibold text-amber-600' : ''}>
+                      {/* Merah = her sudah lewat, kuning = 30 hari lagi atau kurang (kendaraan aktif). */}
+                      {(() => {
+                        const sisa = asset.status === 'aktif' ? sisaHariPajak(asset.vehicle?.tanggal_pajak_tahunan) : null;
+                        const lewat = sisa !== null && sisa < 0;
+                        const dekat = sisa !== null && sisa >= 0 && sisa <= BATAS_PAJAK;
+                        return (
+                          <>
+                            <TableCell className={`whitespace-nowrap ${lewat ? 'font-semibold text-rose-600' : dekat ? 'font-semibold text-amber-600' : ''}`}>
                               {formatDate(asset.vehicle?.tanggal_pajak_tahunan)}
-                              {lewat && <span className="block text-xs">lewat {-sisa} hari</span>}
-                              {dekat && <span className="block text-xs">{sisa === 0 ? 'hari ini' : `${sisa} hari lagi`}</span>}
-                            </span>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_stnk)}</TableCell>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{formatDate(asset.vehicle?.tanggal_stnk)}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {lewat ? (
+                                <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">Lewat {durasi(asset.vehicle?.tanggal_pajak_tahunan)}</Badge>
+                              ) : dekat ? (
+                                <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">{sisa === 0 ? 'Hari ini' : `${durasi(asset.vehicle?.tanggal_pajak_tahunan)} lagi`}</Badge>
+                              ) : sisa !== null ? (
+                                <span className="text-muted-foreground">{durasi(asset.vehicle?.tanggal_pajak_tahunan)} lagi</span>
+                              ) : '—'}
+                            </TableCell>
+                          </>
+                        );
+                      })()}
                       <TableCell className="whitespace-nowrap">
                         <Badge
                           variant="outline"
-                          className={asset.status === 'aktif' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}
+                          className={warnaStatus(asset)}
                         >
-                          {statusLabels[asset.status] ?? asset.status}
+                          {labelStatus(asset)}
                         </Badge>
                       </TableCell>
                     </TableRow>
                   )) : (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                         Tidak ada kendaraan yang cocok di kantor aktif.
                       </TableCell>
                     </TableRow>

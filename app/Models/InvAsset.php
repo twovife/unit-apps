@@ -15,6 +15,7 @@ class InvAsset extends Model
         'purchase_date',
         'purchase_cost',
         'status',
+        'kondisi',
         'description',
     ];
 
@@ -36,6 +37,11 @@ class InvAsset extends Model
     public function currentLocation(): HasOne
     {
         return $this->hasOne(InvLocation::class, 'asset_id')->latestOfMany();
+    }
+
+    public function vehicleLoans(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(InvVehicleLoan::class, 'asset_id');
     }
 
     public function locations(): \Illuminate\Database\Eloquent\Relations\HasMany

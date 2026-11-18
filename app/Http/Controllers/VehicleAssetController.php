@@ -20,6 +20,9 @@ use Inertia\Inertia;
 
 class VehicleAssetController extends Controller
 {
+    public const KONDISI_AKTIF = ['baik', 'rusak'];
+    public const KONDISI_NONAKTIF = ['dijual', 'hilang', 'dihapus'];
+
     /** Pemakai / PIC kosong = kendaraan cadangan (kolom inv_locations.pengguna NOT NULL). */
     public const CADANGAN = 'Cadangan';
 
@@ -36,7 +39,7 @@ class VehicleAssetController extends Controller
             ->selectRaw(
                 "COUNT(*) as total,
                 SUM(CASE WHEN status = 'aktif' THEN 1 ELSE 0 END) as active,
-                SUM(CASE WHEN status IN ('rusak', 'hilang') THEN 1 ELSE 0 END) as problematic",
+                SUM(CASE WHEN kondisi IN ('rusak', 'hilang') THEN 1 ELSE 0 END) as problematic",
             )
             ->first();
 
@@ -210,8 +213,12 @@ class VehicleAssetController extends Controller
         $branchId = $this->activeBranchId();
         $category = InvCategory::query()->where('name', 'Kendaraan')->firstOrFail();
         $validated = $this->validateAsset($request, creating: true);
+        $angsuran = $this->validasiAngsuranBaru($request);
+        $buktiAngsuran = $angsuran && empty($angsuran['lunas'])
+            ? VehicleLoanController::simpanBukti($request, 'angsuran_bukti')
+            : null;
 
-        DB::transaction(function () use ($validated, $branchId, $category) {
+        DB::transaction(function () use ($validated, $branchId, $category, $angsuran, $buktiAngsuran) {
             $this->assertUniquePlate($validated['plat_nomor']);
             $year = Carbon::parse($validated['purchase_date'])->year;
             // Nomor = kode AST-{tahun} terbesar + 1, bukan jumlah aset tahun itu: aset
@@ -226,6 +233,7 @@ class VehicleAssetController extends Controller
                 'purchase_date' => $validated['purchase_date'],
                 'purchase_cost' => $validated['purchase_cost'] ?? 0, // boleh kosong; kolom NOT NULL
                 'status' => $validated['status'],
+                'kondisi' => $validated['kondisi'],
                 'description' => $validated['description'] ?? null,
             ]);
 
@@ -239,9 +247,43 @@ class VehicleAssetController extends Controller
             ]);
 
             $this->saveVehicleDetails($asset, $validated);
+            if ($angsuran) {
+                \App\Models\InvVehicleLoan::catatAwal($asset->id, $branchId, $angsuran, (string) \Illuminate\Support\Str::uuid(), $buktiAngsuran);
+            }
         });
 
         return redirect()->route('assets.index')->with('success', 'Kendaraan berhasil didaftarkan.');
+    }
+
+    /**
+     * Angsuran motor sekalian saat daftar kendaraan baru (opsional, mas 2026-11-19): centang
+     * lunas = penanda "tidak ada angsuran"; isian terisi = kontrak berjalan; kosong = nanti
+     * lewat Input Awal / tombol merah navbar.
+     */
+    private function validasiAngsuranBaru(Request $request): ?array
+    {
+        if ($request->boolean('angsuran_lunas')) {
+            return ['lunas' => true];
+        }
+        $isi = [
+            'angsuran' => $request->input('angsuran_nominal'),
+            'tenor' => $request->input('angsuran_tenor'),
+            'terbayar' => $request->input('angsuran_terbayar'),
+            'tanggal_terakhir' => $request->input('angsuran_tanggal'),
+        ];
+        if (! array_filter($isi, fn ($v) => $v !== null && $v !== '')) {
+            return null;
+        }
+        [$aturan, $pesan] = \App\Models\InvVehicleLoan::aturan();
+        $cek = validator($isi, $aturan, $pesan);
+        if ($cek->fails()) {
+            $nama = ['angsuran' => 'angsuran_nominal', 'tenor' => 'angsuran_tenor', 'terbayar' => 'angsuran_terbayar', 'tanggal_terakhir' => 'angsuran_tanggal'];
+            throw ValidationException::withMessages(collect($cek->errors()->toArray())->mapWithKeys(fn ($m, $k) => [$nama[$k] => $m[0]])->all());
+        }
+        $request->validate(['angsuran_bukti' => ['required', 'array', 'min:1', 'max:10'], 'angsuran_bukti.*' => \App\Support\Unggahan::ATURAN],
+            ['angsuran_bukti.required' => 'Bukti transfer angsuran terakhir wajib diunggah.'] + \App\Support\Unggahan::pesan('angsuran_bukti.*'));
+
+        return $cek->validated();
     }
 
     public function update(Request $request, InvAsset $asset)
@@ -263,6 +305,7 @@ class VehicleAssetController extends Controller
                 'purchase_date' => $validated['purchase_date'],
                 // Harga perolehan tidak lagi diisi di form (mas 2026-10-26): angka lama dibiarkan.
                 'status' => $validated['status'],
+                'kondisi' => $validated['kondisi'],
                 'description' => $validated['description'] ?? null,
             ]);
             $this->saveVehicleDetails($lockedAsset, $validated);
@@ -363,6 +406,45 @@ class VehicleAssetController extends Controller
         });
 
         return back()->with('success', 'Mutasi dibatalkan, kendaraan kembali ke penempatan sebelumnya.');
+    }
+
+    /** Ubah catatan (description) saja dari drawer detail, mas 2026-11-18. Kosong = hapus catatan. */
+    public function ubahCatatan(Request $request, InvAsset $asset)
+    {
+        abort_unless($this->bolehKelola($request), 403, 'Ubah catatan bukan untuk kepala mantri / mantri.');
+        $this->assertAssetInActiveBranch($request, $asset);
+        $v = $request->validate(['description' => ['nullable', 'string', 'max:5000']]);
+        $branchId = $this->activeBranchId();
+        DB::transaction(function () use ($asset, $v, $branchId) {
+            $lockedAsset = InvAsset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
+            $this->assertAssetBranch($lockedAsset, $branchId);
+            $lockedAsset->update(['description' => trim((string) ($v['description'] ?? '')) ?: null]);
+        });
+
+        return back()->with('success', 'Catatan kendaraan diubah.');
+    }
+
+    /** Ubah status + kondisi saja dari drawer detail, mas 2026-11-18. */
+    public function ubahStatus(Request $request, InvAsset $asset)
+    {
+        abort_unless($this->bolehKelola($request), 403, 'Ubah status bukan untuk kepala mantri / mantri.');
+        $this->assertAssetInActiveBranch($request, $asset);
+        $validated = $this->validasiStatus($request);
+
+        $branchId = $this->activeBranchId();
+        $lama = DB::transaction(function () use ($asset, $validated, $branchId) {
+            $lockedAsset = InvAsset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
+            $this->assertAssetBranch($lockedAsset, $branchId);
+            $lama = $lockedAsset->status . '/' . $lockedAsset->kondisi;
+            $lockedAsset->update($validated);
+
+            return $lama;
+        });
+        \Illuminate\Support\Facades\Log::info('Status kendaraan diubah', [
+            'asset_id' => $asset->id, 'dari' => $lama, 'ke' => $validated['status'] . '/' . $validated['kondisi'], 'user_id' => $request->user()?->id,
+        ]);
+
+        return back()->with('success', 'Status kendaraan diubah.');
     }
 
     public function addMaintenance(Request $request, InvAsset $asset)
@@ -537,7 +619,7 @@ class VehicleAssetController extends Controller
         return back()->with('success', 'Pembayaran pajak berhasil dibatalkan.');
     }
 
-    private function activeBranchId(): int
+    protected function activeBranchId(): int
     {
         $scope = AuthScope::resolve();
         $branchId = (int) $scope->branch_id;
@@ -552,7 +634,7 @@ class VehicleAssetController extends Controller
         return $branchId;
     }
 
-    private function vehicleAssetsAt(int $branchId)
+    protected function vehicleAssetsAt(int $branchId)
     {
         return InvAsset::query()
             ->where('category_id', InvCategory::KENDARAAN)
@@ -608,8 +690,6 @@ class VehicleAssetController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'purchase_date' => ['required', 'date'],
             'purchase_cost' => ['nullable', 'integer', 'min:0'],
-            // non-aktif (impor lama) sengaja TIDAK diterima: kasir harus memilih status sebenarnya.
-            'status' => ['required', 'in:aktif,rusak,hilang,dijual,dihapus'],
             'description' => ['nullable', 'string', 'max:5000'],
             'plat_nomor' => ['required', 'string', 'max:50'],
             'nama_stnk' => ['required', 'string', 'max:255'],
@@ -637,10 +717,32 @@ class VehicleAssetController extends Controller
             'bpkb_location.in' => 'Posisi fisik BPKB tidak valid.',
         ];
 
-        $validated = $request->validate($rules, $messages);
+        $validated = $this->validasiStatus($request) + $request->validate($rules, $messages);
         $validated['plat_nomor'] = $this->normalizePlate($validated['plat_nomor']);
 
         return $validated;
+    }
+
+    /**
+     * Status dua tingkat (mas 2026-11-18): aktif -> kondisi baik / rusak (kosong = baik),
+     * nonaktif -> dijual / hilang / dihapus (wajib dipilih). Nilai impor lama tidak diterima.
+     *
+     * @return array{status:string,kondisi:string}
+     */
+    private function validasiStatus(Request $request): array
+    {
+        $aktif = $request->input('status') === 'aktif';
+        $v = $request->validate([
+            'status' => ['required', 'in:aktif,nonaktif'],
+            'kondisi' => [$aktif ? 'nullable' : 'required', \Illuminate\Validation\Rule::in($aktif ? self::KONDISI_AKTIF : self::KONDISI_NONAKTIF)],
+        ], [
+            'status.required' => 'Status kendaraan wajib dipilih.',
+            'status.in' => 'Status kendaraan tidak valid.',
+            'kondisi.required' => 'Kondisi kendaraan nonaktif wajib dipilih (dijual, hilang, atau dihapus).',
+            'kondisi.in' => 'Kondisi tidak cocok dengan status.',
+        ]);
+
+        return ['status' => $v['status'], 'kondisi' => $v['kondisi'] ?? 'baik'];
     }
 
     private function saveVehicleDetails(InvAsset $asset, array $validated): void
