@@ -247,7 +247,12 @@ function Daftar({ kontrak, onDetail, bolehHapusSemua }) {
   };
   const hapusSemua = () => kirimHapus('assets.angsuran.hapus_batch', `Hapus SEMUA angsuran ${pilih.length} motor (kontrak + seluruh pembayarannya)? Motor kembali ke daftar "belum diinput".`);
   const hapusBulanIni = () => kirimHapus('assets.angsuran.hapus_bulan_ini', `Hapus angsuran ${bulan(dayjs().format('YYYY-MM-01'))} untuk ${pilih.length} motor? Angsuran bulan lain tetap.`);
+  // Filter bulan hanya untuk angsuran yang berjalan; kontrak lunas selalu tampil angka akhirnya.
   const hitung = (k) => {
+    if (k.status === 'lunas') {
+      const total = k.bayar.reduce((t, [, , n]) => t + n, 0);
+      return { ini: null, lunas: true, terbayar: k.bayar.length, total, sisa: k.total_harga - total };
+    }
     const sd = k.bayar.filter(([p]) => p <= bln);
     const ini = k.bayar.find(([p]) => p === bln);
     const total = sd.reduce((t, [, , n]) => t + n, 0);
@@ -274,7 +279,7 @@ function Daftar({ kontrak, onDetail, bolehHapusSemua }) {
             )}
           </>
         )}
-        <label className="ml-auto flex items-center gap-2">
+        <label className={`ml-auto flex items-center gap-2 ${lihat === 'lunas' ? 'invisible' : ''}`}>
           <span className="text-muted-foreground">Bulan</span>
           <Input type="month" value={bln} onChange={(e) => setBln(e.target.value || dayjs().format('YYYY-MM'))} className="h-8 w-40" />
         </label>
@@ -288,8 +293,8 @@ function Daftar({ kontrak, onDetail, bolehHapusSemua }) {
                 {['Plat', 'Pemakai'].map((h) => <th key={h} className={KELAS_TH}>{h}</th>)}
                 <th className={`${KELAS_TH} text-right`}>Angsuran</th>
                 <th className={`${KELAS_TH} text-right`}>Total Harga</th>
-                <th className={KELAS_TH}>Angsuran {bulan(`${bln}-01`)}</th>
-                <th className={KELAS_TH}>Tanggal Bayar</th>
+                <th className={KELAS_TH}>{lihat === 'lunas' ? 'Status' : `Angsuran ${bulan(`${bln}-01`)}`}</th>
+                <th className={KELAS_TH}>{lihat === 'lunas' ? 'Tanggal Lunas' : 'Tanggal Bayar'}</th>
                 <th className={`${KELAS_TH} text-center`}>Terbayar / Tenor</th>
                 <th className={`${KELAS_TH} text-right`}>Total Angsuran</th>
                 <th className={`${KELAS_TH} text-right`}>Sisa Angsuran</th>
@@ -307,7 +312,9 @@ function Daftar({ kontrak, onDetail, bolehHapusSemua }) {
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(k.angsuran)}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(k.total_harga)}</td>
                   <td className="whitespace-nowrap px-3 py-2.5">
-                    {h.ini ? (
+                    {h.lunas ? (
+                      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">Lunas</Badge>
+                    ) : h.ini ? (
                       <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">{rp(h.ini[2])}</Badge>
                     ) : h.terbayar >= k.tenor || !k.bayar.length || bln < k.bayar[0][0] ? (
                       <span className="text-muted-foreground">—</span>
@@ -315,7 +322,7 @@ function Daftar({ kontrak, onDetail, bolehHapusSemua }) {
                       <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">Belum dibayar</Badge>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2.5">{h.ini ? tanggal(h.ini[1]) : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5">{h.lunas ? tanggal(k.lunas_at) : h.ini ? tanggal(h.ini[1]) : <span className="text-muted-foreground">—</span>}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-center font-medium">{h.terbayar} / {k.tenor}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(h.total)}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">{rp(h.sisa)}</td>
