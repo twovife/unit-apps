@@ -775,10 +775,6 @@ const DialogModal = ({ m, onClosed, rekening }) => {
   );
 };
 
-const sapaan = () => {
-  const j = new Date().getHours();
-  return j < 11 ? 'Selamat pagi' : j < 15 ? 'Selamat siang' : j < 18 ? 'Selamat sore' : 'Selamat malam';
-};
 
 /** Foto profil (MinIO, link sementara) atau inisial kalau tidak ada / gagal dimuat. */
 const Foto = ({ p }) => {
@@ -876,7 +872,7 @@ export default function PembayaranKantor({ videos = {}, profil = null, pembaruan
       <div className="min-w-0 space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            {sapaan()}{profil ? `, ${profil.nama}` : ''}
+            {profil?.nama ?? 'Dashboard Kasir'}
           </h1>
           <p className="text-sm text-slate-500">Yang perlu dikerjakan hari ini dan pembayaran kantor bulan ini.</p>
         </div>

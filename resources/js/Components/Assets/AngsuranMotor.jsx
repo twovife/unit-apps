@@ -148,7 +148,7 @@ function Bayar({ daftar }) {
   const [tgl, setTgl] = useState(dayjs().format('YYYY-MM-DD'));
   const [proses, setProses] = useState(false);
   useEffect(() => {
-    setPilih(Object.fromEntries(daftar.filter((k) => k.tunggakan > 0).map((k) => [k.id, k.tunggakan])));
+    setPilih(Object.fromEntries(daftar.filter((k) => k.tunggakan > 0).map((k) => [k.id, 1])));
   }, [daftar.length]);
   const dipilih = daftar.filter((k) => pilih[k.id]);
   const total = dipilih.reduce((t, k) => t + k.angsuran * pilih[k.id], 0);
@@ -175,19 +175,18 @@ function Bayar({ daftar }) {
         <table className="w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              <th className="w-10 px-3 py-2"><input type="checkbox" className="size-4" checked={dipilih.length === daftar.length} onChange={(e) => setPilih(e.target.checked ? Object.fromEntries(daftar.map((k) => [k.id, Math.max(1, k.tunggakan)])) : {})} /></th>
+              <th className="w-10 px-3 py-2"><input type="checkbox" className="size-4" checked={dipilih.length === daftar.length} onChange={(e) => setPilih(e.target.checked ? Object.fromEntries(daftar.map((k) => [k.id, 1])) : {})} /></th>
               <th className={KELAS_TH}>Plat</th>
               <th className={KELAS_TH}>Angsuran</th>
               <th className={KELAS_TH}>Terbayar</th>
               <th className={KELAS_TH}>Tagihan</th>
-              <th className={KELAS_TH}>Bayar (bulan)</th>
               <th className={`${KELAS_TH} text-right`}>Jumlah</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {daftar.map((k) => (
               <tr key={k.id} className={pilih[k.id] ? 'bg-sky-50/50' : ''}>
-                <td className="px-3 py-2"><input type="checkbox" className="size-4" checked={!!pilih[k.id]} onChange={(e) => setPilih((p) => ({ ...p, [k.id]: e.target.checked ? Math.max(1, k.tunggakan) : 0 }))} /></td>
+                <td className="px-3 py-2"><input type="checkbox" className="size-4" checked={!!pilih[k.id]} onChange={(e) => setPilih((p) => ({ ...p, [k.id]: e.target.checked ? 1 : 0 }))} /></td>
                 <td className="whitespace-nowrap px-3 py-2">
                   <span className="font-mono font-bold">{k.plat ?? '—'}</span>
                   <div className="text-xs text-muted-foreground">{k.nama}{!k.aset_aktif && ' · nonaktif'}</div>
@@ -195,13 +194,16 @@ function Bayar({ daftar }) {
                 <td className="whitespace-nowrap px-3 py-2">{rp(k.angsuran)}</td>
                 <td className="whitespace-nowrap px-3 py-2">{k.terbayar} / {k.tenor}</td>
                 <td className="whitespace-nowrap px-3 py-2"><Tagihan k={k} /></td>
-                <td className="px-3 py-2">
-                  <Input type="number" min={1} max={k.tenor - k.terbayar} className="h-8 w-20" disabled={!pilih[k.id]} value={pilih[k.id] || ''} onChange={(e) => setPilih((p) => ({ ...p, [k.id]: Math.min(k.tenor - k.terbayar, Math.max(1, Number(e.target.value) || 1)) }))} />
-                </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-medium">{pilih[k.id] ? rp(k.angsuran * pilih[k.id]) : '—'}</td>
               </tr>
             ))}
           </tbody>
+          <tfoot className="border-t-2 bg-slate-50 font-semibold tabular-nums">
+            <tr>
+              <td colSpan={5} className="px-3 py-2.5">Total ({dipilih.length} motor dipilih)</td>
+              <td className="whitespace-nowrap px-3 py-2.5 text-right text-base">{rp(total)}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border bg-slate-50 p-3">
