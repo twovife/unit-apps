@@ -73,6 +73,10 @@ class InvVehicleLoan extends Model
                 'user_id' => auth()->id(),
             ]);
         }
+        // Angsuran ke = tenor: sudah lunas sejak tanggal pembayaran itu (riwayat tetap tercatat).
+        if ((int) $b['terbayar'] === (int) $b['tenor']) {
+            $loan->update(['status' => self::LUNAS, 'lunas_at' => $akhir->toDateString()]);
+        }
     }
 
     /** Aturan isian kontrak (dipakai input awal & form kendaraan baru). */
@@ -81,18 +85,18 @@ class InvVehicleLoan extends Model
         return [[
             'angsuran' => ['required', 'integer', 'min:1000'],
             'tenor' => ['required', 'integer', 'min:2', 'max:120'],
-            'terbayar' => ['required', 'integer', 'min:1', 'lt:tenor'],
+            'terbayar' => ['required', 'integer', 'min:1', 'lte:tenor'],
             'tanggal_terakhir' => ['required', 'date', 'before_or_equal:today'],
         ], [
             'angsuran.required' => 'Angsuran wajib diisi.',
             'angsuran.min' => 'Angsuran minimal Rp 1.000.',
             'tenor.required' => 'Tenor wajib diisi.',
             'tenor.min' => 'Tenor minimal 2 bulan.',
-            'terbayar.required' => 'Angsuran terbayar wajib diisi.',
-            'terbayar.min' => 'Angsuran terbayar minimal 1 kali.',
-            'terbayar.lt' => 'Terbayar harus kurang dari tenor (yang dicatat hanya angsuran yang masih berjalan).',
-            'tanggal_terakhir.required' => 'Tanggal angsuran terakhir wajib diisi.',
-            'tanggal_terakhir.before_or_equal' => 'Tanggal angsuran terakhir tidak boleh di masa depan.',
+            'terbayar.required' => 'Angsuran ke wajib diisi.',
+            'terbayar.min' => 'Angsuran ke minimal 1.',
+            'terbayar.lte' => 'Angsuran ke tidak boleh melebihi tenor.',
+            'tanggal_terakhir.required' => 'Tanggal pembayaran wajib diisi.',
+            'tanggal_terakhir.before_or_equal' => 'Tanggal pembayaran tidak boleh di masa depan.',
         ]];
     }
 

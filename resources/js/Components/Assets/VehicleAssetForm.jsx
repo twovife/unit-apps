@@ -343,15 +343,15 @@ export default function VehicleAssetForm({ open, asset, branch, canEditVehicleRe
                 {!form.data.angsuran_lunas && (
                   <>
                     <Field label="Angsuran per bulan" error={form.errors.angsuran_nominal}>
-                      <Input inputMode="numeric" placeholder="500.000" value={form.data.angsuran_nominal ? new Intl.NumberFormat('id-ID').format(form.data.angsuran_nominal) : ''} onChange={(e) => form.setData('angsuran_nominal', e.target.value.replace(/\D/g, ''))} />
+                      <Input inputMode="numeric" placeholder="0" value={form.data.angsuran_nominal ? new Intl.NumberFormat('id-ID').format(form.data.angsuran_nominal) : ''} onChange={(e) => form.setData('angsuran_nominal', e.target.value.replace(/\D/g, ''))} />
                     </Field>
                     <Field label="Tenor (bulan)" error={form.errors.angsuran_tenor}>
-                      <Input type="number" min={2} value={form.data.angsuran_tenor} onChange={(e) => form.setData('angsuran_tenor', e.target.value)} />
+                      <Input inputMode="numeric" placeholder="0" value={form.data.angsuran_tenor} onChange={(e) => form.setData('angsuran_tenor', e.target.value.replace(/\D/g, ''))} />
                     </Field>
-                    <Field label="Sudah diangsur (x)" error={form.errors.angsuran_terbayar}>
-                      <Input type="number" min={1} value={form.data.angsuran_terbayar} onChange={(e) => form.setData('angsuran_terbayar', e.target.value)} />
+                    <Field label="Angsuran ke" error={form.errors.angsuran_terbayar}>
+                      <Input inputMode="numeric" placeholder="0" value={form.data.angsuran_terbayar} onChange={(e) => form.setData('angsuran_terbayar', e.target.value.replace(/\D/g, ''))} />
                     </Field>
-                    <Field label="Tanggal angsuran terakhir" error={form.errors.angsuran_tanggal}>
+                    <Field label="Tanggal pembayaran" error={form.errors.angsuran_tanggal}>
                       <Input type="date" value={form.data.angsuran_tanggal} onChange={(e) => form.setData('angsuran_tanggal', e.target.value)} />
                     </Field>
                     <div className="sm:col-span-2">

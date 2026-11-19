@@ -99,6 +99,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/pembayaran/{payment}', 'hapus')->whereNumber('payment')->name('hapus');
     Route::get('/pembayaran/{payment}/bukti/{n?}', 'bukti')->whereNumber(['payment', 'n'])->name('bukti');
     Route::delete('/{loan}', 'hapusKontrak')->whereNumber('loan')->name('hapus_kontrak');
+    Route::post('/hapus-batch', 'hapusBatch')->name('hapus_batch');
+    Route::post('/hapus-bulan-ini', 'hapusBulanIni')->name('hapus_bulan_ini');
   });
   Route::controller(\App\Http\Controllers\VehicleAssetController::class)->prefix('assets')->name('assets.')->group(function () {
     Route::get('/', 'index')->name('index');

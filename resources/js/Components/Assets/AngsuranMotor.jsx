@@ -98,7 +98,7 @@ export default function AngsuranMotor() {
         <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
           <DialogHeader className="border-b px-5 py-4 pr-12 text-left">
             <DialogTitle>Tambah Motor</DialogTitle>
-            <DialogDescription>Motor kantor ini yang belum punya angsuran berjalan. Isi yang angsurannya masih berjalan; baris kosong dilewati.</DialogDescription>
+            <DialogDescription>Motor kantor ini yang belum diinput sama sekali. Salah tandai "Tidak ada angsuran"? Hapus dulu dari tab Lunas di daftar, lalu input lagi di sini.</DialogDescription>
           </DialogHeader>
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             <InputAwal kandidat={data.bisa_tambah ?? []} />
@@ -107,11 +107,11 @@ export default function AngsuranMotor() {
       </Dialog>
 
       <div className="rounded-xl border bg-white p-3 shadow-sm sm:p-4">
-        {tab === 'kontrak' && <Daftar kontrak={data.kontrak} onDetail={setDetail} />}
+        {tab === 'kontrak' && <Daftar kontrak={data.kontrak} onDetail={setDetail} bolehHapusSemua={data.boleh_hapus_semua} />}
         {tab === 'awal' && <InputAwal kandidat={data.kandidat} onSelesai={() => { muat(); setTab('kontrak'); }} />}
       </div>
 
-      <Detail k={detail} onClose={() => setDetail(null)} onUbah={() => { muat(); }} />
+      <Detail k={detail} onClose={() => setDetail(null)} onUbah={() => { muat(); }} bolehHapusSemua={data.boleh_hapus_semua} />
     </div>
   );
 }
@@ -226,10 +226,27 @@ function Bayar({ daftar }) {
  * Daftar per bulan terpilih (bawaan bulan ini): angsuran bulan itu (sudah / belum dibayar),
  * terbayar s/d bulan itu, total angsuran & sisa per akhir bulan itu.
  */
-function Daftar({ kontrak, onDetail }) {
+function Daftar({ kontrak, onDetail, bolehHapusSemua }) {
   const [lihat, setLihat] = useState('berjalan');
   const [bln, setBln] = useState(dayjs().format('YYYY-MM'));
-  const isi = kontrak.filter((k) => k.tenor > 0 && (lihat === 'semua' || k.status === lihat));
+  // Penanda "Tidak ada angsuran" (tenor 0, status lunas) ikut tab Lunas / Semua.
+  const isi = kontrak.filter((k) => lihat === 'semua' || k.status === lihat);
+  const [pilih, setPilih] = useState([]);
+  const [proses, setProses] = useState(false);
+  useEffect(() => setPilih([]), [lihat]);
+  const centang = (id) => setPilih((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const kirimHapus = async (rute, tanya) => {
+    if (!(await konfirmasi(tanya))) return;
+    setProses(true);
+    router.post(route(rute), { id: pilih }, {
+      preserveScroll: true,
+      onSuccess: () => window.location.reload(),
+      onError: (e) => toast.error(galatPertama(e)),
+      onFinish: () => setProses(false),
+    });
+  };
+  const hapusSemua = () => kirimHapus('assets.angsuran.hapus_batch', `Hapus SEMUA angsuran ${pilih.length} motor (kontrak + seluruh pembayarannya)? Motor kembali ke daftar "belum diinput".`);
+  const hapusBulanIni = () => kirimHapus('assets.angsuran.hapus_bulan_ini', `Hapus angsuran ${bulan(dayjs().format('YYYY-MM-01'))} untuk ${pilih.length} motor? Angsuran bulan lain tetap.`);
   const hitung = (k) => {
     const sd = k.bayar.filter(([p]) => p <= bln);
     const ini = k.bayar.find(([p]) => p === bln);
@@ -245,6 +262,18 @@ function Daftar({ kontrak, onDetail }) {
         {[['berjalan', 'Berjalan'], ['lunas', 'Lunas'], ['semua', 'Semua']].map(([k, l]) => (
           <button key={k} type="button" onClick={() => setLihat(k)} className={`rounded-md border px-3 py-1 ${lihat === k ? 'border-slate-900 bg-slate-900 text-white' : 'hover:bg-slate-50'}`}>{l}</button>
         ))}
+        {pilih.length > 0 && (
+          <>
+            <Button size="sm" variant="outline" className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50" disabled={proses} onClick={hapusBulanIni}>
+              <Trash2 className="size-4" />Hapus angsuran bulan ini ({pilih.length})
+            </Button>
+            {bolehHapusSemua && (
+              <Button size="sm" variant="outline" className="gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50" disabled={proses} onClick={hapusSemua}>
+                <Trash2 className="size-4" />Hapus semua angsuran ({pilih.length})
+              </Button>
+            )}
+          </>
+        )}
         <label className="ml-auto flex items-center gap-2">
           <span className="text-muted-foreground">Bulan</span>
           <Input type="month" value={bln} onChange={(e) => setBln(e.target.value || dayjs().format('YYYY-MM'))} className="h-8 w-40" />
@@ -255,10 +284,12 @@ function Daftar({ kontrak, onDetail }) {
           <table className="w-full text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="w-10 px-3 py-2.5"><input type="checkbox" className="size-4" title="Pilih semua" checked={isi.length > 0 && pilih.length === isi.length} onChange={(e) => setPilih(e.target.checked ? isi.map((k) => k.id) : [])} /></th>
                 {['Plat', 'Pemakai'].map((h) => <th key={h} className={KELAS_TH}>{h}</th>)}
                 <th className={`${KELAS_TH} text-right`}>Angsuran</th>
                 <th className={`${KELAS_TH} text-right`}>Total Harga</th>
                 <th className={KELAS_TH}>Angsuran {bulan(`${bln}-01`)}</th>
+                <th className={KELAS_TH}>Tanggal Bayar</th>
                 <th className={`${KELAS_TH} text-center`}>Terbayar / Tenor</th>
                 <th className={`${KELAS_TH} text-right`}>Total Angsuran</th>
                 <th className={`${KELAS_TH} text-right`}>Sisa Angsuran</th>
@@ -266,30 +297,37 @@ function Daftar({ kontrak, onDetail }) {
             </thead>
             <tbody className="divide-y">
               {baris.map(({ k, h }) => (
-                <tr key={k.id} className="cursor-pointer tabular-nums transition-colors hover:bg-sky-50/60" onClick={() => onDetail(k)}>
+                <tr key={k.id} className={`cursor-pointer tabular-nums transition-colors hover:bg-sky-50/60 ${pilih.includes(k.id) ? 'bg-rose-50/60' : ''}`} onClick={() => onDetail(k)}>
+                  <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="size-4" checked={pilih.includes(k.id)} onChange={() => centang(k.id)} /></td>
                   <td className="whitespace-nowrap px-3 py-2.5.5"><span className="font-mono font-bold text-blue-700">{k.plat ?? '—'}</span><div className="text-xs text-muted-foreground">{k.nama}</div></td>
                   <td className="whitespace-nowrap px-3 py-2.5">{k.pemakai ?? '—'}</td>
+                  {k.tenor === 0 ? (
+                    <td colSpan={7} className="whitespace-nowrap px-3 py-2.5 text-center"><Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">Lunas · tidak ada angsuran</Badge></td>
+                  ) : (<>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(k.angsuran)}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(k.total_harga)}</td>
                   <td className="whitespace-nowrap px-3 py-2.5">
                     {h.ini ? (
-                      <><Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">{rp(h.ini[2])}</Badge><div className="text-xs text-muted-foreground">dibayar {tanggal(h.ini[1])}</div></>
+                      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">{rp(h.ini[2])}</Badge>
                     ) : h.terbayar >= k.tenor || !k.bayar.length || bln < k.bayar[0][0] ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
                       <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">Belum dibayar</Badge>
                     )}
                   </td>
+                  <td className="whitespace-nowrap px-3 py-2.5">{h.ini ? tanggal(h.ini[1]) : <span className="text-muted-foreground">—</span>}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-center font-medium">{h.terbayar} / {k.tenor}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(h.total)}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">{rp(h.sisa)}</td>
+                  </>)}
                 </tr>
               ))}
             </tbody>
             <tfoot className="border-t-2 bg-slate-50 font-semibold tabular-nums">
               <tr>
-                <td colSpan={4} className="px-3 py-2">Jumlah ({baris.length} motor)</td>
+                <td colSpan={5} className="px-3 py-2">Jumlah ({baris.length} motor)</td>
                 <td className="whitespace-nowrap px-3 py-2.5">{rp(jumlah.ini)}</td>
+                <td />
                 <td />
                 <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(jumlah.total)}</td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-right">{rp(jumlah.sisa)}</td>
@@ -346,8 +384,8 @@ export function InputAwal({ kandidat, onSelesai }) {
       forceFormData: true,
       preserveScroll: true,
       preserveState: true,
-      // Muat ulang halaman penuh: daftar, tab Dashboard Kasir & tombol merah navbar ikut segar.
-      onSuccess: () => { toast.success(`${terisi.length} motor dicatat.`); window.location.reload(); },
+      // Sesudah simpan langsung ke menu Angsuran Motor (muat penuh: daftar & tombol navbar segar).
+      onSuccess: () => { window.location.href = route('assets.angsuran.index'); },
       onError: (e) => toast.error(galatPertama(e)),
       onFinish: () => setProses(false),
     });
@@ -356,24 +394,24 @@ export function InputAwal({ kandidat, onSelesai }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <p className="text-muted-foreground">Isi motor yang angsurannya masih berjalan. Motor tanpa angsuran / sudah lunas: centang <b>Tidak ada angsuran</b>. Baris kosong dilewati.</p>
+        <p className="text-muted-foreground">Isi motor yang ada angsurannya (Angsuran ke = tenor berarti sudah lunas). Motor tanpa angsuran: centang <b>Tidak ada angsuran</b> di kolom paling kanan. Baris kosong dilewati.</p>
         <label className="flex items-center gap-2"><input type="checkbox" className="size-4" checked={nonaktif} onChange={(e) => setNonaktif(e.target.checked)} />Tampilkan kendaraan nonaktif</label>
       </div>
       {!tampil.length ? <Kosong>Semua kendaraan sudah punya angsuran berjalan.</Kosong> : (
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-xs">
             <thead className="bg-slate-50">
-              <tr>{['Nomor Plat', 'Tidak ada angsuran', 'Angsuran', 'Tenor (bulan)', 'Angsuran Terbayar (x)', 'Tanggal Angsuran Terakhir', 'Total Angsuran', 'Total Harga'].map((h, n) => (
-                <th key={h} className={`${KELAS_TH} text-xs ${n === 1 ? 'text-center' : ''} ${n >= 6 ? 'text-right' : ''}`}>{h}</th>
+              <tr>{['Nomor Plat', 'Angsuran', 'Tenor (bulan)', 'Angsuran ke', 'Tanggal Pembayaran', 'Total Angsuran', 'Total Harga', 'Tidak ada angsuran'].map((h, n) => (
+                <th key={h} className={`${KELAS_TH} text-xs ${n === 5 || n === 6 ? 'text-right' : ''} ${n === 7 ? 'text-center' : ''}`}>{h}</th>
               ))}</tr>
               <tr className="border-t bg-sky-50">
                 <th className="px-3 py-2 text-left text-xs font-semibold text-sky-800">Isi semua ↓</th>
-                <th className="px-3 py-2" />
-                <th className="px-3 py-2 text-left font-normal"><Input inputMode="numeric" className="h-8 px-2 text-xs md:text-xs w-32 bg-white" placeholder="500.000" value={ribuan(semua.angsuran)} onChange={(e) => isiSemua('angsuran', angka(e.target.value))} /></th>
-                <th className="px-3 py-2 text-left font-normal"><Input type="number" min={2} className="h-8 px-2 text-xs md:text-xs w-20 bg-white" value={semua.tenor ?? ''} onChange={(e) => isiSemua('tenor', e.target.value)} /></th>
-                <th className="px-3 py-2 text-left font-normal"><Input type="number" min={1} className="h-8 px-2 text-xs md:text-xs w-20 bg-white" value={semua.terbayar ?? ''} onChange={(e) => isiSemua('terbayar', e.target.value)} /></th>
+                <th className="px-3 py-2 text-left font-normal"><Input inputMode="numeric" className="h-8 px-2 text-xs md:text-xs w-32 bg-white" placeholder="0" value={ribuan(semua.angsuran)} onChange={(e) => isiSemua('angsuran', angka(e.target.value))} /></th>
+                <th className="px-3 py-2 text-left font-normal"><Input inputMode="numeric" placeholder="0" className="h-8 px-2 text-xs md:text-xs w-20 bg-white" value={semua.tenor ?? ''} onChange={(e) => isiSemua('tenor', angka(e.target.value))} /></th>
+                <th className="px-3 py-2 text-left font-normal"><Input inputMode="numeric" placeholder="0" className="h-8 px-2 text-xs md:text-xs w-20 bg-white" value={semua.terbayar ?? ''} onChange={(e) => isiSemua('terbayar', angka(e.target.value))} /></th>
                 <th className="px-3 py-2 text-left font-normal"><Input type="date" className="h-8 px-2 text-xs md:text-xs w-40 bg-white" max={dayjs().format('YYYY-MM-DD')} value={semua.tanggal_terakhir ?? ''} onChange={(e) => isiSemua('tanggal_terakhir', e.target.value)} /></th>
                 <th colSpan={2} className="px-3 py-2 text-left text-xs font-normal text-sky-800">Mengisi semua baris; tiap baris tetap bisa diubah.</th>
+                <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -384,13 +422,18 @@ export function InputAwal({ kandidat, onSelesai }) {
                 return (
                   <tr key={a.asset_id} className={mati ? 'bg-slate-50 text-muted-foreground' : ''}>
                     <td className="whitespace-nowrap px-3 py-2"><span className="font-mono text-xs font-bold">{a.plat ?? '—'}</span><div className="text-[11px] text-muted-foreground">{a.nama}{!a.aktif && ` · nonaktif${a.kondisi ? ` (${a.kondisi})` : ''}`}</div></td>
-                    <td className="px-3 py-2 text-center align-middle"><input type="checkbox" className="size-4 align-middle" checked={mati} onChange={(e) => ubah(a.asset_id, 'lunas', e.target.checked)} /></td>
-                    <td className="px-3 py-2"><Input disabled={mati} inputMode="numeric" className="h-8 px-2 text-xs md:text-xs w-32" placeholder="500.000" value={ribuan(r.angsuran)} onChange={(e) => ubah(a.asset_id, 'angsuran', angka(e.target.value))} /></td>
-                    <td className="px-3 py-2"><Input disabled={mati} type="number" min={2} className="h-8 px-2 text-xs md:text-xs w-20" value={r.tenor ?? ''} onChange={(e) => ubah(a.asset_id, 'tenor', e.target.value)} /></td>
-                    <td className="px-3 py-2"><Input disabled={mati} type="number" min={1} className="h-8 px-2 text-xs md:text-xs w-20" value={r.terbayar ?? ''} onChange={(e) => ubah(a.asset_id, 'terbayar', e.target.value)} /></td>
+                    <td className="px-3 py-2"><Input disabled={mati} inputMode="numeric" className="h-8 px-2 text-xs md:text-xs w-32" placeholder="0" value={ribuan(r.angsuran)} onChange={(e) => ubah(a.asset_id, 'angsuran', angka(e.target.value))} /></td>
+                    <td className="px-3 py-2"><Input disabled={mati} inputMode="numeric" placeholder="0" className="h-8 px-2 text-xs md:text-xs w-20" value={r.tenor ?? ''} onChange={(e) => ubah(a.asset_id, 'tenor', angka(e.target.value))} /></td>
+                    <td className="px-3 py-2"><Input disabled={mati} inputMode="numeric" placeholder="0" className="h-8 px-2 text-xs md:text-xs w-20" value={r.terbayar ?? ''} onChange={(e) => ubah(a.asset_id, 'terbayar', angka(e.target.value))} /></td>
                     <td className="px-3 py-2"><Input disabled={mati} type="date" className="h-8 px-2 text-xs md:text-xs w-40" max={dayjs().format('YYYY-MM-DD')} value={r.tanggal_terakhir ?? ''} onChange={(e) => ubah(a.asset_id, 'tanggal_terakhir', e.target.value)} /></td>
                     <td className="whitespace-nowrap px-3 py-2 text-right">{!mati && ang && r.terbayar ? rp(ang * Number(r.terbayar)) : '—'}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-right font-medium">{!mati && ang && r.tenor ? rp(ang * Number(r.tenor)) : '—'}</td>
+                    <td className="px-3 py-2 text-center">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs">
+                        <input type="checkbox" className="size-4" checked={mati} onChange={(e) => ubah(a.asset_id, 'lunas', e.target.checked)} />
+                        Tidak ada angsuran
+                      </label>
+                    </td>
                   </tr>
                 );
               })}
@@ -408,7 +451,7 @@ export function InputAwal({ kandidat, onSelesai }) {
 }
 
 /** Drawer satu kontrak: riwayat angsuran, bayar satu unit, batalkan angsuran terakhir. */
-function Detail({ k, onClose, onUbah }) {
+function Detail({ k, onClose, onUbah, bolehHapusSemua }) {
   const [riwayat, setRiwayat] = useState(null);
   const [files, setFiles] = useState([]);
   const [tgl, setTgl] = useState(dayjs().format('YYYY-MM-DD'));
@@ -427,6 +470,17 @@ function Detail({ k, onClose, onUbah }) {
     setProses(true);
     const bukti = await Promise.all(files.map(kecilkan));
     router.post(route('assets.angsuran.bayar'), { tanggal_bayar: tgl, bukti, item: [{ loan_id: k.id, bulan: 1 }] }, { ...opsi('Angsuran dibayar.'), forceFormData: true, onSuccess: () => window.location.reload() });
+  };
+  const hapusBulanIni = async () => {
+    if (!(await konfirmasi(`Hapus angsuran ${bulan(dayjs().format('YYYY-MM-01'))} ${k.plat}? Angsuran bulan lain tetap.`))) return;
+    setProses(true);
+    router.post(route('assets.angsuran.hapus_bulan_ini'), { id: [k.id] }, { ...opsi('Angsuran bulan ini dihapus.'), onSuccess: () => window.location.reload() });
+  };
+  // Salah input: hapus kontrak + semua pembayarannya; motor kembali ke daftar belum diinput.
+  const hapusKontrak = async () => {
+    if (!(await konfirmasi(`Hapus SEMUA angsuran ${k.plat} (${k.terbayar} pembayaran ikut terhapus)? Motor ini kembali ke daftar "belum diinput".`))) return;
+    setProses(true);
+    router.delete(route('assets.angsuran.hapus_kontrak', k.id), { ...opsi('Angsuran dihapus.'), onSuccess: () => window.location.reload() });
   };
   const batal = async (p) => {
     if (!(await konfirmasi(`Batalkan angsuran ke-${p.angsuran_ke} (${bulan(p.periode)})?`))) return;
@@ -485,6 +539,18 @@ function Detail({ k, onClose, onUbah }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t pt-3">
+              {k.bayar?.length > 1 && k.bayar[k.bayar.length - 1][0] === dayjs().format('YYYY-MM') && (
+                <Button variant="outline" size="sm" className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50" disabled={proses} onClick={hapusBulanIni}>
+                  <Trash2 className="size-4" />Hapus angsuran bulan ini
+                </Button>
+              )}
+              {bolehHapusSemua && (
+                <Button variant="outline" size="sm" className="gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50" disabled={proses} onClick={hapusKontrak}>
+                  <Trash2 className="size-4" />Hapus semua angsuran
+                </Button>
+              )}
             </div>
           </div>
         )}

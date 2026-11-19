@@ -20,6 +20,17 @@ use Inertia\Inertia;
  */
 class VehicleLoanController extends VehicleAssetController
 {
+    /**
+     * "Hapus semua angsuran" (kontrak utuh) hanya untuk masa pendataan: s/d tanggal ini
+     * (mas 2026-11-19, akhir bulan pendataan). Sesudahnya hanya superuser.
+     */
+    public const BATAS_HAPUS_SEMUA = '2026-11-30';
+
+    public static function bolehHapusSemua(): bool
+    {
+        return now()->toDateString() <= self::BATAS_HAPUS_SEMUA || (bool) auth()->user()?->hasRole('superuser');
+    }
+
     public function page()
     {
         return Inertia::render('Assets/Angsuran');
@@ -72,13 +83,14 @@ class VehicleLoanController extends VehicleAssetController
             ->map(fn ($a) => ['asset_id' => $a->id, 'plat' => $a->vehicle?->plat_nomor, 'nama' => $a->name, 'aktif' => $a->status === 'aktif', 'kondisi' => $a->kondisi])
             ->sortBy([['aktif', 'desc'], ['plat', 'asc']])->values();
 
-        // Tambah motor (lupa diinput / salah ditandai "tidak ada angsuran"): semua tanpa kontrak berjalan.
-        $berjalan = $loans->where('status', InvVehicleLoan::BERJALAN)->pluck('asset_id')->all();
-        $bisaTambah = $assets->reject(fn ($a) => in_array($a->id, $berjalan, true))
-            ->map(fn ($a) => ['asset_id' => $a->id, 'plat' => $a->vehicle?->plat_nomor, 'nama' => $a->name, 'aktif' => $a->status === 'aktif', 'kondisi' => $a->kondisi])
-            ->sortBy([['aktif', 'desc'], ['plat', 'asc']])->values();
+        // Tambah motor = motor yang belum diinput sama sekali (yang ditandai "tidak ada angsuran" / lunas
+        // tidak muncul; salah tandai -> hapus dulu lewat filter "Tidak ada angsuran", lalu input lagi).
+        $bisaTambah = $kandidat;
 
-        return response()->json(['kontrak' => $kontrak, 'kandidat' => $kandidat, 'bisa_tambah' => $bisaTambah, 'bulan_ini' => $bulanIni->toDateString()]);
+        return response()->json([
+            'kontrak' => $kontrak, 'kandidat' => $kandidat, 'bisa_tambah' => $bisaTambah, 'bulan_ini' => $bulanIni->toDateString(),
+            'boleh_hapus_semua' => self::bolehHapusSemua(),
+        ]);
     }
 
     /** Jumlah kendaraan AKTIF kantor aktif yang belum diinput (tombol merah di navbar). */
@@ -274,11 +286,67 @@ class VehicleLoanController extends VehicleAssetController
         return back()->with('success', 'Angsuran ke-' . $payment->angsuran_ke . ' dibatalkan.');
     }
 
-    /** Hapus kontrak salah input (superuser): pembayaran ikut terhapus. */
+    /**
+     * Hapus angsuran BULAN INI (periode bulan berjalan) untuk satu / banyak motor: hanya kalau itu
+     * angsuran terakhir kontraknya dan bukan satu-satunya. Status lunas ikut dibuka lagi.
+     */
+    public function hapusBulanIni(Request $request)
+    {
+        $v = $request->validate(['id' => ['required', 'array', 'min:1', 'max:200'], 'id.*' => ['integer', 'distinct']], ['id.required' => 'Pilih minimal satu motor.']);
+        $di = $this->vehicleAssetsAt($this->activeBranchId())->pluck('id')->all();
+        $periode = now()->startOfMonth()->toDateString();
+        $hapus = 0;
+        $lewat = [];
+        DB::transaction(function () use ($v, $di, $periode, &$hapus, &$lewat) {
+            foreach (InvVehicleLoan::whereIn('id', $v['id'])->with('asset.vehicle')->lockForUpdate()->get() as $loan) {
+                abort_unless(in_array((int) $loan->asset_id, $di, true), 404);
+                $plat = $loan->asset?->vehicle?->plat_nomor ?? "#{$loan->id}";
+                $terakhir = $loan->payments()->orderByDesc('angsuran_ke')->first();
+                if (! $terakhir || $terakhir->periode->toDateString() !== $periode) {
+                    $lewat[] = "$plat (" . ($loan->payments()->whereDate('periode', $periode)->exists() ? 'sudah bayar bulan depan' : 'belum ada angsuran bulan ini') . ')';
+                    continue;
+                }
+                if ($loan->payments()->count() === 1) {
+                    $lewat[] = "$plat (satu-satunya angsuran; pakai hapus semua)";
+                    continue;
+                }
+                $terakhir->delete();
+                $loan->update(['status' => InvVehicleLoan::BERJALAN, 'lunas_at' => null]);
+                $hapus++;
+            }
+        });
+        \Illuminate\Support\Facades\Log::info('Angsuran motor bulan ini dihapus', ['loan' => $v['id'], 'dihapus' => $hapus, 'user_id' => auth()->id()]);
+        $pesan = "{$hapus} angsuran bulan ini dihapus." . ($lewat ? ' Dilewati: ' . implode(', ', $lewat) . '.' : '');
+
+        return $hapus ? back()->with('success', $pesan) : back()->withErrors(['id' => $pesan]);
+    }
+
+    /** Hapus banyak kontrak sekaligus (salah input batch): kontrak + pembayarannya, kantor aktif saja. */
+    public function hapusBatch(Request $request)
+    {
+        abort_unless(self::bolehHapusSemua(), 403, 'Hapus semua angsuran hanya sampai ' . self::BATAS_HAPUS_SEMUA . ' (masa pendataan).');
+        $v = $request->validate(['id' => ['required', 'array', 'min:1', 'max:200'], 'id.*' => ['integer', 'distinct']], ['id.required' => 'Pilih minimal satu motor.']);
+        $di = $this->vehicleAssetsAt($this->activeBranchId())->pluck('id')->all();
+        $loans = InvVehicleLoan::whereIn('id', $v['id'])->withCount('payments')->get();
+        abort_unless($loans->count() === count($v['id']) && $loans->every(fn ($l) => in_array((int) $l->asset_id, $di, true)), 404);
+        DB::transaction(fn () => InvVehicleLoan::whereIn('id', $loans->pluck('id'))->delete());
+        \Illuminate\Support\Facades\Log::info('Kontrak angsuran motor dihapus (batch)', [
+            'loan' => $loans->map(fn ($l) => $l->only(['id', 'asset_id', 'angsuran', 'tenor', 'status', 'payments_count']))->all(),
+            'user_id' => auth()->id(),
+        ]);
+
+        return back()->with('success', $loans->count() . ' angsuran motor dihapus.');
+    }
+
+    /**
+     * Hapus kontrak salah input (mas 2026-11-19: kasir boleh, peran menu Aset = gate route):
+     * kontrak & semua pembayarannya hilang, motor kembali ke daftar "belum diinput".
+     */
     public function hapusKontrak(InvVehicleLoan $loan)
     {
-        abort_unless(auth()->user()?->hasRole('superuser'), 403, 'Hapus kontrak angsuran hanya superuser.');
+        abort_unless(self::bolehHapusSemua(), 403, 'Hapus semua angsuran hanya sampai ' . self::BATAS_HAPUS_SEMUA . ' (masa pendataan).');
         $this->pastikanKantor($loan);
+        \Illuminate\Support\Facades\Log::info('Kontrak angsuran motor dihapus', ['loan' => $loan->only(['id', 'asset_id', 'angsuran', 'tenor', 'status']), 'pembayaran' => $loan->payments()->count(), 'user_id' => auth()->id()]);
         $loan->delete();
 
         return back()->with('success', 'Kontrak angsuran dihapus.');
