@@ -351,6 +351,7 @@ function Daftar({ kontrak, onDetail, bolehHapusSemua }) {
 
 /** Input awal kontrak berjalan: satu baris per kendaraan; baris kosong dilewati. */
 export function InputAwal({ kandidat, onSelesai }) {
+  const namaBulanIni = dayjs().toDate().toLocaleDateString('id-ID', { month: 'long' });
   const [nonaktif, setNonaktif] = useState(false);
   const [isi, setIsi] = useState({});
   const [proses, setProses] = useState(false);
@@ -403,14 +404,14 @@ export function InputAwal({ kandidat, onSelesai }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <p className="text-muted-foreground">Isi motor yang ada angsurannya (Angsuran ke = tenor berarti sudah lunas). Motor tanpa angsuran: centang <b>Tidak ada angsuran</b> di kolom paling kanan. Baris kosong dilewati.</p>
+        <p className="text-muted-foreground">Isi motor yang ada angsurannya (Angsuran ke = tenor berarti sudah lunas). Motor yang sudah lunas sebelum {namaBulanIni} (atau dibeli tunai): centang di kolom paling kanan. Baris kosong dilewati.</p>
         <label className="flex items-center gap-2"><input type="checkbox" className="size-4" checked={nonaktif} onChange={(e) => setNonaktif(e.target.checked)} />Tampilkan kendaraan nonaktif</label>
       </div>
       {!tampil.length ? <Kosong>Semua kendaraan sudah punya angsuran berjalan.</Kosong> : (
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-xs">
             <thead className="bg-slate-50">
-              <tr>{['Nomor Plat', 'Angsuran', 'Tenor (bulan)', 'Angsuran ke', 'Tanggal Pembayaran', 'Total Angsuran', 'Total Harga', 'Tidak ada angsuran'].map((h, n) => (
+              <tr>{['Nomor Plat', 'Angsuran', 'Tenor (bulan)', 'Angsuran ke', 'Tanggal Pembayaran', 'Total Angsuran', 'Total Harga', `Lunas sebelum ${namaBulanIni}`].map((h, n) => (
                 <th key={h} className={`${KELAS_TH} text-xs ${n === 5 || n === 6 ? 'text-right' : ''} ${n === 7 ? 'text-center' : ''}`}>{h}</th>
               ))}</tr>
               <tr className="border-t bg-sky-50">
@@ -440,7 +441,7 @@ export function InputAwal({ kandidat, onSelesai }) {
                     <td className="px-3 py-2 text-center">
                       <label className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs">
                         <input type="checkbox" className="size-4" checked={mati} onChange={(e) => ubah(a.asset_id, 'lunas', e.target.checked)} />
-                        Tidak ada angsuran
+                        Centang jika lunas sebelum {namaBulanIni}
                       </label>
                     </td>
                   </tr>

@@ -59,7 +59,7 @@ export default function AlertAngsuranMotor() {
         <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
           <DialogHeader className="border-b px-5 py-4 pr-12 text-left">
             <DialogTitle>Input Angsuran Motor</DialogTitle>
-            <DialogDescription>{belum} motor aktif di kantor ini belum diinput. Isi yang angsurannya masih berjalan, centang &ldquo;Tidak ada angsuran&rdquo; untuk yang lain.</DialogDescription>
+            <DialogDescription>{belum} motor aktif di kantor ini belum diinput. Isi yang angsurannya masih berjalan, centang &ldquo;lunas sebelum bulan ini&rdquo; untuk yang sudah lunas / tanpa angsuran.</DialogDescription>
           </DialogHeader>
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {kandidat ? (
