@@ -1,236 +1,155 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/shadcn/ui/table';
-import FormatNumbering from '@/Components/shadcn/FormatNumbering';
+import React from 'react';
 import dayjs from 'dayjs';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/shadcn/ui/accordion';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shadcn/ui/accordion';
+import { Wallet } from 'lucide-react';
+import { ribu } from './TabelHarian';
+import { Cek, KOLOM_HARIAN, WARNA_HARIAN } from './TableRekap';
+import { WARNA } from './TableRekapKasir';
+import { useModeRibuan } from '@/lib/modeAngka';
+import SatuanAngka from '@/Components/SatuanAngka';
 
-const TableRekapPerMantri = ({ saldoAwalBulan, datas }) => {
-  const [data, setData] = useState([]);
-  const [sirkulasiAwal, setSirkulasiAwal] = useState([]);
-  useEffect(() => {
-    setData(datas);
-    setSirkulasiAwal(saldoAwalBulan);
-  }, [datas, saldoAwalBulan]);
+const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+// Kolom "Jml"/saldo itu angka berjalan - totalnya = baris terakhir, bukan jumlah.
+const BERJALAN = new Set(['total_drop', 'total_storting', 'sirkulasi', 'total_angsuran_cm', 'saldo_cm', 'total_angsuran_mb', 'saldo_mb', 'total_angsuran_ml', 'saldo_ml']);
 
-  const calculateTotals = (data, keyToSum) => {
-    const result = data.reduce(
-      (acc, item) => acc + parseInt(item[keyToSum] ?? 0),
-      0
-    );
-    return result;
-  };
+/**
+ * Rekap Mantri: satu kelompok sebulan, satu baris per tanggal. Tampilan
+ * seragam dengan Rekap 2 (kolom KOLOM_HARIAN, ribuan, Cek Staff / Cek Target).
+ * Klik Storting -> buku angsuran hari itu, Drop -> buku drop, Cek Target ->
+ * drawer ACC KM (hanya kalau onAcc diberikan). Cek Staff hanya status: mantri
+ * tidak punya akses ke Rekap 1.
+ */
+const TableRekapPerMantri = ({ saldoAwalBulan = [], datas = [], onKlikStorting, onKlikDrop, onAcc }) => {
+  useModeRibuan();
+  const klik = { storting: onKlikStorting, drop: onKlikDrop };
+  const akhir = datas[datas.length - 1] ?? {};
 
   return (
     <div>
-      <Accordion type="single" collapsible className="mb-3">
-        <AccordionItem value="item-1">
-          <AccordionTrigger className="px-3">Saldo Awal Bulan</AccordionTrigger>
-          <AccordionContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-200">
-                  <TableHead className="text-center">Hari</TableHead>
-                  <TableHead className="text-center">Surkulasi</TableHead>
-                  <TableHead className="text-center">Saldo CM</TableHead>
-                  <TableHead className="text-center">Saldo MB</TableHead>
-                  <TableHead className="text-center">Saldo ML</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="text-tinny">
-                {sirkulasiAwal.map((item, key) => (
-                  <TableRow key={key}>
-                    <TableCell>{item.hari}</TableCell>
-                    <TableCell>
-                      <FormatNumbering value={item.sirkulasi} />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering value={item.sirkulasiCm} />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering value={item.sirkulasiMb} />
-                    </TableCell>
-                    <TableCell>
-                      <FormatNumbering value={item.sirkulasiMl} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+      <Accordion type="single" collapsible className="mb-3 overflow-hidden bg-white border rounded-lg">
+        <AccordionItem value="item-1" className="border-b-0">
+          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 hover:no-underline data-[state=open]:border-b">
+            <span className="flex items-center gap-3 font-semibold text-slate-900">
+              <Wallet className="w-5 h-5 text-sky-600 shrink-0" aria-hidden="true" />
+              Saldo Awal Bulan
+            </span>
+            <span className="ml-auto mr-2 text-xs font-normal text-slate-500"><SatuanAngka pendek /></span>
+          </AccordionTrigger>
+          <AccordionContent className="pb-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs tabular-nums">
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr>
+                    <th className="px-3 py-2 font-medium text-left">Hari</th>
+                    <th className="px-3 py-2 font-medium text-right">Sirkulasi</th>
+                    <th className="px-3 py-2 font-medium text-right">Saldo CM</th>
+                    <th className="px-3 py-2 font-medium text-right">Saldo MB</th>
+                    <th className="px-3 py-2 font-medium text-right">Saldo ML</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {saldoAwalBulan.map((s, i) => (
+                    <tr key={i} className="border-t even:bg-slate-50 hover:bg-sky-50">
+                      <td className="px-3 py-1.5 font-medium capitalize">{s.hari}</td>
+                      <td className="px-3 py-1.5 text-right">{ribu(s.sirkulasi)}</td>
+                      <td className="px-3 py-1.5 text-right">{ribu(s.sirkulasiCm)}</td>
+                      <td className="px-3 py-1.5 text-right">{ribu(s.sirkulasiMb)}</td>
+                      <td className="px-3 py-1.5 text-right">{ribu(s.sirkulasiMl)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                {saldoAwalBulan.length > 0 && (
+                  <tfoot className="font-bold border-t-2 bg-slate-100 text-slate-900">
+                    <tr>
+                      <td className="px-3 py-2">Total</td>
+                      {['sirkulasi', 'sirkulasiCm', 'sirkulasiMb', 'sirkulasiMl'].map((k) => (
+                        <td key={k} className="px-3 py-2 text-right">
+                          {ribu(jumlah(saldoAwalBulan, k))}
+                        </td>
+                      ))}
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
 
-      <div className="max-h-[65vh] border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
-        <Table className="w-full mb-3 table-auto">
-          <TableHeader className="sticky top-0 z-10 bg-gray-100">
-            <TableRow>
-              <TableHead className="text-center">Tanggal</TableHead>
-              <TableHead className="text-center">Kelompok</TableHead>
-              <TableHead className="text-center">Drop</TableHead>
-              <TableHead className="text-center">Jumlah Drop</TableHead>
-              <TableHead className="text-center">Storting</TableHead>
-              <TableHead className="text-center">Jumlah Storting</TableHead>
-              <TableHead className="text-center">Sirkulasi</TableHead>
-              <TableHead className="text-center">Angsuran CM</TableHead>
-              <TableHead className="text-center">Jumlah CM</TableHead>
-              <TableHead className="text-center">Saldo CM</TableHead>
-              <TableHead className="text-center">Angsuran MB</TableHead>
-              <TableHead className="text-center">Jumlah MB</TableHead>
-              <TableHead className="text-center">Saldo MB</TableHead>
-              <TableHead className="text-center">Angsuran ML</TableHead>
-              <TableHead className="text-center">Jumlah ML</TableHead>
-              <TableHead className="text-center">Saldo ML</TableHead>
-              <TableHead className="text-center">Cek Staff</TableHead>
-              <TableHead className="text-center">Cek Target</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((subitem, subkey) => (
-              <TableRow key={subkey}>
-                <TableCell>{subitem.tanggal}</TableCell>
-                <TableCell>{subitem.kelompok}</TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.drop} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.total_drop} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.storting} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.total_storting} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.sirkulasi} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.angsuran_cm} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.total_angsuran_cm} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.saldo_cm} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.angsuran_mb} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.total_angsuran_mb} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.saldo_mb} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.angsuran_ml} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.total_angsuran_ml} />
-                </TableCell>
-                <TableCell>
-                  <FormatNumbering value={subitem.saldo_ml} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-center">
-                    {subitem.status_approve_kasir ? (
-                      <CheckCircle className="text-green-500" />
+      <div className="max-h-[65vh] bg-white border rounded-lg overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thin">
+        <table className="w-full text-xs tabular-nums">
+          <thead className="sticky top-0 z-20 bg-slate-100 text-slate-700">
+            <tr>
+              <th className={`sticky left-0 z-20 px-3 py-2 font-medium text-left ${WARNA.biru.kepala}`}>Tanggal</th>
+              {KOLOM_HARIAN.map(([k, label]) => (
+                <th key={k} className={`px-3 py-2 font-medium text-right whitespace-nowrap ${WARNA_HARIAN[k]?.kepala ?? ''}`}>
+                  {label}
+                </th>
+              ))}
+              <th className="px-3 py-2 font-medium text-center whitespace-nowrap">Cek Staff</th>
+              <th className="px-3 py-2 font-medium text-center whitespace-nowrap">Cek Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            {datas.length === 0 && (
+              <tr>
+                <td colSpan={KOLOM_HARIAN.length + 3} className="py-6 text-center text-slate-500">
+                  Belum ada data.
+                </td>
+              </tr>
+            )}
+            {datas.map((r) => (
+              <tr
+                key={r.tanggal}
+                // Latar padat (bukan transparan): kolom Tanggal yang beku mewarisinya.
+                // group: warna blok kolom (sama dengan Rekap 2) ikut selang-seling & hover.
+                className={`group border-t hover:bg-sky-50 ${dayjs(r.tanggal).day() === 1 ? 'bg-rose-50' : 'bg-white even:bg-slate-50'}`}
+              >
+                <td
+                  className={`sticky left-0 px-3 py-1 font-medium whitespace-nowrap ${
+                    dayjs(r.tanggal).day() === 1 ? 'bg-rose-200' : WARNA.biru.sel
+                  }`}
+                >
+                  {dayjs(r.tanggal).format('ddd, DD-MM')}
+                </td>
+                {KOLOM_HARIAN.map(([k, , kelas]) => (
+                  <td key={k} className={`px-3 py-1 text-right ${WARNA_HARIAN[k]?.sel ?? ''} ${kelas ?? ''}`}>
+                    {klik[k] ? (
+                      <button
+                        type="button"
+                        onClick={() => klik[k](r)}
+                        className="text-sky-700 underline decoration-dotted hover:text-sky-900"
+                      >
+                        {ribu(r[k])}
+                      </button>
                     ) : (
-                      <XCircle className="text-red-500" />
+                      ribu(r[k])
                     )}
-                  </div>
-                  {/* {subitem.status_approve_kasir
-                          ? dayjs(subitem.status_approve_kasir).format('DD-MM')
-                          : ''} */}
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-center ">
-                    {subitem.status_approve_kepala ? (
-                      <CheckCircle className="text-green-500" />
-                    ) : (
-                      <XCircle className="text-red-500" />
-                    )}
-                  </div>
-                  {/* {subitem.status_approve_kepala
-                          ? dayjs(subitem.status_approve_kepala).format('DD-MM')
-                          : ''} */}
-                </TableCell>
-              </TableRow>
+                  </td>
+                ))}
+                <td className="px-3 py-1">
+                  <Cek ok={r.status_approve_kasir} />
+                </td>
+                <td className="px-3 py-1">
+                  <Cek ok={r.status_approve_kepala} otomatis={r.kepala_otomatis} onClick={onAcc && (() => onAcc(r))} />
+                </td>
+              </tr>
             ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow className="bg-gray-100">
-              <TableCell></TableCell>
-              <TableCell className="font-semibold">TOTAL</TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'drop')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'total_drop')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'storting')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering
-                  value={calculateTotals(data, 'total_storting')}
-                />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'sirkulasi')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'angsuran_cm')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering
-                  value={calculateTotals(data, 'total_angsuran_cm')}
-                />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'saldo_cm')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'angsuran_mb')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering
-                  value={calculateTotals(data, 'total_angsuran_mb')}
-                />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'saldo_mb')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'angsuran_ml')} />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering
-                  value={calculateTotals(data, 'total_angsuran_ml')}
-                />
-              </TableCell>
-              <TableCell>
-                <FormatNumbering value={calculateTotals(data, 'saldo_ml')} />
-              </TableCell>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
+          </tbody>
+          {datas.length > 0 && (
+            <tfoot className="sticky bottom-0 font-bold border-t-2 bg-emerald-50 text-slate-900">
+              <tr>
+                <td className={`sticky left-0 px-3 py-2 ${WARNA.biru.total}`}>Total</td>
+                {KOLOM_HARIAN.map(([k, , kelas]) => (
+                  <td key={k} className={`px-3 py-2 text-right ${WARNA_HARIAN[k]?.total ?? ''} ${kelas ?? ''}`}>
+                    {ribu(BERJALAN.has(k) ? akhir[k] : jumlah(datas, k))}
+                  </td>
+                ))}
+                <td colSpan={2} />
+              </tr>
+            </tfoot>
+          )}
+        </table>
       </div>
     </div>
   );

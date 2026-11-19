@@ -1,129 +1,74 @@
-import { useRef, useState } from 'react';
-import DangerButton from '@/Components/DangerButton';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
-import TextInput from '@/Components/TextInput';
-import { useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import dayjs from 'dayjs';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/shadcn/ui/button';
-import { Dialog } from '@headlessui/react';
-import Loading from '@/Components/Loading';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shadcn/ui/dialog';
+import { rp as rupiah } from '@/lib/rupiah';
 
-export default function DeleteAngsuran({ id }) {
-  const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
-  const passwordInput = useRef();
+
+/**
+ * Hapus satu angsuran: tombol "Hapus" (ikon sampah di HP) -> dialog
+ * konfirmasi yang menyebut tanggal & nominalnya -> hapus.
+ */
+export default function DeleteAngsuran({ id, tanggal, nominal }) {
   const { auth } = usePage().props;
+  // can-edit (koreksi) boleh menghapus walau tanpa can-create.
+  const boleh = auth.permissions.includes('can-create') || auth.permissions.includes('can-edit');
+  const [buka, setBuka] = useState(false);
+  const [proses, setProses] = useState(false);
 
-  const unitAkses = auth.permissions.includes('can create');
-
-  const {
-    data,
-    setData,
-    delete: destroy,
-    processing,
-    reset,
-    errors,
-  } = useForm();
-
-  const confirmUserDeletion = () => {
-    setConfirmingUserDeletion(true);
-  };
-
-  const cancelUserDeletion = () => {
-    setTimeout(() => {
-      setConfirmingUserDeletion(false);
-    }, 200);
-  };
-
-  const buttonArea = useRef(null);
-
-  const deleteUser = (e) => {
-    e.preventDefault();
-
-    destroy(route('pinjaman.destroy_angsuran', id), {
+  const hapus = () =>
+    router.delete(route('pinjaman.destroy_angsuran', id), {
       preserveScroll: true,
+      onStart: () => setProses(true),
+      onFinish: () => {
+        setProses(false);
+        setBuka(false);
+      },
     });
-  };
 
   return (
-    <div ref={buttonArea} onMouseLeave={cancelUserDeletion}>
-      <Loading show={processing} />
-      <form onSubmit={deleteUser}>
-        <div className="flex flex-col h-6 overflow-hidden">
-          <div
-            className={`inline transition-all duration-300
-              ${confirmingUserDeletion ? 'translate-y-full' : 'translate-y-0'}
-              `}
-          >
-            <Button
-              disabled={!unitAkses}
-              type="button"
-              size="xs"
-              onClick={confirmUserDeletion}
-            >
-              Hapus
+    <>
+      <button
+        type="button"
+        disabled={!boleh || proses}
+        onClick={() => setBuka(true)}
+        title="Hapus angsuran"
+        aria-label="Hapus angsuran"
+        className="inline-flex items-center justify-center h-6 px-1.5 sm:px-2 text-[11px] font-semibold text-red-600 bg-white border border-red-200 rounded-md transition-colors hover:border-red-400 hover:bg-red-50 disabled:opacity-40"
+      >
+        <Trash2 className="w-3.5 h-3.5 sm:hidden" aria-hidden="true" />
+        <span className="hidden sm:inline">Hapus</span>
+      </button>
+
+      <Dialog open={buka} onOpenChange={(o) => !proses && setBuka(o)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Hapus angsuran?</DialogTitle>
+            <DialogDescription>
+              Angsuran{tanggal ? ` ${dayjs(tanggal).format('DD MMM YYYY')}` : ''}
+              {nominal !== undefined ? ` sebesar Rp ${rupiah(nominal)}` : ''} akan dihapus. Tindakan ini tidak bisa
+              dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+            <Button variant="outline" disabled={proses} onClick={() => setBuka(false)}>
+              Batal
             </Button>
-          </div>
-          <div
-            className={`inline transition-all duration-300
-              ${
-                confirmingUserDeletion ? '-translate-y-full' : 'translate-y-0'
-              }`}
-          >
-            <Button
-              type="submit"
-              size="xs"
-              variant="destructive"
-              onClick={confirmUserDeletion}
-            >
-              Yakin?
+            <Button className="bg-red-600 hover:bg-red-700" disabled={proses} onClick={hapus}>
+              {proses ? 'Menghapus…' : 'Ya, hapus'}
             </Button>
-          </div>
-        </div>
-      </form>
-
-      {/* <Modal show={confirmingUserDeletion} onClose={closeModal}>
-          <h2 className="text-lg font-medium text-gray-900">
-            Apakah Anda Yakin ? Menghapus Transaksi Tersebut
-          </h2>
-
-          <p className="mt-1 text-sm text-gray-600">
-            Menghapus Transaksi Dapat Mengubah Status Transaksi, Perolehan
-            Storting, dan Neraca Kas
-          </p>
-
-          <div className="mt-6">
-            <InputLabel
-              htmlFor="password"
-              value="Password"
-              className="sr-only"
-            />
-
-            <TextInput
-              id="password"
-              type="password"
-              name="password"
-              ref={passwordInput}
-              value={data.password}
-              onChange={(e) => setData('password', e.target.value)}
-              className="block w-3/4 mt-1"
-              isFocused
-              placeholder="Password"
-            />
-
-            <InputError message={errors.password} className="mt-2" />
-          </div>
-
-          <div className="flex justify-end mt-6">
-            <SecondaryButton onClick={closeModal}>Cancel</SecondaryButton>
-
-            <DangerButton className="ml-3" disabled={processing}>
-              Hapus Transaksi
-            </DangerButton>
-          </div>
-
-      </Modal> */}
-    </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

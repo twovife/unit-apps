@@ -5,10 +5,10 @@ function useOptionGenerator({ propsWilayah = '', ...props } = {}) {
   const { server_filter } = usePage().props;
 
   const [selectedSearchParam, setSelectedSearchParam] = useState(
-    server_filter?.search ?? null
+    server_filter?.search ?? null,
   );
   const [selectedWilayah, setSelectedWilayah] = useState(
-    server_filter?.wilayah ?? ''
+    server_filter?.wilayah ?? '',
   );
 
   useEffect(() => {
@@ -17,20 +17,20 @@ function useOptionGenerator({ propsWilayah = '', ...props } = {}) {
 
   // dipakai jika hanya tanpa mengganti request branch_id
   const [selectedBranch_id, setSelectedBranch_id] = useState(
-    server_filter?.branch_id ?? ''
+    server_filter?.branch_id ?? '',
   );
   // dipakai jika hanya tanpa mengganti request branch_id
   const [selectedMonth, setSelectedMonth] = useState(
-    server_filter?.month ?? ''
+    server_filter?.month ?? '',
   );
   // dipakai jika hanya tanpa mengganti request branch_id
   const [selectedDate, setSelectedDate] = useState(server_filter?.date ?? '');
 
   const [selectedEmployee, setSelectedEmployee] = useState(
-    server_filter?.employee_id ?? ''
+    server_filter?.employee_id ?? '',
   );
   const [selectedKelompok, setSelectedKelompok] = useState(
-    server_filter?.kelompok ?? ''
+    server_filter?.kelompok ?? '',
   );
   const [selectedHari, setSelectedHari] = useState(server_filter?.hari ?? '');
 
@@ -46,6 +46,8 @@ function useOptionGenerator({ propsWilayah = '', ...props } = {}) {
     { id: 8, display: 'Wilayah 8', value: 8 },
     { id: 9, display: 'Wilayah 9', value: 9 },
     { id: 10, display: 'Wilayah 10', value: 10 },
+    { id: 11, display: 'Wilayah 11', value: 11 },
+    { id: 12, display: 'Wilayah 12', value: 12 },
   ];
 
   const dayOpt = [
