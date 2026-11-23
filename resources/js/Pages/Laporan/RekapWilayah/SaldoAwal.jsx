@@ -6,8 +6,8 @@ import { nilai, persen, persenTeks } from './kolom';
 // lama masing-masing, ML dibagi sirkulasi.
 const EMBER = [
   { k: 'awal_sirkulasi', j: 'Sirkulasi' },
-  { k: 'awal_cm', j: 'Calon Macet', bagi: 'saldo_lama_cm' },
-  { k: 'awal_mb', j: 'Macet Baru', bagi: 'saldo_lama_mb' },
+  { k: 'awal_cm', j: 'Calon Macet', bagi: 'saldo_lama_cm', drop: 'drop_cm' },
+  { k: 'awal_mb', j: 'Macet Baru', bagi: 'saldo_lama_mb', drop: 'drop_mb' },
   { k: 'awal_ml', j: 'Macet Lama', bagi: 'awal_sirkulasi' },
 ];
 
@@ -22,7 +22,7 @@ const EMBER = [
  * Memakai <details> bawaan browser: buka-tutupnya tidak perlu state, dan
  * isinya tetap bisa dicari dengan Ctrl+F.
  */
-export default function SaldoAwal({ baris, bulan }) {
+export default function SaldoAwal({ baris, bulan, bulanCm, bulanMb }) {
   useModeRibuan(); // ikut saklar ribuan di header
 
   const total = (k) => baris.reduce((t, b) => t + Number(nilai(b, k) || 0), 0);
@@ -41,6 +41,7 @@ export default function SaldoAwal({ baris, bulan }) {
               <span className="text-slate-500">{e.j} </span>
               <span className="font-medium">{angka(total(e.k))}</span>
               {e.bagi && <span className="text-slate-400"> ({persenTotal(e)})</span>}
+              {e.drop && <span className="text-slate-400"> · drop {angka(total(e.drop))}</span>}
             </span>
           ))}
           <span className="text-[11px] text-slate-400">klik untuk rincian {baris.length} kantor</span>
@@ -53,8 +54,14 @@ export default function SaldoAwal({ baris, bulan }) {
             <tr>
               <th className="px-1.5 py-1 text-left text-[10px] font-semibold uppercase tracking-tight text-slate-500">Kantor</th>
               {EMBER.map((e) => (
-                <th key={e.k} colSpan={e.bagi ? 2 : 1} className="px-1.5 py-1 text-right text-[10px] font-semibold uppercase tracking-tight text-slate-500">
+                <th
+                  key={e.k}
+                  colSpan={(e.drop ? 1 : 0) + (e.bagi ? 2 : 1)}
+                  title={e.drop ? `Saldo lama = drop ${e.k === 'awal_cm' ? bulanCm : bulanMb} x 1,3` : undefined}
+                  className="px-1.5 py-1 text-right text-[10px] font-semibold uppercase tracking-tight text-slate-500"
+                >
                   {e.j}
+                  {e.drop && <span className="font-normal normal-case"> · drop {e.k === 'awal_cm' ? bulanCm : bulanMb}</span>}
                 </th>
               ))}
             </tr>
@@ -65,6 +72,11 @@ export default function SaldoAwal({ baris, bulan }) {
                 <td className="whitespace-nowrap px-1.5 py-0.5 font-medium">{b.unit}</td>
                 {EMBER.map((e) => (
                   <Fragment key={e.k}>
+                    {e.drop && (
+                      <td className="whitespace-nowrap px-1.5 py-0.5 text-right tabular-nums text-slate-500">
+                        {angka(nilai(b, e.drop))}
+                      </td>
+                    )}
                     <td className="whitespace-nowrap px-1.5 py-0.5 text-right tabular-nums">{angka(nilai(b, e.k))}</td>
                     {e.bagi && (
                       <td className="whitespace-nowrap px-1.5 py-0.5 text-right tabular-nums text-slate-500">
@@ -81,6 +93,7 @@ export default function SaldoAwal({ baris, bulan }) {
               <td className="px-1.5 py-1">Total Wilayah</td>
               {EMBER.map((e) => (
                 <Fragment key={e.k}>
+                  {e.drop && <td className="whitespace-nowrap px-1.5 py-1 text-right tabular-nums">{angka(total(e.drop))}</td>}
                   <td className="whitespace-nowrap px-1.5 py-1 text-right tabular-nums">{angka(total(e.k))}</td>
                   {e.bagi && <td className="whitespace-nowrap px-1.5 py-1 text-right tabular-nums">{persenTotal(e)}</td>}
                 </Fragment>

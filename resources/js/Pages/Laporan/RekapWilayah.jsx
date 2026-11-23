@@ -165,6 +165,8 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_ker
         {baris.length > 0 && (
           <SaldoAwal
             baris={barisTampil}
+            bulanCm={namaBulan(bulan_cm)}
+            bulanMb={namaBulan(bulan_mb)}
             bulan={new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
           />
         )}
