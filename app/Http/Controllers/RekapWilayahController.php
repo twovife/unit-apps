@@ -63,6 +63,9 @@ class RekapWilayahController extends Controller
             // Hari libur dianggap tidak ada (aturan mas 2026-11-23): halamannya
             // tetap bisa dilihat, tapi tidak ada yang boleh diisi di sana.
             'hari_kerja' => WorkDay::hariKerja($tanggal),
+            // Bulan asal saldo lama, untuk judul kolom & keterangan di layar.
+            'bulan_cm' => RekapWilayah::bulanRujukan($tanggal, 'cm'),
+            'bulan_mb' => RekapWilayah::bulanRujukan($tanggal, 'mb'),
             'hari_tertinggal' => $this->hariTertinggal($wilayah, $tanggal, array_keys($sistem)),
             'daftar_wilayah' => $this->wilayahBoleh(),
             'boleh_ubah' => $user->hasAnyRole(self::PERAN_UBAH) && WorkDay::hariKerja($tanggal),

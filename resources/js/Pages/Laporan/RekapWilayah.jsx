@@ -12,7 +12,10 @@ import TabelWilayah from './RekapWilayah/TabelWilayah';
  * hanya DITANDAI, tidak menghalangi simpan: angka laporan dicatat apa adanya
  * supaya jejak kasir yang salah lapor tidak hilang.
  */
-export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_kerja, hari_tertinggal = [], daftar_wilayah, baris, boleh_ubah }) {
+const namaBulan = (t) =>
+  t ? new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : null;
+
+export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_kerja, hari_tertinggal = [], bulan_cm, bulan_mb, daftar_wilayah, baris, boleh_ubah }) {
   // Hanya sel yang benar-benar diketik, berkunci "branch_id|kolom". Baris yang
   // tidak disentuh tidak ikut dikirim, jadi angka sistem tidak tersimpan
   // seolah-olah dilaporkan kasir.
@@ -172,6 +175,8 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_ker
             bolehUbah={boleh_ubah}
             belumSimpan={new Set(Object.keys(ubahan).map((k) => Number(k.split('|')[0])))}
             onUbah={(branchId, kolom, v) => setUbahan((s) => ({ ...s, [`${branchId}|${kolom}`]: v }))}
+            bulanCm={namaBulan(bulan_cm)}
+            bulanMb={namaBulan(bulan_mb)}
             onCek={cek}
             onBuka={(b) => setBukaBaris(b)}
             onLog={lihatLog}

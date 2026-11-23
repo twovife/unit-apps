@@ -80,7 +80,7 @@ function Penanda({ nilai = 0, dari = 0, kiri = false }) {
  * ditampilkan. Baris yang masih ada isian belum tersimpan ditandai, karena
  * kolom turunannya belum ikut berubah.
  */
-export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, onCek, onBuka, onLog }) {
+export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, onCek, onBuka, onLog, bulanCm, bulanMb }) {
   useModeRibuan(); // ikut berganti saat saklar ribuan di header diubah
 
   // Persen baris total dari jumlah pembilang / jumlah penyebut, BUKAN
@@ -96,6 +96,15 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
   const keBawah = (indeks, k) => {
     const berikut = baris[indeks + 1];
     if (berikut) document.querySelector(`[data-sel="${berikut.branch_id}|${k}"]`)?.focus();
+  };
+
+  // Saldo lama berasal dari drop bulan T-3 / T-4; bulannya ditulis di
+  // keterangan sel supaya angkanya bisa ditelusuri.
+  const ket = {
+    drop_cm: `Jumlah drop ${bulanCm ?? 'bulan CM'}`,
+    saldo_lama_cm: `Drop ${bulanCm ?? 'bulan CM'} x 1,3`,
+    drop_mb: `Jumlah drop ${bulanMb ?? 'bulan MB'}`,
+    saldo_lama_mb: `Drop ${bulanMb ?? 'bulan MB'} x 1,3`,
   };
 
   const th = 'sticky z-20 whitespace-nowrap border-b bg-slate-100 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-tight text-slate-500';
@@ -145,7 +154,7 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
                   return (
                     <td
                       key={k.k}
-                      title={basi ? 'Dihitung ulang setelah disimpan' : (tanda ?? undefined)}
+                      title={basi ? 'Dihitung ulang setelah disimpan' : (ket[k.k] ?? tanda ?? undefined)}
                       className={`whitespace-nowrap border-b p-0 text-right tabular-nums group-hover:bg-slate-50 ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-amber-100' : ''}`}
                     >
                       {bisaKetik ? (

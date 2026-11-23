@@ -69,8 +69,10 @@ class AngkaRekapWilayah
         $awal = self::saldoAwal($gidBaru, $gidLama, $milikKantor, $periode);
         $gerak = self::dropStorting($gidBaru, $gidLama, $milikKantor, $periode, $tanggal);
 
-        $dropCm = self::dropBulan($wilayah, RekapWilayah::bulanRujukan($tanggal, 'cm'));
-        $dropMb = self::dropBulan($wilayah, RekapWilayah::bulanRujukan($tanggal, 'mb'));
+        $bulanCm = RekapWilayah::bulanRujukan($tanggal, 'cm');
+        $bulanMb = RekapWilayah::bulanRujukan($tanggal, 'mb');
+        $dropCm = self::dropBulan($wilayah, $bulanCm);
+        $dropMb = self::dropBulan($wilayah, $bulanMb);
 
         $hasil = [];
         foreach ($kantor as $id => $unit) {
@@ -105,6 +107,10 @@ class AngkaRekapWilayah
 
                 'saldo_lama_cm' => RekapWilayah::saldoLama($dropCm[$id] ?? 0),
                 'saldo_lama_mb' => RekapWilayah::saldoLama($dropMb[$id] ?? 0),
+                // Drop bulan rujukan, asal saldo lama. Ditampilkan supaya
+                // angkanya bisa ditelusuri, bukan muncul entah dari mana.
+                'drop_cm' => $dropCm[$id] ?? 0,
+                'drop_mb' => $dropMb[$id] ?? 0,
             ];
         }
 
