@@ -38,7 +38,10 @@ class RekapWilayahController extends Controller
         $wilayah = $this->wilayahTerpilih($request);
 
         $sistem = AngkaRekapWilayah::untukWilayah($wilayah, $tanggal);
-        $unit = Branch::whereIn('id', array_keys($sistem))->orderBy('unit')->pluck('unit', 'id');
+        // Urut alami, bukan alfabet: orderBy('unit') menaruh Krian 10 di antara
+        // Krian 1 dan Krian 2, karena membandingkan huruf per huruf.
+        $unit = Branch::whereIn('id', array_keys($sistem))->pluck('unit', 'id')
+            ->sort(fn ($a, $b) => strnatcasecmp($a, $b));
 
         $diketik = RegionalCirculationRecap::with('pengecek.employee:id,nama_karyawan')
             ->whereDate('tanggal', $tanggal)
