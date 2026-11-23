@@ -324,12 +324,16 @@ export default function AppSidebar({ ...props }) {
                 ]}
               />
             )}
-            {(isSuperUser || auth?.roles?.includes('pusat')) && (
+            {/* Staf kontrol ikut melihat grup Laporan, tapi hanya butir yang boleh dibukanya. */}
+            {(isSuperUser || auth?.roles?.includes('pusat') || auth?.roles?.includes('stafkontrol')) && (
               <SidebarSubMenuSection
                 icon={ClipboardCheck}
                 title="Laporan"
                 items={[
-                  { id: 'lap-checklist', title: 'Checklist Aplikasi Baru', link: route('checklist.laporan'), active: route().current('checklist.laporan') },
+                  ...(isSuperUser || auth?.roles?.includes('pusat')
+                    ? [{ id: 'lap-checklist', title: 'Checklist Aplikasi Baru', link: route('checklist.laporan'), active: route().current('checklist.laporan') }]
+                    : []),
+                  { id: 'lap-rekap-wilayah', title: 'Rekap Sirkulasi Wilayah', link: route('laporan.rekap_wilayah.index'), active: route().current('laporan.rekap_wilayah.*') },
                 ]}
               />
             )}

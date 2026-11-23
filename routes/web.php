@@ -22,6 +22,10 @@ use Inertia\Inertia;
 */
 
 
+
+// Masuk otomatis dari bossub (link sekali pakai bertanda tangan HMAC).
+Route::get('/sso/masuk', [\App\Http\Controllers\SsoController::class, 'masuk'])->name('sso.masuk');
+
 Route::get('/', function () {
   // Video panduan pengumuman (MinIO, link sementara) - kosong kalau belum disetel.
   return Inertia::render('Dashboard', ['video' => \App\Helpers\VideoPengumuman::url()]);
@@ -39,6 +43,12 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\BranchChecklistCon
   Route::delete('/checklist-aplikasi/{item}', 'batal')->name('checklist.batal');
   Route::get('/laporan/checklist-aplikasi', 'laporan')->name('checklist.laporan');
 });
+// Rekap Sirkulasi Wilayah: pengganti berkas Excel staf kontrol
+// (.agents/rekap_sirkulasi_wilayah.md). Peran dicek di controller.
+Route::middleware(['auth'])->controller(\App\Http\Controllers\RekapWilayahController::class)
+  ->prefix('laporan/rekap-wilayah')->name('laporan.rekap_wilayah.')->group(function () {
+    Route::get('/', 'index')->name('index');
+  });
 Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorController::class)
   ->prefix('dashboard-kasir')->name('dashboard.kasir.')->group(function () {
     Route::post('/iuran', 'bayarIuran')->name('iuran');
