@@ -11,11 +11,15 @@
 //
 // Ubah $PERIKSA di bawah untuk memeriksa wilayah atau tanggal lain.
 
+// Pakai tanggal yang BENAR-BENAR ada transaksinya, kalau tidak kolom harian
+// (drop, storting, angsuran) nol di kedua sisi dan perbandingannya tidak
+// membuktikan apa-apa. Salinan lokal berhenti di 2026-11-16.
 $PERIKSA = [
-    [1, '2026-11-18'],  // wilayah terbesar, 32 kantor, termasuk Sidoarjo 2 (alur lama)
-    [8, '2026-11-18'],  // termasuk Solo 1 (alur lama)
-    [10, '2026-11-17'], // 33 kantor
+    [1, '2026-11-16'],  // wilayah terbesar, 32 kantor, termasuk Sidoarjo 2 (alur lama)
+    [8, '2026-11-13'],  // termasuk Solo 1 (alur lama)
+    [10, '2026-11-11'], // 33 kantor
     [4, '2026-10-15'],  // bulan yang sudah lewat
+    [1, '2026-10-01'],  // tanggal 1 yang jatuh di hari kerja (1 November 2026 = Minggu)
 ];
 
 $KOLOM = [
@@ -74,7 +78,12 @@ foreach ($PERIKSA as [$wilayah, $tanggal]) {
         }
     }
 
-    echo "wilayah $wilayah $tanggal: " . count($punyaku) . " kantor, {$detik}s\n";
+    // Kalau kolom harian nol di semua kantor, tanggal itu tidak membuktikan
+    // apa pun untuk drop/storting — ganti tanggalnya.
+    $harian = collect($punyaku)->sum('drop') + collect($punyaku)->sum('storting');
+    $catatan = $harian === 0 ? '  <- kolom harian nol semua, tanggal ini tidak menguji apa-apa' : '';
+
+    echo "wilayah $wilayah $tanggal: " . count($punyaku) . " kantor, {$detik}s$catatan\n";
 }
 
 echo "\ndiperiksa=$diperiksa beda=$beda\n";

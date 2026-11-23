@@ -28,6 +28,11 @@ jejaknya.
 
 - Tanggal 1: tambahan kolom saldo awal bulan (sirkulasi, CM, MB, ML).
 
+  **Belum diputuskan:** kalau tanggal 1 jatuh di hari libur, tanggal itu bukan
+  hari kerja dan Rekap 2 tidak punya barisnya (1 November 2026 = Minggu). Perlu
+  ditanyakan ke mas: saldo awal diketik di tanggal 1 walau libur, atau di hari
+  kerja pertama bulan itu. Menyangkut Tugas 5, yang masih ditunda.
+
 ## 2. Angka
 
 ### Yang diketik staf kontrol
