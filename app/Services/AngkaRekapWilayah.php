@@ -69,6 +69,10 @@ class AngkaRekapWilayah
         $awal = self::saldoAwal($gidBaru, $gidLama, $milikKantor, $periode);
         $gerak = self::dropStorting($gidBaru, $gidLama, $milikKantor, $periode, $tanggal);
 
+        $bulanLalu = Carbon::parse($periode)->subMonth()->toDateString();
+        $dropLalu = self::dropBulan($wilayah, $bulanLalu);
+        $pemutihan = self::pemutihanBulan($wilayah, $bulanLalu);
+
         $bulanCm = RekapWilayah::bulanRujukan($tanggal, 'cm');
         $bulanMb = RekapWilayah::bulanRujukan($tanggal, 'mb');
         $dropCm = self::dropBulan($wilayah, $bulanCm);
@@ -111,6 +115,10 @@ class AngkaRekapWilayah
                 // angkanya bisa ditelusuri, bukan muncul entah dari mana.
                 'drop_cm' => $dropCm[$id] ?? 0,
                 'drop_mb' => $dropMb[$id] ?? 0,
+
+                // Bulan lalu: drop dan pemutihan yang membentuk saldo awal ini.
+                'drop_bulan_lalu' => $dropLalu[$id] ?? 0,
+                'pemutihan' => $pemutihan[$id] ?? 0,
             ];
         }
 
@@ -365,6 +373,36 @@ class AngkaRekapWilayah
         }
 
         return $hasil;
+    }
+
+    /**
+     * Pemutihan per kantor pada satu bulan.
+     *
+     * Dipakai untuk bulan LALU: sirkulasi bulan itu belum dikurangi pemutihan
+     * (aturan mas 2026-10-05), baru keluar di saldo awal bulan ini. Jadi
+     * angkanya ditaruh bersebelahan dengan saldo awal supaya selisihnya
+     * terbaca. Sama dengan yang dipakai Rekap 2.
+     *
+     * @return array<int, int> branch_id => jumlah pemutihan
+     */
+    private static function pemutihanBulan(int $wilayah, string $periode): array
+    {
+        return Cache::remember("rekap_wilayah:pemutihan:$wilayah:$periode", now()->addHours(6), function () use ($wilayah, $periode) {
+            $akhir = Carbon::parse($periode)->endOfMonth()->toDateString();
+
+            return \App\Models\TransactionWhiteOff::join(
+                'transaction_loan_officer_groupings as g',
+                'g.id', '=', 'transaction_white_offs.transaction_loan_officer_grouping_id'
+            )
+                ->join('branches as b', 'b.id', '=', 'g.branch_id')
+                ->where('b.wilayah', $wilayah)
+                ->whereBetween('transaction_white_offs.transaction_date', [$periode, $akhir])
+                ->groupBy('g.branch_id')
+                ->selectRaw('g.branch_id AS b, SUM(transaction_white_offs.nominal) AS n')
+                ->toBase()->get()
+                ->mapWithKeys(fn ($r) => [(int) $r->b => (int) $r->n])
+                ->all();
+        });
     }
 
     /**

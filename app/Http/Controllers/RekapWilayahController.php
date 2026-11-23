@@ -64,6 +64,7 @@ class RekapWilayahController extends Controller
             // tetap bisa dilihat, tapi tidak ada yang boleh diisi di sana.
             'hari_kerja' => WorkDay::hariKerja($tanggal),
             // Bulan asal saldo lama, untuk judul kolom & keterangan di layar.
+            'bulan_lalu' => Carbon::parse($tanggal)->startOfMonth()->subMonth()->toDateString(),
             'bulan_cm' => RekapWilayah::bulanRujukan($tanggal, 'cm'),
             'bulan_mb' => RekapWilayah::bulanRujukan($tanggal, 'mb'),
             'hari_tertinggal' => $this->hariTertinggal($wilayah, $tanggal, array_keys($sistem)),
