@@ -59,6 +59,20 @@ function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
 }
 
 /**
+ * Penanda TTD kasir / ACC KM: berapa kelompok dari seluruh kelompok kantor itu.
+ * Lengkap -> hijau, sebagian -> kuning, belum ada -> kelabu.
+ */
+function Penanda({ nilai = 0, dari = 0, kiri = false }) {
+  const warna = dari && nilai >= dari ? 'text-emerald-700' : nilai > 0 ? 'text-amber-600' : 'text-slate-300';
+
+  return (
+    <td className={`whitespace-nowrap border-b px-1.5 py-0.5 text-center text-[10px] tabular-nums group-hover:bg-slate-50 ${kiri ? 'border-l' : ''}`}>
+      <span className={warna}>{nilai}/{dari}</span>
+    </td>
+  );
+}
+
+/**
  * Tabel Rekap Sirkulasi Wilayah: satu baris per kantor, lalu baris total.
  *
  * Yang diketik hanya mutasi hari itu (Drop, Storting, Angs CM/MB/ML).
@@ -66,7 +80,7 @@ function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
  * ditampilkan. Baris yang masih ada isian belum tersimpan ditandai, karena
  * kolom turunannya belum ikut berubah.
  */
-export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan }) {
+export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, onCek, onBuka, onLog }) {
   useModeRibuan(); // ikut berganti saat saklar ribuan di header diubah
 
   // Persen baris total dari jumlah pembilang / jumlah penyebut, BUKAN
@@ -97,7 +111,13 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan }) 
                 {b.judul}
               </th>
             ))}
-            <th rowSpan={2} className={`${th} top-0 border-l text-center`}>Cek</th>
+            <th rowSpan={2} className={`${th} top-0 border-l text-center`} title="Berapa kelompok yang sudah di-TTD kasir">
+              Kasir
+            </th>
+            <th rowSpan={2} className={`${th} top-0 text-center`} title="Berapa kelompok yang sudah di-ACC kepala mantri">
+              KM
+            </th>
+            <th rowSpan={2} className={`${th} top-0 border-l text-center`}>Staf Kontrol</th>
           </tr>
           <tr>
             {SEMUA_KOLOM.map((k) => (
@@ -144,9 +164,24 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan }) 
                     </td>
                   );
                 })}
+                <Penanda nilai={b.ttd?.kasir} dari={b.ttd?.kelompok} kiri />
+                <Penanda nilai={b.ttd?.km} dari={b.ttd?.kelompok} />
                 <td className="whitespace-nowrap border-b border-l px-1.5 py-0.5 text-center text-[10px] text-slate-500 group-hover:bg-slate-50">
                   {b.terkunci ? (
-                    <span title={`${b.dicek_oleh ?? '-'} · ${b.dicek_pada ?? '-'}`}>✓ {b.dicek_oleh ?? '-'}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <button type="button" onClick={() => onLog?.(b)} title={`${b.dicek_oleh ?? '-'} · ${b.dicek_pada ?? '-'}`} className="text-emerald-700 underline decoration-dotted">
+                        ✓ {b.dicek_oleh ?? '-'}
+                      </button>
+                      {bolehUbah && (
+                        <button type="button" onClick={() => onBuka?.(b)} className="text-sky-600 underline">
+                          buka
+                        </button>
+                      )}
+                    </span>
+                  ) : bolehUbah ? (
+                    <button type="button" onClick={() => onCek?.(b)} className="rounded border px-1.5 py-0.5 hover:bg-slate-100">
+                      Cek
+                    </button>
                   ) : (
                     <span className="text-slate-300">belum</span>
                   )}
@@ -163,6 +198,8 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan }) 
                 {selTotal(k.k)}
               </td>
             ))}
+            <td className="sticky bottom-0 border-l border-t-2 bg-slate-100 px-1.5 py-1" />
+            <td className="sticky bottom-0 border-t-2 bg-slate-100 px-1.5 py-1" />
             <td className="sticky bottom-0 border-l border-t-2 bg-slate-100 px-1.5 py-1" />
           </tr>
         </tfoot>

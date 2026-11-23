@@ -302,6 +302,66 @@ class AngkaRekapWilayah
     }
 
     /**
+     * Berapa kelompok di tiap kantor yang sudah di-TTD kasir dan di-ACC kepala
+     * mantri pada tanggal itu. Dipakai staf kontrol sebagai penanda: kantor
+     * yang kasirnya sendiri belum tanda tangan biasanya angkanya belum final.
+     *
+     * @return array<int, array{kasir: int, km: int, kelompok: int}>
+     */
+    public static function ttdKantor(int $wilayah, string $tanggal): array
+    {
+        $tanggal = Carbon::parse($tanggal)->toDateString();
+        $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+
+        $kantor = Branch::where('wilayah', $wilayah)->where('isactive', true)->pluck('id');
+        $grouping = TransactionLoanOfficerGrouping::whereIn('branch_id', $kantor)->get(['id', 'branch_id']);
+        $milikKantor = $grouping->pluck('branch_id', 'id');
+
+        $hasil = [];
+        foreach ($grouping as $g) {
+            $hasil[$g->branch_id] ??= ['kasir' => 0, 'km' => 0, 'kelompok' => 0];
+            $hasil[$g->branch_id]['kelompok']++;
+        }
+
+        $alurBaru = $kantor->mapWithKeys(fn ($id) => [$id => AgregasiScope::pakaiAgregatBaru($id, $periode)]);
+        $gidBaru = $grouping->filter(fn ($g) => $alurBaru[$g->branch_id])->pluck('id');
+        $gidLama = $grouping->reject(fn ($g) => $alurBaru[$g->branch_id])->pluck('id');
+
+        $hitung = function ($gid, bool $kasir, bool $km) use (&$hasil, $milikKantor) {
+            $b = $milikKantor[$gid] ?? null;
+            if ($b === null) {
+                return;
+            }
+            $hasil[$b]['kasir'] += $kasir ? 1 : 0;
+            $hasil[$b]['km'] += $km ? 1 : 0;
+        };
+
+        if ($gidBaru->isNotEmpty()) {
+            TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $gidBaru)
+                ->whereDate('date', $tanggal)
+                ->get(['transaction_loan_officer_grouping_id', 'kasir_lock_at', 'kepala_approval_at'])
+                ->each(fn ($r) => $hitung(
+                    $r->transaction_loan_officer_grouping_id,
+                    $r->kasir_lock_at !== null,
+                    $r->kepala_approval_at !== null
+                ));
+        }
+
+        if ($gidLama->isNotEmpty()) {
+            \App\Models\TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $gidLama)
+                ->whereDate('date', $tanggal)
+                ->get(['transaction_loan_officer_grouping_id', 'daily_kasir_approval', 'daily_kepala_approval'])
+                ->each(fn ($r) => $hitung(
+                    $r->transaction_loan_officer_grouping_id,
+                    (bool) $r->daily_kasir_approval,
+                    (bool) $r->daily_kepala_approval
+                ));
+        }
+
+        return $hasil;
+    }
+
+    /**
      * Jumlah drop per kantor pada satu bulan, untuk saldo lama CM/MB.
      *
      * Sumbernya transaction_loans, bukan transaction_monthly_closings.drop:

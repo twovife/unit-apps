@@ -29,6 +29,12 @@ class RekapWilayahController extends Controller
     /** Boleh membuka halaman. */
     private const PERAN_LIHAT = ['stafkontrol', 'superuser', 'pusat'];
 
+    /**
+     * Rantai cek dimulai di sini. Sejajar Gembok::MULAI_CEK_KUNCI_LAMA di
+     * Rekap 1: hari sebelum tanggal ini tidak ditagih.
+     */
+    private const MULAI = '2026-11-01';
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -43,6 +49,8 @@ class RekapWilayahController extends Controller
         $unit = Branch::whereIn('id', array_keys($sistem))->pluck('unit', 'id')
             ->sort(fn ($a, $b) => strnatcasecmp($a, $b));
 
+        $ttd = AngkaRekapWilayah::ttdKantor($wilayah, $tanggal);
+
         $diketik = RegionalCirculationRecap::with('pengecek.employee:id,nama_karyawan')
             ->whereDate('tanggal', $tanggal)
             ->whereIn('branch_id', array_keys($sistem))
@@ -55,9 +63,10 @@ class RekapWilayahController extends Controller
             // Hari libur dianggap tidak ada (aturan mas 2026-11-23): halamannya
             // tetap bisa dilihat, tapi tidak ada yang boleh diisi di sana.
             'hari_kerja' => WorkDay::hariKerja($tanggal),
+            'hari_tertinggal' => $this->hariTertinggal($wilayah, $tanggal, array_keys($sistem)),
             'daftar_wilayah' => $this->wilayahBoleh(),
             'boleh_ubah' => $user->hasAnyRole(self::PERAN_UBAH) && WorkDay::hariKerja($tanggal),
-            'baris' => $unit->map(function ($nama, $id) use ($sistem, $diketik) {
+            'baris' => $unit->map(function ($nama, $id) use ($sistem, $diketik, $ttd) {
                 $d = $diketik->get($id);
 
                 return [
@@ -69,6 +78,7 @@ class RekapWilayahController extends Controller
                         ...RegionalCirculationRecap::KOLOM_AWAL,
                         ...RegionalCirculationRecap::KOLOM_BEKU,
                     ]),
+                    'ttd' => $ttd[$id] ?? ['kasir' => 0, 'km' => 0, 'kelompok' => 0],
                     'terkunci' => (bool) $d?->terkunci(),
                     'dicek_oleh' => $d?->pengecek?->employee?->nama_karyawan,
                     'dicek_pada' => $d?->checked_at?->format('d/m/Y H:i'),
@@ -167,6 +177,191 @@ class RekapWilayahController extends Controller
         });
 
         return back();
+    }
+
+
+    /**
+     * Tanda tangan staf kontrol untuk satu baris kantor.
+     *
+     * Berantai seperti kunci kasir di Rekap 1: hari kerja sebelumnya di kantor
+     * yang sama harus sudah dicek lebih dulu, supaya tidak ada hari yang
+     * dilewati diam-diam.
+     */
+    public function cek(Request $request, Branch $branch)
+    {
+        $this->pastikanBolehUbah($branch);
+        $tanggal = Carbon::parse($request->tanggal)->toDateString();
+        abort_unless(WorkDay::hariKerja($tanggal), 422, 'Tanggal itu bukan hari kerja.');
+
+        \DB::transaction(function () use ($branch, $tanggal) {
+            $tertinggal = $this->hariBelumDicek($branch->id, $tanggal);
+            abort_if(
+                $tertinggal->isNotEmpty(),
+                422,
+                'Hari sebelumnya belum dicek: ' . $tertinggal->take(3)->implode(', ')
+                    . ($tertinggal->count() > 3 ? ' dan ' . ($tertinggal->count() - 3) . ' lagi' : '')
+            );
+
+            $baris = RegionalCirculationRecap::lockForUpdate()
+                ->where('branch_id', $branch->id)->whereDate('tanggal', $tanggal)->first();
+
+            // Baris kosong tetap boleh dicek: angka bawaannya dari Rekap 2, dan
+            // nol memang nol (aturan mas 2026-11-23). Barisnya dibuat di sini
+            // dengan angka sistem supaya yang ditandatangani tersimpan.
+            $baris ??= $this->barisDariSistem($branch, $tanggal);
+
+            abort_if($baris->terkunci(), 422, 'Baris ini sudah dicek.');
+
+            // Saldo lama dibekukan saat dicek: angka yang sudah ditandatangani
+            // tidak boleh bergeser kalau drop lama dikoreksi.
+            $sistem = AngkaRekapWilayah::untukWilayah((int) $branch->wilayah, $tanggal)[$branch->id] ?? [];
+            $baris->saldo_lama_cm ??= $sistem['saldo_lama_cm'] ?? null;
+            $baris->saldo_lama_mb ??= $sistem['saldo_lama_mb'] ?? null;
+
+            $baris->checked_by = auth()->id();
+            $baris->checked_at = now();
+            $baris->save();
+
+            $baris->logs()->create([
+                'user_id' => auth()->id(),
+                'action' => RegionalCirculationRecapLog::CEK,
+            ]);
+        });
+
+        return back();
+    }
+
+    /** Buka baris yang sudah dicek. Alasan wajib dan masuk log. */
+    public function buka(Request $request, Branch $branch)
+    {
+        $this->pastikanBolehUbah($branch);
+        $alasan = $request->validate(['alasan' => 'required|string|min:5|max:255'])['alasan'];
+        $tanggal = Carbon::parse($request->tanggal)->toDateString();
+
+        \DB::transaction(function () use ($branch, $tanggal, $alasan) {
+            $baris = RegionalCirculationRecap::lockForUpdate()
+                ->where('branch_id', $branch->id)->whereDate('tanggal', $tanggal)->firstOrFail();
+
+            abort_unless($baris->terkunci(), 422, 'Baris ini belum dicek.');
+
+            $baris->logs()->create([
+                'user_id' => auth()->id(),
+                'action' => RegionalCirculationRecapLog::BUKA,
+                'reason' => $alasan,
+            ]);
+
+            $baris->checked_by = null;
+            $baris->checked_at = null;
+            $baris->save();
+        });
+
+        return back();
+    }
+
+    /** Riwayat satu baris, dibaca drawer di tabel. */
+    public function log(Request $request, Branch $branch)
+    {
+        abort_unless(auth()->user()?->hasAnyRole(self::PERAN_LIHAT), 403);
+        $tanggal = Carbon::parse($request->tanggal)->toDateString();
+
+        $baris = RegionalCirculationRecap::where('branch_id', $branch->id)
+            ->whereDate('tanggal', $tanggal)->first();
+
+        return response()->json($baris
+            ? $baris->logs()->with('user.employee:id,nama_karyawan')->orderByDesc('id')->get()
+                ->map(fn ($l) => [
+                    'aksi' => $l->action,
+                    'kolom' => $l->field,
+                    'lama' => $l->old_value,
+                    'baru' => $l->new_value,
+                    'alasan' => $l->reason,
+                    'oleh' => $l->user?->employee?->nama_karyawan ?? '-',
+                    'pada' => $l->created_at->format('d/m/Y H:i'),
+                ])
+            : []);
+    }
+
+    /** Boleh mengisi, cek, dan buka: stafkontrol di kantor zonanya, atau superuser. */
+    private function pastikanBolehUbah(Branch $branch): void
+    {
+        $user = auth()->user();
+        abort_unless($user?->hasAnyRole(self::PERAN_UBAH), 403, 'Hanya staf kontrol & superuser.');
+
+        $boleh = Branch::getAllowedBranchIds($user);
+        abort_if($boleh !== null && ! in_array($branch->id, $boleh, true), 403, 'Kantor ini di luar wilayah Anda.');
+    }
+
+    /**
+     * Hari kerja sejak MULAI s/d sehari sebelum $tanggal yang masih punya
+     * kantor belum dicek, untuk banner di atas tabel. Ringkas: satu baris per
+     * tanggal berisi jumlah kantornya saja.
+     *
+     * @return array<int, array{tanggal: string, kantor: int}>
+     */
+    private function hariTertinggal(int $wilayah, string $tanggal, array $branchIds): array
+    {
+        $mulai = max(self::MULAI, Carbon::parse($tanggal)->startOfMonth()->toDateString());
+        if ($tanggal <= $mulai || empty($branchIds)) {
+            return [];
+        }
+
+        $hari = WorkDay::hariKerjaBulan($tanggal)
+            ->map(fn ($t) => $t->toDateString())
+            ->filter(fn ($t) => $t >= $mulai && $t < $tanggal)
+            ->values();
+
+        if ($hari->isEmpty()) {
+            return [];
+        }
+
+        $sudah = RegionalCirculationRecap::whereIn('branch_id', $branchIds)
+            ->whereIn('tanggal', $hari->all())
+            ->whereNotNull('checked_at')
+            ->get(['branch_id', 'tanggal'])
+            ->groupBy(fn ($r) => $r->tanggal->toDateString())
+            ->map->count();
+
+        return $hari
+            ->map(fn ($t) => ['tanggal' => $t, 'kantor' => count($branchIds) - ($sudah[$t] ?? 0)])
+            ->filter(fn ($h) => $h['kantor'] > 0)
+            ->values()->all();
+    }
+
+    /**
+     * Hari kerja sejak MULAI s/d sehari sebelum $tanggal yang belum dicek di
+     * kantor ini.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    private function hariBelumDicek(int $branchId, string $tanggal)
+    {
+        $mulai = max(self::MULAI, Carbon::parse($tanggal)->startOfMonth()->toDateString());
+        if ($tanggal <= $mulai) {
+            return collect();
+        }
+
+        $sudah = RegionalCirculationRecap::where('branch_id', $branchId)
+            ->whereBetween('tanggal', [$mulai, $tanggal])
+            ->whereNotNull('checked_at')
+            ->pluck('tanggal')->map(fn ($t) => $t->toDateString())->flip();
+
+        return WorkDay::hariKerjaBulan($tanggal)
+            ->map(fn ($t) => $t->toDateString())
+            ->filter(fn ($t) => $t >= $mulai && $t < $tanggal && ! $sudah->has($t))
+            ->values();
+    }
+
+    /** Baris baru berisi angka sistem, untuk kantor yang tidak melapor sama sekali. */
+    private function barisDariSistem(Branch $branch, string $tanggal): RegionalCirculationRecap
+    {
+        $sistem = AngkaRekapWilayah::untukWilayah((int) $branch->wilayah, $tanggal)[$branch->id] ?? [];
+
+        $isi = ['branch_id' => $branch->id, 'tanggal' => $tanggal, 'wilayah' => $branch->wilayah];
+        foreach ([...RegionalCirculationRecap::KOLOM_MUTASI, ...RegionalCirculationRecap::KOLOM_TURUNAN] as $k) {
+            $isi[$k] = $sistem[$k] ?? 0;
+        }
+
+        return RegionalCirculationRecap::create($isi);
     }
 
     /**

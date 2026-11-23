@@ -11,12 +11,15 @@ import TabelWilayah from './RekapWilayah/TabelWilayah';
  * hanya DITANDAI, tidak menghalangi simpan: angka laporan dicatat apa adanya
  * supaya jejak kasir yang salah lapor tidak hilang.
  */
-export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_kerja, daftar_wilayah, baris, boleh_ubah }) {
+export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_kerja, hari_tertinggal = [], daftar_wilayah, baris, boleh_ubah }) {
   // Hanya sel yang benar-benar diketik, berkunci "branch_id|kolom". Baris yang
   // tidak disentuh tidak ikut dikirim, jadi angka sistem tidak tersimpan
   // seolah-olah dilaporkan kasir.
   const [ubahan, setUbahan] = useState({});
   const [menyimpan, setMenyimpan] = useState(false);
+  const [bukaBaris, setBukaBaris] = useState(null);
+  const [alasan, setAlasan] = useState('');
+  const [log, setLog] = useState(null);
 
   // Angka yang diketik dituang ke baris, supaya tanda selisih, persen, dan
   // baris total ikut berubah saat mengetik.
@@ -62,6 +65,32 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_ker
     );
   };
 
+  const cek = (b) =>
+    router.post(route('laporan.rekap_wilayah.cek', b.branch_id), { tanggal }, {
+      preserveScroll: true,
+      onSuccess: () => toast.success(`${b.unit} dicek`),
+      onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal mengecek'),
+    });
+
+  const buka = () => {
+    if (alasan.trim().length < 5) return;
+    router.post(route('laporan.rekap_wilayah.buka', bukaBaris.branch_id), { tanggal, alasan: alasan.trim() }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        toast.success(`${bukaBaris.unit} dibuka`);
+        setBukaBaris(null);
+        setAlasan('');
+      },
+      onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal membuka'),
+    });
+  };
+
+  const lihatLog = async (b) => {
+    setLog({ unit: b.unit, isi: null });
+    const r = await fetch(route('laporan.rekap_wilayah.log', b.branch_id) + `?tanggal=${tanggal}`);
+    setLog({ unit: b.unit, isi: await r.json() });
+  };
+
   const jumlahUbahan = Object.keys(ubahan).length;
   const sudahDicek = baris.filter((b) => b.terkunci).length;
 
@@ -84,6 +113,20 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_ker
             murni dari sistem. Kalau angkanya tidak nol, berarti ada transaksi tercatat di hari libur dan itu perlu
             ditelusuri.
           </p>
+        )}
+
+        {hari_tertinggal.length > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
+            <div className="font-semibold">{hari_tertinggal.length} hari sejak November belum dicek</div>
+            <p className="mt-0.5 text-[11px]">Selama masih tertinggal, hari sesudahnya tidak bisa dicek. Klik tanggalnya.</p>
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+              {hari_tertinggal.map((h) => (
+                <button key={h.tanggal} type="button" onClick={() => pindah({ tanggal: h.tanggal })} className="underline">
+                  {h.tanggal} — {h.kantor} kantor belum dicek
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-2">
@@ -121,9 +164,60 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_ker
             bolehUbah={boleh_ubah}
             belumSimpan={new Set(Object.keys(ubahan).map((k) => Number(k.split('|')[0])))}
             onUbah={(branchId, kolom, v) => setUbahan((s) => ({ ...s, [`${branchId}|${kolom}`]: v }))}
+            onCek={cek}
+            onBuka={(b) => setBukaBaris(b)}
+            onLog={lihatLog}
           />
         ) : (
           <p className="rounded-xl border bg-white p-6 text-sm text-slate-500">Tidak ada kantor aktif di wilayah ini.</p>
+        )}
+        {bukaBaris && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setBukaBaris(null)}>
+            <div className="w-full max-w-md rounded-lg bg-white p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h2 className="font-semibold">Buka {bukaBaris.unit}</h2>
+              <p className="mt-1 text-[12px] text-slate-500">
+                Alasan dicatat di riwayat bersama nama Anda. Minimal 5 huruf.
+              </p>
+              <textarea
+                autoFocus
+                value={alasan}
+                onChange={(e) => setAlasan(e.target.value)}
+                rows={3}
+                className="mt-2 w-full rounded border px-2 py-1 text-sm"
+                placeholder="Mis. kasir salah lapor storting"
+              />
+              <div className="mt-3 flex justify-end gap-2 text-sm">
+                <button type="button" onClick={() => setBukaBaris(null)} className="rounded border px-3 py-1">Batal</button>
+                <button type="button" onClick={buka} disabled={alasan.trim().length < 5} className="rounded bg-sky-600 px-3 py-1 text-white disabled:opacity-40">
+                  Buka
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {log && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setLog(null)}>
+            <div className="max-h-[70vh] w-full max-w-lg overflow-auto rounded-lg bg-white p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h2 className="font-semibold">Riwayat {log.unit}</h2>
+              {!log.isi ? (
+                <p className="mt-2 text-sm text-slate-500">Memuat…</p>
+              ) : log.isi.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">Belum ada riwayat.</p>
+              ) : (
+                <ul className="mt-2 space-y-1 text-[12px]">
+                  {log.isi.map((l, i) => (
+                    <li key={i} className="border-b pb-1">
+                      <span className="font-medium">{l.aksi}</span>
+                      {l.kolom && ` ${l.kolom}: ${l.lama ?? '-'} → ${l.baru ?? '-'}`}
+                      {l.alasan && ` · ${l.alasan}`}
+                      <span className="text-slate-400"> · {l.oleh} · {l.pada}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </>

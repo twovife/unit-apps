@@ -49,6 +49,9 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\RekapWilayahContro
   ->prefix('laporan/rekap-wilayah')->name('laporan.rekap_wilayah.')->group(function () {
     Route::get('/', 'index')->name('index');
     Route::post('/', 'simpan')->name('simpan');
+    Route::post('/{branch}/cek', 'cek')->name('cek');
+    Route::post('/{branch}/buka', 'buka')->name('buka');
+    Route::get('/{branch}/log', 'log')->name('log');
   });
 Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorController::class)
   ->prefix('dashboard-kasir')->name('dashboard.kasir.')->group(function () {
@@ -341,6 +344,9 @@ Route::middleware('auth')->group(function () {
       // otorisasinya dijelaskan di controller.
       Route::get('/libur', 'liburJson')->name('libur');
       Route::post('/', 'simpan')->name('simpan');
+    Route::post('/{branch}/cek', 'cek')->name('cek');
+    Route::post('/{branch}/buka', 'buka')->name('buka');
+    Route::get('/{branch}/log', 'log')->name('log');
       Route::post('/terapkan-saran', 'terapkanSaran')->name('terapkan_saran');
     });
 
@@ -356,6 +362,9 @@ Route::middleware('auth')->group(function () {
     ->prefix('rombak-resort')->name('rombak_resort.')->group(function () {
       Route::get('/', 'index')->name('index');
       Route::post('/', 'simpan')->name('simpan');
+    Route::post('/{branch}/cek', 'cek')->name('cek');
+    Route::post('/{branch}/buka', 'buka')->name('buka');
+    Route::get('/{branch}/log', 'log')->name('log');
       Route::delete('/{rombak}', 'hapus')->whereNumber('rombak')->name('hapus');
       Route::post('/{rombak}/pratinjau', 'pratinjau')->whereNumber('rombak')->name('pratinjau');
       Route::post('/{rombak}/terapkan', 'terapkan')->whereNumber('rombak')->name('terapkan');
@@ -376,6 +385,9 @@ Route::middleware('auth')->group(function () {
     ->prefix('input-ml')->name('input_ml.')->group(function () {
       Route::get('/', 'index')->name('index');
       Route::post('/', 'simpan')->name('simpan');
+    Route::post('/{branch}/cek', 'cek')->name('cek');
+    Route::post('/{branch}/buka', 'buka')->name('buka');
+    Route::get('/{branch}/log', 'log')->name('log');
       Route::delete('/{loan}', 'hapus')->whereNumber('loan')->name('hapus');
       Route::post('/hapus-nasabah/{loan}', 'hapusNasabah')->whereNumber('loan')->name('hapus_nasabah');
     });
