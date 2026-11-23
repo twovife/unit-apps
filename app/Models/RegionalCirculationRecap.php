@@ -11,7 +11,24 @@ use Illuminate\Database\Eloquent\Model;
  */
 class RegionalCirculationRecap extends Model
 {
-    /** Angka harian dan kumulatif; urutannya sama dengan kolom di layar. */
+    /**
+     * Yang DIKETIK staf kontrol: mutasi hari itu saja (keputusan mas
+     * 2026-11-23). Kumulatif dan saldo dihitung, tidak diketik.
+     */
+    public const KOLOM_MUTASI = ['drop', 'storting', 'angsuran_cm', 'angsuran_mb', 'angsuran_ml'];
+
+    /**
+     * Yang DIHITUNG dari mutasi sebulan, lalu disimpan supaya ekspor dan hari
+     * berikutnya tidak perlu menghitung ulang.
+     */
+    public const KOLOM_TURUNAN = [
+        'total_drop', 'total_storting', 'sirkulasi',
+        'total_angsuran_cm', 'saldo_cm',
+        'total_angsuran_mb', 'saldo_mb',
+        'total_angsuran_ml', 'saldo_ml',
+    ];
+
+    /** Semua kolom angka; urutannya sama dengan kolom di layar. */
     public const KOLOM_ANGKA = [
         'drop', 'total_drop', 'storting', 'total_storting', 'sirkulasi',
         'angsuran_cm', 'total_angsuran_cm', 'saldo_cm',

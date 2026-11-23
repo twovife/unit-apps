@@ -37,27 +37,26 @@ jejaknya.
 
 ### Yang diketik staf kontrol
 
-Mutasi harian **dan** kumulatif (keputusan mas): DROP, JUMLAH DROP, STORTING,
-JUMLAH STORTING, SALDO, dan ANGS/JUMLAH/SALDO untuk CM, MB, ML. Tanggal 1
-ditambah saldo awal bulan.
+**Hanya mutasi hari itu** (keputusan mas 2026-11-23, mengganti keputusan
+sebelumnya yang juga mengetik kumulatif): DROP, STORTING, ANGS CM, ANGS MB,
+ANGS ML. Tanggal 1 ditambah saldo awal bulan.
 
-**Tempatnya langsung di sel tabel** (keputusan mas 2026-11-23; usulan drawer
-per kantor ditolak). Tabelnya 19 kolom dan harus digeser ke kanan, jadi
-bahaya utamanya salah kolom — angka Angs CM masuk ke Angs MB. Yang wajib ada
-untuk menahan itu:
+JUMLAH DROP, JUMLAH STORTING, SALDO, dan JUMLAH/SALDO tiap ember **dihitung**,
+tidak diketik.
 
-- Baris kepala tabel **menempel di atas** (`sticky top-0`), supaya nama kolom
-  tidak hilang saat digeser ke bawah.
-- Kolom Kantor menempel di kiri (sudah ada).
-- Sel yang sedang disorot menandai **baris dan kolomnya**, dan nama kolomnya
-  ditulis di `title` tiap isian.
-- **Enter pindah ke bawah** (kolom sama, kantor berikutnya). Staf kontrol bisa
-  mengisi satu kolom untuk semua kantor sekaligus, dan itu alasan mas memilih
-  tabel.
+**Tempatnya langsung di sel tabel** (keputusan mas; usulan drawer per kantor
+ditolak). Kotak isiannya dicontek dari `IsianSel` di Rekap 1
+(`resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx`):
 
-Semua sel itu **terisi lebih dulu dari Rekap 2** (`getDataRekapDua`,
-`app/Traits/RekapTrait.php`, dijumlah per kantor). Staf kontrol menimpa dengan
-angka WA kasir.
+- Diketik dalam **ribuan**: 200 berarti 200.000. Akhiran `.000` tampil saat
+  kotak sedang diisi.
+- Angka sistem yang belum dikonfirmasi ditulis **miring kelabu**.
+- Enter pindah ke kantor berikutnya di kolom yang sama, Escape membatalkan.
+- Sel tabel memakai `angka()` dari `lib/modeAngka`, jadi ikut saklar ribuan di
+  header seperti rekap lain.
+
+Penahan salah kolom: kepala tabel menempel di atas, dan tiap isian membawa
+nama blok serta kolomnya di `title`.
 
 ### Yang dihitung sistem
 
@@ -80,18 +79,25 @@ angka WA kasir.
 
 ### Tanda selisih
 
-Dua jenis, keduanya **hanya tanda di sel, simpan tetap boleh** (angka WA
-dicatat apa adanya agar jejak salah lapor kasir tidak hilang):
+**Satu jenis saja: angka tersimpan berbeda dari Rekap 2.** Sel diberi latar
+kuning, dan keterangannya (rupiah penuh) muncul saat kursor diarahkan. Tanpa
+toleransi, beda Rp1 pun ditandai, dan **tidak menghalangi simpan** — angka
+laporan kasir dicatat apa adanya supaya jejak salah lapor tidak hilang.
 
-1. **Beda dengan Rekap 2** — nilai diketik ≠ nilai sistem. Tooltip menunjukkan
-   angka sistem.
-2. **Tidak cocok dengan angka sendiri**:
-   - JUMLAH hari ini ≠ JUMLAH hari kerja sebelumnya + mutasi hari ini
-     (berlaku untuk drop, storting, angs CM/MB/ML).
-   - SALDO sirkulasi hari ini ≠ saldo kemarin + DROP × 1,3 − STORTING.
-   - Tanggal 1: pembanding "kemarin" adalah saldo awal bulan.
+Pemeriksaan rantai kumulatif (kemarin + mutasi = hari ini) **dihapus**. Sejak
+kumulatif dihitung dari mutasi sebulan, angkanya tidak mungkin bertengkar
+dengan dirinya sendiri.
 
-Tidak ada toleransi: beda Rp1 pun ditandai.
+### Cara menghitung kumulatif
+
+Dijumlah dari mutasi yang diketik sejak tanggal 1, **bukan** dari baris
+kemarin. Alasannya: kalau hari lalu dikoreksi, hari-hari sesudahnya harus ikut
+bergeser. Jadi tiap simpan menghitung ulang sebulan untuk kantor itu.
+
+Baris yang sudah dicek **tidak diubah** — angkanya sudah ditandatangani.
+Mutasinya tetap ikut dijumlah untuk hari-hari sesudahnya. Sudah diuji:
+mengoreksi 2 November menggeser 3 November, tetapi tidak kalau 3 November
+sudah dicek.
 
 ## 3. Penyimpanan
 

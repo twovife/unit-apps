@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthScope;
+use App\Helpers\RekapWilayah;
 use App\Models\Branch;
 use App\Models\RegionalCirculationRecap;
 use App\Models\RegionalCirculationRecapLog;
@@ -50,7 +51,6 @@ class RekapWilayahController extends Controller
             'hari_kerja_ke' => $this->hariKerjaKe($tanggal),
             'daftar_wilayah' => $this->wilayahBoleh(),
             'boleh_ubah' => $user->hasAnyRole(self::PERAN_UBAH),
-            'kemarin' => $this->kumulatifSebelumnya($tanggal, array_keys($sistem)),
             'baris' => $unit->map(function ($nama, $id) use ($sistem, $diketik) {
                 $d = $diketik->get($id);
 
@@ -83,7 +83,10 @@ class RekapWilayahController extends Controller
         $user = auth()->user();
         abort_unless($user?->hasAnyRole(self::PERAN_UBAH), 403, 'Hanya staf kontrol & superuser yang boleh mengisi.');
 
-        $kolom = [...RegionalCirculationRecap::KOLOM_ANGKA, ...RegionalCirculationRecap::KOLOM_AWAL];
+        // Hanya mutasi hari itu + saldo awal bulan yang boleh dikirim.
+        // Kumulatif dan saldo DIHITUNG di sini, tidak pernah dipercaya dari
+        // layar (keputusan mas 2026-11-23).
+        $kolom = [...RegionalCirculationRecap::KOLOM_MUTASI, ...RegionalCirculationRecap::KOLOM_AWAL];
 
         $isi = $request->validate([
             'tanggal' => 'required|date',
@@ -99,6 +102,8 @@ class RekapWilayahController extends Controller
             ->get(['id', 'wilayah'])->keyBy('id');
 
         \DB::transaction(function () use ($isi, $tanggal, $kolom, $kantor, $bolehKantor) {
+            $tersentuh = [];
+
             foreach ($isi['baris'] as $kiriman) {
                 $branchId = (int) $kiriman['branch_id'];
 
@@ -140,6 +145,13 @@ class RekapWilayahController extends Controller
                 }
 
                 $baris->save();
+                $tersentuh[$branchId] = $kantor[$branchId]->wilayah;
+            }
+
+            // Mengubah mutasi satu hari menggeser kumulatif hari-hari
+            // SESUDAHNYA juga, jadi sebulan dihitung ulang untuk kantor itu.
+            foreach ($tersentuh as $branchId => $wilayah) {
+                $this->hitungUlangBulan($branchId, (int) $wilayah, $tanggal);
             }
         });
 
@@ -147,38 +159,61 @@ class RekapWilayahController extends Controller
     }
 
     /**
-     * Angka kumulatif hari kerja SEBELUMNYA dalam bulan yang sama, untuk
-     * memeriksa rantai (kemarin + mutasi hari ini = kumulatif hari ini).
-     * Hari kerja pertama bulan itu -> null, layar memakai saldo awal bulan.
+     * Hitung ulang kolom kumulatif & saldo satu kantor untuk SEBULAN.
      *
-     * @return array<int, array<string, int|null>>|null
+     * Dijumlah dari mutasi yang diketik sejak tanggal 1, bukan dari baris
+     * kemarin, supaya hari yang baru dikoreksi tidak meninggalkan hari-hari
+     * sesudahnya dengan angka lama. Rumusnya sama dengan Rekap 2:
+     *   sirkulasi = saldo awal + jumlah drop x 1,3 - jumlah storting
+     *   saldo cm  = saldo awal cm - jumlah angsuran cm   (mb & ml sama)
+     *
+     * Baris yang sudah dicek TIDAK diubah: angkanya sudah ditandatangani.
+     * Mutasinya tetap ikut dijumlah untuk hari-hari sesudahnya.
      */
-    private function kumulatifSebelumnya(string $tanggal, array $branchIds): ?array
+    private function hitungUlangBulan(int $branchId, int $wilayah, string $tanggal): void
     {
-        $sebelum = $this->hariKerjaSebelumnya($tanggal);
-        if ($sebelum === null) {
-            return null;
+        $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+        $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
+
+        $baris = RegionalCirculationRecap::where('branch_id', $branchId)
+            ->whereBetween('tanggal', [$periode, $akhir])
+            ->orderBy('tanggal')->get();
+
+        if ($baris->isEmpty()) {
+            return;
         }
 
-        return RegionalCirculationRecap::whereDate('tanggal', $sebelum)
-            ->whereIn('branch_id', $branchIds)
-            ->get(['branch_id', 'total_drop', 'total_storting', 'sirkulasi',
-                'total_angsuran_cm', 'saldo_cm', 'total_angsuran_mb', 'saldo_mb',
-                'total_angsuran_ml', 'saldo_ml'])
-            ->keyBy('branch_id')
-            ->map(fn ($r) => $r->only(['total_drop', 'total_storting', 'sirkulasi',
-                'total_angsuran_cm', 'saldo_cm', 'total_angsuran_mb', 'saldo_mb',
-                'total_angsuran_ml', 'saldo_ml']))
-            ->all();
-    }
+        // Saldo awal bulan: yang diketik staf kontrol kalau ada, kalau belum
+        // dari angka sistem (Rekap 2).
+        $sistem = AngkaRekapWilayah::untukWilayah($wilayah, $tanggal)[$branchId] ?? [];
+        $awal = [];
+        foreach (['sirkulasi' => 'awal_sirkulasi', 'cm' => 'awal_cm', 'mb' => 'awal_mb', 'ml' => 'awal_ml'] as $ember => $kolom) {
+            $diketik = $baris->firstWhere(fn ($r) => $r->$kolom !== null);
+            $awal[$ember] = (int) ($diketik->$kolom ?? $sistem[$kolom] ?? 0);
+        }
 
-    /** Hari kerja sebelum tanggal ini DALAM BULAN YANG SAMA; null kalau tidak ada. */
-    private function hariKerjaSebelumnya(string $tanggal): ?string
-    {
-        return WorkDay::hariKerjaBulan($tanggal)
-            ->map(fn ($t) => $t->toDateString())
-            ->filter(fn ($t) => $t < $tanggal)
-            ->last();
+        $jumlah = ['drop' => 0, 'storting' => 0, 'angsuran_cm' => 0, 'angsuran_mb' => 0, 'angsuran_ml' => 0];
+
+        foreach ($baris as $r) {
+            foreach ($jumlah as $k => $_) {
+                $jumlah[$k] += (int) ($r->$k ?? 0);
+            }
+
+            if ($r->terkunci()) {
+                continue;
+            }
+
+            $r->total_drop = $jumlah['drop'];
+            $r->total_storting = $jumlah['storting'];
+            $r->sirkulasi = RekapWilayah::sirkulasiBerjalan($awal['sirkulasi'], $jumlah['drop'], $jumlah['storting']);
+
+            foreach (['cm', 'mb', 'ml'] as $ember) {
+                $r->{"total_angsuran_$ember"} = $jumlah["angsuran_$ember"];
+                $r->{"saldo_$ember"} = $awal[$ember] - $jumlah["angsuran_$ember"];
+            }
+
+            $r->save();
+        }
     }
 
     /** Hari kerja ke-n dalam bulan tanggal itu; null kalau tanggal itu libur. */

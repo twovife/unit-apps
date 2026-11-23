@@ -11,7 +11,7 @@ import TabelWilayah from './RekapWilayah/TabelWilayah';
  * hanya DITANDAI, tidak menghalangi simpan: angka laporan dicatat apa adanya
  * supaya jejak kasir yang salah lapor tidak hilang.
  */
-export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, daftar_wilayah, baris, kemarin, boleh_ubah }) {
+export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, daftar_wilayah, baris, boleh_ubah }) {
   // Hanya sel yang benar-benar diketik, berkunci "branch_id|kolom". Baris yang
   // tidak disentuh tidak ikut dikirim, jadi angka sistem tidak tersimpan
   // seolah-olah dilaporkan kasir.
@@ -25,7 +25,7 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, daftar_w
       baris.map((b) => {
         const milik = Object.entries(ubahan)
           .filter(([kunci]) => kunci.startsWith(`${b.branch_id}|`))
-          .map(([kunci, v]) => [kunci.split('|')[1], v === '' ? null : Number(v)]);
+          .map(([kunci, v]) => [kunci.split('|')[1], v]);
 
         return milik.length ? { ...b, diketik: { ...(b.diketik ?? {}), ...Object.fromEntries(milik) } } : b;
       }),
@@ -43,7 +43,7 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, daftar_w
     for (const [kunci, v] of Object.entries(ubahan)) {
       const [id, kolom] = kunci.split('|');
       perKantor[id] ??= { branch_id: Number(id), nilai: {} };
-      perKantor[id].nilai[kolom] = v === '' ? null : Number(v);
+      perKantor[id].nilai[kolom] = v;
     }
 
     setMenyimpan(true);
@@ -102,15 +102,16 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, daftar_w
               {menyimpan ? 'Menyimpan…' : jumlahUbahan ? `Simpan ${jumlahUbahan} isian` : 'Simpan'}
             </button>
           )}
-          <span className="text-xs text-slate-400">Sel kuning = angkanya beda; arahkan kursor untuk melihat pembandingnya.</span>
+          <span className="text-[11px] text-slate-400">
+            Diketik dalam ribuan (200 = 200.000). Sel kuning = beda dengan Rekap 2. Jumlah dan saldo dihitung sistem.
+          </span>
         </div>
 
         {baris.length ? (
           <TabelWilayah
             baris={barisTampil}
-            kemarin={kemarin}
-            hariPertama={kemarin === null}
             bolehUbah={boleh_ubah}
+            belumSimpan={new Set(Object.keys(ubahan).map((k) => Number(k.split('|')[0])))}
             onUbah={(branchId, kolom, v) => setUbahan((s) => ({ ...s, [`${branchId}|${kolom}`]: v }))}
           />
         ) : (
