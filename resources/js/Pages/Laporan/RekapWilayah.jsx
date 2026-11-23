@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import SaldoAwal from './RekapWilayah/SaldoAwal';
 import TabelWilayah from './RekapWilayah/TabelWilayah';
 
 /**
@@ -157,6 +158,13 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_ker
             Diketik dalam ribuan (200 = 200.000). Sel kuning = beda dengan Rekap 2. Jumlah dan saldo dihitung sistem.
           </span>
         </div>
+
+        {baris.length > 0 && (
+          <SaldoAwal
+            baris={barisTampil}
+            bulan={new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+          />
+        )}
 
         {baris.length ? (
           <TabelWilayah
