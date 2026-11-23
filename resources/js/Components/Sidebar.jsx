@@ -13,7 +13,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarRail,
   useSidebar,
 } from '@/shadcn/ui/sidebar';
 import {
@@ -530,7 +529,10 @@ export default function AppSidebar({ ...props }) {
         </SidebarMenu>
       </SidebarFooter>
 
-      <SidebarRail />
+      {/* SidebarRail dicabut (mas 2026-11-23): strip 16px itu duduk di LUAR
+          sidebar, menimpa tepi kiri isi halaman. Mengklik isi di dekat tepi
+          jadi menutup sidebar, dan melewatinya dengan kursor membuatnya
+          seolah muncul sendiri. Toggle tetap ada di SidebarTrigger di Navbar. */}
     </Sidebar>
   );
 }
