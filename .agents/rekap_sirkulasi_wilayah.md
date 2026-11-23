@@ -153,38 +153,53 @@ Hasil penyelidikan 2026-11-23, sebelum satu baris kode ditulis.
 
 - Isinya **hanya mulai periode 2026-10-01**. Untuk Rekap November, CM butuh
   drop Agustus dan MB butuh drop Juli — dua bulan itu tidak ada barisnya.
-- Angkanya sudah **menyimpang** dari transaksinya. Drop Oktober:
-  monthly closings 94.445.750.000, `transaction_loans` 95.280.550.000.
-  Beda 834.800.000, seluruhnya dari dua kantor: **Sidoarjo 2** kurang
-  527.300.000 dan **Solo 1** kurang 307.500.000. 139 kantor lain sama persis.
-  Jadi kolom itu cetakan sesaat yang bisa ketinggalan bila drop dimasukkan
-  atau dikoreksi sesudah closing dibuat.
+- Angkanya **tidak mencakup semua kantor**. Drop Oktober: monthly closings
+  94.445.750.000, `transaction_loans` 95.280.550.000. Beda 834.800.000,
+  seluruhnya dari dua kantor: **Sidoarjo 2** kurang 527.300.000 dan **Solo 1**
+  kurang 307.500.000. 139 kantor lain sama persis.
+  Sebabnya sudah ditelusuri: Sidoarjo 2 dan Solo 1 **masih alur lama**, jadi
+  closing-nya memang tidak dipelihara. Bukan data rusak, tapi tetap berarti
+  kolom itu tidak bisa dipakai sebagai sumber tunggal.
 - Memakai dua sumber (tabel baru untuk bulan lama, closing untuk bulan baru)
   membuat %CM melompat saat batas bulan bergeser, karena kedua sumber tidak
-  sama. Itu sebabnya **tidak ada tabel agregasi baru** di rancangan ini.
+  mencakup kantor yang sama. Itu sebabnya **tidak ada tabel agregasi baru** di
+  rancangan ini.
 
-Penyimpangan drop Oktober di Sidoarjo 2 dan Solo 1 adalah temuan terpisah dan
-di luar lingkup menu ini, tapi perlu ditindaklanjuti: angka itu jadi jangkar
-saldo awal bulan berikutnya.
+### Drop & storting harian: closing untuk hari terkunci, hitung langsung untuk sisanya
 
-### `transaction_daily_closings` belum bisa jadi sumber drop/storting
+`transaction_daily_closings.drop` dan `.storting` **terisi, tetapi hanya pada
+baris yang sudah dikunci kasir** — trigger yang membekukannya saat kunci.
+Dicek November 2026: 29.067 baris, 16.358 terkunci, drop pada baris terkunci
+64.317.450.000 dari 65.145.150.000 sebulan. Baris yang belum dikunci masih 0,
+itu sebabnya pemeriksaan satu tanggal yang belum terkunci tampak nol semua.
 
-Dicek pada 2026-11-20: ada 1.363 baris dari 137 kantor, tetapi `SUM(drop)` dan
-`SUM(storting)` keduanya **0**, dan tidak satu baris pun `drop > 0`. Barisnya
-dibuat `closing:generate`, kolom agregatnya belum pernah diisi. Rekap 2 sendiri
-juga tidak membacanya: drop dari `transaction_loans`, storting dari
-`transaction_loan_instalments`, dan `daily_closings` hanya dipakai untuk
-kasbon, transport, setoran, serta status kunci.
+Jadi ikuti Rekap 2 apa adanya: hari yang sudah dikunci dibaca dari closing,
+hari yang belum dihitung langsung lewat `HitungAgregat::harianBanyak`.
+Batas "mulai hitung langsung" ditentukan **per kantor**, bukan per wilayah —
+lihat §6 bagian risiko.
 
 ### Risiko lain
 
 - `getDataRekapDua` menghitung sebulan penuh per kantor, jadi **jangan**
   dipanggil per kantor. Pakai satu kueri agregat per wilayah (Tugas 3).
+- Wilayah terbesar berisi **33 kantor dan 320 kelompok** (wilayah 1 dan 10).
+- **Batas hitung langsung per kantor, bukan per wilayah.** Rekap 2 memakai satu
+  batas untuk satu kantor; kalau pola itu ditiru untuk satu wilayah, kantor
+  yang paling tertinggal menarik semua kantor lain. Dicek 2026-11-23: Sidoarjo 5
+  belum terkunci sejak 2 November, dan menghitung 19 hari untuk seluruh
+  wilayah 1 memakan 2,66 detik, padahal 31 kantor lainnya angkanya sudah beku.
+- Jangan memanggil `Collection::contains()` di dalam loop kelompok. 320
+  kelompok dibanding 5.220 baris closing memakan 5,9 detik; pakai hasil
+  `groupBy` yang sudah ada.
 - `AgregasiScope::pakaiAgregatBaru` sekarang benar untuk **139 dari 142**
-  kantor aktif (bukan 37 lagi). Percabangan alur lama hanya menyangkut 3
-  kantor, tapi tetap harus ada — saldo awal bulan diambil dari
+  kantor aktif (bukan 37 lagi). Yang masih alur lama: **Sidoarjo 2, Solo 1,
+  dan Pusat**. Percabangannya tetap harus ada — saldo awal bulan diambil dari
   `transaction_monthly_closings` (alur baru) atau `transaction_sirculations`
   (alur lama).
+- Mutasi kelompok (`Mutasi::saring`) **tidak perlu** di sini: dicek 2026-11-23,
+  2.199 mutasi dan nol yang lintas kantor, jadi penjumlahan per kantor tidak
+  berubah. Kalau nanti ada mutasi lintas kantor, drop harus disaring seperti
+  di `RekapTrait`.
 - "HARI KERJA KE-n" — pakai `WorkDay::hariKerjaBulan`, sumber yang sama dengan
   rekap lain.
 
