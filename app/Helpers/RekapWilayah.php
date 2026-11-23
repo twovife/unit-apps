@@ -57,21 +57,4 @@ class RekapWilayah
 
         return sprintf('%04d-%02d-01', intdiv($total, 12), $total % 12 + 1);
     }
-
-    /**
-     * Selisih rantai kumulatif: kumulatif hari ini dibanding
-     * (kumulatif hari kerja sebelumnya + mutasi hari ini).
-     *
-     * 0 = cocok. null = belum bisa dinilai (tidak ada angka hari sebelumnya).
-     * Selisih TIDAK menghalangi simpan: angka WA kasir dicatat apa adanya,
-     * dan ini cuma penanda bahwa laporannya perlu ditanya ulang.
-     */
-    public static function selisihRantai(?int $kumulatifSebelum, int $mutasi, int $kumulatifIni): ?int
-    {
-        if ($kumulatifSebelum === null) {
-            return null;
-        }
-
-        return $kumulatifIni - ($kumulatifSebelum + $mutasi);
-    }
 }

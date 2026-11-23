@@ -32,10 +32,7 @@ assert(RekapWilayah::bulanRujukan('2026-01-15', 'cm') === '2025-10-01', 'lintas 
 assert(RekapWilayah::bulanRujukan('2026-03-31', 'cm') === '2025-12-01', 'akhir bulan tidak meluber');
 assert(RekapWilayah::bulanRujukan('2026-04-30', 'mb') === '2025-12-01');
 
-// --- selisih rantai kumulatif
-assert(RekapWilayah::selisihRantai(1000, 200, 1200) === 0, 'cocok');
-assert(RekapWilayah::selisihRantai(1000, 200, 1250) === 50, 'kelebihan 50');
-assert(RekapWilayah::selisihRantai(1000, 200, 1100) === -100, 'kurang 100');
-assert(RekapWilayah::selisihRantai(null, 200, 1200) === null, 'tanpa angka hari sebelumnya');
+// Rantai kumulatif (kemarin + mutasi hari ini) diperiksa di layar, bukan di
+// sini: lihat .agents/uji/uji_kolom_rekap_wilayah.mjs. Satu rumus satu tempat.
 
 echo "OK semua\n";

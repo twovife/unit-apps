@@ -48,6 +48,7 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\BranchChecklistCon
 Route::middleware(['auth'])->controller(\App\Http\Controllers\RekapWilayahController::class)
   ->prefix('laporan/rekap-wilayah')->name('laporan.rekap_wilayah.')->group(function () {
     Route::get('/', 'index')->name('index');
+    Route::post('/', 'simpan')->name('simpan');
   });
 Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorController::class)
   ->prefix('dashboard-kasir')->name('dashboard.kasir.')->group(function () {
