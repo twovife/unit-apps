@@ -101,9 +101,7 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
   // Saldo lama berasal dari drop bulan T-3 / T-4; bulannya ditulis di
   // keterangan sel supaya angkanya bisa ditelusuri.
   const ket = {
-    drop_cm: `Jumlah drop ${bulanCm ?? 'bulan CM'}`,
     saldo_lama_cm: `Drop ${bulanCm ?? 'bulan CM'} x 1,3`,
-    drop_mb: `Jumlah drop ${bulanMb ?? 'bulan MB'}`,
     saldo_lama_mb: `Drop ${bulanMb ?? 'bulan MB'} x 1,3`,
   };
 
