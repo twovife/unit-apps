@@ -41,6 +41,20 @@ Mutasi harian **dan** kumulatif (keputusan mas): DROP, JUMLAH DROP, STORTING,
 JUMLAH STORTING, SALDO, dan ANGS/JUMLAH/SALDO untuk CM, MB, ML. Tanggal 1
 ditambah saldo awal bulan.
 
+**Tempatnya langsung di sel tabel** (keputusan mas 2026-11-23; usulan drawer
+per kantor ditolak). Tabelnya 19 kolom dan harus digeser ke kanan, jadi
+bahaya utamanya salah kolom — angka Angs CM masuk ke Angs MB. Yang wajib ada
+untuk menahan itu:
+
+- Baris kepala tabel **menempel di atas** (`sticky top-0`), supaya nama kolom
+  tidak hilang saat digeser ke bawah.
+- Kolom Kantor menempel di kiri (sudah ada).
+- Sel yang sedang disorot menandai **baris dan kolomnya**, dan nama kolomnya
+  ditulis di `title` tiap isian.
+- **Enter pindah ke bawah** (kolom sama, kantor berikutnya). Staf kontrol bisa
+  mengisi satu kolom untuk semua kantor sekaligus, dan itu alasan mas memilih
+  tabel.
+
 Semua sel itu **terisi lebih dulu dari Rekap 2** (`getDataRekapDua`,
 `app/Traits/RekapTrait.php`, dijumlah per kantor). Staf kontrol menimpa dengan
 angka WA kasir.

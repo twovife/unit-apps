@@ -899,6 +899,19 @@ baris belum terkunci. Sel dengan tanda selisih diberi latar kuning dan
 `title` berisi pesannya. Simpan satu baris dengan `router.post(route(
 'laporan.rekap_wilayah.simpan', branch_id), { tanggal, nilai })`.
 
+Mengetik di sel tabel adalah keputusan mas (spec §2), jadi penahan salah kolom
+WAJIB ikut di tugas ini, bukan ditunda:
+
+- `<thead>` dibuat `sticky top-0 z-20` dengan latar tak tembus pandang.
+- Tiap `<input>` membawa `title="<nama blok> · <nama kolom>"`, mis.
+  `title="Calon Macet · Angs"`.
+- Sel yang sedang disorot menandai baris dan kolomnya. Paling murah: simpan
+  `fokus` berisi `{ branch_id, kolom }` di state, lalu beri latar pada sel
+  yang `branch_id`-nya atau `kolom`-nya sama.
+- `onKeyDown`: Enter memindahkan fokus ke kantor berikutnya di kolom yang
+  sama. Beri tiap isian `data-sel="<branch_id>|<kolom>"` lalu
+  `document.querySelector` baris sesudahnya — jangan pasang `ref` 32 x 14.
+
 **Simpan tetap boleh walau ada selisih** (spec §2) — tanda hanya penanda.
 
 - [ ] **Langkah 8: coba di browser**
