@@ -11,7 +11,7 @@ import TabelWilayah from './RekapWilayah/TabelWilayah';
  * hanya DITANDAI, tidak menghalangi simpan: angka laporan dicatat apa adanya
  * supaya jejak kasir yang salah lapor tidak hilang.
  */
-export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, daftar_wilayah, baris, boleh_ubah }) {
+export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_kerja, daftar_wilayah, baris, boleh_ubah }) {
   // Hanya sel yang benar-benar diketik, berkunci "branch_id|kolom". Baris yang
   // tidak disentuh tidak ikut dikirim, jadi angka sistem tidak tersimpan
   // seolah-olah dilaporkan kasir.
@@ -77,6 +77,14 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, daftar_w
             {` · ${sudahDicek} dari ${baris.length} kantor sudah dicek`}
           </p>
         </div>
+
+        {!hari_kerja && (
+          <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
+            Tanggal ini bukan hari kerja menurut kalender, jadi tidak ada rekap yang diisi di sini. Angka yang tampil
+            murni dari sistem. Kalau angkanya tidak nol, berarti ada transaksi tercatat di hari libur dan itu perlu
+            ditelusuri.
+          </p>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           <select value={wilayah} onChange={(e) => pindah({ wilayah: e.target.value })} className="h-9 rounded-md border bg-background px-3 text-sm">

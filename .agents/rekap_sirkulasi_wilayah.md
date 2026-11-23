@@ -26,12 +26,19 @@ jejaknya.
 | Macet Baru | ANGS, JUMLAH, SALDO, %, SALDO LAMA |
 | Macet Lama | ANGS, JUMLAH, SALDO, % |
 
-- Tanggal 1: tambahan kolom saldo awal bulan (sirkulasi, CM, MB, ML).
+- **Hari libur dianggap tidak ada** (aturan mas 2026-11-23). Tanggal yang bukan
+  hari kerja menurut `WorkDay::hariKerja()` tetap bisa DILIHAT, tetapi tidak
+  ada yang boleh diisi: layar mematikan isiannya dan server menolak simpan
+  dengan 422.
 
-  **Belum diputuskan:** kalau tanggal 1 jatuh di hari libur, tanggal itu bukan
-  hari kerja dan Rekap 2 tidak punya barisnya (1 November 2026 = Minggu). Perlu
-  ditanyakan ke mas: saldo awal diketik di tanggal 1 walau libur, atau di hari
-  kerja pertama bulan itu. Menyangkut Tugas 5, yang masih ditunda.
+  Halamannya sengaja tidak disembunyikan. Kalau hari libur ternyata ada
+  angkanya, berarti ada transaksi tercatat di sana dan itu perlu ditelusuri —
+  menyaring tanggalnya hanya akan menyembunyikan masalahnya. Banner di atas
+  tabel mengatakan itu.
+
+- **Saldo awal bulan diketik di HARI KERJA PERTAMA bulan itu**, bukan di
+  tanggal 1. 1 November 2026 jatuh di hari Minggu, jadi tanggal 1 bisa saja
+  bukan hari kerja. Kolomnya belum dibuat; ini aturannya untuk nanti.
 
 ## 2. Angka
 

@@ -49,8 +49,11 @@ class RekapWilayahController extends Controller
             'wilayah' => $wilayah,
             'tanggal' => $tanggal,
             'hari_kerja_ke' => $this->hariKerjaKe($tanggal),
+            // Hari libur dianggap tidak ada (aturan mas 2026-11-23): halamannya
+            // tetap bisa dilihat, tapi tidak ada yang boleh diisi di sana.
+            'hari_kerja' => WorkDay::hariKerja($tanggal),
             'daftar_wilayah' => $this->wilayahBoleh(),
-            'boleh_ubah' => $user->hasAnyRole(self::PERAN_UBAH),
+            'boleh_ubah' => $user->hasAnyRole(self::PERAN_UBAH) && WorkDay::hariKerja($tanggal),
             'baris' => $unit->map(function ($nama, $id) use ($sistem, $diketik) {
                 $d = $diketik->get($id);
 
@@ -96,6 +99,11 @@ class RekapWilayahController extends Controller
         ]);
 
         $tanggal = Carbon::parse($isi['tanggal'])->toDateString();
+
+        // Hari libur dianggap tidak ada, jadi tidak ada rekap yang diisi di
+        // sana. Layar sudah mematikan isiannya; ini penjaga di sisi server.
+        abort_unless(WorkDay::hariKerja($tanggal), 422, 'Tanggal itu bukan hari kerja, jadi tidak ada rekap yang diisi.');
+
         $bolehKantor = Branch::getAllowedBranchIds($user);
 
         $kantor = Branch::whereIn('id', collect($isi['baris'])->pluck('branch_id'))
