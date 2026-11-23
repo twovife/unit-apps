@@ -16,6 +16,7 @@ Seluruh video tutorial disimpan di object storage MinIO (bucket: `ubmi-bucket`, 
 | `tutorial/sksw_karyawan_baru.mp4` | `D:\nota tf\input sksw karyawan baru.mp4` | ~22.9 MB | Panduan Input SKSW Karyawan Baru |
 | `tutorial/tabungangoro.mp4` | `D:\nota tf\tabungangoro.mp4` | ~11.7 MB | Setoran Tabungan Goro Umrah & Bukti Transfer |
 | `tutorial/cekaset.mp4` | `D:\nota tf\cekaset.mp4` | ~20.6 MB | Registri Aset Kendaraan, Servis & Pajak/STNK |
+| `tutorial/cek_pajak.mp4` | `C:\Users\AZIZ\AppData\Local\CapCut\Videos\cek_pajak.mp4` | ~5.7 MB | Cara Cek Pajak Kendaraan (menu Aset, bersama `cekaset`) |
 | `tutorial/lamaran.mp4` | `D:\nota tf\lamaran.mp4` | ~23.7 MB | Pencatatan Lamaran Kerja & Upload Dokumen |
 
 *Akses URL*: Menggunakan presigned temporary URL 3 jam via disk `s3_publik` (`AWS_PUBLIC_ENDPOINT`), sehingga file aman dan tidak terbuka secara publik tanpa izin.
