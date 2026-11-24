@@ -53,6 +53,10 @@ export const KOLOM_HARIAN = [
 // itu. Sama persis dengan Rekap Sirkulasi Wilayah — penyebutnya pun dari
 // sumber yang sama (AngkaRekapWilayah::dropKelompok), supaya persen di dua
 // menu tidak pernah bertengkar.
+/** Pecahan; null kalau penyebut 0 supaya ditulis '-', bukan 0%. */
+const persen = (atas, bawah) => (bawah ? atas / bawah : null);
+const persenTeks = (p) => (p === null ? '-' : (p * 100).toFixed(2).replace('.', ',') + '%');
+
 export const PECAHAN_HARIAN = {
   persen_cm: ['saldo_cm', 'drop_cm'],
   persen_mb: ['saldo_mb', 'drop_mb'],
@@ -168,9 +172,14 @@ const TableRekap = ({
                   <tr>
                     <th className="px-3 py-2 font-medium text-left">Kelompok</th>
                     <th className="px-3 py-2 font-medium text-right">Sirkulasi</th>
+                    {sf.pakai_persen && <th className="px-3 py-2 font-medium text-right whitespace-nowrap">Drop CM</th>}
                     <th className="px-3 py-2 font-medium text-right">Saldo CM</th>
+                    {sf.pakai_persen && <th className="px-3 py-2 font-medium text-right">% CM</th>}
+                    {sf.pakai_persen && <th className="px-3 py-2 font-medium text-right whitespace-nowrap">Drop MB</th>}
                     <th className="px-3 py-2 font-medium text-right">Saldo MB</th>
+                    {sf.pakai_persen && <th className="px-3 py-2 font-medium text-right">% MB</th>}
                     <th className="px-3 py-2 font-medium text-right">Saldo ML</th>
+                    {sf.pakai_persen && <th className="px-3 py-2 font-medium text-right">% ML</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -204,9 +213,20 @@ const TableRekap = ({
                           {ribu(item.sirkulasi)}
                         </div>
                       </td>
+                      {sf.pakai_persen && <td className="px-3 py-1.5 text-right text-slate-500">{ribu(item.drop_cm)}</td>}
                       <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiCm)}</td>
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-1.5 text-right">{persenTeks(persen(item.sirkulasiCm, item.drop_cm))}</td>
+                      )}
+                      {sf.pakai_persen && <td className="px-3 py-1.5 text-right text-slate-500">{ribu(item.drop_mb)}</td>}
                       <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiMb)}</td>
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-1.5 text-right">{persenTeks(persen(item.sirkulasiMb, item.drop_mb))}</td>
+                      )}
                       <td className="px-3 py-1.5 text-right">{ribu(item.sirkulasiMl)}</td>
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-1.5 text-right">{persenTeks(persen(item.sirkulasiMl, item.sirkulasi))}</td>
+                      )}
                     </tr>
                     {/* Per hari: klik -> buku storting bulan lalu (saldo akhirnya = saldo awal ini). */}
                     {buka[item.kelompok] &&
@@ -227,9 +247,17 @@ const TableRekap = ({
                         >
                           <td className="py-1 pl-8 pr-3 capitalize">{h.hari}</td>
                           <td className="px-3 py-1 text-right underline decoration-dotted">{ribu(h.sirkulasi)}</td>
+                          {/* Drop bulan rujukan tidak dipecah per hari tagih, jadi persennya pun tidak. */}
+                          {sf.pakai_persen && <td />}
                           <td className="px-3 py-1 text-right">{ribu(h.cm)}</td>
+                          {sf.pakai_persen && <td />}
+                          {sf.pakai_persen && <td />}
                           <td className="px-3 py-1 text-right">{ribu(h.mb)}</td>
+                          {sf.pakai_persen && <td />}
                           <td className="px-3 py-1 text-right">{ribu(h.ml)}</td>
+                          {sf.pakai_persen && (
+                            <td className="px-3 py-1 text-right">{persenTeks(persen(h.ml, h.sirkulasi))}</td>
+                          )}
                         </tr>
                       ))}
                     </React.Fragment>
@@ -249,9 +277,31 @@ const TableRekap = ({
                           {ribu(calculateTotals(sirkulasiAwal, 'sirkulasi'))}
                         </div>
                       </td>
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'drop_cm'))}</td>
+                      )}
                       <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'sirkulasiCm'))}</td>
+                      {/* Persen total: jumlah pembilang / jumlah penyebut, bukan rata-rata persen kelompok. */}
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-2 text-right">
+                          {persenTeks(persen(calculateTotals(sirkulasiAwal, 'sirkulasiCm'), calculateTotals(sirkulasiAwal, 'drop_cm')))}
+                        </td>
+                      )}
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'drop_mb'))}</td>
+                      )}
                       <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'sirkulasiMb'))}</td>
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-2 text-right">
+                          {persenTeks(persen(calculateTotals(sirkulasiAwal, 'sirkulasiMb'), calculateTotals(sirkulasiAwal, 'drop_mb')))}
+                        </td>
+                      )}
                       <td className="px-3 py-2 text-right">{ribu(calculateTotals(sirkulasiAwal, 'sirkulasiMl'))}</td>
+                      {sf.pakai_persen && (
+                        <td className="px-3 py-2 text-right">
+                          {persenTeks(persen(calculateTotals(sirkulasiAwal, 'sirkulasiMl'), calculateTotals(sirkulasiAwal, 'sirkulasi')))}
+                        </td>
+                      )}
                     </tr>
                   </tfoot>
                 )}

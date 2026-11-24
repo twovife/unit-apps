@@ -735,9 +735,13 @@ trait RekapTrait
         ->whereDate('periode', $startDateofMonth)
         ->get()
         ->groupBy('transaction_loan_officer_grouping_id')
-        ->map(function ($item) use ($urutHari) {
+        ->map(function ($item, $gid) use ($urutHari, $dropCm, $dropMb) {
           return [
             'kelompok' => $item->first()->loan_officer_grouping->kelompok ?? null,
+            // Penyebut persen CM/MB di kartu Saldo Awal Bulan. Kosong kalau
+            // bulannya belum dihitung (lihat MULAI_PERSEN).
+            'drop_cm' => (int) ($dropCm[$gid] ?? 0),
+            'drop_mb' => (int) ($dropMb[$gid] ?? 0),
             'sirkulasi' => (int) $item->sum('awal_total'),
             'sirkulasiCm' => (int) $item->sum('awal_cm'),
             'sirkulasiMb' => (int) $item->sum('awal_mb'),
@@ -749,9 +753,11 @@ trait RekapTrait
           ];
         })->sortBy('kelompok')->values();
     } else {
-      $saldoAwalBulan = $transactionSirculation->map(function ($item) use ($urutHari) {
+      $saldoAwalBulan = $transactionSirculation->map(function ($item, $gid) use ($urutHari, $dropCm, $dropMb) {
         return [
           'kelompok' => $item->first()->transaction_loan_officer_grouping->kelompok,
+          'drop_cm' => (int) ($dropCm[$gid] ?? 0),
+          'drop_mb' => (int) ($dropMb[$gid] ?? 0),
           'sirkulasi' => $item->sum('amount') ?? 0,
           'sirkulasiCm' => $item->sum('cm_amount') ?? 0,
           'sirkulasiMb' => $item->sum('mb_amount') ?? 0,
