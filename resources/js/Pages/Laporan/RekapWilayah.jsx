@@ -1,9 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import BlokHari, { TANPA_UBAHAN } from './RekapWilayah/BlokHari';
 import RekapMingguan from './RekapWilayah/RekapMingguan';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
-import TabelWilayah from './RekapWilayah/TabelWilayah';
 
 const namaBulan = (t) =>
   t ? new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : null;
@@ -37,23 +37,27 @@ export default function RekapWilayah({
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
 
-  // Angka yang diketik dituang ke baris, supaya tanda selisih dan baris total
-  // ikut berubah saat mengetik.
-  const hariTampil = useMemo(
-    () =>
-      hari.map((h) => ({
-        ...h,
-        baris: h.baris.map((b) => {
-          const awalan = `${h.tanggal}|${b.branch_id}|`;
-          const milik = Object.entries(ubahan)
-            .filter(([k]) => k.startsWith(awalan))
-            .map(([k, v]) => [k.slice(awalan.length), v]);
+  // Ubahan dipecah per tanggal. Tanggal tanpa ubahan memakai acuan yang SAMA
+  // (TANPA_UBAHAN), supaya BlokHari yang dibungkus memo bisa melewatkannya.
+  const ubahanPerTanggal = useMemo(() => {
+    const peta = {};
+    for (const [kunci, v] of Object.entries(ubahan)) {
+      const pisah = kunci.indexOf('|');
+      const tanggal = kunci.slice(0, pisah);
+      (peta[tanggal] ??= {})[kunci.slice(pisah + 1)] = v;
+    }
 
-          return milik.length ? { ...b, diketik: { ...(b.diketik ?? {}), ...Object.fromEntries(milik) } } : b;
-        }),
-      })),
-    [hari, ubahan],
-  );
+    return peta;
+  }, [ubahan]);
+
+  // Mengubah mutasi satu hari menggeser kumulatif hari-hari SESUDAHNYA juga,
+  // tapi hitungannya di server dan baru jalan saat disimpan. Jadi sejak
+  // tanggal terawal yang diketik, Jumlah & Saldo hari-hari berikutnya ikut
+  // basi sampai Simpan ditekan.
+  const basiSejak = useMemo(() => {
+    const tanggal = Object.keys(ubahanPerTanggal);
+    return tanggal.length ? tanggal.sort()[0] : null;
+  }, [ubahanPerTanggal]);
 
   const pindah = (ubah) => {
     if (Object.keys(ubahan).length && !confirm('Ada isian yang belum disimpan. Tinggalkan halaman ini?')) return;
@@ -86,12 +90,12 @@ export default function RekapWilayah({
     );
   };
 
-  const cek = (tanggal, b) =>
+  const cek = useCallback((tanggal, b) =>
     router.post(route('laporan.rekap_wilayah.cek', b.branch_id), { tanggal }, {
       preserveScroll: true,
       onSuccess: () => toast.success(`${b.unit} ${tanggal} dicek`),
       onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal mengecek'),
-    });
+    }), []);
 
   const buka = () => {
     if (alasan.trim().length < 5) return;
@@ -110,11 +114,11 @@ export default function RekapWilayah({
     );
   };
 
-  const lihatLog = async (tanggal, b) => {
+  const lihatLog = useCallback(async (tanggal, b) => {
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: null });
     const r = await fetch(route('laporan.rekap_wilayah.log', b.branch_id) + `?tanggal=${tanggal}`);
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: await r.json() });
-  };
+  }, []);
 
   // Tanggal yang sedang terlihat di layar, supaya tombolnya menyala.
   // rootMargin atas = tinggi baris filter yang menempel; bawah -65% supaya
@@ -143,6 +147,15 @@ export default function RekapWilayah({
 
     return () => pengamat.disconnect();
   }, [hari]);
+
+  const namaBulanCm = useMemo(() => namaBulan(bulan_cm), [bulan_cm]);
+  const namaBulanMb = useMemo(() => namaBulan(bulan_mb), [bulan_mb]);
+
+  const ubah = useCallback(
+    (tanggal, branchId, kolom, v) => setUbahan((s) => ({ ...s, [`${tanggal}|${branchId}|${kolom}`]: v })),
+    [],
+  );
+  const mintaBuka = useCallback((tanggal, baris) => setBukaBaris({ tanggal, baris }), []);
 
   const jumlahUbahan = Object.keys(ubahan).length;
   const totalBaris = hari.reduce((t, h) => t + h.baris.length, 0);
@@ -233,50 +246,26 @@ export default function RekapWilayah({
 
         <RekapMingguan minggu={mingguan} unitKantor={Object.fromEntries(kantor.map((k) => [k.branch_id, k.unit]))} />
 
-        {hariTampil.length === 0 && (
+        {hari.length === 0 && (
           <p className="rounded-xl border bg-white p-6 text-sm text-slate-500">
             Tidak ada kantor aktif di wilayah ini, atau bulan itu belum punya hari kerja.
           </p>
         )}
 
-        {hariTampil.map((h) => (
-          <section key={h.tanggal} id={`tgl-${h.tanggal}`} className="scroll-mt-28 space-y-1">
-            <h2 className={`text-[13px] font-semibold ${aktif === h.tanggal ? 'text-sky-700' : ''}`}>
-              {judulTanggal(h.tanggal)}
-              <span className="ml-2 font-normal text-slate-400">
-                {h.hari_kerja_ke ? `hari kerja ke-${h.hari_kerja_ke}` : 'bukan hari kerja'}
-                {' · '}
-                {h.baris.filter((b) => b.terkunci).length}/{h.baris.length} dicek
-              </span>
-            </h2>
-
-            {!h.hari_kerja && (
-              <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
-                Bukan hari kerja, jadi tidak ada rekap yang diisi. Angka yang tampil murni dari sistem. Kalau tidak nol,
-                berarti ada transaksi tercatat di hari libur dan itu perlu ditelusuri.
-              </p>
-            )}
-
-            <TabelWilayah
-              baris={h.baris}
-              bolehUbah={h.boleh_ubah}
-              belumSimpan={
-                new Set(
-                  Object.keys(ubahan)
-                    .filter((k) => k.startsWith(`${h.tanggal}|`))
-                    .map((k) => Number(k.split('|')[1])),
-                )
-              }
-              bulanCm={namaBulan(bulan_cm)}
-              bulanMb={namaBulan(bulan_mb)}
-              onUbah={(branchId, kolom, v) =>
-                setUbahan((s) => ({ ...s, [`${h.tanggal}|${branchId}|${kolom}`]: v }))
-              }
-              onCek={(b) => cek(h.tanggal, b)}
-              onBuka={(b) => setBukaBaris({ tanggal: h.tanggal, baris: b })}
-              onLog={(b) => lihatLog(h.tanggal, b)}
-            />
-          </section>
+        {hari.map((h) => (
+          <BlokHari
+            key={h.tanggal}
+            hari={h}
+            ubahan={ubahanPerTanggal[h.tanggal] ?? TANPA_UBAHAN}
+            basi={basiSejak !== null && h.tanggal > basiSejak}
+            aktif={aktif === h.tanggal}
+            bulanCm={namaBulanCm}
+            bulanMb={namaBulanMb}
+            onUbah={ubah}
+            onCek={cek}
+            onBuka={mintaBuka}
+            onLog={lihatLog}
+          />
         ))}
 
         {bukaBaris && (

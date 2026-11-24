@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { angka as angkaMode, useModeRibuan } from '@/lib/modeAngka';
 import { BLOK, KOLOM_TURUNAN, PECAHAN, SEMUA_KOLOM, nilai, persen, persenTeks, tandaSelisih, turunan } from './kolom';
 
@@ -36,11 +36,17 @@ function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
         onChange={(e) => {
           setTeks(e.target.value);
           setDiketik(true);
-          onUbah(e.target.value === '' ? null : Math.round(Number(e.target.value) * 1000));
+        }}
+        // Dikirim ke induk saat selesai, bukan tiap ketukan: satu ketukan
+        // kalau diteruskan akan merender ulang seluruh tabel tanggal ini.
+        onBlur={() => {
+          if (!diketik) return;
+          onUbah(teks === '' ? null : Math.round(Number(teks) * 1000));
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
+            e.currentTarget.blur(); // onBlur mengirim nilainya
             onEnter();
           }
           if (e.key === 'Escape') {
@@ -80,7 +86,7 @@ function Penanda({ nilai = 0, dari = 0, kiri = false }) {
  * ditampilkan. Baris yang masih ada isian belum tersimpan ditandai, karena
  * kolom turunannya belum ikut berubah.
  */
-export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, onCek, onBuka, onLog, bulanCm, bulanMb }) {
+function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, belumSimpan, basiSemua, onCek, onBuka, onLog, bulanCm, bulanMb }) {
   useModeRibuan(); // ikut berganti saat saklar ribuan di header diubah
 
   // Persen baris total dari jumlah pembilang / jumlah penyebut, BUKAN
@@ -148,7 +154,7 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
                   const tanda = k.hitung ? null : tandaSelisih(b, k.k);
                   const bisaKetik = bolehUbah && k.ketik && !b.terkunci;
                   // Turunan belum dihitung ulang selama isian belum disimpan.
-                  const basi = tertunda && KOLOM_TURUNAN.has(k.k);
+                  const basi = (tertunda || basiSemua) && KOLOM_TURUNAN.has(k.k);
 
                   return (
                     <td
@@ -161,7 +167,7 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
                           baris={b}
                           kolom={k.k}
                           tersimpan={b.diketik?.[k.k] ?? b.sistem?.[k.k] ?? null}
-                          onUbah={(v) => onUbah(b.branch_id, k.k, v)}
+                          onUbah={(v) => onUbah(tanggal, b.branch_id, k.k, v)}
                           onEnter={() => keBawah(i, k.k)}
                         />
                       ) : (
@@ -177,17 +183,17 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
                 <td className="whitespace-nowrap border-b border-l px-1.5 py-0.5 text-center text-[10px] text-slate-500 group-hover:bg-slate-50">
                   {b.terkunci ? (
                     <span className="inline-flex items-center gap-1">
-                      <button type="button" onClick={() => onLog?.(b)} title={`${b.dicek_oleh ?? '-'} · ${b.dicek_pada ?? '-'}`} className="text-emerald-700 underline decoration-dotted">
+                      <button type="button" onClick={() => onLog?.(tanggal, b)} title={`${b.dicek_oleh ?? '-'} · ${b.dicek_pada ?? '-'}`} className="text-emerald-700 underline decoration-dotted">
                         ✓ {b.dicek_oleh ?? '-'}
                       </button>
                       {bolehUbah && (
-                        <button type="button" onClick={() => onBuka?.(b)} className="text-sky-600 underline">
+                        <button type="button" onClick={() => onBuka?.(tanggal, b)} className="text-sky-600 underline">
                           buka
                         </button>
                       )}
                     </span>
                   ) : bolehUbah ? (
-                    <button type="button" onClick={() => onCek?.(b)} className="rounded border px-1.5 py-0.5 hover:bg-slate-100">
+                    <button type="button" onClick={() => onCek?.(tanggal, b)} className="rounded border px-1.5 py-0.5 hover:bg-slate-100">
                       Cek
                     </button>
                   ) : (
@@ -215,3 +221,5 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
     </div>
   );
 }
+
+export default memo(TabelWilayah);
