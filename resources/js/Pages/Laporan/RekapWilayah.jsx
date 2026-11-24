@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import RekapMingguan from './RekapWilayah/RekapMingguan';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
@@ -116,6 +116,34 @@ export default function RekapWilayah({
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: await r.json() });
   };
 
+  // Tanggal yang sedang terlihat di layar, supaya tombolnya menyala.
+  // rootMargin atas = tinggi baris filter yang menempel; bawah -65% supaya
+  // yang dihitung hanya blok di sepertiga atas layar, bukan semua yang
+  // kebetulan terlihat.
+  const [aktif, setAktif] = useState(null);
+  const daftarHari = useRef([]);
+  daftarHari.current = hari.map((h) => h.tanggal);
+
+  useEffect(() => {
+    const terlihat = new Set();
+    const pengamat = new IntersectionObserver(
+      (entri) => {
+        for (const e of entri) {
+          const t = e.target.id.replace('tgl-', '');
+          e.isIntersecting ? terlihat.add(t) : terlihat.delete(t);
+        }
+        // Yang paling atas di antara yang terlihat.
+        const urut = daftarHari.current.filter((t) => terlihat.has(t));
+        if (urut.length) setAktif(urut[0]);
+      },
+      { rootMargin: '-120px 0px -65% 0px' },
+    );
+
+    document.querySelectorAll('section[id^="tgl-"]').forEach((el) => pengamat.observe(el));
+
+    return () => pengamat.disconnect();
+  }, [hari]);
+
   const jumlahUbahan = Object.keys(ubahan).length;
   const totalBaris = hari.reduce((t, h) => t + h.baris.length, 0);
   const sudahDicek = hari.reduce((t, h) => t + h.baris.filter((b) => b.terkunci).length, 0);
@@ -177,6 +205,8 @@ export default function RekapWilayah({
                   title={`${judulTanggal(h.tanggal)} · ${dicek}/${h.baris.length} dicek`}
                   onClick={() => document.getElementById(`tgl-${h.tanggal}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                   className={`h-7 min-w-7 rounded-md border px-1.5 text-xs tabular-nums transition-colors ${
+                    aktif === h.tanggal ? 'ring-2 ring-sky-500 ring-offset-1 font-semibold ' : ''
+                  }${
                     !h.hari_kerja
                       ? 'border-slate-200 text-slate-300'
                       : penuh
@@ -211,7 +241,7 @@ export default function RekapWilayah({
 
         {hariTampil.map((h) => (
           <section key={h.tanggal} id={`tgl-${h.tanggal}`} className="scroll-mt-28 space-y-1">
-            <h2 className="text-[13px] font-semibold">
+            <h2 className={`text-[13px] font-semibold ${aktif === h.tanggal ? 'text-sky-700' : ''}`}>
               {judulTanggal(h.tanggal)}
               <span className="ml-2 font-normal text-slate-400">
                 {h.hari_kerja_ke ? `hari kerja ke-${h.hari_kerja_ke}` : 'bukan hari kerja'}
