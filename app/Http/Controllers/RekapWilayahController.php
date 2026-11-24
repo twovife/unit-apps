@@ -136,7 +136,7 @@ class RekapWilayahController extends Controller
                             'branch_id' => (int) $id,
                             'unit' => $nama,
                             'sistem' => $mendatang ? [] : collect($perKantor[$id] ?? [])->only($kolomHarian)->all(),
-                            'diketik' => $mendatang ? null : $d?->only($kolomHarian),
+                            'diketik' => $mendatang || ! $this->disentuh($d) ? null : $d->only($kolomHarian),
                             'ttd' => $ttd[$tanggal][$id] ?? ['kasir' => 0, 'km' => 0, 'kelompok' => 0],
                             'terkunci' => (bool) $d?->terkunci(),
                             'dicek_oleh' => $d?->pengecek?->employee?->nama_karyawan,
@@ -727,6 +727,24 @@ class RekapWilayahController extends Controller
     }
 
     /**
+     * Apakah baris ini sudah disentuh staf kontrol?
+     *
+     * "Disentuh" = ada satu saja kolom mutasi yang terisi. Baris yang dibuat
+     * hitungUlangBulan() hanya berisi kolom turunan, jadi belum terhitung.
+     *
+     * Baris yang belum disentuh TIDAK dikirim angkanya ke layar: kolom
+     * turunannya memang berhenti di angka laporan terakhir, dan kalau itu
+     * ditampilkan dia akan merah seluruh baris — padahal bedanya bukan
+     * "kasir salah lapor" melainkan "belum ada laporan". Layar menampilkan
+     * angka sistem saja di sana.
+     */
+    private function disentuh(?RegionalCirculationRecap $baris): bool
+    {
+        return $baris !== null && collect(RegionalCirculationRecap::KOLOM_MUTASI)
+            ->contains(fn ($k) => $baris->$k !== null);
+    }
+
+    /**
      * Balasan ringkas untuk autosave, cek & buka: sebulan baris kantor-kantor
      * yang tersentuh, berkunci "tanggal|branch_id" seperti state di layar.
      *
@@ -747,8 +765,14 @@ class RekapWilayahController extends Controller
             ->get()
             ->mapWithKeys(fn ($r) => [
                 "{$r->tanggal->toDateString()}|{$r->branch_id}" => [
-                    'nilai' => collect(RegionalCirculationRecap::KOLOM_ANGKA)
-                        ->mapWithKeys(fn ($k) => [$k => $r->$k === null ? null : (int) $r->$k])->all(),
+                    // Baris yang belum disentuh dikirim kosong, alasannya di
+                    // disentuh(). Tanpa ini autosave memunculkan merah sebaris
+                    // penuh di tanggal yang belum dilaporkan.
+                    'nilai' => $this->disentuh($r)
+                        ? collect(RegionalCirculationRecap::KOLOM_ANGKA)
+                            ->mapWithKeys(fn ($k) => [$k => $r->$k === null ? null : (int) $r->$k])->all()
+                        : collect(RegionalCirculationRecap::KOLOM_ANGKA)
+                            ->mapWithKeys(fn ($k) => [$k => null])->all(),
                     'terkunci' => $r->terkunci(),
                     'dicek_oleh' => $r->pengecek?->employee?->nama_karyawan,
                     'dicek_pada' => $r->checked_at?->format('d/m/Y H:i'),
