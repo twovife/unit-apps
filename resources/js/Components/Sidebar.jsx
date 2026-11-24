@@ -323,16 +323,17 @@ export default function AppSidebar({ ...props }) {
                 ]}
               />
             )}
-            {/* Staf kontrol ikut melihat grup Laporan, tapi hanya butir yang boleh dibukanya. */}
-            {(isSuperUser || auth?.roles?.includes('pusat') || auth?.roles?.includes('stafkontrol')) && (
+            {(isSuperUser || auth?.roles?.includes('pusat')) && (
               <SidebarSubMenuSection
                 icon={ClipboardCheck}
                 title="Laporan"
                 items={[
-                  ...(isSuperUser || auth?.roles?.includes('pusat')
-                    ? [{ id: 'lap-checklist', title: 'Checklist Aplikasi Baru', link: route('checklist.laporan'), active: route().current('checklist.laporan') }]
+                  { id: 'lap-checklist', title: 'Checklist Aplikasi Baru', link: route('checklist.laporan'), active: route().current('checklist.laporan') },
+                  // Rekap Sirkulasi Wilayah masih superuser saja (mas 2026-11-24);
+                  // staf kontrol & pusat menyusul kalau menunya sudah siap.
+                  ...(isSuperUser
+                    ? [{ id: 'lap-rekap-wilayah', title: 'Rekap Sirkulasi Wilayah', link: route('laporan.rekap_wilayah.index'), active: route().current('laporan.rekap_wilayah.*') }]
                     : []),
-                  { id: 'lap-rekap-wilayah', title: 'Rekap Sirkulasi Wilayah', link: route('laporan.rekap_wilayah.index'), active: route().current('laporan.rekap_wilayah.*') },
                 ]}
               />
             )}

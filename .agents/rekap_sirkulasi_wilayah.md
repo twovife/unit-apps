@@ -250,8 +250,14 @@ seluruh kelompok kantor itu yang sudah di-TTD kasir (`kasir_lock_at`) dan
 di-ACC kepala mantri (`kepala_approval_at`), ditulis `n/m`. Hijau kalau lengkap,
 kuning kalau sebagian, kelabu kalau belum ada. Tujuannya staf kontrol tahu
 angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
-- Yang boleh simpan/Cek/Buka: **stafkontrol** (hanya wilayahnya) dan
-  **superuser**. Peran lain yang punya akses Laporan hanya melihat.
+- **Sementara ini menunya superuser saja** (permintaan mas 2026-11-24).
+  `PERAN_UBAH` dan `PERAN_LIHAT` dua-duanya `['superuser']`, dan butirnya di
+  sidebar hanya muncul untuk superuser.
+
+  Rancangannya tidak berubah dan kodenya sudah siap: yang boleh simpan/Cek/Buka
+  **stafkontrol** (hanya wilayahnya, lewat `Branch::getAllowedBranchIds`) dan
+  **superuser**, ditambah **pusat** yang hanya melihat. Membukanya nanti cukup
+  mengembalikan isi dua konstanta itu dan syarat di sidebar.
 - Pemeriksaan wilayah di server memakai `AuthScope`; pelanggaran →
   `AppHelper::PESAN_BUKAN_WILAYAH`.
 - Riwayat log per baris bisa dibuka dari baris itu (drawer).

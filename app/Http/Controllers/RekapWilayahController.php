@@ -23,11 +23,18 @@ use Inertia\Inertia;
  */
 class RekapWilayahController extends Controller
 {
-    /** Boleh mengetik, cek, dan buka. Peran lain hanya melihat. */
-    private const PERAN_UBAH = ['stafkontrol', 'superuser'];
+    /**
+     * Boleh mengetik, cek, dan buka.
+     *
+     * Dibatasi ke superuser saja atas permintaan mas 2026-11-24, sampai
+     * menunya siap dibuka untuk staf kontrol. Rancangannya tetap:
+     * ['stafkontrol', 'superuser'] untuk mengubah, ditambah 'pusat' untuk
+     * melihat, dan penyaringan zona staf kontrol di bawah sudah siap.
+     */
+    private const PERAN_UBAH = ['superuser'];
 
     /** Boleh membuka halaman. */
-    private const PERAN_LIHAT = ['stafkontrol', 'superuser', 'pusat'];
+    private const PERAN_LIHAT = ['superuser'];
 
     /**
      * Rantai cek dimulai di sini. Sejajar Gembok::MULAI_CEK_KUNCI_LAMA di
@@ -38,7 +45,7 @@ class RekapWilayahController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        abort_unless($user?->hasAnyRole(self::PERAN_LIHAT), 403, 'Rekap Sirkulasi Wilayah untuk staf kontrol, pusat & superuser.');
+        abort_unless($user?->hasAnyRole(self::PERAN_LIHAT), 403, 'Rekap Sirkulasi Wilayah masih dibatasi untuk superuser.');
 
         // Filter bulan, sama dengan Rekap 2 (?bulan=Y-m).
         $bulan = preg_match('/^\d{4}-\d{2}$/', (string) $request->bulan)
