@@ -14,6 +14,27 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 ---
 
+# 2026-11-24
+
+## Rekap Sirkulasi Wilayah (menu baru, `/laporan/rekap-wilayah`)
+
+Rancangan: `.agents/rekap_sirkulasi_wilayah.md`.
+Aturan membaca angka agregasi: `.agents/kapan_angka_boleh_dipercaya.md`.
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Http/Controllers/RekapWilayahController.php` | `index()`, `simpan()`, `cek()`, `buka()`, `log()`, `simpanAwal()`, `isiSistem()`, `rekapDua()`, `hitungUlangBulan()`, `balasTambalan()`, `barisDariSistem()`, `hariBelumDicek()` | `laporan.rekap_wilayah.*` (`GET /laporan/rekap-wilayah`, `POST /`, `POST /{branch}/cek`, `POST /{branch}/buka`, `POST /{branch}/awal`, `POST /isi-sistem`, `GET /{branch}/log`, `GET /{branch}/rekap-dua`) | `regional_circulation_recaps` (`BACA` / `TULIS`), `regional_circulation_recap_logs` (`TULIS`), `regional_circulation_openings` (`BACA` / `TULIS`), `branches` (`BACA`), `work_days` (`BACA`) | Menu baru: pengganti berkas Excel staf kontrol. Satu baris per kantor per tanggal, sebulan penuh. Autosave per sel (tanpa tombol Simpan), Cek berantai per baris, Buka beralasan, riwayat log. Kumulatif & saldo dihitung server dari mutasi sejak tanggal 1 — **angka yang diketik kalau ada, angka sistem kalau belum**, termasuk untuk tanggal yang belum punya baris. Tanggal yang belum terjadi dikosongkan dan ditolak 422. `rekapDua()` mengganti cabang aktif sementara lalu mengembalikannya di `finally`. |
+| `app/Services/AngkaRekapWilayah.php` | `untukBulan()`, `untukWilayah()`, `saldoAwal()`, `dropStorting()`, `alurBaru()`, `alurLama()`, `ttdBulan()`, `dropBulan()`, `pemutihanBulan()` | dipakai `RekapWilayahController` | `transaction_daily_closings` (`BACA`), `transaction_monthly_closings` (`BACA`), `transaction_sirculations` (`BACA`), `transaction_loans` (`BACA`), `transaction_loan_instalments` (`BACA`), `transaction_loan_officer_groupings` (`BACA`), `branches` (`BACA`) | Angka sistem per kantor per tanggal, rumusnya sama dengan Rekap 2. `$branchId` opsional menyempitkan ke satu kantor: 60 ms & 24 kueri, bukan 2.403 ms & 93 kueri. Drop bulan rujukan dari `transaction_loans`, ditembolok 6 jam. |
+| `app/Models/RegionalCirculationRecap.php`, `RegionalCirculationRecapLog.php`, `RegionalCirculationOpening.php` | konstanta kolom, `terkunci()`, relasi | — | Model tiga tabel baru. Kolom `awal_*` di `regional_circulation_recaps` **BERHENTI-TULIS** sejak saldo awal pindah ke `regional_circulation_openings`. |
+| `resources/js/Pages/Laporan/RekapWilayah.jsx` + folder `RekapWilayah/` | halaman, `BlokHari`, `TabelWilayah`, `SaldoAwal`, `DrawerRekapDua`, `kolom.js`, `ekspor.js` | `laporan.rekap_wilayah.index` | — | Tabel & warna mengikuti Rekap 2 (`WARNA` diimpor dari `TableRekapKasir`, tidak disalin). Tabel tiap tanggal baru dipasang saat mendekati layar — 800 baris & 4.000 `<input>` sekaligus membuat Chrome tersendat. Cetak PDF lewat `window.print()`, ekspor `.xlsx` lewat `exceljs` yang diimpor dinamis. Nama kantor membuka Rekap 2 asli di Sheet lewat `<iframe ?polos=1>`. |
+| `resources/js/Layouts/AuthenticatedLayout.jsx` | `Authenticated()` | semua halaman | — | Mode `?polos=1`: tanpa sidebar & navbar, untuk halaman yang ditumpangkan di `<iframe>`. |
+| `resources/js/Components/Sidebar.jsx` | — | — | — | Butir menu Laporan → Rekap Sirkulasi Wilayah, **superuser saja** untuk sekarang. Grup Laporan kembali ke superuser + pusat. |
+| `resources/css/app.css` | — | semua halaman | — | Blok `@media print` global: A4 landscape, sidebar/navbar/`.tanpa-cetak` disembunyikan, `thead` berulang tiap halaman, warna sel tetap tercetak. |
+
+Sengaja TIDAK diubah: `RekapTrait::getDataRekapDua` dan alur closing harian/bulanan. Menu ini membaca hasilnya, tidak mengubah cara menghitungnya. Arus `transaction_monthly_closings` tetap dijumlah dari `transaction_daily_closings` walau bisa dihitung langsung — mengubahnya menyentuh closing yang sudah jalan di produksi.
+
+---
+
 # 2026-10-17
 
 ## Registri Kendaraan (/assets): Pengeluaran Seluruh Kendaraan Kantor Aktif Tanpa Paginasi, Opsi Status "Dijual", & Peningkatan Notifikasi/Feedback Error Form Edit

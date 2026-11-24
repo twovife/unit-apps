@@ -399,6 +399,7 @@ class RekapWilayahController extends Controller
                 ->flip();
 
             $baru = [];
+            $tambal = [];
             foreach ($sebulan as $tanggal => $perKantor) {
                 // Tanggal yang belum terjadi dan hari libur tidak diisi, sama
                 // dengan aturan isian manual.
@@ -407,11 +408,17 @@ class RekapWilayahController extends Controller
                 }
 
                 foreach ($kantor as $id => $wil) {
+                    $s = $perKantor[$id] ?? [];
+
+                    // Baris sudah ada: lubangnya saja yang ditambal. Hitung
+                    // ulang membuat baris berisi kumulatif tanpa mutasi, dan
+                    // baris yang diketik sebagian juga punya kolom kosong —
+                    // keduanya perlu diisi, bukan dilewati.
                     if ($sudahAda->has($id . '|' . $tanggal)) {
+                        $tambal[] = [$id, $tanggal, $s];
                         continue;
                     }
 
-                    $s = $perKantor[$id] ?? [];
                     $baru[] = ['branch_id' => $id, 'tanggal' => $tanggal, 'wilayah' => $wil]
                         + collect($kolom)->mapWithKeys(fn ($k) => [$k => (int) ($s[$k] ?? 0)])->all()
                         + ['created_at' => now(), 'updated_at' => now()];
@@ -421,6 +428,28 @@ class RekapWilayahController extends Controller
             $dibuat = count($baru);
             foreach (array_chunk($baru, 200) as $bagian) {
                 RegionalCirculationRecap::insert($bagian);
+            }
+
+            // Lubang di baris yang sudah ada. Yang sudah dicek dilewati.
+            foreach ($tambal as [$id, $tanggal, $s]) {
+                $baris = RegionalCirculationRecap::where('branch_id', $id)
+                    ->whereDate('tanggal', $tanggal)->first();
+
+                if ($baris === null || $baris->terkunci()) {
+                    continue;
+                }
+
+                $isi = [];
+                foreach (RegionalCirculationRecap::KOLOM_MUTASI as $k) {
+                    if ($baris->$k === null) {
+                        $isi[$k] = (int) ($s[$k] ?? 0);
+                    }
+                }
+
+                if ($isi) {
+                    $baris->fill($isi)->save();
+                    $dibuat++;
+                }
             }
 
             // Baris yang sudah diketik bisa berbeda dari sistem, jadi
@@ -628,6 +657,8 @@ class RekapWilayahController extends Controller
         }
 
         $jumlah = array_fill_keys(RegionalCirculationRecap::KOLOM_MUTASI, 0);
+        $sekarang = Carbon::now()->toDateString();
+        $wilayahKantor = null;
 
         foreach ($sistem as $t => $perKantor) {
             $s = $perKantor[$branchId] ?? [];
@@ -637,10 +668,32 @@ class RekapWilayahController extends Controller
                 $jumlah[$k] += (int) ($r?->$k ?? $s[$k] ?? 0);
             }
 
-            // Tanggal tanpa baris tidak ditulis, mutasinya tetap ikut dijumlah.
-            // Baris yang sudah dicek juga: angkanya sudah ditandatangani.
-            if ($r === null || $r->terkunci()) {
+            // Baris yang sudah dicek tidak disentuh: angkanya sudah
+            // ditandatangani. Mutasinya tetap ikut dijumlah di atas.
+            if ($r?->terkunci()) {
                 continue;
+            }
+
+            // Tanggal yang belum punya baris DIBUATKAN, berisi kumulatif saja.
+            // Tanpa ini Jml Drop melompat di perbatasan: tanggal yang punya
+            // baris memakai kumulatif hasil hitung ulang, tanggal tanpa baris
+            // jatuh ke kumulatif sistem apa adanya, dan koreksi staf kontrol
+            // hilang begitu saja di tanggal berikutnya.
+            //
+            // Kolom mutasinya sengaja dibiarkan null: itu yang membuat selnya
+            // tetap tampil miring kelabu alias "angka sistem, belum
+            // dilaporkan". Yang diisi hanya kolom turunan.
+            if ($r === null) {
+                if ($t > $sekarang) {
+                    continue;
+                }
+
+                $wilayahKantor ??= Branch::whereKey($branchId)->value('wilayah');
+                $r = new RegionalCirculationRecap([
+                    'branch_id' => $branchId,
+                    'tanggal' => $t,
+                    'wilayah' => $wilayahKantor,
+                ]);
             }
 
             $r->total_drop = $jumlah['drop'];

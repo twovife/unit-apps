@@ -208,6 +208,13 @@ Bukan angka yang diketik saja. Dua hal ikut di situ:
 - Tanggal yang belum punya baris sama sekali tetap ikut dijumlah dari angka
   sistem. Tanpa ini, mengetik di 5 November melewatkan 2–4 November yang belum
   pernah disimpan.
+- **Tanggal yang belum punya baris DIBUATKAN**, berisi kolom turunan saja;
+  kolom mutasinya dibiarkan null supaya selnya tetap tampil miring kelabu.
+  Tanpa ini Jml Drop melompat di perbatasan: tanggal yang punya baris memakai
+  kumulatif hasil hitung ulang, tanggal tanpa baris jatuh ke kumulatif sistem
+  apa adanya. Diukur sebelum diperbaiki: mengisi 4 tanggal dengan drop
+  dilebihkan 1 juta per hari, kelebihan 4 juta lenyap di tanggal ke-5.
+  Dijaga `.agents/uji/uji_kumulatif_bersambung.php`.
 
 Keduanya sesuai dengan yang dilihat staf kontrol: layar memang menampilkan
 angka sistem di sel yang belum diisi.
