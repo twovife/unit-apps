@@ -40,56 +40,109 @@ class RekapWilayahController extends Controller
         $user = auth()->user();
         abort_unless($user?->hasAnyRole(self::PERAN_LIHAT), 403, 'Rekap Sirkulasi Wilayah untuk staf kontrol, pusat & superuser.');
 
-        $tanggal = Carbon::parse($request->tanggal ?: now())->toDateString();
+        // Filter bulan, sama dengan Rekap 2 (?bulan=Y-m).
+        $bulan = preg_match('/^\d{4}-\d{2}$/', (string) $request->bulan)
+            ? $request->bulan
+            : Carbon::now()->format('Y-m');
+        $periode = $bulan . '-01';
         $wilayah = $this->wilayahTerpilih($request);
 
-        $sistem = AngkaRekapWilayah::untukWilayah($wilayah, $tanggal);
+        $sebulan = AngkaRekapWilayah::untukBulan($wilayah, $periode);
+        if (empty($sebulan)) {
+            return Inertia::render('Laporan/RekapWilayah', $this->propKosong($wilayah, $bulan));
+        }
+
+        $branchIds = array_keys(reset($sebulan));
+
         // Urut alami, bukan alfabet: orderBy('unit') menaruh Krian 10 di antara
         // Krian 1 dan Krian 2, karena membandingkan huruf per huruf.
-        $unit = Branch::whereIn('id', array_keys($sistem))->pluck('unit', 'id')
+        $unit = Branch::whereIn('id', $branchIds)->pluck('unit', 'id')
             ->sort(fn ($a, $b) => strnatcasecmp($a, $b));
 
-        $ttd = AngkaRekapWilayah::ttdKantor($wilayah, $tanggal);
+        $ttd = AngkaRekapWilayah::ttdBulan($wilayah, $periode);
 
         $diketik = RegionalCirculationRecap::with('pengecek.employee:id,nama_karyawan')
-            ->whereDate('tanggal', $tanggal)
-            ->whereIn('branch_id', array_keys($sistem))
-            ->get()->keyBy('branch_id');
+            ->whereBetween('tanggal', [$periode, Carbon::parse($periode)->endOfMonth()->toDateString()])
+            ->whereIn('branch_id', $branchIds)
+            ->get()->groupBy(fn ($r) => $r->tanggal->toDateString());
+
+        $kolomTetap = ['awal_sirkulasi', 'awal_cm', 'awal_mb', 'awal_ml',
+            'saldo_lama_cm', 'saldo_lama_mb', 'drop_cm', 'drop_mb',
+            'drop_bulan_lalu', 'pemutihan'];
+        // saldo_lama_* ikut tiap tanggal walau isinya tetap: itu penyebut
+        // kolom persen, jadi tanpa dikirim persennya tidak bisa dihitung.
+        $kolomHarian = [...RegionalCirculationRecap::KOLOM_MUTASI, ...RegionalCirculationRecap::KOLOM_TURUNAN,
+            ...RegionalCirculationRecap::KOLOM_BEKU];
+
+        $bolehUbah = $user->hasAnyRole(self::PERAN_UBAH);
+        $pertama = reset($sebulan);
 
         return Inertia::render('Laporan/RekapWilayah', [
             'wilayah' => $wilayah,
-            'tanggal' => $tanggal,
-            'hari_kerja_ke' => $this->hariKerjaKe($tanggal),
-            // Hari libur dianggap tidak ada (aturan mas 2026-11-23): halamannya
-            // tetap bisa dilihat, tapi tidak ada yang boleh diisi di sana.
-            'hari_kerja' => WorkDay::hariKerja($tanggal),
-            // Bulan asal saldo lama, untuk judul kolom & keterangan di layar.
-            'bulan_lalu' => Carbon::parse($tanggal)->startOfMonth()->subMonth()->toDateString(),
-            'bulan_cm' => RekapWilayah::bulanRujukan($tanggal, 'cm'),
-            'bulan_mb' => RekapWilayah::bulanRujukan($tanggal, 'mb'),
-            'hari_tertinggal' => $this->hariTertinggal($wilayah, $tanggal, array_keys($sistem)),
-            'mingguan' => $this->mingguan($tanggal, array_keys($sistem)),
+            'bulan' => $bulan,
             'daftar_wilayah' => $this->wilayahBoleh(),
-            'boleh_ubah' => $user->hasAnyRole(self::PERAN_UBAH) && WorkDay::hariKerja($tanggal),
-            'baris' => $unit->map(function ($nama, $id) use ($sistem, $diketik, $ttd) {
-                $d = $diketik->get($id);
+            'boleh_ubah' => $bolehUbah,
+
+            // Bulan asal angka yang tetap sepanjang bulan.
+            'bulan_lalu' => Carbon::parse($periode)->subMonth()->toDateString(),
+            'bulan_cm' => RekapWilayah::bulanRujukan($periode, 'cm'),
+            'bulan_mb' => RekapWilayah::bulanRujukan($periode, 'mb'),
+
+            // Dikirim sekali per kantor, bukan diulang tiap tanggal: isinya
+            // tetap sebulan, dan satu wilayah bisa 33 kantor x 25 tanggal.
+            'kantor' => $unit->map(fn ($nama, $id) => [
+                'branch_id' => (int) $id,
+                'unit' => $nama,
+                'sistem' => collect($pertama[$id] ?? [])->only($kolomTetap)->all(),
+            ])->values(),
+
+            'mingguan' => $this->mingguan($periode, $branchIds),
+
+            'hari' => collect($sebulan)->map(function ($perKantor, $tanggal) use ($unit, $diketik, $ttd, $kolomHarian, $bolehUbah) {
+                $hariIni = $diketik->get($tanggal, collect())->keyBy('branch_id');
+                $hariKerja = WorkDay::hariKerja($tanggal);
 
                 return [
-                    'branch_id' => (int) $id,
-                    'unit' => $nama,
-                    'sistem' => $sistem[$id],
-                    'diketik' => $d?->only([
-                        ...RegionalCirculationRecap::KOLOM_ANGKA,
-                        ...RegionalCirculationRecap::KOLOM_AWAL,
-                        ...RegionalCirculationRecap::KOLOM_BEKU,
-                    ]),
-                    'ttd' => $ttd[$id] ?? ['kasir' => 0, 'km' => 0, 'kelompok' => 0],
-                    'terkunci' => (bool) $d?->terkunci(),
-                    'dicek_oleh' => $d?->pengecek?->employee?->nama_karyawan,
-                    'dicek_pada' => $d?->checked_at?->format('d/m/Y H:i'),
+                    'tanggal' => $tanggal,
+                    'hari_kerja' => $hariKerja,
+                    'hari_kerja_ke' => $this->hariKerjaKe($tanggal),
+                    // Hari libur dianggap tidak ada (aturan mas 2026-11-23):
+                    // tetap terlihat, tetapi tidak ada yang boleh diisi.
+                    'boleh_ubah' => $bolehUbah && $hariKerja,
+                    'baris' => $unit->map(function ($nama, $id) use ($perKantor, $hariIni, $ttd, $tanggal, $kolomHarian) {
+                        $d = $hariIni->get($id);
+
+                        return [
+                            'branch_id' => (int) $id,
+                            'unit' => $nama,
+                            'sistem' => collect($perKantor[$id] ?? [])->only($kolomHarian)->all(),
+                            'diketik' => $d?->only($kolomHarian),
+                            'ttd' => $ttd[$tanggal][$id] ?? ['kasir' => 0, 'km' => 0, 'kelompok' => 0],
+                            'terkunci' => (bool) $d?->terkunci(),
+                            'dicek_oleh' => $d?->pengecek?->employee?->nama_karyawan,
+                            'dicek_pada' => $d?->checked_at?->format('d/m/Y H:i'),
+                        ];
+                    })->values(),
                 ];
             })->values(),
         ]);
+    }
+
+    /** Wilayah tanpa kantor aktif: halaman tetap terbuka, isinya kosong. */
+    private function propKosong(int $wilayah, string $bulan): array
+    {
+        return [
+            'wilayah' => $wilayah,
+            'bulan' => $bulan,
+            'daftar_wilayah' => $this->wilayahBoleh(),
+            'boleh_ubah' => false,
+            'bulan_lalu' => null,
+            'bulan_cm' => null,
+            'bulan_mb' => null,
+            'kantor' => [],
+            'mingguan' => [],
+            'hari' => [],
+        ];
     }
 
     /**
@@ -110,28 +163,28 @@ class RekapWilayahController extends Controller
         $kolom = [...RegionalCirculationRecap::KOLOM_MUTASI, ...RegionalCirculationRecap::KOLOM_AWAL];
 
         $isi = $request->validate([
-            'tanggal' => 'required|date',
             'baris' => 'required|array|min:1',
             'baris.*.branch_id' => 'required|integer|exists:branches,id',
+            'baris.*.tanggal' => 'required|date',
             ...collect($kolom)->mapWithKeys(fn ($k) => ["baris.*.nilai.$k" => 'nullable|integer|min:0'])->all(),
         ]);
-
-        $tanggal = Carbon::parse($isi['tanggal'])->toDateString();
-
-        // Hari libur dianggap tidak ada, jadi tidak ada rekap yang diisi di
-        // sana. Layar sudah mematikan isiannya; ini penjaga di sisi server.
-        abort_unless(WorkDay::hariKerja($tanggal), 422, 'Tanggal itu bukan hari kerja, jadi tidak ada rekap yang diisi.');
 
         $bolehKantor = Branch::getAllowedBranchIds($user);
 
         $kantor = Branch::whereIn('id', collect($isi['baris'])->pluck('branch_id'))
             ->get(['id', 'wilayah'])->keyBy('id');
 
-        \DB::transaction(function () use ($isi, $tanggal, $kolom, $kantor, $bolehKantor) {
+        \DB::transaction(function () use ($isi, $kolom, $kantor, $bolehKantor) {
             $tersentuh = [];
 
             foreach ($isi['baris'] as $kiriman) {
                 $branchId = (int) $kiriman['branch_id'];
+                $tanggal = Carbon::parse($kiriman['tanggal'])->toDateString();
+
+                // Hari libur dianggap tidak ada, jadi tidak ada rekap yang
+                // diisi di sana. Layar sudah mematikan isiannya; ini penjaga
+                // di sisi server.
+                abort_unless(WorkDay::hariKerja($tanggal), 422, "Tanggal $tanggal bukan hari kerja.");
 
                 // Staf kontrol hanya kantor di zonanya; superuser & pusat null = semua.
                 // PESAN_BUKAN_WILAYAH berbunyi "Pinjaman ini bukan ...", tidak
@@ -171,13 +224,13 @@ class RekapWilayahController extends Controller
                 }
 
                 $baris->save();
-                $tersentuh[$branchId] = $kantor[$branchId]->wilayah;
+                $tersentuh[$branchId] = [(int) $kantor[$branchId]->wilayah, $tanggal];
             }
 
             // Mengubah mutasi satu hari menggeser kumulatif hari-hari
             // SESUDAHNYA juga, jadi sebulan dihitung ulang untuk kantor itu.
-            foreach ($tersentuh as $branchId => $wilayah) {
-                $this->hitungUlangBulan($branchId, (int) $wilayah, $tanggal);
+            foreach ($tersentuh as $branchId => [$wilayah, $tanggal]) {
+                $this->hitungUlangBulan($branchId, $wilayah, $tanggal);
             }
         });
 
@@ -354,42 +407,6 @@ class RekapWilayahController extends Controller
 
         $boleh = Branch::getAllowedBranchIds($user);
         abort_if($boleh !== null && ! in_array($branch->id, $boleh, true), 403, 'Kantor ini di luar wilayah Anda.');
-    }
-
-    /**
-     * Hari kerja sejak MULAI s/d sehari sebelum $tanggal yang masih punya
-     * kantor belum dicek, untuk banner di atas tabel. Ringkas: satu baris per
-     * tanggal berisi jumlah kantornya saja.
-     *
-     * @return array<int, array{tanggal: string, kantor: int}>
-     */
-    private function hariTertinggal(int $wilayah, string $tanggal, array $branchIds): array
-    {
-        $mulai = max(self::MULAI, Carbon::parse($tanggal)->startOfMonth()->toDateString());
-        if ($tanggal <= $mulai || empty($branchIds)) {
-            return [];
-        }
-
-        $hari = WorkDay::hariKerjaBulan($tanggal)
-            ->map(fn ($t) => $t->toDateString())
-            ->filter(fn ($t) => $t >= $mulai && $t < $tanggal)
-            ->values();
-
-        if ($hari->isEmpty()) {
-            return [];
-        }
-
-        $sudah = RegionalCirculationRecap::whereIn('branch_id', $branchIds)
-            ->whereIn('tanggal', $hari->all())
-            ->whereNotNull('checked_at')
-            ->get(['branch_id', 'tanggal'])
-            ->groupBy(fn ($r) => $r->tanggal->toDateString())
-            ->map->count();
-
-        return $hari
-            ->map(fn ($t) => ['tanggal' => $t, 'kantor' => count($branchIds) - ($sudah[$t] ?? 0)])
-            ->filter(fn ($h) => $h['kantor'] > 0)
-            ->values()->all();
     }
 
     /**

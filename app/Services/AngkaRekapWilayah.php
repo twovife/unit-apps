@@ -41,7 +41,23 @@ class AngkaRekapWilayah
     public static function untukWilayah(int $wilayah, string $tanggal): array
     {
         $tanggal = Carbon::parse($tanggal)->toDateString();
+
+        return self::untukBulan($wilayah, $tanggal)[$tanggal] ?? [];
+    }
+
+    /**
+     * Sama, tetapi untuk SEBULAN sekaligus: tanggal => branch_id => kolom.
+     *
+     * Dihitung sekali jalan, bukan memanggil per tanggal: kuerinya memang
+     * sudah menarik sebulan, yang berbeda cuma cara menumpuknya. Satu wilayah
+     * 33 kantor sebulan kira-kira sama mahalnya dengan satu tanggal.
+     *
+     * @return array<string, array<int, array<string, int>>>
+     */
+    public static function untukBulan(int $wilayah, string $tanggal): array
+    {
         $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+        $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
 
         $kantor = Branch::where('wilayah', $wilayah)->where('isactive', true)
             ->orderBy('unit')->pluck('unit', 'id');
@@ -67,63 +83,76 @@ class AngkaRekapWilayah
         $gidLama = $grouping->reject(fn ($g) => $alurBaru[$g->branch_id])->pluck('id');
 
         $awal = self::saldoAwal($gidBaru, $gidLama, $milikKantor, $periode);
-        $gerak = self::dropStorting($gidBaru, $gidLama, $milikKantor, $periode, $tanggal);
+        $gerak = self::dropStorting($gidBaru, $gidLama, $milikKantor, $periode, $akhir);
 
         $bulanLalu = Carbon::parse($periode)->subMonth()->toDateString();
         $dropLalu = self::dropBulan($wilayah, $bulanLalu);
         $pemutihan = self::pemutihanBulan($wilayah, $bulanLalu);
 
-        $bulanCm = RekapWilayah::bulanRujukan($tanggal, 'cm');
-        $bulanMb = RekapWilayah::bulanRujukan($tanggal, 'mb');
+        $bulanCm = RekapWilayah::bulanRujukan($periode, 'cm');
+        $bulanMb = RekapWilayah::bulanRujukan($periode, 'mb');
         $dropCm = self::dropBulan($wilayah, $bulanCm);
         $dropMb = self::dropBulan($wilayah, $bulanMb);
+
+        // Tanggal yang ditampilkan: hari kerja menurut kalender, DITAMBAH
+        // tanggal apa pun yang ternyata punya data walau libur. Sama dengan
+        // Rekap 2 — tanggal libur yang ada isinya tidak boleh disembunyikan.
+        $berdata = collect($gerak)->flatMap(fn ($perTanggal) => array_keys($perTanggal))->unique();
+        $tanggalBulan = \App\Models\WorkDay::tanggalRekapBulan($periode, $berdata)->all();
 
         $hasil = [];
         foreach ($kantor as $id => $unit) {
             $a = $awal[$id] ?? ['sirkulasi' => 0, 'cm' => 0, 'mb' => 0, 'ml' => 0];
-            $hari = $gerak[$id]['hari'] ?? self::KOSONG;
-            $bulan = $gerak[$id]['bulan'] ?? self::KOSONG;
+            $perTanggal = $gerak[$id] ?? [];
+            $jalan = self::KOSONG;
 
-            $hasil[$id] = [
-                'drop' => $hari['drop'],
-                'total_drop' => $bulan['drop'],
-                'storting' => $hari['storting'],
-                'total_storting' => $bulan['storting'],
-                'sirkulasi' => RekapWilayah::sirkulasiBerjalan($a['sirkulasi'], $bulan['drop'], $bulan['storting']),
+            foreach ($tanggalBulan as $t) {
+                $hari = $perTanggal[$t] ?? self::KOSONG;
+                foreach (self::KOSONG as $k => $_) {
+                    $jalan[$k] += $hari[$k];
+                }
 
-                'angsuran_cm' => $hari['cm'],
-                'total_angsuran_cm' => $bulan['cm'],
-                'saldo_cm' => $a['cm'] - $bulan['cm'],
+                $hasil[$t][$id] = [
+                    'drop' => $hari['drop'],
+                    'total_drop' => $jalan['drop'],
+                    'storting' => $hari['storting'],
+                    'total_storting' => $jalan['storting'],
+                    'sirkulasi' => RekapWilayah::sirkulasiBerjalan($a['sirkulasi'], $jalan['drop'], $jalan['storting']),
 
-                'angsuran_mb' => $hari['mb'],
-                'total_angsuran_mb' => $bulan['mb'],
-                'saldo_mb' => $a['mb'] - $bulan['mb'],
+                    'angsuran_cm' => $hari['cm'],
+                    'total_angsuran_cm' => $jalan['cm'],
+                    'saldo_cm' => $a['cm'] - $jalan['cm'],
 
-                'angsuran_ml' => $hari['ml'],
-                'total_angsuran_ml' => $bulan['ml'],
-                'saldo_ml' => $a['ml'] - $bulan['ml'],
+                    'angsuran_mb' => $hari['mb'],
+                    'total_angsuran_mb' => $jalan['mb'],
+                    'saldo_mb' => $a['mb'] - $jalan['mb'],
 
-                // Saldo awal bulan, dipakai kolom tambahan di tanggal 1.
-                'awal_sirkulasi' => $a['sirkulasi'],
-                'awal_cm' => $a['cm'],
-                'awal_mb' => $a['mb'],
-                'awal_ml' => $a['ml'],
+                    'angsuran_ml' => $hari['ml'],
+                    'total_angsuran_ml' => $jalan['ml'],
+                    'saldo_ml' => $a['ml'] - $jalan['ml'],
 
-                // Penyebut persen CM/MB: jumlah drop bulan rujukan APA ADANYA,
-                // tanpa pengali 1,3 (keputusan mas 2026-11-24). Nama kolomnya
-                // tetap saldo_lama_* karena itu yang dibekukan saat dicek.
-                'saldo_lama_cm' => $dropCm[$id] ?? 0,
-                'saldo_lama_mb' => $dropMb[$id] ?? 0,
-                // Drop bulan rujukan, asal saldo lama. Ditampilkan supaya
-                // angkanya bisa ditelusuri, bukan muncul entah dari mana.
-                'drop_cm' => $dropCm[$id] ?? 0,
-                'drop_mb' => $dropMb[$id] ?? 0,
+                    // Tetap sepanjang bulan; dipakai panel Sirkulasi Awal.
+                    'awal_sirkulasi' => $a['sirkulasi'],
+                    'awal_cm' => $a['cm'],
+                    'awal_mb' => $a['mb'],
+                    'awal_ml' => $a['ml'],
 
-                // Bulan lalu: drop dan pemutihan yang membentuk saldo awal ini.
-                'drop_bulan_lalu' => $dropLalu[$id] ?? 0,
-                'pemutihan' => $pemutihan[$id] ?? 0,
-            ];
+                    // Penyebut persen CM/MB: jumlah drop bulan rujukan APA
+                    // ADANYA, tanpa pengali 1,3 (keputusan mas 2026-11-24).
+                    // Nama kolomnya tetap saldo_lama_* karena itu yang
+                    // dibekukan saat baris dicek.
+                    'saldo_lama_cm' => $dropCm[$id] ?? 0,
+                    'saldo_lama_mb' => $dropMb[$id] ?? 0,
+                    'drop_cm' => $dropCm[$id] ?? 0,
+                    'drop_mb' => $dropMb[$id] ?? 0,
+
+                    'drop_bulan_lalu' => $dropLalu[$id] ?? 0,
+                    'pemutihan' => $pemutihan[$id] ?? 0,
+                ];
+            }
         }
+
+        ksort($hasil);
 
         return $hasil;
     }
@@ -172,36 +201,32 @@ class AngkaRekapWilayah
     }
 
     /**
-     * Drop & storting per kantor: 'hari' (tanggal itu) dan 'bulan' (tanggal 1
-     * s/d tanggal itu).
+     * Drop & storting per kantor PER TANGGAL.
      *
-     * @return array<int, array{hari: array<string,int>, bulan: array<string,int>}>
+     * @return array<int, array<string, array<string,int>>> branch_id => tanggal => kolom
      */
-    private static function dropStorting($gidBaru, $gidLama, $milikKantor, string $periode, string $tanggal): array
+    private static function dropStorting($gidBaru, $gidLama, $milikKantor, string $periode, string $akhir): array
     {
         $hasil = [];
-        // Satu titik masuk untuk kedua alur: tambahkan angka satu kelompok satu
-        // tanggal, lalu tabel ini yang memilah 'hari' dan 'bulan'.
-        $tambah = function ($gid, string $t, array $v) use (&$hasil, $milikKantor, $tanggal) {
+        // Satu titik masuk untuk kedua alur: tambahkan angka satu kelompok
+        // satu tanggal, lalu ditumpuk per kantor per tanggal.
+        $tambah = function ($gid, string $t, array $v) use (&$hasil, $milikKantor) {
             $b = $milikKantor[$gid] ?? null;
             if ($b === null) {
                 return;
             }
-            $hasil[$b] ??= ['hari' => self::KOSONG, 'bulan' => self::KOSONG];
+            $hasil[$b][$t] ??= self::KOSONG;
             foreach (self::KOSONG as $k => $_) {
-                $hasil[$b]['bulan'][$k] += (int) ($v[$k] ?? 0);
-                if ($t === $tanggal) {
-                    $hasil[$b]['hari'][$k] += (int) ($v[$k] ?? 0);
-                }
+                $hasil[$b][$t][$k] += (int) ($v[$k] ?? 0);
             }
         };
 
         if ($gidBaru->isNotEmpty()) {
-            self::alurBaru($gidBaru, $milikKantor, $periode, $tanggal, $tambah);
+            self::alurBaru($gidBaru, $milikKantor, $periode, $akhir, $tambah);
         }
 
         if ($gidLama->isNotEmpty()) {
-            self::alurLama($gidLama, $periode, $tanggal, $tambah);
+            self::alurLama($gidLama, $periode, $akhir, $tambah);
         }
 
         return $hasil;
@@ -327,38 +352,49 @@ class AngkaRekapWilayah
      */
     public static function ttdKantor(int $wilayah, string $tanggal): array
     {
-        $tanggal = Carbon::parse($tanggal)->toDateString();
+        return self::ttdBulan($wilayah, $tanggal)[Carbon::parse($tanggal)->toDateString()] ?? [];
+    }
+
+    /**
+     * Sama, sebulan sekaligus: tanggal => branch_id => {kasir, km, kelompok}.
+     *
+     * @return array<string, array<int, array{kasir: int, km: int, kelompok: int}>>
+     */
+    public static function ttdBulan(int $wilayah, string $tanggal): array
+    {
         $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+        $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
 
         $kantor = Branch::where('wilayah', $wilayah)->where('isactive', true)->pluck('id');
         $grouping = TransactionLoanOfficerGrouping::whereIn('branch_id', $kantor)->get(['id', 'branch_id']);
         $milikKantor = $grouping->pluck('branch_id', 'id');
 
+        $jumlahKelompok = $grouping->groupBy('branch_id')->map->count();
+
         $hasil = [];
-        foreach ($grouping as $g) {
-            $hasil[$g->branch_id] ??= ['kasir' => 0, 'km' => 0, 'kelompok' => 0];
-            $hasil[$g->branch_id]['kelompok']++;
-        }
+        $hitung = null; // diisi di bawah
 
         $alurBaru = $kantor->mapWithKeys(fn ($id) => [$id => AgregasiScope::pakaiAgregatBaru($id, $periode)]);
         $gidBaru = $grouping->filter(fn ($g) => $alurBaru[$g->branch_id])->pluck('id');
         $gidLama = $grouping->reject(fn ($g) => $alurBaru[$g->branch_id])->pluck('id');
 
-        $hitung = function ($gid, bool $kasir, bool $km) use (&$hasil, $milikKantor) {
+        $hitung = function ($gid, string $t, bool $kasir, bool $km) use (&$hasil, $milikKantor, $jumlahKelompok) {
             $b = $milikKantor[$gid] ?? null;
             if ($b === null) {
                 return;
             }
-            $hasil[$b]['kasir'] += $kasir ? 1 : 0;
-            $hasil[$b]['km'] += $km ? 1 : 0;
+            $hasil[$t][$b] ??= ['kasir' => 0, 'km' => 0, 'kelompok' => (int) ($jumlahKelompok[$b] ?? 0)];
+            $hasil[$t][$b]['kasir'] += $kasir ? 1 : 0;
+            $hasil[$t][$b]['km'] += $km ? 1 : 0;
         };
 
         if ($gidBaru->isNotEmpty()) {
             TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $gidBaru)
-                ->whereDate('date', $tanggal)
-                ->get(['transaction_loan_officer_grouping_id', 'kasir_lock_at', 'kepala_approval_at'])
+                ->whereBetween('date', [$periode, $akhir])
+                ->get(['transaction_loan_officer_grouping_id', 'date', 'kasir_lock_at', 'kepala_approval_at'])
                 ->each(fn ($r) => $hitung(
                     $r->transaction_loan_officer_grouping_id,
+                    Carbon::parse($r->date)->toDateString(),
                     $r->kasir_lock_at !== null,
                     $r->kepala_approval_at !== null
                 ));
@@ -366,10 +402,11 @@ class AngkaRekapWilayah
 
         if ($gidLama->isNotEmpty()) {
             \App\Models\TransactionDailyRecap::whereIn('transaction_loan_officer_grouping_id', $gidLama)
-                ->whereDate('date', $tanggal)
-                ->get(['transaction_loan_officer_grouping_id', 'daily_kasir_approval', 'daily_kepala_approval'])
+                ->whereBetween('date', [$periode, $akhir])
+                ->get(['transaction_loan_officer_grouping_id', 'date', 'daily_kasir_approval', 'daily_kepala_approval'])
                 ->each(fn ($r) => $hitung(
                     $r->transaction_loan_officer_grouping_id,
+                    Carbon::parse($r->date)->toDateString(),
                     (bool) $r->daily_kasir_approval,
                     (bool) $r->daily_kepala_approval
                 ));
