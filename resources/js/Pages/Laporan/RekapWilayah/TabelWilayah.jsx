@@ -175,7 +175,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
                     <td
                       key={k.k}
                       title={ket[k.k] ?? tanda ?? undefined}
-                      className={`whitespace-nowrap border-b p-0 text-right tabular-nums group-hover:bg-slate-50 ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-amber-100' : ''}`}
+                      className={`whitespace-nowrap border-b p-0 text-right tabular-nums group-hover:bg-slate-50 ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-red-100 text-red-900' : ''}`}
                     >
                       {bisaKetik ? (
                         <>

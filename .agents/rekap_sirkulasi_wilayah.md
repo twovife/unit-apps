@@ -163,7 +163,7 @@ angka di layar tidak tertinggal lebih maju dari yang tersimpan.
 ### Tanda selisih
 
 **Satu jenis saja: angka tersimpan berbeda dari Rekap 2.** Sel diberi latar
-kuning, dan keterangannya (rupiah penuh) muncul saat kursor diarahkan. Tanpa
+merah (mas 2026-11-24; sebelumnya kuning), dan keterangannya (rupiah penuh) muncul saat kursor diarahkan. Tanpa
 toleransi, beda Rp1 pun ditandai, dan **tidak menghalangi simpan** — angka
 laporan kasir dicatat apa adanya supaya jejak salah lapor tidak hilang.
 
@@ -340,139 +340,6 @@ semula.
 Di kepala drawer ada tautan "buka di tab baru" tanpa `polos`. Yang itu
 **memang** memindahkan cabang aktif, karena halamannya berdiri sendiri.
 
-### Isi dari Rekap 2 (massal)
-
-Tombol di baris filter, permintaan mas 2026-11-24. Membuat baris untuk seluruh
-bulan dan seluruh kantor di wilayah itu, berisi angka sistem, **tanpa
-mencentang apa pun**.
-
-- Hanya baris yang **belum ada** yang dibuat. Baris yang sudah diketik atau
-  sudah dicek tidak disentuh.
-- Hari libur dan tanggal yang belum terjadi dilewati, sama dengan aturan
-  isian manual.
-- Sesudah itu kumulatif dihitung ulang per kantor, supaya baris yang diketik
-  berbeda dari sistem tetap menggeser hari-hari sesudahnya.
-- Diukur di lokal: 632 baris dibuat dalam 4,4 detik, 653 kueri. Dicoba di
-  dalam transaksi yang dibatalkan sebelum tombolnya dipasang.
-
-**Harganya:** sesudah diisi, layar tidak bisa lagi membedakan "kasir melapor
-angka yang sama dengan sistem" dari "belum ada laporan kasir" — angka miring
-kelabu hilang karena semuanya jadi tersimpan. Penanda selisih tetap jalan
-untuk angka yang dikoreksi sesudahnya.
-
-### Penanda TTD kasir & ACC KM
-
-Dua kolom di kanan tiap baris, permintaan mas 2026-11-23: berapa kelompok dari
-seluruh kelompok kantor itu yang sudah di-TTD kasir (`kasir_lock_at`) dan
-di-ACC kepala mantri (`kepala_approval_at`), ditulis `n/m`. Hijau kalau lengkap,
-kuning kalau sebagian, kelabu kalau belum ada. Tujuannya staf kontrol tahu
-angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
-- **Sementara ini menunya superuser saja** (permintaan mas 2026-11-24).
-  `PERAN_UBAH` dan `PERAN_LIHAT` dua-duanya `['superuser']`, dan butirnya di
-  sidebar hanya muncul untuk superuser.
-
-  Rancangannya tidak berubah dan kodenya sudah siap: yang boleh simpan/Cek/Buka
-  **stafkontrol** (hanya wilayahnya, lewat `Branch::getAllowedBranchIds`) dan
-  **superuser**, ditambah **pusat** yang hanya melihat. Membukanya nanti cukup
-  mengembalikan isi dua konstanta itu dan syarat di sidebar.
-- Pemeriksaan wilayah di server memakai `AuthScope`; pelanggaran →
-  `AppHelper::PESAN_BUKAN_WILAYAH`.
-- Riwayat log per baris bisa dibuka dari baris itu (drawer).
-
-### Nama kantor membuka Rekap 2
-
-**Nama kantor diklik** membuka halaman **Rekap 2 yang asli** untuk kantor itu,
-di tab baru.
-
-Sempat dibuat tiruan Rekap 2 di dalam drawer — per kelompok, sebulan, lengkap
-dengan kumulatif dan saldo. Dicabut 2026-11-24 ("susah klo gini"). Alasannya
-bukan cuma selera: dua tempat yang menghitung hal yang sama adalah persis
-bahaya yang dijaga proyek ini, dan tiruannya perlu uji tersendiri hanya untuk
-membuktikan dia masih sama dengan aslinya.
-
-Caranya: Rekap 2 mengambil cabangnya dari paket filter global di session
-(`AuthScope`), bukan dari parameter. Jadi rutenya mengganti cabang aktif dulu
-(`simpanFilterGlobal`) lalu mengalihkan ke `kasir.rekap.rekap_dua` dengan
-`?month=`. **Cabang aktif pengguna ikut berpindah** — itu sebabnya tautannya
-dibuka di tab baru, supaya halaman rekap wilayah tidak ikut terbawa.
-
-### Isi dari Rekap 2 (massal)
-
-Tombol di baris filter, permintaan mas 2026-11-24. Membuat baris untuk seluruh
-bulan dan seluruh kantor di wilayah itu, berisi angka sistem, **tanpa
-mencentang apa pun**.
-
-- Hanya baris yang **belum ada** yang dibuat. Baris yang sudah diketik atau
-  sudah dicek tidak disentuh.
-- Hari libur dan tanggal yang belum terjadi dilewati, sama dengan aturan
-  isian manual.
-- Sesudah itu kumulatif dihitung ulang per kantor, supaya baris yang diketik
-  berbeda dari sistem tetap menggeser hari-hari sesudahnya.
-- Diukur di lokal: 632 baris dibuat dalam 4,4 detik, 653 kueri. Dicoba di
-  dalam transaksi yang dibatalkan sebelum tombolnya dipasang.
-
-**Harganya:** sesudah diisi, layar tidak bisa lagi membedakan "kasir melapor
-angka yang sama dengan sistem" dari "belum ada laporan kasir" — angka miring
-kelabu hilang karena semuanya jadi tersimpan. Penanda selisih tetap jalan
-untuk angka yang dikoreksi sesudahnya.
-
-### Penanda TTD kasir & ACC KM
-
-Dua kolom di kanan tiap baris, permintaan mas 2026-11-23: berapa kelompok dari
-seluruh kelompok kantor itu yang sudah di-TTD kasir (`kasir_lock_at`) dan
-di-ACC kepala mantri (`kepala_approval_at`), ditulis `n/m`. Hijau kalau lengkap,
-kuning kalau sebagian, kelabu kalau belum ada. Tujuannya staf kontrol tahu
-angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
-- **Sementara ini menunya superuser saja** (permintaan mas 2026-11-24).
-  `PERAN_UBAH` dan `PERAN_LIHAT` dua-duanya `['superuser']`, dan butirnya di
-  sidebar hanya muncul untuk superuser.
-
-  Rancangannya tidak berubah dan kodenya sudah siap: yang boleh simpan/Cek/Buka
-  **stafkontrol** (hanya wilayahnya, lewat `Branch::getAllowedBranchIds`) dan
-  **superuser**, ditambah **pusat** yang hanya melihat. Membukanya nanti cukup
-  mengembalikan isi dua konstanta itu dan syarat di sidebar.
-- Pemeriksaan wilayah di server memakai `AuthScope`; pelanggaran →
-  `AppHelper::PESAN_BUKAN_WILAYAH`.
-- Riwayat log per baris bisa dibuka dari baris itu (drawer).
-
-### Drawer rincian per kelompok
-
-**Nama kantor diklik** membuka **Rekap 2 kantor itu, sebulan penuh, per
-kelompok** — susunan kolom yang sama dengan tabel wilayah (mutasi, kumulatif,
-saldo, dibagi blok Sirkulasi / Calon Macet / Macet Baru / Macet Lama), cuma
-barisnya kelompok. Ditambah hitungan hari yang sudah di-TTD kasir dan di-ACC
-kepala mantri.
-
-Kelompok tertutup menampilkan sebulan; diklik terbuka menampilkan **saldo awal
-bulan** lalu tiap tanggal, dengan tanggal yang tadi diklik disorot. Permintaan
-mas 2026-11-24, supaya "angka Rekap 2-nya dari mana" bisa dijawab tanpa pindah
-halaman.
-
-**Kumulatif dan saldo tidak dijumlah** saat kelompok ditutup maupun di baris
-Jumlah kantor: yang berlaku angka hari terakhir, karena angkanya sudah
-kumulatif sejak awal bulan. Yang dijumlah hanya mutasi.
-
-Sumbernya `AngkaRekapWilayah::perKelompokBulan()` untuk mutasi dan
-`awalPerKelompok()` untuk saldo awal; keduanya memanggil `alurBaru` /
-`alurLama` / `saldoAwal` **yang sama** dengan penyusun barisnya — cuma penumpuknya dikunci
-per kelompok per tanggal, bukan per kantor. Jadi jumlah drawer selalu sama
-dengan baris kantornya, dijaga `.agents/uji/uji_kelompok_bulan.php`
-(516 kolom, 322 bukan nol, 0 beda).
-
-Sirkulasi & saldo berjalan juga dicek cocok, dengan toleransi sebesar jumlah
-kelompok: `sirkulasiBerjalan()` memakai `round()`, jadi membulatkan 10 kali
-per kelompok bisa meleset beberapa rupiah dari membulatkan sekali per kantor.
-
-**Sebulan sekaligus, bukan dipanggil per tanggal.** Kuerinya memang sudah
-menarik sebulan; yang per tanggal hanya membuangnya. Diukur 2026-11-24: satu
-lintasan 131 ms dan 10 kueri, dipanggil 25 kali 1.686 ms dan 225 kueri.
-
-Tanggal yang belum terjadi tidak dikirim.
-
-Halaman Rekap 2 yang asli tidak dipakai ulang: cabang aktifnya diambil dari
-paket filter global di session (`AuthScope`), bukan dari parameter, jadi
-membukanya untuk kantor lain berarti mengubah filter global pengguna.
-
 ## 5. Ekspor
 
 Dua tombol di baris filter. Belum ada: snapshot PNG untuk WA (`html-to-image`),
@@ -489,7 +356,7 @@ yang sama:
   (`header`), toast sonner, dan apa pun berkelas **`.tanpa-cetak`**.
 - `thead` jadi `table-header-group`, jadi kop tabel berulang di tiap halaman;
   `break-inside: avoid` pada baris.
-- `print-color-adjust: exact`, supaya sel kuning penanda selisih dan baris
+- `print-color-adjust: exact`, supaya sel merah penanda selisih dan baris
   total tetap tercetak.
 
 Yang khusus halaman ini:

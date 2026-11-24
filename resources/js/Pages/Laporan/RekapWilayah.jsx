@@ -323,7 +323,7 @@ export default function RekapWilayah({
             <span className="text-[12px] text-sky-600">Menyimpan{menyimpan > 1 ? ` ${menyimpan}` : ''}…</span>
           )}
           <span className="text-[11px] text-slate-400">
-            Diketik dalam ribuan (200 = 200.000). Tersimpan sendiri saat pindah kotak. Sel kuning = beda dengan Rekap
+            Diketik dalam ribuan (200 = 200.000). Tersimpan sendiri saat pindah kotak. Sel merah = beda dengan Rekap
             2. Jumlah dan saldo dihitung sistem.
           </span>
 
