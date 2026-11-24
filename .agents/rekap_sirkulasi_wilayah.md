@@ -16,9 +16,16 @@ jejaknya.
 - Filter: wilayah + **bulan** (`?bulan=Y-m`), sama dengan Rekap 2. Staf kontrol
   terkunci ke wilayahnya sendiri (`AuthScope`); superuser/pusat bebas memilih.
 - Isinya **sebulan penuh**: satu blok per tanggal, berurutan. Di atas ada deret
-  tombol tanggal seperti Rekap 2 — mengklik melompat ke blok tanggal itu,
-  tombolnya menyala mengikuti blok yang sedang terlihat (`IntersectionObserver`),
-  hijau kalau semua kantor tanggal itu sudah dicek, kelabu kalau hari libur.
+  tombol tanggal seperti Rekap 2 — mengklik melompat ke blok tanggal itu dan
+  menyalakan tombolnya; hijau kalau semua kantor tanggal itu sudah dicek,
+  kelabu kalau hari libur.
+
+  Tombolnya **tidak** mengikuti posisi gulir. Sempat dibuat begitu dengan
+  `IntersectionObserver`, lalu dibuang 2026-11-24: tiap layar bergeser,
+  halaman dirender ulang dan 25 blok dibandingkan lagi.
+
+- Baris filter menempel di `top-14`, tepat di bawah navbar (`h-14`). `top-0`
+  membuatnya menutupi navbar saat digulir.
 - Tidak ada gulir di dalam gulir: tabelnya hanya menggulir ke samping
   (`overflow-x-auto`), dan yang menempel cuma kolom Kantor.
 - Kepala tiap blok: tanggal + "hari kerja ke-n" + "x/33 dicek".

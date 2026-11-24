@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import BlokHari, { TANPA_TAMBALAN } from './RekapWilayah/BlokHari';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
@@ -171,33 +171,17 @@ export default function RekapWilayah({
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: await r.json() });
   }, []);
 
-  // Tanggal yang sedang terlihat di layar, supaya tombolnya menyala.
-  // rootMargin atas = tinggi baris filter yang menempel; bawah -65% supaya
-  // yang dihitung hanya blok di sepertiga atas layar, bukan semua yang
-  // kebetulan terlihat.
+  // Tanggal yang tombolnya menyala. Diisi saat tombolnya diklik.
+  //
+  // Dulu diikutkan posisi gulir lewat IntersectionObserver, dan itu menyalakan
+  // render ulang halaman tiap kali layar bergeser — 25 blok dibandingkan ulang
+  // sambil menggulir. Dibuang atas permintaan mas 2026-11-24.
   const [aktif, setAktif] = useState(null);
-  const daftarHari = useRef([]);
-  daftarHari.current = hari.map((h) => h.tanggal);
 
-  useEffect(() => {
-    const terlihat = new Set();
-    const pengamat = new IntersectionObserver(
-      (entri) => {
-        for (const e of entri) {
-          const t = e.target.id.replace('tgl-', '');
-          e.isIntersecting ? terlihat.add(t) : terlihat.delete(t);
-        }
-        // Yang paling atas di antara yang terlihat.
-        const urut = daftarHari.current.filter((t) => terlihat.has(t));
-        if (urut.length) setAktif(urut[0]);
-      },
-      { rootMargin: '-120px 0px -65% 0px' },
-    );
-
-    document.querySelectorAll('section[id^="tgl-"]').forEach((el) => pengamat.observe(el));
-
-    return () => pengamat.disconnect();
-  }, [hari]);
+  const lompat = (tanggal) => {
+    setAktif(tanggal);
+    document.getElementById(`tgl-${tanggal}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const namaBulanCm = useMemo(() => namaBulan(bulan_cm), [bulan_cm]);
   const namaBulanMb = useMemo(() => namaBulan(bulan_mb), [bulan_mb]);
@@ -224,7 +208,8 @@ export default function RekapWilayah({
           </p>
         </div>
 
-        <div className="tanpa-cetak sticky top-0 z-40 -mx-2 flex flex-wrap items-center gap-2 bg-white/95 px-2 py-2 backdrop-blur">
+        {/* top-14 = tinggi navbar (h-14); top-0 dulu menutupinya saat digulir. */}
+        <div className="tanpa-cetak sticky top-14 z-30 -mx-2 flex flex-wrap items-center gap-2 bg-white/95 px-2 py-2 backdrop-blur">
           <select
             value={wilayah}
             onChange={(e) => pindah({ wilayah: e.target.value })}
@@ -278,7 +263,7 @@ export default function RekapWilayah({
                   key={h.tanggal}
                   type="button"
                   title={`${judulTanggal(h.tanggal)} · ${dicek}/${h.baris.length} dicek`}
-                  onClick={() => document.getElementById(`tgl-${h.tanggal}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  onClick={() => lompat(h.tanggal)}
                   className={`h-7 min-w-7 rounded-md border px-1.5 text-xs tabular-nums transition-colors ${
                     aktif === h.tanggal ? 'ring-2 ring-sky-500 ring-offset-1 font-semibold ' : ''
                   }${

@@ -34,7 +34,7 @@ function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, on
   return (
     <section
       id={`tgl-${hari.tanggal}`}
-      className={`scroll-mt-28 space-y-1 ${pertama ? '' : 'print:break-before-page'}`}
+      className={`scroll-mt-36 space-y-1 ${pertama ? '' : 'print:break-before-page'}`}
     >
       <h2 className={`text-[13px] font-semibold ${aktif ? 'text-sky-700' : ''}`}>
         {judulTanggal(hari.tanggal)}
