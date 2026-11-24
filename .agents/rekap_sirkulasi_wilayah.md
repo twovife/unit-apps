@@ -1,6 +1,7 @@
 # Rekap Sirkulasi Wilayah — rancangan
 
-Status: disetujui mas 2026-11-23, belum diimplementasi.
+Status: jalan di lokal 2026-11-24. Belum dipush, migrasinya belum di prod.
+Yang belum: ekspor (§5).
 
 ## Latar
 
@@ -12,19 +13,46 @@ jejaknya.
 ## 1. Halaman
 
 - Menu: **Laporan → Rekap Sirkulasi Wilayah**.
-- Filter: wilayah + tanggal. Staf kontrol terkunci ke wilayahnya sendiri
-  (`AuthScope`); superuser/pusat bebas memilih.
-- Kepala: tanggal + "HARI KERJA KE-n".
+- Filter: wilayah + **bulan** (`?bulan=Y-m`), sama dengan Rekap 2. Staf kontrol
+  terkunci ke wilayahnya sendiri (`AuthScope`); superuser/pusat bebas memilih.
+- Isinya **sebulan penuh**: satu blok per tanggal, berurutan. Di atas ada deret
+  tombol tanggal seperti Rekap 2 — mengklik melompat ke blok tanggal itu,
+  tombolnya menyala mengikuti blok yang sedang terlihat (`IntersectionObserver`),
+  hijau kalau semua kantor tanggal itu sudah dicek, kelabu kalau hari libur.
+- Tidak ada gulir di dalam gulir: tabelnya hanya menggulir ke samping
+  (`overflow-x-auto`), dan yang menempel cuma kolom Kantor.
+- Kepala tiap blok: tanggal + "hari kerja ke-n" + "x/33 dicek".
 - Baris: satu per kantor di wilayah (kelompok 1–10 dijumlah), lalu baris
   **total wilayah**.
-- Kolom (urutan Excel mas):
+- Kolom per tanggal (urutan Excel mas), 17 kolom:
 
 | Blok | Kolom |
 |---|---|
-| Sirkulasi | DROP, JUMLAH DROP, STORTING, JUMLAH STORTING, SALDO |
-| Calon Macet | ANGS, JUMLAH, SALDO, %, SALDO LAMA |
-| Macet Baru | ANGS, JUMLAH, SALDO, %, SALDO LAMA |
-| Macet Lama | ANGS, JUMLAH, SALDO, % |
+| Sirkulasi | Drop, Jml Drop, Storting, Jml Storting, Saldo |
+| Calon Macet | Angs, Jumlah, Saldo, % |
+| Macet Baru | Angs, Jumlah, Saldo, % |
+| Macet Lama | Angs, Jumlah, Saldo, % |
+
+  Lalu tiga kolom penanda: Kasir, KM, Staf Kontrol (§4).
+
+  **Saldo Lama dan Drop CM/MB tidak ada di tabel harian** (keputusan mas
+  2026-11-24): angkanya tetap sepanjang bulan, jadi tempatnya di panel
+  Sirkulasi Awal. Yang per tanggal hanya yang bergerak per tanggal.
+
+### Dua panel di atas blok tanggal
+
+Keduanya `<details>` bawaan browser, jadi buka-tutupnya tidak perlu state dan
+isinya tetap bisa dicari dengan Ctrl+F.
+
+- **Sirkulasi Awal <bulan>** — tertutup menampilkan total wilayah, dibuka
+  menampilkan tiap kantor. Kolomnya, urutan permintaan mas 2026-11-24:
+  Pemutihan | Drop Bln Lalu | Sirkulasi | Drop CM | CM | % | Drop MB | MB | % |
+  ML | %.
+- **Rekap Mingguan** — satu baris per minggu, Senin s/d Minggu dipotong batas
+  bulan, jadi minggu pertama dan terakhir bisa pendek. Mutasi dijumlah;
+  sirkulasi akhir minggu diambil dari baris terakhir tiap kantor, **bukan**
+  dijumlah, karena sirkulasi sudah kumulatif sejak awal bulan. Tiap minggu bisa
+  dibuka untuk melihat rinciannya per kantor.
 
 - **Hari libur dianggap tidak ada** (aturan mas 2026-11-23). Tanggal yang bukan
   hari kerja menurut `WorkDay::hariKerja()` tetap bisa DILIHAT, tetapi tidak
@@ -64,6 +92,25 @@ ditolak). Kotak isiannya dicontek dari `IsianSel` di Rekap 1
 
 Penahan salah kolom: kepala tabel menempel di atas, dan tiap isian membawa
 nama blok serta kolomnya di `title`.
+
+### Menyimpan: autosave, tanpa tombol Simpan
+
+Keputusan mas 2026-11-24, mengganti tombol "Simpan n isian". Satu sel dikirim
+**saat kotaknya ditinggalkan** (blur atau Enter), dan hanya kalau angkanya
+benar-benar berubah. Jadi satu sel = satu permintaan, bukan satu ketukan = satu
+permintaan.
+
+Balasannya **bukan halaman penuh melainkan tambalan JSON**: sebulan baris
+kantor itu, berkunci `"tanggal|branch_id"`, berisi semua kolom angka ditambah
+status tanda tangan. Layar menempelkannya ke barisnya. Memuat ulang halaman
+berarti menghitung sebulan untuk 33 kantor — 2.403 ms dan 93 kueri — padahal
+yang berubah satu kantor (§6).
+
+Mengubah mutasi tanggal 5 menggeser kumulatif tanggal 6 ke atas. Karena
+tambalannya sebulan, pergeseran itu **langsung terlihat** tanpa memuat ulang.
+
+Gagal simpan: toast merah, lalu `router.reload({ only: ['hari'] })`, supaya
+angka di layar tidak tertinggal lebih maju dari yang tersimpan.
 
 ### Yang dihitung sistem
 
@@ -146,6 +193,9 @@ awal. Baris dibuat saat simpan pertama.
 **SALDO LAMA disimpan saat Cek**, supaya angka yang sudah ditandatangani tidak
 bergeser bila drop lama dikoreksi. Sebelum Cek, layar menghitungnya langsung.
 
+Kolomnya tidak ditampilkan di tabel harian, tapi tetap dikirim ke layar: dia
+penyebut kolom % CM dan % MB.
+
 ### `regional_circulation_recap_logs`
 
 | Kolom | Catatan |
@@ -163,12 +213,37 @@ Satu baris log per kolom yang berubah.
 
 ## 4. Alur dan hak akses
 
-- **Simpan**: per baris kantor. Tiap kolom yang berubah → log `ubah`.
-- **Cek**: per baris kantor. Mengisi `checked_by`, `checked_at`, `saldo_lama_*`;
-  log `cek`. Baris terkunci (input dinonaktifkan, server menolak ubah).
-- **Buka**: wajib alasan. Mengosongkan `checked_by`/`checked_at`; log `buka`.
+- **Simpan**: autosave per sel (§2). Tiap kolom yang berubah satu log `ubah`.
+  Satu permintaan boleh memuat beberapa tanggal sekaligus
+  (`baris.*.tanggal`), jadi halaman sebulan tetap bisa dilayani satu endpoint.
+- **Cek**: per baris kantor, tombol di kolom paling kanan — itu tanda tangan
+  staf kontrol. Mengisi `checked_by`, `checked_at`, `saldo_lama_*`; log `cek`.
+  Baris terkunci: isiannya mati dan server menolak ubah.
+
+  **Berantai**, seperti kunci kasir di Rekap 1: hari kerja sebelumnya di kantor
+  yang sama harus sudah dicek lebih dulu, kalau tidak Cek ditolak 422 dengan
+  menyebut tanggal yang tertinggal. Patokan mulainya **1 November 2026**
+  (`RekapWilayahController::MULAI`), bukan awal data.
+
+  Baris yang belum pernah diketik tetap boleh dicek: angkanya diambil dari
+  Rekap 2 dan nol memang nol (aturan mas 2026-11-23). Barisnya dibuat saat Cek
+  supaya yang ditandatangani tersimpan.
+- **Buka**: wajib alasan minimal 5 huruf. Mengosongkan `checked_by`/`checked_at`;
+  log `buka`. Sesudahnya kumulatif kantor itu dihitung ulang — barisnya tadi
+  dilewati karena terkunci.
+- **Cek dan Buka juga membalas tambalan JSON**, sama dengan autosave, jadi
+  baris, hitungan "x/33 dicek", dan warna tombol tanggal berubah tanpa memuat
+  ulang halaman.
 - Halaman wilayah **selesai** bila semua baris kantor sudah dicek. Tidak ada
   tombol tambahan.
+
+### Penanda TTD kasir & ACC KM
+
+Dua kolom di kanan tiap baris, permintaan mas 2026-11-23: berapa kelompok dari
+seluruh kelompok kantor itu yang sudah di-TTD kasir (`kasir_lock_at`) dan
+di-ACC kepala mantri (`kepala_approval_at`), ditulis `n/m`. Hijau kalau lengkap,
+kuning kalau sebagian, kelabu kalau belum ada. Tujuannya staf kontrol tahu
+angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
 - Yang boleh simpan/Cek/Buka: **stafkontrol** (hanya wilayahnya) dan
   **superuser**. Peran lain yang punya akses Laporan hanya melihat.
 - Pemeriksaan wilayah di server memakai `AuthScope`; pelanggaran →
@@ -218,6 +293,45 @@ hari yang belum dihitung langsung lewat `HitungAgregat::harianBanyak`.
 Batas "mulai hitung langsung" ditentukan **per kantor**, bukan per wilayah —
 lihat §6 bagian risiko.
 
+### Kinerja: yang mahal dan jalan murahnya
+
+Diukur 2026-11-24, wilayah 1, November 2026.
+
+| Jalur | Waktu | Kueri |
+|---|---|---|
+| `untukBulan($wilayah, $t)` — 33 kantor sebulan | 2.403 ms | 93 |
+| `untukBulan($wilayah, $t, $branchId)` — satu kantor | 60 ms | 24 |
+| `awalKantor($branchId, $t)` — saldo awal satu kantor | 13 ms | 3 |
+
+Halaman sebulan: server 6,6 detik dingin / 2,5 detik hangat, 121 kueri, 40 MB
+puncak, JSON 416 KB, 825 baris dan 4.125 kotak isian di layar.
+
+Tiga hal yang membuat autosave tidak memberatkan:
+
+1. **`untukBulan()` menerima `$branchId`** untuk menyempitkan ke satu kantor.
+   Dipakai tombol Cek dan `barisDariSistem()`. Drop bulan rujukan tetap
+   dihitung per wilayah karena sudah ditembolok 6 jam dan dipakai bersama
+   halamannya.
+
+   Jalur sempit bisa punya daftar tanggal **lebih pendek** daripada jalur penuh:
+   tanggal libur yang isinya cuma ada di kantor lain tidak muncul. Aman untuk
+   Cek karena Cek hanya jalan di hari kerja, tapi jangan dipakai untuk
+   membandingkan "tanggal pertama" dua jalur.
+
+2. **`AngkaRekapWilayah::awalKantor()`** menggantikan `untukWilayah()` di dalam
+   `hitungUlangBulan()`. Menghitung ulang kumulatif hanya butuh saldo awal
+   bulan, bukan drop & storting harian, jadi cukup satu kueri closing.
+
+3. **Satu tanggal dirender ulang, bukan sebulan.** Tiap tanggal jadi `BlokHari`
+   yang dibungkus `memo`. Syaratnya acuan prop harus tetap: tanggal tanpa
+   tambalan menerima objek beku `TANPA_TAMBALAN` yang sama, semua callback
+   dibungkus `useCallback` dengan tanggal dikirim sebagai argumen (bukan ditutup
+   di closure), dan kotak isian mengirim nilainya saat blur, bukan tiap ketukan.
+   Mengetik di 5 November merender ulang 33 baris, bukan 825.
+
+Angka jalur murah diuji ulang dengan `.agents/uji/uji_awal_kantor.php`
+(1.372 kolom, 0 beda terhadap jalur penuh).
+
 ### Risiko lain
 
 - `getDataRekapDua` menghitung sebulan penuh per kantor, jadi **jangan**
@@ -242,6 +356,35 @@ lihat §6 bagian risiko.
   di `RekapTrait`.
 - "HARI KERJA KE-n" — pakai `WorkDay::hariKerjaBulan`, sumber yang sama dengan
   rekap lain.
+
+## Pengujian
+
+Tidak lewat phpunit — `php artisan test` menghantam `ubmi_db` produksi. Empat
+skrip yang bisa dijalankan ulang:
+
+```bash
+# rumus murni (persen, sirkulasi, bulan rujukan), tanpa DB
+docker exec -u www-data -e HOME=/tmp unit-app php -d zend.assertions=1 .agents/uji/uji_rekap_wilayah.php
+
+# kolom & turunan di sisi layar, node biasa
+docker exec unit-vite node .agents/uji/uji_kolom_rekap_wilayah.mjs
+
+# angka halaman harus sama dengan Rekap 2
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/banding_rekap_wilayah.php
+
+# jalur murah (awalKantor, untukBulan satu kantor) harus sama dengan jalur penuh
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_awal_kantor.php
+```
+
+Hasil terakhir: banding 1.652 kolom 0 beda, jalur murah 1.372 kolom 0 beda.
+
+`banding_rekap_wilayah.php` memperingatkan kalau kolom hariannya nol semua —
+salinan lokal berhenti 2026-11-16, jadi tanggal sesudah itu membandingkan nol
+dengan nol dan tidak membuktikan apa pun.
+
+**artisan di container jangan sebagai root.** `storage` jadi milik root dan
+php-fpm galat `Permission denied`. Selalu `-u www-data -e HOME=/tmp`; tanpa
+`HOME` psysh menolak menulis `/var/www/.config/psysh`.
 
 ## Di luar lingkup
 

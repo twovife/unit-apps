@@ -1,5 +1,17 @@
 # Rencana Implementasi — Rekap Sirkulasi Wilayah
 
+> **Status 2026-11-24: Tugas 1–6 sudah jalan di lokal. Sisa Tugas 7 (ekspor)
+> dan Tugas 8 (snapshot PNG).** Kotak `- [ ]` di bawah tidak dicentang; yang
+> berlaku adalah `.agents/rekap_sirkulasi_wilayah.md`, yang sudah diperbarui
+> mengikuti keputusan mas sesudah rencana ini ditulis. Beberapa langkah di
+> bawah **sudah tidak berlaku**:
+>
+> - filternya **bulan**, bukan tanggal, dan isinya sebulan penuh;
+> - **tidak ada tombol Simpan** — tiap sel menyimpan sendiri saat ditinggalkan;
+> - kolom Saldo Lama & Drop CM/MB pindah dari tabel harian ke panel Sirkulasi
+>   Awal;
+> - penyebut persen CM/MB **tanpa pengali 1,3**.
+>
 > **Untuk pekerja agen:** jalankan tugas satu per satu, berhenti di akhir tiap
 > tugas untuk ditinjau. Langkah bertanda `- [ ]`.
 
