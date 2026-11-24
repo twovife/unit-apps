@@ -69,9 +69,9 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb })
         </div>
       </summary>
 
-      <div className="max-h-80 overflow-auto border-t">
+      <div className="overflow-x-auto border-t">
         <table className="w-full text-[11px]">
-          <thead className="sticky top-0 bg-slate-100">
+          <thead className="bg-slate-100">
             <tr>
               <th className="px-1.5 py-1 text-left text-[10px] font-semibold uppercase tracking-tight text-slate-500">
                 Kantor
@@ -102,7 +102,7 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb })
               </tr>
             ))}
           </tbody>
-          <tfoot className="sticky bottom-0 border-t-2 bg-slate-100 font-semibold">
+          <tfoot className="border-t-2 bg-slate-100 font-semibold">
             <tr>
               <td className="px-1.5 py-1">Total Wilayah</td>
               {KOLOM.map((c) => (

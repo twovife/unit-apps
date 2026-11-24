@@ -162,6 +162,33 @@ export default function RekapWilayah({
           <span className="text-[11px] text-slate-400">
             Diketik dalam ribuan (200 = 200.000). Sel kuning = beda dengan Rekap 2. Jumlah dan saldo dihitung sistem.
           </span>
+
+          {/* Tombol tanggal seperti Rekap 2: lompat ke blok tanggal itu.
+              Hijau = semua kantor sudah dicek, kelabu = hari libur. */}
+          <div className="flex w-full flex-wrap gap-1">
+            {hari.map((h) => {
+              const dicek = h.baris.filter((b) => b.terkunci).length;
+              const penuh = dicek === h.baris.length;
+
+              return (
+                <button
+                  key={h.tanggal}
+                  type="button"
+                  title={`${judulTanggal(h.tanggal)} · ${dicek}/${h.baris.length} dicek`}
+                  onClick={() => document.getElementById(`tgl-${h.tanggal}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className={`h-7 min-w-7 rounded-md border px-1.5 text-xs tabular-nums transition-colors ${
+                    !h.hari_kerja
+                      ? 'border-slate-200 text-slate-300'
+                      : penuh
+                        ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                        : 'hover:bg-slate-100'
+                  }`}
+                >
+                  {Number(h.tanggal.slice(8))}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {kantor.length > 0 && (
@@ -183,7 +210,7 @@ export default function RekapWilayah({
         )}
 
         {hariTampil.map((h) => (
-          <section key={h.tanggal} className="space-y-1">
+          <section key={h.tanggal} id={`tgl-${h.tanggal}`} className="scroll-mt-28 space-y-1">
             <h2 className="text-[13px] font-semibold">
               {judulTanggal(h.tanggal)}
               <span className="ml-2 font-normal text-slate-400">

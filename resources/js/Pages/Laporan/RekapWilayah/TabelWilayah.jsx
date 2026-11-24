@@ -106,30 +106,30 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
     persen_ml: 'Saldo ML dibagi sirkulasi hari ini',
   };
 
-  const th = 'sticky z-20 whitespace-nowrap border-b bg-slate-100 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-tight text-slate-500';
+  const th = 'whitespace-nowrap border-b bg-slate-100 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-tight text-slate-500';
 
   return (
-    <div className="max-h-[75vh] overflow-auto rounded-lg border bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
       <table className="w-full border-separate border-spacing-0 text-[11px]">
         <thead>
           <tr>
-            <th rowSpan={2} className={`${th} left-0 top-0 z-30 text-left`}>Kantor</th>
+            <th rowSpan={2} className={`${th} sticky left-0 z-20 text-left`}>Kantor</th>
             {BLOK.map((b) => (
-              <th key={b.judul} colSpan={b.kolom.length} className={`${th} top-0 border-l text-center`}>
+              <th key={b.judul} colSpan={b.kolom.length} className={`${th} border-l text-center`}>
                 {b.judul}
               </th>
             ))}
-            <th rowSpan={2} className={`${th} top-0 border-l text-center`} title="Berapa kelompok yang sudah di-TTD kasir">
+            <th rowSpan={2} className={`${th} border-l text-center`} title="Berapa kelompok yang sudah di-TTD kasir">
               Kasir
             </th>
-            <th rowSpan={2} className={`${th} top-0 text-center`} title="Berapa kelompok yang sudah di-ACC kepala mantri">
+            <th rowSpan={2} className={`${th} text-center`} title="Berapa kelompok yang sudah di-ACC kepala mantri">
               KM
             </th>
-            <th rowSpan={2} className={`${th} top-0 border-l text-center`}>Staf Kontrol</th>
+            <th rowSpan={2} className={`${th} border-l text-center`}>Staf Kontrol</th>
           </tr>
           <tr>
             {SEMUA_KOLOM.map((k) => (
-              <th key={k.k} className={`${th} top-[25px] text-right ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
+              <th key={k.k} className={`${th} text-right ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
                 {k.j}
               </th>
             ))}
@@ -200,15 +200,15 @@ export default function TabelWilayah({ baris, bolehUbah, onUbah, belumSimpan, on
         </tbody>
         <tfoot>
           <tr className="font-semibold">
-            <td className="sticky bottom-0 left-0 z-20 border-t-2 bg-slate-100 px-1.5 py-1">Total Wilayah</td>
+            <td className="sticky left-0 z-10 border-t-2 bg-slate-100 px-1.5 py-1">Total Wilayah</td>
             {SEMUA_KOLOM.map((k) => (
-              <td key={k.k} className={`sticky bottom-0 whitespace-nowrap border-t-2 bg-slate-100 px-1.5 py-1 text-right tabular-nums ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
+              <td key={k.k} className={`whitespace-nowrap border-t-2 bg-slate-100 px-1.5 py-1 text-right tabular-nums ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
                 {selTotal(k.k)}
               </td>
             ))}
-            <td className="sticky bottom-0 border-l border-t-2 bg-slate-100 px-1.5 py-1" />
-            <td className="sticky bottom-0 border-t-2 bg-slate-100 px-1.5 py-1" />
-            <td className="sticky bottom-0 border-l border-t-2 bg-slate-100 px-1.5 py-1" />
+            <td className="border-l border-t-2 bg-slate-100 px-1.5 py-1" />
+            <td className="border-t-2 bg-slate-100 px-1.5 py-1" />
+            <td className="border-l border-t-2 bg-slate-100 px-1.5 py-1" />
           </tr>
         </tfoot>
       </table>
