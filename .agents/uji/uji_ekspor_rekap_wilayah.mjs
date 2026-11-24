@@ -51,7 +51,7 @@ assert.equal(h.getCell('B1').value, 'Kantor');
 assert.equal(h.getCell('C1').value, 'Sirkulasi');
 assert.equal(h.getCell('H1').value, 'Calon Macet');
 assert.equal(h.getCell('C2').value, 'Drop');
-assert.equal(h.getCell('G2').value, 'Saldo');
+assert.equal(h.getCell('G2').value, 'Sirkulasi');
 
 // Angka harus angka, bukan teks: kalau teks, Excel tidak bisa menjumlah.
 assert.equal(typeof h.getCell('C3').value, 'number');
