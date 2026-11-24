@@ -299,8 +299,6 @@ Jebakan yang sempat kena: angka sistemnya **tidak boleh** diambil dengan
 hasilnya, jadi saldo awalnya terisi nol. Pakai `untukBulan()` lalu ambil
 tanggal pertama yang ada. Dijaga `.agents/uji/uji_cek_saldo_awal.php`.
 
-Tombol **Isi dari Rekap 2** ikut mengisi tabel ini.
-
 Belum ada: log perubahan saldo awal. `regional_circulation_recap_logs`
 menunjuk ke baris harian lewat `regional_circulation_recap_id`, jadi tidak
 bisa dipakai apa adanya. Yang tercatat baru `checked_by` & `checked_at`.
@@ -325,6 +323,12 @@ Satu baris log per kolom yang berubah.
 - **Simpan**: autosave per sel (§2). Tiap kolom yang berubah satu log `ubah`.
   Satu permintaan boleh memuat beberapa tanggal sekaligus
   (`baris.*.tanggal`), jadi halaman sebulan tetap bisa dilayani satu endpoint.
+- **Tidak ada pengisian massal.** Tombol "Isi dari Rekap 2" sempat ada lalu
+  dicabut (mas 2026-11-24): staf kontrol mengecek satu per satu, dan kalau
+  angkanya memang sudah sama dengan rekap, tombol **Cek** yang membuat
+  barisnya dari angka sistem. Mengisi sebulan sekaligus juga menghapus
+  pembeda antara "kasir melapor sama dengan sistem" dan "belum ada laporan".
+
 - **Cek**: per baris kantor, tombol di kolom paling kanan — itu tanda tangan
   staf kontrol. Mengisi `checked_by`, `checked_at`, `saldo_lama_*`; log `cek`.
   Baris terkunci: isiannya mati dan server menolak ubah.
@@ -345,26 +349,6 @@ Satu baris log per kolom yang berubah.
   ulang halaman.
 - Halaman wilayah **selesai** bila semua baris kantor sudah dicek. Tidak ada
   tombol tambahan.
-
-### Isi dari Rekap 2 (massal)
-
-Tombol di baris filter, permintaan mas 2026-11-24. Membuat baris untuk seluruh
-bulan dan seluruh kantor di wilayah itu, berisi angka sistem, **tanpa
-mencentang apa pun**.
-
-- Hanya baris yang **belum ada** yang dibuat. Baris yang sudah diketik atau
-  sudah dicek tidak disentuh.
-- Hari libur dan tanggal yang belum terjadi dilewati, sama dengan aturan
-  isian manual.
-- Sesudah itu kumulatif dihitung ulang per kantor, supaya baris yang diketik
-  berbeda dari sistem tetap menggeser hari-hari sesudahnya.
-- Diukur di lokal: 632 baris dibuat dalam 4,4 detik, 653 kueri. Dicoba di
-  dalam transaksi yang dibatalkan sebelum tombolnya dipasang.
-
-**Harganya:** sesudah diisi, layar tidak bisa lagi membedakan "kasir melapor
-angka yang sama dengan sistem" dari "belum ada laporan kasir" — angka miring
-kelabu hilang karena semuanya jadi tersimpan. Penanda selisih tetap jalan
-untuk angka yang dikoreksi sesudahnya.
 
 ### Penanda TTD kasir & ACC KM
 

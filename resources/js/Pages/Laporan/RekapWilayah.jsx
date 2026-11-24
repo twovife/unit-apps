@@ -45,7 +45,6 @@ export default function RekapWilayah({
   // Saldo awal yang baru diketik, per branch_id. Balasan server berisi baris
   // harian saja, jadi panelnya ditambal dari yang dikirim.
   const [tambalanAwal, setTambalanAwal] = useState({});
-  const [mengisi, setMengisi] = useState(false);
   const [mengekspor, setMengekspor] = useState(false);
 
   // exceljs 900 KB, diimpor hanya saat tombolnya ditekan.
@@ -171,27 +170,6 @@ export default function RekapWilayah({
     const r = await fetch(route('laporan.rekap_wilayah.log', b.branch_id) + `?tanggal=${tanggal}`);
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: await r.json() });
   }, []);
-
-  // Isi sebulan dari angka sistem, tanpa dicek. Barisnya jadi tersimpan, jadi
-  // sesudah ini layar tidak bisa lagi membedakan "kasir melapor sama dengan
-  // sistem" dari "belum ada laporan".
-  const isiSistem = () => {
-    if (!confirm(`Isi semua baris ${namaBulan(bulan + '-01')} dari Rekap 2?\n\nBaris yang sudah diketik atau sudah dicek tidak disentuh.`)) {
-      return;
-    }
-
-    setMengisi(true);
-    router.post(
-      route('laporan.rekap_wilayah.isi_sistem'),
-      { wilayah, bulan },
-      {
-        preserveScroll: true,
-        onSuccess: () => setTambalan({}),
-        onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal mengisi'),
-        onFinish: () => setMengisi(false),
-      },
-    );
-  };
 
   // Saldo awal bulan versi laporan kantor. Tabel sendiri, satu baris per
   // kantor per bulan; mengubahnya menggeser seluruh kumulatif bulan itu, jadi
@@ -371,17 +349,6 @@ export default function RekapWilayah({
           >
             {mengekspor ? 'Menyusun…' : 'Excel'}
           </button>
-          {boleh_ubah && (
-            <button
-              type="button"
-              onClick={isiSistem}
-              disabled={!hari.length || mengisi}
-              title="Buat baris untuk tanggal yang belum terisi, memakai angka Rekap 2. Tidak mencentang apa pun."
-              className="h-9 rounded-md border px-3 text-sm hover:bg-slate-100 disabled:opacity-40"
-            >
-              {mengisi ? 'Mengisi…' : 'Isi dari Rekap 2'}
-            </button>
-          )}
           {menyimpan > 0 && (
             <span className="text-[12px] text-sky-600">Menyimpan{menyimpan > 1 ? ` ${menyimpan}` : ''}…</span>
           )}
