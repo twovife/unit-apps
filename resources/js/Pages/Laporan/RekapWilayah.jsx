@@ -42,6 +42,9 @@ export default function RekapWilayah({
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
   const [rekapDua, setRekapDua] = useState(null);
+  // Saldo awal yang baru diketik, per branch_id. Balasan server berisi baris
+  // harian saja, jadi panelnya ditambal dari yang dikirim.
+  const [tambalanAwal, setTambalanAwal] = useState({});
   const [mengisi, setMengisi] = useState(false);
   const [mengekspor, setMengekspor] = useState(false);
 
@@ -194,6 +197,31 @@ export default function RekapWilayah({
       },
     );
   };
+
+  // Saldo awal bulan versi laporan kantor. Tabel sendiri, satu baris per
+  // kantor per bulan; mengubahnya menggeser seluruh kumulatif bulan itu, jadi
+  // balasannya tambalan yang sama dengan autosave harian.
+  const ubahAwal = useCallback(
+    (branchId, kolom, nilai) => {
+      setTambalanAwal((s) => ({ ...s, [branchId]: { ...s[branchId], [kolom]: nilai } }));
+
+      return kirim(
+        window.axios.post(route('laporan.rekap_wilayah.simpan_awal', branchId), {
+          periode: bulan + '-01',
+          nilai: { [kolom]: nilai },
+        }),
+      );
+    },
+    [kirim, bulan],
+  );
+
+  const kantorGabung = useMemo(
+    () =>
+      kantor.map((b) =>
+        tambalanAwal[b.branch_id] ? { ...b, diketik: { ...(b.diketik ?? {}), ...tambalanAwal[b.branch_id] } } : b,
+      ),
+    [kantor, tambalanAwal],
+  );
 
   // Nama kantor diklik: Rekap 2 kantor itu, ditumpangkan di drawer.
   const lihatRekapDua = useCallback(
@@ -368,11 +396,13 @@ export default function RekapWilayah({
 
         {kantor.length > 0 && (
           <SaldoAwal
-            baris={kantor}
+            baris={kantorGabung}
             bulan={namaBulan(bulan + '-01')}
             bulanLalu={namaBulan(bulan_lalu)}
             bulanCm={namaBulan(bulan_cm)}
             bulanMb={namaBulan(bulan_mb)}
+            bolehUbah={boleh_ubah}
+            onUbah={ubahAwal}
           />
         )}
 

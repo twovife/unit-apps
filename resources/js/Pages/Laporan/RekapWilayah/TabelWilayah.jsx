@@ -11,7 +11,7 @@ const judulBlok = Object.fromEntries(BLOK.flatMap((b) => b.kolom.map((k) => [k.k
  * dalam RIBUAN (200 = 200.000), akhiran ".000" tampil saat sedang diisi,
  * Enter pindah, Escape membatalkan.
  */
-function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
+export function IsianSel({ baris, kolom, judul, tersimpan, onUbah, onEnter }) {
   const penuh = !useModeRibuan();
   const awal = tersimpan == null ? '' : Number(tersimpan) / 1000;
   const [teks, setTeks] = useState(awal);
@@ -31,7 +31,7 @@ function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
     <div className="relative">
       <input
         data-sel={`${baris.branch_id}|${kolom}`}
-        title={judulBlok[kolom] + (bawaan ? ' — angka sistem, belum dikonfirmasi kasir' : '')}
+        title={(judul ?? judulBlok[kolom] ?? kolom) + (bawaan ? ' — angka sistem, belum dilaporkan' : '')}
         type="number"
         min={0}
         step="any"
@@ -58,7 +58,7 @@ function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
           if (e.key === 'Enter') {
             e.preventDefault();
             e.currentTarget.blur(); // onBlur mengirim nilainya
-            onEnter();
+            onEnter?.();
           }
           if (e.key === 'Escape') {
             setTeks(awal);

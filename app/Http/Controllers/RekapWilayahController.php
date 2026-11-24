@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthScope;
 use App\Helpers\RekapWilayah;
 use App\Models\Branch;
+use App\Models\RegionalCirculationOpening;
 use App\Models\RegionalCirculationRecap;
 use App\Models\RegionalCirculationRecapLog;
 use App\Models\WorkDay;
@@ -83,6 +84,9 @@ class RekapWilayahController extends Controller
 
         $bolehUbah = $user->hasAnyRole(self::PERAN_UBAH);
         $pertama = reset($sebulan);
+
+        $dilapor = RegionalCirculationOpening::whereIn('branch_id', $branchIds)
+            ->whereDate('periode', $periode)->get()->keyBy('branch_id');
         $sekarang = Carbon::now()->toDateString();
 
         return Inertia::render('Laporan/RekapWilayah', [
@@ -102,6 +106,9 @@ class RekapWilayahController extends Controller
                 'branch_id' => (int) $id,
                 'unit' => $nama,
                 'sistem' => collect($pertama[$id] ?? [])->only($kolomTetap)->all(),
+                // Saldo awal versi laporan kantor; null = belum dilaporkan.
+                'diketik' => $dilapor->get($id)?->only(RegionalCirculationOpening::KOLOM),
+                'terkunci' => (bool) $dilapor->get($id)?->terkunci(),
             ])->values(),
 
             'hari' => collect($sebulan)->map(function ($perKantor, $tanggal) use ($unit, $diketik, $ttd, $kolomHarian, $bolehUbah, $sekarang) {
@@ -169,10 +176,10 @@ class RekapWilayahController extends Controller
         $user = auth()->user();
         abort_unless($user?->hasAnyRole(self::PERAN_UBAH), 403, 'Hanya staf kontrol & superuser yang boleh mengisi.');
 
-        // Hanya mutasi hari itu + saldo awal bulan yang boleh dikirim.
-        // Kumulatif dan saldo DIHITUNG di sini, tidak pernah dipercaya dari
-        // layar (keputusan mas 2026-11-23).
-        $kolom = [...RegionalCirculationRecap::KOLOM_MUTASI, ...RegionalCirculationRecap::KOLOM_AWAL];
+        // Hanya mutasi hari itu. Kumulatif dan saldo DIHITUNG di sini, tidak
+        // pernah dipercaya dari layar (keputusan mas 2026-11-23). Saldo awal
+        // bulan punya tabelnya sendiri, regional_circulation_openings.
+        $kolom = RegionalCirculationRecap::KOLOM_MUTASI;
 
         $isi = $request->validate([
             'baris' => 'required|array|min:1',
@@ -427,6 +434,51 @@ class RekapWilayahController extends Controller
     }
 
     /**
+     * Simpan saldo awal bulan yang dilaporkan satu kantor.
+     *
+     * Satu baris per kantor per bulan, bukan per hari tagih (mas 2026-11-24).
+     * Dipakai staf kontrol untuk melihat saldo awal versi laporan kantor
+     * berbeda atau tidak dari versi sistem; yang diketik disimpan apa adanya,
+     * selisihnya cuma ditandai.
+     *
+     * Mengubahnya menggeser seluruh kumulatif bulan itu, jadi sebulan
+     * dihitung ulang dan tambalannya dibalas seperti autosave harian.
+     */
+    public function simpanAwal(Request $request, Branch $branch)
+    {
+        $this->pastikanBolehUbah($branch);
+
+        $isi = $request->validate([
+            'periode' => 'required|date',
+            ...collect(RegionalCirculationOpening::KOLOM)
+                ->mapWithKeys(fn ($k) => ["nilai.$k" => 'nullable|integer|min:0'])->all(),
+        ]);
+
+        $periode = Carbon::parse($isi['periode'])->startOfMonth()->toDateString();
+        abort_if($periode < self::MULAI, 422, 'Saldo awal baru ditagih mulai ' . self::MULAI . '.');
+
+        \DB::transaction(function () use ($branch, $periode, $isi) {
+            $baris = RegionalCirculationOpening::lockForUpdate()
+                ->firstOrNew(['branch_id' => $branch->id, 'periode' => $periode]);
+
+            abort_if($baris->terkunci(), 422, 'Saldo awal sudah dicek.');
+
+            $baris->wilayah ??= $branch->wilayah;
+            foreach (RegionalCirculationOpening::KOLOM as $k) {
+                if (array_key_exists($k, $isi['nilai'] ?? [])) {
+                    $baris->$k = $isi['nilai'][$k] === null ? null : (int) $isi['nilai'][$k];
+                }
+            }
+            $baris->save();
+
+            // Saldo awal adalah titik mulai seluruh kumulatif bulan itu.
+            $this->hitungUlangBulan($branch->id, (int) $branch->wilayah, $periode);
+        });
+
+        return $this->balasTambalan([$branch->id => true], $periode);
+    }
+
+    /**
      * Rekap 2 ASLI untuk kantor itu, dirender di tempat.
      *
      * Dibuka di dalam drawer lewat <iframe ?polos=1>, jadi yang terlihat cuma
@@ -564,13 +616,15 @@ class RekapWilayahController extends Controller
             ->whereBetween('tanggal', [$periode, Carbon::parse($periode)->endOfMonth()->toDateString()])
             ->get()->keyBy(fn ($r) => $r->tanggal->toDateString());
 
-        // Saldo awal bulan: yang diketik staf kontrol kalau ada, kalau belum
+        // Saldo awal bulan: yang dilaporkan kantor kalau ada, kalau belum
         // dari angka sistem (Rekap 2).
         $awalSistem = $sistem[array_key_first($sistem)][$branchId] ?? [];
+        $dilapor = RegionalCirculationOpening::where('branch_id', $branchId)
+            ->whereDate('periode', $periode)->first();
+
         $awal = [];
         foreach (['sirkulasi' => 'awal_sirkulasi', 'cm' => 'awal_cm', 'mb' => 'awal_mb', 'ml' => 'awal_ml'] as $ember => $kolom) {
-            $diketik = $baris->first(fn ($r) => $r->$kolom !== null);
-            $awal[$ember] = (int) ($diketik->$kolom ?? $awalSistem[$kolom] ?? 0);
+            $awal[$ember] = (int) ($dilapor?->$kolom ?? $awalSistem[$kolom] ?? 0);
         }
 
         $jumlah = array_fill_keys(RegionalCirculationRecap::KOLOM_MUTASI, 0);

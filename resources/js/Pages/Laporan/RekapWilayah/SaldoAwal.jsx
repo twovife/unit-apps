@@ -1,5 +1,6 @@
 import { angka, useModeRibuan } from '@/lib/modeAngka';
-import { KOLOM_AWAL as KOLOM, nilai, persen, persenTeks } from './kolom';
+import { KOLOM_AWAL as KOLOM, nilai, persen, persenTeks, tandaSelisih } from './kolom';
+import { IsianSel } from './TabelWilayah';
 
 // Yang ikut ringkasan saat panel tertutup.
 const RINGKAS = ['awal_sirkulasi', 'awal_cm', 'persen_cm', 'awal_mb', 'persen_mb', 'awal_ml', 'persen_ml'];
@@ -16,10 +17,15 @@ const RINGKAS = ['awal_sirkulasi', 'awal_cm', 'persen_cm', 'awal_mb', 'persen_mb
  * transaction_monthly_closings.drop: closing hanya ada sejak Oktober 2026 dan
  * tidak dipelihara untuk kantor alur lama (lihat spec §6).
  *
+ * Empat kolom saldo (Sirkulasi, CM, MB, ML) BISA DIKETIK: itu saldo awal
+ * versi laporan kantor, disimpan di regional_circulation_openings, satu baris
+ * per kantor per bulan. Beda dari versi sistem ditandai merah, tidak
+ * menghalangi simpan — persis aturan tabel harian.
+ *
  * Memakai <details> bawaan browser: buka-tutupnya tidak perlu state, dan
  * isinya tetap bisa dicari dengan Ctrl+F.
  */
-export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb }) {
+export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah }) {
   useModeRibuan(); // ikut saklar ribuan di header
 
   const namaBulan = { lalu: bulanLalu, cm: bulanCm, mb: bulanMb };
@@ -70,16 +76,34 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb })
           </thead>
           <tbody>
             {baris.map((b) => (
-              <tr key={b.branch_id} className="border-t hover:bg-slate-50">
-                <td className="whitespace-nowrap px-1.5 py-0.5 font-medium">{b.unit}</td>
-                {KOLOM.map((c) => (
-                  <td
-                    key={c.k}
-                    className={`whitespace-nowrap px-1.5 py-0.5 text-right tabular-nums ${c.tebal ? 'font-semibold' : 'text-slate-500'}`}
-                  >
-                    {selBaris(b, c)}
-                  </td>
-                ))}
+              <tr key={b.branch_id} className="group border-t">
+                <td className="whitespace-nowrap px-1.5 py-0.5 font-medium group-hover:bg-slate-50">{b.unit}</td>
+                {KOLOM.map((c) => {
+                  const tanda = c.bagi ? null : tandaSelisih(b, c.k);
+                  const bisaKetik = bolehUbah && c.ketik && !b.terkunci;
+
+                  return (
+                    <td
+                      key={c.k}
+                      title={tanda ?? ket(c)}
+                      className={`whitespace-nowrap p-0 text-right tabular-nums group-hover:bg-slate-50 ${tanda ? 'bg-red-100 text-red-900' : ''}`}
+                    >
+                      {bisaKetik ? (
+                        <IsianSel
+                          baris={b}
+                          kolom={c.k}
+                          judul={`Saldo awal ${c.j} menurut laporan kantor`}
+                          tersimpan={b.diketik?.[c.k] ?? b.sistem?.[c.k] ?? null}
+                          onUbah={(v) => onUbah(b.branch_id, c.k, v)}
+                        />
+                      ) : (
+                        <span className={`block px-1.5 py-0.5 ${c.tebal ? 'font-semibold' : 'text-slate-500'}`}>
+                          {selBaris(b, c)}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>

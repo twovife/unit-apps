@@ -58,14 +58,14 @@ export const SEMUA_KOLOM = BLOK.flatMap((b) => b.kolom);
 export const KOLOM_AWAL = [
   { k: 'pemutihan', j: 'Pemutihan', ket: 'Pemutihan bulan lalu; keluarnya baru terlihat di saldo awal bulan ini' },
   { k: 'drop_bulan_lalu', j: 'Drop Bln Lalu', bulan: 'lalu' },
-  { k: 'awal_sirkulasi', j: 'Sirkulasi', tebal: true },
+  { ketik: true, k: 'awal_sirkulasi', j: 'Sirkulasi', tebal: true },
   { k: 'drop_cm', j: 'Drop CM', bulan: 'cm' },
-  { k: 'awal_cm', j: 'CM', tebal: true },
+  { ketik: true, k: 'awal_cm', j: 'CM', tebal: true },
   { k: 'persen_cm', j: '%', atas: 'awal_cm', bagi: 'saldo_lama_cm' },
   { k: 'drop_mb', j: 'Drop MB', bulan: 'mb' },
-  { k: 'awal_mb', j: 'MB', tebal: true },
+  { ketik: true, k: 'awal_mb', j: 'MB', tebal: true },
   { k: 'persen_mb', j: '%', atas: 'awal_mb', bagi: 'saldo_lama_mb' },
-  { k: 'awal_ml', j: 'ML', tebal: true },
+  { ketik: true, k: 'awal_ml', j: 'ML', tebal: true },
   { k: 'persen_ml', j: '%', atas: 'awal_ml', bagi: 'awal_sirkulasi' },
 ];
 
