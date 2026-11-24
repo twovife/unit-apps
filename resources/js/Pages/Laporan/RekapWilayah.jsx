@@ -104,6 +104,10 @@ export default function RekapWilayah({
     return janji
       .then(({ data }) => {
         setTambalan((s) => ({ ...s, ...data.tambalan }));
+        // Balasan cek/buka/simpan saldo awal membawa status barisnya sendiri.
+        if (data.awal) {
+          setTambalanAwal((s) => ({ ...s, [data.awal.branch_id]: data.awal }));
+        }
         if (pesan) toast.success(pesan);
 
         return true;
@@ -194,7 +198,10 @@ export default function RekapWilayah({
   // balasannya tambalan yang sama dengan autosave harian.
   const ubahAwal = useCallback(
     (branchId, kolom, nilai) => {
-      setTambalanAwal((s) => ({ ...s, [branchId]: { ...s[branchId], [kolom]: nilai } }));
+      setTambalanAwal((s) => ({
+        ...s,
+        [branchId]: { ...s[branchId], nilai: { ...s[branchId]?.nilai, [kolom]: nilai } },
+      }));
 
       return kirim(
         window.axios.post(route('laporan.rekap_wilayah.simpan_awal', branchId), {
@@ -208,10 +215,47 @@ export default function RekapWilayah({
 
   const kantorGabung = useMemo(
     () =>
-      kantor.map((b) =>
-        tambalanAwal[b.branch_id] ? { ...b, diketik: { ...(b.diketik ?? {}), ...tambalanAwal[b.branch_id] } } : b,
-      ),
+      kantor.map((b) => {
+        const t = tambalanAwal[b.branch_id];
+
+        return t
+          ? {
+              ...b,
+              diketik: { ...(b.diketik ?? {}), ...t.nilai },
+              terkunci: t.terkunci ?? b.terkunci,
+              dicek_oleh: t.dicek_oleh ?? b.dicek_oleh,
+              dicek_pada: t.dicek_pada ?? b.dicek_pada,
+            }
+          : b;
+      }),
     [kantor, tambalanAwal],
+  );
+
+  const cekAwal = useCallback(
+    (b) =>
+      kirim(
+        window.axios.post(route('laporan.rekap_wilayah.cek_awal', b.branch_id), { periode: bulan + '-01' }),
+        `Saldo awal ${b.unit} dicek`,
+      ),
+    [kirim, bulan],
+  );
+
+  const bukaAwal = useCallback(
+    (b) => {
+      const alasan = (prompt(`Alasan membuka saldo awal ${b.unit}? Minimal 5 huruf.`) ?? '').trim();
+      if (alasan.length < 5) {
+        return;
+      }
+
+      kirim(
+        window.axios.post(route('laporan.rekap_wilayah.buka_awal', b.branch_id), {
+          periode: bulan + '-01',
+          alasan,
+        }),
+        `Saldo awal ${b.unit} dibuka`,
+      );
+    },
+    [kirim, bulan],
   );
 
   // Nama kantor diklik: Rekap 2 kantor itu, ditumpangkan di drawer.
@@ -395,6 +439,8 @@ export default function RekapWilayah({
             bulanMb={namaBulan(bulan_mb)}
             bolehUbah={boleh_ubah}
             onUbah={ubahAwal}
+            onCek={cekAwal}
+            onBuka={bukaAwal}
           />
         )}
 

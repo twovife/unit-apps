@@ -26,7 +26,7 @@ const RINGKAS = ['awal_sirkulasi', 'awal_cm', 'persen_cm', 'awal_mb', 'persen_mb
  *
  * Kartu lipatnya Accordion shadcn, sama dengan "Saldo Awal Bulan" di Rekap 2.
  */
-export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah }) {
+export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah, onCek, onBuka }) {
   useModeRibuan(); // ikut saklar ribuan di header
 
   const namaBulan = { lalu: bulanLalu, cm: bulanCm, mb: bulanMb };
@@ -74,6 +74,7 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
                   {c.j}
                 </th>
               ))}
+              <th className="whitespace-nowrap border-l px-3 py-2 text-center font-medium">Staf Kontrol</th>
             </tr>
           </thead>
           <tbody>
@@ -106,6 +107,30 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
                     </td>
                   );
                 })}
+                <td className="whitespace-nowrap border-l px-3 py-1 text-center text-[11px] text-slate-500">
+                  {b.terkunci ? (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="text-emerald-700" title={`${b.dicek_oleh ?? '-'} · ${b.dicek_pada ?? '-'}`}>
+                        ✓ {b.dicek_oleh ?? '-'}
+                      </span>
+                      {bolehUbah && (
+                        <button type="button" onClick={() => onBuka?.(b)} className="tanpa-cetak text-sky-600 underline">
+                          buka
+                        </button>
+                      )}
+                    </span>
+                  ) : bolehUbah ? (
+                    <button
+                      type="button"
+                      onClick={() => onCek?.(b)}
+                      className="tanpa-cetak rounded border px-1.5 py-0.5 hover:bg-slate-100"
+                    >
+                      Cek
+                    </button>
+                  ) : (
+                    <span className="text-slate-300">belum</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -117,6 +142,7 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
                   {selTotal(c)}
                 </td>
               ))}
+              <td className="border-l px-3 py-1.5" />
             </tr>
           </tfoot>
         </table>

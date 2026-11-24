@@ -53,6 +53,8 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\RekapWilayahContro
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::post('/{branch}/awal', 'simpanAwal')->name('simpan_awal');
+    Route::post('/{branch}/awal/cek', 'cekAwal')->name('cek_awal');
+    Route::post('/{branch}/awal/buka', 'bukaAwal')->name('buka_awal');
     // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
     Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
@@ -352,6 +354,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::post('/{branch}/awal', 'simpanAwal')->name('simpan_awal');
+    Route::post('/{branch}/awal/cek', 'cekAwal')->name('cek_awal');
+    Route::post('/{branch}/awal/buka', 'bukaAwal')->name('buka_awal');
     // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
     Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
@@ -374,6 +378,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::post('/{branch}/awal', 'simpanAwal')->name('simpan_awal');
+    Route::post('/{branch}/awal/cek', 'cekAwal')->name('cek_awal');
+    Route::post('/{branch}/awal/buka', 'bukaAwal')->name('buka_awal');
     // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
     Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
@@ -401,6 +407,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::post('/{branch}/awal', 'simpanAwal')->name('simpan_awal');
+    Route::post('/{branch}/awal/cek', 'cekAwal')->name('cek_awal');
+    Route::post('/{branch}/awal/buka', 'bukaAwal')->name('buka_awal');
     // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
     Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');

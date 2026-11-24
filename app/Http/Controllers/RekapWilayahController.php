@@ -452,6 +452,36 @@ class RekapWilayahController extends Controller
                 }
             }
 
+            // Saldo awal bulan ikut diisi: dia titik mulai seluruh
+            // kumulatif, jadi mengisi harian saja meninggalkan pekerjaan
+            // setengah jadi.
+            $awalSistem = reset($sebulan);
+            $sudahAwal = RegionalCirculationOpening::whereIn('branch_id', $kantor->keys())
+                ->whereDate('periode', $periode)->get()->keyBy('branch_id');
+
+            foreach ($kantor as $id => $wil) {
+                $o = $sudahAwal->get($id);
+                if ($o?->terkunci()) {
+                    continue;
+                }
+
+                $o ??= new RegionalCirculationOpening(['branch_id' => $id, 'periode' => $periode, 'wilayah' => $wil]);
+                $s = $awalSistem[$id] ?? [];
+                $isi = false;
+
+                foreach (RegionalCirculationOpening::KOLOM as $k) {
+                    if ($o->$k === null) {
+                        $o->$k = (int) ($s[$k] ?? 0);
+                        $isi = true;
+                    }
+                }
+
+                if ($isi) {
+                    $o->save();
+                    $dibuat++;
+                }
+            }
+
             // Baris yang sudah diketik bisa berbeda dari sistem, jadi
             // kumulatifnya digeser ulang.
             foreach ($kantor as $id => $wil) {
@@ -500,11 +530,90 @@ class RekapWilayahController extends Controller
             }
             $baris->save();
 
-            // Saldo awal adalah titik mulai seluruh kumulatif bulan itu.
-            $this->hitungUlangBulan($branch->id, (int) $branch->wilayah, $periode);
         });
 
-        return $this->balasTambalan([$branch->id => true], $periode);
+        // Saldo awal titik mulai seluruh kumulatif bulan itu, jadi sebulan
+        // dihitung ulang di dalam balasAwal().
+        return $this->balasAwal($branch, $periode);
+    }
+
+    /**
+     * Tanda tangan staf kontrol untuk saldo awal bulan satu kantor.
+     *
+     * Tidak berantai seperti Cek harian: saldo awal cuma satu per bulan, tidak
+     * ada urutan yang bisa dilewati. Barisnya dibuat dari angka sistem kalau
+     * belum pernah diketik — sama dengan Cek harian, nol memang nol.
+     */
+    public function cekAwal(Request $request, Branch $branch)
+    {
+        $this->pastikanBolehUbah($branch);
+        $periode = Carbon::parse($request->periode)->startOfMonth()->toDateString();
+        abort_if($periode < self::MULAI, 422, 'Saldo awal baru ditagih mulai ' . self::MULAI . '.');
+
+        \DB::transaction(function () use ($branch, $periode) {
+            $baris = RegionalCirculationOpening::lockForUpdate()
+                ->firstOrNew(['branch_id' => $branch->id, 'periode' => $periode]);
+
+            abort_if($baris->terkunci(), 422, 'Saldo awal sudah dicek.');
+
+            // untukBulan, BUKAN untukWilayah($periode): tanggal 1 bisa jatuh
+            // di hari libur — 1 November 2026 hari Minggu — dan tanggal yang
+            // bukan hari kerja tidak ada di hasilnya. Saldo awal tetap sama
+            // di semua tanggal, jadi tanggal pertama yang ada sudah benar.
+            $sebulan = AngkaRekapWilayah::untukBulan((int) $branch->wilayah, $periode, $branch->id);
+            $sistem = $sebulan ? (reset($sebulan)[$branch->id] ?? []) : [];
+
+            $baris->wilayah ??= $branch->wilayah;
+            foreach (RegionalCirculationOpening::KOLOM as $k) {
+                $baris->$k ??= (int) ($sistem[$k] ?? 0);
+            }
+
+            $baris->checked_by = auth()->id();
+            $baris->checked_at = now();
+            $baris->save();
+        });
+
+        return $this->balasAwal($branch, $periode);
+    }
+
+    /** Buka saldo awal yang sudah dicek. Alasan wajib. */
+    public function bukaAwal(Request $request, Branch $branch)
+    {
+        $this->pastikanBolehUbah($branch);
+        $request->validate(['alasan' => 'required|string|min:5|max:255']);
+        $periode = Carbon::parse($request->periode)->startOfMonth()->toDateString();
+
+        $baris = RegionalCirculationOpening::where('branch_id', $branch->id)
+            ->whereDate('periode', $periode)->firstOrFail();
+
+        abort_unless($baris->terkunci(), 422, 'Saldo awal ini belum dicek.');
+
+        $baris->forceFill(['checked_by' => null, 'checked_at' => null])->save();
+
+        return $this->balasAwal($branch, $periode);
+    }
+
+    /**
+     * Balasan ringkas sesudah saldo awal berubah: barisnya sendiri, plus
+     * tambalan harian sebulan karena saldo awal menggeser semua kumulatif.
+     */
+    private function balasAwal(Branch $branch, string $periode): \Illuminate\Http\JsonResponse
+    {
+        $this->hitungUlangBulan($branch->id, (int) $branch->wilayah, $periode);
+
+        $o = RegionalCirculationOpening::with('pengecek.employee:id,nama_karyawan')
+            ->where('branch_id', $branch->id)->whereDate('periode', $periode)->first();
+
+        $tambalan = $this->balasTambalan([$branch->id => true], $periode);
+
+        return response()->json($tambalan->getData(true) + ['awal' => [
+            'branch_id' => $branch->id,
+            'nilai' => collect(RegionalCirculationOpening::KOLOM)
+                ->mapWithKeys(fn ($k) => [$k => $o?->$k === null ? null : (int) $o->$k])->all(),
+            'terkunci' => (bool) $o?->terkunci(),
+            'dicek_oleh' => $o?->pengecek?->employee?->nama_karyawan,
+            'dicek_pada' => $o?->checked_at?->format('d/m/Y H:i'),
+        ]]);
     }
 
     /**
