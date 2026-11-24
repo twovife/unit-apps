@@ -180,9 +180,15 @@ export default function RekapWilayah({
 
   const lompat = (tanggal, halus = true) => {
     setAktif(tanggal);
-    document
-      .getElementById(`tgl-${tanggal}`)
-      ?.scrollIntoView({ behavior: halus ? 'smooth' : 'auto', block: 'start' });
+    const ke = () =>
+      document
+        .getElementById(`tgl-${tanggal}`)
+        ?.scrollIntoView({ behavior: halus ? 'smooth' : 'auto', block: 'start' });
+
+    ke();
+    // Tabel tujuan baru dipasang sesudah bloknya mendekati layar, dan tinggi
+    // sebenarnya beda dari taksiran, jadi posisinya dibetulkan sekali lagi.
+    setTimeout(ke, 200);
   };
 
   // Halaman dibuka langsung di tanggal hari ini, bukan di tanggal 1: yang
@@ -222,7 +228,7 @@ export default function RekapWilayah({
         </div>
 
         {/* top-14 = tinggi navbar (h-14); top-0 dulu menutupinya saat digulir. */}
-        <div className="tanpa-cetak sticky top-14 z-30 -mx-2 flex flex-wrap items-center gap-2 bg-white/95 px-2 py-2 backdrop-blur">
+        <div className="tanpa-cetak sticky top-14 z-30 -mx-2 flex flex-wrap items-center gap-2 border-b bg-white px-2 py-2">
           <select
             value={wilayah}
             onChange={(e) => pindah({ wilayah: e.target.value })}

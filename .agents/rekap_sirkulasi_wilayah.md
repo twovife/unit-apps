@@ -402,7 +402,24 @@ Tiga hal yang membuat autosave tidak memberatkan:
    `hitungUlangBulan()`. Menghitung ulang kumulatif hanya butuh saldo awal
    bulan, bukan drop & storting harian, jadi cukup satu kueri closing.
 
-3. **Satu tanggal dirender ulang, bukan sebulan.** Tiap tanggal jadi `BlokHari`
+3. **Tabel tanggal baru dipasang saat bloknya mendekati layar.** Satu wilayah
+   sebulan itu 25 tanggal x 32 kantor = 800 baris, 16.800 sel, dan 4.000
+   `<input>` — kira-kira **39.000 simpul DOM**. Chrome tersendat jauh di bawah
+   itu: mengetik tertunda dan gulir meninggalkan bidang kosong. Yang terpasang
+   sekarang cuma blok di sekitar layar, sekitar 100 baris; sisanya kotak
+   setinggi taksiran supaya posisi gulir tidak melompat.
+
+   Pengamatnya milik tiap blok dan state-nya lokal, jadi menggulir hanya
+   merender ulang blok yang masuk atau keluar — bukan halaman.
+
+   Dua hal yang ikut dari situ: `beforeprint` memasang semua blok, kalau tidak
+   yang belum dipasang tercetak sebagai kotak kosong; dan tombol tanggal
+   menggulir dua kali, karena tinggi tabel sebenarnya beda dari taksiran.
+
+   `backdrop-blur` di baris filter dibuang: satu lapis blur yang digambar ulang
+   tiap bingkai gulir, di atas halaman sepanjang ini.
+
+4. **Satu tanggal dirender ulang, bukan sebulan.** Tiap tanggal jadi `BlokHari`
    yang dibungkus `memo`. Syaratnya acuan prop harus tetap: tanggal tanpa
    tambalan menerima objek beku `TANPA_TAMBALAN` yang sama, semua callback
    dibungkus `useCallback` dengan tanggal dikirim sebagai argumen (bukan ditutup
