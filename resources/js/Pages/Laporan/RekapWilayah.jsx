@@ -113,9 +113,14 @@ export default function RekapWilayah({
       })
       .catch((e) => {
         toast.error(e.response?.data?.message ?? 'Gagal menyimpan');
-        // Layar bisa sudah berubah padahal server menolak; dimuat ulang
-        // supaya yang terlihat tetap yang tersimpan.
-        router.reload({ only: ['hari'], onSuccess: () => setTambalan({}) });
+
+        // 422 = aturan yang ditolak server (rantai cek, hari libur, baris
+        // terkunci). Tidak ada yang tersimpan dan layar tidak berubah, jadi
+        // memuat ulang cuma membuang 2,5 detik. Galat lain bisa meninggalkan
+        // layar lebih maju dari yang tersimpan, itu yang perlu disegarkan.
+        if (e.response?.status !== 422) {
+          router.reload({ only: ['hari'], onSuccess: () => setTambalan({}) });
+        }
 
         return false;
       })

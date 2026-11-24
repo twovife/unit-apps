@@ -580,7 +580,7 @@ Angka jalur murah diuji ulang dengan `.agents/uji/uji_kantor_sempit.php`
 ## Pengujian
 
 Tidak lewat phpunit — `php artisan test` menghantam `ubmi_db` produksi.
-Sembilan skrip yang bisa dijalankan ulang; yang menyentuh basis data berjalan
+Sepuluh skrip yang bisa dijalankan ulang; yang menyentuh basis data berjalan
 di dalam transaksi yang DIBATALKAN, jadi tidak meninggalkan data.
 
 ```bash
@@ -610,6 +610,9 @@ docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji
 
 # cek saldo awal: diisi dari sistem, terkunci, tolak ubah, buka wajib alasan
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_cek_saldo_awal.php
+
+# cek harus urut, tidak boleh lompat tanggal, dan rantainya per kantor
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_rantai_cek.php
 ```
 
 Hasil terakhir: banding 1.652 kolom 0 beda, jalur sempit 1.176 kolom 0 beda.
