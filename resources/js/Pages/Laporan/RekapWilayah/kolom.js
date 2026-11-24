@@ -23,7 +23,6 @@ export const BLOK = [
       { k: 'total_angsuran_cm', j: 'Jumlah' },
       { k: 'saldo_cm', j: 'Saldo', tebal: true },
       { k: 'persen_cm', j: '%', hitung: true },
-      { k: 'saldo_lama_cm', j: 'Saldo Lama' },
     ],
   },
   {
@@ -33,7 +32,6 @@ export const BLOK = [
       { k: 'total_angsuran_mb', j: 'Jumlah' },
       { k: 'saldo_mb', j: 'Saldo', tebal: true },
       { k: 'persen_mb', j: '%', hitung: true },
-      { k: 'saldo_lama_mb', j: 'Saldo Lama' },
     ],
   },
   {
@@ -65,6 +63,11 @@ export const nilai = (baris, k) => baris.diketik?.[k] ?? baris.sistem?.[k] ?? 0;
 
 /**
  * Pembilang & penyebut tiap kolom persen, dipakai juga untuk baris total.
+ *
+ * saldo_lama_* tidak lagi jadi kolom di tabel harian (mas 2026-11-24): angkanya
+ * tetap sepanjang bulan, jadi mengulangnya di tiap tanggal tidak menambah apa
+ * pun. Nilainya tetap dikirim dan tetap jadi penyebut persen; rinciannya ada
+ * di panel Sirkulasi Awal.
  * %ML dibagi SIRKULASI, bukan saldo lama (aturan mas).
  */
 export const PECAHAN = {
