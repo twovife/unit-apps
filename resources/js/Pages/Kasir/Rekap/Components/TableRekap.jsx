@@ -27,6 +27,7 @@ export const WARNA_HARIAN = {
   angsuran_cm: WARNA.biru, total_angsuran_cm: WARNA.biru, saldo_cm: WARNA.biru,
   angsuran_mb: WARNA.kuning, total_angsuran_mb: WARNA.kuning, saldo_mb: WARNA.kuning,
   angsuran_ml: WARNA.merah, total_angsuran_ml: WARNA.merah, saldo_ml: WARNA.merah,
+  persen_cm: WARNA.biru, persen_mb: WARNA.kuning, persen_ml: WARNA.merah,
 };
 
 // [kunci, label, kelas tambahan]. Saldo ditebalkan - angka yang dicocokkan.
@@ -46,6 +47,25 @@ export const KOLOM_HARIAN = [
   ['total_angsuran_ml', 'Jml ML'],
   ['saldo_ml', 'Saldo ML', 'font-semibold'],
 ];
+
+// Kolom persen: [pembilang, penyebut]. CM & MB dibagi jumlah drop bulan
+// rujukannya (T-3 / T-4) APA ADANYA tanpa pengali, ML dibagi sirkulasi hari
+// itu. Sama persis dengan Rekap Sirkulasi Wilayah — penyebutnya pun dari
+// sumber yang sama (AngkaRekapWilayah::dropKelompok), supaya persen di dua
+// menu tidak pernah bertengkar.
+export const PECAHAN_HARIAN = {
+  persen_cm: ['saldo_cm', 'drop_cm'],
+  persen_mb: ['saldo_mb', 'drop_mb'],
+  persen_ml: ['saldo_ml', 'sirkulasi'],
+};
+
+// Rekap 2 saja. Rekap per Mantri tetap memakai KOLOM_HARIAN polos: datanya
+// dari sumber lain (getRekapPermantriData) yang belum mengirim drop_cm/drop_mb.
+const SESUDAH = { saldo_cm: ['persen_cm', '% CM'], saldo_mb: ['persen_mb', '% MB'], saldo_ml: ['persen_ml', '% ML'] };
+
+export const KOLOM_HARIAN_PERSEN = KOLOM_HARIAN.flatMap((k) =>
+  SESUDAH[k[0]] ? [k, SESUDAH[k[0]]] : [k],
+);
 
 // Belum dicek: silang + tombol ke tempat ngeceknya (href = pindah halaman,
 // onClick = drawer).
@@ -281,8 +301,9 @@ const TableRekap = ({
 
       <TabelHarian
         data={data ?? []}
-        kolom={KOLOM_HARIAN}
+        kolom={KOLOM_HARIAN_PERSEN}
         warna={WARNA_HARIAN}
+        pecahan={PECAHAN_HARIAN}
         klik={{ storting: onKlikStorting, drop: onKlikDrop }}
         // Tanggal yang belum tiba = kosongan.
         batasIsi={dayjs().format('YYYY-MM-DD')}

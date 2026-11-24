@@ -686,6 +686,16 @@ trait RekapTrait
         ->get();
     }
 
+    // Penyebut persen CM/MB per kelompok: jumlah drop bulan T-3 / T-4.
+    $dropCm = \App\Services\AngkaRekapWilayah::dropKelompok(
+        $groupingIds->all(),
+        \App\Helpers\RekapWilayah::bulanRujukan($startDateofMonth, 'cm')
+    );
+    $dropMb = \App\Services\AngkaRekapWilayah::dropKelompok(
+        $groupingIds->all(),
+        \App\Helpers\RekapWilayah::bulanRujukan($startDateofMonth, 'mb')
+    );
+
     // GERBANG alur baru: base grid harian (sirkulasi + saldo cm/mb/ml per hari)
     // ikut saldo awal baru. Untuk kantor migrasi diambil dari monthly_closings
     // awal_*, dipetakan ke nama kolom sirkulasi lama supaya sum() di grid tak
@@ -935,7 +945,9 @@ trait RekapTrait
       $instalmentAgg,
       $transactionSirculation,
       $berjalan,
-      $recapIdx
+      $recapIdx,
+      $dropCm,
+      $dropMb
     ) {
 
       return [
@@ -947,7 +959,9 @@ trait RekapTrait
           $instalmentAgg,
           $transactionSirculation,
           $berjalan,
-          $recapIdx
+          $recapIdx,
+          $dropCm,
+          $dropMb
         ) {
 
           $thisLoan = data_get($loanAgg, $item->id . '.' . $date . '.0.drop_total', 0);
@@ -1018,6 +1032,14 @@ trait RekapTrait
             'angsuran_ml' => $ml,
             'total_angsuran_ml' => $totalStortingMl,
             'saldo_ml' => $thisSirculation->sum('ml_amount') - $totalStortingMl,
+
+            // Penyebut persen CM/MB: jumlah drop bulan rujukan APA ADANYA,
+            // tanpa pengali. CM memakai drop bulan T-3, MB bulan T-4. Tetap
+            // sepanjang bulan, jadi sama di semua tanggal. Sumbernya sama
+            // dengan Rekap Sirkulasi Wilayah supaya persennya tidak
+            // bertengkar antar menu.
+            'drop_cm' => (int) ($dropCm[$item->id] ?? 0),
+            'drop_mb' => (int) ($dropMb[$item->id] ?? 0),
           ];
         })->values()
       ];

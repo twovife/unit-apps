@@ -16,6 +16,19 @@ Peta lengkap aplikasi ada di `.agents/skills/peta-aplikasi/`.
 
 # 2026-11-24
 
+## Rekap 2: kolom persen CM / MB / ML
+
+| Berkas | Fungsi / Method | Route / Controller terdampak | Tabel tersentuh | Dampak |
+|---|---|---|---|---|
+| `app/Traits/RekapTrait.php` | `getDataRekapDua()` | `kasir.rekap.rekap_dua` (`GET /kasir/rekap/rekap-dua`) | `transaction_loans` (`BACA`) | Tiap baris harian ikut membawa `drop_cm` & `drop_mb` — jumlah drop kelompok itu di bulan T-3 / T-4, penyebut persen. Dua kueri tambahan per halaman, ditembolok 6 jam. |
+| `app/Services/AngkaRekapWilayah.php` | `dropKelompok()` (baru) | dipakai `RekapTrait` | `transaction_loans` (`BACA`) | Jumlah drop sebulan per kelompok. Saringannya sama persis dengan `dropBulan()` yang per kantor, supaya persen Rekap 2 dan Rekap Sirkulasi Wilayah tidak bertengkar. |
+| `resources/js/Pages/Kasir/Rekap/Components/TabelHarian.jsx` | `TabelHarian()` | `kasir.rekap.rekap_dua`, Rencana Drop | — | Prop baru `pecahan`: kolom yang disebut di situ ditulis sebagai persen, dan subtotalnya jumlah pembilang / jumlah penyebut, bukan rata-rata persen baris. Tanpa prop itu perilakunya tidak berubah, jadi Rencana Drop tidak terpengaruh. |
+| `resources/js/Pages/Kasir/Rekap/Components/TableRekap.jsx` | — | `kasir.rekap.rekap_dua` | — | `PECAHAN_HARIAN` & `KOLOM_HARIAN_PERSEN` baru: KOLOM_HARIAN disisipi % CM, % MB, % ML sesudah saldonya masing-masing. Dipakai Rekap 2 saja. |
+
+Sengaja TIDAK diubah: `TableRekapPerMantri` tetap memakai `KOLOM_HARIAN` polos. Datanya dari `getRekapPermantriData()` yang belum mengirim `drop_cm`/`drop_mb`, jadi persennya akan kosong kalau dipaksakan.
+
+Uji: `.agents/uji/uji_persen_rekap_dua.php` — penyebut per kelompok harus berjumlah sama dengan penyebut per kantor (16 kolom, 0 beda).
+
 ## Rekap Sirkulasi Wilayah (menu baru, `/laporan/rekap-wilayah`)
 
 Rancangan: `.agents/rekap_sirkulasi_wilayah.md`.

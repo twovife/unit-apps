@@ -8,6 +8,10 @@ import { angka, useModeRibuan } from '@/lib/modeAngka';
 export const ribu = (n) => angka(n);
 
 const jumlah = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+
+/** Pecahan; null kalau penyebut 0 supaya ditulis '-', bukan 0%. */
+const persen = (atas, bawah) => (bawah ? atas / bawah : null);
+const persenTeks = (p) => (p === null ? '-' : (p * 100).toFixed(2).replace('.', ',') + '%');
 // Senin minggu itu (dayjs: Minggu = 0) - penanda minggu.
 const seninDari = (t) => dayjs(t).subtract((dayjs(t).day() + 6) % 7, 'day').format('YYYY-MM-DD');
 
@@ -24,8 +28,11 @@ const seninDari = (t) => dayjs(t).subtract((dayjs(t).day() + 6) % 7, 'day').form
  *   dan chip-nya pudar. Tanpa ini semua tanggal tampil apa adanya.
  * - ekstra: { kepala: [label], sel: (baris, tanggal, kosong) => [<td>] }
  * - warna: { kunci: WARNA.x } - warna blok kolom ala Rekap 1 (TableRekapKasir)
+ * - pecahan: { kunci: [pembilang, penyebut] } - kolom itu ditulis sebagai
+ *   persen, bukan rupiah. Subtotalnya jumlah pembilang / jumlah penyebut,
+ *   BUKAN rata-rata persen tiap baris.
  */
-const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null, warna = {} }) => {
+const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = null, warna = {}, pecahan = {} }) => {
   useModeRibuan();
   const kotak = useRef(null);
   const kepala = useRef(null);
@@ -147,7 +154,13 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                       <td className={`sticky left-0 px-3 py-1 font-medium ${WARNA.biru.sel}`}>{r.kelompok}</td>
                       {kolom.map(([k, , kelas]) => (
                         <td key={k} className={`px-3 py-1 text-right ${warna[k]?.sel ?? ''} ${kelas ?? ''}`}>
-                          {klik[k] && !kosong ? (
+                          {pecahan[k] ? (
+                            kosong ? (
+                              <span className="text-slate-300">–</span>
+                            ) : (
+                              persenTeks(persen(Number(r[pecahan[k][0]]) || 0, Number(r[pecahan[k][1]]) || 0))
+                            )
+                          ) : klik[k] && !kosong ? (
                             <button
                               type="button"
                               onClick={() => klik[k]({ ...r, tanggal: item.tanggal })}
@@ -171,7 +184,15 @@ const TabelHarian = ({ data = [], kolom, klik = {}, batasIsi = null, ekstra = nu
                     <td className={`sticky left-0 px-3 py-1.5 ${WARNA.biru.total}`}>Total</td>
                     {kolom.map(([k, , kelas]) => (
                       <td key={k} className={`px-3 py-1.5 text-right ${warna[k]?.total ?? ''} ${kelas ?? ''}`}>
-                        {kosong ? <span className="font-normal text-slate-300">–</span> : ribu(jumlah(item.data, k))}
+                        {kosong ? (
+                          <span className="font-normal text-slate-300">–</span>
+                        ) : pecahan[k] ? (
+                          // Jumlah pembilang / jumlah penyebut, bukan
+                          // rata-rata persen tiap kelompok.
+                          persenTeks(persen(jumlah(item.data, pecahan[k][0]), jumlah(item.data, pecahan[k][1])))
+                        ) : (
+                          ribu(jumlah(item.data, k))
+                        )}
                       </td>
                     ))}
                     {ekstra && <td colSpan={ekstra.kepala.length} />}

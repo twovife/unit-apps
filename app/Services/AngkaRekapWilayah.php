@@ -462,6 +462,40 @@ class AngkaRekapWilayah
      *
      * @return array<int, int> branch_id => jumlah drop
      */
+    /**
+     * Jumlah drop sebulan PER KELOMPOK, untuk penyebut persen CM/MB di Rekap 2.
+     *
+     * Sumber dan saringannya sama persis dengan dropBulan() yang per kantor —
+     * transaction_loans, status success, nominal_drop, disaring drop_date —
+     * supaya persen di Rekap 2 dan di Rekap Sirkulasi Wilayah tidak pernah
+     * bertengkar. Ditembolok 6 jam, berkunci daftar kelompok + bulan.
+     *
+     * @param  array<int>  $gid
+     * @return array<int, int> grouping_id => jumlah drop
+     */
+    public static function dropKelompok(array $gid, string $periode): array
+    {
+        if (empty($gid)) {
+            return [];
+        }
+
+        sort($gid);
+        $kunci = 'rekap_wilayah:drop_kelompok:' . md5(implode(',', $gid)) . ":$periode";
+
+        return Cache::remember($kunci, now()->addHours(6), function () use ($gid, $periode) {
+            $akhir = Carbon::parse($periode)->endOfMonth()->toDateString();
+
+            return TransactionLoan::whereIn('transaction_loan_officer_grouping_id', $gid)
+                ->where('status', 'success')
+                ->whereBetween('drop_date', [$periode, $akhir])
+                ->groupBy('transaction_loan_officer_grouping_id')
+                ->selectRaw('transaction_loan_officer_grouping_id AS g, SUM(nominal_drop) AS n')
+                ->toBase()->get()
+                ->mapWithKeys(fn ($r) => [(int) $r->g => (int) $r->n])
+                ->all();
+        });
+    }
+
     private static function dropBulan(int $wilayah, string $periode): array
     {
         return Cache::remember("rekap_wilayah:drop:$wilayah:$periode", now()->addHours(6), function () use ($wilayah, $periode) {
