@@ -225,10 +225,18 @@ tanggal tanpa baris jatuh ke kumulatif sistem apa adanya, dan koreksi staf
 kontrol hilang begitu saja. Dijaga
 `.agents/uji/uji_kumulatif_bersambung.php`.
 
-Akibat yang disengaja: begitu satu sel diketik, kolom Jml dan Saldo sebulan
-itu berhenti mengikuti Rekap 2 dan jadi "menurut laporan". Bedanya terlihat
-merah. Sebelum ada satu pun isian, barisnya belum ada dan seluruh layar
-menampilkan angka Rekap 2.
+**Baris yang belum disentuh tidak dikirim angkanya ke layar.** Kolom
+turunannya memang berhenti di angka laporan terakhir — itu benar menurut
+aturan di atas — tapi kalau ditampilkan dia merah sebaris penuh, padahal
+bedanya bukan "kasir salah lapor" melainkan "belum ada laporan". Di tanggal
+itu layar menampilkan angka sistem saja, tanpa penanda.
+
+Berlaku juga untuk balasan autosave (`balasTambalan`), kalau tidak merahnya
+muncul lagi begitu satu sel disimpan.
+
+Jadi urutannya: sebelum ada isian, tanggal itu menampilkan angka Rekap 2 tanpa
+penanda. Begitu satu selnya diketik, seluruh kolom Jml dan Saldo tanggal itu
+beralih jadi "menurut laporan", dan bedanya dari Rekap 2 ditandai merah.
 
 Keduanya sesuai dengan yang dilihat staf kontrol: layar memang menampilkan
 angka sistem di sel yang belum diisi.
@@ -563,8 +571,9 @@ Angka jalur murah diuji ulang dengan `.agents/uji/uji_kantor_sempit.php`
 
 ## Pengujian
 
-Tidak lewat phpunit — `php artisan test` menghantam `ubmi_db` produksi. Empat
-skrip yang bisa dijalankan ulang:
+Tidak lewat phpunit — `php artisan test` menghantam `ubmi_db` produksi.
+Sembilan skrip yang bisa dijalankan ulang; yang menyentuh basis data berjalan
+di dalam transaksi yang DIBATALKAN, jadi tidak meninggalkan data.
 
 ```bash
 # rumus murni (persen, sirkulasi, bulan rujukan), tanpa DB
@@ -573,17 +582,26 @@ docker exec -u www-data -e HOME=/tmp unit-app php -d zend.assertions=1 .agents/u
 # kolom & turunan di sisi layar, node biasa
 docker exec unit-vite node .agents/uji/uji_kolom_rekap_wilayah.mjs
 
+# lembar .xlsx: kepala bertingkat, angka tetap angka, persen pecahan
+docker exec unit-vite node .agents/uji/uji_ekspor_rekap_wilayah.mjs
+
 # angka halaman harus sama dengan Rekap 2
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/banding_rekap_wilayah.php
 
 # untukBulan satu kantor harus sama dengan jalur penuh
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_kantor_sempit.php
 
-# mengetik satu kolom tidak boleh menolkan kolom lain (transaksi dibatalkan)
+# mengetik satu kolom tidak boleh menolkan kolom lain
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_hitung_ulang.php
 
-# lembar .xlsx: kepala bertingkat, angka tetap angka, persen pecahan
-docker exec unit-vite node .agents/uji/uji_ekspor_rekap_wilayah.mjs
+# kumulatif meneruskan laporan, tidak dicampur angka sistem
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_kumulatif_bersambung.php
+
+# tanggal yang belum dilapor tidak merah sebaris penuh
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_belum_dilapor_tidak_merah.php
+
+# saldo awal yang dilaporkan menggeser kumulatif sebulan
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_saldo_awal.php
 ```
 
 Hasil terakhir: banding 1.652 kolom 0 beda, jalur sempit 1.176 kolom 0 beda.
