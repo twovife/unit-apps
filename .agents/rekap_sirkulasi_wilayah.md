@@ -271,6 +271,26 @@ Satu baris log per kolom yang berubah.
 - Halaman wilayah **selesai** bila semua baris kantor sudah dicek. Tidak ada
   tombol tambahan.
 
+### Isi dari Rekap 2 (massal)
+
+Tombol di baris filter, permintaan mas 2026-11-24. Membuat baris untuk seluruh
+bulan dan seluruh kantor di wilayah itu, berisi angka sistem, **tanpa
+mencentang apa pun**.
+
+- Hanya baris yang **belum ada** yang dibuat. Baris yang sudah diketik atau
+  sudah dicek tidak disentuh.
+- Hari libur dan tanggal yang belum terjadi dilewati, sama dengan aturan
+  isian manual.
+- Sesudah itu kumulatif dihitung ulang per kantor, supaya baris yang diketik
+  berbeda dari sistem tetap menggeser hari-hari sesudahnya.
+- Diukur di lokal: 632 baris dibuat dalam 4,4 detik, 653 kueri. Dicoba di
+  dalam transaksi yang dibatalkan sebelum tombolnya dipasang.
+
+**Harganya:** sesudah diisi, layar tidak bisa lagi membedakan "kasir melapor
+angka yang sama dengan sistem" dari "belum ada laporan kasir" — angka miring
+kelabu hilang karena semuanya jadi tersimpan. Penanda selisih tetap jalan
+untuk angka yang dikoreksi sesudahnya.
+
 ### Penanda TTD kasir & ACC KM
 
 Dua kolom di kanan tiap baris, permintaan mas 2026-11-23: berapa kelompok dari

@@ -351,6 +351,84 @@ class RekapWilayahController extends Controller
     }
 
     /**
+     * Isi sebulan dari angka sistem (Rekap 2), tanpa menandatanganinya.
+     *
+     * Permintaan mas 2026-11-24. Yang dibuat hanya baris yang BELUM ADA;
+     * baris yang sudah diketik atau sudah dicek tidak disentuh. Setelah itu
+     * kumulatif dihitung ulang per kantor, supaya baris yang diketik berbeda
+     * dari sistem tetap menggeser hari-hari sesudahnya.
+     *
+     * Catatan: sesudah ini layar tidak bisa lagi membedakan "kasir melapor
+     * angka yang sama dengan sistem" dari "belum ada laporan kasir" — angka
+     * miring kelabu hilang karena semuanya jadi tersimpan. Penanda selisih
+     * tetap jalan untuk angka yang nanti dikoreksi.
+     */
+    public function isiSistem(Request $request)
+    {
+        $user = auth()->user();
+        abort_unless($user?->hasAnyRole(self::PERAN_UBAH), 403, 'Hanya superuser yang boleh mengisi massal.');
+
+        $wilayah = $this->wilayahTerpilih($request);
+        $periode = (preg_match('/^\d{4}-\d{2}$/', (string) $request->bulan) ? $request->bulan : Carbon::now()->format('Y-m')) . '-01';
+        $sekarang = Carbon::now()->toDateString();
+
+        $sebulan = AngkaRekapWilayah::untukBulan($wilayah, $periode);
+        if (empty($sebulan)) {
+            return back();
+        }
+
+        $bolehKantor = Branch::getAllowedBranchIds($user);
+        $kantor = Branch::where('wilayah', $wilayah)->where('isactive', true)->pluck('wilayah', 'id')
+            ->filter(fn ($w, $id) => $bolehKantor === null || in_array($id, $bolehKantor, true));
+
+        $kolom = [...RegionalCirculationRecap::KOLOM_MUTASI, ...RegionalCirculationRecap::KOLOM_TURUNAN];
+        $dibuat = 0;
+
+        \DB::transaction(function () use ($sebulan, $kantor, $kolom, $sekarang, $periode, &$dibuat) {
+            // Satu kueri untuk tahu baris mana yang sudah ada, bukan satu
+            // firstOrNew per sel: sebulan satu wilayah itu 800 baris.
+            $sudahAda = RegionalCirculationRecap::whereIn('branch_id', $kantor->keys())
+                ->whereBetween('tanggal', [$periode, Carbon::parse($periode)->endOfMonth()->toDateString()])
+                ->get(['branch_id', 'tanggal'])
+                ->map(fn ($r) => $r->branch_id . '|' . $r->tanggal->toDateString())
+                ->flip();
+
+            $baru = [];
+            foreach ($sebulan as $tanggal => $perKantor) {
+                // Tanggal yang belum terjadi dan hari libur tidak diisi, sama
+                // dengan aturan isian manual.
+                if ($tanggal > $sekarang || ! WorkDay::hariKerja($tanggal)) {
+                    continue;
+                }
+
+                foreach ($kantor as $id => $wil) {
+                    if ($sudahAda->has($id . '|' . $tanggal)) {
+                        continue;
+                    }
+
+                    $s = $perKantor[$id] ?? [];
+                    $baru[] = ['branch_id' => $id, 'tanggal' => $tanggal, 'wilayah' => $wil]
+                        + collect($kolom)->mapWithKeys(fn ($k) => [$k => (int) ($s[$k] ?? 0)])->all()
+                        + ['created_at' => now(), 'updated_at' => now()];
+                }
+            }
+
+            $dibuat = count($baru);
+            foreach (array_chunk($baru, 200) as $bagian) {
+                RegionalCirculationRecap::insert($bagian);
+            }
+
+            // Baris yang sudah diketik bisa berbeda dari sistem, jadi
+            // kumulatifnya digeser ulang.
+            foreach ($kantor as $id => $wil) {
+                $this->hitungUlangBulan((int) $id, (int) $wil, $periode);
+            }
+        });
+
+        return back()->with('message', "$dibuat baris diisi dari Rekap 2.");
+    }
+
+    /**
      * Rincian angka sistem satu kantor SEBULAN, per kelompok per tanggal.
      *
      * Dibaca drawer yang terbuka saat nama kantor diklik: baris wilayah itu

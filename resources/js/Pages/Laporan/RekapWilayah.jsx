@@ -42,6 +42,7 @@ export default function RekapWilayah({
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
   const [rincian, setRincian] = useState(null);
+  const [mengisi, setMengisi] = useState(false);
   const [mengekspor, setMengekspor] = useState(false);
 
   // Panel accordion dibuka sebelum cetak, kalau tidak isinya hilang dari
@@ -173,6 +174,27 @@ export default function RekapWilayah({
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: await r.json() });
   }, []);
 
+  // Isi sebulan dari angka sistem, tanpa dicek. Barisnya jadi tersimpan, jadi
+  // sesudah ini layar tidak bisa lagi membedakan "kasir melapor sama dengan
+  // sistem" dari "belum ada laporan".
+  const isiSistem = () => {
+    if (!confirm(`Isi semua baris ${namaBulan(bulan + '-01')} dari Rekap 2?\n\nBaris yang sudah diketik atau sudah dicek tidak disentuh.`)) {
+      return;
+    }
+
+    setMengisi(true);
+    router.post(
+      route('laporan.rekap_wilayah.isi_sistem'),
+      { wilayah, bulan },
+      {
+        preserveScroll: true,
+        onSuccess: () => setTambalan({}),
+        onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal mengisi'),
+        onFinish: () => setMengisi(false),
+      },
+    );
+  };
+
   // Nama kantor diklik: rincian angka sistem SEBULAN, per kelompok. Sumbernya
   // sama dengan yang menyusun barisnya, jadi jumlahnya pasti cocok.
   const lihatKelompok = useCallback(async (tanggal, b) => {
@@ -289,6 +311,17 @@ export default function RekapWilayah({
           >
             {mengekspor ? 'Menyusun…' : 'Excel'}
           </button>
+          {boleh_ubah && (
+            <button
+              type="button"
+              onClick={isiSistem}
+              disabled={!hari.length || mengisi}
+              title="Buat baris untuk tanggal yang belum terisi, memakai angka Rekap 2. Tidak mencentang apa pun."
+              className="h-9 rounded-md border px-3 text-sm hover:bg-slate-100 disabled:opacity-40"
+            >
+              {mengisi ? 'Mengisi…' : 'Isi dari Rekap 2'}
+            </button>
+          )}
           {menyimpan > 0 && (
             <span className="text-[12px] text-sky-600">Menyimpan{menyimpan > 1 ? ` ${menyimpan}` : ''}…</span>
           )}

@@ -53,6 +53,7 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\RekapWilayahContro
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
   });
 Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorController::class)
   ->prefix('dashboard-kasir')->name('dashboard.kasir.')->group(function () {
@@ -349,6 +350,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
       Route::post('/terapkan-saran', 'terapkanSaran')->name('terapkan_saran');
     });
 
@@ -368,6 +370,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
       Route::delete('/{rombak}', 'hapus')->whereNumber('rombak')->name('hapus');
       Route::post('/{rombak}/pratinjau', 'pratinjau')->whereNumber('rombak')->name('pratinjau');
       Route::post('/{rombak}/terapkan', 'terapkan')->whereNumber('rombak')->name('terapkan');
@@ -392,6 +395,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
     Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
       Route::delete('/{loan}', 'hapus')->whereNumber('loan')->name('hapus');
       Route::post('/hapus-nasabah/{loan}', 'hapusNasabah')->whereNumber('loan')->name('hapus_nasabah');
     });
