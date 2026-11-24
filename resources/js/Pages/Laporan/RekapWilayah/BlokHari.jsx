@@ -1,8 +1,8 @@
 import { memo, useMemo } from 'react';
 import TabelWilayah from './TabelWilayah';
 
-/** Dipakai semua tanggal yang tidak sedang diketik, supaya acuannya sama. */
-export const TANPA_UBAHAN = Object.freeze({});
+/** Dipakai semua tanggal yang belum punya tambalan, supaya acuannya sama. */
+export const TANPA_TAMBALAN = Object.freeze({});
 
 const judulTanggal = (t) =>
   new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -12,30 +12,22 @@ const judulTanggal = (t) =>
  * merender ulang 24 tanggal lainnya: satu wilayah sebulan bisa 825 baris dan
  * 4.125 kotak isian.
  *
- * Syaratnya acuan prop harus tetap. Tanggal yang tidak diketik menerima
- * TANPA_UBAHAN yang sama, dan semua callback-nya dibungkus useCallback di
+ * Syaratnya acuan prop harus tetap. Tanggal tanpa tambalan menerima
+ * TANPA_TAMBALAN yang sama, dan semua callback-nya dibungkus useCallback di
  * induk, dengan tanggal dikirim sebagai argumen, bukan ditutup di closure.
  */
-function BlokHari({ hari, ubahan, basi, aktif, bulanCm, bulanMb, onUbah, onCek, onBuka, onLog }) {
-  // Angka yang diketik dituang ke baris tanggal INI saja.
+function BlokHari({ hari, tambalan, aktif, bulanCm, bulanMb, onUbah, onCek, onBuka, onLog }) {
+  // Angka hasil autosave (mutasi yang diketik + kumulatif yang dihitung ulang
+  // server) dituang ke baris tanggal INI saja.
   const baris = useMemo(() => {
-    const kunci = Object.keys(ubahan);
-    if (!kunci.length) {
+    if (!Object.keys(tambalan).length) {
       return hari.baris;
     }
 
-    return hari.baris.map((b) => {
-      const awalan = `${b.branch_id}|`;
-      const milik = kunci.filter((k) => k.startsWith(awalan)).map((k) => [k.slice(awalan.length), ubahan[k]]);
-
-      return milik.length ? { ...b, diketik: { ...(b.diketik ?? {}), ...Object.fromEntries(milik) } } : b;
-    });
-  }, [hari.baris, ubahan]);
-
-  const belumSimpan = useMemo(
-    () => new Set(Object.keys(ubahan).map((k) => Number(k.split('|')[0]))),
-    [ubahan],
-  );
+    return hari.baris.map((b) =>
+      tambalan[b.branch_id] ? { ...b, diketik: { ...(b.diketik ?? {}), ...tambalan[b.branch_id] } } : b,
+    );
+  }, [hari.baris, tambalan]);
 
   const dicek = hari.baris.filter((b) => b.terkunci).length;
 
@@ -56,18 +48,10 @@ function BlokHari({ hari, ubahan, basi, aktif, bulanCm, bulanMb, onUbah, onCek, 
         </p>
       )}
 
-      {basi && (
-        <p className="text-[11px] text-slate-400">
-          Ada isian hari sebelumnya yang belum disimpan, jadi Jumlah dan Saldo di sini belum ikut berubah.
-        </p>
-      )}
-
       <TabelWilayah
         tanggal={hari.tanggal}
         baris={baris}
         bolehUbah={hari.boleh_ubah}
-        belumSimpan={belumSimpan}
-        basiSemua={basi}
         bulanCm={bulanCm}
         bulanMb={bulanMb}
         onUbah={onUbah}

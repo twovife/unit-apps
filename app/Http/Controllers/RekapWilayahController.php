@@ -174,7 +174,7 @@ class RekapWilayahController extends Controller
         $kantor = Branch::whereIn('id', collect($isi['baris'])->pluck('branch_id'))
             ->get(['id', 'wilayah'])->keyBy('id');
 
-        \DB::transaction(function () use ($isi, $kolom, $kantor, $bolehKantor) {
+        $tambalan = \DB::transaction(function () use ($isi, $kolom, $kantor, $bolehKantor) {
             $tersentuh = [];
 
             foreach ($isi['baris'] as $kiriman) {
@@ -229,10 +229,20 @@ class RekapWilayahController extends Controller
 
             // Mengubah mutasi satu hari menggeser kumulatif hari-hari
             // SESUDAHNYA juga, jadi sebulan dihitung ulang untuk kantor itu.
+            $tambalan = [];
             foreach ($tersentuh as $branchId => [$wilayah, $tanggal]) {
-                $this->hitungUlangBulan($branchId, $wilayah, $tanggal);
+                $tambalan += $this->hitungUlangBulan($branchId, $tanggal);
             }
+
+            return $tambalan;
         });
+
+        // Autosave: balas tambalan JSON saja. Memuat ulang halaman penuh
+        // berarti menghitung sebulan untuk 33 kantor (2,5 detik) tiap kali
+        // satu sel ditinggalkan, jadi layar ditambal angka hasil hitung ulang.
+        if ($request->boolean('ringkas')) {
+            return response()->json(['tambalan' => $tambalan]);
+        }
 
         return back();
     }
@@ -458,7 +468,7 @@ class RekapWilayahController extends Controller
      * Baris yang sudah dicek TIDAK diubah: angkanya sudah ditandatangani.
      * Mutasinya tetap ikut dijumlah untuk hari-hari sesudahnya.
      */
-    private function hitungUlangBulan(int $branchId, int $wilayah, string $tanggal): void
+    private function hitungUlangBulan(int $branchId, string $tanggal): array
     {
         $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
         $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
@@ -468,12 +478,12 @@ class RekapWilayahController extends Controller
             ->orderBy('tanggal')->get();
 
         if ($baris->isEmpty()) {
-            return;
+            return [];
         }
 
         // Saldo awal bulan: yang diketik staf kontrol kalau ada, kalau belum
         // dari angka sistem (Rekap 2).
-        $sistem = AngkaRekapWilayah::untukWilayah($wilayah, $tanggal)[$branchId] ?? [];
+        $sistem = AngkaRekapWilayah::awalKantor($branchId, $tanggal);
         $awal = [];
         foreach (['sirkulasi' => 'awal_sirkulasi', 'cm' => 'awal_cm', 'mb' => 'awal_mb', 'ml' => 'awal_ml'] as $ember => $kolom) {
             $diketik = $baris->firstWhere(fn ($r) => $r->$kolom !== null);
@@ -502,6 +512,13 @@ class RekapWilayahController extends Controller
 
             $r->save();
         }
+
+        // Dikembalikan supaya autosave bisa menambal layar tanpa memuat ulang
+        // halaman: kuncinya "tanggal|branch_id", sama dengan state di layar.
+        return $baris->mapWithKeys(fn ($r) => [
+            "{$r->tanggal->toDateString()}|$branchId" => collect(RegionalCirculationRecap::KOLOM_ANGKA)
+                ->mapWithKeys(fn ($k) => [$k => $r->$k === null ? null : (int) $r->$k])->all(),
+        ])->all();
     }
 
     /** Hari kerja ke-n dalam bulan tanggal itu; null kalau tanggal itu libur. */

@@ -37,7 +37,7 @@ export default function RekapMingguan({ minggu = [], unitKantor = {} }) {
         <span className="ml-2 font-normal text-slate-400">{minggu.length} minggu · klik untuk membuka</span>
       </summary>
 
-      <div className="overflow-auto border-t">
+      <div className="overflow-x-auto border-t">
         <table className="w-full text-[11px]">
           <thead className="bg-slate-100">
             <tr>

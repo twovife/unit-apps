@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import BlokHari, { TANPA_UBAHAN } from './RekapWilayah/BlokHari';
+import BlokHari, { TANPA_TAMBALAN } from './RekapWilayah/BlokHari';
 import RekapMingguan from './RekapWilayah/RekapMingguan';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
 
@@ -13,6 +13,10 @@ const judulTanggal = (t) =>
 
 /**
  * Rekap Sirkulasi Wilayah (.agents/rekap_sirkulasi_wilayah.md).
+ *
+ * Tidak ada tombol Simpan: tiap sel menyimpan sendiri saat ditinggalkan, dan
+ * balasannya adalah kumulatif sebulan yang sudah dihitung ulang untuk kantor
+ * itu.
  *
  * Filternya bulan, sama dengan Rekap 2, dan isinya sebulan penuh: satu blok
  * per tanggal, satu baris per kantor. Sel terisi lebih dulu dengan angka
@@ -30,70 +34,64 @@ export default function RekapWilayah({
   mingguan = [],
   hari = [],
 }) {
-  // Hanya sel yang benar-benar diketik, berkunci "tanggal|branch_id|kolom".
-  const [ubahan, setUbahan] = useState({});
-  const [menyimpan, setMenyimpan] = useState(false);
+  // Angka hasil autosave, berkunci "tanggal|branch_id". Isinya mutasi yang
+  // diketik DAN kumulatif yang dihitung ulang server, jadi satu sel yang
+  // diubah di tanggal 5 langsung menggeser tanggal 6 ke atas di layar.
+  const [tambalan, setTambalan] = useState({});
+  const [menyimpan, setMenyimpan] = useState(0);
   const [bukaBaris, setBukaBaris] = useState(null);
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
 
-  // Ubahan dipecah per tanggal. Tanggal tanpa ubahan memakai acuan yang SAMA
-  // (TANPA_UBAHAN), supaya BlokHari yang dibungkus memo bisa melewatkannya.
-  const ubahanPerTanggal = useMemo(() => {
+  // Tambalan dipecah per tanggal. Tanggal tanpa tambalan memakai acuan yang
+  // SAMA (TANPA_TAMBALAN), supaya BlokHari yang dibungkus memo melewatkannya.
+  const tambalanPerTanggal = useMemo(() => {
     const peta = {};
-    for (const [kunci, v] of Object.entries(ubahan)) {
+    for (const [kunci, v] of Object.entries(tambalan)) {
       const pisah = kunci.indexOf('|');
-      const tanggal = kunci.slice(0, pisah);
-      (peta[tanggal] ??= {})[kunci.slice(pisah + 1)] = v;
+      (peta[kunci.slice(0, pisah)] ??= {})[kunci.slice(pisah + 1)] = v;
     }
 
     return peta;
-  }, [ubahan]);
+  }, [tambalan]);
 
-  // Mengubah mutasi satu hari menggeser kumulatif hari-hari SESUDAHNYA juga,
-  // tapi hitungannya di server dan baru jalan saat disimpan. Jadi sejak
-  // tanggal terawal yang diketik, Jumlah & Saldo hari-hari berikutnya ikut
-  // basi sampai Simpan ditekan.
-  const basiSejak = useMemo(() => {
-    const tanggal = Object.keys(ubahanPerTanggal);
-    return tanggal.length ? tanggal.sort()[0] : null;
-  }, [ubahanPerTanggal]);
-
-  const pindah = (ubah) => {
-    if (Object.keys(ubahan).length && !confirm('Ada isian yang belum disimpan. Tinggalkan halaman ini?')) return;
-    setUbahan({});
+  const pindah = (ubah) =>
     router.get(route('laporan.rekap_wilayah.index'), { wilayah, bulan, ...ubah }, { preserveState: false });
-  };
 
-  const simpan = () => {
-    const perBaris = {};
-    for (const [kunci, v] of Object.entries(ubahan)) {
-      const [tanggal, id, kolom] = kunci.split('|');
-      const k = `${tanggal}|${id}`;
-      perBaris[k] ??= { tanggal, branch_id: Number(id), nilai: {} };
-      perBaris[k].nilai[kolom] = v;
-    }
+  /**
+   * Autosave satu sel, seperti Rekap 1: dikirim saat kotak ditinggalkan.
+   *
+   * Balasannya bukan halaman penuh melainkan tambalan JSON sebulan untuk
+   * kantor itu — memuat ulang halaman berarti menghitung sebulan untuk 33
+   * kantor tiap kali satu sel ditinggalkan.
+   */
+  const ubah = useCallback((tanggal, branchId, kolom, nilai) => {
+    const kunci = `${tanggal}|${branchId}`;
+    setTambalan((s) => ({ ...s, [kunci]: { ...s[kunci], [kolom]: nilai } }));
+    setMenyimpan((n) => n + 1);
 
-    setMenyimpan(true);
-    router.post(
-      route('laporan.rekap_wilayah.simpan'),
-      { baris: Object.values(perBaris) },
-      {
-        preserveScroll: true,
-        onSuccess: () => {
-          setUbahan({});
-          toast.success(`${Object.keys(perBaris).length} baris disimpan`);
-        },
-        onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal menyimpan'),
-        onFinish: () => setMenyimpan(false),
-      },
-    );
-  };
+    window.axios
+      .post(route('laporan.rekap_wilayah.simpan'), {
+        ringkas: true,
+        baris: [{ branch_id: branchId, tanggal, nilai: { [kolom]: nilai } }],
+      })
+      .then(({ data }) => setTambalan((s) => ({ ...s, ...data.tambalan })))
+      .catch((e) => {
+        toast.error(e.response?.data?.message ?? 'Gagal menyimpan');
+        // Angka di layar sudah berubah padahal server menolak; dimuat ulang
+        // supaya yang terlihat tetap yang tersimpan.
+        router.reload({ only: ['hari'], onSuccess: () => setTambalan({}) });
+      })
+      .finally(() => setMenyimpan((n) => n - 1));
+  }, []);
 
   const cek = useCallback((tanggal, b) =>
     router.post(route('laporan.rekap_wilayah.cek', b.branch_id), { tanggal }, {
       preserveScroll: true,
-      onSuccess: () => toast.success(`${b.unit} ${tanggal} dicek`),
+      onSuccess: () => {
+        setTambalan({});
+        toast.success(`${b.unit} ${tanggal} dicek`);
+      },
       onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal mengecek'),
     }), []);
 
@@ -105,6 +103,7 @@ export default function RekapWilayah({
       {
         preserveScroll: true,
         onSuccess: () => {
+          setTambalan({});
           toast.success(`${bukaBaris.baris.unit} dibuka`);
           setBukaBaris(null);
           setAlasan('');
@@ -151,13 +150,8 @@ export default function RekapWilayah({
   const namaBulanCm = useMemo(() => namaBulan(bulan_cm), [bulan_cm]);
   const namaBulanMb = useMemo(() => namaBulan(bulan_mb), [bulan_mb]);
 
-  const ubah = useCallback(
-    (tanggal, branchId, kolom, v) => setUbahan((s) => ({ ...s, [`${tanggal}|${branchId}|${kolom}`]: v })),
-    [],
-  );
   const mintaBuka = useCallback((tanggal, baris) => setBukaBaris({ tanggal, baris }), []);
 
-  const jumlahUbahan = Object.keys(ubahan).length;
   const totalBaris = hari.reduce((t, h) => t + h.baris.length, 0);
   const sudahDicek = hari.reduce((t, h) => t + h.baris.filter((b) => b.terkunci).length, 0);
 
@@ -190,18 +184,12 @@ export default function RekapWilayah({
             onChange={(e) => e.target.value && pindah({ bulan: e.target.value })}
             className="h-9 rounded-md border bg-background px-3 text-sm"
           />
-          {boleh_ubah && (
-            <button
-              type="button"
-              onClick={simpan}
-              disabled={!jumlahUbahan || menyimpan}
-              className="h-9 rounded-md bg-sky-600 px-4 text-sm font-medium text-white disabled:opacity-40"
-            >
-              {menyimpan ? 'Menyimpan…' : jumlahUbahan ? `Simpan ${jumlahUbahan} isian` : 'Simpan'}
-            </button>
+          {menyimpan > 0 && (
+            <span className="text-[12px] text-sky-600">Menyimpan{menyimpan > 1 ? ` ${menyimpan}` : ''}…</span>
           )}
           <span className="text-[11px] text-slate-400">
-            Diketik dalam ribuan (200 = 200.000). Sel kuning = beda dengan Rekap 2. Jumlah dan saldo dihitung sistem.
+            Diketik dalam ribuan (200 = 200.000). Tersimpan sendiri saat pindah kotak. Sel kuning = beda dengan Rekap
+            2. Jumlah dan saldo dihitung sistem.
           </span>
 
           {/* Tombol tanggal seperti Rekap 2: lompat ke blok tanggal itu.
@@ -256,8 +244,7 @@ export default function RekapWilayah({
           <BlokHari
             key={h.tanggal}
             hari={h}
-            ubahan={ubahanPerTanggal[h.tanggal] ?? TANPA_UBAHAN}
-            basi={basiSejak !== null && h.tanggal > basiSejak}
+            tambalan={tambalanPerTanggal[h.tanggal] ?? TANPA_TAMBALAN}
             aktif={aktif === h.tanggal}
             bulanCm={namaBulanCm}
             bulanMb={namaBulanMb}

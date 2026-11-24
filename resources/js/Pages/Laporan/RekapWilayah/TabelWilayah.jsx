@@ -1,6 +1,6 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { angka as angkaMode, useModeRibuan } from '@/lib/modeAngka';
-import { BLOK, KOLOM_TURUNAN, PECAHAN, SEMUA_KOLOM, nilai, persen, persenTeks, tandaSelisih, turunan } from './kolom';
+import { BLOK, PECAHAN, SEMUA_KOLOM, nilai, persen, persenTeks, tandaSelisih, turunan } from './kolom';
 
 const awalBlok = new Set(BLOK.map((b) => b.kolom[0].k));
 const judulBlok = Object.fromEntries(BLOK.flatMap((b) => b.kolom.map((k) => [k.k, `${b.judul} · ${k.j}`])));
@@ -16,6 +16,12 @@ function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
   const awal = tersimpan == null ? '' : Number(tersimpan) / 1000;
   const [teks, setTeks] = useState(awal);
   const [diketik, setDiketik] = useState(false);
+
+  // Autosave membalas angka hasil hitung ulang server; kotaknya ikut disegarkan.
+  useEffect(() => {
+    setTeks(tersimpan == null ? '' : Number(tersimpan) / 1000);
+    setDiketik(false);
+  }, [tersimpan]);
 
   // Belum pernah disimpan -> angka sistem, ditulis miring supaya kelihatan
   // belum dikonfirmasi kasir.
@@ -39,9 +45,14 @@ function IsianSel({ baris, kolom, tersimpan, onUbah, onEnter }) {
         }}
         // Dikirim ke induk saat selesai, bukan tiap ketukan: satu ketukan
         // kalau diteruskan akan merender ulang seluruh tabel tanggal ini.
+        // Autosave: dikirim saat kotak ditinggalkan, bukan tiap ketukan, dan
+        // hanya kalau angkanya benar-benar berubah.
         onBlur={() => {
           if (!diketik) return;
-          onUbah(teks === '' ? null : Math.round(Number(teks) * 1000));
+          setDiketik(false);
+          const baru = teks === '' ? null : Math.round(Number(teks) * 1000);
+          if (baru === (tersimpan == null ? null : Number(tersimpan))) return;
+          onUbah(baru);
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
@@ -83,10 +94,10 @@ function Penanda({ nilai = 0, dari = 0, kiri = false }) {
  *
  * Yang diketik hanya mutasi hari itu (Drop, Storting, Angs CM/MB/ML).
  * Kumulatif dan saldo dihitung server dari mutasi sebulan, jadi di sini cuma
- * ditampilkan. Baris yang masih ada isian belum tersimpan ditandai, karena
- * kolom turunannya belum ikut berubah.
+ * ditampilkan. Tiap sel menyimpan sendiri saat ditinggalkan, dan angka
+ * turunannya datang dari balasan simpan itu — tidak ada tombol Simpan.
  */
-function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, belumSimpan, basiSemua, onCek, onBuka, onLog, bulanCm, bulanMb }) {
+function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, onCek, onBuka, onLog, bulanCm, bulanMb }) {
   useModeRibuan(); // ikut berganti saat saklar ribuan di header diubah
 
   // Persen baris total dari jumlah pembilang / jumlah penyebut, BUKAN
@@ -142,10 +153,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, belumSimpan, basiSemu
           </tr>
         </thead>
         <tbody>
-          {baris.map((b, i) => {
-            const tertunda = belumSimpan?.has(b.branch_id);
-
-            return (
+          {baris.map((b, i) => (
               <tr key={b.branch_id} className="group">
                 <td className="sticky left-0 z-10 whitespace-nowrap border-b bg-white px-1.5 py-0 font-medium group-hover:bg-slate-50">
                   {b.unit}
@@ -153,13 +161,11 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, belumSimpan, basiSemu
                 {SEMUA_KOLOM.map((k) => {
                   const tanda = k.hitung ? null : tandaSelisih(b, k.k);
                   const bisaKetik = bolehUbah && k.ketik && !b.terkunci;
-                  // Turunan belum dihitung ulang selama isian belum disimpan.
-                  const basi = (tertunda || basiSemua) && KOLOM_TURUNAN.has(k.k);
 
                   return (
                     <td
                       key={k.k}
-                      title={basi ? 'Dihitung ulang setelah disimpan' : (ket[k.k] ?? tanda ?? undefined)}
+                      title={ket[k.k] ?? tanda ?? undefined}
                       className={`whitespace-nowrap border-b p-0 text-right tabular-nums group-hover:bg-slate-50 ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-amber-100' : ''}`}
                     >
                       {bisaKetik ? (
@@ -171,7 +177,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, belumSimpan, basiSemu
                           onEnter={() => keBawah(i, k.k)}
                         />
                       ) : (
-                        <span className={`block px-1.5 py-0.5 ${k.tebal ? 'font-semibold' : ''} ${basi ? 'text-slate-300' : ''}`}>
+                        <span className={`block px-1.5 py-0.5 ${k.tebal ? 'font-semibold' : ''}`}>
                           {k.hitung ? persenTeks(turunan(b, k.k)) : angkaMode(nilai(b, k.k))}
                         </span>
                       )}
@@ -201,8 +207,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, belumSimpan, basiSemu
                   )}
                 </td>
               </tr>
-            );
-          })}
+          ))}
         </tbody>
         <tfoot>
           <tr className="font-semibold">
