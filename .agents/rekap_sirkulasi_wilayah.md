@@ -292,19 +292,25 @@ angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
 
 ### Drawer rincian per kelompok
 
-**Nama kantor diklik** membuka rincian angka sistem hari itu, dipecah per
-kelompok: Drop, Storting, Angs CM/MB/ML, plus tanda TTD kasir dan ACC kepala
-mantri tiap kelompok. Permintaan mas 2026-11-24, supaya "angka Rekap 2-nya
-dari mana" bisa dijawab tanpa pindah halaman.
+**Nama kantor diklik** membuka rincian angka sistem **sebulan**, dipecah per
+kelompok: Drop, Storting, Angs CM/MB/ML, plus hitungan hari yang sudah di-TTD
+kasir dan di-ACC kepala mantri. Kelompok tertutup menampilkan jumlah sebulan;
+diklik terbuka per tanggal, dan tanggal yang tadi diklik disorot. Permintaan
+mas 2026-11-24, supaya "angka Rekap 2-nya dari mana" bisa dijawab tanpa pindah
+halaman.
 
-Sumbernya `AngkaRekapWilayah::perKelompok()`, yang memanggil `alurBaru` /
+Sumbernya `AngkaRekapWilayah::perKelompokBulan()`, yang memanggil `alurBaru` /
 `alurLama` **yang sama** dengan penyusun barisnya — cuma penumpuknya dikunci
-per kelompok, bukan per kantor. Jadi jumlah drawer selalu sama dengan baris
-kantornya; dicek di lokal untuk Gresik 3 tanggal 2 November, 10 kelompok,
-lima kolom cocok semua.
+per kelompok per tanggal, bukan per kantor. Jadi jumlah drawer selalu sama
+dengan baris kantornya, dijaga `.agents/uji/uji_kelompok_bulan.php`
+(500 kolom, 322 bukan nol, 0 beda).
 
-Yang ditampilkan hanya **mutasi hari itu**. Kumulatif dan saldo milik baris
-kantornya, bukan kelompoknya.
+**Sebulan sekaligus, bukan dipanggil per tanggal.** Kuerinya memang sudah
+menarik sebulan; yang per tanggal hanya membuangnya. Diukur 2026-11-24: satu
+lintasan 131 ms dan 10 kueri, dipanggil 25 kali 1.686 ms dan 225 kueri.
+
+Yang ditampilkan hanya **mutasi**. Kumulatif dan saldo milik baris kantornya,
+bukan kelompoknya. Tanggal yang belum terjadi tidak dikirim.
 
 Halaman Rekap 2 yang asli tidak dipakai ulang: cabang aktifnya diambil dari
 paket filter global di session (`AuthScope`), bukan dari parameter, jadi
@@ -505,6 +511,9 @@ docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji
 
 # mengetik satu kolom tidak boleh menolkan kolom lain (transaksi dibatalkan)
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_hitung_ulang.php
+
+# rincian per kelompok harus berjumlah sama dengan baris kantornya
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_kelompok_bulan.php
 
 # lembar .xlsx: kepala bertingkat, angka tetap angka, persen pecahan
 docker exec unit-vite node .agents/uji/uji_ekspor_rekap_wilayah.mjs

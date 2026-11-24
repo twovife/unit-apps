@@ -46,19 +46,24 @@ class AngkaRekapWilayah
     }
 
     /**
-     * Rincian SATU kantor SATU tanggal, dipecah per kelompok.
+     * Rincian SATU kantor SEBULAN, dipecah per kelompok per tanggal.
      *
-     * Dipakai drawer di nama kantor: angka sistem di baris wilayah itu
-     * jumlah dari kelompok mana saja. Rumusnya sama persis dengan yang
-     * menyusun barisnya — alurBaru/alurLama yang sama, cuma penumpuknya
-     * dikunci per kelompok, bukan per kantor.
+     * Dipakai drawer di nama kantor: angka sistem baris wilayah itu jumlah
+     * dari kelompok mana saja. Rumusnya sama persis dengan yang menyusun
+     * barisnya — alurBaru/alurLama yang sama, cuma penumpuknya dikunci per
+     * kelompok, bukan per kantor.
      *
-     * @return array<int, array<string, int>> grouping_id => drop|storting|cm|mb|ml
+     * Sebulan sekaligus, BUKAN dipanggil per tanggal: kuerinya memang sudah
+     * menarik sebulan. Diukur 2026-11-24 — satu lintasan 112 ms dan 10 kueri,
+     * dipanggil 25 kali 1.686 ms dan 225 kueri.
+     *
+     * @return array<int, array<string, array<string,int>>>
+     *         grouping_id => tanggal => drop|storting|cm|mb|ml
      */
-    public static function perKelompok(int $branchId, string $tanggal): array
+    public static function perKelompokBulan(int $branchId, string $tanggal): array
     {
-        $tanggal = Carbon::parse($tanggal)->toDateString();
         $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+        $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
 
         $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->get(['id', 'branch_id']);
         if ($grouping->isEmpty()) {
@@ -69,22 +74,17 @@ class AngkaRekapWilayah
         $milikKantor = $grouping->pluck('branch_id', 'id');
 
         $hasil = [];
-        $tambah = function ($g, string $t, array $v) use (&$hasil, $tanggal) {
-            // alurBaru & alurLama menyusuri sebulan; yang diminta satu tanggal.
-            if ($t !== $tanggal) {
-                return;
-            }
-
-            $hasil[$g] ??= self::KOSONG;
+        $tambah = function ($g, string $t, array $v) use (&$hasil) {
+            $hasil[$g][$t] ??= self::KOSONG;
             foreach (self::KOSONG as $k => $_) {
-                $hasil[$g][$k] += (int) ($v[$k] ?? 0);
+                $hasil[$g][$t][$k] += (int) ($v[$k] ?? 0);
             }
         };
 
         if (AgregasiScope::pakaiAgregatBaru($branchId, $periode)) {
-            self::alurBaru($gid, $milikKantor, $periode, $tanggal, $tambah);
+            self::alurBaru($gid, $milikKantor, $periode, $akhir, $tambah);
         } else {
-            self::alurLama($gid, $periode, $tanggal, $tambah);
+            self::alurLama($gid, $periode, $akhir, $tambah);
         }
 
         return $hasil;

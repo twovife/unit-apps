@@ -351,43 +351,58 @@ class RekapWilayahController extends Controller
     }
 
     /**
-     * Rincian angka sistem satu kantor satu tanggal, dipecah per kelompok.
+     * Rincian angka sistem satu kantor SEBULAN, per kelompok per tanggal.
      *
      * Dibaca drawer yang terbuka saat nama kantor diklik: baris wilayah itu
      * jumlah dari kelompok mana saja, dan kelompok mana yang sudah di-TTD
-     * kasir / di-ACC kepala mantri. Angkanya dari sumber yang sama dengan
-     * baris itu sendiri, jadi jumlahnya pasti cocok.
+     * kasir / di-ACC kepala mantri tiap harinya. Angkanya dari sumber yang
+     * sama dengan baris itu sendiri, jadi jumlahnya pasti cocok.
      */
     public function kelompok(Request $request, Branch $branch)
     {
         abort_unless(auth()->user()?->hasAnyRole(self::PERAN_LIHAT), 403);
         $tanggal = Carbon::parse($request->tanggal)->toDateString();
+        $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+        $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
 
-        $angka = AngkaRekapWilayah::perKelompok($branch->id, $tanggal);
+        $angka = AngkaRekapWilayah::perKelompokBulan($branch->id, $tanggal);
 
         $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branch->id)
             ->orderBy('kelompok')->get(['id', 'kelompok']);
 
+        // TTD kasir & ACC kepala mantri per kelompok PER TANGGAL.
         $tutup = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $grouping->pluck('id'))
-            ->whereDate('date', $tanggal)
-            ->get(['transaction_loan_officer_grouping_id', 'kasir_lock_at', 'kepala_approval_at'])
-            ->keyBy('transaction_loan_officer_grouping_id');
+            ->whereBetween('date', [$periode, $akhir])
+            ->get(['transaction_loan_officer_grouping_id', 'date', 'kasir_lock_at', 'kepala_approval_at'])
+            ->groupBy('transaction_loan_officer_grouping_id');
 
-        return response()->json($grouping->map(function ($g) use ($angka, $tutup) {
-            $a = $angka[$g->id] ?? [];
-            $c = $tutup->get($g->id);
+        // Tanggal yang ditampilkan sama dengan halamannya, dan tidak lebih
+        // dari hari ini: tanggal yang belum terjadi dikosongkan di mana-mana.
+        $sekarang = Carbon::now()->toDateString();
+        $tanggalBulan = collect(AngkaRekapWilayah::untukBulan((int) $branch->wilayah, $periode, $branch->id))
+            ->keys()->filter(fn ($t) => $t <= $sekarang)->values();
 
-            return [
-                'kelompok' => $g->kelompok,
-                'drop' => (int) ($a['drop'] ?? 0),
-                'storting' => (int) ($a['storting'] ?? 0),
-                'angsuran_cm' => (int) ($a['cm'] ?? 0),
-                'angsuran_mb' => (int) ($a['mb'] ?? 0),
-                'angsuran_ml' => (int) ($a['ml'] ?? 0),
-                'kasir' => $c?->kasir_lock_at !== null,
-                'km' => $c?->kepala_approval_at !== null,
-            ];
-        })->values());
+        return response()->json([
+            'tanggal' => $tanggalBulan,
+            'kelompok' => $grouping->map(function ($g) use ($angka, $tutup, $tanggalBulan) {
+                $perTanggal = $angka[$g->id] ?? [];
+                $tanda = ($tutup[$g->id] ?? collect())->keyBy(fn ($r) => Carbon::parse($r->date)->toDateString());
+
+                return [
+                    'kelompok' => $g->kelompok,
+                    'hari' => $tanggalBulan->map(fn ($t) => [
+                        'tanggal' => $t,
+                        'drop' => (int) ($perTanggal[$t]['drop'] ?? 0),
+                        'storting' => (int) ($perTanggal[$t]['storting'] ?? 0),
+                        'angsuran_cm' => (int) ($perTanggal[$t]['cm'] ?? 0),
+                        'angsuran_mb' => (int) ($perTanggal[$t]['mb'] ?? 0),
+                        'angsuran_ml' => (int) ($perTanggal[$t]['ml'] ?? 0),
+                        'kasir' => $tanda->get($t)?->kasir_lock_at !== null,
+                        'km' => $tanda->get($t)?->kepala_approval_at !== null,
+                    ])->all(),
+                ];
+            })->values(),
+        ]);
     }
 
     /** Riwayat satu baris, dibaca drawer di tabel. */
