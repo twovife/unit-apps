@@ -178,17 +178,33 @@ export default function RekapWilayah({
   // sambil menggulir. Dibuang atas permintaan mas 2026-11-24.
   const [aktif, setAktif] = useState(null);
 
+  // Jarak judul tanggal dari atas layar sesudah melompat: navbar + baris
+  // filter. Sama dengan scroll-mt-36 (9rem) di BlokHari.
+  const ATAS = 144;
+
   const lompat = (tanggal, halus = true) => {
     setAktif(tanggal);
-    const ke = () =>
-      document
-        .getElementById(`tgl-${tanggal}`)
-        ?.scrollIntoView({ behavior: halus ? 'smooth' : 'auto', block: 'start' });
+    const cari = () => document.getElementById(`tgl-${tanggal}`);
+    cari()?.scrollIntoView({ behavior: halus ? 'smooth' : 'auto', block: 'start' });
 
-    ke();
-    // Tabel tujuan baru dipasang sesudah bloknya mendekati layar, dan tinggi
-    // sebenarnya beda dari taksiran, jadi posisinya dibetulkan sekali lagi.
-    setTimeout(ke, 200);
+    // Blok yang dilewati dipasang & dilepas sambil digulir, dan tingginya
+    // berubah saat itu, jadi sasarannya bergeser. Dibetulkan berulang sampai
+    // judulnya benar-benar berhenti di tempatnya.
+    let sisa = 10;
+    const betulkan = () => {
+      const el = cari();
+      if (!el || sisa-- <= 0) {
+        return;
+      }
+
+      if (Math.abs(el.getBoundingClientRect().top - ATAS) > 4) {
+        el.scrollIntoView({ block: 'start' });
+      }
+
+      setTimeout(betulkan, 120);
+    };
+
+    setTimeout(betulkan, 120);
   };
 
   // Halaman dibuka langsung di tanggal hari ini, bukan di tanggal 1: yang

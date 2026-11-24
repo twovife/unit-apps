@@ -9,8 +9,16 @@ const judulTanggal = (t) =>
   new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 
 // Tinggi perkiraan tabel yang belum dipasang, supaya tinggi halaman dan posisi
-// gulir tidak melompat saat blok dipasang. Baris 22px, kepala dua tingkat 40px.
-const taksirTinggi = (jumlahBaris) => 40 + (jumlahBaris + 1) * 22;
+// gulir tidak melompat saat blok dipasang atau dilepas.
+//
+// Taksiran awal 22px per baris, lalu DIPERBAIKI dari tabel pertama yang
+// benar-benar dipasang. Semua tabel di sini bentuknya sama, jadi satu
+// pengukuran berlaku untuk semuanya. Tanpa ini, blok yang dipasang menggeser
+// isi halaman dan lompatan ke tanggal hari ini mendarat di tanggal lain.
+const KEPALA = 40;
+let tinggiBaris = 22;
+
+const taksirTinggi = (jumlahBaris) => KEPALA + (jumlahBaris + 1) * tinggiBaris;
 
 /**
  * Satu blok tanggal.
@@ -70,6 +78,15 @@ function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, on
       window.removeEventListener('beforeprint', pasang);
     };
   }, []);
+
+  // Sekali tabelnya terpasang, tinggi barisnya diukur supaya taksiran blok
+  // lain tepat.
+  useEffect(() => {
+    const h = dekat ? kotak.current?.offsetHeight : 0;
+    if (h > 0 && baris.length) {
+      tinggiBaris = (h - KEPALA) / (baris.length + 1);
+    }
+  }, [dekat, baris.length]);
 
   return (
     <section
