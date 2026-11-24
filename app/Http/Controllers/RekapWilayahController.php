@@ -444,6 +444,7 @@ class RekapWilayahController extends Controller
         $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
 
         $angka = AngkaRekapWilayah::perKelompokBulan($branch->id, $tanggal);
+        $awal = AngkaRekapWilayah::awalPerKelompok($branch->id, $tanggal);
 
         $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branch->id)
             ->orderBy('kelompok')->get(['id', 'kelompok']);
@@ -462,22 +463,46 @@ class RekapWilayahController extends Controller
 
         return response()->json([
             'tanggal' => $tanggalBulan,
-            'kelompok' => $grouping->map(function ($g) use ($angka, $tutup, $tanggalBulan) {
+            'kelompok' => $grouping->map(function ($g) use ($angka, $awal, $tutup, $tanggalBulan) {
                 $perTanggal = $angka[$g->id] ?? [];
                 $tanda = ($tutup[$g->id] ?? collect())->keyBy(fn ($r) => Carbon::parse($r->date)->toDateString());
+                $a = $awal[$g->id] ?? ['sirkulasi' => 0, 'cm' => 0, 'mb' => 0, 'ml' => 0];
+
+                // Kumulatif & saldo berjalan, rumus yang sama dengan baris
+                // kantor: sirkulasi = awal + jumlah drop x 1,3 - jumlah
+                // storting; saldo ember = awal ember - jumlah angsurannya.
+                $jumlah = ['drop' => 0, 'storting' => 0, 'cm' => 0, 'mb' => 0, 'ml' => 0];
+
+                $hari = $tanggalBulan->map(function ($t) use ($perTanggal, $tanda, $a, &$jumlah) {
+                    foreach ($jumlah as $k => $_) {
+                        $jumlah[$k] += (int) ($perTanggal[$t][$k] ?? 0);
+                    }
+
+                    return [
+                        'tanggal' => $t,
+                        'drop' => (int) ($perTanggal[$t]['drop'] ?? 0),
+                        'total_drop' => $jumlah['drop'],
+                        'storting' => (int) ($perTanggal[$t]['storting'] ?? 0),
+                        'total_storting' => $jumlah['storting'],
+                        'sirkulasi' => RekapWilayah::sirkulasiBerjalan($a['sirkulasi'], $jumlah['drop'], $jumlah['storting']),
+                        'angsuran_cm' => (int) ($perTanggal[$t]['cm'] ?? 0),
+                        'saldo_cm' => $a['cm'] - $jumlah['cm'],
+                        'angsuran_mb' => (int) ($perTanggal[$t]['mb'] ?? 0),
+                        'saldo_mb' => $a['mb'] - $jumlah['mb'],
+                        'angsuran_ml' => (int) ($perTanggal[$t]['ml'] ?? 0),
+                        'saldo_ml' => $a['ml'] - $jumlah['ml'],
+                        'kasir' => $tanda->get($t)?->kasir_lock_at !== null,
+                        'km' => $tanda->get($t)?->kepala_approval_at !== null,
+                    ];
+                })->all();
 
                 return [
                     'kelompok' => $g->kelompok,
-                    'hari' => $tanggalBulan->map(fn ($t) => [
-                        'tanggal' => $t,
-                        'drop' => (int) ($perTanggal[$t]['drop'] ?? 0),
-                        'storting' => (int) ($perTanggal[$t]['storting'] ?? 0),
-                        'angsuran_cm' => (int) ($perTanggal[$t]['cm'] ?? 0),
-                        'angsuran_mb' => (int) ($perTanggal[$t]['mb'] ?? 0),
-                        'angsuran_ml' => (int) ($perTanggal[$t]['ml'] ?? 0),
-                        'kasir' => $tanda->get($t)?->kasir_lock_at !== null,
-                        'km' => $tanda->get($t)?->kepala_approval_at !== null,
-                    ])->all(),
+                    'awal_sirkulasi' => (int) $a['sirkulasi'],
+                    'awal_cm' => (int) $a['cm'],
+                    'awal_mb' => (int) $a['mb'],
+                    'awal_ml' => (int) $a['ml'],
+                    'hari' => $hari,
                 ];
             })->values(),
         ]);

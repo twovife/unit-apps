@@ -37,6 +37,24 @@ foreach (Branch::where('isactive', true)->whereNotNull('wilayah')->orderBy('id')
     }
 }
 
+// Saldo awal & kumulatif per kelompok harus berjumlah sama dengan kantornya.
+// Toleransi sebesar jumlah kelompok: sirkulasi memakai round() per kelompok,
+// jadi pembulatannya bisa meleset beberapa rupiah dari hitungan kantor.
+foreach (Branch::where('isactive', true)->whereNotNull('wilayah')->orderBy('id')->take(4)->get(['id', 'wilayah']) as $b) {
+    $awal = AngkaRekapWilayah::awalPerKelompok($b->id, $periode);
+    $baris = AngkaRekapWilayah::untukBulan((int) $b->wilayah, $periode, $b->id);
+    $pertama = reset($baris)[$b->id] ?? [];
+
+    foreach (['sirkulasi' => 'awal_sirkulasi', 'cm' => 'awal_cm', 'mb' => 'awal_mb', 'ml' => 'awal_ml'] as $pendek => $panjang) {
+        $jumlah = array_sum(array_column($awal, $pendek));
+        $diperiksa++;
+        if ($jumlah !== (int) ($pertama[$panjang] ?? 0)) {
+            $beda++;
+            printf("BEDA kantor %d %s: kelompok=%d kantor=%d\n", $b->id, $panjang, $jumlah, $pertama[$panjang] ?? 0);
+        }
+    }
+}
+
 printf("diperiksa=%d (bukan nol: %d) beda=%d\n", $diperiksa, $berisi, $beda);
 
 if ($berisi === 0) {

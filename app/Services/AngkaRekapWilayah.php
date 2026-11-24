@@ -46,6 +46,36 @@ class AngkaRekapWilayah
     }
 
     /**
+     * Saldo awal bulan SATU kantor, dipecah per kelompok.
+     *
+     * Sumber dan rumusnya sama dengan saldo awal kantor — alur baru dari
+     * transaction_monthly_closings, alur lama dari transaction_sirculations —
+     * cuma penumpuknya dikunci per kelompok. Caranya: peta "milik kantor"
+     * diisi gid => gid, jadi saldoAwal() menumpuk ke kelompoknya sendiri.
+     *
+     * @return array<int, array<string,int>> grouping_id => sirkulasi|cm|mb|ml
+     */
+    public static function awalPerKelompok(int $branchId, string $tanggal): array
+    {
+        $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+
+        $gid = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id');
+        if ($gid->isEmpty()) {
+            return [];
+        }
+
+        $kosong = collect();
+        $baru = AgregasiScope::pakaiAgregatBaru($branchId, $periode);
+
+        return self::saldoAwal(
+            $baru ? $gid : $kosong,
+            $baru ? $kosong : $gid,
+            $gid->mapWithKeys(fn ($id) => [$id => $id]),
+            $periode,
+        );
+    }
+
+    /**
      * Rincian SATU kantor SEBULAN, dipecah per kelompok per tanggal.
      *
      * Dipakai drawer di nama kantor: angka sistem baris wilayah itu jumlah

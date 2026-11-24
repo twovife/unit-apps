@@ -312,25 +312,37 @@ angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
 
 ### Drawer rincian per kelompok
 
-**Nama kantor diklik** membuka rincian angka sistem **sebulan**, dipecah per
-kelompok: Drop, Storting, Angs CM/MB/ML, plus hitungan hari yang sudah di-TTD
-kasir dan di-ACC kepala mantri. Kelompok tertutup menampilkan jumlah sebulan;
-diklik terbuka per tanggal, dan tanggal yang tadi diklik disorot. Permintaan
+**Nama kantor diklik** membuka **Rekap 2 kantor itu, sebulan penuh, per
+kelompok** — susunan kolom yang sama dengan tabel wilayah (mutasi, kumulatif,
+saldo, dibagi blok Sirkulasi / Calon Macet / Macet Baru / Macet Lama), cuma
+barisnya kelompok. Ditambah hitungan hari yang sudah di-TTD kasir dan di-ACC
+kepala mantri.
+
+Kelompok tertutup menampilkan sebulan; diklik terbuka menampilkan **saldo awal
+bulan** lalu tiap tanggal, dengan tanggal yang tadi diklik disorot. Permintaan
 mas 2026-11-24, supaya "angka Rekap 2-nya dari mana" bisa dijawab tanpa pindah
 halaman.
 
-Sumbernya `AngkaRekapWilayah::perKelompokBulan()`, yang memanggil `alurBaru` /
-`alurLama` **yang sama** dengan penyusun barisnya — cuma penumpuknya dikunci
+**Kumulatif dan saldo tidak dijumlah** saat kelompok ditutup maupun di baris
+Jumlah kantor: yang berlaku angka hari terakhir, karena angkanya sudah
+kumulatif sejak awal bulan. Yang dijumlah hanya mutasi.
+
+Sumbernya `AngkaRekapWilayah::perKelompokBulan()` untuk mutasi dan
+`awalPerKelompok()` untuk saldo awal; keduanya memanggil `alurBaru` /
+`alurLama` / `saldoAwal` **yang sama** dengan penyusun barisnya — cuma penumpuknya dikunci
 per kelompok per tanggal, bukan per kantor. Jadi jumlah drawer selalu sama
 dengan baris kantornya, dijaga `.agents/uji/uji_kelompok_bulan.php`
-(500 kolom, 322 bukan nol, 0 beda).
+(516 kolom, 322 bukan nol, 0 beda).
+
+Sirkulasi & saldo berjalan juga dicek cocok, dengan toleransi sebesar jumlah
+kelompok: `sirkulasiBerjalan()` memakai `round()`, jadi membulatkan 10 kali
+per kelompok bisa meleset beberapa rupiah dari membulatkan sekali per kantor.
 
 **Sebulan sekaligus, bukan dipanggil per tanggal.** Kuerinya memang sudah
 menarik sebulan; yang per tanggal hanya membuangnya. Diukur 2026-11-24: satu
 lintasan 131 ms dan 10 kueri, dipanggil 25 kali 1.686 ms dan 225 kueri.
 
-Yang ditampilkan hanya **mutasi**. Kumulatif dan saldo milik baris kantornya,
-bukan kelompoknya. Tanggal yang belum terjadi tidak dikirim.
+Tanggal yang belum terjadi tidak dikirim.
 
 Halaman Rekap 2 yang asli tidak dipakai ulang: cabang aktifnya diambil dari
 paket filter global di session (`AuthScope`), bukan dari parameter, jadi
