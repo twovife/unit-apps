@@ -5,8 +5,16 @@ import TabelWilayah from './TabelWilayah';
 /** Dipakai semua tanggal yang belum punya tambalan, supaya acuannya sama. */
 export const TANPA_TAMBALAN = Object.freeze({});
 
-const judulTanggal = (t) =>
-  new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+// Format pita tanggal sama dengan Rekap 2: "Senin, 02-11-2026".
+const judulTanggal = (t) => {
+  const d = new Date(t + 'T00:00:00');
+  const hari = d.toLocaleDateString('id-ID', { weekday: 'long' });
+
+  return `${hari}, ${t.slice(8)}-${t.slice(5, 7)}-${t.slice(0, 4)}`;
+};
+
+// Senin diberi latar merah muda, seperti pita tanggal di Rekap 2.
+const senin = (t) => new Date(t + 'T00:00:00').getDay() === 1;
 
 // Tinggi perkiraan tabel yang belum dipasang, supaya tinggi halaman dan posisi
 // gulir tidak melompat saat blok dipasang atau dilepas.
@@ -93,9 +101,13 @@ function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, on
       id={`tgl-${hari.tanggal}`}
       className={`scroll-mt-36 space-y-1 ${pertama ? '' : 'print:break-before-page'}`}
     >
-      <h2 className={`text-[13px] font-semibold ${aktif ? 'text-sky-700' : ''}`}>
+      <h2
+        className={`rounded-md px-3 py-1.5 text-xs font-semibold text-slate-800 ${
+          senin(hari.tanggal) ? 'bg-rose-100' : 'bg-slate-200'
+        } ${aktif ? 'ring-2 ring-sky-500' : ''}`}
+      >
         {judulTanggal(hari.tanggal)}
-        <span className="ml-2 font-normal text-slate-400">
+        <span className="ml-2 font-normal text-slate-600">
           {hari.hari_kerja_ke ? `hari kerja ke-${hari.hari_kerja_ke}` : 'bukan hari kerja'}
           {` · ${dicek}/${hari.baris.length} dicek`}
         </span>

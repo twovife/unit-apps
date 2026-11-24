@@ -1,6 +1,8 @@
 import { memo, useEffect, useState } from 'react';
 import { angka as angkaMode, useModeRibuan } from '@/lib/modeAngka';
 import { BLOK, PECAHAN, SEMUA_KOLOM, nilai, persen, persenTeks, tandaSelisih, turunan } from './kolom';
+// Warna blok kolom dipinjam dari Rekap 1/2 supaya seragam, bukan disalin.
+import { WARNA } from '@/Pages/Kasir/Rekap/Components/TableRekapKasir';
 
 const awalBlok = new Set(BLOK.map((b) => b.kolom[0].k));
 const judulBlok = Object.fromEntries(BLOK.flatMap((b) => b.kolom.map((k) => [k.k, `${b.judul} · ${k.j}`])));
@@ -66,9 +68,9 @@ export function IsianSel({ baris, kolom, judul, tersimpan, onUbah, onEnter }) {
             onUbah(tersimpan);
           }
         }}
-        className={`peer block w-full min-w-[4.5rem] rounded-none border-0 bg-sky-50/60 py-0.5 pl-1 text-right text-[11px] tabular-nums outline-none [appearance:textfield] focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500 [&::-webkit-inner-spin-button]:appearance-none ${penuh ? 'pr-7' : 'pr-1'} focus:pr-7 ${bawaan ? 'italic text-slate-400' : ''}`}
+        className={`peer block w-full min-w-[5rem] rounded-none border-0 bg-sky-50/60 py-1 pl-2 text-right text-xs tabular-nums outline-none [appearance:textfield] focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500 [&::-webkit-inner-spin-button]:appearance-none ${penuh ? 'pr-8' : 'pr-2'} focus:pr-8 ${bawaan ? 'italic text-slate-400' : ''}`}
       />
-      <span className={`pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 peer-focus:block ${penuh ? 'block' : 'hidden'}`}>
+      <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 peer-focus:block ${penuh ? 'block' : 'hidden'}`}>
         .000
       </span>
     </div>
@@ -83,7 +85,7 @@ function Penanda({ nilai = 0, dari = 0, kiri = false }) {
   const warna = dari && nilai >= dari ? 'text-emerald-700' : nilai > 0 ? 'text-amber-600' : 'text-slate-300';
 
   return (
-    <td className={`whitespace-nowrap border-b px-1.5 py-0.5 text-center text-[10px] tabular-nums group-hover:bg-slate-50 ${kiri ? 'border-l' : ''}`}>
+    <td className={`whitespace-nowrap px-3 py-1 text-center text-[11px] ${kiri ? 'border-l' : ''}`}>
       <span className={warna}>{nilai}/{dari}</span>
     </td>
   );
@@ -125,14 +127,16 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
     persen_ml: 'Saldo ML dibagi sirkulasi hari ini',
   };
 
-  const th = 'whitespace-nowrap border-b bg-slate-100 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-tight text-slate-500';
+  // Gaya kepala & sel mengikuti Rekap 2 (TabelHarian): text-xs, px-3 py-1,
+  // kepala slate-100, baris selang-seling, sorot biru saat disinggahi.
+  const th = 'whitespace-nowrap px-3 py-2 text-right font-medium';
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
-      <table className="w-full border-separate border-spacing-0 text-[11px]">
-        <thead>
+    <div className="overflow-x-auto rounded-lg border bg-white">
+      <table className="w-full border-separate border-spacing-0 text-xs tabular-nums">
+        <thead className="bg-slate-100 text-slate-700">
           <tr>
-            <th rowSpan={2} className={`${th} sticky left-0 z-20 text-left`}>Kantor</th>
+            <th rowSpan={2} className={`${th} sticky left-0 z-20 bg-slate-100 text-left`}>Kantor</th>
             {BLOK.map((b) => (
               <th key={b.judul} colSpan={b.kolom.length} className={`${th} border-l text-center`}>
                 {b.judul}
@@ -148,7 +152,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
           </tr>
           <tr>
             {SEMUA_KOLOM.map((k) => (
-              <th key={k.k} className={`${th} text-right ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
+              <th key={k.k} className={`${th} ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
                 {k.j}
               </th>
             ))}
@@ -156,8 +160,8 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
         </thead>
         <tbody>
           {baris.map((b, i) => (
-              <tr key={b.branch_id} className="group">
-                <td className="sticky left-0 z-10 whitespace-nowrap border-b bg-white px-1.5 py-0 font-medium group-hover:bg-slate-50">
+              <tr key={b.branch_id} className="group border-t bg-white even:bg-slate-50 hover:bg-sky-50">
+                <td className={`sticky left-0 z-10 whitespace-nowrap px-3 py-1 font-medium ${WARNA.biru.sel}`}>
                   <button
                     type="button"
                     onClick={() => onKantor?.(tanggal, b)}
@@ -175,7 +179,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
                     <td
                       key={k.k}
                       title={ket[k.k] ?? tanda ?? undefined}
-                      className={`whitespace-nowrap border-b p-0 text-right tabular-nums group-hover:bg-slate-50 ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-red-100 text-red-900' : ''}`}
+                      className={`whitespace-nowrap p-0 text-right ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-red-100 text-red-900' : WARNA[k.warna].sel}`}
                     >
                       {bisaKetik ? (
                         <>
@@ -193,7 +197,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
                           </div>
                         </>
                       ) : (
-                        <span className={`block px-1.5 py-0.5 ${k.tebal ? 'font-semibold' : ''}`}>
+                        <span className={`block px-3 py-1 ${k.tebal ? 'font-semibold' : ''}`}>
                           {kosong ? '' : k.hitung ? persenTeks(turunan(b, k.k)) : angkaMode(nilai(b, k.k))}
                         </span>
                       )}
@@ -202,7 +206,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
                 })}
                 <Penanda nilai={b.ttd?.kasir} dari={b.ttd?.kelompok} kiri />
                 <Penanda nilai={b.ttd?.km} dari={b.ttd?.kelompok} />
-                <td className="whitespace-nowrap border-b border-l px-1.5 py-0.5 text-center text-[10px] text-slate-500 group-hover:bg-slate-50">
+                <td className="whitespace-nowrap border-l px-3 py-1 text-center text-[11px] text-slate-500">
                   {kosong ? (
                     <span className="text-slate-300">—</span>
                   ) : b.terkunci ? (
@@ -236,16 +240,19 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
           ))}
         </tbody>
         <tfoot>
-          <tr className="font-semibold">
-            <td className="sticky left-0 z-10 border-t-2 bg-slate-100 px-1.5 py-1">Total Wilayah</td>
+          <tr className="border-t bg-emerald-50 font-bold text-slate-900">
+            <td className={`sticky left-0 z-10 px-3 py-1.5 ${WARNA.biru.total}`}>Total Wilayah</td>
             {SEMUA_KOLOM.map((k) => (
-              <td key={k.k} className={`whitespace-nowrap border-t-2 bg-slate-100 px-1.5 py-1 text-right tabular-nums ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
+              <td
+                key={k.k}
+                className={`whitespace-nowrap px-3 py-1.5 text-right ${WARNA[k.warna].total} ${awalBlok.has(k.k) ? 'border-l' : ''}`}
+              >
                 {selTotal(k.k)}
               </td>
             ))}
-            <td className="border-l border-t-2 bg-slate-100 px-1.5 py-1" />
-            <td className="border-t-2 bg-slate-100 px-1.5 py-1" />
-            <td className="border-l border-t-2 bg-slate-100 px-1.5 py-1" />
+            <td className="border-l px-3 py-1.5" />
+            <td className="px-3 py-1.5" />
+            <td className="border-l px-3 py-1.5" />
           </tr>
         </tfoot>
       </table>

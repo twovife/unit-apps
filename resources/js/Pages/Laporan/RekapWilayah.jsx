@@ -48,15 +48,6 @@ export default function RekapWilayah({
   const [mengisi, setMengisi] = useState(false);
   const [mengekspor, setMengekspor] = useState(false);
 
-  // Panel accordion dibuka sebelum cetak, kalau tidak isinya hilang dari
-  // kertas: <details> yang tertutup memang tidak dirender.
-  useEffect(() => {
-    const buka = () => document.querySelectorAll('details:not([open])').forEach((d) => (d.open = true));
-    window.addEventListener('beforeprint', buka);
-
-    return () => window.removeEventListener('beforeprint', buka);
-  }, []);
-
   // exceljs 900 KB, diimpor hanya saat tombolnya ditekan.
   const unduh = async () => {
     setMengekspor(true);
@@ -373,18 +364,19 @@ export default function RekapWilayah({
                       : `${judulTanggal(h.tanggal)} · ${dicek}/${h.baris.length} dicek`
                   }
                   onClick={() => lompat(h.tanggal)}
-                  className={`h-7 min-w-7 rounded-md border px-1.5 text-xs tabular-nums transition-all ${
-                    // Yang dipilih dibalik warnanya, bukan diberi cincin:
-                    // cincin tipis tenggelam di antara 30 tombol.
+                  // Kelasnya sama dengan chip tanggal di Rekap 2 (TabelHarian):
+                  // terpilih biru penuh, mendatang pudar. Yang khas di sini
+                  // cuma hijau = semua kantor tanggal itu sudah dicek.
+                  className={`h-7 min-w-7 shrink-0 rounded-md border px-1.5 text-xs tabular-nums transition-colors ${
                     aktif === h.tanggal
-                      ? 'scale-110 border-sky-700 bg-sky-600 font-bold text-white shadow'
+                      ? 'border-sky-600 bg-sky-600 font-semibold text-white'
                       : h.mendatang
-                        ? 'cursor-not-allowed border-dashed border-slate-200 text-slate-300'
+                        ? 'border-slate-200 bg-white text-slate-300'
                         : !h.hari_kerja
-                          ? 'border-slate-200 text-slate-300'
+                          ? 'border-slate-200 bg-white text-slate-300'
                           : penuh
-                            ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                            : 'hover:bg-slate-100'
+                            ? 'border-emerald-400 bg-emerald-50 font-semibold text-emerald-700 hover:bg-emerald-100'
+                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   {Number(h.tanggal.slice(8))}

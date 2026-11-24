@@ -43,7 +43,29 @@ jejaknya.
   Tanggal mendatang juga tidak ikut hitungan "x dari y baris sudah dicek".
 - Tidak ada gulir di dalam gulir: tabelnya hanya menggulir ke samping
   (`overflow-x-auto`), dan yang menempel cuma kolom Kantor.
-- Kepala tiap blok: tanggal + "hari kerja ke-n" + "x/33 dicek".
+- Kepala tiap blok: pita tanggal bergaya Rekap 2 — "Senin, 02-11-2026",
+  latar kelabu, Senin merah muda — ditambah "hari kerja ke-n" dan
+  "x/33 dicek".
+
+### Bentuk tabel mengikuti Rekap 2
+
+Permintaan mas 2026-11-24: semirip mungkin dengan Rekap 2, tabel dan warnanya.
+
+- Nama kolom disamakan dengan `KOLOM_HARIAN` di Rekap 2: Jml Drop, Jml
+  Storting, Sirkulasi, Angs CM, Jml CM, Saldo CM, dan seterusnya. Yang tidak
+  ada di Rekap 2 cuma kolom persen.
+- Warna blok **diimpor** dari `WARNA` di
+  `Kasir/Rekap/Components/TableRekapKasir.jsx`, bukan disalin: drop biru,
+  storting kuning, sirkulasi hijau, CM biru, MB kuning, ML merah. Yang
+  berwarna cuma baris total; sel biasa putih, selang-seling kelabu, biru saat
+  disinggahi.
+- Ukuran & jarak sama: `text-xs tabular-nums`, kepala `px-3 py-2` di
+  `bg-slate-100`, sel `px-3 py-1`.
+- Baris total `bg-emerald-50 font-bold`, tiap kolomnya memakai warna bloknya.
+- Chip tanggal memakai kelas yang sama dengan `TabelHarian`.
+- Panel Sirkulasi Awal memakai `Accordion` shadcn dengan ikon dompet, seperti
+  kartu "Saldo Awal Bulan" di Rekap 2. Dibuka sejak awal: Radix melepas isi
+  panel yang tertutup, jadi kalau tertutup dia tidak ikut tercetak.
 - Baris: satu per kantor di wilayah (kelompok 1–10 dijumlah), lalu baris
   **total wilayah**.
 - Kolom per tanggal (urutan Excel mas), 17 kolom:

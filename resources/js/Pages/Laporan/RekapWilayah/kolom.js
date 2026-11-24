@@ -1,4 +1,7 @@
-// Kolom Rekap Sirkulasi Wilayah, urutan mengikuti berkas Excel staf kontrol.
+// Kolom Rekap Sirkulasi Wilayah. Nama kolom & warna bloknya mengikuti Rekap 2
+// (KOLOM_HARIAN & WARNA_HARIAN di Kasir/Rekap/Components/TableRekap.jsx):
+// drop biru, storting kuning, sirkulasi hijau, CM biru, MB kuning, ML merah.
+// Yang tidak ada di Rekap 2 cuma kolom persen.
 //
 // ketik: diisi staf kontrol dari laporan WA kasir — HANYA mutasi hari itu.
 // hitung: diturunkan di layar (persen).
@@ -9,38 +12,38 @@ export const BLOK = [
   {
     judul: 'Sirkulasi',
     kolom: [
-      { k: 'drop', j: 'Drop', ketik: true },
-      { k: 'total_drop', j: 'Jml Drop' },
-      { k: 'storting', j: 'Storting', ketik: true },
-      { k: 'total_storting', j: 'Jml Storting' },
-      { k: 'sirkulasi', j: 'Saldo', tebal: true },
+      { k: 'drop', j: 'Drop', ketik: true, warna: 'biru' },
+      { k: 'total_drop', j: 'Jml Drop', warna: 'biru' },
+      { k: 'storting', j: 'Storting', ketik: true, warna: 'kuning' },
+      { k: 'total_storting', j: 'Jml Storting', warna: 'kuning' },
+      { k: 'sirkulasi', j: 'Sirkulasi', tebal: true, warna: 'hijau' },
     ],
   },
   {
     judul: 'Calon Macet',
     kolom: [
-      { k: 'angsuran_cm', j: 'Angs', ketik: true },
-      { k: 'total_angsuran_cm', j: 'Jumlah' },
-      { k: 'saldo_cm', j: 'Saldo', tebal: true },
-      { k: 'persen_cm', j: '%', hitung: true },
+      { k: 'angsuran_cm', j: 'Angs CM', ketik: true, warna: 'biru' },
+      { k: 'total_angsuran_cm', j: 'Jml CM', warna: 'biru' },
+      { k: 'saldo_cm', j: 'Saldo CM', tebal: true, warna: 'biru' },
+      { k: 'persen_cm', j: '% CM', hitung: true, warna: 'biru' },
     ],
   },
   {
     judul: 'Macet Baru',
     kolom: [
-      { k: 'angsuran_mb', j: 'Angs', ketik: true },
-      { k: 'total_angsuran_mb', j: 'Jumlah' },
-      { k: 'saldo_mb', j: 'Saldo', tebal: true },
-      { k: 'persen_mb', j: '%', hitung: true },
+      { k: 'angsuran_mb', j: 'Angs MB', ketik: true, warna: 'kuning' },
+      { k: 'total_angsuran_mb', j: 'Jml MB', warna: 'kuning' },
+      { k: 'saldo_mb', j: 'Saldo MB', tebal: true, warna: 'kuning' },
+      { k: 'persen_mb', j: '% MB', hitung: true, warna: 'kuning' },
     ],
   },
   {
     judul: 'Macet Lama',
     kolom: [
-      { k: 'angsuran_ml', j: 'Angs', ketik: true },
-      { k: 'total_angsuran_ml', j: 'Jumlah' },
-      { k: 'saldo_ml', j: 'Saldo', tebal: true },
-      { k: 'persen_ml', j: '%', hitung: true },
+      { k: 'angsuran_ml', j: 'Angs ML', ketik: true, warna: 'merah' },
+      { k: 'total_angsuran_ml', j: 'Jml ML', warna: 'merah' },
+      { k: 'saldo_ml', j: 'Saldo ML', tebal: true, warna: 'merah' },
+      { k: 'persen_ml', j: '% ML', hitung: true, warna: 'merah' },
     ],
   },
 ];

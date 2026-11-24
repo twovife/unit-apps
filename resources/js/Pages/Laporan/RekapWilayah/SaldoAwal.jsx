@@ -1,3 +1,5 @@
+import { Wallet } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shadcn/ui/accordion';
 import { angka, useModeRibuan } from '@/lib/modeAngka';
 import { KOLOM_AWAL as KOLOM, nilai, persen, persenTeks, tandaSelisih } from './kolom';
 import { IsianSel } from './TabelWilayah';
@@ -22,8 +24,7 @@ const RINGKAS = ['awal_sirkulasi', 'awal_cm', 'persen_cm', 'awal_mb', 'persen_mb
  * per kantor per bulan. Beda dari versi sistem ditandai merah, tidak
  * menghalangi simpan — persis aturan tabel harian.
  *
- * Memakai <details> bawaan browser: buka-tutupnya tidak perlu state, dan
- * isinya tetap bisa dicari dengan Ctrl+F.
+ * Kartu lipatnya Accordion shadcn, sama dengan "Saldo Awal Bulan" di Rekap 2.
  */
 export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah }) {
   useModeRibuan(); // ikut saklar ribuan di header
@@ -40,35 +41,36 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
   const ket = (c) => c.ket ?? (c.bulan ? `Jumlah drop ${namaBulan[c.bulan] ?? '-'}` : undefined);
 
   return (
-    <details className="rounded-lg border bg-white shadow-sm">
-      <summary className="cursor-pointer list-none px-3 py-2 text-[12px] [&::-webkit-details-marker]:hidden">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-          <span className="font-semibold">Sirkulasi Awal {bulan}</span>
-          {KOLOM.filter((c) => RINGKAS.includes(c.k)).map((c) => (
-            <span key={c.k} className="tabular-nums">
-              {!c.bagi && <span className="text-slate-500">{c.j} </span>}
-              <span className={c.bagi ? 'text-slate-400' : 'font-medium'}>
-                {c.bagi ? `(${selTotal(c)})` : selTotal(c)}
+    // defaultValue: terbuka sejak awal. Radix melepas isinya saat tertutup,
+    // jadi panel yang tertutup tidak ikut tercetak.
+    <Accordion type="single" collapsible defaultValue="awal" className="overflow-hidden rounded-lg border bg-white">
+      <AccordionItem value="awal" className="border-b-0">
+        {/* Kartu lipat yang sama dengan "Saldo Awal Bulan" di Rekap 2. */}
+        <AccordionTrigger className="bg-slate-50 px-4 py-3 hover:bg-slate-100 hover:no-underline data-[state=open]:border-b">
+          <span className="flex items-center gap-3 font-semibold text-slate-900">
+            <Wallet className="h-5 w-5 shrink-0 text-sky-600" aria-hidden="true" />
+            Saldo Awal {bulan}
+          </span>
+          <span className="ml-auto mr-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            {KOLOM.filter((c) => RINGKAS.includes(c.k)).map((c) => (
+              <span key={c.k} className="tabular-nums">
+                {!c.bagi && <span className="text-slate-500">{c.j} </span>}
+                <span className={c.bagi ? 'text-slate-400' : 'font-medium'}>
+                  {c.bagi ? `(${selTotal(c)})` : selTotal(c)}
+                </span>
               </span>
-            </span>
-          ))}
-          <span className="text-[11px] text-slate-400">klik untuk rincian {baris.length} kantor</span>
-        </div>
-      </summary>
+            ))}
+          </span>
+        </AccordionTrigger>
 
-      <div className="overflow-x-auto border-t">
-        <table className="w-full text-[11px]">
-          <thead className="bg-slate-100">
+        <AccordionContent className="pb-0">
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs tabular-nums">
+          <thead className="bg-slate-100 text-slate-700">
             <tr>
-              <th className="px-1.5 py-1 text-left text-[10px] font-semibold uppercase tracking-tight text-slate-500">
-                Kantor
-              </th>
+              <th className="px-3 py-2 text-left font-medium">Kantor</th>
               {KOLOM.map((c) => (
-                <th
-                  key={c.k}
-                  title={ket(c)}
-                  className="whitespace-nowrap px-1.5 py-1 text-right text-[10px] font-semibold uppercase tracking-tight text-slate-500"
-                >
+                <th key={c.k} title={ket(c)} className="whitespace-nowrap px-3 py-2 text-right font-medium">
                   {c.j}
                 </th>
               ))}
@@ -76,8 +78,8 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
           </thead>
           <tbody>
             {baris.map((b) => (
-              <tr key={b.branch_id} className="group border-t">
-                <td className="whitespace-nowrap px-1.5 py-0.5 font-medium group-hover:bg-slate-50">{b.unit}</td>
+              <tr key={b.branch_id} className="group border-t bg-white even:bg-slate-50 hover:bg-sky-50">
+                <td className="whitespace-nowrap px-3 py-1 font-medium">{b.unit}</td>
                 {KOLOM.map((c) => {
                   const tanda = c.bagi ? null : tandaSelisih(b, c.k);
                   const bisaKetik = bolehUbah && c.ketik && !b.terkunci;
@@ -86,7 +88,7 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
                     <td
                       key={c.k}
                       title={tanda ?? ket(c)}
-                      className={`whitespace-nowrap p-0 text-right tabular-nums group-hover:bg-slate-50 ${tanda ? 'bg-red-100 text-red-900' : ''}`}
+                      className={`whitespace-nowrap p-0 text-right ${tanda ? 'bg-red-100 text-red-900' : ''}`}
                     >
                       {bisaKetik ? (
                         <IsianSel
@@ -97,7 +99,7 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
                           onUbah={(v) => onUbah(b.branch_id, c.k, v)}
                         />
                       ) : (
-                        <span className={`block px-1.5 py-0.5 ${c.tebal ? 'font-semibold' : 'text-slate-500'}`}>
+                        <span className={`block px-3 py-1 ${c.tebal ? 'font-semibold' : 'text-slate-500'}`}>
                           {selBaris(b, c)}
                         </span>
                       )}
@@ -107,11 +109,11 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
               </tr>
             ))}
           </tbody>
-          <tfoot className="border-t-2 bg-slate-100 font-semibold">
+          <tfoot className="border-t bg-emerald-50 font-bold text-slate-900">
             <tr>
-              <td className="px-1.5 py-1">Total Wilayah</td>
+              <td className="px-3 py-1.5">Total Wilayah</td>
               {KOLOM.map((c) => (
-                <td key={c.k} className="whitespace-nowrap px-1.5 py-1 text-right tabular-nums">
+                <td key={c.k} className="whitespace-nowrap px-3 py-1.5 text-right">
                   {selTotal(c)}
                 </td>
               ))}
@@ -119,6 +121,8 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
           </tfoot>
         </table>
       </div>
-    </details>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
