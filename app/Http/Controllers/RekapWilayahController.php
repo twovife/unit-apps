@@ -243,7 +243,7 @@ class RekapWilayahController extends Controller
             // Mengubah mutasi satu hari menggeser kumulatif hari-hari
             // SESUDAHNYA juga, jadi sebulan dihitung ulang untuk kantor itu.
             foreach ($tersentuh as $branchId => [$wilayah, $tanggal]) {
-                $this->hitungUlangBulan($branchId, $tanggal);
+                $this->hitungUlangBulan($branchId, $wilayah, $tanggal);
             }
 
             return $tersentuh;
@@ -338,7 +338,7 @@ class RekapWilayahController extends Controller
 
             // Baris ini tadi dilewati hitungUlangBulan karena terkunci.
             // Sekarang terbuka, jadi kumulatifnya ikut dihitung lagi.
-            $this->hitungUlangBulan($branch->id, $tanggal);
+            $this->hitungUlangBulan($branch->id, (int) $branch->wilayah, $tanggal);
         });
 
         if ($request->boolean('ringkas')) {
@@ -430,36 +430,46 @@ class RekapWilayahController extends Controller
      * Baris yang sudah dicek TIDAK diubah: angkanya sudah ditandatangani.
      * Mutasinya tetap ikut dijumlah untuk hari-hari sesudahnya.
      */
-    private function hitungUlangBulan(int $branchId, string $tanggal): void
+    private function hitungUlangBulan(int $branchId, int $wilayah, string $tanggal): void
     {
         $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
-        $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
 
-        $baris = RegionalCirculationRecap::where('branch_id', $branchId)
-            ->whereBetween('tanggal', [$periode, $akhir])
-            ->orderBy('tanggal')->get();
-
-        if ($baris->isEmpty()) {
+        // Angka sistem sebulan untuk SATU kantor (60 ms). Dipakai dua hal:
+        // tanggal yang belum punya baris sama sekali, dan sel yang barisnya
+        // ada tapi kolomnya belum diketik. Tanpa ini "Jml Drop" jadi nol
+        // begitu staf kontrol mengetik storting saja: yang dijumlah hanya
+        // kolom yang pernah diketik.
+        $sistem = AngkaRekapWilayah::untukBulan($wilayah, $periode, $branchId);
+        if (empty($sistem)) {
             return;
         }
 
+        $baris = RegionalCirculationRecap::where('branch_id', $branchId)
+            ->whereBetween('tanggal', [$periode, Carbon::parse($periode)->endOfMonth()->toDateString()])
+            ->get()->keyBy(fn ($r) => $r->tanggal->toDateString());
+
         // Saldo awal bulan: yang diketik staf kontrol kalau ada, kalau belum
         // dari angka sistem (Rekap 2).
-        $sistem = AngkaRekapWilayah::awalKantor($branchId, $tanggal);
+        $awalSistem = $sistem[array_key_first($sistem)][$branchId] ?? [];
         $awal = [];
         foreach (['sirkulasi' => 'awal_sirkulasi', 'cm' => 'awal_cm', 'mb' => 'awal_mb', 'ml' => 'awal_ml'] as $ember => $kolom) {
-            $diketik = $baris->firstWhere(fn ($r) => $r->$kolom !== null);
-            $awal[$ember] = (int) ($diketik->$kolom ?? $sistem[$kolom] ?? 0);
+            $diketik = $baris->first(fn ($r) => $r->$kolom !== null);
+            $awal[$ember] = (int) ($diketik->$kolom ?? $awalSistem[$kolom] ?? 0);
         }
 
-        $jumlah = ['drop' => 0, 'storting' => 0, 'angsuran_cm' => 0, 'angsuran_mb' => 0, 'angsuran_ml' => 0];
+        $jumlah = array_fill_keys(RegionalCirculationRecap::KOLOM_MUTASI, 0);
 
-        foreach ($baris as $r) {
+        foreach ($sistem as $t => $perKantor) {
+            $s = $perKantor[$branchId] ?? [];
+            $r = $baris->get($t);
+
             foreach ($jumlah as $k => $_) {
-                $jumlah[$k] += (int) ($r->$k ?? 0);
+                $jumlah[$k] += (int) ($r?->$k ?? $s[$k] ?? 0);
             }
 
-            if ($r->terkunci()) {
+            // Tanggal tanpa baris tidak ditulis, mutasinya tetap ikut dijumlah.
+            // Baris yang sudah dicek juga: angkanya sudah ditandatangani.
+            if ($r === null || $r->terkunci()) {
                 continue;
             }
 

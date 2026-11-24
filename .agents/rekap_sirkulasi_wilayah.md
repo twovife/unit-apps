@@ -173,9 +173,22 @@ dengan dirinya sendiri.
 
 ### Cara menghitung kumulatif
 
-Dijumlah dari mutasi yang diketik sejak tanggal 1, **bukan** dari baris
-kemarin. Alasannya: kalau hari lalu dikoreksi, hari-hari sesudahnya harus ikut
-bergeser. Jadi tiap simpan menghitung ulang sebulan untuk kantor itu.
+Dijumlah sejak tanggal 1, **bukan** dari baris kemarin. Alasannya: kalau hari
+lalu dikoreksi, hari-hari sesudahnya harus ikut bergeser. Jadi tiap simpan
+menghitung ulang sebulan untuk kantor itu.
+
+**Yang dijumlah: angka yang diketik kalau ada, angka sistem kalau belum.**
+Bukan angka yang diketik saja. Dua hal ikut di situ:
+
+- Sel yang belum diketik memakai angka sistem tanggal itu. Tanpa ini, mengetik
+  storting saja membuat "Jml Drop" jadi nol — bug 2026-11-24, lihat
+  `.agents/uji/uji_hitung_ulang.php`.
+- Tanggal yang belum punya baris sama sekali tetap ikut dijumlah dari angka
+  sistem. Tanpa ini, mengetik di 5 November melewatkan 2–4 November yang belum
+  pernah disimpan.
+
+Keduanya sesuai dengan yang dilihat staf kontrol: layar memang menampilkan
+angka sistem di sel yang belum diisi.
 
 Baris yang sudah dicek **tidak diubah** — angkanya sudah ditandatangani.
 Mutasinya tetap ikut dijumlah untuk hari-hari sesudahnya. Sudah diuji:
@@ -381,7 +394,6 @@ Diukur 2026-11-24, wilayah 1, November 2026.
 |---|---|---|
 | `untukBulan($wilayah, $t)` — 33 kantor sebulan | 2.403 ms | 93 |
 | `untukBulan($wilayah, $t, $branchId)` — satu kantor | 60 ms | 24 |
-| `awalKantor($branchId, $t)` — saldo awal satu kantor | 13 ms | 3 |
 
 Halaman sebulan: server 6,6 detik dingin / 2,5 detik hangat, 121 kueri, 40 MB
 puncak, JSON 416 KB, 825 baris dan 4.125 kotak isian di layar.
@@ -398,9 +410,8 @@ Tiga hal yang membuat autosave tidak memberatkan:
    Cek karena Cek hanya jalan di hari kerja, tapi jangan dipakai untuk
    membandingkan "tanggal pertama" dua jalur.
 
-2. **`AngkaRekapWilayah::awalKantor()`** menggantikan `untukWilayah()` di dalam
-   `hitungUlangBulan()`. Menghitung ulang kumulatif hanya butuh saldo awal
-   bulan, bukan drop & storting harian, jadi cukup satu kueri closing.
+2. **`hitungUlangBulan()` memakai jalur sempit yang sama**, bukan sebulan
+   untuk 33 kantor.
 
 3. **Tabel tanggal baru dipasang saat bloknya mendekati layar.** Satu wilayah
    sebulan itu 25 tanggal x 32 kantor = 800 baris, 16.800 sel, dan 4.000
@@ -426,7 +437,7 @@ Tiga hal yang membuat autosave tidak memberatkan:
    di closure), dan kotak isian mengirim nilainya saat blur, bukan tiap ketukan.
    Mengetik di 5 November merender ulang 33 baris, bukan 825.
 
-Angka jalur murah diuji ulang dengan `.agents/uji/uji_awal_kantor.php`
+Angka jalur murah diuji ulang dengan `.agents/uji/uji_kantor_sempit.php`
 (1.372 kolom, 0 beda terhadap jalur penuh).
 
 ### Risiko lain
@@ -469,11 +480,17 @@ docker exec unit-vite node .agents/uji/uji_kolom_rekap_wilayah.mjs
 # angka halaman harus sama dengan Rekap 2
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/banding_rekap_wilayah.php
 
-# jalur murah (awalKantor, untukBulan satu kantor) harus sama dengan jalur penuh
-docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_awal_kantor.php
+# untukBulan satu kantor harus sama dengan jalur penuh
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_kantor_sempit.php
+
+# mengetik satu kolom tidak boleh menolkan kolom lain (transaksi dibatalkan)
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_hitung_ulang.php
+
+# lembar .xlsx: kepala bertingkat, angka tetap angka, persen pecahan
+docker exec unit-vite node .agents/uji/uji_ekspor_rekap_wilayah.mjs
 ```
 
-Hasil terakhir: banding 1.652 kolom 0 beda, jalur murah 1.372 kolom 0 beda.
+Hasil terakhir: banding 1.652 kolom 0 beda, jalur sempit 1.176 kolom 0 beda.
 
 `banding_rekap_wilayah.php` memperingatkan kalau kolom hariannya nol semua —
 salinan lokal berhenti 2026-11-16, jadi tanggal sesudah itu membandingkan nol

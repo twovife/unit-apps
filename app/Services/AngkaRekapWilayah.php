@@ -46,44 +46,6 @@ class AngkaRekapWilayah
     }
 
     /**
-     * Saldo awal bulan SATU kantor saja.
-     *
-     * Dipakai saat menghitung ulang kumulatif sesudah satu sel diketik. Hanya
-     * menyentuh transaction_monthly_closings / transaction_sirculations, tidak
-     * drop & storting harian, jadi satu kueri kecil — bukan 2,5 detik seperti
-     * untukBulan() yang menarik sebulan penuh untuk 33 kantor.
-     *
-     * @return array<string, int> awal_sirkulasi|awal_cm|awal_mb|awal_ml
-     */
-    public static function awalKantor(int $branchId, string $tanggal): array
-    {
-        $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
-
-        $gid = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->pluck('id');
-        if ($gid->isEmpty()) {
-            return [];
-        }
-
-        $kosong = collect();
-        $baru = AgregasiScope::pakaiAgregatBaru($branchId, $periode);
-        $milikKantor = $gid->mapWithKeys(fn ($id) => [$id => $branchId]);
-
-        $a = self::saldoAwal(
-            $baru ? $gid : $kosong,
-            $baru ? $kosong : $gid,
-            $milikKantor,
-            $periode,
-        )[$branchId] ?? null;
-
-        return $a === null ? [] : [
-            'awal_sirkulasi' => $a['sirkulasi'],
-            'awal_cm' => $a['cm'],
-            'awal_mb' => $a['mb'],
-            'awal_ml' => $a['ml'],
-        ];
-    }
-
-    /**
      * Sama, tetapi untuk SEBULAN sekaligus: tanggal => branch_id => kolom.
      *
      * Dihitung sekali jalan, bukan memanggil per tanggal: kuerinya memang
