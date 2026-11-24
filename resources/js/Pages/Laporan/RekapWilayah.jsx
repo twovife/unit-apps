@@ -264,14 +264,16 @@ export default function RekapWilayah({
                   type="button"
                   title={`${judulTanggal(h.tanggal)} · ${dicek}/${h.baris.length} dicek`}
                   onClick={() => lompat(h.tanggal)}
-                  className={`h-7 min-w-7 rounded-md border px-1.5 text-xs tabular-nums transition-colors ${
-                    aktif === h.tanggal ? 'ring-2 ring-sky-500 ring-offset-1 font-semibold ' : ''
-                  }${
-                    !h.hari_kerja
-                      ? 'border-slate-200 text-slate-300'
-                      : penuh
-                        ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                        : 'hover:bg-slate-100'
+                  className={`h-7 min-w-7 rounded-md border px-1.5 text-xs tabular-nums transition-all ${
+                    // Yang dipilih dibalik warnanya, bukan diberi cincin:
+                    // cincin tipis tenggelam di antara 30 tombol.
+                    aktif === h.tanggal
+                      ? 'scale-110 border-sky-700 bg-sky-600 font-bold text-white shadow'
+                      : !h.hari_kerja
+                        ? 'border-slate-200 text-slate-300'
+                        : penuh
+                          ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                          : 'hover:bg-slate-100'
                   }`}
                 >
                   {Number(h.tanggal.slice(8))}
