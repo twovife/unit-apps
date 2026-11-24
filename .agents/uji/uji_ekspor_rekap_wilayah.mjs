@@ -37,15 +37,11 @@ const isi = {
       ],
     },
   ],
-  mingguan: [
-    { ke: 1, mulai: '2026-11-02', sampai: '2026-11-08', total: { drop: 4_000_000, storting: 1_000_000, angsuran_cm: 1_000_000, angsuran_mb: 0, angsuran_ml: 0, sirkulasi: 204_200_000 } },
-    { ke: 2, mulai: '2026-11-09', sampai: '2026-11-15', total: { drop: 2_000_000, storting: 500_000, angsuran_cm: 0, angsuran_mb: 0, angsuran_ml: 0, sirkulasi: 206_100_000 } },
-  ],
 };
 
 const wb = await susunWorkbook(isi);
 
-assert.deepEqual(wb.worksheets.map((w) => w.name), ['Harian', 'Sirkulasi Awal', 'Mingguan']);
+assert.deepEqual(wb.worksheets.map((w) => w.name), ['Harian', 'Sirkulasi Awal']);
 
 const h = wb.getWorksheet('Harian');
 
@@ -80,11 +76,5 @@ assert.equal(a.getCell('A1').value, 'Kantor');
 assert.equal(a.getCell('B1').value, 'Pemutihan');
 assert.equal(a.getCell('D2').value, 200_000_000); // Sirkulasi awal
 assert.equal(a.getCell('G2').value, 0.5); // % CM = 5jt / 10jt
-
-const m = wb.getWorksheet('Mingguan');
-assert.equal(m.getCell('A2').value, 'Minggu 1');
-assert.equal(m.getCell('A4').value, 'Sebulan');
-assert.equal(m.getCell('D4').value, 6_000_000); // drop dijumlah
-assert.equal(m.getCell('I4').value, 206_100_000); // sirkulasi: minggu terakhir, bukan dijumlah
 
 console.log('OK semua');

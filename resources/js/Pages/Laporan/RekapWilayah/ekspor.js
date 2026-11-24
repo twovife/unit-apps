@@ -135,46 +135,8 @@ function lembarAwal(wb, { kantor, namaBulan }) {
   ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 1 }];
 }
 
-const KOLOM_MINGGU = [
-  ['drop', 'Drop'],
-  ['storting', 'Storting'],
-  ['angsuran_cm', 'Angs CM'],
-  ['angsuran_mb', 'Angs MB'],
-  ['angsuran_ml', 'Angs ML'],
-  ['sirkulasi', 'Sirkulasi Akhir'],
-];
-
-/** Lembar "Mingguan": satu baris per minggu, lalu sebulan. */
-function lembarMingguan(wb, { mingguan }) {
-  if (!mingguan.length) return;
-
-  const ws = wb.addWorksheet('Mingguan');
-  ws.addRow(['Minggu', 'Mulai', 'Sampai', ...KOLOM_MINGGU.map(([, j]) => j)]).font = { bold: true };
-  [14, 12, 12].forEach((w, i) => (ws.getColumn(i + 1).width = w));
-  KOLOM_MINGGU.forEach(([, j], i) => {
-    const c = ws.getColumn(4 + i);
-    c.numFmt = RUPIAH;
-    c.width = lebar(j);
-  });
-
-  for (const m of mingguan) {
-    ws.addRow([`Minggu ${m.ke}`, tgl(m.mulai), tgl(m.sampai), ...KOLOM_MINGGU.map(([k]) => m.total[k])]);
-  }
-
-  // Sirkulasi bukan jumlah mingguan: yang berlaku angka minggu terakhir.
-  const akhir = mingguan[mingguan.length - 1].total;
-  const total = ws.addRow([
-    'Sebulan',
-    '',
-    '',
-    ...KOLOM_MINGGU.map(([k]) => (k === 'sirkulasi' ? akhir[k] : mingguan.reduce((t, m) => t + m.total[k], 0))),
-  ]);
-  total.font = { bold: true };
-  total.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
-}
-
 /**
- * Susun tiga lembar: Harian, Sirkulasi Awal, Mingguan.
+ * Susun dua lembar: Harian dan Sirkulasi Awal.
  *
  * Angkanya ditulis sebagai ANGKA dengan numFmt, bukan teks, jadi masih bisa
  * dijumlah di Excel. Persen ditulis sebagai pecahan (0,4) dengan format
@@ -183,14 +145,13 @@ function lembarMingguan(wb, { mingguan }) {
  * Dipisah dari unduhExcel supaya bisa diuji di node tanpa document & URL:
  * .agents/uji/uji_ekspor_rekap_wilayah.mjs
  */
-export async function susunWorkbook({ namaBulan, kantor = [], hari = [], mingguan = [] }) {
+export async function susunWorkbook({ namaBulan, kantor = [], hari = [] }) {
   const ExcelJS = await muatExcelJS();
   const wb = new ExcelJS.Workbook();
   wb.created = new Date();
 
   lembarHarian(wb, { hari, namaBulan });
   lembarAwal(wb, { kantor, namaBulan });
-  lembarMingguan(wb, { mingguan });
 
   return wb;
 }

@@ -96,8 +96,6 @@ class RekapWilayahController extends Controller
                 'sistem' => collect($pertama[$id] ?? [])->only($kolomTetap)->all(),
             ])->values(),
 
-            'mingguan' => $this->mingguan($periode, $branchIds),
-
             'hari' => collect($sebulan)->map(function ($perKantor, $tanggal) use ($unit, $diketik, $ttd, $kolomHarian, $bolehUbah) {
                 $hariIni = $diketik->get($tanggal, collect())->keyBy('branch_id');
                 $hariKerja = WorkDay::hariKerja($tanggal);
@@ -140,7 +138,6 @@ class RekapWilayahController extends Controller
             'bulan_cm' => null,
             'bulan_mb' => null,
             'kantor' => [],
-            'mingguan' => [],
             'hari' => [],
         ];
     }
@@ -355,66 +352,6 @@ class RekapWilayahController extends Controller
                     'pada' => $l->created_at->format('d/m/Y H:i'),
                 ])
             : []);
-    }
-
-    /**
-     * Rekap per minggu untuk bulan tanggal yang dibuka.
-     *
-     * Minggu dipatok Senin s/d Minggu, jadi satu bulan bisa punya minggu
-     * pertama atau terakhir yang pendek. Yang dijumlah hanya MUTASI yang
-     * tersimpan; sirkulasi akhir minggu diambil dari baris terakhir tiap
-     * kantor di minggu itu, bukan dijumlah, karena sirkulasi sudah kumulatif.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function mingguan(string $tanggal, array $branchIds): array
-    {
-        if (empty($branchIds)) {
-            return [];
-        }
-
-        $awal = Carbon::parse($tanggal)->startOfMonth();
-        $baris = RegionalCirculationRecap::whereIn('branch_id', $branchIds)
-            ->whereBetween('tanggal', [$awal->toDateString(), $awal->copy()->endOfMonth()->toDateString()])
-            ->orderBy('tanggal')
-            ->get(['branch_id', 'tanggal', ...RegionalCirculationRecap::KOLOM_MUTASI, 'sirkulasi']);
-
-        if ($baris->isEmpty()) {
-            return [];
-        }
-
-        $minggu = [];
-        foreach ($baris as $r) {
-            $mulai = $r->tanggal->copy()->startOfWeek()->max($awal);
-            $kunci = $mulai->toDateString();
-
-            $minggu[$kunci] ??= [
-                'mulai' => $kunci,
-                'sampai' => $r->tanggal->copy()->endOfWeek()->min($awal->copy()->endOfMonth())->toDateString(),
-                'total' => array_fill_keys(RegionalCirculationRecap::KOLOM_MUTASI, 0) + ['sirkulasi' => 0],
-                'kantor' => [],
-            ];
-
-            $k = &$minggu[$kunci]['kantor'][$r->branch_id];
-            $k ??= array_fill_keys(RegionalCirculationRecap::KOLOM_MUTASI, 0) + ['sirkulasi' => 0];
-
-            foreach (RegionalCirculationRecap::KOLOM_MUTASI as $kolom) {
-                $k[$kolom] += (int) ($r->$kolom ?? 0);
-                $minggu[$kunci]['total'][$kolom] += (int) ($r->$kolom ?? 0);
-            }
-
-            // Baris diurutkan menaik, jadi yang terakhir menimpa: sirkulasi
-            // akhir minggu untuk kantor itu.
-            $minggu[$kunci]['total']['sirkulasi'] += (int) ($r->sirkulasi ?? 0) - $k['sirkulasi'];
-            $k['sirkulasi'] = (int) ($r->sirkulasi ?? 0);
-            unset($k);
-        }
-
-        ksort($minggu);
-
-        return collect($minggu)->values()
-            ->map(fn ($m, $i) => ['ke' => $i + 1] + $m)
-            ->all();
     }
 
     /** Boleh mengisi, cek, dan buka: stafkontrol di kantor zonanya, atau superuser. */

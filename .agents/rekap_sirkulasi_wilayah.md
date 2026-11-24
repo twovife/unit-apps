@@ -39,20 +39,19 @@ jejaknya.
   2026-11-24): angkanya tetap sepanjang bulan, jadi tempatnya di panel
   Sirkulasi Awal. Yang per tanggal hanya yang bergerak per tanggal.
 
-### Dua panel di atas blok tanggal
+### Panel Sirkulasi Awal
 
-Keduanya `<details>` bawaan browser, jadi buka-tutupnya tidak perlu state dan
-isinya tetap bisa dicari dengan Ctrl+F.
+`<details>` bawaan browser, jadi buka-tutupnya tidak perlu state dan isinya
+tetap bisa dicari dengan Ctrl+F.
+
+Panel **Rekap Mingguan** sempat dibuat lalu **dihapus** atas permintaan mas
+2026-11-24: satu bulan di layar baru punya satu minggu berisi, jadi barisnya
+mengulang baris Sebulan dan tidak menambah apa pun.
 
 - **Sirkulasi Awal <bulan>** — tertutup menampilkan total wilayah, dibuka
   menampilkan tiap kantor. Kolomnya, urutan permintaan mas 2026-11-24:
   Pemutihan | Drop Bln Lalu | Sirkulasi | Drop CM | CM | % | Drop MB | MB | % |
   ML | %.
-- **Rekap Mingguan** — satu baris per minggu, Senin s/d Minggu dipotong batas
-  bulan, jadi minggu pertama dan terakhir bisa pendek. Mutasi dijumlah;
-  sirkulasi akhir minggu diambil dari baris terakhir tiap kantor, **bukan**
-  dijumlah, karena sirkulasi sudah kumulatif sejak awal bulan. Tiap minggu bisa
-  dibuka untuk melihat rinciannya per kantor.
 
 - **Hari libur dianggap tidak ada** (aturan mas 2026-11-23). Tanggal yang bukan
   hari kerja menurut `WorkDay::hariKerja()` tetap bisa DILIHAT, tetapi tidak
@@ -284,13 +283,12 @@ Yang khusus halaman ini:
 
 `exceljs@4.4.0`, diimpor **dinamis** (900 KB, dan yang mengekspor cuma staf
 kontrol sekali sebulan). Satu berkas `rekap-wilayah-{wilayah}-{bulan}.xlsx`,
-tiga lembar:
+dua lembar:
 
 | Lembar | Isi |
 |---|---|
 | Harian | satu baris per kantor per tanggal + baris total tiap tanggal |
 | Sirkulasi Awal | kolom panel accordion, satu baris per kantor |
-| Mingguan | satu baris per minggu, lalu baris Sebulan |
 
 Lembar **Harian** memakai kepala bertingkat yang sama dengan layar (baris blok
 dengan sel gabung, lalu judul kolom), tapi kepalanya ditulis **sekali di atas**
@@ -311,9 +309,6 @@ Yang diekspor adalah angka **sesudah autosave**, bukan angka saat halaman
 dibuka: baris digabung dengan tambalan lewat `gabung()` di `kolom.js`, fungsi
 yang sama dengan yang dipakai layar.
 
-Kecuali lembar **Mingguan**, yang masih dari prop `mingguan` — dihitung server
-saat halaman dibuka. Sama dengan panelnya di layar, jadi keduanya ikut
-ketinggalan sesudah autosave sampai halaman dimuat ulang.
 
 ## 6. Temuan dan risiko
 

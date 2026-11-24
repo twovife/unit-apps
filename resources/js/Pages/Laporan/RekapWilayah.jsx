@@ -2,7 +2,6 @@ import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import BlokHari, { TANPA_TAMBALAN } from './RekapWilayah/BlokHari';
-import RekapMingguan from './RekapWilayah/RekapMingguan';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
 
 const namaBulan = (t) =>
@@ -31,7 +30,6 @@ export default function RekapWilayah({
   bulan_cm,
   bulan_mb,
   kantor = [],
-  mingguan = [],
   hari = [],
 }) {
   // Angka hasil autosave, berkunci "tanggal|branch_id". Isinya mutasi yang
@@ -61,9 +59,6 @@ export default function RekapWilayah({
       const { gabung } = await import('./RekapWilayah/kolom');
 
       // Angka hasil autosave ikut diekspor, bukan angka saat halaman dibuka.
-      // ponytail: lembar Mingguan masih dari prop mingguan, yang dihitung
-      // server saat halaman dibuka. Sama dengan panelnya di layar; kalau nanti
-      // perlu ikut autosave, hitung mingguannya dari hari yang sudah digabung.
       const hariGabung = hari.map((h) => ({
         ...h,
         baris: h.baris.map((b) => gabung(b, tambalan[`${h.tanggal}|${b.branch_id}`])),
@@ -75,7 +70,6 @@ export default function RekapWilayah({
         namaBulan: namaBulan(bulan + '-01'),
         kantor,
         hari: hariGabung,
-        mingguan,
       });
     } catch (e) {
       toast.error('Gagal menyusun berkas Excel');
@@ -311,8 +305,6 @@ export default function RekapWilayah({
             bulanMb={namaBulan(bulan_mb)}
           />
         )}
-
-        <RekapMingguan minggu={mingguan} unitKantor={Object.fromEntries(kantor.map((k) => [k.branch_id, k.unit]))} />
 
         {hari.length === 0 && (
           <p className="rounded-xl border bg-white p-6 text-sm text-slate-500">
