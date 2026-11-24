@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import RekapMingguan from './RekapWilayah/RekapMingguan';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
 import TabelWilayah from './RekapWilayah/TabelWilayah';
 
@@ -15,7 +16,7 @@ import TabelWilayah from './RekapWilayah/TabelWilayah';
 const namaBulan = (t) =>
   t ? new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : null;
 
-export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_kerja, hari_tertinggal = [], bulan_lalu, bulan_cm, bulan_mb, daftar_wilayah, baris, boleh_ubah }) {
+export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_kerja, hari_tertinggal = [], mingguan = [], bulan_lalu, bulan_cm, bulan_mb, daftar_wilayah, baris, boleh_ubah }) {
   // Hanya sel yang benar-benar diketik, berkunci "branch_id|kolom". Baris yang
   // tidak disentuh tidak ikut dikirim, jadi angka sistem tidak tersimpan
   // seolah-olah dilaporkan kasir.
@@ -171,6 +172,8 @@ export default function RekapWilayah({ wilayah, tanggal, hari_kerja_ke, hari_ker
             bulan={new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
           />
         )}
+
+        <RekapMingguan minggu={mingguan} unitKantor={Object.fromEntries(baris.map((b) => [b.branch_id, b.unit]))} />
 
         {baris.length ? (
           <TabelWilayah
