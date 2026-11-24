@@ -178,10 +178,20 @@ export default function RekapWilayah({
   // sambil menggulir. Dibuang atas permintaan mas 2026-11-24.
   const [aktif, setAktif] = useState(null);
 
-  const lompat = (tanggal) => {
+  const lompat = (tanggal, halus = true) => {
     setAktif(tanggal);
-    document.getElementById(`tgl-${tanggal}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document
+      .getElementById(`tgl-${tanggal}`)
+      ?.scrollIntoView({ behavior: halus ? 'smooth' : 'auto', block: 'start' });
   };
+
+  // Halaman dibuka langsung di tanggal hari ini, bukan di tanggal 1: yang
+  // dikerjakan staf kontrol hampir selalu hari ini. Bulan lain tidak digeser.
+  useEffect(() => {
+    const ini = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD waktu setempat
+    if (hari.some((h) => h.tanggal === ini)) lompat(ini, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulan, wilayah]);
 
   const namaBulanCm = useMemo(() => namaBulan(bulan_cm), [bulan_cm]);
   const namaBulanMb = useMemo(() => namaBulan(bulan_mb), [bulan_mb]);
@@ -193,8 +203,11 @@ export default function RekapWilayah({
     [tambalan],
   );
 
-  const totalBaris = hari.reduce((t, h) => t + h.baris.length, 0);
-  const sudahDicek = hari.reduce((t, h) => t + h.baris.filter((b) => terkunci(h.tanggal, b)).length, 0);
+  // Tanggal yang belum terjadi tidak ikut dihitung: barisnya memang belum
+  // bisa dicek, jadi memasukkannya membuat "x dari y" terlihat tertinggal.
+  const berjalan = hari.filter((h) => !h.mendatang);
+  const totalBaris = berjalan.reduce((t, h) => t + h.baris.length, 0);
+  const sudahDicek = berjalan.reduce((t, h) => t + h.baris.filter((b) => terkunci(h.tanggal, b)).length, 0);
 
   return (
     <>
@@ -262,18 +275,25 @@ export default function RekapWilayah({
                 <button
                   key={h.tanggal}
                   type="button"
-                  title={`${judulTanggal(h.tanggal)} · ${dicek}/${h.baris.length} dicek`}
+                  disabled={h.mendatang}
+                  title={
+                    h.mendatang
+                      ? `${judulTanggal(h.tanggal)} · belum terjadi`
+                      : `${judulTanggal(h.tanggal)} · ${dicek}/${h.baris.length} dicek`
+                  }
                   onClick={() => lompat(h.tanggal)}
                   className={`h-7 min-w-7 rounded-md border px-1.5 text-xs tabular-nums transition-all ${
                     // Yang dipilih dibalik warnanya, bukan diberi cincin:
                     // cincin tipis tenggelam di antara 30 tombol.
                     aktif === h.tanggal
                       ? 'scale-110 border-sky-700 bg-sky-600 font-bold text-white shadow'
-                      : !h.hari_kerja
-                        ? 'border-slate-200 text-slate-300'
-                        : penuh
-                          ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                          : 'hover:bg-slate-100'
+                      : h.mendatang
+                        ? 'cursor-not-allowed border-dashed border-slate-200 text-slate-300'
+                        : !h.hari_kerja
+                          ? 'border-slate-200 text-slate-300'
+                          : penuh
+                            ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                            : 'hover:bg-slate-100'
                   }`}
                 >
                   {Number(h.tanggal.slice(8))}

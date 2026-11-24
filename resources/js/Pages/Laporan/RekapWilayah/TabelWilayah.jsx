@@ -97,14 +97,16 @@ function Penanda({ nilai = 0, dari = 0, kiri = false }) {
  * ditampilkan. Tiap sel menyimpan sendiri saat ditinggalkan, dan angka
  * turunannya datang dari balasan simpan itu — tidak ada tombol Simpan.
  */
-function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, onCek, onBuka, onLog, bulanCm, bulanMb }) {
+function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka, onLog, bulanCm, bulanMb }) {
   useModeRibuan(); // ikut berganti saat saklar ribuan di header diubah
 
   // Persen baris total dari jumlah pembilang / jumlah penyebut, BUKAN
   // rata-rata persen tiap kantor (rancangan §2).
   const jumlah = (k) => baris.reduce((t, b) => t + Number(nilai(b, k) || 0), 0);
   const selTotal = (k) => {
+    if (kosong) return '';
     const p = PECAHAN[k];
+
     return p ? persenTeks(persen(jumlah(p[0]), jumlah(p[1]))) : angkaMode(jumlah(k));
   };
 
@@ -159,7 +161,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, onCek, onBuka, onLog,
                   {b.unit}
                 </td>
                 {SEMUA_KOLOM.map((k) => {
-                  const tanda = k.hitung ? null : tandaSelisih(b, k.k);
+                  const tanda = kosong || k.hitung ? null : tandaSelisih(b, k.k);
                   const bisaKetik = bolehUbah && k.ketik && !b.terkunci;
 
                   return (
@@ -185,7 +187,7 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, onCek, onBuka, onLog,
                         </>
                       ) : (
                         <span className={`block px-1.5 py-0.5 ${k.tebal ? 'font-semibold' : ''}`}>
-                          {k.hitung ? persenTeks(turunan(b, k.k)) : angkaMode(nilai(b, k.k))}
+                          {kosong ? '' : k.hitung ? persenTeks(turunan(b, k.k)) : angkaMode(nilai(b, k.k))}
                         </span>
                       )}
                     </td>
@@ -194,7 +196,9 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, onCek, onBuka, onLog,
                 <Penanda nilai={b.ttd?.kasir} dari={b.ttd?.kelompok} kiri />
                 <Penanda nilai={b.ttd?.km} dari={b.ttd?.kelompok} />
                 <td className="whitespace-nowrap border-b border-l px-1.5 py-0.5 text-center text-[10px] text-slate-500 group-hover:bg-slate-50">
-                  {b.terkunci ? (
+                  {kosong ? (
+                    <span className="text-slate-300">—</span>
+                  ) : b.terkunci ? (
                     <span className="inline-flex items-center gap-1">
                       <button type="button" onClick={() => onLog?.(tanggal, b)} title={`${b.dicek_oleh ?? '-'} · ${b.dicek_pada ?? '-'}`} className="text-emerald-700 underline decoration-dotted">
                         ✓ {b.dicek_oleh ?? '-'}

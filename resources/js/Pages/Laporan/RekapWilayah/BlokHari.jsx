@@ -44,7 +44,13 @@ function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, on
         </span>
       </h2>
 
-      {!hari.hari_kerja && (
+      {hari.mendatang && (
+        <p className="rounded border bg-slate-50 px-2 py-1 text-[11px] text-slate-500">
+          Belum terjadi. Angkanya baru ada sesudah kasir melapor.
+        </p>
+      )}
+
+      {!hari.mendatang && !hari.hari_kerja && (
         <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
           Bukan hari kerja, jadi tidak ada rekap yang diisi. Angka yang tampil murni dari sistem. Kalau tidak nol,
           berarti ada transaksi tercatat di hari libur dan itu perlu ditelusuri.
@@ -55,6 +61,7 @@ function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, on
         tanggal={hari.tanggal}
         baris={baris}
         bolehUbah={hari.boleh_ubah}
+        kosong={hari.mendatang}
         bulanCm={bulanCm}
         bulanMb={bulanMb}
         onUbah={onUbah}

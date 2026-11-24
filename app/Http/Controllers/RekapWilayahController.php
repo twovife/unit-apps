@@ -83,6 +83,7 @@ class RekapWilayahController extends Controller
 
         $bolehUbah = $user->hasAnyRole(self::PERAN_UBAH);
         $pertama = reset($sebulan);
+        $sekarang = Carbon::now()->toDateString();
 
         return Inertia::render('Laporan/RekapWilayah', [
             'wilayah' => $wilayah,
@@ -103,25 +104,32 @@ class RekapWilayahController extends Controller
                 'sistem' => collect($pertama[$id] ?? [])->only($kolomTetap)->all(),
             ])->values(),
 
-            'hari' => collect($sebulan)->map(function ($perKantor, $tanggal) use ($unit, $diketik, $ttd, $kolomHarian, $bolehUbah) {
+            'hari' => collect($sebulan)->map(function ($perKantor, $tanggal) use ($unit, $diketik, $ttd, $kolomHarian, $bolehUbah, $sekarang) {
                 $hariIni = $diketik->get($tanggal, collect())->keyBy('branch_id');
                 $hariKerja = WorkDay::hariKerja($tanggal);
+
+                // Tanggal yang belum terjadi (aturan mas 2026-11-24): barisnya
+                // tetap ada supaya bulannya utuh, tapi angkanya tidak dikirim.
+                // Angka sistem di sana cuma nol, dan nol yang dipamerkan
+                // terbaca seperti laporan kasir yang nol.
+                $mendatang = $tanggal > $sekarang;
 
                 return [
                     'tanggal' => $tanggal,
                     'hari_kerja' => $hariKerja,
                     'hari_kerja_ke' => $this->hariKerjaKe($tanggal),
+                    'mendatang' => $mendatang,
                     // Hari libur dianggap tidak ada (aturan mas 2026-11-23):
                     // tetap terlihat, tetapi tidak ada yang boleh diisi.
-                    'boleh_ubah' => $bolehUbah && $hariKerja,
-                    'baris' => $unit->map(function ($nama, $id) use ($perKantor, $hariIni, $ttd, $tanggal, $kolomHarian) {
+                    'boleh_ubah' => $bolehUbah && $hariKerja && ! $mendatang,
+                    'baris' => $unit->map(function ($nama, $id) use ($perKantor, $hariIni, $ttd, $tanggal, $kolomHarian, $mendatang) {
                         $d = $hariIni->get($id);
 
                         return [
                             'branch_id' => (int) $id,
                             'unit' => $nama,
-                            'sistem' => collect($perKantor[$id] ?? [])->only($kolomHarian)->all(),
-                            'diketik' => $d?->only($kolomHarian),
+                            'sistem' => $mendatang ? [] : collect($perKantor[$id] ?? [])->only($kolomHarian)->all(),
+                            'diketik' => $mendatang ? null : $d?->only($kolomHarian),
                             'ttd' => $ttd[$tanggal][$id] ?? ['kasir' => 0, 'km' => 0, 'kelompok' => 0],
                             'terkunci' => (bool) $d?->terkunci(),
                             'dicek_oleh' => $d?->pengecek?->employee?->nama_karyawan,
@@ -189,6 +197,7 @@ class RekapWilayahController extends Controller
                 // diisi di sana. Layar sudah mematikan isiannya; ini penjaga
                 // di sisi server.
                 abort_unless(WorkDay::hariKerja($tanggal), 422, "Tanggal $tanggal bukan hari kerja.");
+                abort_if($tanggal > Carbon::now()->toDateString(), 422, "Tanggal $tanggal belum terjadi.");
 
                 // Staf kontrol hanya kantor di zonanya; superuser & pusat null = semua.
                 // PESAN_BUKAN_WILAYAH berbunyi "Pinjaman ini bukan ...", tidak
@@ -260,6 +269,7 @@ class RekapWilayahController extends Controller
         $this->pastikanBolehUbah($branch);
         $tanggal = Carbon::parse($request->tanggal)->toDateString();
         abort_unless(WorkDay::hariKerja($tanggal), 422, 'Tanggal itu bukan hari kerja.');
+        abort_if($tanggal > Carbon::now()->toDateString(), 422, 'Tanggal itu belum terjadi.');
 
         \DB::transaction(function () use ($branch, $tanggal) {
             $tertinggal = $this->hariBelumDicek($branch->id, $tanggal);

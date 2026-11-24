@@ -26,6 +26,21 @@ jejaknya.
 
 - Baris filter menempel di `top-14`, tepat di bawah navbar (`h-14`). `top-0`
   membuatnya menutupi navbar saat digulir.
+
+- **Halaman dibuka langsung di tanggal hari ini**, bukan di tanggal 1
+  (permintaan mas 2026-11-24). Kalau bulan yang dipilih bukan bulan berjalan,
+  tidak ada yang digeser.
+
+- **Tanggal yang belum terjadi dikosongkan.** Barisnya tetap ada supaya
+  bulannya utuh, tapi angkanya **tidak dikirim server** (`sistem` kosong,
+  `diketik` null), selnya kosong di layar, tombol tanggalnya mati, dan
+  `boleh_ubah` false. Angka sistem di tanggal mendatang cuma nol, dan nol yang
+  dipamerkan terbaca seperti laporan kasir yang nol.
+
+  Penjaganya ada di server juga: simpan dan cek menolak 422 untuk tanggal
+  yang lebih besar dari hari ini.
+
+  Tanggal mendatang juga tidak ikut hitungan "x dari y baris sudah dicek".
 - Tidak ada gulir di dalam gulir: tabelnya hanya menggulir ke samping
   (`overflow-x-auto`), dan yang menempel cuma kolom Kantor.
 - Kepala tiap blok: tanggal + "hari kerja ke-n" + "x/33 dicek".
