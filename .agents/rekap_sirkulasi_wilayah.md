@@ -259,6 +259,52 @@ bergeser bila drop lama dikoreksi. Sebelum Cek, layar menghitungnya langsung.
 Kolomnya tidak ditampilkan di tabel harian, tapi tetap dikirim ke layar: dia
 penyebut kolom % CM dan % MB.
 
+### `regional_circulation_openings`
+
+Saldo awal bulan yang **dilaporkan kantor**, satu baris per kantor per bulan —
+bukan per hari tagih seperti rekap mantri (mas 2026-11-24). Mulai ditagih
+**November 2026**; periode sebelum itu ditolak 422.
+
+| Kolom | Catatan |
+|---|---|
+| id, branch_id, periode | periode = tanggal 1 bulan itu; unik (branch_id, periode) |
+| wilayah | salinan, alasan sama dengan tabel harian |
+| awal_sirkulasi, awal_cm, awal_mb, awal_ml | bigint, nullable |
+| checked_by, checked_at | terisi = terkunci |
+| timestamps | |
+
+Kenapa tabel sendiri, bukan kolom di baris harian: angkanya tetap sepanjang
+bulan. Menaruhnya di baris harian berarti mengulang angka yang sama 25 kali
+dan harus memilih baris mana yang berlaku. Empat kolom `awal_*` di
+`regional_circulation_recaps` jadi tidak terpakai; dibiarkan ada supaya tabel
+lokal yang sudah berisi tidak perlu dibuang.
+
+**Mengubahnya menggeser seluruh kumulatif bulan itu** — saldo awal titik
+mulainya. `hitungUlangBulan()` membaca saldo awal dari sini dulu, baru jatuh
+ke angka sistem kalau belum dilaporkan. Dijaga
+`.agents/uji/uji_saldo_awal.php`: menaikkan saldo awal 1 juta menaikkan
+sirkulasi akhir bulan tepat 1 juta.
+
+Di layar: empat kolom saldo di panel **Sirkulasi Awal** bisa diketik, bedanya
+dari angka sistem ditandai merah, aturan yang sama dengan tabel harian.
+
+**Cek & Buka** di kolom paling kanan panel. Tidak berantai: saldo awal cuma
+satu per bulan, tidak ada urutan yang bisa dilewati. Baris yang belum pernah
+diketik dibuatkan dari angka sistem saat dicek. Buka wajib beralasan minimal
+5 huruf.
+
+Jebakan yang sempat kena: angka sistemnya **tidak boleh** diambil dengan
+`untukWilayah($wilayah, $periode)`. Tanggal 1 bisa jatuh di hari libur —
+1 November 2026 hari Minggu — dan tanggal bukan hari kerja tidak ada di
+hasilnya, jadi saldo awalnya terisi nol. Pakai `untukBulan()` lalu ambil
+tanggal pertama yang ada. Dijaga `.agents/uji/uji_cek_saldo_awal.php`.
+
+Tombol **Isi dari Rekap 2** ikut mengisi tabel ini.
+
+Belum ada: log perubahan saldo awal. `regional_circulation_recap_logs`
+menunjuk ke baris harian lewat `regional_circulation_recap_id`, jadi tidak
+bisa dipakai apa adanya. Yang tercatat baru `checked_by` & `checked_at`.
+
 ### `regional_circulation_recap_logs`
 
 | Kolom | Catatan |
@@ -550,7 +596,7 @@ Angka jalur murah diuji ulang dengan `.agents/uji/uji_kantor_sempit.php`
 ## Pengujian
 
 Tidak lewat phpunit — `php artisan test` menghantam `ubmi_db` produksi.
-Delapan skrip yang bisa dijalankan ulang; yang menyentuh basis data berjalan
+Sembilan skrip yang bisa dijalankan ulang; yang menyentuh basis data berjalan
 di dalam transaksi yang DIBATALKAN, jadi tidak meninggalkan data.
 
 ```bash
@@ -577,6 +623,9 @@ docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji
 
 # saldo awal yang dilaporkan menggeser kumulatif sebulan
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_saldo_awal.php
+
+# cek saldo awal: diisi dari sistem, terkunci, tolak ubah, buka wajib alasan
+docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_cek_saldo_awal.php
 ```
 
 Hasil terakhir: banding 1.652 kolom 0 beda, jalur sempit 1.176 kolom 0 beda.
