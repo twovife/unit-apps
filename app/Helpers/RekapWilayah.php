@@ -12,6 +12,15 @@ namespace App\Helpers;
 class RekapWilayah
 {
     /** Pengali sirkulasi & saldo lama; sama dengan yang dipakai RekapTrait. */
+    /**
+     * Kolom persen di Rekap 2 baru ditampilkan sejak bulan ini
+     * (mas 2026-11-24). Bulan sebelumnya tidak menghitungnya sama sekali.
+     *
+     * Tidak berlaku untuk Rekap Sirkulasi Wilayah: di sana persen memang
+     * bagian dari rancangannya sejak awal.
+     */
+    public const MULAI_PERSEN = '2026-12-01';
+
     public const PENGALI = 1.3;
 
     /** Bulan rujukan saldo lama, dihitung mundur dari bulan yang dibuka. */

@@ -301,9 +301,12 @@ const TableRekap = ({
 
       <TabelHarian
         data={data ?? []}
-        kolom={KOLOM_HARIAN_PERSEN}
+        // Kolom persen baru muncul mulai Desember 2026; server yang
+        // memutuskan lewat server_filter.pakai_persen, bukan layar yang
+        // membandingkan tanggal sendiri.
+        kolom={sf.pakai_persen ? KOLOM_HARIAN_PERSEN : KOLOM_HARIAN}
         warna={WARNA_HARIAN}
-        pecahan={PECAHAN_HARIAN}
+        pecahan={sf.pakai_persen ? PECAHAN_HARIAN : {}}
         klik={{ storting: onKlikStorting, drop: onKlikDrop }}
         // Tanggal yang belum tiba = kosongan.
         batasIsi={dayjs().format('YYYY-MM-DD')}

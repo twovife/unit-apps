@@ -9,7 +9,9 @@ use App\Models\Branch;
 use App\Models\TransactionLoanOfficerGrouping;
 use App\Services\AngkaRekapWilayah;
 
-$periode = '2026-11-01';
+// Bulan yang persennya sudah ditampilkan. Sebelum MULAI_PERSEN, Rekap 2
+// tidak menghitung penyebutnya sama sekali.
+$periode = RekapWilayah::MULAI_PERSEN;
 $beda = 0;
 $diperiksa = 0;
 $berisi = 0;
@@ -40,7 +42,7 @@ foreach (Branch::where('isactive', true)->whereNotNull('wilayah')->orderBy('id')
     }
 }
 
-printf("diperiksa=%d (bukan nol: %d) beda=%d\n", $diperiksa, $berisi, $beda);
+printf("periode=%s diperiksa=%d (bukan nol: %d) beda=%d\n", $periode, $diperiksa, $berisi, $beda);
 
 if ($berisi === 0) {
     echo "PERINGATAN: semua penyebutnya nol, uji ini tidak membuktikan apa pun.\n";

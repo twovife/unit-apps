@@ -686,15 +686,19 @@ trait RekapTrait
         ->get();
     }
 
-    // Penyebut persen CM/MB per kelompok: jumlah drop bulan T-3 / T-4.
-    $dropCm = \App\Services\AngkaRekapWilayah::dropKelompok(
+    // Kolom persen baru ditampilkan mulai Desember 2026 (mas 2026-11-24).
+    // Bulan sebelumnya tidak menghitungnya sama sekali — dua kueri yang
+    // tidak akan dipakai.
+    $pakaiPersen = $startDateofMonth >= \App\Helpers\RekapWilayah::MULAI_PERSEN;
+
+    $dropCm = $pakaiPersen ? \App\Services\AngkaRekapWilayah::dropKelompok(
         $groupingIds->all(),
         \App\Helpers\RekapWilayah::bulanRujukan($startDateofMonth, 'cm')
-    );
-    $dropMb = \App\Services\AngkaRekapWilayah::dropKelompok(
+    ) : [];
+    $dropMb = $pakaiPersen ? \App\Services\AngkaRekapWilayah::dropKelompok(
         $groupingIds->all(),
         \App\Helpers\RekapWilayah::bulanRujukan($startDateofMonth, 'mb')
-    );
+    ) : [];
 
     // GERBANG alur baru: base grid harian (sirkulasi + saldo cm/mb/ml per hari)
     // ikut saldo awal baru. Untuk kantor migrasi diambil dari monthly_closings
@@ -1051,6 +1055,9 @@ trait RekapTrait
       'server_filter' => [
         'date' => $transaction_date->format('Y-m-d'),
         'month' => $transaction_date->format('Y-m'),
+        // Layar membaca ini, bukan membandingkan tanggal sendiri: satu
+        // tempat saja yang memutuskan kapan kolom persen muncul.
+        'pakai_persen' => $pakaiPersen,
         // Dibaca Rencana/Approval di drawer ACC KM (alur baru vs lama).
         'migrasi' => \App\Helpers\AgregasiScope::pakaiAgregatBaru($branch_id, $startDateofMonth),
         'hari_terbuka' => \App\Helpers\AgregasiScope::sudahMigrasi($branch_id) ? \App\Helpers\Gembok::hariTerbuka($branch_id) : [],
