@@ -7,8 +7,6 @@ use App\Helpers\RekapWilayah;
 use App\Models\Branch;
 use App\Models\RegionalCirculationRecap;
 use App\Models\RegionalCirculationRecapLog;
-use App\Models\TransactionDailyClosing;
-use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\WorkDay;
 use App\Services\AngkaRekapWilayah;
 use Carbon\Carbon;
@@ -429,83 +427,32 @@ class RekapWilayahController extends Controller
     }
 
     /**
-     * Rincian angka sistem satu kantor SEBULAN, per kelompok per tanggal.
+     * Buka Rekap 2 ASLI untuk kantor itu.
      *
-     * Dibaca drawer yang terbuka saat nama kantor diklik: baris wilayah itu
-     * jumlah dari kelompok mana saja, dan kelompok mana yang sudah di-TTD
-     * kasir / di-ACC kepala mantri tiap harinya. Angkanya dari sumber yang
-     * sama dengan baris itu sendiri, jadi jumlahnya pasti cocok.
+     * Rekap 2 mengambil cabangnya dari paket filter global di session
+     * (AuthScope), bukan dari parameter, jadi cabang aktif diganti dulu lalu
+     * dialihkan. Artinya **cabang aktif pengguna ikut berpindah** — tautannya
+     * dibuka di tab baru supaya halaman rekap wilayah tidak ikut terbawa.
+     *
+     * Tiruan Rekap 2 di dalam drawer sudah dicabut (mas 2026-11-24, "susah
+     * klo gini"): dua tempat yang menghitung hal yang sama adalah persis
+     * bahaya yang dijaga proyek ini.
      */
-    public function kelompok(Request $request, Branch $branch)
+    public function rekapDua(Request $request, Branch $branch)
     {
-        abort_unless(auth()->user()?->hasAnyRole(self::PERAN_LIHAT), 403);
-        $tanggal = Carbon::parse($request->tanggal)->toDateString();
-        $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
-        $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
+        $user = auth()->user();
+        abort_unless($user?->hasAnyRole(self::PERAN_LIHAT), 403);
 
-        $angka = AngkaRekapWilayah::perKelompokBulan($branch->id, $tanggal);
-        $awal = AngkaRekapWilayah::awalPerKelompok($branch->id, $tanggal);
+        $boleh = Branch::getAllowedBranchIds($user);
+        abort_if($boleh !== null && ! in_array($branch->id, $boleh, true), 403, 'Kantor ini di luar wilayah Anda.');
 
-        $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branch->id)
-            ->orderBy('kelompok')->get(['id', 'kelompok']);
+        AuthScope::simpanFilterGlobal(['branch_id' => $branch->id]);
 
-        // TTD kasir & ACC kepala mantri per kelompok PER TANGGAL.
-        $tutup = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $grouping->pluck('id'))
-            ->whereBetween('date', [$periode, $akhir])
-            ->get(['transaction_loan_officer_grouping_id', 'date', 'kasir_lock_at', 'kepala_approval_at'])
-            ->groupBy('transaction_loan_officer_grouping_id');
+        $bulan = preg_match('/^\d{4}-\d{2}$/', (string) $request->bulan)
+            ? $request->bulan
+            : Carbon::now()->format('Y-m');
 
-        // Tanggal yang ditampilkan sama dengan halamannya, dan tidak lebih
-        // dari hari ini: tanggal yang belum terjadi dikosongkan di mana-mana.
-        $sekarang = Carbon::now()->toDateString();
-        $tanggalBulan = collect(AngkaRekapWilayah::untukBulan((int) $branch->wilayah, $periode, $branch->id))
-            ->keys()->filter(fn ($t) => $t <= $sekarang)->values();
-
-        return response()->json([
-            'tanggal' => $tanggalBulan,
-            'kelompok' => $grouping->map(function ($g) use ($angka, $awal, $tutup, $tanggalBulan) {
-                $perTanggal = $angka[$g->id] ?? [];
-                $tanda = ($tutup[$g->id] ?? collect())->keyBy(fn ($r) => Carbon::parse($r->date)->toDateString());
-                $a = $awal[$g->id] ?? ['sirkulasi' => 0, 'cm' => 0, 'mb' => 0, 'ml' => 0];
-
-                // Kumulatif & saldo berjalan, rumus yang sama dengan baris
-                // kantor: sirkulasi = awal + jumlah drop x 1,3 - jumlah
-                // storting; saldo ember = awal ember - jumlah angsurannya.
-                $jumlah = ['drop' => 0, 'storting' => 0, 'cm' => 0, 'mb' => 0, 'ml' => 0];
-
-                $hari = $tanggalBulan->map(function ($t) use ($perTanggal, $tanda, $a, &$jumlah) {
-                    foreach ($jumlah as $k => $_) {
-                        $jumlah[$k] += (int) ($perTanggal[$t][$k] ?? 0);
-                    }
-
-                    return [
-                        'tanggal' => $t,
-                        'drop' => (int) ($perTanggal[$t]['drop'] ?? 0),
-                        'total_drop' => $jumlah['drop'],
-                        'storting' => (int) ($perTanggal[$t]['storting'] ?? 0),
-                        'total_storting' => $jumlah['storting'],
-                        'sirkulasi' => RekapWilayah::sirkulasiBerjalan($a['sirkulasi'], $jumlah['drop'], $jumlah['storting']),
-                        'angsuran_cm' => (int) ($perTanggal[$t]['cm'] ?? 0),
-                        'saldo_cm' => $a['cm'] - $jumlah['cm'],
-                        'angsuran_mb' => (int) ($perTanggal[$t]['mb'] ?? 0),
-                        'saldo_mb' => $a['mb'] - $jumlah['mb'],
-                        'angsuran_ml' => (int) ($perTanggal[$t]['ml'] ?? 0),
-                        'saldo_ml' => $a['ml'] - $jumlah['ml'],
-                        'kasir' => $tanda->get($t)?->kasir_lock_at !== null,
-                        'km' => $tanda->get($t)?->kepala_approval_at !== null,
-                    ];
-                })->all();
-
-                return [
-                    'kelompok' => $g->kelompok,
-                    'awal_sirkulasi' => (int) $a['sirkulasi'],
-                    'awal_cm' => (int) $a['cm'],
-                    'awal_mb' => (int) $a['mb'],
-                    'awal_ml' => (int) $a['ml'],
-                    'hari' => $hari,
-                ];
-            })->values(),
-        ]);
+        return redirect()->route('kasir.rekap.rekap_dua', ['month' => $bulan]);
     }
 
     /** Riwayat satu baris, dibaca drawer di tabel. */

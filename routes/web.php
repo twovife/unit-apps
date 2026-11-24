@@ -52,7 +52,8 @@ Route::middleware(['auth'])->controller(\App\Http\Controllers\RekapWilayahContro
     Route::post('/{branch}/cek', 'cek')->name('cek');
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
-    Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
+    Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
   });
 Route::middleware(['auth'])->controller(\App\Http\Controllers\PembayaranKantorController::class)
@@ -349,7 +350,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/cek', 'cek')->name('cek');
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
-    Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
+    Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
       Route::post('/terapkan-saran', 'terapkanSaran')->name('terapkan_saran');
     });
@@ -369,7 +371,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/cek', 'cek')->name('cek');
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
-    Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
+    Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
       Route::delete('/{rombak}', 'hapus')->whereNumber('rombak')->name('hapus');
       Route::post('/{rombak}/pratinjau', 'pratinjau')->whereNumber('rombak')->name('pratinjau');
@@ -394,7 +397,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/{branch}/cek', 'cek')->name('cek');
     Route::post('/{branch}/buka', 'buka')->name('buka');
     Route::get('/{branch}/log', 'log')->name('log');
-    Route::get('/{branch}/kelompok', 'kelompok')->name('kelompok');
+    // Nama kantor diklik: ganti cabang aktif lalu buka Rekap 2 yang asli.
+    Route::get('/{branch}/rekap-dua', 'rekapDua')->name('rekap_dua');
     Route::post('/isi-sistem', 'isiSistem')->name('isi_sistem');
       Route::delete('/{loan}', 'hapus')->whereNumber('loan')->name('hapus');
       Route::post('/hapus-nasabah/{loan}', 'hapusNasabah')->whereNumber('loan')->name('hapus_nasabah');

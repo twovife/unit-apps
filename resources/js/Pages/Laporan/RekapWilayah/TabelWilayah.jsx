@@ -97,7 +97,7 @@ function Penanda({ nilai = 0, dari = 0, kiri = false }) {
  * ditampilkan. Tiap sel menyimpan sendiri saat ditinggalkan, dan angka
  * turunannya datang dari balasan simpan itu — tidak ada tombol Simpan.
  */
-function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka, onLog, onKantor, bulanCm, bulanMb }) {
+function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka, onLog, bulanCm, bulanMb }) {
   useModeRibuan(); // ikut berganti saat saklar ribuan di header diubah
 
   // Persen baris total dari jumlah pembilang / jumlah penyebut, BUKAN
@@ -158,14 +158,17 @@ function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka
           {baris.map((b, i) => (
               <tr key={b.branch_id} className="group">
                 <td className="sticky left-0 z-10 whitespace-nowrap border-b bg-white px-1.5 py-0 font-medium group-hover:bg-slate-50">
-                  <button
-                    type="button"
-                    onClick={() => onKantor?.(tanggal, b)}
-                    title="Lihat rincian per kelompok dari Rekap 2"
+                  {/* Rekap 2 yang asli, bukan tiruan. Tab baru karena
+                      membukanya memindahkan cabang aktif. */}
+                  <a
+                    href={route('laporan.rekap_wilayah.rekap_dua', b.branch_id) + `?bulan=${tanggal.slice(0, 7)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Buka Rekap 2 kantor ini di tab baru — cabang aktif Anda ikut berpindah ke sini"
                     className="underline decoration-dotted underline-offset-2 hover:text-sky-700"
                   >
                     {b.unit}
-                  </button>
+                  </a>
                 </td>
                 {SEMUA_KOLOM.map((k) => {
                   const tanda = kosong || k.hitung ? null : tandaSelisih(b, k.k);

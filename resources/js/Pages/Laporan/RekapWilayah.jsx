@@ -2,7 +2,6 @@ import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import BlokHari, { TANPA_TAMBALAN } from './RekapWilayah/BlokHari';
-import DrawerKelompok from './RekapWilayah/DrawerKelompok';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
 
 const namaBulan = (t) =>
@@ -41,7 +40,6 @@ export default function RekapWilayah({
   const [bukaBaris, setBukaBaris] = useState(null);
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
-  const [rincian, setRincian] = useState(null);
   const [mengisi, setMengisi] = useState(false);
   const [mengekspor, setMengekspor] = useState(false);
 
@@ -194,15 +192,6 @@ export default function RekapWilayah({
       },
     );
   };
-
-  // Nama kantor diklik: rincian angka sistem SEBULAN, per kelompok. Sumbernya
-  // sama dengan yang menyusun barisnya, jadi jumlahnya pasti cocok.
-  const lihatKelompok = useCallback(async (tanggal, b) => {
-    const judul = `${b.unit} · ${namaBulan(tanggal)}`;
-    setRincian({ judul, sorot: tanggal, isi: null });
-    const r = await fetch(route('laporan.rekap_wilayah.kelompok', b.branch_id) + `?tanggal=${tanggal}`);
-    setRincian({ judul, sorot: tanggal, isi: await r.json() });
-  }, []);
 
   // Tanggal yang tombolnya menyala. Diisi saat tombolnya diklik.
   //
@@ -398,7 +387,6 @@ export default function RekapWilayah({
             onCek={cek}
             onBuka={mintaBuka}
             onLog={lihatLog}
-            onKantor={lihatKelompok}
           />
         ))}
 
@@ -434,15 +422,6 @@ export default function RekapWilayah({
               </div>
             </div>
           </div>
-        )}
-
-        {rincian && (
-          <DrawerKelompok
-            judul={rincian.judul}
-            sorot={rincian.sorot}
-            isi={rincian.isi}
-            onTutup={() => setRincian(null)}
-          />
         )}
 
         {log && (

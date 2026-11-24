@@ -310,6 +310,62 @@ angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
   `AppHelper::PESAN_BUKAN_WILAYAH`.
 - Riwayat log per baris bisa dibuka dari baris itu (drawer).
 
+### Nama kantor membuka Rekap 2
+
+**Nama kantor diklik** membuka halaman **Rekap 2 yang asli** untuk kantor itu,
+di tab baru.
+
+Sempat dibuat tiruan Rekap 2 di dalam drawer — per kelompok, sebulan, lengkap
+dengan kumulatif dan saldo. Dicabut 2026-11-24 ("susah klo gini"). Alasannya
+bukan cuma selera: dua tempat yang menghitung hal yang sama adalah persis
+bahaya yang dijaga proyek ini, dan tiruannya perlu uji tersendiri hanya untuk
+membuktikan dia masih sama dengan aslinya.
+
+Caranya: Rekap 2 mengambil cabangnya dari paket filter global di session
+(`AuthScope`), bukan dari parameter. Jadi rutenya mengganti cabang aktif dulu
+(`simpanFilterGlobal`) lalu mengalihkan ke `kasir.rekap.rekap_dua` dengan
+`?month=`. **Cabang aktif pengguna ikut berpindah** — itu sebabnya tautannya
+dibuka di tab baru, supaya halaman rekap wilayah tidak ikut terbawa.
+
+### Isi dari Rekap 2 (massal)
+
+Tombol di baris filter, permintaan mas 2026-11-24. Membuat baris untuk seluruh
+bulan dan seluruh kantor di wilayah itu, berisi angka sistem, **tanpa
+mencentang apa pun**.
+
+- Hanya baris yang **belum ada** yang dibuat. Baris yang sudah diketik atau
+  sudah dicek tidak disentuh.
+- Hari libur dan tanggal yang belum terjadi dilewati, sama dengan aturan
+  isian manual.
+- Sesudah itu kumulatif dihitung ulang per kantor, supaya baris yang diketik
+  berbeda dari sistem tetap menggeser hari-hari sesudahnya.
+- Diukur di lokal: 632 baris dibuat dalam 4,4 detik, 653 kueri. Dicoba di
+  dalam transaksi yang dibatalkan sebelum tombolnya dipasang.
+
+**Harganya:** sesudah diisi, layar tidak bisa lagi membedakan "kasir melapor
+angka yang sama dengan sistem" dari "belum ada laporan kasir" — angka miring
+kelabu hilang karena semuanya jadi tersimpan. Penanda selisih tetap jalan
+untuk angka yang dikoreksi sesudahnya.
+
+### Penanda TTD kasir & ACC KM
+
+Dua kolom di kanan tiap baris, permintaan mas 2026-11-23: berapa kelompok dari
+seluruh kelompok kantor itu yang sudah di-TTD kasir (`kasir_lock_at`) dan
+di-ACC kepala mantri (`kepala_approval_at`), ditulis `n/m`. Hijau kalau lengkap,
+kuning kalau sebagian, kelabu kalau belum ada. Tujuannya staf kontrol tahu
+angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
+- **Sementara ini menunya superuser saja** (permintaan mas 2026-11-24).
+  `PERAN_UBAH` dan `PERAN_LIHAT` dua-duanya `['superuser']`, dan butirnya di
+  sidebar hanya muncul untuk superuser.
+
+  Rancangannya tidak berubah dan kodenya sudah siap: yang boleh simpan/Cek/Buka
+  **stafkontrol** (hanya wilayahnya, lewat `Branch::getAllowedBranchIds`) dan
+  **superuser**, ditambah **pusat** yang hanya melihat. Membukanya nanti cukup
+  mengembalikan isi dua konstanta itu dan syarat di sidebar.
+- Pemeriksaan wilayah di server memakai `AuthScope`; pelanggaran →
+  `AppHelper::PESAN_BUKAN_WILAYAH`.
+- Riwayat log per baris bisa dibuka dari baris itu (drawer).
+
 ### Drawer rincian per kelompok
 
 **Nama kantor diklik** membuka **Rekap 2 kantor itu, sebulan penuh, per
@@ -543,9 +599,6 @@ docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji
 
 # mengetik satu kolom tidak boleh menolkan kolom lain (transaksi dibatalkan)
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_hitung_ulang.php
-
-# rincian per kelompok harus berjumlah sama dengan baris kantornya
-docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_kelompok_bulan.php
 
 # lembar .xlsx: kepala bertingkat, angka tetap angka, persen pecahan
 docker exec unit-vite node .agents/uji/uji_ekspor_rekap_wilayah.mjs
