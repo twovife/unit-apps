@@ -40,4 +40,11 @@
 
 - **CATATAN PERUBAHAN (WAJIB):** Setiap kali mengedit kode, AI **WAJIB** mencatat di `.agents/CHANGELOG.md`: **fungsi/method apa yang tersentuh, controller/route mana yang terdampak, dan tabel mana yang terlibat** (tandai `BACA` / `TULIS` / `BERHENTI-TULIS`). Catat juga apa yang sengaja TIDAK diubah beserta alasannya. Tanpa ini, agen berikutnya harus membaca ulang seluruh kode untuk menilai dampak sebuah perubahan.
 
+- **KAPAN ANGKA BOLEH DIPERCAYA (WAJIB sebelum menyentuh agregasi):** baca
+`.agents/kapan_angka_boleh_dipercaya.md`. Isinya satu aturan yang menentukan benar-salahnya
+hampir semua layar angka: `transaction_daily_closings` hanya boleh dipercaya pada baris yang
+`kasir_lock_at`-nya terisi; baris lain bisa berisi angka dan angka itu bisa salah. Lengkap
+dengan contoh nyata, siapa menulis apa, dan hasil uji 61.119 baris. Jangan membaca ulang kode
+untuk menyimpulkan ini sendiri.
+
 - **PETA APLIKASI:** Sebelum tugas kompleks, baca `.agents/skills/peta-aplikasi/SKILL.md` — index peta Route → Controller → fungsi → View → komponen → axios → action, skema DB live, roles/permission, dan daftar jebakan terverifikasi.

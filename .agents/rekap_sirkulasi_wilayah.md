@@ -447,6 +447,9 @@ Hasil penyelidikan 2026-11-23, sebelum satu baris kode ditulis.
 
 ### Drop & storting harian: closing untuk hari terkunci, hitung langsung untuk sisanya
 
+Penjelasan lengkapnya pindah ke `.agents/kapan_angka_boleh_dipercaya.md` —
+berlaku untuk semua layar angka, bukan menu ini saja. Ringkasnya:
+
 `transaction_daily_closings.drop` dan `.storting` **terisi, tetapi hanya pada
 baris yang sudah dikunci kasir** — trigger yang membekukannya saat kunci.
 Dicek November 2026: 29.067 baris, 16.358 terkunci, drop pada baris terkunci
