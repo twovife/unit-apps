@@ -290,6 +290,26 @@ angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
   `AppHelper::PESAN_BUKAN_WILAYAH`.
 - Riwayat log per baris bisa dibuka dari baris itu (drawer).
 
+### Drawer rincian per kelompok
+
+**Nama kantor diklik** membuka rincian angka sistem hari itu, dipecah per
+kelompok: Drop, Storting, Angs CM/MB/ML, plus tanda TTD kasir dan ACC kepala
+mantri tiap kelompok. Permintaan mas 2026-11-24, supaya "angka Rekap 2-nya
+dari mana" bisa dijawab tanpa pindah halaman.
+
+Sumbernya `AngkaRekapWilayah::perKelompok()`, yang memanggil `alurBaru` /
+`alurLama` **yang sama** dengan penyusun barisnya — cuma penumpuknya dikunci
+per kelompok, bukan per kantor. Jadi jumlah drawer selalu sama dengan baris
+kantornya; dicek di lokal untuk Gresik 3 tanggal 2 November, 10 kelompok,
+lima kolom cocok semua.
+
+Yang ditampilkan hanya **mutasi hari itu**. Kumulatif dan saldo milik baris
+kantornya, bukan kelompoknya.
+
+Halaman Rekap 2 yang asli tidak dipakai ulang: cabang aktifnya diambil dari
+paket filter global di session (`AuthScope`), bukan dari parameter, jadi
+membukanya untuk kantor lain berarti mengubah filter global pengguna.
+
 ## 5. Ekspor
 
 Dua tombol di baris filter. Belum ada: snapshot PNG untuk WA (`html-to-image`),

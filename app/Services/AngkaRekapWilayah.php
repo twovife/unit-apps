@@ -46,6 +46,51 @@ class AngkaRekapWilayah
     }
 
     /**
+     * Rincian SATU kantor SATU tanggal, dipecah per kelompok.
+     *
+     * Dipakai drawer di nama kantor: angka sistem di baris wilayah itu
+     * jumlah dari kelompok mana saja. Rumusnya sama persis dengan yang
+     * menyusun barisnya — alurBaru/alurLama yang sama, cuma penumpuknya
+     * dikunci per kelompok, bukan per kantor.
+     *
+     * @return array<int, array<string, int>> grouping_id => drop|storting|cm|mb|ml
+     */
+    public static function perKelompok(int $branchId, string $tanggal): array
+    {
+        $tanggal = Carbon::parse($tanggal)->toDateString();
+        $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
+
+        $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branchId)->get(['id', 'branch_id']);
+        if ($grouping->isEmpty()) {
+            return [];
+        }
+
+        $gid = $grouping->pluck('id');
+        $milikKantor = $grouping->pluck('branch_id', 'id');
+
+        $hasil = [];
+        $tambah = function ($g, string $t, array $v) use (&$hasil, $tanggal) {
+            // alurBaru & alurLama menyusuri sebulan; yang diminta satu tanggal.
+            if ($t !== $tanggal) {
+                return;
+            }
+
+            $hasil[$g] ??= self::KOSONG;
+            foreach (self::KOSONG as $k => $_) {
+                $hasil[$g][$k] += (int) ($v[$k] ?? 0);
+            }
+        };
+
+        if (AgregasiScope::pakaiAgregatBaru($branchId, $periode)) {
+            self::alurBaru($gid, $milikKantor, $periode, $tanggal, $tambah);
+        } else {
+            self::alurLama($gid, $periode, $tanggal, $tambah);
+        }
+
+        return $hasil;
+    }
+
+    /**
      * Sama, tetapi untuk SEBULAN sekaligus: tanggal => branch_id => kolom.
      *
      * Dihitung sekali jalan, bukan memanggil per tanggal: kuerinya memang

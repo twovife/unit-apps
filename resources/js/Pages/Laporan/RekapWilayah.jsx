@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import { angka } from '@/lib/modeAngka';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import BlokHari, { TANPA_TAMBALAN } from './RekapWilayah/BlokHari';
@@ -6,6 +7,16 @@ import SaldoAwal from './RekapWilayah/SaldoAwal';
 
 const namaBulan = (t) =>
   t ? new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : null;
+
+// Kolom drawer rincian per kelompok: mutasi hari itu saja, karena cuma itu
+// yang punya arti per kelompok. Kumulatif & saldo milik barisnya.
+const RINCIAN_KOLOM = [
+  ['drop', 'Drop'],
+  ['storting', 'Storting'],
+  ['angsuran_cm', 'Angs CM'],
+  ['angsuran_mb', 'Angs MB'],
+  ['angsuran_ml', 'Angs ML'],
+];
 
 const judulTanggal = (t) =>
   new Date(t + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -40,6 +51,7 @@ export default function RekapWilayah({
   const [bukaBaris, setBukaBaris] = useState(null);
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
+  const [rincian, setRincian] = useState(null);
   const [mengekspor, setMengekspor] = useState(false);
 
   // Panel accordion dibuka sebelum cetak, kalau tidak isinya hilang dari
@@ -169,6 +181,14 @@ export default function RekapWilayah({
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: null });
     const r = await fetch(route('laporan.rekap_wilayah.log', b.branch_id) + `?tanggal=${tanggal}`);
     setLog({ judul: `${b.unit} · ${tanggal}`, isi: await r.json() });
+  }, []);
+
+  // Nama kantor diklik: rincian angka sistem hari itu, per kelompok. Sumbernya
+  // sama dengan yang menyusun barisnya, jadi jumlahnya pasti cocok.
+  const lihatKelompok = useCallback(async (tanggal, b) => {
+    setRincian({ judul: `${b.unit} · ${tanggal}`, isi: null });
+    const r = await fetch(route('laporan.rekap_wilayah.kelompok', b.branch_id) + `?tanggal=${tanggal}`);
+    setRincian({ judul: `${b.unit} · ${tanggal}`, isi: await r.json() });
   }, []);
 
   // Tanggal yang tombolnya menyala. Diisi saat tombolnya diklik.
@@ -354,6 +374,7 @@ export default function RekapWilayah({
             onCek={cek}
             onBuka={mintaBuka}
             onLog={lihatLog}
+            onKantor={lihatKelompok}
           />
         ))}
 
@@ -387,6 +408,68 @@ export default function RekapWilayah({
                   Buka
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {rincian && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setRincian(null)}>
+            <div className="max-h-[70vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h2 className="font-semibold">Rincian per kelompok · {rincian.judul}</h2>
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                Angka sistem (Rekap 2) hari itu, dipecah per kelompok. Jumlahnya sama dengan baris kantor di tabel.
+              </p>
+
+              {!rincian.isi ? (
+                <p className="mt-2 text-sm text-slate-500">Memuat…</p>
+              ) : rincian.isi.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">Kantor ini tidak punya kelompok.</p>
+              ) : (
+                <table className="mt-2 w-full text-[11px]">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="px-1.5 py-1 text-left text-[10px] uppercase tracking-tight text-slate-500">Kelompok</th>
+                      {RINCIAN_KOLOM.map(([, j]) => (
+                        <th key={j} className="whitespace-nowrap px-1.5 py-1 text-right text-[10px] uppercase tracking-tight text-slate-500">
+                          {j}
+                        </th>
+                      ))}
+                      <th className="px-1.5 py-1 text-center text-[10px] uppercase tracking-tight text-slate-500">Kasir</th>
+                      <th className="px-1.5 py-1 text-center text-[10px] uppercase tracking-tight text-slate-500">KM</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rincian.isi.map((k) => (
+                      <tr key={k.kelompok} className="border-t">
+                        <td className="whitespace-nowrap px-1.5 py-0.5 font-medium">Kelompok {k.kelompok}</td>
+                        {RINCIAN_KOLOM.map(([kol]) => (
+                          <td key={kol} className="whitespace-nowrap px-1.5 py-0.5 text-right tabular-nums">
+                            {angka(k[kol])}
+                          </td>
+                        ))}
+                        <td className={`px-1.5 py-0.5 text-center ${k.kasir ? 'text-emerald-700' : 'text-slate-300'}`}>
+                          {k.kasir ? '✓' : '–'}
+                        </td>
+                        <td className={`px-1.5 py-0.5 text-center ${k.km ? 'text-emerald-700' : 'text-slate-300'}`}>
+                          {k.km ? '✓' : '–'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="border-t-2 bg-slate-100 font-semibold">
+                    <tr>
+                      <td className="px-1.5 py-1">Jumlah kantor</td>
+                      {RINCIAN_KOLOM.map(([kol]) => (
+                        <td key={kol} className="whitespace-nowrap px-1.5 py-1 text-right tabular-nums">
+                          {angka(rincian.isi.reduce((t, k) => t + k[kol], 0))}
+                        </td>
+                      ))}
+                      <td className="px-1.5 py-1 text-center">{rincian.isi.filter((k) => k.kasir).length}</td>
+                      <td className="px-1.5 py-1 text-center">{rincian.isi.filter((k) => k.km).length}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
             </div>
           </div>
         )}

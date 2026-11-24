@@ -7,6 +7,8 @@ use App\Helpers\RekapWilayah;
 use App\Models\Branch;
 use App\Models\RegionalCirculationRecap;
 use App\Models\RegionalCirculationRecapLog;
+use App\Models\TransactionDailyClosing;
+use App\Models\TransactionLoanOfficerGrouping;
 use App\Models\WorkDay;
 use App\Services\AngkaRekapWilayah;
 use Carbon\Carbon;
@@ -346,6 +348,46 @@ class RekapWilayahController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Rincian angka sistem satu kantor satu tanggal, dipecah per kelompok.
+     *
+     * Dibaca drawer yang terbuka saat nama kantor diklik: baris wilayah itu
+     * jumlah dari kelompok mana saja, dan kelompok mana yang sudah di-TTD
+     * kasir / di-ACC kepala mantri. Angkanya dari sumber yang sama dengan
+     * baris itu sendiri, jadi jumlahnya pasti cocok.
+     */
+    public function kelompok(Request $request, Branch $branch)
+    {
+        abort_unless(auth()->user()?->hasAnyRole(self::PERAN_LIHAT), 403);
+        $tanggal = Carbon::parse($request->tanggal)->toDateString();
+
+        $angka = AngkaRekapWilayah::perKelompok($branch->id, $tanggal);
+
+        $grouping = TransactionLoanOfficerGrouping::where('branch_id', $branch->id)
+            ->orderBy('kelompok')->get(['id', 'kelompok']);
+
+        $tutup = TransactionDailyClosing::whereIn('transaction_loan_officer_grouping_id', $grouping->pluck('id'))
+            ->whereDate('date', $tanggal)
+            ->get(['transaction_loan_officer_grouping_id', 'kasir_lock_at', 'kepala_approval_at'])
+            ->keyBy('transaction_loan_officer_grouping_id');
+
+        return response()->json($grouping->map(function ($g) use ($angka, $tutup) {
+            $a = $angka[$g->id] ?? [];
+            $c = $tutup->get($g->id);
+
+            return [
+                'kelompok' => $g->kelompok,
+                'drop' => (int) ($a['drop'] ?? 0),
+                'storting' => (int) ($a['storting'] ?? 0),
+                'angsuran_cm' => (int) ($a['cm'] ?? 0),
+                'angsuran_mb' => (int) ($a['mb'] ?? 0),
+                'angsuran_ml' => (int) ($a['ml'] ?? 0),
+                'kasir' => $c?->kasir_lock_at !== null,
+                'km' => $c?->kepala_approval_at !== null,
+            ];
+        })->values());
     }
 
     /** Riwayat satu baris, dibaca drawer di tabel. */
