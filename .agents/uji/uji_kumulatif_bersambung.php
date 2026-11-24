@@ -1,7 +1,11 @@
 <?php
-// Mengisi sebagian tanggal saja tidak boleh membuat Jml Drop melompat di
-// tanggal berikutnya. Sebelum 2026-11-24, tanggal tanpa baris jatuh ke
-// kumulatif sistem apa adanya dan koreksi staf kontrol hilang di situ.
+// Kumulatif meneruskan angka STAF KONTROL, bukan Rekap 2.
+//
+// Dua cacat yang dijaga uji ini, keduanya pernah terjadi:
+//  1. tanggal tanpa baris jatuh ke kumulatif sistem apa adanya, koreksi staf
+//     kontrol hilang begitu saja di tanggal berikutnya;
+//  2. tanggal yang belum dilaporkan ikut menambah angka sistem, jadi
+//     kumulatifnya campuran laporan dan sistem - tidak berarti apa-apa.
 //
 // Berjalan di dalam transaksi yang DIBATALKAN.
 //   docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_kumulatif_bersambung.php
@@ -42,26 +46,31 @@ try {
     app(RekapWilayahController::class)->simpan(Request::create('/x', 'POST', ['baris' => $kirim]));
 
     $beda = 0;
-    printf("%-12s %-14s %-14s %s\n", 'tanggal', 'jml drop', 'sistem', 'selisih');
+    $dilapor = 0;
+    printf("%-12s %-10s %-16s %-16s %s\n", 'tanggal', 'dilapor', 'jml drop', 'sistem', 'seharusnya');
 
     foreach ($tanggal as $i => $t) {
         $r = RegionalCirculationRecap::where('branch_id', $branchId)->whereDate('tanggal', $t)->first();
         $s = (int) $sistem[$t][$branchId]['total_drop'];
         $tampil = $r?->total_drop ?? $s;
 
-        // Kelebihan menumpuk 1 juta per tanggal yang diisi, lalu BERTAHAN di
-        // tanggal sesudahnya — bukan hilang.
-        $harus = $s + $lebih * min($i + 1, 4);
+        // Hanya tanggal yang diisi yang menambah. Tanggal 5 dan seterusnya
+        // belum dilaporkan, jadi kumulatifnya berhenti di angka tanggal 4.
+        if ($i < 4) {
+            $dilapor += (int) $sistem[$t][$branchId]['drop'] + $lebih;
+        }
 
-        printf("%-12s %-14s %-14s %+d\n", $t, number_format($tampil, 0, ',', '.'), number_format($s, 0, ',', '.'), $tampil - $s);
+        printf("%-12s %-10s %-16s %-16s %s\n", $t, $i < 4 ? 'ya' : '-',
+            number_format($tampil, 0, ',', '.'), number_format($s, 0, ',', '.'),
+            number_format($dilapor, 0, ',', '.'));
 
-        if ($tampil !== $harus) {
+        if ($tampil !== $dilapor) {
             $beda++;
-            printf("  BEDA: seharusnya %s\n", number_format($harus, 0, ',', '.'));
+            echo "  BEDA\n";
         }
     }
 
-    assert($beda === 0, 'kumulatif melompat di tanggal yang belum diisi');
+    assert($beda === 0, 'kumulatif tidak meneruskan angka staf kontrol');
     echo "OK semua\n";
 } finally {
     DB::rollBack();

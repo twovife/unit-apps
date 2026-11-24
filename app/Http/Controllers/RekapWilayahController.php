@@ -664,8 +664,25 @@ class RekapWilayahController extends Controller
             $s = $perKantor[$branchId] ?? [];
             $r = $baris->get($t);
 
-            foreach ($jumlah as $k => $_) {
-                $jumlah[$k] += (int) ($r?->$k ?? $s[$k] ?? 0);
+            // Tanggal yang BELUM DISENTUH staf kontrol tidak ikut dijumlah.
+            // Kumulatif di kolom ini artinya "jumlah menurut laporan kasir",
+            // jadi hari yang belum dilaporkan tidak menambah apa pun. Kalau
+            // sistem ikut ditambahkan, angkanya campuran laporan dan sistem —
+            // tidak berarti apa-apa (keputusan mas 2026-11-24).
+            //
+            // "Disentuh" = ada satu saja kolom mutasi yang terisi. Baris yang
+            // dibuat hitung ulang ini sendiri berisi kolom turunan saja, jadi
+            // dia tidak terhitung disentuh.
+            $disentuh = $r !== null && collect(RegionalCirculationRecap::KOLOM_MUTASI)
+                ->contains(fn ($k) => $r->$k !== null);
+
+            if ($disentuh) {
+                // Di dalam tanggal yang sudah disentuh, kolom yang belum
+                // diketik memakai angka sistem — kalau tidak, mengetik
+                // storting saja akan menolkan Jml Drop.
+                foreach ($jumlah as $k => $_) {
+                    $jumlah[$k] += (int) ($r->$k ?? $s[$k] ?? 0);
+                }
             }
 
             // Baris yang sudah dicek tidak disentuh: angkanya sudah

@@ -199,22 +199,36 @@ Dijumlah sejak tanggal 1, **bukan** dari baris kemarin. Alasannya: kalau hari
 lalu dikoreksi, hari-hari sesudahnya harus ikut bergeser. Jadi tiap simpan
 menghitung ulang sebulan untuk kantor itu.
 
-**Yang dijumlah: angka yang diketik kalau ada, angka sistem kalau belum.**
-Bukan angka yang diketik saja. Dua hal ikut di situ:
+**Kumulatif meneruskan angka STAF KONTROL, bukan Rekap 2.** Aturannya dua
+tingkat, dan keduanya lahir dari cacat nyata:
 
-- Sel yang belum diketik memakai angka sistem tanggal itu. Tanpa ini, mengetik
-  storting saja membuat "Jml Drop" jadi nol — bug 2026-11-24, lihat
-  `.agents/uji/uji_hitung_ulang.php`.
-- Tanggal yang belum punya baris sama sekali tetap ikut dijumlah dari angka
-  sistem. Tanpa ini, mengetik di 5 November melewatkan 2–4 November yang belum
-  pernah disimpan.
-- **Tanggal yang belum punya baris DIBUATKAN**, berisi kolom turunan saja;
-  kolom mutasinya dibiarkan null supaya selnya tetap tampil miring kelabu.
-  Tanpa ini Jml Drop melompat di perbatasan: tanggal yang punya baris memakai
-  kumulatif hasil hitung ulang, tanggal tanpa baris jatuh ke kumulatif sistem
-  apa adanya. Diukur sebelum diperbaiki: mengisi 4 tanggal dengan drop
-  dilebihkan 1 juta per hari, kelebihan 4 juta lenyap di tanggal ke-5.
-  Dijaga `.agents/uji/uji_kumulatif_bersambung.php`.
+1. **Tanggal yang belum disentuh staf kontrol tidak menambah apa pun.**
+   Kolom ini artinya "jumlah menurut laporan kasir". Kalau tanggal yang belum
+   dilaporkan ikut menambah angka sistem, hasilnya campuran laporan dan
+   sistem — tidak berarti apa-apa di dua dunia mana pun. Contohnya: melapor
+   drop 500.000 selama tiga hari lalu berhenti, tanggal keempat sempat
+   menunjukkan 36.800.000 (1,5 juta laporan + 35,3 juta sistem).
+
+   "Disentuh" = ada satu saja kolom mutasi yang terisi. Baris yang dibuat
+   hitung ulang (lihat bawah) hanya berisi kolom turunan, jadi tidak terhitung
+   disentuh.
+
+2. **Di dalam tanggal yang sudah disentuh, kolom yang belum diketik memakai
+   angka sistem tanggal itu.** Tanpa ini, mengetik storting saja membuat
+   "Jml Drop" jadi nol — barisnya cuma punya storting, drop-nya null.
+   Lihat `.agents/uji/uji_hitung_ulang.php`.
+**Tanggal yang belum punya baris DIBUATKAN**, berisi kolom turunan saja;
+kolom mutasinya dibiarkan null supaya selnya tetap tampil miring kelabu dan
+tanggal itu tidak terhitung "disentuh". Tanpa ini Jml Drop melompat di
+perbatasan: tanggal yang punya baris memakai kumulatif hasil hitung ulang,
+tanggal tanpa baris jatuh ke kumulatif sistem apa adanya, dan koreksi staf
+kontrol hilang begitu saja. Dijaga
+`.agents/uji/uji_kumulatif_bersambung.php`.
+
+Akibat yang disengaja: begitu satu sel diketik, kolom Jml dan Saldo sebulan
+itu berhenti mengikuti Rekap 2 dan jadi "menurut laporan". Bedanya terlihat
+merah. Sebelum ada satu pun isian, barisnya belum ada dan seluruh layar
+menampilkan angka Rekap 2.
 
 Keduanya sesuai dengan yang dilihat staf kontrol: layar memang menampilkan
 angka sistem di sel yang belum diisi.
