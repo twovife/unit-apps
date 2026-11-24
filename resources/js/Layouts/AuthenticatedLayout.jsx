@@ -16,8 +16,14 @@ import { SidebarProvider, SidebarInset, useSidebar } from '@/shadcn/ui/sidebar';
 // lagi supaya sidebar yang dilipat tetap terlipat sesudah pindah halaman.
 const sidebarTerbuka = () => !/(?:^|;\s*)sidebar:state=false/.test(document.cookie);
 
+// ?polos=1 -> tanpa sidebar & navbar. Dipakai halaman yang ditumpangkan di
+// dalam <iframe> (drawer Rekap 2 di Rekap Sirkulasi Wilayah), supaya yang
+// terlihat cuma isinya, bukan aplikasi di dalam aplikasi.
+const polos = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('polos') === '1';
+
 export default function Authenticated({ header, children, loading = false }) {
   const { errors, flash, auth } = usePage().props;
+  const tanpaRangka = polos();
   // Pemindai dokumen/bukti (OpenCV ±4 MB) diunduh ke cache di belakang layar, hanya untuk
   // user yang mengunggah (Lamaran / adm kantor). Layout persisten -> sekali per buka aplikasi.
   const bolehLamaran = !!(auth?.menu?.lamaran || auth?.menu?.admKantor);
@@ -39,6 +45,16 @@ export default function Authenticated({ header, children, loading = false }) {
     if (flash.peringatan) setPeringatan(flash.peringatan);
     else if (flash.message) toast.success(flash.message, { id: `m${flash.timestamp}${flash.message}` });
   }, [flash]);
+
+  if (tanpaRangka) {
+    return (
+      <>
+        <Loading show={loading} />
+        <Toaster />
+        <div className="min-w-0 p-3">{children}</div>
+      </>
+    );
+  }
 
   return (
     <SidebarProvider defaultOpen={sidebarTerbuka()}>

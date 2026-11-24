@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import BlokHari, { TANPA_TAMBALAN } from './RekapWilayah/BlokHari';
+import DrawerRekapDua from './RekapWilayah/DrawerRekapDua';
 import SaldoAwal from './RekapWilayah/SaldoAwal';
 
 const namaBulan = (t) =>
@@ -40,6 +41,7 @@ export default function RekapWilayah({
   const [bukaBaris, setBukaBaris] = useState(null);
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
+  const [rekapDua, setRekapDua] = useState(null);
   const [mengisi, setMengisi] = useState(false);
   const [mengekspor, setMengekspor] = useState(false);
 
@@ -192,6 +194,12 @@ export default function RekapWilayah({
       },
     );
   };
+
+  // Nama kantor diklik: Rekap 2 kantor itu, ditumpangkan di drawer.
+  const lihatRekapDua = useCallback(
+    (tanggal, b) => setRekapDua({ branch_id: b.branch_id, unit: b.unit, bulan: tanggal.slice(0, 7) }),
+    [],
+  );
 
   // Tanggal yang tombolnya menyala. Diisi saat tombolnya diklik.
   //
@@ -387,6 +395,7 @@ export default function RekapWilayah({
             onCek={cek}
             onBuka={mintaBuka}
             onLog={lihatLog}
+            onKantor={lihatRekapDua}
           />
         ))}
 
@@ -423,6 +432,8 @@ export default function RekapWilayah({
             </div>
           </div>
         )}
+
+        <DrawerRekapDua kantor={rekapDua} onTutup={() => setRekapDua(null)} />
 
         {log && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setLog(null)}>

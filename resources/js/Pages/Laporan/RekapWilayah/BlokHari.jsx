@@ -39,7 +39,7 @@ const taksirTinggi = (jumlahBaris) => KEPALA + (jumlahBaris + 1) * tinggiBaris;
  * TANPA_TAMBALAN yang sama, dan semua callback dibungkus useCallback di induk,
  * dengan tanggal dikirim sebagai argumen, bukan ditutup di closure.
  */
-function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, onCek, onBuka, onLog }) {
+function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, onCek, onBuka, onLog, onKantor }) {
   // Balasan autosave / cek / buka (mutasi yang diketik, kumulatif yang
   // dihitung ulang server, dan status tanda tangan) dituang ke baris tanggal
   // INI saja.
@@ -127,6 +127,7 @@ function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, on
             onCek={onCek}
             onBuka={onBuka}
             onLog={onLog}
+            onKantor={onKantor}
           />
         ) : (
           <div

@@ -427,16 +427,18 @@ class RekapWilayahController extends Controller
     }
 
     /**
-     * Buka Rekap 2 ASLI untuk kantor itu.
+     * Rekap 2 ASLI untuk kantor itu, dirender di tempat.
+     *
+     * Dibuka di dalam drawer lewat <iframe ?polos=1>, jadi yang terlihat cuma
+     * isi Rekap 2 tanpa sidebar & navbar. Halamannya tetap halaman Rekap 2
+     * yang sebenarnya — tidak ada tiruan yang perlu dijaga tetap sama.
      *
      * Rekap 2 mengambil cabangnya dari paket filter global di session
-     * (AuthScope), bukan dari parameter, jadi cabang aktif diganti dulu lalu
-     * dialihkan. Artinya **cabang aktif pengguna ikut berpindah** — tautannya
-     * dibuka di tab baru supaya halaman rekap wilayah tidak ikut terbawa.
-     *
-     * Tiruan Rekap 2 di dalam drawer sudah dicabut (mas 2026-11-24, "susah
-     * klo gini"): dua tempat yang menghitung hal yang sama adalah persis
-     * bahaya yang dijaga proyek ini.
+     * (AuthScope), bukan dari parameter. Jadi cabang aktif diganti sebelum
+     * controllernya dipanggil dan **dikembalikan lagi sesudahnya**, supaya
+     * melihat kantor lain tidak memindahkan cabang aktif pengguna. Aman
+     * karena getDataRekapDua() menghitung datanya saat itu juga, bukan nanti
+     * waktu respons dirender.
      */
     public function rekapDua(Request $request, Branch $branch)
     {
@@ -446,13 +448,20 @@ class RekapWilayahController extends Controller
         $boleh = Branch::getAllowedBranchIds($user);
         abort_if($boleh !== null && ! in_array($branch->id, $boleh, true), 403, 'Kantor ini di luar wilayah Anda.');
 
-        AuthScope::simpanFilterGlobal(['branch_id' => $branch->id]);
-
         $bulan = preg_match('/^\d{4}-\d{2}$/', (string) $request->bulan)
             ? $request->bulan
             : Carbon::now()->format('Y-m');
 
-        return redirect()->route('kasir.rekap.rekap_dua', ['month' => $bulan]);
+        $semula = \Illuminate\Support\Facades\Session::get(AuthScope::kunciFilterGlobal())['branch_id'] ?? null;
+
+        try {
+            AuthScope::simpanFilterGlobal(['branch_id' => $branch->id]);
+
+            return app(\App\Http\Controllers\TransactionDailyRecapController::class)
+                ->rekap_dua($request->merge(['month' => $bulan]));
+        } finally {
+            AuthScope::simpanFilterGlobal(['branch_id' => $semula]);
+        }
     }
 
     /** Riwayat satu baris, dibaca drawer di tabel. */
