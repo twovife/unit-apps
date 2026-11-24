@@ -169,13 +169,20 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, onCek, onBuka, onLog,
                       className={`whitespace-nowrap border-b p-0 text-right tabular-nums group-hover:bg-slate-50 ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-amber-100' : ''}`}
                     >
                       {bisaKetik ? (
-                        <IsianSel
-                          baris={b}
-                          kolom={k.k}
-                          tersimpan={b.diketik?.[k.k] ?? b.sistem?.[k.k] ?? null}
-                          onUbah={(v) => onUbah(tanggal, b.branch_id, k.k, v)}
-                          onEnter={() => keBawah(i, k.k)}
-                        />
+                        <>
+                          {/* Dicetak sebagai angka penuh: kotak isian diketik
+                              dalam ribuan, jadi isinya tidak boleh ikut cetak. */}
+                          <span className="hidden px-1.5 py-0.5 print:block">{angkaMode(nilai(b, k.k))}</span>
+                          <div className="print:hidden">
+                            <IsianSel
+                              baris={b}
+                              kolom={k.k}
+                              tersimpan={b.diketik?.[k.k] ?? b.sistem?.[k.k] ?? null}
+                              onUbah={(v) => onUbah(tanggal, b.branch_id, k.k, v)}
+                              onEnter={() => keBawah(i, k.k)}
+                            />
+                          </div>
+                        </>
                       ) : (
                         <span className={`block px-1.5 py-0.5 ${k.tebal ? 'font-semibold' : ''}`}>
                           {k.hitung ? persenTeks(turunan(b, k.k)) : angkaMode(nilai(b, k.k))}
@@ -193,13 +200,21 @@ function TabelWilayah({ tanggal, baris, bolehUbah, onUbah, onCek, onBuka, onLog,
                         ✓ {b.dicek_oleh ?? '-'}
                       </button>
                       {bolehUbah && (
-                        <button type="button" onClick={() => onBuka?.(tanggal, b)} className="text-sky-600 underline">
+                        <button
+                          type="button"
+                          onClick={() => onBuka?.(tanggal, b)}
+                          className="tanpa-cetak text-sky-600 underline"
+                        >
                           buka
                         </button>
                       )}
                     </span>
                   ) : bolehUbah ? (
-                    <button type="button" onClick={() => onCek?.(tanggal, b)} className="rounded border px-1.5 py-0.5 hover:bg-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => onCek?.(tanggal, b)}
+                      className="tanpa-cetak rounded border px-1.5 py-0.5 hover:bg-slate-100"
+                    >
                       Cek
                     </button>
                   ) : (

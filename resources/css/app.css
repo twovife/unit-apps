@@ -238,3 +238,59 @@ html {
     transform: rotate(360deg);
   }
 }
+
+/* ===== Cetak =====================================================
+   Dipakai tombol "Cetak / PDF" di menu laporan: cetak browser, tanpa
+   library PDF. Yang disembunyikan di sini adalah rangka aplikasi —
+   sidebar, navbar, toast. Elemen halaman yang tidak perlu ikut dicetak
+   (filter, tombol) diberi kelas .tanpa-cetak.
+   ================================================================= */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  /* Rangka aplikasi: sidebar shadcn, navbar, toast sonner. */
+  div[data-variant='sidebar'],
+  header,
+  [data-sonner-toaster],
+  .tanpa-cetak {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* Latar & bayangan boros tinta; kop tabel tetap berwarna supaya terbaca. */
+  main,
+  .shadow-sm,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  /* Kotak isian dicetak sebagai angka biasa, tanpa kotak biru. */
+  input {
+    border: 0 !important;
+    background: transparent !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Kop tabel diulang di tiap halaman, baris jangan terbelah. */
+  thead {
+    display: table-header-group;
+  }
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+  }
+
+  /* Warna latar sel (penanda selisih, baris total) ikut tercetak. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -1,24 +1,5 @@
 import { angka, useModeRibuan } from '@/lib/modeAngka';
-import { nilai, persen, persenTeks } from './kolom';
-
-// Urutan kolom (permintaan mas 2026-11-24):
-// Pemutihan | Drop Bln Lalu | Sirkulasi | Drop CM | CM | % | Drop MB | MB | % | ML | %
-//
-// atas/bagi = pembilang & penyebut kolom persen. Sama dengan tabel harian:
-// CM & MB dibagi jumlah drop bulan rujukannya, ML dibagi sirkulasi awal.
-const KOLOM = [
-  { k: 'pemutihan', j: 'Pemutihan', ket: 'Pemutihan bulan lalu; keluarnya baru terlihat di saldo awal bulan ini' },
-  { k: 'drop_bulan_lalu', j: 'Drop Bln Lalu', bulan: 'lalu' },
-  { k: 'awal_sirkulasi', j: 'Sirkulasi', tebal: true },
-  { k: 'drop_cm', j: 'Drop CM', bulan: 'cm' },
-  { k: 'awal_cm', j: 'CM', tebal: true },
-  { k: 'persen_cm', j: '%', atas: 'awal_cm', bagi: 'saldo_lama_cm' },
-  { k: 'drop_mb', j: 'Drop MB', bulan: 'mb' },
-  { k: 'awal_mb', j: 'MB', tebal: true },
-  { k: 'persen_mb', j: '%', atas: 'awal_mb', bagi: 'saldo_lama_mb' },
-  { k: 'awal_ml', j: 'ML', tebal: true },
-  { k: 'persen_ml', j: '%', atas: 'awal_ml', bagi: 'awal_sirkulasi' },
-];
+import { KOLOM_AWAL as KOLOM, nilai, persen, persenTeks } from './kolom';
 
 // Yang ikut ringkasan saat panel tertutup.
 const RINGKAS = ['awal_sirkulasi', 'awal_cm', 'persen_cm', 'awal_mb', 'persen_mb', 'awal_ml', 'persen_ml'];

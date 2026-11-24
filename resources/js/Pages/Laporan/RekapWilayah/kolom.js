@@ -47,6 +47,28 @@ export const BLOK = [
 
 export const SEMUA_KOLOM = BLOK.flatMap((b) => b.kolom);
 
+/**
+ * Kolom panel Sirkulasi Awal, urutan permintaan mas 2026-11-24:
+ * Pemutihan | Drop Bln Lalu | Sirkulasi | Drop CM | CM | % | Drop MB | MB | % | ML | %
+ *
+ * atas/bagi = pembilang & penyebut kolom persen. Sama dengan tabel harian:
+ * CM & MB dibagi jumlah drop bulan rujukannya, ML dibagi sirkulasi awal.
+ * bulan = bulan rujukan yang ditulis di keterangan sel.
+ */
+export const KOLOM_AWAL = [
+  { k: 'pemutihan', j: 'Pemutihan', ket: 'Pemutihan bulan lalu; keluarnya baru terlihat di saldo awal bulan ini' },
+  { k: 'drop_bulan_lalu', j: 'Drop Bln Lalu', bulan: 'lalu' },
+  { k: 'awal_sirkulasi', j: 'Sirkulasi', tebal: true },
+  { k: 'drop_cm', j: 'Drop CM', bulan: 'cm' },
+  { k: 'awal_cm', j: 'CM', tebal: true },
+  { k: 'persen_cm', j: '%', atas: 'awal_cm', bagi: 'saldo_lama_cm' },
+  { k: 'drop_mb', j: 'Drop MB', bulan: 'mb' },
+  { k: 'awal_mb', j: 'MB', tebal: true },
+  { k: 'persen_mb', j: '%', atas: 'awal_mb', bagi: 'saldo_lama_mb' },
+  { k: 'awal_ml', j: 'ML', tebal: true },
+  { k: 'persen_ml', j: '%', atas: 'awal_ml', bagi: 'awal_sirkulasi' },
+];
+
 /** Kolom yang nilainya dihitung server dari mutasi sebulan. */
 export const KOLOM_TURUNAN = new Set([
   'total_drop', 'total_storting', 'sirkulasi',
@@ -57,6 +79,23 @@ export const KOLOM_TURUNAN = new Set([
 
 /** Persen; null kalau penyebut 0 supaya layar menulis '-', bukan 0%. */
 export const persen = (pembilang, penyebut) => (penyebut ? pembilang / penyebut : null);
+
+/**
+ * Baris kantor + tambalan balasan simpan/cek/buka.
+ *
+ * t = { nilai, terkunci, dicek_oleh, dicek_pada }. Dipakai layar dan ekspor,
+ * supaya keduanya melihat angka yang sama sesudah autosave.
+ */
+export const gabung = (b, t) =>
+  t
+    ? {
+        ...b,
+        diketik: { ...(b.diketik ?? {}), ...t.nilai },
+        terkunci: t.terkunci,
+        dicek_oleh: t.dicek_oleh,
+        dicek_pada: t.dicek_pada,
+      }
+    : b;
 
 /** Nilai satu sel: yang tersimpan kalau ada, kalau belum pakai angka sistem. */
 export const nilai = (baris, k) => baris.diketik?.[k] ?? baris.sistem?.[k] ?? 0;

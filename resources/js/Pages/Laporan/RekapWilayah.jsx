@@ -42,6 +42,48 @@ export default function RekapWilayah({
   const [bukaBaris, setBukaBaris] = useState(null);
   const [alasan, setAlasan] = useState('');
   const [log, setLog] = useState(null);
+  const [mengekspor, setMengekspor] = useState(false);
+
+  // Panel accordion dibuka sebelum cetak, kalau tidak isinya hilang dari
+  // kertas: <details> yang tertutup memang tidak dirender.
+  useEffect(() => {
+    const buka = () => document.querySelectorAll('details:not([open])').forEach((d) => (d.open = true));
+    window.addEventListener('beforeprint', buka);
+
+    return () => window.removeEventListener('beforeprint', buka);
+  }, []);
+
+  // exceljs 900 KB, diimpor hanya saat tombolnya ditekan.
+  const unduh = async () => {
+    setMengekspor(true);
+    try {
+      const { unduhExcel } = await import('./RekapWilayah/ekspor');
+      const { gabung } = await import('./RekapWilayah/kolom');
+
+      // Angka hasil autosave ikut diekspor, bukan angka saat halaman dibuka.
+      // ponytail: lembar Mingguan masih dari prop mingguan, yang dihitung
+      // server saat halaman dibuka. Sama dengan panelnya di layar; kalau nanti
+      // perlu ikut autosave, hitung mingguannya dari hari yang sudah digabung.
+      const hariGabung = hari.map((h) => ({
+        ...h,
+        baris: h.baris.map((b) => gabung(b, tambalan[`${h.tanggal}|${b.branch_id}`])),
+      }));
+
+      await unduhExcel({
+        wilayah,
+        bulan,
+        namaBulan: namaBulan(bulan + '-01'),
+        kantor,
+        hari: hariGabung,
+        mingguan,
+      });
+    } catch (e) {
+      toast.error('Gagal menyusun berkas Excel');
+      console.error(e);
+    } finally {
+      setMengekspor(false);
+    }
+  };
 
   // Tambalan dipecah per tanggal. Tanggal tanpa tambalan memakai acuan yang
   // SAMA (TANPA_TAMBALAN), supaya BlokHari yang dibungkus memo melewatkannya.
@@ -181,13 +223,14 @@ export default function RekapWilayah({
       <Head title="Rekap Sirkulasi Wilayah" />
       <div className="space-y-4 md:p-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Rekap Sirkulasi Wilayah</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {namaBulan(bulan + '-01')} · {hari.length} hari · {sudahDicek} dari {totalBaris} baris sudah dicek
+          <h1 className="text-2xl font-bold tracking-tight print:text-base">Rekap Sirkulasi Wilayah</h1>
+          <p className="mt-1 text-sm text-muted-foreground print:text-[11px]">
+            Wilayah {wilayah} · {namaBulan(bulan + '-01')} · {hari.length} hari · {sudahDicek} dari {totalBaris} baris
+            sudah dicek
           </p>
         </div>
 
-        <div className="sticky top-0 z-40 -mx-2 flex flex-wrap items-center gap-2 bg-white/95 px-2 py-2 backdrop-blur">
+        <div className="tanpa-cetak sticky top-0 z-40 -mx-2 flex flex-wrap items-center gap-2 bg-white/95 px-2 py-2 backdrop-blur">
           <select
             value={wilayah}
             onChange={(e) => pindah({ wilayah: e.target.value })}
@@ -205,6 +248,22 @@ export default function RekapWilayah({
             onChange={(e) => e.target.value && pindah({ bulan: e.target.value })}
             className="h-9 rounded-md border bg-background px-3 text-sm"
           />
+          <button
+            type="button"
+            onClick={() => window.print()}
+            disabled={!hari.length}
+            className="h-9 rounded-md border px-3 text-sm hover:bg-slate-100 disabled:opacity-40"
+          >
+            Cetak / PDF
+          </button>
+          <button
+            type="button"
+            onClick={unduh}
+            disabled={!hari.length || mengekspor}
+            className="h-9 rounded-md border px-3 text-sm hover:bg-slate-100 disabled:opacity-40"
+          >
+            {mengekspor ? 'Menyusun…' : 'Excel'}
+          </button>
           {menyimpan > 0 && (
             <span className="text-[12px] text-sky-600">Menyimpan{menyimpan > 1 ? ` ${menyimpan}` : ''}…</span>
           )}
@@ -261,10 +320,11 @@ export default function RekapWilayah({
           </p>
         )}
 
-        {hari.map((h) => (
+        {hari.map((h, i) => (
           <BlokHari
             key={h.tanggal}
             hari={h}
+            pertama={i === 0}
             tambalan={tambalanPerTanggal[h.tanggal] ?? TANPA_TAMBALAN}
             aktif={aktif === h.tanggal}
             bulanCm={namaBulanCm}

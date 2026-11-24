@@ -252,11 +252,68 @@ angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
 
 ## 5. Ekspor
 
-- **Tahap awal**
-  - PDF: cetak browser (`window.print()` + CSS `@media print`), tanpa library.
-  - Excel `.xlsx`: library baru `exceljs`, header bertingkat dan format angka
-    seperti Excel mas.
-- **Paling akhir**: snapshot PNG tabel untuk WA, library `html-to-image`.
+Dua tombol di baris filter. Belum ada: snapshot PNG untuk WA (`html-to-image`),
+ditunda mas ke paling akhir.
+
+### Cetak / PDF
+
+`window.print()` + CSS `@media print`, tanpa library PDF. Aturan cetaknya
+**global**, di `resources/css/app.css`, karena menu laporan lain akan butuh
+yang sama:
+
+- A4 **landscape**, margin 8mm.
+- Yang disembunyikan: sidebar shadcn (`div[data-variant='sidebar']`), navbar
+  (`header`), toast sonner, dan apa pun berkelas **`.tanpa-cetak`**.
+- `thead` jadi `table-header-group`, jadi kop tabel berulang di tiap halaman;
+  `break-inside: avoid` pada baris.
+- `print-color-adjust: exact`, supaya sel kuning penanda selisih dan baris
+  total tetap tercetak.
+
+Yang khusus halaman ini:
+
+- Baris filter dan tombol **Cek**/**buka** diberi `.tanpa-cetak`.
+- Tiap blok tanggal mulai di halaman baru (`print:break-before-page`), kecuali
+  yang pertama.
+- **Kotak isian tidak ikut tercetak.** Isinya diketik dalam ribuan, jadi di
+  kertas akan terbaca 1.000x lebih kecil. Yang dicetak span `hidden print:block`
+  berisi angka penuh; kotaknya `print:hidden`.
+- Panel accordion dibuka lewat `beforeprint`: `<details>` yang tertutup tidak
+  dirender, jadi kalau tidak dibuka isinya hilang dari kertas.
+
+### Excel .xlsx
+
+`exceljs@4.4.0`, diimpor **dinamis** (900 KB, dan yang mengekspor cuma staf
+kontrol sekali sebulan). Satu berkas `rekap-wilayah-{wilayah}-{bulan}.xlsx`,
+tiga lembar:
+
+| Lembar | Isi |
+|---|---|
+| Harian | satu baris per kantor per tanggal + baris total tiap tanggal |
+| Sirkulasi Awal | kolom panel accordion, satu baris per kantor |
+| Mingguan | satu baris per minggu, lalu baris Sebulan |
+
+Lembar **Harian** memakai kepala bertingkat yang sama dengan layar (baris blok
+dengan sel gabung, lalu judul kolom), tapi kepalanya ditulis **sekali di atas**
+dan tanggalnya jadi kolom pertama — bukan diulang 25 kali. Jadi isinya masih
+bisa disaring (`autoFilter`) dan dipivot, sementara susunan kolomnya tetap
+seperti Excel mas.
+
+Aturan angka:
+
+- Angka ditulis sebagai **angka** dengan `numFmt '#,##0'`, bukan teks, jadi
+  masih bisa dijumlah di Excel.
+- Persen ditulis sebagai **pecahan** (0,4) dengan format `0.00%`. Kalau ditulis
+  40, Excel menampilkannya 4000%.
+- `null` jadi **sel kosong**, bukan 0: nol dan "belum diisi" beda artinya.
+- Persen baris total dari jumlah pembilang / jumlah penyebut, sama dengan layar.
+
+Yang diekspor adalah angka **sesudah autosave**, bukan angka saat halaman
+dibuka: baris digabung dengan tambalan lewat `gabung()` di `kolom.js`, fungsi
+yang sama dengan yang dipakai layar.
+
+Kecuali lembar **Mingguan**, yang masih dari prop `mingguan` — dihitung server
+saat halaman dibuka. Sama dengan panelnya di layar, jadi keduanya ikut
+ketinggalan sesudah autosave sampai halaman dimuat ulang.
 
 ## 6. Temuan dan risiko
 

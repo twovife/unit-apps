@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { gabung } from './kolom';
 import TabelWilayah from './TabelWilayah';
 
 /** Dipakai semua tanggal yang belum punya tambalan, supaya acuannya sama. */
@@ -16,7 +17,7 @@ const judulTanggal = (t) =>
  * TANPA_TAMBALAN yang sama, dan semua callback-nya dibungkus useCallback di
  * induk, dengan tanggal dikirim sebagai argumen, bukan ditutup di closure.
  */
-function BlokHari({ hari, tambalan, aktif, bulanCm, bulanMb, onUbah, onCek, onBuka, onLog }) {
+function BlokHari({ hari, tambalan, aktif, pertama, bulanCm, bulanMb, onUbah, onCek, onBuka, onLog }) {
   // Balasan autosave / cek / buka (mutasi yang diketik, kumulatif yang
   // dihitung ulang server, dan status tanda tangan) dituang ke baris tanggal
   // INI saja.
@@ -25,25 +26,16 @@ function BlokHari({ hari, tambalan, aktif, bulanCm, bulanMb, onUbah, onCek, onBu
       return hari.baris;
     }
 
-    return hari.baris.map((b) => {
-      const t = tambalan[b.branch_id];
-
-      return t
-        ? {
-            ...b,
-            diketik: { ...(b.diketik ?? {}), ...t.nilai },
-            terkunci: t.terkunci,
-            dicek_oleh: t.dicek_oleh,
-            dicek_pada: t.dicek_pada,
-          }
-        : b;
-    });
+    return hari.baris.map((b) => gabung(b, tambalan[b.branch_id]));
   }, [hari.baris, tambalan]);
 
   const dicek = baris.filter((b) => b.terkunci).length;
 
   return (
-    <section id={`tgl-${hari.tanggal}`} className="scroll-mt-28 space-y-1">
+    <section
+      id={`tgl-${hari.tanggal}`}
+      className={`scroll-mt-28 space-y-1 ${pertama ? '' : 'print:break-before-page'}`}
+    >
       <h2 className={`text-[13px] font-semibold ${aktif ? 'text-sky-700' : ''}`}>
         {judulTanggal(hari.tanggal)}
         <span className="ml-2 font-normal text-slate-400">
