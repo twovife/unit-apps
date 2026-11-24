@@ -17,19 +17,30 @@ const judulTanggal = (t) =>
  * induk, dengan tanggal dikirim sebagai argumen, bukan ditutup di closure.
  */
 function BlokHari({ hari, tambalan, aktif, bulanCm, bulanMb, onUbah, onCek, onBuka, onLog }) {
-  // Angka hasil autosave (mutasi yang diketik + kumulatif yang dihitung ulang
-  // server) dituang ke baris tanggal INI saja.
+  // Balasan autosave / cek / buka (mutasi yang diketik, kumulatif yang
+  // dihitung ulang server, dan status tanda tangan) dituang ke baris tanggal
+  // INI saja.
   const baris = useMemo(() => {
     if (!Object.keys(tambalan).length) {
       return hari.baris;
     }
 
-    return hari.baris.map((b) =>
-      tambalan[b.branch_id] ? { ...b, diketik: { ...(b.diketik ?? {}), ...tambalan[b.branch_id] } } : b,
-    );
+    return hari.baris.map((b) => {
+      const t = tambalan[b.branch_id];
+
+      return t
+        ? {
+            ...b,
+            diketik: { ...(b.diketik ?? {}), ...t.nilai },
+            terkunci: t.terkunci,
+            dicek_oleh: t.dicek_oleh,
+            dicek_pada: t.dicek_pada,
+          }
+        : b;
+    });
   }, [hari.baris, tambalan]);
 
-  const dicek = hari.baris.filter((b) => b.terkunci).length;
+  const dicek = baris.filter((b) => b.terkunci).length;
 
   return (
     <section id={`tgl-${hari.tanggal}`} className="scroll-mt-28 space-y-1">

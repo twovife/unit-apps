@@ -63,54 +63,70 @@ export default function RekapWilayah({
    *
    * Balasannya bukan halaman penuh melainkan tambalan JSON sebulan untuk
    * kantor itu — memuat ulang halaman berarti menghitung sebulan untuk 33
-   * kantor tiap kali satu sel ditinggalkan.
+   * kantor, 1,9 detik dan 92 kueri.
    */
-  const ubah = useCallback((tanggal, branchId, kolom, nilai) => {
-    const kunci = `${tanggal}|${branchId}`;
-    setTambalan((s) => ({ ...s, [kunci]: { ...s[kunci], [kolom]: nilai } }));
+  const kirim = useCallback((janji, pesan) => {
     setMenyimpan((n) => n + 1);
 
-    window.axios
-      .post(route('laporan.rekap_wilayah.simpan'), {
-        ringkas: true,
-        baris: [{ branch_id: branchId, tanggal, nilai: { [kolom]: nilai } }],
+    return janji
+      .then(({ data }) => {
+        setTambalan((s) => ({ ...s, ...data.tambalan }));
+        if (pesan) toast.success(pesan);
+
+        return true;
       })
-      .then(({ data }) => setTambalan((s) => ({ ...s, ...data.tambalan })))
       .catch((e) => {
         toast.error(e.response?.data?.message ?? 'Gagal menyimpan');
-        // Angka di layar sudah berubah padahal server menolak; dimuat ulang
+        // Layar bisa sudah berubah padahal server menolak; dimuat ulang
         // supaya yang terlihat tetap yang tersimpan.
         router.reload({ only: ['hari'], onSuccess: () => setTambalan({}) });
+
+        return false;
       })
       .finally(() => setMenyimpan((n) => n - 1));
   }, []);
 
-  const cek = useCallback((tanggal, b) =>
-    router.post(route('laporan.rekap_wilayah.cek', b.branch_id), { tanggal }, {
-      preserveScroll: true,
-      onSuccess: () => {
-        setTambalan({});
-        toast.success(`${b.unit} ${tanggal} dicek`);
-      },
-      onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal mengecek'),
-    }), []);
+  const ubah = useCallback(
+    (tanggal, branchId, kolom, nilai) => {
+      const kunci = `${tanggal}|${branchId}`;
+      setTambalan((s) => ({ ...s, [kunci]: { ...s[kunci], nilai: { ...s[kunci]?.nilai, [kolom]: nilai } } }));
 
-  const buka = () => {
+      kirim(
+        window.axios.post(route('laporan.rekap_wilayah.simpan'), {
+          ringkas: true,
+          baris: [{ branch_id: branchId, tanggal, nilai: { [kolom]: nilai } }],
+        }),
+      );
+    },
+    [kirim],
+  );
+
+  const cek = useCallback(
+    (tanggal, b) =>
+      kirim(
+        window.axios.post(route('laporan.rekap_wilayah.cek', b.branch_id), { ringkas: true, tanggal }),
+        `${b.unit} ${tanggal} dicek`,
+      ),
+    [kirim],
+  );
+
+  const buka = async () => {
     if (alasan.trim().length < 5) return;
-    router.post(
-      route('laporan.rekap_wilayah.buka', bukaBaris.baris.branch_id),
-      { tanggal: bukaBaris.tanggal, alasan: alasan.trim() },
-      {
-        preserveScroll: true,
-        onSuccess: () => {
-          setTambalan({});
-          toast.success(`${bukaBaris.baris.unit} dibuka`);
-          setBukaBaris(null);
-          setAlasan('');
-        },
-        onError: (e) => toast.error(Object.values(e)[0] ?? 'Gagal membuka'),
-      },
+    const { tanggal, baris } = bukaBaris;
+
+    const berhasil = await kirim(
+      window.axios.post(route('laporan.rekap_wilayah.buka', baris.branch_id), {
+        ringkas: true,
+        tanggal,
+        alasan: alasan.trim(),
+      }),
+      `${baris.unit} dibuka`,
     );
+
+    if (berhasil) {
+      setBukaBaris(null);
+      setAlasan('');
+    }
   };
 
   const lihatLog = useCallback(async (tanggal, b) => {
@@ -152,8 +168,13 @@ export default function RekapWilayah({
 
   const mintaBuka = useCallback((tanggal, baris) => setBukaBaris({ tanggal, baris }), []);
 
+  const terkunci = useCallback(
+    (tanggal, b) => tambalan[`${tanggal}|${b.branch_id}`]?.terkunci ?? b.terkunci,
+    [tambalan],
+  );
+
   const totalBaris = hari.reduce((t, h) => t + h.baris.length, 0);
-  const sudahDicek = hari.reduce((t, h) => t + h.baris.filter((b) => b.terkunci).length, 0);
+  const sudahDicek = hari.reduce((t, h) => t + h.baris.filter((b) => terkunci(h.tanggal, b)).length, 0);
 
   return (
     <>
@@ -196,7 +217,7 @@ export default function RekapWilayah({
               Hijau = semua kantor sudah dicek, kelabu = hari libur. */}
           <div className="flex w-full flex-wrap gap-1">
             {hari.map((h) => {
-              const dicek = h.baris.filter((b) => b.terkunci).length;
+              const dicek = h.baris.filter((b) => terkunci(h.tanggal, b)).length;
               const penuh = dicek === h.baris.length;
 
               return (

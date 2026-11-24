@@ -38,11 +38,11 @@ class AngkaRekapWilayah
      * @return array<int, array<string, int>> branch_id => kolom KOLOM_HARIAN
      *         plus saldo_lama_cm & saldo_lama_mb
      */
-    public static function untukWilayah(int $wilayah, string $tanggal): array
+    public static function untukWilayah(int $wilayah, string $tanggal, ?int $branchId = null): array
     {
         $tanggal = Carbon::parse($tanggal)->toDateString();
 
-        return self::untukBulan($wilayah, $tanggal)[$tanggal] ?? [];
+        return self::untukBulan($wilayah, $tanggal, $branchId)[$tanggal] ?? [];
     }
 
     /**
@@ -92,12 +92,17 @@ class AngkaRekapWilayah
      *
      * @return array<string, array<int, array<string, int>>>
      */
-    public static function untukBulan(int $wilayah, string $tanggal): array
+    public static function untukBulan(int $wilayah, string $tanggal, ?int $branchId = null): array
     {
         $periode = Carbon::parse($tanggal)->startOfMonth()->toDateString();
         $akhir = Carbon::parse($tanggal)->endOfMonth()->toDateString();
 
+        // $branchId mempersempit ke SATU kantor. Dipakai tombol Cek: dia cuma
+        // butuh angka sistem satu baris, dan sebulan untuk 33 kantor memakan
+        // 1,9 detik. Drop bulan rujukan tetap dihitung per wilayah karena
+        // hasilnya sudah ditembolok 6 jam dan dipakai bersama halamannya.
         $kantor = Branch::where('wilayah', $wilayah)->where('isactive', true)
+            ->when($branchId, fn ($q) => $q->where('id', $branchId))
             ->orderBy('unit')->pluck('unit', 'id');
 
         if ($kantor->isEmpty()) {
