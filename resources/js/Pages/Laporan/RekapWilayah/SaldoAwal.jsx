@@ -5,7 +5,7 @@ import { nilai, persen, persenTeks } from './kolom';
 // Pemutihan | Drop Bln Lalu | Sirkulasi | Drop CM | CM | % | Drop MB | MB | % | ML | %
 //
 // atas/bagi = pembilang & penyebut kolom persen. Sama dengan tabel harian:
-// CM & MB dibagi saldo lama masing-masing, ML dibagi sirkulasi awal.
+// CM & MB dibagi jumlah drop bulan rujukannya, ML dibagi sirkulasi awal.
 const KOLOM = [
   { k: 'pemutihan', j: 'Pemutihan', ket: 'Pemutihan bulan lalu; keluarnya baru terlihat di saldo awal bulan ini' },
   { k: 'drop_bulan_lalu', j: 'Drop Bln Lalu', bulan: 'lalu' },

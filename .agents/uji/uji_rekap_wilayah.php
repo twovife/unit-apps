@@ -16,11 +16,6 @@ assert(round(RekapWilayah::persen(103_565_000, 614_300_000), 4) === 0.1686, 'con
 assert(RekapWilayah::persen(1000, 0) === null, 'penyebut 0 -> null, bukan 0');
 assert(RekapWilayah::persen(0, 1000) === 0.0);
 
-// --- saldo lama = drop bulan rujukan x 1,3
-assert(RekapWilayah::saldoLama(100_000_000) === 130_000_000);
-assert(RekapWilayah::saldoLama(0) === 0);
-assert(RekapWilayah::saldoLama(3) === 4, 'pembulatan: 3 x 1,3 = 3,9 -> 4');
-
 // --- sirkulasi berjalan
 assert(RekapWilayah::sirkulasiBerjalan(1_000_000, 100_000, 50_000) === 1_080_000);
 assert(RekapWilayah::sirkulasiBerjalan(0, 0, 0) === 0);

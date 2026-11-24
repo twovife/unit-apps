@@ -30,12 +30,6 @@ class RekapWilayah
         return $pembilang / $penyebut;
     }
 
-    /** Saldo lama CM/MB = jumlah drop bulan rujukan x 1,3. */
-    public static function saldoLama(int $dropBulanRujukan): int
-    {
-        return (int) round($dropBulanRujukan * self::PENGALI);
-    }
-
     /** Sirkulasi hari ini = saldo sebelumnya + drop x 1,3 - storting. */
     public static function sirkulasiBerjalan(int $saldoSebelum, int $drop, int $storting): int
     {

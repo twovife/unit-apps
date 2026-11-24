@@ -67,19 +67,27 @@ nama blok serta kolomnya di `title`.
 
 ### Yang dihitung sistem
 
-- **SALDO LAMA CM** = jumlah drop kantor pada bulan T−3 × 1,3.
-- **SALDO LAMA MB** = jumlah drop kantor pada bulan T−4 × 1,3.
-  (T = bulan tanggal yang dibuka. Batas bulan sama dengan `$dateOfCm` /
-  `$dateOfMb` di `RekapTrait`. Tetap sepanjang bulan.)
+- **Penyebut persen CM/MB = jumlah drop bulan rujukan, APA ADANYA**
+  (keputusan mas 2026-11-24, mengganti aturan drop x 1,3 sebelumnya).
+  CM memakai drop bulan **T−3**, MB memakai drop bulan **T−4**.
+  Contoh mas: drop CM 10 juta dengan saldo CM 5 juta berarti 50%; sesudah ada
+  yang membayar sehingga saldo tinggal 4 juta, jadi 40%. Penyebutnya tetap,
+  pembilangnya berkurang tiap ada angsuran.
+
+  Di basis data namanya tetap `saldo_lama_cm` / `saldo_lama_mb`, karena itu
+  kolom yang dibekukan saat baris dicek.
+
+  Pengali 1,3 **masih dipakai**, tapi hanya untuk sirkulasi
+  (saldo awal + drop x 1,3 − storting), bukan untuk persen.
+
 - **Sumber drop bulan rujukan: `transaction_loans`** (`status = 'success'`,
-  `nominal_drop`, disaring `Mutasi::saring` atas `drop_date`), BUKAN
-  `transaction_monthly_closings.drop` dan BUKAN tabel agregasi baru
-  (keputusan mas 2026-11-23). Alasannya di §6.
-  Angkanya tetap sebulan, jadi disimpan di `Cache::remember` berkunci
-  wilayah + bulan rujukan. Diukur: satu wilayah (32 kantor) dua bulan = 0,9
-  detik.
-- **% CM** = SALDO CM / SALDO LAMA CM.
-- **% MB** = SALDO MB / SALDO LAMA MB.
+  `nominal_drop`), BUKAN `transaction_monthly_closings.drop` dan BUKAN tabel
+  agregasi baru. Alasannya di §6. Angkanya tetap sebulan, jadi disimpan di
+  `Cache::remember` berkunci wilayah + bulan rujukan. Diukur: satu wilayah
+  (32 kantor) dua bulan = 0,9 detik.
+
+- **% CM** = SALDO CM / jumlah drop bulan T−3.
+- **% MB** = SALDO MB / jumlah drop bulan T−4.
 - **% ML** = SALDO ML / SALDO (sirkulasi).
 - Baris total wilayah = jumlah tiap kolom; % baris total dihitung dari jumlah
   pembilang / jumlah penyebut, **bukan** rata-rata persen kantor.

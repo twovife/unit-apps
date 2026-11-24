@@ -109,8 +109,11 @@ class AngkaRekapWilayah
                 'awal_mb' => $a['mb'],
                 'awal_ml' => $a['ml'],
 
-                'saldo_lama_cm' => RekapWilayah::saldoLama($dropCm[$id] ?? 0),
-                'saldo_lama_mb' => RekapWilayah::saldoLama($dropMb[$id] ?? 0),
+                // Penyebut persen CM/MB: jumlah drop bulan rujukan APA ADANYA,
+                // tanpa pengali 1,3 (keputusan mas 2026-11-24). Nama kolomnya
+                // tetap saldo_lama_* karena itu yang dibekukan saat dicek.
+                'saldo_lama_cm' => $dropCm[$id] ?? 0,
+                'saldo_lama_mb' => $dropMb[$id] ?? 0,
                 // Drop bulan rujukan, asal saldo lama. Ditampilkan supaya
                 // angkanya bisa ditelusuri, bukan muncul entah dari mana.
                 'drop_cm' => $dropCm[$id] ?? 0,
