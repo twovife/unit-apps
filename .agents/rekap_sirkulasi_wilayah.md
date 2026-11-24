@@ -199,52 +199,30 @@ Dijumlah sejak tanggal 1, **bukan** dari baris kemarin. Alasannya: kalau hari
 lalu dikoreksi, hari-hari sesudahnya harus ikut bergeser. Jadi tiap simpan
 menghitung ulang sebulan untuk kantor itu.
 
-**Kumulatif meneruskan angka STAF KONTROL, bukan Rekap 2.** Aturannya dua
-tingkat, dan keduanya lahir dari cacat nyata:
+**Yang dijumlah: angka yang diketik kalau ada, angka sistem kalau belum.**
+Berlaku **per kolom**, bukan per tanggal. Dua hal yang dijaga aturan ini:
 
-1. **Tanggal yang belum disentuh staf kontrol tidak menambah apa pun.**
-   Kolom ini artinya "jumlah menurut laporan kasir". Kalau tanggal yang belum
-   dilaporkan ikut menambah angka sistem, hasilnya campuran laporan dan
-   sistem — tidak berarti apa-apa di dua dunia mana pun. Contohnya: melapor
-   drop 500.000 selama tiga hari lalu berhenti, tanggal keempat sempat
-   menunjukkan 36.800.000 (1,5 juta laporan + 35,3 juta sistem).
-
-   "Disentuh" = ada satu saja kolom mutasi yang terisi. Baris yang dibuat
-   hitung ulang (lihat bawah) hanya berisi kolom turunan, jadi tidak terhitung
-   disentuh.
-
-2. **Di dalam tanggal yang sudah disentuh, kolom yang belum diketik memakai
-   angka sistem tanggal itu.** Tanpa ini, mengetik storting saja membuat
-   "Jml Drop" jadi nol — barisnya cuma punya storting, drop-nya null.
+1. **Mengetik storting saja tidak boleh menolkan Jml Drop.** Barisnya cuma
+   punya storting; kolom drop yang masih null memakai angka sistem hari itu.
    Lihat `.agents/uji/uji_hitung_ulang.php`.
+
+2. **Koreksi menjalar ke bawah.** Tanggal 3 yang belum diisi tetap menyumbang
+   angka sistemnya, jadi kumulatifnya dibangun di atas angka tanggal 2. Kalau
+   tanggal 2 salah, Jml dan Saldo tanggal 3 ke bawah ikut selisih — dan itu
+   memang yang mau dilihat staf kontrol (keputusan mas 2026-11-24).
+
+   Contoh nyata, Kediri 1 November 2026: storting tanggal 2 dilaporkan
+   25.455.000, sistem 25.456.000. Selisih Rp1.000 itu terbawa ke Jml Storting
+   tanggal 3, 4, 5 dan seterusnya. Jml Drop tetap cocok dengan sistem, jadi
+   tidak ditandai — yang merah hanya kolom yang benar-benar terpengaruh.
+
+   Dijaga `.agents/uji/uji_kumulatif_bersambung.php`.
+
 **Tanggal yang belum punya baris DIBUATKAN**, berisi kolom turunan saja;
-kolom mutasinya dibiarkan null supaya selnya tetap tampil miring kelabu dan
-tanggal itu tidak terhitung "disentuh". Tanpa ini Jml Drop melompat di
-perbatasan: tanggal yang punya baris memakai kumulatif hasil hitung ulang,
-tanggal tanpa baris jatuh ke kumulatif sistem apa adanya, dan koreksi staf
-kontrol hilang begitu saja. Dijaga
-`.agents/uji/uji_kumulatif_bersambung.php`.
-
-**Baris yang belum disentuh tidak dikirim angkanya ke layar.** Kolom
-turunannya memang berhenti di angka laporan terakhir — itu benar menurut
-aturan di atas — tapi kalau ditampilkan dia merah sebaris penuh, padahal
-bedanya bukan "kasir salah lapor" melainkan "belum ada laporan". Di tanggal
-itu layar menampilkan angka sistem saja, tanpa penanda.
-
-Berlaku juga untuk balasan autosave (`balasTambalan`), kalau tidak merahnya
-muncul lagi begitu satu sel disimpan.
-
-Jadi urutannya: sebelum ada isian, tanggal itu menampilkan angka Rekap 2 tanpa
-penanda. Begitu satu selnya diketik, seluruh kolom Jml dan Saldo tanggal itu
-beralih jadi "menurut laporan", dan bedanya dari Rekap 2 ditandai merah.
-
-Keduanya sesuai dengan yang dilihat staf kontrol: layar memang menampilkan
-angka sistem di sel yang belum diisi.
-
-Baris yang sudah dicek **tidak diubah** — angkanya sudah ditandatangani.
-Mutasinya tetap ikut dijumlah untuk hari-hari sesudahnya. Sudah diuji:
-mengoreksi 2 November menggeser 3 November, tetapi tidak kalau 3 November
-sudah dicek.
+kolom mutasinya dibiarkan null supaya selnya tetap tampil miring kelabu
+alias "angka sistem, belum dilaporkan". Tanpa baris itu, kumulatifnya tidak
+punya tempat disimpan dan tanggal itu jatuh ke kumulatif sistem apa adanya —
+koreksi staf kontrol hilang di situ, lalu muncul lagi kalau tanggalnya diisi.
 
 ## 3. Penyimpanan
 
@@ -572,7 +550,7 @@ Angka jalur murah diuji ulang dengan `.agents/uji/uji_kantor_sempit.php`
 ## Pengujian
 
 Tidak lewat phpunit — `php artisan test` menghantam `ubmi_db` produksi.
-Sembilan skrip yang bisa dijalankan ulang; yang menyentuh basis data berjalan
+Delapan skrip yang bisa dijalankan ulang; yang menyentuh basis data berjalan
 di dalam transaksi yang DIBATALKAN, jadi tidak meninggalkan data.
 
 ```bash
@@ -596,9 +574,6 @@ docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji
 
 # kumulatif meneruskan laporan, tidak dicampur angka sistem
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_kumulatif_bersambung.php
-
-# tanggal yang belum dilapor tidak merah sebaris penuh
-docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_belum_dilapor_tidak_merah.php
 
 # saldo awal yang dilaporkan menggeser kumulatif sebulan
 docker exec -u www-data -e HOME=/tmp unit-app php artisan tinker .agents/uji/uji_saldo_awal.php

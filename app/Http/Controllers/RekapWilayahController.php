@@ -136,7 +136,7 @@ class RekapWilayahController extends Controller
                             'branch_id' => (int) $id,
                             'unit' => $nama,
                             'sistem' => $mendatang ? [] : collect($perKantor[$id] ?? [])->only($kolomHarian)->all(),
-                            'diketik' => $mendatang || ! $this->disentuh($d) ? null : $d->only($kolomHarian),
+                            'diketik' => $mendatang ? null : $d?->only($kolomHarian),
                             'ttd' => $ttd[$tanggal][$id] ?? ['kasir' => 0, 'km' => 0, 'kelompok' => 0],
                             'terkunci' => (bool) $d?->terkunci(),
                             'dicek_oleh' => $d?->pengecek?->employee?->nama_karyawan,
@@ -664,25 +664,17 @@ class RekapWilayahController extends Controller
             $s = $perKantor[$branchId] ?? [];
             $r = $baris->get($t);
 
-            // Tanggal yang BELUM DISENTUH staf kontrol tidak ikut dijumlah.
-            // Kumulatif di kolom ini artinya "jumlah menurut laporan kasir",
-            // jadi hari yang belum dilaporkan tidak menambah apa pun. Kalau
-            // sistem ikut ditambahkan, angkanya campuran laporan dan sistem —
-            // tidak berarti apa-apa (keputusan mas 2026-11-24).
+            // Tiap tanggal menyumbang: angka yang diketik kalau ada, angka
+            // sistem kalau belum. Berlaku per KOLOM, bukan per tanggal.
             //
-            // "Disentuh" = ada satu saja kolom mutasi yang terisi. Baris yang
-            // dibuat hitung ulang ini sendiri berisi kolom turunan saja, jadi
-            // dia tidak terhitung disentuh.
-            $disentuh = $r !== null && collect(RegionalCirculationRecap::KOLOM_MUTASI)
-                ->contains(fn ($k) => $r->$k !== null);
-
-            if ($disentuh) {
-                // Di dalam tanggal yang sudah disentuh, kolom yang belum
-                // diketik memakai angka sistem — kalau tidak, mengetik
-                // storting saja akan menolkan Jml Drop.
-                foreach ($jumlah as $k => $_) {
-                    $jumlah[$k] += (int) ($r->$k ?? $s[$k] ?? 0);
-                }
+            // Dua hal yang dijaga aturan ini (mas 2026-11-24):
+            //  - mengetik storting saja tidak boleh menolkan Jml Drop; kolom
+            //    drop yang masih null memakai angka sistem hari itu;
+            //  - koreksi di tanggal 2 harus MENJALAR ke tanggal 3 dan
+            //    seterusnya walau tanggal itu belum diisi. Kalau tanggal 2
+            //    salah, ke bawah ikut selisih — itu memang yang mau dilihat.
+            foreach ($jumlah as $k => $_) {
+                $jumlah[$k] += (int) ($r?->$k ?? $s[$k] ?? 0);
             }
 
             // Baris yang sudah dicek tidak disentuh: angkanya sudah
@@ -727,24 +719,6 @@ class RekapWilayahController extends Controller
     }
 
     /**
-     * Apakah baris ini sudah disentuh staf kontrol?
-     *
-     * "Disentuh" = ada satu saja kolom mutasi yang terisi. Baris yang dibuat
-     * hitungUlangBulan() hanya berisi kolom turunan, jadi belum terhitung.
-     *
-     * Baris yang belum disentuh TIDAK dikirim angkanya ke layar: kolom
-     * turunannya memang berhenti di angka laporan terakhir, dan kalau itu
-     * ditampilkan dia akan merah seluruh baris — padahal bedanya bukan
-     * "kasir salah lapor" melainkan "belum ada laporan". Layar menampilkan
-     * angka sistem saja di sana.
-     */
-    private function disentuh(?RegionalCirculationRecap $baris): bool
-    {
-        return $baris !== null && collect(RegionalCirculationRecap::KOLOM_MUTASI)
-            ->contains(fn ($k) => $baris->$k !== null);
-    }
-
-    /**
      * Balasan ringkas untuk autosave, cek & buka: sebulan baris kantor-kantor
      * yang tersentuh, berkunci "tanggal|branch_id" seperti state di layar.
      *
@@ -765,14 +739,8 @@ class RekapWilayahController extends Controller
             ->get()
             ->mapWithKeys(fn ($r) => [
                 "{$r->tanggal->toDateString()}|{$r->branch_id}" => [
-                    // Baris yang belum disentuh dikirim kosong, alasannya di
-                    // disentuh(). Tanpa ini autosave memunculkan merah sebaris
-                    // penuh di tanggal yang belum dilaporkan.
-                    'nilai' => $this->disentuh($r)
-                        ? collect(RegionalCirculationRecap::KOLOM_ANGKA)
-                            ->mapWithKeys(fn ($k) => [$k => $r->$k === null ? null : (int) $r->$k])->all()
-                        : collect(RegionalCirculationRecap::KOLOM_ANGKA)
-                            ->mapWithKeys(fn ($k) => [$k => null])->all(),
+                    'nilai' => collect(RegionalCirculationRecap::KOLOM_ANGKA)
+                        ->mapWithKeys(fn ($k) => [$k => $r->$k === null ? null : (int) $r->$k])->all(),
                     'terkunci' => $r->terkunci(),
                     'dicek_oleh' => $r->pengecek?->employee?->nama_karyawan,
                     'dicek_pada' => $r->checked_at?->format('d/m/Y H:i'),
