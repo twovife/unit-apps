@@ -241,11 +241,13 @@ export default function RekapWilayah({
     [kirim, bulan],
   );
 
-  // Nama kantor diklik: Rekap 2 kantor itu, ditumpangkan di drawer.
+  // Nama kantor diklik: Rekap 2 kantor itu, ditumpangkan di drawer. Dari
+  // tabel harian tanggalnya ikut; dari panel Sirkulasi Awal cukup bulannya.
   const lihatRekapDua = useCallback(
     (tanggal, b) => setRekapDua({ branch_id: b.branch_id, unit: b.unit, bulan: tanggal.slice(0, 7) }),
     [],
   );
+  const lihatRekapDuaBulan = useCallback((b) => lihatRekapDua(bulan + '-01', b), [lihatRekapDua, bulan]);
 
   // Tanggal yang tombolnya menyala. Diisi saat tombolnya diklik.
   //
@@ -413,6 +415,7 @@ export default function RekapWilayah({
             onUbah={ubahAwal}
             onCek={cekAwal}
             onBuka={bukaAwal}
+            onKantor={lihatRekapDuaBulan}
           />
         )}
 

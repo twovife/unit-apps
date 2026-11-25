@@ -371,7 +371,8 @@ angka kantor itu sudah beku atau masih bisa bergerak sebelum menandatangani.
 
 ### Nama kantor membuka Rekap 2
 
-**Nama kantor diklik** membuka **halaman Rekap 2 yang asli** untuk kantor itu,
+**Nama kantor diklik** — di tabel harian maupun di panel Sirkulasi Awal —
+membuka **halaman Rekap 2 yang asli** untuk kantor itu,
 di dalam **Sheet** shadcn yang menggeser dari kanan (bukan modal di tengah,
 permintaan mas 2026-11-24 — sama dengan drawer buku di Rekap 1), lewat
 `<iframe ?polos=1>`.

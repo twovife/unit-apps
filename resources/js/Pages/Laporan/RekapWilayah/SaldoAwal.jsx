@@ -26,7 +26,7 @@ const RINGKAS = ['awal_sirkulasi', 'awal_cm', 'persen_cm', 'awal_mb', 'persen_mb
  *
  * Kartu lipatnya Accordion shadcn, sama dengan "Saldo Awal Bulan" di Rekap 2.
  */
-export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah, onCek, onBuka }) {
+export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah, onCek, onBuka, onKantor }) {
   useModeRibuan(); // ikut saklar ribuan di header
 
   const namaBulan = { lalu: bulanLalu, cm: bulanCm, mb: bulanMb };
@@ -80,7 +80,16 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
           <tbody>
             {baris.map((b) => (
               <tr key={b.branch_id} className="group border-t bg-white even:bg-slate-50 hover:bg-sky-50">
-                <td className="whitespace-nowrap px-3 py-1 font-medium">{b.unit}</td>
+                <td className="whitespace-nowrap px-3 py-1 font-medium">
+                  <button
+                    type="button"
+                    onClick={() => onKantor?.(b)}
+                    title="Buka Rekap 2 kantor ini"
+                    className="underline decoration-dotted underline-offset-2 hover:text-sky-700"
+                  >
+                    {b.unit}
+                  </button>
+                </td>
                 {KOLOM.map((c) => {
                   const tanda = c.bagi ? null : tandaSelisih(b, c.k);
                   const bisaKetik = bolehUbah && c.ketik && !b.terkunci;
