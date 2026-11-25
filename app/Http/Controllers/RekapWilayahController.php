@@ -356,6 +356,50 @@ class RekapWilayahController extends Controller
     }
 
     /**
+     * Simpan saldo awal bulan yang dilaporkan satu kantor.
+     *
+     * Satu baris per kantor per bulan, bukan per hari tagih (mas 2026-11-24).
+     * Dipakai staf kontrol untuk melihat saldo awal versi laporan kantor
+     * berbeda atau tidak dari versi sistem; yang diketik disimpan apa adanya,
+     * selisihnya cuma ditandai.
+     *
+     * Mengubahnya menggeser seluruh kumulatif bulan itu, jadi sebulan
+     * dihitung ulang dan tambalannya dibalas seperti autosave harian.
+     */
+    public function simpanAwal(Request $request, Branch $branch)
+    {
+        $this->pastikanBolehUbah($branch);
+
+        $isi = $request->validate([
+            'periode' => 'required|date',
+            ...collect(RegionalCirculationOpening::KOLOM)
+                ->mapWithKeys(fn ($k) => ["nilai.$k" => 'nullable|integer|min:0'])->all(),
+        ]);
+
+        $periode = Carbon::parse($isi['periode'])->startOfMonth()->toDateString();
+        abort_if($periode < self::MULAI, 422, 'Saldo awal baru ditagih mulai ' . self::MULAI . '.');
+
+        \DB::transaction(function () use ($branch, $periode, $isi) {
+            $baris = RegionalCirculationOpening::lockForUpdate()
+                ->firstOrNew(['branch_id' => $branch->id, 'periode' => $periode]);
+
+            abort_if($baris->terkunci(), 422, 'Saldo awal sudah dicek.');
+
+            $baris->wilayah ??= $branch->wilayah;
+            foreach (RegionalCirculationOpening::KOLOM as $k) {
+                if (array_key_exists($k, $isi['nilai'] ?? [])) {
+                    $baris->$k = $isi['nilai'][$k] === null ? null : (int) $isi['nilai'][$k];
+                }
+            }
+            $baris->save();
+        });
+
+        // Saldo awal titik mulai seluruh kumulatif bulan itu, jadi sebulan
+        // dihitung ulang di dalam balasAwal().
+        return $this->balasAwal($branch, $periode);
+    }
+
+    /**
      * Tanda tangan staf kontrol untuk saldo awal bulan satu kantor.
      *
      * Tidak berantai seperti Cek harian: saldo awal cuma satu per bulan, tidak
