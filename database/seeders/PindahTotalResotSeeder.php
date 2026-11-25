@@ -22,47 +22,35 @@ class PindahTotalResotSeeder extends Seeder
       ->firstOrFail();
     echo 'dari kelompok' . $kelompok_asal->id . PHP_EOL;
     $kelompok_tujuan = TransactionLoanOfficerGrouping::where('branch_id', 34)
-      ->where('kelompok', 3)
+      ->where('kelompok', 1)
       ->firstOrFail();
-
-    $date = "2026-02-06";
-    $hari = "jumat";
 
     echo 'ke kelompok' . $kelompok_tujuan->id . PHP_EOL;
 
-    DB::transaction(function () use ($kelompok_asal, $kelompok_tujuan, $date, $hari) {
+    DB::transaction(function () use ($kelompok_asal, $kelompok_tujuan) {
 
-      // $loanIds = TransactionLoan::where('transaction_loan_officer_grouping_id', $kelompok_asal->id)
-      //   ->whereNull('out_status')
-      //   ->where('hari', 'sabtu')
-      //   ->pluck('id');
-
-      $loans = TransactionLoan::where('transaction_loan_officer_grouping_id', $kelompok_asal->id)
-        ->where('hari', $hari)
-        ->whereHas('loan_instalment', function ($q) use ($date) {
-          $q->whereDate('transaction_date', $date);
-        })
-        ->with([
-          'loan_instalment' => fn($q) => $q->whereDate('transaction_date', $date)
-        ])
+      $loanIds = TransactionLoan::where('transaction_loan_officer_grouping_id', $kelompok_asal->id)
+        ->whereNull('out_status')
+        ->where('hari', 'rabu')
         ->pluck('id');
 
+      echo 'jumlah loan yang dipindah: ' . $loanIds->count() . PHP_EOL;
 
-      echo 'jumlah loan yang dipindah: ' . $loans->count() . PHP_EOL;
-
-      if ($loans->isEmpty()) {
+      if ($loanIds->isEmpty()) {
         return;
         echo "tidak ada loan yang dipindah" . PHP_EOL;
       }
 
-      TransactionLoanInstalment::whereIn('transaction_loan_id', $loans)
+      TransactionLoanInstalment::whereIn('transaction_loan_id', $loanIds)
         ->update([
           'transaction_loan_officer_grouping_id' => $kelompok_tujuan->id
         ]);
 
       echo "instalment berhasil diupdate" . PHP_EOL;
 
-      TransactionLoan::whereIn('id', $loans)
+
+
+      TransactionLoan::whereIn('id', $loanIds)
         ->update([
           'transaction_loan_officer_grouping_id' => $kelompok_tujuan->id
         ]);
@@ -71,7 +59,7 @@ class PindahTotalResotSeeder extends Seeder
       // export log id mana yang berhasil diupdate
 
       Log::channel('swaplog')->info("BEFORE", [
-        'loans_moved' => $loans->toArray(),
+        'loans_moved' => $loanIds->toArray(),
       ]);
       // optional: log sukses
     });

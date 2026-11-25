@@ -1,0 +1,72 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[php]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.copyWithSyntaxHighlighting": false, // Menonaktifkan penyalinan dengan penyorotan sintaks.
+    "diffEditor.ignoreTrimWhitespace": true, // Tidak mengabaikan spasi kosong saat membandingkan file.
+    "editor.emptySelectionClipboard": false, // Tidak menyalin teks saat tidak ada teks yang dipilih.
+    "workbench.editor.enablePreview": false, // Menonaktifkan mode pratayang editor.
+    "window.newWindowDimensions": "inherit", // Menggunakan dimensi jendela yang ada untuk jendela baru.
+    "editor.multiCursorModifier": "ctrlCmd", // Menetapkan modifikasi multi-kursor ke Ctrl/Cmd.
+    "files.trimTrailingWhitespace": true, // Menghapus spasi kosong di akhir baris saat menyimpan file.
+    "diffEditor.renderSideBySide": false, // Tidak menampilkan perbedaan secara berdampingan.
+    "editor.snippetSuggestions": "top", // Menampilkan saran potongan kode di atas saran lainnya.
+    "editor.detectIndentation": false, // Menonaktifkan deteksi otomatis indentasi.
+    "window.nativeFullScreen": false, // Menonaktifkan mode layar penuh asli.
+    "files.insertFinalNewline": true, // Menambahkan baris baru di akhir file saat menyimpan.
+    "files.trimFinalNewlines": true, // Menonaktifkan tampilan bilah aktivitas di samping.
+    "workbench.statusBar.visible": false, // Menonaktifkan tampilan bilah status di bagian bawah.
+    "workbench.editor.showTabs": "none", // Menonaktifkan panduan indentasi di editor.
+    "editor.minimap.enabled": false, // Menonaktifkan minimap di editor.
+    "editor.lineNumbers": "on", // Menonaktifkan penomoran baris di editor.
+    "breadcrumbs.enabled": false, // Menonaktifkan breadcrumb navigation (navigasi jalur file).
+    "scm.diffDecorations": "none", // Tidak menampilkan dekorasi perbedaan pada SCM (Source Control Manager).
+    "editor.hover.enabled": "off", // Menonaktifkan tampilan tooltip saat hover di editor.
+    "editor.matchBrackets": "never", // Menonaktifkan penyorotan bracket yang cocok.
+    "workbench.tips.enabled": false, // Menonaktifkan tampilan tips dan saran di workbench.
+    "editor.colorDecorators": false, // Menonaktifkan dekorator warna di editor.
+    "git.decorations.enabled": false, // Menonaktifkan dekorasi Git di editor.
+    "workbench.startupEditor": "none", // Tidak membuka editor apa pun saat memulai.
+    "editor.lightbulb.enabled": "off", // Menonaktifkan tampilan ikon lightbulb untuk saran perbaikan cepat.
+    "editor.selectionHighlight": false, // Menonaktifkan penyorotan teks yang dipilih.
+    "editor.overviewRulerBorder": false, // Menonaktifkan border overview ruler.
+    "editor.renderLineHighlight": "none", // Menonaktifkan penyorotan baris aktif di editor.
+    "editor.occurrencesHighlight": "off", // Menonaktifkan penyorotan kemunculan teks.
+    "problems.decorations.enabled": false, // Menonaktifkan dekorasi masalah di editor.
+    "editor.renderControlCharacters": false, // Menonaktifkan rendering karakter kontrol di editor.
+    "editor.hideCursorInOverviewRuler": true, // Menyembunyikan kursor di overview ruler.
+    "editor.gotoLocation.multipleReferences": "goto", // Menetapkan navigasi ke referensi ganda sebagai 'goto'.
+    "editor.gotoLocation.multipleDefinitions": "goto", // Menetapkan navigasi ke definisi ganda sebagai 'goto'.
+    "editor.gotoLocation.multipleDeclarations": "goto", // Menetapkan navigasi ke deklarasi ganda sebagai 'goto'.
+    "workbench.editor.enablePreviewFromQuickOpen": false, // Menonaktifkan preview editor dari Quick Open.
+    "editor.gotoLocation.multipleImplementations": "goto", // Menetapkan navigasi ke implementasi ganda sebagai 'goto'.
+    "editor.gotoLocation.multipleTypeDefinitions": "goto", // Menetapkan navigasi ke definisi tipe ganda sebagai 'goto'.
+    "editor.scrollbar.vertical": "hidden",
+    "editor.scrollbar.horizontal": "hidden",
+    "editor.cursorSmoothCaretAnimation": "on", // Mengaktifkan animasi kursor yang halus.
+    "editor.cursorBlinking": "solid", // Mengatur kursor berkedip ke solid.
+    "terminal.integrated.fontSize": 13, // Ukuran font terminal terintegrasi.
+    "terminal.integrated.lineHeight": 1.2, // Tinggi baris terminal terintegrasi.
+    "terminal.integrated.cursorStyle": "line", // Gaya kursor terminal terintegrasi.
+    "editor.inlineSuggest.enabled": true, // Mengaktifkan saran inline di editor.
+    "editor.fontFamily": "Fira Code, Consolas, 'Courier New', monospace", // Mengatur Fira Code sebagai font utama.
+    "editor.fontLigatures": true, // Mengaktifkan ligatures untuk Fira Code.
+    "editor.fontSize": 12
+}

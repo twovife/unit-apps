@@ -1,0 +1,105 @@
+import AppButton from '@/Components/shadcn/AppButton';
+import Loading from '@/Components/Loading';
+import { Input } from '@/shadcn/ui/input';
+import { Label } from '@/shadcn/ui/label';
+import { useForm } from '@inertiajs/react';
+import dayjs from 'dayjs';
+import useHariLibur from '@/Hooks/useHariLibur';
+import React, { useEffect, useState } from 'react';
+
+/**
+ * Tombol "Tundaan" - cuma muncul untuk pengajuan yang sudah di-ACC (dipasang
+ * oleh `Acc.jsx`). Cuma mengganti tanggal drop: pengajuan ini otomatis jadi
+ * 'gagal' (TIDAK dihapus), dan dibuat pengajuan baru dengan tanggal drop
+ * baru yang mewarisi approved_nominal/user_check/check_date - langsung
+ * 'acc' lagi, tidak perlu di-ACC ulang.
+ */
+const Tundaan = ({ id, dropDateLama, onClosed }) => {
+  const [open, setOpen] = useState(false);
+  const { majuKeHariKerja, siap: kalenderSiap } = useHariLibur(dropDateLama);
+
+  // Tundaan menggeser drop MAJU seminggu — dan kalau minggu depan libur,
+  // lompatannya ke minggu berikutnya lagi. Server juga menuntut harinya sama
+  // dengan drop lama ("Hari Tidak Sama"), jadi lompatannya per minggu.
+  const defaultTanggalBaru = majuKeHariKerja(
+    dayjs(dropDateLama).add(1, 'week').format('YYYY-MM-DD'),
+  );
+
+  const { data, setData, post, processing, errors, reset } = useForm({
+    tanggal_drop: defaultTanggalBaru,
+  });
+
+  // Kalendernya datang belakangan; begitu siap, bawaannya dibetulkan.
+  useEffect(() => {
+    if (open) setData('tanggal_drop', defaultTanggalBaru);
+  }, [kalenderSiap]);
+
+  const bukaForm = () => {
+    setData('tanggal_drop', defaultTanggalBaru);
+    setOpen(true);
+  };
+
+  const submit = () => {
+    post(route('transaction.tundaan_pengajuan', id), {
+      // Jangan lompat ke atas daftar sesudah simpan.
+      preserveScroll: true,
+      onSuccess: () => {
+        reset();
+        setOpen(false);
+        onClosed?.();
+      },
+    });
+  };
+
+  if (!open) {
+    return (
+      <AppButton variant="warningOutline" size="sm" type="button" onClick={bukaForm}>
+        Tundaan
+      </AppButton>
+    );
+  }
+
+  // Sengaja bukan <form> - komponen ini dipasang di dalam <form> milik
+  // Acc.jsx. <form> bersarang tidak valid di HTML; tombol submit di
+  // dalamnya bisa "diklaim" oleh form terluar (yang cuma preventDefault(),
+  // no-op) alih-alih memicu handler di sini. Submit ditangani manual lewat
+  // onClick, bukan lewat event submit form.
+  const pesanError = Object.values(errors)[0];
+
+  return (
+    <div className="w-full p-3 mt-2 border rounded-md bg-muted/40">
+      <Loading show={processing} />
+      <Label>Tanggal Drop Baru</Label>
+      {/* Tidak dipilih: server selalu menunda ke hari tagih kerja berikutnya. */}
+      <div className="mt-1 text-sm font-semibold">
+        {dayjs(data.tanggal_drop).format('dddd, DD MMMM YYYY')}
+      </div>
+      {pesanError && (
+        <p className="mt-1 text-xs font-medium text-destructive">
+          {pesanError}
+        </p>
+      )}
+      <div className="flex justify-end gap-2 mt-2">
+        <AppButton
+          variant="ghost"
+          size="sm"
+          type="button"
+          onClick={() => setOpen(false)}
+        >
+          Batal
+        </AppButton>
+        <AppButton
+          variant="warning"
+          size="sm"
+          type="button"
+          disabled={processing}
+          onClick={submit}
+        >
+          Tunda ke Tanggal Ini
+        </AppButton>
+      </div>
+    </div>
+  );
+};
+
+export default Tundaan;

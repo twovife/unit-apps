@@ -1,0 +1,33 @@
+<?php
+
+// Uji rumus Rekap Sirkulasi Wilayah. Tanpa Laravel, tanpa basis data.
+// Jalankan: docker exec unit-app php -d zend.assertions=1 .agents/uji/uji_rekap_wilayah.php
+//
+// phpunit di proyek ini menghantam ubmi_db produksi, jadi rumusnya diuji
+// lewat skrip lepas seperti ini.
+
+require __DIR__ . '/../../app/Helpers/RekapWilayah.php';
+
+use App\Helpers\RekapWilayah;
+
+// --- persen
+assert(RekapWilayah::persen(103_565_000, 614_300_000) !== null);
+assert(round(RekapWilayah::persen(103_565_000, 614_300_000), 4) === 0.1686, 'contoh Excel mas: 16,86%');
+assert(RekapWilayah::persen(1000, 0) === null, 'penyebut 0 -> null, bukan 0');
+assert(RekapWilayah::persen(0, 1000) === 0.0);
+
+// --- sirkulasi berjalan
+assert(RekapWilayah::sirkulasiBerjalan(1_000_000, 100_000, 50_000) === 1_080_000);
+assert(RekapWilayah::sirkulasiBerjalan(0, 0, 0) === 0);
+
+// --- bulan rujukan: CM = T-3, MB = T-4
+assert(RekapWilayah::bulanRujukan('2026-11-23', 'cm') === '2026-08-01');
+assert(RekapWilayah::bulanRujukan('2026-11-23', 'mb') === '2026-07-01');
+assert(RekapWilayah::bulanRujukan('2026-01-15', 'cm') === '2025-10-01', 'lintas tahun');
+assert(RekapWilayah::bulanRujukan('2026-03-31', 'cm') === '2025-12-01', 'akhir bulan tidak meluber');
+assert(RekapWilayah::bulanRujukan('2026-04-30', 'mb') === '2025-12-01');
+
+// Rantai kumulatif (kemarin + mutasi hari ini) diperiksa di layar, bukan di
+// sini: lihat .agents/uji/uji_kolom_rekap_wilayah.mjs. Satu rumus satu tempat.
+
+echo "OK semua\n";

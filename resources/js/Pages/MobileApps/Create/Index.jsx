@@ -9,6 +9,8 @@ const Index = () => {
       <NewNasabah
         onClosed={() => void 0}
         submitUrl={route('transaction.store_buku_transaksi')}
+        aturanDrop={true}
+        batasiPengajuan={true}
       />
     </MobileLayout>
   );

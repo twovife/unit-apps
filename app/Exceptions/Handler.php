@@ -46,5 +46,18 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+
+        // 419 (token CSRF kedaluwarsa, biasanya sesi habis): jangan tampilkan
+        // halaman error di popup Inertia. Sesi habis -> ke login dengan pesan;
+        // masih login (mis. token basi dari tab lain) -> kembali ke halaman tadi.
+        // 303 supaya PUT/DELETE dari Inertia dilanjutkan sebagai GET.
+        $this->renderable(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+            if ($e->getStatusCode() !== 419) {
+                return null;
+            }
+            return auth()->check()
+                ? back(303)->with('message', 'Halaman kedaluwarsa, silakan ulangi.')
+                : redirect()->route('login', [], 303)->with('status', 'Sesi habis, silakan login lagi.');
+        });
     }
 }

@@ -1,0 +1,263 @@
+import { memo, useEffect, useState } from 'react';
+import { angka as angkaMode, useModeRibuan } from '@/lib/modeAngka';
+import { BLOK, PECAHAN, SEMUA_KOLOM, nilai, persen, persenTeks, tandaSelisih, turunan } from './kolom';
+// Warna blok kolom dipinjam dari Rekap 1/2 supaya seragam, bukan disalin.
+import { WARNA } from '@/Pages/Kasir/Rekap/Components/TableRekapKasir';
+
+const awalBlok = new Set(BLOK.map((b) => b.kolom[0].k));
+const judulBlok = Object.fromEntries(BLOK.flatMap((b) => b.kolom.map((k) => [k.k, `${b.judul} · ${k.j}`])));
+
+/**
+ * Kotak isian satu sel. Dicontek dari IsianSel di Rekap 1
+ * (resources/js/Pages/Kasir/Rekap/Components/TableRekapKasir.jsx): diketik
+ * dalam RIBUAN (200 = 200.000), akhiran ".000" tampil saat sedang diisi,
+ * Enter pindah, Escape membatalkan.
+ */
+export function IsianSel({ baris, kolom, judul, tersimpan, onUbah, onEnter }) {
+  const penuh = !useModeRibuan();
+  const awal = tersimpan == null ? '' : Number(tersimpan) / 1000;
+  const [teks, setTeks] = useState(awal);
+  const [diketik, setDiketik] = useState(false);
+
+  // Autosave membalas angka hasil hitung ulang server; kotaknya ikut disegarkan.
+  useEffect(() => {
+    setTeks(tersimpan == null ? '' : Number(tersimpan) / 1000);
+    setDiketik(false);
+  }, [tersimpan]);
+
+  // Belum pernah disimpan -> angka sistem, ditulis miring supaya kelihatan
+  // belum dikonfirmasi kasir.
+  const bawaan = !diketik && tersimpan == null;
+
+  return (
+    <div className="relative">
+      <input
+        data-sel={`${baris.branch_id}|${kolom}`}
+        title={(judul ?? judulBlok[kolom] ?? kolom) + (bawaan ? ' — angka sistem, belum dilaporkan' : '')}
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        placeholder="0"
+        value={teks}
+        onFocus={(e) => e.currentTarget.select()}
+        onChange={(e) => {
+          setTeks(e.target.value);
+          setDiketik(true);
+        }}
+        // Dikirim ke induk saat selesai, bukan tiap ketukan: satu ketukan
+        // kalau diteruskan akan merender ulang seluruh tabel tanggal ini.
+        // Autosave: dikirim saat kotak ditinggalkan, bukan tiap ketukan, dan
+        // hanya kalau angkanya benar-benar berubah.
+        onBlur={() => {
+          if (!diketik) return;
+          setDiketik(false);
+          const baru = teks === '' ? null : Math.round(Number(teks) * 1000);
+          if (baru === (tersimpan == null ? null : Number(tersimpan))) return;
+          onUbah(baru);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.currentTarget.blur(); // onBlur mengirim nilainya
+            onEnter?.();
+          }
+          if (e.key === 'Escape') {
+            setTeks(awal);
+            setDiketik(false);
+            onUbah(tersimpan);
+          }
+        }}
+        className={`peer block w-full min-w-[5rem] rounded-none border-0 bg-sky-50/60 py-1 pl-2 text-right text-xs tabular-nums outline-none [appearance:textfield] focus:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-500 [&::-webkit-inner-spin-button]:appearance-none ${penuh ? 'pr-8' : 'pr-2'} focus:pr-8 ${bawaan ? 'italic text-slate-400' : ''}`}
+      />
+      <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 peer-focus:block ${penuh ? 'block' : 'hidden'}`}>
+        .000
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Penanda TTD kasir / ACC KM: berapa kelompok dari seluruh kelompok kantor itu.
+ * Lengkap -> hijau, sebagian -> kuning, belum ada -> kelabu.
+ */
+function Penanda({ nilai = 0, dari = 0, kiri = false }) {
+  const warna = dari && nilai >= dari ? 'text-emerald-700' : nilai > 0 ? 'text-amber-600' : 'text-slate-300';
+
+  return (
+    <td className={`whitespace-nowrap px-3 py-1 text-center text-[11px] ${kiri ? 'border-l' : ''}`}>
+      <span className={warna}>{nilai}/{dari}</span>
+    </td>
+  );
+}
+
+/**
+ * Tabel Rekap Sirkulasi Wilayah: satu baris per kantor, lalu baris total.
+ *
+ * Yang diketik hanya mutasi hari itu (Drop, Storting, Angs CM/MB/ML).
+ * Kumulatif dan saldo dihitung server dari mutasi sebulan, jadi di sini cuma
+ * ditampilkan. Tiap sel menyimpan sendiri saat ditinggalkan, dan angka
+ * turunannya datang dari balasan simpan itu — tidak ada tombol Simpan.
+ */
+function TabelWilayah({ tanggal, baris, bolehUbah, kosong, onUbah, onCek, onBuka, onLog, onKantor, bulanCm, bulanMb }) {
+  useModeRibuan(); // ikut berganti saat saklar ribuan di header diubah
+
+  // Persen baris total dari jumlah pembilang / jumlah penyebut, BUKAN
+  // rata-rata persen tiap kantor (rancangan §2).
+  const jumlah = (k) => baris.reduce((t, b) => t + Number(nilai(b, k) || 0), 0);
+  const selTotal = (k) => {
+    if (kosong) return '';
+    const p = PECAHAN[k];
+
+    return p ? persenTeks(persen(jumlah(p[0]), jumlah(p[1]))) : angkaMode(jumlah(k));
+  };
+
+  // Enter: pindah ke kantor berikutnya pada kolom yang sama. data-sel dipakai
+  // supaya tidak perlu memasang ref untuk 32 x 5 isian.
+  const keBawah = (indeks, k) => {
+    const berikut = baris[indeks + 1];
+    if (berikut) document.querySelector(`[data-sel="${berikut.branch_id}|${k}"]`)?.focus();
+  };
+
+  // Saldo lama berasal dari drop bulan T-3 / T-4; bulannya ditulis di
+  // keterangan sel supaya angkanya bisa ditelusuri.
+  const ket = {
+    persen_cm: `Saldo CM dibagi jumlah drop ${bulanCm ?? 'bulan CM'}`,
+    persen_mb: `Saldo MB dibagi jumlah drop ${bulanMb ?? 'bulan MB'}`,
+    persen_ml: 'Saldo ML dibagi sirkulasi hari ini',
+  };
+
+  // Gaya kepala & sel mengikuti Rekap 2 (TabelHarian): text-xs, px-3 py-1,
+  // kepala slate-100, baris selang-seling, sorot biru saat disinggahi.
+  const th = 'whitespace-nowrap px-3 py-2 text-right font-medium';
+
+  return (
+    <div className="overflow-x-auto rounded-lg border bg-white">
+      <table className="w-full border-separate border-spacing-0 text-xs tabular-nums">
+        <thead className="bg-slate-100 text-slate-700">
+          <tr>
+            <th rowSpan={2} className={`${th} sticky left-0 z-20 bg-slate-100 text-left`}>Kantor</th>
+            {BLOK.map((b) => (
+              <th key={b.judul} colSpan={b.kolom.length} className={`${th} border-l text-center`}>
+                {b.judul}
+              </th>
+            ))}
+            <th rowSpan={2} className={`${th} border-l text-center`} title="Berapa kelompok yang sudah di-TTD kasir">
+              Kasir
+            </th>
+            <th rowSpan={2} className={`${th} text-center`} title="Berapa kelompok yang sudah di-ACC kepala mantri">
+              KM
+            </th>
+            <th rowSpan={2} className={`${th} border-l text-center`}>Staf Kontrol</th>
+          </tr>
+          <tr>
+            {SEMUA_KOLOM.map((k) => (
+              <th key={k.k} className={`${th} ${awalBlok.has(k.k) ? 'border-l' : ''}`}>
+                {k.j}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {baris.map((b, i) => (
+              <tr key={b.branch_id} className="group border-t bg-white even:bg-slate-50 hover:bg-sky-50">
+                <td className={`sticky left-0 z-10 whitespace-nowrap px-3 py-1 font-medium ${WARNA.biru.sel}`}>
+                  <button
+                    type="button"
+                    onClick={() => onKantor?.(tanggal, b)}
+                    title="Buka Rekap 2 kantor ini"
+                    className="underline decoration-dotted underline-offset-2 hover:text-sky-700"
+                  >
+                    {b.unit}
+                  </button>
+                </td>
+                {SEMUA_KOLOM.map((k) => {
+                  const tanda = kosong || k.hitung ? null : tandaSelisih(b, k.k);
+                  const bisaKetik = bolehUbah && k.ketik && !b.terkunci;
+
+                  return (
+                    <td
+                      key={k.k}
+                      title={ket[k.k] ?? tanda ?? undefined}
+                      className={`whitespace-nowrap p-0 text-right ${awalBlok.has(k.k) ? 'border-l' : ''} ${tanda ? 'bg-red-100 text-red-900' : WARNA[k.warna].sel}`}
+                    >
+                      {bisaKetik ? (
+                        <>
+                          {/* Dicetak sebagai angka penuh: kotak isian diketik
+                              dalam ribuan, jadi isinya tidak boleh ikut cetak. */}
+                          <span className="hidden px-1.5 py-0.5 print:block">{angkaMode(nilai(b, k.k))}</span>
+                          <div className="print:hidden">
+                            <IsianSel
+                              baris={b}
+                              kolom={k.k}
+                              tersimpan={b.diketik?.[k.k] ?? b.sistem?.[k.k] ?? null}
+                              onUbah={(v) => onUbah(tanggal, b.branch_id, k.k, v)}
+                              onEnter={() => keBawah(i, k.k)}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <span className={`block px-3 py-1 ${k.tebal ? 'font-semibold' : ''}`}>
+                          {kosong ? '' : k.hitung ? persenTeks(turunan(b, k.k)) : angkaMode(nilai(b, k.k))}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+                <Penanda nilai={b.ttd?.kasir} dari={b.ttd?.kelompok} kiri />
+                <Penanda nilai={b.ttd?.km} dari={b.ttd?.kelompok} />
+                <td className="whitespace-nowrap border-l px-3 py-1 text-center text-[11px] text-slate-500">
+                  {kosong ? (
+                    <span className="text-slate-300">—</span>
+                  ) : b.terkunci ? (
+                    <span className="inline-flex items-center gap-1">
+                      <button type="button" onClick={() => onLog?.(tanggal, b)} title={`${b.dicek_oleh ?? '-'} · ${b.dicek_pada ?? '-'}`} className="text-emerald-700 underline decoration-dotted">
+                        ✓ {b.dicek_oleh ?? '-'}
+                      </button>
+                      {bolehUbah && (
+                        <button
+                          type="button"
+                          onClick={() => onBuka?.(tanggal, b)}
+                          className="tanpa-cetak text-sky-600 underline"
+                        >
+                          buka
+                        </button>
+                      )}
+                    </span>
+                  ) : bolehUbah ? (
+                    <button
+                      type="button"
+                      onClick={() => onCek?.(tanggal, b)}
+                      className="tanpa-cetak rounded border px-1.5 py-0.5 hover:bg-slate-100"
+                    >
+                      Cek
+                    </button>
+                  ) : (
+                    <span className="text-slate-300">belum</span>
+                  )}
+                </td>
+              </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t bg-emerald-50 font-bold text-slate-900">
+            <td className={`sticky left-0 z-10 px-3 py-1.5 ${WARNA.biru.total}`}>Total Wilayah</td>
+            {SEMUA_KOLOM.map((k) => (
+              <td
+                key={k.k}
+                className={`whitespace-nowrap px-3 py-1.5 text-right ${WARNA[k.warna].total} ${awalBlok.has(k.k) ? 'border-l' : ''}`}
+              >
+                {selTotal(k.k)}
+              </td>
+            ))}
+            <td className="border-l px-3 py-1.5" />
+            <td className="px-3 py-1.5" />
+            <td className="border-l px-3 py-1.5" />
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+export default memo(TabelWilayah);

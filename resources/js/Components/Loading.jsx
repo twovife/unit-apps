@@ -1,32 +1,35 @@
-import React from 'react';
-import '../../css/loader.css';
+import { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Transition } from '@headlessui/react';
+import { Loader2 } from 'lucide-react';
 
-const Loading = ({ show }) => {
+// Pengunci layar selama proses: ketukan langsung tertahan, kartu "Memuat…"
+// baru tampil sesudah 300 ms supaya proses cepat tidak berkedip.
+const Loading = ({ show, pesan = 'Memuat…' }) => {
+  const [kartu, setKartu] = useState(false);
+  useEffect(() => {
+    if (!show) return setKartu(false);
+    const t = setTimeout(() => setKartu(true), 300);
+    return () => clearTimeout(t);
+  }, [show]);
+
   const loadingRoot = document.getElementById('loading');
-
-  if (!loadingRoot) return null;
+  if (!loadingRoot || !show) return null;
 
   return ReactDOM.createPortal(
-    <Transition
-      show={show}
-      enter="transition-opacity duration-200"
-      enterFrom="opacity-0"
-      enterTo="opacity-100"
-      leave="transition-opacity duration-200"
-      leaveFrom="opacity-100"
-      leaveTo="opacity-0"
+    <div
+      className={`fixed inset-0 z-[100] flex items-center justify-center cursor-wait transition-colors duration-200 ${kartu ? 'bg-slate-900/10' : 'bg-transparent'}`}
+      aria-busy="true"
+      aria-live="polite"
     >
-      <div className="w-full h-screen bg-white/20 fixed inset-0 z-100 flex justify-center items-center backdrop-blur-[1px] pointer-events-auto">
-        <div className="custom-loader"></div>
-      </div>
-    </Transition>,
+      {kartu && (
+        <div className="flex items-center gap-3 rounded-lg border-[1.5px] border-slate-300 bg-white px-5 py-3 text-[15px] font-medium text-slate-700 shadow-lg">
+          <Loader2 className="size-5 animate-spin text-slate-500" />
+          {pesan}
+        </div>
+      )}
+    </div>,
     loadingRoot
   );
-  // <div className="absolute w-full h-full bg-red-400">
-  //     <div class="custom-loader"></div>
-  // </div>
 };
 
 export default Loading;
