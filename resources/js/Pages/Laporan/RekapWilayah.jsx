@@ -45,6 +45,19 @@ export default function RekapWilayah({
   // Saldo awal yang baru diketik, per branch_id. Balasan server berisi baris
   // harian saja, jadi panelnya ditambal dari yang dikirim.
   const [tambalanAwal, setTambalanAwal] = useState({});
+  // Panel Sirkulasi Awal terbuka sejak awal; tombol "Awal" di deret tanggal
+  // membukanya lagi kalau sempat ditutup.
+  const [panelAwal, setPanelAwal] = useState(true);
+  // Tombol "Awal" yang menyala, terpisah dari tanggal yang menyala.
+  const [diAwal, setDiAwal] = useState(false);
+
+  // Panel yang tertutup tidak dirender Radix, jadi tidak ikut tercetak.
+  useEffect(() => {
+    const pasang = () => setPanelAwal(true);
+    window.addEventListener('beforeprint', pasang);
+
+    return () => window.removeEventListener('beforeprint', pasang);
+  }, []);
   const [mengekspor, setMengekspor] = useState(false);
 
   // exceljs 900 KB, diimpor hanya saat tombolnya ditekan.
@@ -262,6 +275,7 @@ export default function RekapWilayah({
 
   const lompat = (tanggal, halus = true) => {
     setAktif(tanggal);
+    setDiAwal(false);
     const cari = () => document.getElementById(`tgl-${tanggal}`);
     cari()?.scrollIntoView({ behavior: halus ? 'smooth' : 'auto', block: 'start' });
 
@@ -285,11 +299,58 @@ export default function RekapWilayah({
     setTimeout(betulkan, 120);
   };
 
-  // Halaman dibuka langsung di tanggal hari ini, bukan di tanggal 1: yang
-  // dikerjakan staf kontrol hampir selalu hari ini. Bulan lain tidak digeser.
+  // Posisi gulir diingat per wilayah + bulan, supaya muat ulang atau pergi
+  // dan kembali tidak melempar staf kontrol ke atas lagi. Disimpan di
+  // sessionStorage: cuma berlaku selama tab ini hidup, dan tidak terbawa ke
+  // komputer lain.
+  const kunciGulir = `rekapwilayah.gulir.${wilayah}.${bulan}`;
+
   useEffect(() => {
+    let tunda = null;
+    const simpan = () => {
+      if (tunda) return;
+      tunda = setTimeout(() => {
+        tunda = null;
+        try {
+          sessionStorage.setItem(kunciGulir, String(window.scrollY));
+        } catch {
+          /* tanpa storage: halaman tetap jalan, cuma tidak diingat */
+        }
+      }, 300);
+    };
+
+    window.addEventListener('scroll', simpan, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', simpan);
+      if (tunda) clearTimeout(tunda);
+    };
+  }, [kunciGulir]);
+
+  // Saat dibuka: kembali ke posisi terakhir kalau ada, kalau belum pernah
+  // lompat ke tanggal hari ini. Bulan lain tanpa riwayat tidak digeser.
+  useEffect(() => {
+    let tersimpan = null;
+    try {
+      tersimpan = sessionStorage.getItem(kunciGulir);
+    } catch {
+      /* diabaikan */
+    }
+
+    if (tersimpan !== null) {
+      // Diulang: tinggi blok berubah saat tabelnya dipasang, jadi sekali
+      // gulir saja meleset.
+      const ke = () => window.scrollTo({ top: Number(tersimpan), behavior: 'auto' });
+      ke();
+      const jam = [setTimeout(ke, 150), setTimeout(ke, 400)];
+
+      return () => jam.forEach(clearTimeout);
+    }
+
     const ini = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD waktu setempat
     if (hari.some((h) => h.tanggal === ini)) lompat(ini, false);
+
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bulan, wilayah]);
 
@@ -367,6 +428,26 @@ export default function RekapWilayah({
           {/* Tombol tanggal seperti Rekap 2: lompat ke blok tanggal itu.
               Hijau = semua kantor sudah dicek, kelabu = hari libur. */}
           <div className="flex w-full flex-wrap gap-1">
+            {/* Sejajar tombol tanggal: lompat ke panel Sirkulasi Awal sekaligus
+                membukanya. Letaknya paling depan karena awal bulan memang
+                datang sebelum tanggal 1. */}
+            <button
+              type="button"
+              title="Sirkulasi awal bulan"
+              onClick={() => {
+                setPanelAwal(true);
+                setAktif(null);
+                setDiAwal(true);
+                document.getElementById('sirkulasi-awal')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className={`h-7 shrink-0 rounded-md border px-2 text-xs transition-colors ${
+                diAwal
+                  ? 'border-sky-600 bg-sky-600 font-semibold text-white'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Awal
+            </button>
             {hari.map((h) => {
               const dicek = h.baris.filter((b) => terkunci(h.tanggal, b)).length;
               const penuh = dicek === h.baris.length;
@@ -416,6 +497,8 @@ export default function RekapWilayah({
             onCek={cekAwal}
             onBuka={bukaAwal}
             onKantor={lihatRekapDuaBulan}
+            terbuka={panelAwal}
+            onBukaPanel={setPanelAwal}
           />
         )}
 

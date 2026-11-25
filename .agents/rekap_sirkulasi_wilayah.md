@@ -27,9 +27,20 @@ jejaknya.
 - Baris filter menempel di `top-14`, tepat di bawah navbar (`h-14`). `top-0`
   membuatnya menutupi navbar saat digulir.
 
-- **Halaman dibuka langsung di tanggal hari ini**, bukan di tanggal 1
-  (permintaan mas 2026-11-24). Kalau bulan yang dipilih bukan bulan berjalan,
-  tidak ada yang digeser.
+- **Posisi gulir diingat per wilayah + bulan** di `sessionStorage`
+  (permintaan mas 2026-11-25). Muat ulang atau pergi-dan-kembali tidak
+  melempar staf kontrol ke atas lagi. Disimpan sebagai piksel, ditulis
+  paling sering tiap 300 ms, dan dipasang ulang dua kali sesudah muat karena
+  tinggi blok berubah saat tabelnya dipasang.
+
+- **Kalau belum ada riwayat gulir, halaman dibuka di tanggal hari ini**, bukan
+  tanggal 1. Bulan selain bulan berjalan tidak digeser.
+
+- Di depan deret tombol tanggal ada tombol **Awal**: melompat ke panel
+  Sirkulasi Awal sekaligus membukanya. Panelnya dikendalikan halaman
+  (`value` Radix), bukan `defaultValue`, supaya tombol itu bisa membuka yang
+  sudah ditutup. `beforeprint` juga membukanya — Radix melepas isi panel yang
+  tertutup, jadi yang tertutup tidak ikut tercetak.
 
 - **Tanggal yang belum terjadi dikosongkan.** Barisnya tetap ada supaya
   bulannya utuh, tapi angkanya **tidak dikirim server** (`sistem` kosong,

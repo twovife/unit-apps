@@ -26,7 +26,7 @@ const RINGKAS = ['awal_sirkulasi', 'awal_cm', 'persen_cm', 'awal_mb', 'persen_mb
  *
  * Kartu lipatnya Accordion shadcn, sama dengan "Saldo Awal Bulan" di Rekap 2.
  */
-export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah, onCek, onBuka, onKantor }) {
+export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, bolehUbah, onUbah, onCek, onBuka, onKantor, terbuka, onBukaPanel }) {
   useModeRibuan(); // ikut saklar ribuan di header
 
   const namaBulan = { lalu: bulanLalu, cm: bulanCm, mb: bulanMb };
@@ -41,9 +41,16 @@ export default function SaldoAwal({ baris, bulan, bulanLalu, bulanCm, bulanMb, b
   const ket = (c) => c.ket ?? (c.bulan ? `Jumlah drop ${namaBulan[c.bulan] ?? '-'}` : undefined);
 
   return (
-    // defaultValue: terbuka sejak awal. Radix melepas isinya saat tertutup,
-    // jadi panel yang tertutup tidak ikut tercetak.
-    <Accordion type="single" collapsible defaultValue="awal" className="overflow-hidden rounded-lg border bg-white">
+    // Dikendalikan induk: tombol "Awal" di deret tanggal membukanya. Radix
+    // melepas isi panel yang tertutup, jadi yang tertutup tidak ikut tercetak.
+    <Accordion
+      type="single"
+      collapsible
+      id="sirkulasi-awal"
+      value={terbuka ? 'awal' : ''}
+      onValueChange={(v) => onBukaPanel?.(v === 'awal')}
+      className="scroll-mt-36 overflow-hidden rounded-lg border bg-white"
+    >
       <AccordionItem value="awal" className="border-b-0">
         {/* Kartu lipat yang sama dengan "Saldo Awal Bulan" di Rekap 2. */}
         <AccordionTrigger className="bg-slate-50 px-4 py-3 hover:bg-slate-100 hover:no-underline data-[state=open]:border-b">
